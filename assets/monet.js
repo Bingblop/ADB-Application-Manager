@@ -24,12 +24,13 @@
  * colours are for (see "Profiles" below). P14, and no profile: part 2 gets a style only where Google's rule gives it a spec other than
  * 2021 (Tonal Spot, Vibrant, Expressive and Spritz at 2025 or 2026, CMF at 2026), so every P14 result at spec 2021 is part 1's, the
  * same as before part 2 was added. P15Q1, P15Q2 and P16 (Android 15 QPR1, 15 QPR2 and 16.0): part 2 at every spec, 2021 included.
+ * P15 (Android 15.0): as P15Q1, with the two rules of AOSP's libmonet android15-release that differ from it at 2021 (the profile below).
  * P16Q1 and P16Q2 (Android 16 QPR1 and QPR2): part 2 with the rules of AOSP's libmonet on those branches, at 2025 for every style
  * (2021 when asked for). P17 (Android 17): part 2 with the rules of AOSP's libmonet android17-release, at the spec asked for with
  * upstream's fallback (2026 gives Tonal Spot, Vibrant, Expressive and Spritz 2025, CMF 2026, the others 2021). Android 14, 15 and 16.0
- * build their own theme at spec 2021 (15.0 with an older libmonet), Android 16 QPR1 and QPR2 at 2025 with changes of their own (the
- * P16Q1 and P16Q2 profiles below), and Android 17 at 2026 (the P17 profile below; read in the AOSP sources and computed with them
- * compiled, not run on a phone).
+ * build their own theme at spec 2021 (15.0 with an older libmonet: the P15 profile below), Android 16 QPR1 and QPR2 at 2025 with
+ * changes of their own (the P16Q1 and P16Q2 profiles below), and Android 17 at 2026 (the P17 profile below; read in the AOSP sources
+ * and computed with them compiled, not run on a phone).
  *
  * Part 1, provenance (what was ported from where; the Java is AOSP frameworks/base at refs/heads/android14-release, the TypeScript is
  * Google's npm package @material/material-color-utilities 0.4.0; both Apache-2.0):
@@ -97,7 +98,7 @@
  *   text_hint_inverse) keep part 1's Android 14 definition, evaluated on part 2's palettes (libmonet on Android 15 and 16 defines
  *   them the same way at 2021: the profile oracle below). The 65 shades are taken from the scheme of the mode asked for (opts.dark),
  *   as Android 15's and 16's ThemeOverlayController takes them from the mode the phone is in; for P14 with part 1's rule (Android
- *   14's Shades.of), for P15Q1, P15Q2 and P16 with Android 15's and 16's (below).
+ *   14's Shades.of), for P15, P15Q1, P15Q2 and P16 with Android 15's and 16's (below).
  *   What the oracle run showed (the library at that commit, bundled with esbuild and run in node; seeds 6750A4 1B6EF3 B5651D 00FF00
  *   808080 FFDE3F, the grey taken to Google blue as the API does; Tonal Spot, Vibrant, Expressive and Spritz at 2025, and at 2026,
  *   which gives them 2025; CMF at 2026; light and dark): every palette's hue, chroma and key colour (error included), every role
@@ -160,6 +161,52 @@
  *   light and dark): at contrast 0 Fidelity and Content differ in 58-59 of 672 role and fixed values (the on-colours and
  *   outline_light), the seven styles SystemUI accepts (Monochrome among them) in outline_light only (6 of 672); at contrast 0.5 and 1
  *   about 40 % differ. Not handled yet.
+ *
+ * Profile P15, provenance (AOSP, Apache-2.0; libmonet Copyright 2021-2023 Google LLC, SystemUI Copyright (C) 2019-2024 The Android
+ * Open Source Project, both covered by the notices at the top of this file): what SystemUI writes on Android 15.0 (API 35), read at the
+ * branch heads refs/heads/android15-release.
+ *   frameworks/base packages/SystemUI/src/com/android/systemui/theme/ThemeOverlayController.java (createOverlays, createNeutralOverlay,
+ *     createAccentOverlay, createDynamicOverlay, assignTonalPaletteToOverlay, assignColorsToOverlay) and frameworks/libs/systemui
+ *     monet/src/com/android/systemui/monet/ (ColorScheme.java, TonalPalette.java, DynamicColors.java): as on 15 QPR1 (P15Q1, above)
+ *     for everything this file writes. TonalPalette.java is byte for byte QPR1's; ColorScheme.java differs only in its hue-distance
+ *     helper and DynamicColors.java only in the name of a custom colour (on_theme_app_ring, theme_notif on QPR1), neither of which this
+ *     file uses or writes. So P15 writes P15Q1's 165 names in P15Q1's order: the 65 shades unsuffixed from the scheme of the mode the
+ *     phone is in, the 44 roles as _light and _dark, the 12 fixed colours unsuffixed from the light scheme; SystemUI's 21 custom
+ *     colours are not written. Flags.COLOR_FIDELITY as for P15Q1 (taken as off).
+ *   external/libmonet (android15-release fb9d98335a10561ead899a78bdd6bf2938adb52a, 2024-05-22, "Snap ... to 24Q3-release"): spec 2021
+ *     for every style, the same as android15-qpr1-release (part 2 at 2021) but for two things, ported here (MCU.schemeOf 'a15', which
+ *     sets DynamicScheme's a15 on a scheme whose spec is 2021): palettes/TonalPalette.java :59-60, :71-100 (createKeyColor: the key
+ *     colour by a linear walk out from T50, Android 14's search, where QPR1 bisects; MCU.keyColorA15) and dynamiccolor/
+ *     MaterialDynamicColors.java :426-444, :517-532, :595-613, :657-667 (on_primary_container, on_secondary_container,
+ *     on_tertiary_container and on_error_container: light tone 10, where QPR1 has 30, and ContrastCurve(4.5, 7, 11, 21), where QPR1
+ *     has (3, 4.5, 7, 11); Monochrome's own tones as on QPR1). Nothing else differs between the two branches (diff -r of the trees:
+ *     those two files and TEST_MAPPING). The key colour gives palette_key_color_* and palettes().key; the palettes' hue and chroma,
+ *     and so every shade, are QPR1's. Its other differences from part 2 are QPR1's (no tone-99 averaging of a yellow in TonalPalette,
+ *     getRotatedHue's bounds, Cam16 with Math.hypot), with no output changed (the oracle below).
+ *   At 2025 and 2026, and for CMF, which no Android 15.0 build computes (its libmonet has no other spec), P15 is P15Q1 (the brief's
+ *     choice: upstream's main, with no a15 rule, as there is no a15 reference to compare with); that is, wherever the style's spec after
+ *     upstream's fallback (specFor) is not 2021. A style that falls back to 2021 at 2025 or 2026 (Rainbow, Fruit Salad, Fidelity,
+ *     Content, Monochrome) is computed at 2021, so with a15's rules, as at 2021 itself. The palettes the accents and the Intensity
+ *     sliders build for a P15 scheme at 2021 take a15's key colour too (MCU.TonalPaletteA15; not measured: no phone has those options).
+ *   What the oracle run showed (scripts on this container): SystemUI's own ColorScheme.java, TonalPalette.java and DynamicColors.java
+ *   of android15-release compiled with libmonet android15-release (stubs only for Android classes the computation does not reach) and
+ *   driven by the six functions above, transcribed (the harness of P15Q1's check), against entries(style, seed, { spec: '2021', dark,
+ *   profile: 'P15', contrast }): the seven styles SystemUI builds, Content through SystemUI's ColorScheme and Fidelity through
+ *   libmonet's SchemeFidelity, seeds 6750A4 1B6EF3 B5651D 00FF00 808080 FFDE3F at contrast 0, 0.5 and 1, the 56 more seeds of P15Q1's
+ *   check at contrast -1, -0.5, 0, 0.25, 0.5, 0.75 and 1, and 9 picked for a yellow or cyan hue at 0, 0.5 and 1, light and dark: the
+ *   same 165 resources in the same order with the same values (7,866 plans, 1,297,890 entries, no difference). Every
+ *   MaterialDynamicColors method of libmonet android15-release (62, the palette key colours and the eight Android-only roles
+ *   included) on the raw six seeds, the nine styles, contrast 0, 0.5 and 1, light and dark, against lib.roleArgb on
+ *   MCU.schemeOf(..., '2021', 'a15'), and every palette's hue and chroma (within 1e-9) and key colour: no difference in 20,088 role
+ *   values and 1,944 palettes (upstream's 2021, P15Q1's, differs in 735 role values and 294 key colours). The write order equals a
+ *   list made from TOC android15-release's rules and DynamicColors.java read as text (165), and every name is a system_* colour of
+ *   core/res values/colors.xml on android15-release. P15Q1's rules on P15, the key colour by bisection, and QPR1's on_*_container
+ *   rules (tone 30, curve (3, 4.5, 7, 11), or either alone) each make the oracle check fail (1,470, 588, 882, 312 and 570 entries of
+ *   the six seeds' 53,460); a15's rules at 2025 and 2026 too make the check below fail. At 2025, 2026 and CMF every P15 result
+ *   equals P15Q1's; at 2021 they differ only in the four on_*_container roles and the palette_key_color_* roles (and palettes()'
+ *   key colours). Every other profile's results are those of the file before P15, byte for byte (no profile and the seven others,
+ *   every style and spec, the six seeds, light and dark, no contrast, 0 and 0.5, six option settings: 251,274 results; PROFILES
+ *   aside, which now names P15). Not run on a device.
  *
  * Profiles P16Q1 and P16Q2, provenance (AOSP, Apache-2.0; libmonet Copyright 2021-2025 Google LLC, SystemUI Copyright (C)
  * 2019-2024 The Android Open Source Project, both covered by the notices at the top of this file): what SystemUI writes on Android
@@ -295,7 +342,7 @@
  *     at 0 background, surface, surface_dim and the two lowest containers (at 2025 and for CMF also surface_container) are black in dark
  *     mode (P14 and P16, the six seeds, every style and spec, contrast 0).
  *   The shades: P14 (Android 14's rule) shade s at tone f(shadeTone(s)), the palette's hue, and chroma min(40, c) x the factor for
- *     shades 10 and 50, c x the factor for the others (c: the chroma before the sliders); P15Q1, P15Q2, P16, P16Q1, P16Q2 and P17
+ *     shades 10 and 50, c x the factor for the others (c: the chroma before the sliders); P15, P15Q1, P15Q2, P16, P16Q1, P16Q2 and P17
  *     tone f(trunc((1000 - s) / 10)) at chroma c x the factor (P16Q1, P16Q2 and P17: each mode's shades from that mode's
  *     palettes). Shade 0 (white) and shade 1000 (black) never move; at 200 shades 10, 50 and 100 of a neutral row
  *     reach white, at 0 shade 900 reaches black.
@@ -335,8 +382,8 @@
  *      seed's hue (and chroma); every other style is 2021 at every spec (maybeFallbackSpecVersion). So the second branch serves
  *      Expressive at 2021 and Fruit Salad at every spec, and no other case (the oracle below counts which styles took it).
  *   3. That palette replaces the scheme's secondary (or tertiary) palette before anything is derived from it: the row's 13 shades (by
- *      the profile's shade rule, as for every row: P14 Android 14's, with its chroma cap of 40 on shades 10 and 50, P15Q1, P15Q2 and
- *      P16 tone trunc((1000 - s) / 10)), and the roles: secondary, on_secondary, secondary_container, on_secondary_container, the four
+ *      the profile's shade rule, as for every row: P14 Android 14's, with its chroma cap of 40 on shades 10 and 50, P15, P15Q1, P15Q2
+ *      and P16 tone trunc((1000 - s) / 10)), and the roles: secondary, on_secondary, secondary_container, on_secondary_container, the four
  *      secondary fixed colours and palette_key_color_secondary (likewise tertiary). The engine still solves each role's tone against
  *      its background (contrast curves, tone-delta pairs, Android 14's Albers step for Fidelity and Content), so Android's contrast
  *      rules apply on top. The primary, neutral, neutral variant and error palettes are never touched: nothing outside the row and its
@@ -411,8 +458,8 @@
  *   MonetPlan.STYLES                       the ten style ids this file knows: TONAL_SPOT VIBRANT EXPRESSIVE RAINBOW FRUIT_SALAD SPRITZ
  *                                          FIDELITY CONTENT MONOCHROMATIC CMF (NEUTRAL and MONOCHROME are accepted as aliases)
  *   MonetPlan.SPECS                        the colour specs: '2021' '2025' '2026'
- *   MonetPlan.PROFILES                     the Android builds this file computes for: 'P14' (Android 14), 'P15Q1' (15 QPR1), 'P15Q2'
- *                                          (15 QPR2), 'P16' (16.0), 'P16Q1' (16 QPR1), 'P16Q2' (16 QPR2), 'P17' (17)
+ *   MonetPlan.PROFILES                     the Android builds this file computes for: 'P14' (Android 14), 'P15' (15.0), 'P15Q1' (15
+ *                                          QPR1), 'P15Q2' (15 QPR2), 'P16' (16.0), 'P16Q1' (16 QPR1), 'P16Q2' (16 QPR2), 'P17' (17)
  *   MonetPlan.specFor(style, spec, profile)  the spec the style really gets on a phone. No profile, or P14 to P16 (upstream's
  *                                          maybeFallbackSpecVersion): CMF keeps the spec, TONAL_SPOT VIBRANT EXPRESSIVE SPRITZ turn
  *                                          2026 into 2025, every other style is always 2021. P16Q1 and P16Q2 (libmonet): every style
@@ -426,7 +473,7 @@
  *                                          left out. profile: one of PROFILES, 'P14' when left out; any other value throws ('Profile not
  *                                          supported').
  *                                          contrast: the phone's contrast level, a number from -1 to 1 (clamped), 0 when left out;
- *                                          anything but a number throws. dark: the mode the phone is in; for P15Q1, P15Q2 and P16,
+ *                                          anything but a number throws. dark: the mode the phone is in; for P15, P15Q1, P15Q2 and P16,
  *                                          and for P14 at 2025 and 2026 (where light and dark palettes differ), the palettes and the
  *                                          65 shades come from the scheme of that mode, for P14 at 2021 from the light one; for
  *                                          P16Q1, P16Q2 and P17 palettes() follows it and entries() writes both modes. No opts,
@@ -452,13 +499,13 @@
  *                                          lightness moves the tones a palette gives, not its key colour). With accents: the accent
  *                                          palette's hue, chroma and key colour in accent2 / accent3
  *   MonetPlan.roles(style, argb, isDark, opts)  the profile's roles as [{ name, argb }] (argb a '0xAARRGGBB' string), in its order:
- *                                          44 for P14 and P15Q1, 50 for P15Q2 and P16, 55 for P16Q1, P16Q2 and P17 (51 at spec 2021,
+ *                                          44 for P14, P15 and P15Q1, 50 for P15Q2 and P16, 55 for P16Q1, P16Q2 and P17 (51 at spec 2021,
  *                                          without primary_dim, secondary_dim, tertiary_dim and error_dim; on P17 the spec asked for
  *                                          decides, so a style that falls back to 2021 from 2025 or 2026 has 55)
  *   MonetPlan.entries(style, argb, opts)   the overlay entries [{ resource, argb }] the profile's SystemUI writes, in its order. P14,
  *                                          165: 65 palette entries (accent1 first, SHADE_KEYS order), the 44 roles for dark then light,
- *                                          the 12 fixed colours from the light scheme. P15Q1, 165, and P15Q2 and P16, 177: 65 palette
- *                                          entries in SystemUI's write order, each role _light then _dark, the 12 fixed colours from
+ *                                          the 12 fixed colours from the light scheme. P15 and P15Q1, 165, and P15Q2 and P16, 177: 65
+ *                                          palette entries in SystemUI's write order, each role _light then _dark, the 12 fixed colours from
  *                                          the light scheme. P16Q1 and P16Q2, 252 (244 at spec 2021): 130 palette entries, accent1-3
  *                                          then neutral1-2, each shade in SHADE_KEYS order as _light (light scheme) then _dark (dark
  *                                          scheme), each role _light then _dark (55, or 51 at 2021, sorted by name), the 12 fixed
@@ -1653,7 +1700,8 @@
             constructor(hue, chroma, keyColor) { this.hue = hue; this.chroma = chroma; this.keyColor = keyColor; this.cache = new Map(); }
             static fromInt(argb) { return TonalPalette.fromHct(Hct.fromInt(argb)); }
             static fromHct(hct) { return new TonalPalette(hct.hue, hct.chroma, hct); }
-            static fromHueAndChroma(hue, chroma) { return new TonalPalette(hue, chroma, new KeyColor(hue, chroma).create()); }
+            // (while a P15 scheme at 2021 builds its palettes, keyColorWalk is set: libmonet android15-release's linear walk, keyColorA15)
+            static fromHueAndChroma(hue, chroma) { return new TonalPalette(hue, chroma, keyColorWalk ? keyColorA15(hue, chroma) : new KeyColor(hue, chroma).create()); }
             tone(tone) {
                 let argb = this.cache.get(tone);
                 if (argb === undefined) {
@@ -1699,6 +1747,29 @@
                 return chroma;
             }
         }
+        // ---------- AOSP external/libmonet palettes/TonalPalette.java, android15-release :59-60, :71-100 (Android 15.0, P15) ----------
+        // createKeyColor: the key colour by a linear walk out from T50 (the tone of T50 +/- 1, 2, ... 49 whose chroma is nearest the one
+        // asked for, stopping once the rounded chromas agree), Android 14's search (part 1's TonalPalette.createKeyColor) on this part's
+        // Hct. From android15-qpr1-release on, libmonet takes KeyColor's bisection above. keyColorWalk is true only while a P15 scheme at
+        // spec 2021 builds its palettes (DynamicScheme below); TonalPaletteA15 is the same factory for the palettes the API builds for
+        // such a scheme (the accents and the Intensity sliders)
+        let keyColorWalk = false;
+        function keyColorA15(hue, chroma) {
+            const startTone = 50.0;
+            let smallestDeltaHct = Hct.from(hue, chroma, startTone);
+            let smallestDelta = Math.abs(smallestDeltaHct.chroma - chroma);
+            for (let delta = 1.0; delta < 50.0; delta += 1.0) {
+                if (Math.round(chroma) === Math.round(smallestDeltaHct.chroma)) return smallestDeltaHct;
+                const hctAdd = Hct.from(hue, chroma, startTone + delta);
+                const hctAddDelta = Math.abs(hctAdd.chroma - chroma);
+                if (hctAddDelta < smallestDelta) { smallestDelta = hctAddDelta; smallestDeltaHct = hctAdd; }
+                const hctSubtract = Hct.from(hue, chroma, startTone - delta);
+                const hctSubtractDelta = Math.abs(hctSubtract.chroma - chroma);
+                if (hctSubtractDelta < smallestDelta) { smallestDelta = hctSubtractDelta; smallestDeltaHct = hctSubtract; }
+            }
+            return smallestDeltaHct;
+        }
+        const TonalPaletteA15 = { fromHueAndChroma(hue, chroma) { return new TonalPalette(hue, chroma, keyColorA15(hue, chroma)); } };
 
         // ---------- dynamiccolor/contrast_curve.ts: a value for the contrast levels -1, 0, 0.5 and 1 ----------
         class ContrastCurve {
@@ -1922,6 +1993,11 @@
         const TDP = (roleA, roleB, delta, polarity, stayTogether, constraint) => new ToneDeltaPair(roleA, roleB, delta, polarity, stayTogether, constraint);
         function isFidelity(scheme) { return scheme.variant === Variant.FIDELITY || scheme.variant === Variant.CONTENT; }
         function isMonochrome(scheme) { return scheme.variant === Variant.MONOCHROME; }
+        // on_primary_container, on_secondary_container, on_tertiary_container and on_error_container at 2021: light tone 30 (Monochrome's
+        // own tones apart) and curve (3, 4.5, 7, 11). A P15 scheme (scheme.a15: libmonet android15-release, MaterialDynamicColors.java
+        // :426-444, :517-532, :595-613, :657-667): light tone 10 and curve (4.5, 7, 11, 21); android15-qpr1-release made them upstream's
+        function onContainerLightTone(scheme) { return scheme.a15 ? 10 : 30; }
+        function onContainerCurve(scheme) { return scheme.a15 ? CC(4.5, 7, 11, 21) : CC(3, 4.5, 7, 11); }
         function findDesiredChromaByTone(hue, chroma, tone, byDecreasingTone) {
             let answer = tone;
             let closestToChroma = Hct.from(hue, chroma, tone);
@@ -1979,8 +2055,8 @@
             }
             onPrimaryContainer() {
                 return FP({ name: 'on_primary_container', palette: s => s.primaryPalette,
-                    tone: s => isFidelity(s) ? DynamicColor.foregroundTone(this.primaryContainer().tone(s), 4.5) : isMonochrome(s) ? (s.isDark ? 0 : 100) : (s.isDark ? 90 : 30),
-                    background: s => this.primaryContainer(), contrastCurve: s => CC(3, 4.5, 7, 11) });
+                    tone: s => isFidelity(s) ? DynamicColor.foregroundTone(this.primaryContainer().tone(s), 4.5) : isMonochrome(s) ? (s.isDark ? 0 : 100) : (s.isDark ? 90 : onContainerLightTone(s)),
+                    background: s => this.primaryContainer(), contrastCurve: s => onContainerCurve(s) });
             }
             inversePrimary() { return FP({ name: 'inverse_primary', palette: s => s.primaryPalette, tone: s => s.isDark ? 40 : 80, background: s => this.inverseSurface(), contrastCurve: s => CC(3, 4.5, 7, 7) }); }
             secondary() {
@@ -2001,8 +2077,8 @@
             }
             onSecondaryContainer() {
                 return FP({ name: 'on_secondary_container', palette: s => s.secondaryPalette,
-                    tone: s => isMonochrome(s) ? (s.isDark ? 90 : 10) : !isFidelity(s) ? (s.isDark ? 90 : 30) : DynamicColor.foregroundTone(this.secondaryContainer().tone(s), 4.5),
-                    background: s => this.secondaryContainer(), contrastCurve: s => CC(3, 4.5, 7, 11) });
+                    tone: s => isMonochrome(s) ? (s.isDark ? 90 : 10) : !isFidelity(s) ? (s.isDark ? 90 : onContainerLightTone(s)) : DynamicColor.foregroundTone(this.secondaryContainer().tone(s), 4.5),
+                    background: s => this.secondaryContainer(), contrastCurve: s => onContainerCurve(s) });
             }
             tertiary() {
                 return FP({ name: 'tertiary', palette: s => s.tertiaryPalette, tone: s => isMonochrome(s) ? (s.isDark ? 90 : 25) : (s.isDark ? 80 : 40), isBackground: true,
@@ -2025,8 +2101,8 @@
             }
             onTertiaryContainer() {
                 return FP({ name: 'on_tertiary_container', palette: s => s.tertiaryPalette,
-                    tone: s => isMonochrome(s) ? (s.isDark ? 0 : 100) : !isFidelity(s) ? (s.isDark ? 90 : 30) : DynamicColor.foregroundTone(this.tertiaryContainer().tone(s), 4.5),
-                    background: s => this.tertiaryContainer(), contrastCurve: s => CC(3, 4.5, 7, 11) });
+                    tone: s => isMonochrome(s) ? (s.isDark ? 0 : 100) : !isFidelity(s) ? (s.isDark ? 90 : onContainerLightTone(s)) : DynamicColor.foregroundTone(this.tertiaryContainer().tone(s), 4.5),
+                    background: s => this.tertiaryContainer(), contrastCurve: s => onContainerCurve(s) });
             }
             error() {
                 return FP({ name: 'error', palette: s => s.errorPalette, tone: s => s.isDark ? 80 : 40, isBackground: true,
@@ -2038,7 +2114,7 @@
                 return FP({ name: 'error_container', palette: s => s.errorPalette, tone: s => s.isDark ? 30 : 90, isBackground: true,
                     background: s => this.highestSurface(s), contrastCurve: s => CC(1, 1, 3, 4.5), toneDeltaPair: s => TDP(this.errorContainer(), this.error(), 10, 'nearer', false) });
             }
-            onErrorContainer() { return FP({ name: 'on_error_container', palette: s => s.errorPalette, tone: s => isMonochrome(s) ? (s.isDark ? 90 : 10) : (s.isDark ? 90 : 30), background: s => this.errorContainer(), contrastCurve: s => CC(3, 4.5, 7, 11) }); }
+            onErrorContainer() { return FP({ name: 'on_error_container', palette: s => s.errorPalette, tone: s => isMonochrome(s) ? (s.isDark ? 90 : 10) : (s.isDark ? 90 : onContainerLightTone(s)), background: s => this.errorContainer(), contrastCurve: s => onContainerCurve(s) }); }
             primaryFixed() {
                 return FP({ name: 'primary_fixed', palette: s => s.primaryPalette, tone: s => isMonochrome(s) ? 40.0 : 90.0, isBackground: true,
                     background: s => this.highestSurface(s), contrastCurve: s => CC(1, 1, 3, 4.5), toneDeltaPair: s => TDP(this.primaryFixed(), this.primaryFixedDim(), 10, 'lighter', true) });
@@ -2742,13 +2818,22 @@
                 this.specVersion = this.libmonet && !LIBMONET_FALLS_BACK[this.libmonet]
                     ? (args.specVersion === undefined || args.specVersion === '2021' ? '2021' : '2025')
                     : DynamicScheme.maybeFallbackSpecVersion(args.specVersion === undefined ? '2021' : args.specVersion, this.variant, this.platform);
+                // a15 (P15, Android 15.0: libmonet android15-release, upstream's 2021 but for the key colour search and the on_*_container
+                // rules): only a scheme whose spec is 2021 (after the fallback above) is a15's; at 2025 and 2026 upstream's, as for P15Q1
+                this.a15 = !!args.a15 && this.specVersion === '2021';
                 const spec = getPalettesSpec(this.specVersion), v = this.variant, h = this.sourceColorHct, d = this.isDark, p = this.platform, c = this.contrastLevel;
-                this.primaryPalette = args.primaryPalette || spec.getPrimaryPalette(v, h, d, p, c);
-                this.secondaryPalette = args.secondaryPalette || spec.getSecondaryPalette(v, h, d, p, c);
-                this.tertiaryPalette = args.tertiaryPalette || spec.getTertiaryPalette(v, h, d, p, c);
-                this.neutralPalette = args.neutralPalette || spec.getNeutralPalette(v, h, d, p, c);
-                this.neutralVariantPalette = args.neutralVariantPalette || spec.getNeutralVariantPalette(v, h, d, p, c);
-                this.errorPalette = args.errorPalette || spec.getErrorPalette(v, h, d, p, c) || TonalPalette.fromHueAndChroma(25.0, 84.0);
+                const walk = keyColorWalk;
+                keyColorWalk = this.a15;
+                try {
+                    this.primaryPalette = args.primaryPalette || spec.getPrimaryPalette(v, h, d, p, c);
+                    this.secondaryPalette = args.secondaryPalette || spec.getSecondaryPalette(v, h, d, p, c);
+                    this.tertiaryPalette = args.tertiaryPalette || spec.getTertiaryPalette(v, h, d, p, c);
+                    this.neutralPalette = args.neutralPalette || spec.getNeutralPalette(v, h, d, p, c);
+                    this.neutralVariantPalette = args.neutralVariantPalette || spec.getNeutralVariantPalette(v, h, d, p, c);
+                    this.errorPalette = args.errorPalette || spec.getErrorPalette(v, h, d, p, c) || TonalPalette.fromHueAndChroma(25.0, 84.0);
+                } finally {
+                    keyColorWalk = walk;
+                }
             }
             // the hue of the breakpoint interval the source hue falls in (>= the lower, < the upper), else the source hue
             static getPiecewiseHue(sourceColorHct, hueBreakpoints, hues) {
@@ -2954,9 +3039,11 @@
         // scheme_tonal_spot.ts, scheme_vibrant.ts, scheme_expressive.ts, scheme_neutral.ts (and _rainbow, _fruit_salad, _fidelity, _content,
         // _monochrome): each is the DynamicScheme constructor with its variant; SchemeCmf is the one with palettes of its own
         // libmonet: 'qpr1', 'qpr2' or 'a17' for the AOSP libmonet branch of P16Q1 / P16Q2 / P17 (left out: upstream's main); CMF, which
-        // libmonet qpr1 and qpr2 do not have, is main's there, and libmonet's SchemeCmf on a17
+        // libmonet qpr1 and qpr2 do not have, is main's there, and libmonet's SchemeCmf on a17. 'a15' (P15): upstream's scheme with
+        // libmonet android15-release's key colours and on_*_container rules at spec 2021 (DynamicScheme's a15); CMF is upstream's
         function schemeOf(variant, sourceColorHct, isDark, contrastLevel, specVersion, libmonet) {
             if (variant === Variant.CMF) return new SchemeCmf(sourceColorHct, isDark, contrastLevel, specVersion, LIBMONET_FALLS_BACK[libmonet] ? libmonet : undefined);
+            if (libmonet === 'a15') return new DynamicScheme({ sourceColorHct, variant, contrastLevel, isDark, specVersion, a15: true });
             if (libmonet) return new DynamicScheme({ sourceColorHct, variant, contrastLevel, isDark, specVersion, libmonet });
             return new DynamicScheme({ sourceColorHct, variant, contrastLevel, isDark, specVersion });
         }
@@ -2964,7 +3051,7 @@
         return { Variant, Hct, Contrast, DislikeAnalyzer, TemperatureCache, TonalPalette, KeyColor, ContrastCurve, ToneDeltaPair, DynamicColor, extendSpecVersion,
             ColorCalculationDelegateImpl2021, ColorCalculationDelegateImpl2025, ColorSpecDelegateImpl2021, ColorSpecDelegateImpl2025, ColorSpecDelegateImpl2026,
             colorSpec, tMaxC, tMinC, findBestToneForChroma, getCurve, DynamicScheme, DynamicSchemePalettesDelegateImpl2021, DynamicSchemePalettesDelegateImpl2025,
-            SchemeCmf, schemeOf, libmonetHct, libmonetCurve, ColorSpecDelegateLibmonet, colorSpecLibmonet, ColorSpecDelegateLibmonet2026,
+            SchemeCmf, schemeOf, libmonetHct, libmonetCurve, keyColorA15, TonalPaletteA15, ColorSpecDelegateLibmonet, colorSpecLibmonet, ColorSpecDelegateLibmonet2026,
             colorSpecLibmonet2026, LIBMONET_FALLS_BACK };
     })();
 
@@ -3032,9 +3119,13 @@
     // android17-release at spec 2026 for every style (which falls back to 2025 or 2021 as upstream's main does): part 2 with that
     // branch's rules (MCU.ColorSpecDelegateLibmonet 'a17', MCU.ColorSpecDelegateLibmonet2026). Any other profile is an error (the page
     // writes nothing then).
-    const PROFILES = ['P14', 'P15Q1', 'P15Q2', 'P16', 'P16Q1', 'P16Q2', 'P17'];
+    const PROFILES = ['P14', 'P15', 'P15Q1', 'P15Q2', 'P16', 'P16Q1', 'P16Q2', 'P17'];
     // the libmonet branch of a profile (MCU.schemeOf's libmonet argument), undefined for the others
     const LIBMONET = { P16Q1: 'qpr1', P16Q2: 'qpr2', P17: 'a17' };
+    // P15 (Android 15.0): P15Q1's names, layout and spec rule (it is not in LIBMONET), on schemes that take libmonet android15-release's
+    // two differences from upstream's 2021 where the scheme's spec is 2021 (MCU.schemeOf 'a15': the key colour walk, the on_*_container
+    // rules); at 2025 and 2026, and CMF, P15's results are P15Q1's (no Android 15.0 build computes those specs)
+    const LIBMONET_A15 = { P15: 'a15' };
     function profileOf(opts) {
         const p = opts && opts.profile !== undefined && opts.profile !== null ? String(opts.profile) : 'P14';
         if (PROFILES.indexOf(p) < 0) throw new Error('Profile not supported: ' + opts.profile);
@@ -3206,7 +3297,8 @@
     const ROLES_A16Q = ROLES_A15Q2.concat([['palette_key_color_error', 'errorPaletteKeyColor'], ['primary_dim', 'primaryDim'],
         ['secondary_dim', 'secondaryDim'], ['tertiary_dim', 'tertiaryDim'], ['error_dim', 'errorDim']]).sort(byName);
     // Android 17 (DynamicColors.java identical to QPR2's): the same 55 roles and 12 fixed colours
-    const PROFILE_COLORS = { P14: [ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED], P15Q1: [ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED],
+    const PROFILE_COLORS = { P14: [ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED], P15: [ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED],
+        P15Q1: [ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED],
         P15Q2: [ROLES_A15Q2, FIXED_A15Q2], P16: [ROLES_A15Q2, FIXED_A15Q2], P16Q1: [ROLES_A16Q, FIXED_A15Q2], P16Q2: [ROLES_A16Q, FIXED_A15Q2],
         P17: [ROLES_A16Q, FIXED_A15Q2] };
     // the roles written for a scheme: the profile's list, less the dim colours on a libmonet scheme at 2021 (libmonet's ColorSpec2021
@@ -3249,8 +3341,10 @@
             const build1 = h => makeScheme(variant, h, dark, contrast);
             return accurateScheme(adjustScheme(accentScheme(build1(Hct.fromInt(argb)), acc, build1, Hct, TonalPalette), adj, TonalPalette), accurate);
         }
-        const lm = LIBMONET[profile], build2 = h => MCU.schemeOf(variant, h, dark, contrast, spec, lm);
-        return accurateScheme(adjustScheme(accentScheme(build2(MCU.Hct.fromInt(argb)), acc, build2, MCU.Hct, MCU.TonalPalette), adj, MCU.TonalPalette), accurate);
+        const lm = LIBMONET[profile] || LIBMONET_A15[profile], build2 = h => MCU.schemeOf(variant, h, dark, contrast, spec, lm);
+        // (a P15 scheme at 2021: the palettes the accents and the sliders build take libmonet android15-release's key colour, as its own do)
+        const s2 = build2(MCU.Hct.fromInt(argb)), Palette2 = s2.a15 ? MCU.TonalPaletteA15 : MCU.TonalPalette;
+        return accurateScheme(adjustScheme(accentScheme(s2, acc, build2, MCU.Hct, Palette2), adj, Palette2), accurate);
     }
     // a role's colour on a scheme of either part. Part 2: upstream's role of that name, or, for the Android-only roles, part 1's
     // definition on a scheme that carries part 2's palettes (those roles read the palettes' hue and chroma, isDark and the contrast level)
@@ -3340,7 +3434,7 @@
         hct, seed: (style, color) => hex6(seed(style, color)), specFor, palettes, roles, entries, scheme,
         lib: { Hct, Cam16, HctSolver, ViewingConditions, Contrast, TonalPalette, TemperatureCache, DislikeAnalyzer, DynamicScheme, DynamicColor, Variant, MDC,
             ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED, ROLES_A15Q2, FIXED_A15Q2, ANDROID_ONLY_ROLES, SHADE_WRITE_ORDER,
-            ROLES_A16Q, DIM_ROLES, LIBMONET, LIBMONET_REMAPPED_ROLES, FIXED_BOTH_MODES, roleListFor, roleArgb, PROFILE_COLORS, PALETTE_ROWS, specOf,
+            ROLES_A16Q, DIM_ROLES, LIBMONET, LIBMONET_A15, LIBMONET_REMAPPED_ROLES, FIXED_BOTH_MODES, roleListFor, roleArgb, PROFILE_COLORS, PALETTE_ROWS, specOf,
             schemePalettes, shadesOf, shadeTone, shadeA15, shadesP14, parseArgb, hex6, hex8, variantOf, profileOf, contrastOf,
             adjustOf, adjustTone, adjustRamp, adjustScheme, AdjustedPalette, ADJUST_TONE_STEP, ADJUST_RAMP_TONES,
             accentsOf, accentPalette, accentScheme, hueDistance, ACCENT_HUE_TOLERANCE, accurateOf, accurateTone, accurateBase, accurateScheme,
