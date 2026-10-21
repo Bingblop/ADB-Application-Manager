@@ -7,10 +7,10 @@ import java.util.Set;
 
 /**
  * Which Android build family (a profile) builds the phone's theme colours, so the page can compute what that build's SystemUI writes,
- * with that build's resource names, and refuse every build it cannot compute (finding T-049). No Android classes: MainActivity looks each
- * name of {@link #PROBES} up with getIdentifier(name, "color", "android"), reads the One UI version and passes both here with the SDK
- * level; tested on a computer (tests/java/src/MonetProfileTest.java). getSystemPalette reports the answer to the page as "profile" and
- * "profileReason".
+ * with that build's resource names, and refuse every build it cannot compute (findings T-049, T-050). No Android classes: MainActivity
+ * looks each name of {@link #PROBES} up with getIdentifier(name, "color", "android") and each name of {@link #BOOL_PROBES} with
+ * getIdentifier(name, "bool", "android"), reads the One UI version and passes both here with the SDK level; tested on a computer
+ * (tests/java/src/MonetProfileTest.java). getSystemPalette reports the answer to the page as "profile" and "profileReason".
  *
  * <p>The probes are colour names of the framework's resources (frameworks/base core/res/res/values/colors.xml) that exist on some
  * releases only, read in AOSP's branch of each release:
@@ -28,6 +28,17 @@ import java.util.Set;
  * has them. That a phone maker's build keeps them, and that getIdentifier finds a name the SDK does not publish, was not checked on a
  * phone.
  *
+ * <p>No colour name tells Android 14.0 from its quarterly updates (QPR3 adds system_error_* only), so SDK 34 is told apart by a framework
+ * boolean (frameworks/base core/res/res/values/config.xml):
+ * <ul>
+ * <li>config_repairModeSupported: android14-qpr1-release (line 6591), android14-qpr2-release (6810) and android14-qpr3-release (6907), a
+ * plain {@code <bool>} entry and a java-symbol (Android 14 has no per-entry resource flag); not anywhere in android14-release's core/res.
+ * On the 19 Android 14 branch heads read it is there exactly where SystemUI's ThemeOverlayController imports libmonet (qpr1, qpr2, qpr3,
+ * qpr3-d1, d2 and their -sN branches) and on none of the 14.0 lines (release, s1, s2, security, platform, gsi, d1); of the 71
+ * android-14.0.0_rN tags of frameworks/base, the 55 that have it all import libmonet there and the 16 without it do not.</li>
+ * </ul>
+ * An SDK 34 phone without it (or whose lookup throws) stays {@link #P14}, as every SDK 34 phone was before.
+ *
  * <p>Fail closed: a build that matches no row below gets {@link #UNKNOWN}, and the page writes no root colours there.
  */
 public final class MonetProfile {
@@ -36,8 +47,14 @@ public final class MonetProfile {
     // ---- profiles the page can compute (reason REASON_OK)
     /** Android 12, 12L and 13 (SDK 31-33): no colour roles; the page offers Pure black only there, as before this class. */
     public static final String P12 = "P12";
-    /** Android 14 (SDK 34). */
+    /** Android 14.0 (SDK 34 without config_repairModeSupported): android14-release's own SystemUI colour maths. */
     public static final String P14 = "P14";
+    /**
+     * Android 14 QPR1, QPR2 and QPR3 (SDK 34 with config_repairModeSupported): {@link #P14}'s palettes, shades, names and layout (the same
+     * 165 entries), with the 44 roles and 12 fixed colours from the libmonet these branches build (external/libmonet android14-qpr1, qpr2
+     * and qpr3-release are the same tree), which the page computes.
+     */
+    public static final String P14Q = "P14Q";
     /**
      * Android 15.0 (SDK 35 with system_on_theme_app_ring_light, without system_theme_notif_light): 44 roles, the same names and layout as
      * {@link #P15Q1} (palettes and fixed colours unsuffixed), with libmonet android15-release's own role maths, which the page computes.
@@ -105,9 +122,21 @@ public final class MonetProfile {
     public static final String PROBE_SEMANTIC_RED = "system_semantic_red_container_high_light";
     public static final String PROBE_PRIMARY_FIXED = "system_primary_fixed_light";
 
-    /** Every name {@link #of} looks at: MainActivity checks each with getIdentifier and passes the ones that exist. */
+    /** The Android 14 quarterly-update probe: a boolean resource of package "android" (not a colour). */
+    public static final String PROBE_REPAIR_MODE = "config_repairModeSupported";
+
+    /**
+     * Every colour name {@link #of} looks at: MainActivity checks each with getIdentifier(name, "color", "android") and passes the ones that
+     * exist.
+     */
     public static final List<String> PROBES = Collections.unmodifiableList(Arrays.asList(
             PROBE_INVERSE_SURFACE, PROBE_THEME_NOTIF, PROBE_ON_THEME_APP_RING, PROBE_PRIMARY_DIM, PROBE_SEMANTIC_RED, PROBE_PRIMARY_FIXED));
+
+    /**
+     * Every boolean name {@link #of} looks at: MainActivity checks each with getIdentifier(name, "bool", "android") and passes the ones that
+     * exist in the same set as the colour names.
+     */
+    public static final List<String> BOOL_PROBES = Collections.unmodifiableList(Arrays.asList(PROBE_REPAIR_MODE));
 
     /** A profile id and why it is (or is not) usable. */
     public static final class Result {
@@ -130,16 +159,18 @@ public final class MonetProfile {
     private static Result unknown() { return new Result(UNKNOWN, REASON_UNKNOWN); }
 
     /**
-     * The decision. {@code sdk} is Build.VERSION.SDK_INT, {@code present} the names of {@link #PROBES} the phone has (null when they
-     * could not be read: then nothing is known) and {@code oneUi} the One UI version ("" or null on a phone without one; {@link #oneUi} gives
-     * it, {@link #ONE_UI_UNREAD} for a Samsung phone whose version could not be read).
-     * The order of the tests is part of the rule: One UI first, then per SDK level the newest release first. On 37 the Android 17 name must
-     * be there: a 37 build without it, or whose names could not be read, is unknown (fail closed), and so is every SDK level after 37.
+     * The decision. {@code sdk} is Build.VERSION.SDK_INT, {@code present} the names of {@link #PROBES} and {@link #BOOL_PROBES} the phone
+     * has (null when they could not be read: then nothing is known) and {@code oneUi} the One UI version ("" or null on a phone without
+     * one; {@link #oneUi} gives it, {@link #ONE_UI_UNREAD} for a Samsung phone whose version could not be read).
+     * The order of the tests is part of the rule: One UI first, then per SDK level the newest release first. On 34 the quarterly-update
+     * name gives {@link #P14Q}; without it, or when the names could not be read, the answer stays {@link #P14} (the answer every SDK 34 phone
+     * had before). On 37 the Android 17 name must be there: a 37 build without it, or whose names could not be read, is unknown (fail
+     * closed), and so is every SDK level after 37.
      */
     public static Result of(int sdk, Set<String> present, String oneUi) {
         if (oneUi != null && !oneUi.trim().isEmpty()) return new Result(UNKNOWN, REASON_ONE_UI);
         if (sdk >= 31 && sdk <= 33) return ok(P12);
-        if (sdk == 34) return ok(P14);
+        if (sdk == 34) return present != null && present.contains(PROBE_REPAIR_MODE) ? ok(P14Q) : ok(P14);
         if (present == null) return unknown();
         if (sdk == 35) {
             if (present.contains(PROBE_INVERSE_SURFACE)) return ok(P15Q2);

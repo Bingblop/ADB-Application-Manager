@@ -7999,7 +7999,7 @@
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
                 <div class="about-tip">Palette Style: the ten styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> (Apache-2.0), written again for this app.</div>
-                <div class="about-tip">More styles and Color spec: on Android 14 the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> and Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> 0.4.0; on Android 15 and 16 those colors, and the 2025 and 2026 specs and CMF everywhere, with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). On Android 15.0, 16 QPR1, 16 QPR2 and 17 they also follow the changes in Android's own copy of that library (libmonet, Android Open Source Project). All Apache-2.0; the file monet.js names what was taken from where.</div>
+                <div class="about-tip">More styles and Color spec: on Android 14 the Fidelity, Content and Monochrome colors are computed with a port of Android 14's own color engine, from the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> and Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> 0.4.0; on Android 15 and 16 those colors, and the 2025 and 2026 specs and CMF everywhere, with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). On Android 14 QPR1 to QPR3, 15.0, 16 QPR1, 16 QPR2 and 17 they also follow the changes in Android's own copy of that library (libmonet, Android Open Source Project). All Apache-2.0; the file monet.js names what was taken from where.</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
@@ -38425,7 +38425,8 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_MORE_SUB_2026 = 'Fidelity, Content, Monochrome and CMF: colors Android has no setting for, computed by this app.';
         // every style an overlay this app wrote may carry: a More style, CMF, or a style of the list above written at spec 2025
         const OVL_RECORD_STYLE_IDS = OVL_STYLE_IDS.concat(OVL_ROOT_STYLE_IDS.filter(id => id !== ''));
-        // Google's colour specs (Material Color Utilities): 2021 is what Android 14, 15 and 16.0 compute themselves (15.0 with libmonet
+        // Google's colour specs (Material Color Utilities): 2021 is what Android 14, 15 and 16.0 compute themselves (14 QPR1 to QPR3 with
+        // libmonet android14-qpr*-release's own 2021 rules: monet.js's P14Q, from T-050 / T-049 PR 12; 15.0 with libmonet
         // android15-release's own 2021 rules: monet.js's P15, from T-049 PR 11); 16 QPR1 and QPR2 compute 2025 (with libmonet's own rules: monet.js's P16Q1 and P16Q2) and 17 computes 2026
         // (libmonet android17-release: monet.js's P17, below). On Android 14 to 16.0, 2025 and 2026 exist only as colours this app writes; Google's own rule (MonetPlan.specFor,
         // upstream's maybeFallbackSpecVersion) gives 2025 to Tonal Spot, Vibrant, Expressive and Spritz at 2025 and 2026, CMF its 2026, and
@@ -38524,8 +38525,12 @@ Type any command above (e.g. pm list packages -d)</div>
         // The Android build family the root colours are computed for, from getSystemPalette (MonetProfile.java: profile, and profileReason ok,
         // notYet, oneUi or unknown): { id, lock }, lock '' where this page may write root colours. Unlocked, each only with the reason ok: P12
         // (Android 12 and 13: Pure black only, as before), P14 and the families monet.js computes (MonetPlan.PROFILES: Android 15 QPR1, 15 QPR2,
-        // 16.0, 16 QPR1 and QPR2 from T-049 PR 9, 17 from PR 10 and 15.0 from PR 11, which MonetProfile.java reports ok from those PRs on;
-        // 15.0 takes 15 QPR1's paths here: not ovlQpr, native spec 2021, the OVL_ROOT_LEAD entries first). Locked, all three
+        // 16.0, 16 QPR1 and QPR2 from T-049 PR 9, 17 from PR 10, 15.0 from PR 11 and 14 QPR1 to QPR3 from PR 12, which MonetProfile.java
+        // reports ok from those PRs on; 15.0 takes 15 QPR1's paths here: not ovlQpr, native spec 2021, the OVL_ROOT_LEAD entries first).
+        // 14 QPR1 to QPR3 (P14Q, MonetProfile.java's answer on SDK 34 with config_repairModeSupported) takes Android 14's: the same
+        // paths, lines and 165 names as P14, only monet.js's role maths differ; without the colour maths at all (monet.js not loaded) it
+        // is live as P14 is, Pure black alone (the style rows say Update the app), while a monet.js that does not name it locks it (that
+        // file would refuse the profile). Locked, all three
         // rows with Super User or without: a phone with a One UI version (Samsung builds its theme with its own service); a family the app knows
         // but an older APK reports as not computed yet (15.0, 16 QPR1, QPR2 and 17 as an APK from before PR 11, PR 9 or PR 10 reports them,
         // notYet; no family is notYet from PR 11 on), or none it
@@ -38537,7 +38542,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!p || typeof p.profile !== 'string') return sdk >= 35 ? { id: '', lock: 'Update the app' } : { id: sdk === 34 ? 'P14' : 'P12', lock: '' };
             const id = p.profile;
             if (p.profileReason === 'oneUi') return { id, lock: OVL_LOCK_ONE_UI };
-            const computed = id === 'P12' || id === 'P14' || (ovlMonetOk() && Array.isArray(MonetPlan.PROFILES) && MonetPlan.PROFILES.includes(id));
+            const computed = id === 'P12' || id === 'P14' || (id === 'P14Q' && !ovlMonetOk()) || (ovlMonetOk() && Array.isArray(MonetPlan.PROFILES) && MonetPlan.PROFILES.includes(id));
             return { id, lock: p.profileReason === 'ok' && computed ? '' : OVL_LOCK_NOT_YET };
         }
         function ovlRootLock() { return ovlProfileState().lock; }
@@ -38730,7 +38735,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // black and style: what the overlay carries (Pure black; the style whose colours it carries, '' for none), so the words name what was
         // written; spec: the spec those colours were computed with (written as 2025 or 2026 only: a record without it, PR 3's and every 2021
         // one, reads as 2021); profile: the Android build family they were computed for (written when it is not P14: a record without it reads
-        // as P14, as every record from before the profiles holds Android 14's colours or Pure black alone); build: the phone's build they were
+        // as P14, as every record from before the profiles holds Android 14's colours or Pure black alone; P14Q, 14 QPR1 to QPR3, is
+        // written, so such a record on a phone updated from 14.0 to a QPR build gives the note below); build: the phone's build they were
         // written on ('' in a record from before the profiles); adjust: the Intensity sliders the colours were computed with ({ accentSat, bgSat,
         // bgLight }, written only when one is not 100 and there is a style: a record without it, every record from before the sliders, reads as
         // 100 / 100 / 100); accents: the Secondary and tertiary accents the colours were computed with ({ secondary, tertiary }, each 'RRGGBB' or
@@ -38902,7 +38908,9 @@ Type any command above (e.g. pm list packages -d)</div>
         // on Android 14 to 16.0 the Color spec note says to tap Apply again after switching (OVL_SPEC_NOTE); on 16 QPR1 and QPR2 both modes'
         // colours are in the overlay, so that sentence is left out there (OVL_SPEC_NOTE_QPR) and a mode change makes nothing stale. A record
         // made on another profile (a QPR1 one on QPR2, or one from 16.0) gives the note as on every profile. On 17 (PR 10) the same as on QPR:
-        // both modes are in the overlay (OVL_SPEC_NOTE_A17 has no mode sentence), and a QPR2 record there gives the note.
+        // both modes are in the overlay (OVL_SPEC_NOTE_A17 has no mode sentence), and a QPR2 record there gives the note. On Android 14
+        // (PR 12) a record made on 14.0 (P14: no profile in it, a build) on a QPR build (P14Q) gives the note, and a
+        // monthly update between QPR builds (P14Q on both sides) none.
         function ovlRootStaleNote() {
             const a = ovlRootApplied(), now = ovlBuild();
             if (!a || !a.style || !a.build || !now || a.build === now || a.profile === ovlProfileState().id) return '';

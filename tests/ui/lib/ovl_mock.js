@@ -36,10 +36,11 @@ module.exports.initScript = function () {
   window.__fabNoAnswer = false;   // the bridge never answers at all (the page's own timeout)
   window.__dark = true;           // PR 4: the phone's light or dark mode as isSystemDarkMode reports it (sdb_mock's answer, true, unless set false)
   // T-049: what getSystemPalette reports from Android 12 on for the root colours (MonetProfile.java). __profile: undefined follows __sdk as
-  // MonetProfile.of does without One UI and without the colour names (31-33 P12, 34 P14, anything else unknown), a string is reported as it
-  // is, null leaves profile and profileReason out (an older APK); __profileReason: undefined is 'ok' for P12 P14 P15 P15Q1 P15Q2 P16 P16Q1
-  // P16Q2 P17 (16 QPR1 and QPR2 from T-049 PR 9 on, 17 from PR 10 on, 15.0 from PR 11 on; an APK from before reported them 'notYet', which a
-  // script sets explicitly) and 'unknown' otherwise. __build (Build.FINGERPRINT) and __contrast (UiModeManager.getContrast) are reported as they
+  // MonetProfile.of does without One UI and without the colour and boolean names (31-33 P12, 34 P14, anything else unknown; 14 QPR1 to
+  // QPR3, P14Q, is set as a string), a string is reported as it is, null leaves profile and profileReason out (an older APK);
+  // __profileReason: undefined is 'ok' for P12 P14 P14Q P15 P15Q1 P15Q2 P16 P16Q1 P16Q2 P17 (16 QPR1 and QPR2 from T-049 PR 9 on, 17 from
+  // PR 10 on, 15.0 from PR 11 on, 14 QPR1 to QPR3 from PR 12 on; an APK from before reported 15.0, 16 QPR1, QPR2 and 17 'notYet', which a
+  // script sets explicitly, and 14 QPR1 to QPR3 as P14) and 'unknown' otherwise. __build (Build.FINGERPRINT) and __contrast (UiModeManager.getContrast) are reported as they
   // are, and left out when null.
   window.__profile = undefined;
   window.__profileReason = undefined;
@@ -172,7 +173,7 @@ module.exports.initScript = function () {
       const sdk = window.__sdk, p = typeof window.__profile === 'string' ? window.__profile : sdk >= 31 && sdk <= 33 ? 'P12' : sdk === 34 ? 'P14' : 'unknown';
       o.profile = p;
       o.profileReason = typeof window.__profileReason === 'string' ? window.__profileReason
-        : ['P12', 'P14', 'P15', 'P15Q1', 'P15Q2', 'P16', 'P16Q1', 'P16Q2', 'P17'].includes(p) ? 'ok' : 'unknown';
+        : ['P12', 'P14', 'P14Q', 'P15', 'P15Q1', 'P15Q2', 'P16', 'P16Q1', 'P16Q2', 'P17'].includes(p) ? 'ok' : 'unknown';
     }
     if (window.__build !== null) o.build = window.__build;
     if (window.__contrast !== null) o.contrast = window.__contrast;

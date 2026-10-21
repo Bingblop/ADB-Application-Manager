@@ -840,7 +840,8 @@ public class MainActivity extends Activity {
 
     /**
      * Which Android build family builds this phone's theme colours (MonetProfile): the SDK level, which of MonetProfile.PROBES the
-     * framework has (getIdentifier(name, "color", "android") != 0) and the One UI version (MonetProfile.oneUi: a Samsung phone whose
+     * framework has (getIdentifier(name, "color", "android") != 0) and which of MonetProfile.BOOL_PROBES (getIdentifier(name, "bool",
+     * "android") != 0; no root, no shell) and the One UI version (MonetProfile.oneUi: a Samsung phone whose
      * version could not be read counts as One UI). A lookup that throws, or a One UI version that could not be read, leaves the answer
      * locked (fail closed) and is not kept, so the next call looks again.
      */
@@ -854,6 +855,7 @@ public class MainActivity extends Activity {
         try {
             Resources res = getResources();
             for (String name : MonetProfile.PROBES) if (res.getIdentifier(name, "color", "android") != 0) present.add(name);
+            for (String name : MonetProfile.BOOL_PROBES) if (res.getIdentifier(name, "bool", "android") != 0) present.add(name);
         } catch (Throwable t) {
             return MonetProfile.of(Build.VERSION.SDK_INT, null, oneUi);
         }

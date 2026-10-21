@@ -296,13 +296,13 @@ const A15_FID_GREEN_KEY2 = '038E00';
     JSON.stringify([lost.fab, lost.resume && lost.resume.root, rs.fab.map(f => f.action + ':' + f.names.length), rs.applied, rs.done]));
 
   // ---- (i) the credit line in German ----
-  const CREDIT = 'More styles and Color spec: on Android 14 the Fidelity, Content and Monochrome colors are computed with a port of Android 14\'s own color engine, from the <1>Android Open Source Project</1> and Google\'s <2>Material Color Utilities</2> 0.4.0; on Android 15 and 16 those colors, and the 2025 and 2026 specs and CMF everywhere, with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). On Android 15.0, 16 QPR1, 16 QPR2 and 17 they also follow the changes in Android\'s own copy of that library (libmonet, Android Open Source Project). All Apache-2.0; the file monet.js names what was taken from where.';
+  const CREDIT = 'More styles and Color spec: on Android 14 the Fidelity, Content and Monochrome colors are computed with a port of Android 14\'s own color engine, from the <1>Android Open Source Project</1> and Google\'s <2>Material Color Utilities</2> 0.4.0; on Android 15 and 16 those colors, and the 2025 and 2026 specs and CMF everywhere, with a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026). On Android 14 QPR1 to QPR3, 15.0, 16 QPR1, 16 QPR2 and 17 they also follow the changes in Android\'s own copy of that library (libmonet, Android Open Source Project). All Apache-2.0; the file monet.js names what was taken from where.';
   const tip = () => ev(() => { const t = Array.from(document.querySelectorAll('.about-tip')).find(e => /libmonet/.test(e.textContent)); return t ? t.textContent : ''; });
   const en = await tip();
   await ev(() => I18N.set('de')); await sleep(600);
   const de = await tip();
   const deWant = await ev(k => { const x = (window.__LANGS.de && window.__LANGS.de.x) || {}; return (x[k] || '').replace(/<\/?\d>/g, ''); }, CREDIT);
-  check('I1. the More styles credit names the builds that follow libmonet (15.0, 16 QPR1, 16 QPR2, 17), and reads in German as assets/lang/de.js has it', en === CREDIT.replace(/<\/?\d>/g, '') && deWant !== '' && /Android 15\.0, 16 QPR1, 16 QPR2 und 17/.test(deWant) && de === deWant, JSON.stringify([en, de, deWant]));
+  check('I1. the More styles credit names the builds that follow libmonet (14 QPR1 to QPR3 from PR 12, 15.0, 16 QPR1, 16 QPR2, 17), and reads in German as assets/lang/de.js has it', en === CREDIT.replace(/<\/?\d>/g, '') && deWant !== '' && /Android 14 QPR1 bis QPR3, 15\.0, 16 QPR1, 16 QPR2 und 17/.test(deWant) && de === deWant, JSON.stringify([en, de, deWant]));
   await ev(() => I18N.set('en')); await sleep(300);
 
   check('no page errors', errors.length === 0, JSON.stringify(errors));

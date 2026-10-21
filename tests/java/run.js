@@ -36,7 +36,7 @@ const SUITES = [
     tests: ['SettingsDbTest'], main: 'com.bloatware.bingblop.SettingsDbTest', utf8: true },
   { name: 'overlayrules', title: 'Overlays and Material You: cmd overlay output, names, the theme value and its merge, every verdict and the Samsung switch, against a fake phone',
     tests: ['OverlayRulesTest'], main: 'com.bloatware.bingblop.OverlayRulesTest', utf8: true },
-  { name: 'monetprofile', title: 'Which Android build family builds the theme colours (SDK level + the framework\'s colour names + One UI -> profile and reason): every release row, unknown levels, missing names, the probe order, the contrast value, and (source scans) getSystemPalette\'s profile, build and contrast',
+  { name: 'monetprofile', title: 'Which Android build family builds the theme colours (SDK level + the framework\'s colour and boolean names + One UI -> profile and reason): every release row, unknown levels, missing names, the probe order, the contrast value, and (source scans) getSystemPalette\'s profile, build and contrast',
     tests: ['MonetProfileTest'], main: 'com.bloatware.bingblop.MonetProfileTest' },
   { name: 'parity', title: 'The page and the Java rules give the same answer to the same names, values and colors (compares ~1,300 inputs)',
     kind: 'parity', needs: ['node'] },
