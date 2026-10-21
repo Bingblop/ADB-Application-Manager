@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "Doğru tonlar",
 "Accurate shades: off.": "Doğru tonlar: kapalı.",
-"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "Açık: her vurgu tonu kendi tonunu korur. Kapalı: soluk vurgu renkleri (100 tonu, açık kapsayıcı renkleri ve sabit renkler) daha koyu bir ton alır; böylece renkli düğmeler ve çipler daha çok öne çıkar.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Açık: her vurgu tonu kendi tonunu korur. Kapalı: soluk vurgu renkleri (100 tonu ve, çoğunlukla Renk belirtimi 2021 ile, açık kapsayıcı renkleri ve sabit renkler) daha koyu bir ton alır.",
 "Also writes this style's colors and pure black with root.": "Root ile bu stilin renklerini ve saf siyahı da yazar.",
 "Also writes this style's colors with root.": "Root ile bu stilin renklerini de yazar.",
 "From the style": "Stilden",

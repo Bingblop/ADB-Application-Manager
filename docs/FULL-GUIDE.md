@@ -955,7 +955,7 @@ style the palette is worked out with:
   the accents: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge
   or when `monet.js` has no `MonetPlan.lib.accurateOf`; the locked row keeps its line, and a stored off counts as on while locked): a
   switch drawn like Pure black's, on by default, the row's line *On: every accent shade keeps its own tone. Off: the pale accent colors
-  (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.* Kept in
+  (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.* Kept in
   `ovl_accurate_shades` (`'0'` is off, `'1'` on; nothing or any other value is on). Flipping it redraws the preview and the hint, writes
   nothing and runs nothing in the background. The maths is `opts.accurate` in `assets/monet.js`, both parts, a rule written for this
   project (Android and Material Color Utilities have no such option): `false` makes the scheme's primary, secondary and tertiary

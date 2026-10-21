@@ -24,7 +24,7 @@ const URL = PAGE;
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const TITLE = 'Accurate shades';
-const SUB = 'On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.';
+const SUB = 'On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.';
 const OFF = 'Accurate shades: off.';
 const NOT_YET = 'Not supported on this Android version yet';
 const ONE_UI = 'Not supported on One UI';

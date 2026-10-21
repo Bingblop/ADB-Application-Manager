@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "Genaue Farbtöne",
 "Accurate shades: off.": "Genaue Farbtöne: aus.",
-"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "Ein: Jeder Akzentton behält seine eigene Helligkeit. Aus: Die blassen Akzentfarben (Ton 100, helle Containerfarben und die festen Farben) werden dunkler, sodass getönte Schaltflächen und Chips stärker hervortreten.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Ein: Jeder Akzentton behält seine eigene Helligkeit. Aus: Die blassen Akzentfarben (Ton 100 und, vor allem mit Farbspezifikation 2021, die hellen Containerfarben und die festen Farben) werden dunkler.",
 "Also writes this style's colors and pure black with root.": "Schreibt mit Root auch die Farben dieses Stils und reines Schwarz.",
 "Also writes this style's colors with root.": "Schreibt mit Root auch die Farben dieses Stils.",
 "From the style": "Vom Stil",

@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "Gradasi akurat",
 "Accurate shades: off.": "Gradasi akurat: nonaktif.",
-"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "Aktif: setiap gradasi aksen mempertahankan nadanya sendiri. Nonaktif: warna aksen yang pucat (gradasi 100, warna kontainer terang, dan warna tetap) memakai nada yang lebih gelap, sehingga tombol dan chip berwarna lebih menonjol.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Aktif: setiap gradasi aksen mempertahankan nadanya sendiri. Nonaktif: warna aksen yang pucat (gradasi 100 dan, terutama dengan Spesifikasi warna 2021, warna kontainer terang serta warna tetap) memakai nada yang lebih gelap.",
 "Also writes this style's colors and pure black with root.": "Juga menulis warna gaya ini dan hitam pekat dengan Root.",
 "Also writes this style's colors with root.": "Juga menulis warna gaya ini dengan Root.",
 "From the style": "Dari gaya",

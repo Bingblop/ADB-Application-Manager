@@ -38475,7 +38475,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_ACC_NONE = 'From the style';
         // Accurate shades: the switch (on by default) and the sentence the hint under Apply adds while it is off and a style's colours are written
         const OVL_ACCURATE_TITLE = 'Accurate shades';
-        const OVL_ACCURATE_SUB = 'On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.';
+        const OVL_ACCURATE_SUB = 'On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.';
         const OVL_ACCURATE_OFF = 'Accurate shades: off.';
 
         function ovlRootBridgeOk() { const b = window.AndroidBridge; return !!(b && typeof b.overlayFabricate === 'function'); }

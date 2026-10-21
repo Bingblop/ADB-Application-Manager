@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "درجات دقيقة",
 "Accurate shades: off.": "درجات دقيقة: متوقفة.",
-"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "تشغيل: تحتفظ كل درجة من درجات التمييز بدرجتها الخاصة. إيقاف: تأخذ ألوان التمييز الباهتة (الدرجة 100 وألوان الحاويات الفاتحة والألوان الثابتة) درجة أغمق، فتبرز الأزرار والشرائح الملوّنة أكثر.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "تشغيل: تحتفظ كل درجة من درجات التمييز بدرجتها الخاصة. إيقاف: تأخذ ألوان التمييز الباهتة (الدرجة 100، ومع مواصفة الألوان 2021 غالبًا ألوان الحاويات الفاتحة والألوان الثابتة) درجة أغمق.",
 "Also writes this style's colors and pure black with root.": "يكتب أيضًا ألوان هذا النمط والأسود الخالص عبر Root.",
 "Also writes this style's colors with root.": "يكتب أيضًا ألوان هذا النمط عبر Root.",
 "From the style": "من النمط",

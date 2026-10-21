@@ -3,7 +3,7 @@
 x: {
 "Accurate shades": "Tonalità precise",
 "Accurate shades: off.": "Tonalità precise: disattivate.",
-"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100, light container colors and the fixed colors) take a darker tone, so tinted buttons and chips stand out more.": "Attivo: ogni tonalità d'accento mantiene la propria luminosità. Disattivo: i colori d'accento pallidi (la tonalità 100, i colori chiari dei contenitori e i colori fissi) prendono un tono più scuro, così pulsanti e chip colorati risaltano di più.",
+"On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.": "Attivo: ogni tonalità d'accento mantiene la propria luminosità. Disattivo: i colori d'accento pallidi (la tonalità 100 e, soprattutto con la Specifica dei colori 2021, i colori chiari dei contenitori e i colori fissi) prendono un tono più scuro.",
 "Also writes this style's colors and pure black with root.": "Scrive anche i colori di questo stile e il nero puro con Root.",
 "Also writes this style's colors with root.": "Scrive anche i colori di questo stile con Root.",
 "From the style": "Dallo stile",
