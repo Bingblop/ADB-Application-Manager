@@ -1,19 +1,19 @@
-// Accurate shades (ColorBlendr item 6, PR 8): the switch under Secondary and tertiary accents in the Overlays tab's Root-only theme controls
-// card (on by default; kv ovl_accurate_shades, '0' off, absent or anything else on) and what Apply writes with it off (monet.js's
+// Accurate shades (ColorBlendr item 6, PR 8): the switch under Secondary and tertiary accents in the Overlays tab's Root-only theme
+// controls card (on by default; kv ovl_accurate_shades, '0' off, absent or anything else on) and what Apply writes with it off (monet.js's
 // opts.accurate false: in accent1, accent2 and accent3 the shade-100 entry takes the row's shade-300 colour, after the accents, the sliders
 // and the profile's shade rule; nothing else changes). (a) Locks, as Intensity and the accents have them: Update the app (no
-// overlayFabricate, or a monet.js without the option), the build family's lock (T-049), Needs Super User; Needs Android 14 on Android 12 and
-// 13; a stored off counts for nothing there and the handler changes nothing and calls no AndroidBridge method. (b) Live on Android 14 (P14)
-// and 16.0 (P16), on by default; what the store reads as off. (c) Flipping it (a tap, the keyboard): stored, the preview and the hint follow,
-// no bridge method but the page's reads, no theme or overlay call. (d) Apply: a list style at 2021 with the sliders at 100, no accent and the
-// switch off is written by the app (MonetPlan.entries with accurate false) on P16 and P14 and the record keeps accurate false; the value of
-// the tap; off with a More style, with the sliders, with accents, at 2025, under Monochrome; Pure black wins; with the switch on everything
-// is what the base writes. (e) Undo (T-069) rebuilds a record's own choices, accurate false included. (f) The records. (g) A restart before
-// the theme's answer (T-068): the resume record keeps the tap's value. (h) The maths through the page's MonetPlan: identity when on, off
-// changes exactly the three _100 accent entries (each its row's _300) and nothing else, after the accents and the sliders, what throws, and
-// values pinned from an oracle that does not use the new code (kept outside the repository: the monet.js from before the option, 5b44669b,
-// gives the entries of the same call; the swap is done there by hand; every other pinned value is that file's own). (j) German. (k) The row
-// at 320 px in English and German.
+// overlayFabricate, or a monet.js without the option), the build family's lock (T-049), Needs Super User; Needs Android 14 on Android 12
+// and 13; a stored off counts for nothing there and the handler changes nothing and calls no AndroidBridge method. (b) Live on Android 14
+// (P14) and 16.0 (P16), on by default; what the store reads as off. (c) Flipping it (a tap, the keyboard): stored, the preview and the hint
+// follow, no bridge method but the page's reads, no theme or overlay call. (d) Apply: a list style at 2021 with the sliders at 100, no
+// accent and the switch off is written by the app (MonetPlan.entries with accurate false) on P16 and P14 and the record keeps accurate
+// false; the value of the tap; off with a More style, with the sliders, with accents, at 2025, under Monochrome; Pure black wins; with the
+// switch on everything is what the base writes. (e) Undo (T-069) rebuilds a record's own choices, accurate false included. (f) The records;
+// the note on colours written on another version of Android (T-077). (g) A restart before the theme's answer (T-068): the resume record
+// keeps the tap's value. (h) The maths through the page's MonetPlan: identity when on, off changes exactly the three _100 accent entries
+// (each its row's _300) and nothing else, after the accents and the sliders, what throws, and values pinned from an oracle that does not
+// use the new code (kept outside the repository: the monet.js from before the option, 5b44669b, gives the entries of the same call; the
+// swap is done there by hand; every other pinned value is that file's own). (j) German. (k) The row at 320 px in English and German.
 const { chromium, PAGE } = require('./lib/pw');
 const sdb = require('./lib/sdb_mock.js');
 const ovl = require('./lib/ovl_mock.js');
@@ -216,7 +216,9 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
   if (await page.$('#ovlAccurateSw')) await tap('#ovlAccurateSw');
   await waitFab(); await settle(); await sleep(100); plan = (await calls()).fab[0] || {};
   check('D3. off when Apply is tapped (the resume record\'s choices say accurate false), flipped on during "' + busy + '": the plan is the one with the switch off (the pins of D1), and so is the record; the switch is on for the next Apply', busy === 'Applying…' && !!res1 && !!res1.at && res1.at.accurate === false && pinsOff(plan, pTS16[6]).length === 0 && (await rec()).includes('"accurate":false') && (await kv(KV)) === '1', JSON.stringify([busy, res1 && res1.at, pinsOff(plan, pTS16[6]), await rec(), await kv(KV)]));
-  await ev(() => kvSet('ovl_root_applied', null)); await reset();
+  await ev(() => { window.__delay = 20; }); await reset(); await apply(); k = await calls();
+  check('   the next Apply takes the switch as it is now (on): Tonal Spot at 2021 is Android\'s own again, so D3\'s overlay is switched off (a disable, no fabricate) and the record goes', k.apply.length === 1 && k.fab.length === 1 && k.fab[0].action === 'disable' && (await rec()) === 'null' && (await kv(KV)) === '1', JSON.stringify([k.fab.map(f => f.action), await rec()]));
+  await ev(() => { kvSet('ovl_root_applied', null); window.__delay = 400; }); await reset();
   await tap('#ovlApplyBtn'); const res2 = await kv('ovl_resume');
   if (await page.$('#ovlAccurateSw')) await tap('#ovlAccurateSw');
   await settle(); await sleep(500); k = await calls();
@@ -285,6 +287,20 @@ const pinOf = (profile, style, spec, accents, adjust) => PINS.find(p => p[0] ===
     return [one({ style: 'TONAL_SPOT', accurate: false }), one({ style: 'TONAL_SPOT' }), one({ style: 'FIDELITY', accurate: false }), one({ style: '', black: true })];
   }, AAM);
   check('   what an Undo rebuilds from a record (ovlRootRebuildAt): accurate false where the record says off, nothing (on) where it does not, and Pure black alone carries none', JSON.stringify(reb) === JSON.stringify(['false', 'absent', 'false', 'absent']), JSON.stringify(reb));
+
+  // ---- the note on colours written on another version of Android (T-077), when the switch off is the only reason Apply writes a style ----
+  {
+    const STALE = 'Android was updated after these colors were written. Tap Apply theme to write them for this version.';
+    const B15 = 'google/mock/mock:15/AP4A.250205.002/12821496:user/release-keys';
+    const stale = () => ev(() => { const el = document.getElementById('ovlRootStale'); return el ? (el.style.display === 'none' ? '' : el.innerText) : 'missing'; });
+    await phone({ sdk: 36, profile: 'P16', build: B16 }); await setCard('', '2021', false); await setAcc(null, null); await setAdj(null, null, null);
+    await ev(([id, b15]) => { kvSet('ovl_root_applied', { ids: [id], t: 1, black: false, style: 'TONAL_SPOT', accurate: false, seed: '6750A4', dark: true, contrast: 0, profile: 'P15Q2', build: b15 }); }, [AAM, B15]);
+    await setAccu('0'); await reset(); const n0 = await stale(); a = await row();
+    check('F3. Tonal Spot written with the switch off on 15 QPR2 (its record), the phone now on 16.0 (P16), Tonal Spot at 2021, sliders at 100, no accent, the switch off: the note says Android was updated; nothing is written by itself', n0 === STALE && a.hint === HINT.list && a.off === OFF && (await calls()).fab.length === 0, JSON.stringify([n0, a.hint, a.off]));
+    await setAccu('1'); const n1 = await stale(); a = await row();
+    check('   the switch on (Apply would leave Tonal Spot to Android and switch the overlay off): no such note; the hint says Apply removes it', n1 === '' && a.hint === 'Also removes the theme overlay.' && a.off === '' && (await calls()).fab.length === 0, JSON.stringify([n1, a.hint]));
+    await ev(() => { kvSet('ovl_root_applied', null); ovlRender(); }); await setAccu(null);
+  }
 
   // ---- (g) a restart before the theme's answer (T-068): the resume record keeps the tap's value ----
   {

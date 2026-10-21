@@ -272,13 +272,14 @@
  * Accurate shades (opts.accurate): the root card's switch, on by default. Android and Google's library have no such option; the rule
  * below was written for this project. On (true, null or left out): nothing changes. Off (false): in each of the three accent rows
  * (accent1, accent2, accent3), shade 100 (system_accentN_100, tone 90) takes the colour of shade 300 (system_accentN_300, tone 70) of
- * the same row, so the light accent shade is darker and stronger. The swap comes last, after everything else has made the 13 shades:
- * the scheme with its accents, the Intensity sliders, then the profile's shade rule (P14's chroma cap included); it reads the shade 300
- * those give. Nothing else changes: the other shades, the neutral rows, every role and fixed colour (the engine derives them from the
- * scheme's palettes, which the switch leaves alone: primary_container is still tone 90 of the primary palette), palette_key_color_*,
- * and palettes()' hue, chroma and key. scheme() only checks the value. So on Android 14 and later, where most apps take their colours
- * from the role colours, the switch shows only where an app or the system reads system_accentN_100 itself; which screens do that is
- * not known here.
+ * the same row, so that shade is darker (tone 70 in place of 90; its chroma comes out higher in most rows, but the same or lower in
+ * about a quarter of them: P14 2021 Tonal Spot 4285F4 accent2 16.05 -> 15.90). The swap comes last, after everything else has made
+ * the 13 shades: the scheme with its accents, the Intensity sliders, then the profile's shade rule (P14's chroma cap included); it
+ * reads the shade 300 those give. Nothing else changes: the other shades, the neutral rows, every role and fixed colour (the engine
+ * derives them from the scheme's palettes, which the switch leaves alone: primary_container is still tone 90 of the primary palette),
+ * palette_key_color_*, and palettes()' hue, chroma and key. scheme() only checks the value. So on Android 14 and later, where most
+ * apps take their colours from the role colours, the switch shows only where an app or the system reads system_accentN_100 itself;
+ * which screens do that is not known here.
  *   What was checked (scripts on this container, against this file from before the option): accurate left out, null or true gives
  *   its results byte for byte (the 26,328 results of the checks above: every profile, style, spec, the six seeds, light and dark,
  *   contrast 0 and 0.5) with no other option, with two Intensity settings, with both accents, and with a tertiary accent and the
