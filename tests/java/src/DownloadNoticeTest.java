@@ -98,12 +98,25 @@ public class DownloadNoticeTest {
         lg.add(z); g.update(lg, 1000);
         z.state = BrowserDownload.State.FAILED; g.update(lg, 2000);
         is("one failed: says to open the app and retry", "A download stopped. Open the app to retry it".equals(g.summary()) && g.hadFailure(), String.valueOf(g.summary()));
+        DownloadNotice g2 = new DownloadNotice();
+        List<BrowserDownload.Job> lg2 = new ArrayList<BrowserDownload.Job>();
+        BrowserDownload.Job z1 = job("z1", "z1.apkm", BrowserDownload.State.RUNNING, 1, 10), z2 = job("z2", "z2.apkm", BrowserDownload.State.RUNNING, 1, 10);
+        lg2.add(z1); lg2.add(z2); g2.update(lg2, 1000);
+        z1.state = BrowserDownload.State.FAILED; z2.state = BrowserDownload.State.FAILED; g2.update(lg2, 2000);
+        is("multiple failed: says to open the app and retry them", "2 downloads stopped. Open the app to retry them".equals(g2.summary()) && g2.hadFailure(), String.valueOf(g2.summary()));
+
         DownloadNotice h = new DownloadNotice();
         List<BrowserDownload.Job> lh = new ArrayList<BrowserDownload.Job>();
         BrowserDownload.Job h1 = job("h1", "", BrowserDownload.State.RUNNING, 1, 10), h2 = job("h2", "", BrowserDownload.State.RUNNING, 1, 10);
         lh.add(h1); lh.add(h2); h.update(lh, 1000);
         h1.state = BrowserDownload.State.DONE; h2.state = BrowserDownload.State.DONE; h.update(lh, 2000);
         is("two finished: '2 downloads finished'", "2 downloads finished".equals(h.summary()), String.valueOf(h.summary()));
+        DownloadNotice h3 = new DownloadNotice();
+        List<BrowserDownload.Job> lh3 = new ArrayList<BrowserDownload.Job>();
+        BrowserDownload.Job h3_1 = job("h3_1", "", BrowserDownload.State.RUNNING, 1, 10);
+        lh3.add(h3_1); h3.update(lh3, 1000);
+        h3_1.state = BrowserDownload.State.DONE; h3.update(lh3, 2000);
+        is("one finished nameless: 'Download finished'", "Download finished".equals(h3.summary()), String.valueOf(h3.summary()));
         DownloadNotice c = new DownloadNotice();
         List<BrowserDownload.Job> lc = new ArrayList<BrowserDownload.Job>();
         BrowserDownload.Job c1 = job("c1", "c.apkm", BrowserDownload.State.RUNNING, 1, 10);
