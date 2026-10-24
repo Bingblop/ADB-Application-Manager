@@ -72,15 +72,15 @@ const { chromium, PAGE } = require('./lib/pw');
   // 5) Search + sort.
   await page.fill('#githubSearch', 'app 007'); await page.waitForTimeout(40);
   const found = await page.locator('#githubList .store-row').count();
-  const firstName = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const firstName = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   console.log('5. search "app 007" -> 1 match:', found === 1 && firstName === 'App 007');
   await page.fill('#githubSearch', ''); await page.waitForTimeout(30);
   await page.selectOption('#githubSort', 'name'); await page.waitForTimeout(30);
-  const nameFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const nameFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   await page.selectOption('#githubSort', 'stars'); await page.waitForTimeout(30);
-  const starFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const starFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   await page.selectOption('#githubSort', 'updated'); await page.waitForTimeout(30);
-  const updFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const updFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   console.log('   sort name -> App 000 first, stars -> App 000 (most), updated -> newest (App 500):', nameFirst === 'App 000' && starFirst === 'App 000' && updFirst === 'App 500', nameFirst, starFirst, updFirst);
   await page.selectOption('#githubSort', 'stars');
 
@@ -160,7 +160,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev({ source: 'fdroid-repo', arg: 'https://f-droid.org/repo', status: 'ok', items: fdItems.slice(400), append: true, done: true, total: 450, repoName: 'F-Droid', format: 'v2', skipped: 12 });
   await page.waitForTimeout(80);
   const fdCount = await text('#fdroidCount');
-  const fdFirst = await page.locator('#fdroidList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const fdFirst = await page.locator('#fdroidList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   const fdStatus = await text('#fdroidStatus');
   console.log('13. progress text shown while reading:', /Reading the catalog… 12\.3 MB · 840 apps/.test(fdProg));
   console.log('    whole catalog loaded (450 apps), newest first by default, hidden-apps note:', /450 apps/.test(fdCount) && fdFirst === 'FApp 0449' && /12 apps hidden/.test(fdStatus), '|', JSON.stringify(fdCount), fdFirst, JSON.stringify(fdStatus));
@@ -226,7 +226,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.waitForTimeout(50);
   const oOpts = await page.locator('#orionCat option').allInnerTexts();
   await page.selectOption('#orionSort', 'name-desc'); await page.waitForTimeout(30);
-  const oFirst = await page.locator('#orionList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const oFirst = await page.locator('#orionList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   await page.selectOption('#orionCat', 'Automation'); await page.waitForTimeout(30);
   console.log('18. orion requested, categories (incl. multi-tag) + Z–A sort + filter:', orionAsked === 1 && oOpts.length === 4 && oFirst === 'Zed Utility' && (await page.locator('#orionList .store-row').count()) === 1, JSON.stringify(oOpts));
 
