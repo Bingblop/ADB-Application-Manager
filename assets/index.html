@@ -1636,7 +1636,7 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: var(--space-3h);
-            margin-bottom: 18px;
+            margin-bottom: var(--space-5);
         }
 
         .palette-preset-card {
@@ -4675,7 +4675,7 @@
 
                 <!-- Automatic storage search results -->
                 <div id="apkScanBox" style="display:none;margin-top:6px;">
-                    <div class="batch-sheet-tools" style="gap:10px;flex-wrap:wrap;align-items:center;">
+                    <div class="batch-sheet-tools" style="gap:var(--space-3h);flex-wrap:wrap;align-items:center;">
                         <input type="text" class="list-search" id="apkScanSearch" placeholder="Filter found files…" style="flex:1;min-width:130px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="renderApkScan()">
                         <select class="op-select" id="apkScanKind" onchange="renderApkScan()">
                             <option value="">All types</option>
@@ -4685,7 +4685,7 @@
                             <option value="xapk">XAPK</option>
                         </select>
                     </div>
-                    <div class="batch-sheet-tools" id="apkSelTools" style="gap:12px;flex-wrap:wrap;align-items:center;margin-top:6px;">
+                    <div class="batch-sheet-tools" id="apkSelTools" style="gap:var(--space-4);flex-wrap:wrap;align-items:center;margin-top:6px;">
                         <button class="batch-tool-link" id="apkSelBtn" onclick="apkSelToggle()">Select</button>
                         <button class="batch-tool-link" id="apkSelCleanBtn" style="display:none;" onclick="apkSelCleanup()">Select duplicates and older versions</button>
                         <button class="batch-tool-link" id="apkSelAllBtn" style="display:none;" onclick="apkSelAll()">All</button>
@@ -4704,17 +4704,17 @@
             <div class="color-card" id="installInfoCard" style="display:none;">
                 <div class="color-card-title" id="installPkgLabel">—</div>
                 <div class="color-card-subtitle" id="installPkgName" style="font-family:monospace;word-break:break-all;"></div>
-                <div id="installInfoGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
-                <div id="installSignRow" class="color-card-subtitle" style="margin-top:8px;"></div>
+                <div id="installInfoGrid" style="display:flex;flex-wrap:wrap;gap:var(--space-3);margin-top:10px;"></div>
+                <div id="installSignRow" class="color-card-subtitle" style="margin-top:var(--space-3);"></div>
             </div>
 
             <!-- VirusTotal scan (optional) -->
             <div class="color-card" id="installVtCard" style="display:none;">
-                <div class="color-card-title">VirusTotal scan <span class="switch-sub" style="font-weight:600;">(optional)</span></div>
+                <div class="color-card-title">VirusTotal scan <span class="switch-sub" style="font-weight:var(--fw-semibold);">(optional)</span></div>
                 <div class="color-card-subtitle">Check this package against 70+ antivirus engines before installing, with your own VirusTotal API key. The scan is a SHA-256 lookup — <b>nothing is uploaded</b>; only if VirusTotal hasn't seen the file can you choose to upload it.</div>
                 <div id="vtKeyNote" class="switch-sub" style="margin-top:10px;"></div>
                 <div class="switch-sub vt-quota" id="vtQuotaLineInst" style="margin-top:4px; display:none;"></div>
-                <div class="batch-sheet-tools" style="margin-top:10px;gap:10px;flex-wrap:wrap;">
+                <div class="batch-sheet-tools" style="margin-top:10px;gap:var(--space-3h);flex-wrap:wrap;">
                     <button class="mode-action-btn primary" id="vtScanBtn" onclick="vtScan(false)">Scan this package</button>
                 </div>
                 <div id="vtResultBox" class="uad-status" style="display:none;margin-top:10px;"></div>
@@ -4724,7 +4724,7 @@
             <div class="color-card" id="installSplitsCard" style="display:none;">
                 <div class="color-card-title">Splits</div>
                 <div class="color-card-subtitle" id="installSplitsSub">Pick which split APKs to install. The base APK is always included; the splits that fit this phone are ticked and the others are left off for you to add.</div>
-                <div class="batch-sheet-tools" style="margin:8px 0;gap:14px;flex-wrap:wrap;">
+                <div class="batch-sheet-tools" style="margin:8px 0;gap:var(--space-4);flex-wrap:wrap;">
                     <button class="batch-tool-link" onclick="installSelectAllSplits('device')">Match this phone</button>
                     <button class="batch-tool-link" onclick="installSelectAllSplits(true)">Select all</button>
                     <button class="batch-tool-link" onclick="installSelectAllSplits(false)" style="color:var(--text-muted);">Only base</button>
@@ -4736,7 +4736,7 @@
             <div class="color-card" id="installExtrasCard" style="display:none;">
                 <div class="color-card-title">Game data (OBB)</div>
                 <div class="color-card-subtitle">This package carries data files that live outside the APK. Right after the install succeeds they are copied into place.</div>
-                <div id="installExtrasList" style="margin-top:8px;"></div>
+                <div id="installExtrasList" style="margin-top:var(--space-3);"></div>
                 <label class="switch-row">
                     <div><div class="switch-title">Copy data files after install</div><div class="switch-sub" id="installExtrasSub">Needs ADB, Shizuku or Root on Android 11+</div></div>
                     <input type="checkbox" class="switch-input" id="optCopyExtras" checked onchange="updateInstallPreview()"><span class="switch-track"></span>
@@ -4808,7 +4808,7 @@
                 </label>
 
                 <div style="margin-top:12px;">
-                    <div class="switch-title">Install source / installer package <span class="switch-sub" style="font-weight:600;">(-i)</span></div>
+                    <div class="switch-title">Install source / installer package <span class="switch-sub" style="font-weight:var(--fw-semibold);">(-i)</span></div>
                     <div class="input-combo">
                         <input class="modal-text-input" id="optInstaller" placeholder="e.g. com.android.vending (optional)" oninput="updateInstallPreview()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
                         <button type="button" class="input-combo-btn" id="optInstallerBtn" aria-label="Choose a common installer source" aria-haspopup="menu" aria-controls="comboMenuInstaller" aria-expanded="false" onclick="toggleInstallCombo('installer')">▾</button>
@@ -4816,7 +4816,7 @@
                     </div>
                 </div>
                 <div style="margin-top:2px;">
-                    <div class="switch-title">Install requester / originating URI <span class="switch-sub" style="font-weight:600;">(--originating-uri)</span></div>
+                    <div class="switch-title">Install requester / originating URI <span class="switch-sub" style="font-weight:var(--fw-semibold);">(--originating-uri)</span></div>
                     <div class="input-combo">
                         <input class="modal-text-input" id="optOriginating" placeholder="optional" oninput="updateInstallPreview()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
                         <button type="button" class="input-combo-btn" id="optOriginatingBtn" aria-label="Choose a common requester address" aria-haspopup="menu" aria-controls="comboMenuOrigin" aria-expanded="false" onclick="toggleInstallCombo('origin')">▾</button>
@@ -4984,11 +4984,11 @@
                     <button class="mode-action-btn" id="updCancelBtn" onclick="cancelUpdatesUI()" style="display:none;">Cancel</button>
                     <button class="mode-action-btn" id="updAllBtn" onclick="updateAllUI()" style="display:none;">Update All</button>
                 </div>
-                <div class="mode-btn-row" style="margin-top:8px;">
+                <div class="mode-btn-row" style="margin-top:var(--space-3);">
                     <button class="mode-action-btn" id="updRecheckBtn" onclick="recheckUpdatesUI()">Check again, ignore saved results</button>
                     <button class="mode-action-btn" id="updRetryBtn" onclick="retryFailedUpdatesUI()" style="display:none;">Retry failed</button>
                 </div>
-                <div class="mode-btn-row" style="margin-top:8px;">
+                <div class="mode-btn-row" style="margin-top:var(--space-3);">
                     <button class="mode-action-btn" onclick="importObtainiumUI()">Import Obtainium List</button>
                     <button class="mode-action-btn" id="ghTokenBtn" onclick="setGithubTokenUI()">GitHub Token</button>
                 </div>
@@ -5001,8 +5001,8 @@
                     <button class="mode-action-btn primary" id="openAuroraBtn" onclick="openAuroraStore()">Open Aurora Store</button>
                     <button class="mode-action-btn" onclick="listPlayApps()">List installed apps</button>
                 </div>
-                <div id="playAppsList" style="margin-top:8px;"></div>
-                <div class="uad-credit" style="margin-top:8px;">Aurora Store is an open-source Play Store client. Automatic Play version detection is a planned follow-up (it needs anonymous Play authentication); for now this routes each app to its store page, opening Aurora Store when it's installed.</div>
+                <div id="playAppsList" style="margin-top:var(--space-3);"></div>
+                <div class="uad-credit" style="margin-top:var(--space-3);">Aurora Store is an open-source Play Store client. Automatic Play version detection is a planned follow-up (it needs anonymous Play authentication); for now this routes each app to its store page, opening Aurora Store when it's installed.</div>
             </div>
             <div id="updContainer">
                 <div class="list-empty">Tap Check for Updates.</div>
@@ -5028,8 +5028,8 @@
                     <button type="button" class="search-refresh-btn fm-refresh-btn" id="fmRefreshIconBtn" aria-label="Refresh" title="Refresh" onclick="fmRefreshClick()"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
                     <button class="batch-tool-link fm-more-btn" id="fmMoreBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="fmMoreModal" onclick="fmMoreOpen()">⋯ More</button>
                 </div>
-                <div id="fmAccessHint" style="display:none; margin-top:8px; padding:8px 10px; border:1px solid var(--border-glass); border-radius:var(--radius-md); background:var(--tint-user);">
-                    <div class="switch-sub" style="margin-bottom:6px;">Storage looks inaccessible. Grant All-files access to browse /sdcard without a privileged mode.</div>
+                <div id="fmAccessHint" style="display:none; margin-top:var(--space-3); padding:var(--space-3) var(--space-3h); border:1px solid var(--border-glass); border-radius:var(--radius-md); background:var(--tint-user);">
+                    <div class="switch-sub" style="margin-bottom:var(--space-2);">Storage looks inaccessible. Grant All-files access to browse /sdcard without a privileged mode.</div>
                     <button class="batch-grid-btn accent" style="height:38px;" onclick="fmGrantAccess()">Grant storage access</button>
                 </div>
                 <div class="list-toolbar fm-bar">
@@ -5058,7 +5058,7 @@
                     </div>
                     <div class="mode-section-label">Search options</div>
                     <div class="fm-opts fm-more-opts">
-                        <select class="lang-select" id="fmSearchScope" style="width:auto; max-width:100%; margin-top:0; font-size:13px;" aria-label="Where to search"></select>
+                        <select class="lang-select" id="fmSearchScope" style="width:auto; max-width:100%; margin-top:0; font-size:var(--fs-body);" aria-label="Where to search"></select>
                         <label class="fm-opt"><input type="checkbox" id="fmSearchNested" checked onchange="fmSearchOpt()"> Include subfolders</label>
                         <label class="fm-opt"><input type="checkbox" id="fmSearchArc" onchange="fmSearchOpt()"> Search inside archives</label>
                         <button class="batch-tool-link" onclick="fmSearchHelpToggle()">Search help</button>
@@ -5127,11 +5127,11 @@
                     <div>You edited this APK, so its signature is no longer valid and Android will not install it as it is.</div>
                     <button class="mode-action-btn primary" style="margin-top:6px; width:100%; justify-content:center;" onclick="signOpen(arc.path)">Sign it now…</button>
                 </div>
-                <div class="list-toolbar" style="margin-top:8px;">
+                <div class="list-toolbar" style="margin-top:var(--space-3);">
                     <input type="text" class="list-search" id="arcSearch" placeholder="Search inside the archive…" oninput="arcSearchInput()" autocomplete="off" autocapitalize="off" spellcheck="false">
                 </div>
                 <div class="arc-crumbs" id="arcCrumbs"></div>
-                <div class="batch-sheet-tools" style="margin:6px 0; gap:12px; flex-wrap:wrap;">
+                <div class="batch-sheet-tools" style="margin:6px 0; gap:var(--space-4); flex-wrap:wrap;">
                     <button class="batch-tool-link" onclick="arcUp()">Up</button>
                     <button class="batch-tool-link" onclick="arcExtractHere()">Extract this folder</button>
                     <button class="batch-tool-link" id="arcAddBtn" onclick="arcAddFile()">＋ Add file</button>
@@ -5142,7 +5142,7 @@
                 <div id="arcDiffHead" style="display:none; margin:6px 0;"></div>
                 <div id="arcStatus" class="uad-status" style="display:none;"></div>
                 <div id="arcList"></div>
-                <button class="mode-action-btn" id="arcMoreBtn" style="display:none; width:100%; justify-content:center; margin-top:8px;" onclick="arcLoadMore()">Show more</button>
+                <button class="mode-action-btn" id="arcMoreBtn" style="display:none; width:100%; justify-content:center; margin-top:var(--space-3);" onclick="arcLoadMore()">Show more</button>
             </div>
         </section>
 
@@ -5356,8 +5356,8 @@
                             <input type="text" class="list-search" id="cdAppSearch" placeholder="Search apps on the device" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdAppsRender()">
                             <button class="mode-action-btn" onclick="cdAppsLoad(true)">Reload</button>
                         </div>
-                        <div class="filter-scroll" id="cdAppFilters" style="margin-top:8px;"></div>
-                        <div class="filter-summary-row" id="cdAppSummary" style="display:none; font-size:11px; color:var(--text-muted); margin-bottom:6px;"></div>
+                        <div class="filter-scroll" id="cdAppFilters" style="margin-top:var(--space-3);"></div>
+                        <div class="filter-summary-row" id="cdAppSummary" style="display:none; font-size:var(--fs-overline); color:var(--text-muted); margin-bottom:var(--space-2);"></div>
                         <div class="cd-count" id="cdAppCount"></div>
                         <div id="cdAppList"></div>
                     </div>
@@ -5407,7 +5407,7 @@
                     <div class="color-card">
                         <div class="color-card-title">Send with Bluetooth</div>
                         <div class="color-card-subtitle">Hands the queued files to Android's Bluetooth sharing, which asks which paired device gets them. Most watches, Wear OS included, cannot receive files this way: for a Wear OS watch use the Bluetooth link under Add device and send over ADB instead.</div>
-                        <div id="cdBtList" style="margin-top:8px;"></div>
+                        <div id="cdBtList" style="margin-top:var(--space-3);"></div>
                         <div class="mode-btn-row" style="margin-top:10px;">
                             <button class="mode-action-btn" onclick="cdBtLoad()">Show paired devices</button>
                             <button class="mode-action-btn" onclick="cdBtSend()">Send queued files</button>
@@ -5447,7 +5447,7 @@
                     <div class="color-card">
                         <div class="color-card-title">Logcat</div>
                         <div class="color-card-subtitle">The device's own log.</div>
-                        <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <div class="batch-sheet-tools" style="margin:8px 0; gap:var(--space-3h); flex-wrap:wrap; align-items:center;">
                             <select class="op-select" id="cdLcLevel" onchange="cdLcSavePrefs(); cdLcRefresh()" aria-label="Level">
                                 <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
                                 <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
@@ -5457,7 +5457,7 @@
                             </select>
                             <input type="text" class="list-search" id="cdLcFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdLcDraw(false)" onchange="cdLcSavePrefs()">
                         </div>
-                        <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px; flex-wrap:wrap;">
+                        <div class="batch-sheet-tools" style="margin-bottom:4px; gap:var(--space-4); flex-wrap:wrap;">
                             <button type="button" class="batch-tool-link lc-play" id="cdLcPlay" onclick="cdLcTogglePlay()" aria-pressed="false">Play</button>
                             <button class="batch-tool-link" onclick="cdLcRefresh()">Refresh</button>
                             <button class="batch-tool-link" onclick="cdLcClear()">Clear</button>
@@ -5478,7 +5478,7 @@
                             <div class="cd-path" id="cdFmPath" translate="no">/sdcard</div>
                         </div>
                         <div class="cd-chips" id="cdFmPlaces"></div>
-                        <div class="batch-sheet-tools" style="margin:6px 0 2px; gap:14px; flex-wrap:wrap;">
+                        <div class="batch-sheet-tools" style="margin:6px 0 2px; gap:var(--space-4); flex-wrap:wrap;">
                             <button class="batch-tool-link" onclick="cdFmRefresh()">Refresh</button>
                             <button class="batch-tool-link" onclick="cdFmPush()">Send a file here</button>
                             <button class="batch-tool-link" onclick="cdFmNewFolder()">New folder</button>
@@ -5494,13 +5494,13 @@
                     <div class="color-card">
                         <div class="color-card-title">Hidden Settings</div>
                         <div class="color-card-subtitle">The device's system, secure and global settings. A wrong value can make a device misbehave: change one at a time.</div>
-                        <div class="chip-row" id="cdSetNs" style="margin-top:8px;"></div>
+                        <div class="chip-row" id="cdSetNs" style="margin-top:var(--space-3);"></div>
                         <div class="cd-row">
                             <input type="text" class="list-search" id="cdSetSearch" placeholder="Search keys and values" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdSetRender()">
                             <button class="mode-action-btn" onclick="cdSetNew()">+ New</button>
                             <button class="mode-action-btn" onclick="cdSetLoad(true)">Reload</button>
                         </div>
-                        <div class="cd-count" id="cdSetCount" style="margin-top:8px;"></div>
+                        <div class="cd-count" id="cdSetCount" style="margin-top:var(--space-3);"></div>
                         <div id="cdSetList"></div>
                     </div>
                 </div>
@@ -5653,7 +5653,7 @@
                         <button class="batch-tool-link" id="tmSortMem" onclick="tmSetSort('mem')">Sort by memory</button>
                         <button class="batch-tool-link" id="tmAppsFirst" aria-pressed="false" onclick="tmToggleAppsFirst()">Apps first</button>
                     </div>
-                    <div class="tm-status" id="tmProcStatus" style="font-size:11px; color:var(--text-muted); margin-bottom:6px;"></div>
+                    <div class="tm-status" id="tmProcStatus" style="font-size:var(--fs-overline); color:var(--text-muted); margin-bottom:var(--space-2);"></div>
                     <div id="tmProcList"><div class="list-empty">Open this tab to see what is running.</div></div>
                 </div>
 
@@ -5927,9 +5927,9 @@
                 <div id="ovlThemeError" style="display:none;"></div>
 
                 <div class="color-card">
-                    <div class="color-card-title" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <div class="color-card-title" style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-3);">
                         <span>Colors in use</span>
-                        <button type="button" class="sdb-iconbtn" style="height:32px; font-size:12px;" onclick="ovlRefreshTheme()" aria-label="Refresh" title="Refresh">Refresh</button>
+                        <button type="button" class="sdb-iconbtn" style="height:32px; font-size:var(--fs-pkg);" onclick="ovlRefreshTheme()" aria-label="Refresh" title="Refresh">Refresh</button>
                     </div>
                     <div id="ovlNow"></div>
                     <div id="ovlPalette"></div>
@@ -5958,9 +5958,9 @@
                         <button type="button" class="ovl-preset-head" id="ovlPresetHead" onclick="ovlTogglePresets()" aria-expanded="false"></button>
                         <div id="ovlPresets" style="display:none;">
                             <div class="sdb-searchwrap" style="margin-top:4px;">
-                                <input type="text" class="list-search" id="ovlPresetSearch" placeholder="Search by name or hex…" oninput="ovlPresetSearchInput()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Search the preset colors" style="width:100%; height:38px; font-size:13px;">
+                                <input type="text" class="list-search" id="ovlPresetSearch" placeholder="Search by name or hex…" oninput="ovlPresetSearchInput()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Search the preset colors" style="width:100%; height:38px; font-size:var(--fs-body);">
                             </div>
-                            <div class="sdb-filters" id="ovlFamilies" style="margin-top:8px; margin-bottom:0;"></div>
+                            <div class="sdb-filters" id="ovlFamilies" style="margin-top:var(--space-3); margin-bottom:0;"></div>
                             <div class="ovl-grid" id="ovlPresetGrid"></div>
                             <div class="sdb-more" id="ovlPresetMore"></div>
                             <div class="ovl-presetname" id="ovlPresetName"></div>
@@ -5985,7 +5985,7 @@
                     <div class="sdb-note" style="margin-top:6px;">
                         Android 12 and newer build every system color from <b>one source color</b>: your wallpaper, or a color you set. The <b>style</b> decides how vibrant that palette is. This tab writes the secure setting <b>theme_customization_overlay_packages</b>, the same one Android’s own wallpaper picker uses, so Google apps and any app that uses Material You follow it. Some phone makers add their own palette on top.
                     </div>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+                    <div style="display:flex; gap:var(--space-3); flex-wrap:wrap; margin-top:10px;">
                         <button type="button" class="batch-tool-link" onclick="ovlCopyRaw()">Copy the setting</button>
                         <button type="button" class="batch-tool-link" onclick="ovlRefreshTheme()">Reload</button>
                     </div>
@@ -6030,7 +6030,7 @@
                         <button type="button" class="filter-chip" data-f="theme" onclick="ovlSetFilter('theme')">Theme</button>
                     </div>
                     <div class="sdb-status" id="ovlStatus"></div>
-                    <div class="sdb-note" style="margin-top:8px;"><b>Tap</b> a switch, or <b>press and hold</b> a row, to switch an overlay on or off; <b>tap</b> the row for details. System overlays change how Android looks and can restart apps. Every change can be undone here.</div>
+                    <div class="sdb-note" style="margin-top:var(--space-3);"><b>Tap</b> a switch, or <b>press and hold</b> a row, to switch an overlay on or off; <b>tap</b> the row for details. System overlays change how Android looks and can restart apps. Every change can be undone here.</div>
                 </div>
                 <div id="ovlRows" class="sdb-list" role="list"></div>
                 <div id="ovlMore" class="sdb-more"></div>
@@ -6088,14 +6088,14 @@
                             <option value="name">Name (A–Z)</option>
                         </select>
                     </div>
-                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:var(--space-4); align-items:center;">
                         <button class="batch-tool-link" onclick="loadStoreCatalog(true)">Refresh catalog</button>
-                        <span id="storeCount" style="font-size:12px; color:var(--text-muted);"></span>
+                        <span id="storeCount" style="font-size:var(--fs-pkg); color:var(--text-muted);"></span>
                     </div>
                     <div class="uad-credit" style="margin-top:6px;">Catalog &amp; metadata from <a href="#" onclick="openUrlExternal('https://github.com/timschneeb/ShizuStore'); return false;">ShizuStore</a> by timschneeb · APKs are served by each app's own developer, not rehosted.</div>
                 </div>
                 <div id="storeStatus" class="uad-status" style="margin:6px 2px;">Open to load the catalog.</div>
-                <div id="storeList" style="display:flex; flex-direction:column; gap:10px;"></div>
+                <div id="storeList" style="display:flex; flex-direction:column; gap:var(--space-3h);"></div>
                 <div id="storeMore" class="store-more"></div>
             </div>
 
@@ -6114,9 +6114,9 @@
                             <option value="name">Name (A–Z)</option>
                         </select>
                     </div>
-                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:var(--space-4); align-items:center;">
                         <button class="batch-tool-link" onclick="refreshSource('github')">Refresh</button>
-                        <span id="githubCount" style="font-size:12px; color:var(--text-muted);"></span>
+                        <span id="githubCount" style="font-size:var(--fs-pkg); color:var(--text-muted);"></span>
                     </div>
                     <div class="uad-credit" style="margin-top:6px;">Catalog by <a href="#" onclick="openUrlExternal('https://github.com/komi-store/komi-store'); return false;">Komi Store</a> · categories come from each repository's GitHub topics · APKs are downloaded from the project's own releases, not rehosted.</div>
                 </div>
@@ -6143,10 +6143,10 @@
                             <option value="name">Name (A–Z)</option>
                         </select>
                     </div>
-                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:var(--space-4); align-items:center;">
                         <button class="batch-tool-link" onclick="refreshSource('fdroid')">Refresh</button>
                         <button class="batch-tool-link" id="fdroidCopyBtn" onclick="fdroidCopyRepoInfo()">Copy address &amp; fingerprint</button>
-                        <span id="fdroidCount" style="font-size:12px; color:var(--text-muted);"></span>
+                        <span id="fdroidCount" style="font-size:var(--fs-pkg); color:var(--text-muted);"></span>
                     </div>
                     <div class="uad-credit" style="margin-top:6px;">Repository list from the <a href="#" onclick="openUrlExternal('https://forum.f-droid.org/t/known-repositories/721'); return false;">F-Droid known-repositories</a> thread · a catalog is downloaded once and kept for 12 hours · apps install from each repository's own servers.</div>
                 </div>
@@ -6169,9 +6169,9 @@
                             <option value="name-desc">Name (Z–A)</option>
                         </select>
                     </div>
-                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:var(--space-4); align-items:center;">
                         <button class="batch-tool-link" onclick="refreshSource('orion')">Refresh</button>
-                        <span id="orionCount" style="font-size:12px; color:var(--text-muted);"></span>
+                        <span id="orionCount" style="font-size:var(--fs-pkg); color:var(--text-muted);"></span>
                     </div>
                     <div class="uad-credit" style="margin-top:6px;">Catalog from <a href="#" onclick="openUrlExternal('https://github.com/RookieEnough/Orion-Store'); return false;">Orion Store</a> by RookieEnough · APKs come from each app's own source, not rehosted.</div>
                 </div>
@@ -6394,7 +6394,7 @@
                     </div>
                 </div>
 
-                <div class="color-card-title" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <div class="color-card-title" style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-3);">
                     <span>Granular Color Pickers</span>
                     <button class="mode-action-btn" id="resetTweaksBtn" style="display:none;" onclick="resetColorTweaks()">Reset tweaks</button>
                 </div>
@@ -6488,7 +6488,7 @@
                     <button class="mode-action-btn" id="askTestStop" style="display:none;" onclick="askStopRun('askTest')">Stop</button>
                 </div>
                 <div class="agent-ask-prog" id="askTestProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="askTestBar"><i id="askTestBarFill"></i></div><div class="agent-ask-prog-txt" id="askTestProgTxt"></div></div>
-                <div class="lc-ent-ai" id="askTestOut" style="display:none; margin-top:8px;"></div>
+                <div class="lc-ent-ai" id="askTestOut" style="display:none; margin-top:var(--space-3);"></div>
                 <div class="appearance-note" id="askTestRes"></div>
 
                 <!-- the VirusTotal key, the other outside service the app can use: it is kept as before (vtKeyTyped -> kv 'vt_key', sealed in the Keystore vault on the phone), only its controls are here -->
@@ -6500,7 +6500,7 @@
                         <button class="mode-action-btn primary" id="vtTestBtn" onclick="vtTestKey()">Test key</button>
                         <button class="mode-action-btn" onclick="vtClearKey()">Remove key</button>
                     </div>
-                    <div class="switch-sub" id="vtKeyStatus" style="margin-top:8px;"></div>
+                    <div class="switch-sub" id="vtKeyStatus" style="margin-top:var(--space-3);"></div>
                     <div class="switch-sub vt-quota" id="vtQuotaLine" style="margin-top:4px; display:none;"></div>
                     <div class="switch-sub" style="margin-top:4px;">Free key from <a href="#" onclick="openUrlExternal('https://www.virustotal.com/gui/my-apikey'); return false;">virustotal.com</a> &rarr; your account &rarr; API key. It is kept on this phone only, and sent only to VirusTotal when you scan. A key counts as approved once <b>Test key</b> has worked.</div>
                 </div>
@@ -6588,7 +6588,7 @@
                     <div id="fontScanStatus" class="uad-status" style="margin:8px 0 0;"></div>
                     <button class="batch-tool-link" id="fontScanClearBtn" style="display:none; margin-top:6px;" onclick="fontScanClear(true)">Clear this list</button>
                     <div id="fontScanBar" class="apk-scan-bar" role="progressbar" aria-label="Searching storage for fonts" aria-valuemin="0" aria-valuemax="100" style="display:none;"><div id="fontScanBarFill"></div></div>
-                    <input type="text" class="list-search" id="fontScanSearch" placeholder="Filter found fonts…" style="display:none; margin-top:8px;" oninput="fontScanRender()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+                    <input type="text" class="list-search" id="fontScanSearch" placeholder="Filter found fonts…" style="display:none; margin-top:var(--space-3);" oninput="fontScanRender()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
                     <div id="fontScanList" class="font-list"></div>
                 </div>
             </div>
@@ -6606,8 +6606,8 @@
                 <div class="color-card-title">Action Button</div>
                 <div class="color-card-subtitle clamp-2">Choose what the extra button on each row of the Apps list does. It is always an icon, and the ones that change with the app (Enable / Disable, Install / Uninstall, Unsuspend / Suspend) switch their icon and action to match the app's current state.</div>
                 <select class="op-select" id="actionBtnSelect" aria-label="Action Button" onchange="setActionBtn(this.value)"></select>
-                <div class="switch-sub" id="actionBtnPreview" style="margin-top:8px;"></div>
-                <div class="color-card-title" style="margin-top:16px; font-size:13px;">Hold menu</div>
+                <div class="switch-sub" id="actionBtnPreview" style="margin-top:var(--space-3);"></div>
+                <div class="color-card-title" style="margin-top:16px; font-size:var(--fs-body);">Hold menu</div>
                 <div class="color-card-subtitle">Press and hold the Action Button for a sheet of actions for that app. Choose which actions it lists and in what order.</div>
                 <div id="abSheetCfgList" class="fl-list"></div>
                 <div class="mode-btn-row" style="margin-top:12px;">
@@ -7802,7 +7802,7 @@
                 <div class="mode-btn-row">
                     <button class="mode-action-btn primary" id="uninstDataBtn" onclick="uninstDataStart()"><span id="uninstDataLock"></span><span id="uninstDataLabel">Clear Data from Uninstalled Apps</span></button>
                 </div>
-                <div class="color-card-subtitle" style="margin-top:8px;">Clears the data of apps that were uninstalled from this device while the <code translate="no">DONT_DELETE_FLAG</code> flag was active. This usually applies to <b>third-party</b> apps, and it can <b>fix common problems</b> when you install them again.</div>
+                <div class="color-card-subtitle" style="margin-top:var(--space-3);">Clears the data of apps that were uninstalled from this device while the <code translate="no">DONT_DELETE_FLAG</code> flag was active. This usually applies to <b>third-party</b> apps, and it can <b>fix common problems</b> when you install them again.</div>
                 <details class="sd-more"><summary>What does this do?</summary>
                 <div class="trim-explain" id="uninstDataExplain">
                     <p><b>What happens.</b> The app lists the apps that are uninstalled on this phone, and in <b>Root</b> mode only those that still have a data folder, with its size. You tick the ones to clear and confirm. Each one is cleared with <code translate="no">pm clear</code>; if that is refused, Root removes the app's data folders directly, and without Root the app is brought back for you with <code translate="no">pm install-existing</code> and removed again <i>without</i> keeping its data. An app that cannot be brought back (its APK was removed) needs Root.</p>
@@ -7817,7 +7817,7 @@
                 <div class="mode-btn-row">
                     <button class="mode-action-btn primary" id="trimCachesBtn" onclick="trimCachesAll()"><span id="trimCachesLock"></span><span id="trimCachesLabel">Trim Caches in All Applications</span></button>
                 </div>
-                <div class="switch-sub" id="trimCachesStatus" style="display:none; margin-top:8px;"></div>
+                <div class="switch-sub" id="trimCachesStatus" style="display:none; margin-top:var(--space-3);"></div>
                 <details class="sd-more"><summary>What does this do?</summary>
                 <div class="trim-explain" id="trimCachesExplain">
                     <p><b>What it runs.</b> The button runs <code translate="no">pm trim-caches 128G</code> on the phone, the same as typing <code translate="no">adb shell pm trim-caches 128G</code> on a computer. It needs a working mode (ADB, Wireless Debugging, Shizuku or Root); without one the button is locked.</p>
@@ -7918,7 +7918,7 @@
 
             <div class="color-card">
                 <div class="color-card-title">Developer &amp; project</div>
-                <dl class="about-kv" style="margin-top:8px;">
+                <dl class="about-kv" style="margin-top:var(--space-3);">
                     <dt>Developer</dt><dd>Bingblop</dd>
                     <dt>GitHub</dt><dd><a href="#" onclick="aboutOpenRepo(); return false;">github.com/Bingblop/ADB-Application-Manager</a></dd>
                 </dl>
@@ -8551,7 +8551,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button class="mode-action-btn" onclick="presetsExport('bops')">Export presets</button>
                 <button class="mode-action-btn" onclick="presetsImport('bops')">Import…</button>
             </div>
-            <div class="mode-btn-row" style="margin-top:8px;">
+            <div class="mode-btn-row" style="margin-top:var(--space-3);">
                 <button class="mode-action-btn" onclick="bopsClear()">Clear ticks</button>
                 <button class="mode-action-btn primary" id="bopsApply" onclick="bopsApply()">Apply</button>
             </div>
@@ -8618,7 +8618,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button class="mode-action-btn" onclick="presetsExport('cmds')">Export saved commands</button>
                 <button class="mode-action-btn" onclick="presetsImport('cmds')">Import…</button>
             </div>
-            <div class="mode-btn-row" style="margin-top:8px;">
+            <div class="mode-btn-row" style="margin-top:var(--space-3);">
                 <button class="mode-action-btn" onclick="bcSave()">Save this command…</button>
                 <button class="mode-action-btn primary" id="bcRun" onclick="bcRun()">Run</button>
             </div>
@@ -8783,7 +8783,7 @@ Type any command above (e.g. pm list packages -d)</div>
             </div>
             <div id="backupTarget" class="backup-item" style="display:none;"></div>
             <div id="backupProgress" style="display:none;">
-                <div id="backupProgressText" style="font-size:12px;"></div>
+                <div id="backupProgressText" style="font-size:var(--fs-pkg);"></div>
                 <div class="backup-bar"><div id="backupProgressBar"></div></div>
             </div>
             <div id="backupResult" class="backup-note" style="display:none;"></div>
@@ -8832,7 +8832,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="cheatGistSection">
                 <div style="margin-top:12px; border-top:1px solid var(--border-glass, rgba(128,128,128,0.22)); padding-top:10px;">
                     <button class="mode-action-btn" id="cheatGistBtn" onclick="loadCheatGist()">Load the full reference from the gist</button>
-                    <div id="cheatGistBox" style="margin-top:8px; max-height:40vh; overflow:auto;"></div>
+                    <div id="cheatGistBox" style="margin-top:var(--space-3); max-height:40vh; overflow:auto;"></div>
                 </div>
                 <div class="uad-credit" style="margin-top:10px;">Quick list in on-device shell form; the full reference loads live from <a href="#" onclick="openUrlExternal('https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8'); return false;">Pulimet's ADB gist</a>. Commands with &lt;placeholders&gt; need editing before they run.</div>
             </div>
@@ -9080,7 +9080,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="storeDetailBody" style="max-height:52vh; overflow-y:auto;">Loading…</div>
             <div style="margin-top:12px; border-top:1px solid var(--border-glass, rgba(128,128,128,0.22)); padding-top:10px;">
                 <div id="storeInstallProgress" class="uad-status" style="display:none; margin-bottom:8px;"></div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div style="display:flex; gap:var(--space-3h); flex-wrap:wrap;">
                     <button class="mode-action-btn primary" id="storeInstallBtn" onclick="installStoreApp()">Install</button>
                     <button class="mode-action-btn" id="storeSourceBtn" onclick="openStoreSource()">Source</button>
                 </div>
@@ -9123,11 +9123,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 <input type="text" class="list-search" id="profileName" placeholder="Profile name (e.g. Lean Samsung)" autocomplete="off">
                 <button class="find-nav" onclick="saveProfile()">Save</button>
             </div>
-            <p style="font-size:11px; color:var(--text-muted);" id="profileScopeHint"></p>
-            <div id="profilesList" style="max-height:38vh; overflow-y:auto; margin-top:8px;"></div>
+            <p style="font-size:var(--fs-overline); color:var(--text-muted);" id="profileScopeHint"></p>
+            <div id="profilesList" style="max-height:38vh; overflow-y:auto; margin-top:var(--space-3);"></div>
             <div id="profilePreview" class="profile-preview" style="display:none;"></div>
             <textarea id="profileImport" class="list-search" rows="3" style="width:100%; margin-top:10px;" placeholder="Paste a shared profile here to import it" spellcheck="false"></textarea>
-            <div class="mode-btn-row" style="margin-top:8px;">
+            <div class="mode-btn-row" style="margin-top:var(--space-3);">
                 <button class="mode-action-btn" onclick="importProfile()">Import</button>
             </div>
         </div>
@@ -9491,7 +9491,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <!-- Tab 6: Raw -->
             <div id="sheetTabRaw" class="sheet-tab-content">
                 <div class="chip-row sheet-full-row"><button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Raw" title="Expand Raw"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button></div>
-                <pre id="rawContainer" style="font-family:monospace; font-size:11px; color:var(--accent); white-space:pre-wrap;"></pre>
+                <pre id="rawContainer" style="font-family:monospace; font-size:var(--fs-overline); color:var(--accent); white-space:pre-wrap;"></pre>
             </div>
 
             <!-- Tab 7: Features -->
@@ -9556,7 +9556,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <input class="modal-text-input" id="listEditorDesc" placeholder="Optional description">
             <textarea class="modal-textarea" id="listEditorPackages" placeholder="com.example.one&#10;com.example.two"></textarea>
             <div class="modal-helper">One package per line. Duplicate entries are removed automatically.</div>
-            <div style="display:flex; gap:10px; margin-top:8px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="saveListFromEditor()">Save List</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeListEditorModal()">Cancel</button>
             </div>
@@ -9577,7 +9577,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <input class="modal-text-input" id="saveListName" placeholder="List name">
             <input class="modal-text-input" id="saveListDesc" placeholder="Optional description">
             <div class="modal-helper">This saves every currently selected app to a reusable named list.</div>
-            <div style="display:flex; gap:10px; margin-top:8px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmSaveSelectedApps()">Save Selected Apps</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeSaveSelectedModal()">Cancel</button>
             </div>
@@ -9597,7 +9597,7 @@ Type any command above (e.g. pm list packages -d)</div>
             </div>
             <div class="result-list" id="commandResultsList"></div>
             <div class="result-actions" id="commandResultsActions" style="display:none;"></div>
-            <div style="display:flex; gap:10px; margin-top:12px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:12px;">
                 <button class="mode-action-btn primary" id="commandResultsDone" style="flex:1; justify-content:center;" onclick="closeCommandResultsModal()">Done</button>
             </div>
         </div>
@@ -9617,7 +9617,7 @@ Type any command above (e.g. pm list packages -d)</div>
             </div>
             <div class="result-item-pkg" id="apkDeletePath" style="margin-bottom:8px;"></div>
             <div class="modal-helper">The file is removed from this phone's storage, not just from the list. An Undo bar stays for 3 seconds, and the file only goes for good once that bar is gone.</div>
-            <div style="display:flex; gap:10px; margin-top:12px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:12px;">
                 <button class="mode-action-btn primary" id="apkDeleteBtn" style="flex:1; justify-content:center; background:var(--danger-solid); color:var(--on-danger);" onclick="confirmApkDelete()">Delete from this device</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeApkDelete()">Cancel</button>
             </div>
@@ -9636,14 +9636,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 </div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="closePermSheet()">✕</button>
             </div>
-            <div id="permLangRow" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;">
-                <label for="permLangSelect" style="font-size:13px; font-weight:800;">Language</label>
+            <div id="permLangRow" style="display:none; align-items:center; justify-content:space-between; gap:var(--space-4); margin-bottom:12px;">
+                <label for="permLangSelect" style="font-size:var(--fs-body); font-weight:var(--fw-heavy);">Language</label>
                 <select class="op-select lang-select" id="permLangSelect" translate="no" aria-label="Language" onchange="chooseLanguage(this.value)"></select>
             </div>
             <div class="mode-tip-box" id="permReason" style="display:none; margin-bottom:10px;"></div>
             <div id="permRows"></div>
             <button class="mode-action-btn" id="permCopyBtn" style="display:none; width:100%; justify-content:center; min-height:44px; margin-top:12px;" onclick="permCopyCommands()">Copy grant commands</button>
-            <div style="display:flex; gap:10px; margin-top:14px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:14px;">
                 <button class="mode-action-btn primary" id="permAllBtn" style="flex:1; justify-content:center; min-height:44px;" onclick="permAllowAll()">Allow all</button>
                 <button class="mode-action-btn" id="permCloseBtn" style="padding:10px 16px; min-height:44px; justify-content:center;" onclick="closePermSheet()">Not now</button>
             </div>
@@ -9664,7 +9664,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="batchConfirmBody">
                 <div class="modal-helper">These apps are currently selected for this action:</div>
                 <div class="confirm-list-box" id="batchConfirmList"></div>
-                <div style="display:flex; gap:10px; margin-top:8px;">
+                <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                     <button class="mode-action-btn primary" style="flex:1; justify-content:center;" id="batchConfirmExecuteBtn" onclick="confirmPendingBatchAction()">Confirm</button>
                     <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeBatchConfirmModal()">Cancel</button>
                 </div>
@@ -9672,7 +9672,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="batchProgressBody" style="display:none;">
                 <div class="uad-status" id="batchProgressText" style="margin-bottom:8px;"></div>
                 <div class="backup-bar"><div id="batchProgressBar" style="width:0%;"></div></div>
-                <div style="display:flex; gap:10px; margin-top:14px;">
+                <div style="display:flex; gap:var(--space-3h); margin-top:14px;">
                     <button class="mode-action-btn" style="flex:1; justify-content:center;" id="batchProgressStopBtn" onclick="batchActionStop()">Stop</button>
                 </div>
             </div>
@@ -9706,7 +9706,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <input type="checkbox" class="switch-input" id="optimizeForce" checked><span class="switch-track"></span>
             </label>
             <div class="switch-sub" id="optimizeResetNote" style="display:none; margin:6px 2px;">Reset puts the app's dex optimization back to the state Android uses after an install (pm compile --reset). The exact result depends on the Android version.</div>
-            <div style="display:flex; gap:10px; margin-top:8px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmOptimize()">Run</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeOptimizeModal()">Cancel</button>
             </div>
@@ -9735,7 +9735,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 </select>
             </label>
             <div class="switch-sub" style="margin:6px 2px;">Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.</div>
-            <div style="display:flex; gap:10px; margin-top:8px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmStandby()">Apply</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeStandbyModal()">Cancel</button>
             </div>
@@ -9780,7 +9780,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="batch-actions-grid" id="fmActionBtns"></div>
             <div id="fmDestRow" style="display:none; margin-top:10px;">
                 <input class="modal-text-input" id="fmDestInput" placeholder="Destination path" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if (event.key === 'Enter') fmDestConfirm()">
-                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:8px;" id="fmDestConfirm" onclick="fmDestConfirm()">Confirm</button>
+                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:var(--space-3);" id="fmDestConfirm" onclick="fmDestConfirm()">Confirm</button>
             </div>
             <div id="fmViewer" class="terminal-box" style="display:none; max-height:50vh; overflow:auto; margin-top:10px;"></div>
         </div>
@@ -9842,7 +9842,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <label class="ex-opt"><input type="radio" name="exWhere" value="here" onchange="exWhereChange()"><span>This folder<small id="exHerePath" translate="no"></small></span></label>
             <label class="ex-opt"><input type="radio" name="exWhere" value="named" onchange="exWhereChange()"><span>A new folder named after the archive<small id="exNamedPath" translate="no"></small></span></label>
             <label class="ex-opt"><input type="radio" name="exWhere" value="other" onchange="exWhereChange()"><span>Another folder</span></label>
-            <input class="modal-text-input" id="exOtherInput" style="display:none; margin-bottom:6px;" placeholder="Full path to a folder" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to extract into" onkeydown="if(event.key==='Enter') exGo()">
+            <input class="modal-text-input" id="exOtherInput" style="display:none; margin-bottom:var(--space-2);" placeholder="Full path to a folder" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to extract into" onkeydown="if(event.key==='Enter') exGo()">
             <div class="switch-sub" style="margin:10px 0 4px;">If a file is already there</div>
             <label class="ex-opt"><input type="radio" name="exPolicy" value="replace"><span>Replace it</span></label>
             <label class="ex-opt"><input type="radio" name="exPolicy" value="skip"><span>Skip it</span></label>
@@ -9866,7 +9866,7 @@ Type any command above (e.g. pm list packages -d)</div>
             </div>
             <div class="sdb-problem" id="pwWrong" style="display:none;">That password did not work. Try again.</div>
             <input class="modal-text-input" id="pwInput" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Password" aria-label="Password" onkeydown="if(event.key==='Enter') pwOk()">
-            <label class="fm-opt" style="margin-top:8px;"><input type="checkbox" id="pwShow" onchange="pwShowToggle()"> Show the password</label>
+            <label class="fm-opt" style="margin-top:var(--space-3);"><input type="checkbox" id="pwShow" onchange="pwShowToggle()"> Show the password</label>
             <div class="switch-sub" style="margin-top:6px;">The password is used only for this archive, only while it is open. It is never saved.</div>
             <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:12px;" id="pwOk" onclick="pwOk()">Open</button>
         </div>
@@ -9932,7 +9932,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="switch-sub" style="margin:10px 0 4px;">Save into</div>
             <label class="ex-opt"><input type="radio" name="czWhere" value="here" onchange="czWhereChange()"><span>This folder<small id="czHerePath" translate="no"></small></span></label>
             <label class="ex-opt"><input type="radio" name="czWhere" value="other" onchange="czWhereChange()"><span>Another folder</span></label>
-            <input class="modal-text-input" id="czOtherInput" style="display:none; margin-bottom:6px;" placeholder="Full path to a folder" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to save into">
+            <input class="modal-text-input" id="czOtherInput" style="display:none; margin-bottom:var(--space-2);" placeholder="Full path to a folder" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to save into">
             <div class="switch-sub" style="margin:10px 0 4px;">If the archive name is taken</div>
             <label class="ex-opt"><input type="radio" name="czPolicy" value="keep"><span>Keep both (the new one becomes name (1))</span></label>
             <label class="ex-opt"><input type="radio" name="czPolicy" value="replace"><span>Replace it</span></label>
@@ -9993,7 +9993,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <input class="modal-text-input" id="arcInput" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') arcInputConfirm()">
                 <div class="switch-sub" id="arcInput2Label" style="margin:8px 0 4px; display:none;"></div>
                 <input class="modal-text-input" id="arcInput2" style="display:none;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') arcInputConfirm()">
-                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:8px;" id="arcInputConfirm" onclick="arcInputConfirm()">Confirm</button>
+                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:var(--space-3);" id="arcInputConfirm" onclick="arcInputConfirm()">Confirm</button>
             </div>
             <div id="arcView" style="display:none; margin-top:10px;">
                 <div class="arc-meta" id="arcViewMeta"></div>
@@ -10002,7 +10002,7 @@ Type any command above (e.g. pm list packages -d)</div>
             </div>
             <div id="arcEditor" style="display:none; margin-top:10px;">
                 <textarea class="arc-textarea" id="arcEditText" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
-                <div style="display:flex; gap:10px; margin-top:8px;">
+                <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                     <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="arcSaveEdit()">Save to archive</button>
                     <button class="mode-action-btn" style="padding:10px 16px;" onclick="arcCancelEdit()">Cancel</button>
                 </div>
@@ -10022,7 +10022,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="lcAppClose()">✕</button>
             </div>
             <input class="modal-text-input" id="lcAppSearch" placeholder="Search apps…" oninput="lcAppRender()" autocomplete="off" autocapitalize="off" spellcheck="false">
-            <div id="lcAppList" style="max-height:50vh; overflow:auto; margin-top:8px;"></div>
+            <div id="lcAppList" style="max-height:50vh; overflow:auto; margin-top:var(--space-3);"></div>
         </div>
     </div>
 
@@ -10040,7 +10040,7 @@ Type any command above (e.g. pm list packages -d)</div>
             </div>
             <div class="switch-sub" style="margin:0 0 8px;">Write your message and tap <b>Send</b>: your email app opens with it ready, addressed to a contact alias (<b id="contactTo"></b>) that forwards to the developer. The subject is <b>ADB App Manager</b>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.</div>
             <textarea class="modal-text-input" id="contactText" rows="6" placeholder="Your message" autocomplete="off" spellcheck="true" style="width:100%; resize:vertical;" aria-label="Message" oninput="contactPreview()"></textarea>
-            <label class="switch-row" style="margin-top:8px;">
+            <label class="switch-row" style="margin-top:var(--space-3);">
                 <div>
                     <div class="switch-title">Add the app and phone details</div>
                     <div class="switch-sub" id="contactDetails">The app version, Android version and phone model, so a problem is easier to find.</div>
@@ -10048,8 +10048,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 <input type="checkbox" class="switch-input" id="contactWithInfo" checked onchange="contactPreview()">
                 <span class="switch-track"></span>
             </label>
-            <div class="sdb-note" id="contactNote" style="margin-top:8px; min-height:18px;"></div>
-            <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+            <div class="sdb-note" id="contactNote" style="margin-top:var(--space-3); min-height:18px;"></div>
+            <div style="display:flex; gap:var(--space-3h); margin-top:12px; flex-wrap:wrap;">
                 <button class="mode-action-btn primary" id="contactSendBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="contactSend()">Send</button>
                 <button class="mode-action-btn" style="min-height:40px;" onclick="contactCopy()">Copy message</button>
             </div>
@@ -10070,9 +10070,9 @@ Type any command above (e.g. pm list packages -d)</div>
             </div>
             <div class="switch-sub" style="margin:0 0 8px;">Paste the address of an <b>F-Droid style repository</b> (for example <span translate="no">https://apt.izzysoft.de/fdroid/repo</span>), or of a <b>GitHub</b> or <b>Codeberg</b> user, organization or project. The app reads what it publishes and lists the apps.</div>
             <input class="modal-text-input" id="storeAddUrl" type="url" inputmode="url" placeholder="https://…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Address" oninput="storeAddHint()">
-            <input class="modal-text-input" id="storeAddName" type="text" placeholder="Name of the tab (optional: filled in from the address)" autocomplete="off" maxlength="30" style="margin-top:8px;" aria-label="Name of the tab">
-            <div class="sdb-note" id="storeAddNote" style="margin-top:8px; min-height:18px;"></div>
-            <div style="display:flex; gap:10px; margin-top:12px;">
+            <input class="modal-text-input" id="storeAddName" type="text" placeholder="Name of the tab (optional: filled in from the address)" autocomplete="off" maxlength="30" style="margin-top:var(--space-3);" aria-label="Name of the tab">
+            <div class="sdb-note" id="storeAddNote" style="margin-top:var(--space-3); min-height:18px;"></div>
+            <div style="display:flex; gap:var(--space-3h); margin-top:12px;">
                 <button class="mode-action-btn primary" id="storeAddBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="storeAddSubmit()">Add</button>
                 <button class="mode-action-btn" style="min-height:40px;" onclick="storeAddClose()">Cancel</button>
             </div>
@@ -10166,7 +10166,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="sdb-problem" id="sdbEditProblem"></div>
             <div class="sdb-quick" id="sdbEditQuick" aria-label="Quick values"></div>
             <div class="sdb-note" id="sdbEditNote"></div>
-            <div style="display:flex; gap:10px; margin-top:12px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:12px;">
                 <button class="mode-action-btn primary" id="sdbEditSaveBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="sdbEditSave()">Save</button>
                 <button class="mode-action-btn" id="sdbEditFlipBtn" style="min-height:40px;" onclick="sdbEditFlip()">Flip</button>
             </div>
@@ -10174,7 +10174,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="lc-ent-ai" id="sdbEditAi" style="display:none; margin-top:10px;"></div>
             <div class="agent-ask-prog" id="sdbEditProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="sdbEditBar"><i id="sdbEditBarFill"></i></div><div class="agent-ask-prog-txt" id="sdbEditProgTxt"></div></div>
             <div class="lc-ent-btns" style="margin-top:6px;"><button class="mode-action-btn" id="sdbEditStop" style="display:none;" onclick="askStopRun('sdbEdit')">Stop</button></div>
-            <div class="batch-sheet-tools" style="margin-top:8px; gap:12px; flex-wrap:wrap;">
+            <div class="batch-sheet-tools" style="margin-top:var(--space-3); gap:var(--space-4); flex-wrap:wrap;">
                 <button class="batch-tool-link" id="sdbEditWebBtn" onclick="sdbEditWeb()">Web search</button>
                 <button class="batch-tool-link" id="sdbEditAiBtn" onclick="sdbEditAsk()">Ask agent</button>
                 <button class="batch-tool-link" id="sdbEditHistBtn" onclick="askHistToggle('sdbEdit')">History</button>
@@ -10229,7 +10229,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <li>Use <b>Copy value</b> first to keep the old value.</li>
                     <li>The Undo bar and <b>Changes</b> (the clock button, or under ⋯) put a value back.</li>
                 </ul>
-                <div style="display:flex; gap:10px; margin-top:12px;">
+                <div style="display:flex; gap:var(--space-3h); margin-top:12px;">
                     <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="sdbCloseHelp(); openHelpGuide('tab-settings')">Open the Help Guide topic</button>
                     <button class="mode-action-btn" onclick="sdbCloseHelp()">Close</button>
                 </div>
@@ -10259,7 +10259,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="sdb-problem" id="sdbNewValueProblem"></div>
             <div class="sdb-quick" id="sdbNewQuick" aria-label="Quick values"></div>
             <div class="sdb-note" id="sdbNewNote"></div>
-            <div style="display:flex; gap:10px; margin-top:12px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:12px;">
                 <button class="mode-action-btn primary" id="sdbNewCreateBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="sdbNewCreate()">＋ Create</button>
                 <button class="mode-action-btn" style="min-height:40px;" onclick="sdbNewClose()">Cancel</button>
             </div>
@@ -10310,10 +10310,10 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="sdbJournalClose()">✕</button>
             </div>
             <div id="sdbJournalList" style="max-height:52vh; overflow:auto;"></div>
-            <div style="display:flex; gap:10px; margin-top:8px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                 <button class="mode-action-btn" id="sdbJournalClear" onclick="sdbJournalClear()">Clear history</button>
             </div>
-            <div style="display:flex; gap:10px; margin-top:8px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                 <button class="mode-action-btn" id="sdbBackupBtn" onclick="sdbBackup()">Back up changes</button>
                 <button class="mode-action-btn" id="sdbRestoreBtn" onclick="sdbRestore()">Restore…</button>
             </div>
@@ -10340,11 +10340,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="ovlCloseDetail()">✕</button>
             </div>
             <div class="sdb-note" id="ovlDetailNote" style="margin:0 0 12px;"></div>
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; gap:var(--space-3h);">
                 <button class="mode-action-btn primary" id="ovlDetailOn" style="flex:1; justify-content:center; min-height:42px;" onclick="ovlDetailDo('on')">Switch on</button>
                 <button class="mode-action-btn" id="ovlDetailOff" style="flex:1; justify-content:center; min-height:42px;" onclick="ovlDetailDo('off')">Switch off</button>
             </div>
-            <div class="batch-sheet-tools" style="margin-top:10px; gap:12px; flex-wrap:wrap;">
+            <div class="batch-sheet-tools" style="margin-top:10px; gap:var(--space-4); flex-wrap:wrap;">
                 <button class="batch-tool-link" onclick="ovlDetailDo('name')">Copy name</button>
                 <button class="batch-tool-link" onclick="ovlDetailDo('target')">Copy target</button>
                 <button class="batch-tool-link" onclick="ovlDetailDo('cmd')">Copy command</button>
@@ -10366,7 +10366,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div id="signRows"></div>
             <div id="signStatus" class="uad-status" style="display:none;"></div>
             <div class="batch-actions-grid" id="signBtns"></div>
-            <div class="modal-helper" id="signNote" style="margin-top:8px;"></div>
+            <div class="modal-helper" id="signNote" style="margin-top:var(--space-3);"></div>
         </div>
     </div>
 
@@ -10382,7 +10382,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="closeDeleteListModal()">✕</button>
             </div>
             <div class="modal-helper">Are you sure you want to delete this saved list?</div>
-            <div style="display:flex; gap:10px; margin-top:8px;">
+            <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center; background:var(--status-bloat); color:#fff;" onclick="confirmDeleteList()">Delete List</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeDeleteListModal()">Cancel</button>
             </div>
@@ -10401,7 +10401,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="closeListNameCollisionModal()">✕</button>
             </div>
             <div class="modal-helper">Overwrite the existing list, or save this as a new separate list?</div>
-            <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+            <div style="display:flex; flex-direction:column; gap:var(--space-3h); margin-top:var(--space-3);">
                 <button class="mode-action-btn primary" style="justify-content:center;" onclick="resolveListNameCollision('overwrite')">Overwrite</button>
                 <button class="mode-action-btn" style="justify-content:center;" onclick="resolveListNameCollision('new')">Create new list</button>
                 <button class="mode-action-btn" style="justify-content:center;" onclick="closeListNameCollisionModal()">Cancel</button>
@@ -10426,7 +10426,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 </div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="closeWorkingModesModal()">✕</button>
             </div>
-            <div class="modal-helper" style="margin-bottom:10px;">New to this? The <a href="#" style="color:var(--accent); font-weight:800;" onclick="closeWorkingModesModal(); openHelpGuide('modes-overview'); return false;">Help Guide</a> explains each mode and how to set it up, step by step.</div>
+            <div class="modal-helper" style="margin-bottom:10px;">New to this? The <a href="#" style="color:var(--accent); font-weight:var(--fw-heavy);" onclick="closeWorkingModesModal(); openHelpGuide('modes-overview'); return false;">Help Guide</a> explains each mode and how to set it up, step by step.</div>
 
             <!-- ADB key (per install) -->
             <div class="mode-card" id="adbKeyCard">
@@ -10439,7 +10439,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <div class="mode-tip-box" id="adbKeyNotice" style="display:none; border-color:var(--line-user); background:var(--tint-user);">
                     <b>New private key created.</b> Earlier versions shared one ADB key with everyone who had the APK. This install now has its own key, so your phone will ask <b>"Allow debugging?"</b> once on the next ADB connection. Wireless Debugging needs to be paired again.
                     For full safety, also tap <b>Revoke USB debugging authorizations</b> in Developer Options to remove the old shared key.
-                    <div class="mode-btn-row" style="margin-top:8px;">
+                    <div class="mode-btn-row" style="margin-top:var(--space-3);">
                         <button class="mode-action-btn" onclick="openDevOptionsUI()">Developer Options</button>
                         <button class="mode-action-btn" onclick="dismissAdbKeyNoticeUI()">✓ Got it</button>
                     </div>
@@ -10819,9 +10819,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 </div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="cdAskDone(false)">&#10005;</button>
             </div>
-            <div id="cdAskText" style="font-size:13px; line-height:1.55; overflow-wrap:anywhere;"></div>
+            <div id="cdAskText" style="font-size:var(--fs-body); line-height:1.55; overflow-wrap:anywhere;"></div>
             <input class="modal-text-input" id="cdAskInput" style="display:none; margin-top:10px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') cdAskDone(true)">
-            <input class="modal-text-input" id="cdAskInput2" style="display:none; margin-top:8px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') cdAskDone(true)">
+            <input class="modal-text-input" id="cdAskInput2" style="display:none; margin-top:var(--space-3);" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') cdAskDone(true)">
             <div class="mode-btn-row" style="margin-top:14px;">
                 <button class="mode-action-btn primary" id="cdAskOk" style="flex:1; justify-content:center;" onclick="cdAskDone(true)">OK</button>
                 <button class="mode-action-btn" onclick="cdAskDone(false)">Cancel</button>
@@ -10841,7 +10841,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 </div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="closeTrackersInfo()">✕</button>
             </div>
-            <div id="trackersBody" style="font-size:13px; line-height:1.55;"></div>
+            <div id="trackersBody" style="font-size:var(--fs-body); line-height:1.55;"></div>
             <div class="uad-credit" id="trackersCredit" style="margin-top:12px;"></div>
             <div class="mode-btn-row" style="margin-top:12px;">
                 <button class="mode-action-btn" onclick="openUrlExternal('https://exodus-privacy.eu.org')">Exodus Privacy</button>
@@ -10862,7 +10862,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 </div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="closeUadInfo()">✕</button>
             </div>
-            <div id="uadInfoBody" style="font-size:13px; line-height:1.55;"></div>
+            <div id="uadInfoBody" style="font-size:var(--fs-body); line-height:1.55;"></div>
             <div class="uad-credit" style="margin-top:12px;">Levels and descriptions come from the UAD-NG project (GPL-3.0). The list is downloaded from their GitHub and cached on this phone.</div>
             <div class="mode-btn-row" style="margin-top:12px;">
                 <button class="mode-action-btn" onclick="openUadWiki()">UAD-NG Wiki</button>
@@ -10954,7 +10954,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 </div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="closePrivilegeModal()">✕</button>
             </div>
-            <div style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:18px;">
+            <div style="font-size:var(--fs-pkg); color:var(--text-muted); line-height:1.5; margin-bottom:18px;">
                 You are currently running in <b>Read-Only Mode</b>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <b>ADB TCP (5555)</b>, <b>Wireless Debugging</b>, <b>Shizuku</b>, or <b>Root</b>.
             </div>
             <div class="mode-btn-row">
@@ -10991,7 +10991,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <div class="sheet-app-hero"><div class="sheet-title"><h3 id="mpAskTitle"></h3></div></div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="mpAskDone(false)">&#10005;</button>
             </div>
-            <div id="mpAskText" style="font-size:13px; line-height:1.55; overflow-wrap:anywhere; white-space:pre-line;"></div>
+            <div id="mpAskText" style="font-size:var(--fs-body); line-height:1.55; overflow-wrap:anywhere; white-space:pre-line;"></div>
             <input class="modal-text-input" id="mpAskInput" style="display:none; margin-top:10px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') mpAskDone(true)">
             <div class="mode-btn-row" style="margin-top:14px;">
                 <button class="mode-action-btn primary" id="mpAskOk" style="flex:1; justify-content:center;" onclick="mpAskDone(true)">OK</button>
@@ -15173,7 +15173,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const notes = u.notes ? `<div class="upd-msg">${escapeHtml(u.notes.length > 220 ? u.notes.slice(0, 220) + '…' : u.notes)}</div>` : '';
                 const noApk = u.noApk ? '<div class="upd-msg">No APK for this phone in the latest release. Open the release page to pick one.</div>' : '';
                 const links = (u.obtainium || u.page) && u.source !== 'galaxy' && u.source !== 'self'
-                    ? `<div class="mode-btn-row" style="margin-top:8px;">${u.page ? `<button class="mode-action-btn" data-url="${escapeHtml(u.page)}" onclick="openUpdatePage(this.getAttribute('data-url'))">Page</button>` : ''}${u.obtainium ? `<button class="mode-action-btn" data-link="${escapeHtml(u.obtainium)}" onclick="openObtainiumUI(this.getAttribute('data-link'))">Open in Obtainium</button>` : ''}</div>` : '';
+                    ? `<div class="mode-btn-row" style="margin-top:var(--space-3);">${u.page ? `<button class="mode-action-btn" data-url="${escapeHtml(u.page)}" onclick="openUpdatePage(this.getAttribute('data-url'))">Page</button>` : ''}${u.obtainium ? `<button class="mode-action-btn" data-link="${escapeHtml(u.obtainium)}" onclick="openObtainiumUI(this.getAttribute('data-link'))">Open in Obtainium</button>` : ''}</div>` : '';
                 return `
                     <div class="upd-row">
                         <div class="upd-head">
@@ -15264,7 +15264,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         <div class="uad-name">${escapeHtml(u.name)}</div>
                         <div class="uad-pkg">${escapeHtml(u.pkg)} • ${escapeHtml(u.installedVersion || '')}</div>
                         <div class="upd-msg">${escapeHtml(u.sourceUrl || '')}</div>
-                        <div class="mode-btn-row" style="margin-top:8px;">
+                        <div class="mode-btn-row" style="margin-top:var(--space-3);">
                             <button class="mode-action-btn primary" data-link="${escapeHtml(u.obtainium || '')}" onclick="openObtainiumUI(this.getAttribute('data-link'))">Open in Obtainium</button>
                             <button class="mode-action-btn" data-url="${escapeHtml(u.page || '')}" onclick="openUpdatePage(this.getAttribute('data-url'))">Page</button>
                         </div>
@@ -16048,20 +16048,20 @@ Type any command above (e.g. pm list packages -d)</div>
                 ? `<button class="batch-tool-link" onclick="storeShown += 60; renderStoreList()">Show ${Math.min(60, left)} more · ${left} left</button>` : '';
             const esc = escapeHtml;
             const rows = apps.slice(0, storeShown).map(a => {
-                const img = a.iconHash ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:12px;object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
-                const fb = `<div style="width:46px;height:46px;border-radius:12px;flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:800;color:var(--on-gradient);">${esc(firstChar(a.name))}</div>`;
+                const img = a.iconHash ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:var(--radius-md);object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
+                const fb = `<div style="width:46px;height:46px;border-radius:var(--radius-md);flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:var(--fw-heavy);color:var(--on-gradient);">${esc(firstChar(a.name))}</div>`;
                 const chips = [];
                 if (a.stars != null) chips.push(esc(fmtCount(a.stars)) + ' stars');
                 if (a.versionName) chips.push('v' + esc(a.versionName));
                 if (a.categorySlug) chips.push(esc(a.categorySlug));
                 if (a.requiresRoot) chips.push('root');
-                const meta = chips.map(c => `<span style="font-size:11px;color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:8px;padding:2px 7px;">${c}</span>`).join(' ');
+                const meta = chips.map(c => `<span style="font-size:var(--fs-overline);color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:var(--radius-sm);padding:2px 7px;">${c}</span>`).join(' ');
                 const sid = cssId(a.slug), rs = storeRowSt[a.slug] || {};
-                return `<div data-slug="${esc(a.slug)}" onclick="openStoreApp(this.dataset.slug)" style="display:flex;gap:12px;align-items:flex-start;background:rgba(var(--ov),0.05);border:1px solid var(--border-glass);border-radius:14px;padding:12px;cursor:pointer;">
+                return `<div data-slug="${esc(a.slug)}" onclick="openStoreApp(this.dataset.slug)" style="display:flex;gap:var(--space-4);align-items:flex-start;background:rgba(var(--ov),0.05);border:1px solid var(--border-glass);border-radius:var(--radius-md);padding:12px;cursor:pointer;">
                     ${img}${fb}
                     <div style="flex:1;min-width:0;">
-                        <div style="font-weight:700;color:var(--text-main);">${esc(a.name || a.slug)}</div>
-                        <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(htmlToReadable(a.description || '').replace(/\s*\n+\s*/g, ' '))}</div>
+                        <div style="font-weight:var(--fw-bold);color:var(--text-main);">${esc(a.name || a.slug)}</div>
+                        <div style="font-size:var(--fs-pkg);color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(htmlToReadable(a.description || '').replace(/\s*\n+\s*/g, ' '))}</div>
                         <div style="display:flex;gap:5px;flex-wrap:wrap;">${meta}</div>
                         <div class="sr-status" id="ss-st-${sid}" style="display:none;"></div>
                     </div>
@@ -16274,7 +16274,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('storeDetailSub').innerText = (a.packageName || '') + (a.versionName ? ' · v' + a.versionName : '');
             const parts = [];
             const desc = htmlToReadable(a.fullDescription || a.description || '');
-            if (desc) parts.push(`<div style="font-size:13px;color:var(--text-main);white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:10px;">${esc(desc)}</div>`);
+            if (desc) parts.push(`<div style="font-size:var(--fs-body);color:var(--text-main);white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:10px;">${esc(desc)}</div>`);
             const chips = [];
             if (a.stars != null) chips.push(esc(fmtCount(a.stars)) + ' stars');
             if (a.downloadTotal != null) chips.push(esc(fmtCount(a.downloadTotal)) + ' downloads');
@@ -16282,10 +16282,10 @@ Type any command above (e.g. pm list packages -d)</div>
             if (a.license) chips.push('© ' + esc(a.license));
             if (a.categorySlug) chips.push(esc(a.categorySlug));
             if (a.requiresRoot) chips.push('needs root');
-            if (chips.length) parts.push(`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${chips.map(c => `<span style="font-size:11px;color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:8px;padding:3px 8px;">${c}</span>`).join('')}</div>`);
+            if (chips.length) parts.push(`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${chips.map(c => `<span style="font-size:var(--fs-overline);color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:var(--radius-sm);padding:3px 8px;">${c}</span>`).join('')}</div>`);
             if (storeCurrent.download) {
                 const dl = storeCurrent.download;
-                parts.push(`<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Install source: <b>${esc(dl.source || 'upstream')}</b>${dl.size ? ' · ' + (Math.round(dl.size / 1048576 * 10) / 10) + ' MB' : ''}${dl.versionName ? ' · v' + esc(dl.versionName) : ''}</div>`);
+                parts.push(`<div style="font-size:var(--fs-pkg);color:var(--text-muted);margin-bottom:10px;">Install source: <b>${esc(dl.source || 'upstream')}</b>${dl.size ? ' · ' + (Math.round(dl.size / 1048576 * 10) / 10) + ' MB' : ''}${dl.versionName ? ' · v' + esc(dl.versionName) : ''}</div>`);
             } else if (a.storeUrl) {
                 parts.push(`<div class="uad-status" style="margin-bottom:10px;">Distributed on the Play Store — use Source to open it there.</div>`);
             } else {
@@ -16294,10 +16294,10 @@ Type any command above (e.g. pm list packages -d)</div>
             if (Array.isArray(a.screenshots) && a.screenshots.length) {
                 const shots = a.screenshots.filter(u => typeof u === 'string' && /^https?:\/\//i.test(u)).slice(0, 12);
                 shotSet(shots);
-                parts.push(`<div class="shot-row">${shots.map((s, i) => `<img class="shot-thumb" src="${esc(s)}" alt="Screenshot ${i + 1} of ${shots.length}: tap to enlarge" role="button" tabindex="0" style="height:220px;border-radius:10px;" loading="lazy" onclick="shotOpen(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();shotOpen(${i});}">`).join('')}</div><div class="switch-sub" style="margin:-4px 0 10px;">Tap a picture to enlarge it.</div>`);
+                parts.push(`<div class="shot-row">${shots.map((s, i) => `<img class="shot-thumb" src="${esc(s)}" alt="Screenshot ${i + 1} of ${shots.length}: tap to enlarge" role="button" tabindex="0" style="height:220px;border-radius:var(--radius-md);" loading="lazy" onclick="shotOpen(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();shotOpen(${i});}">`).join('')}</div><div class="switch-sub" style="margin:-4px 0 10px;">Tap a picture to enlarge it.</div>`);
             }
             if (Array.isArray(a.permissions) && a.permissions.length) {
-                parts.push(`<details style="margin-bottom:8px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;">Permissions (${a.permissions.length})</summary><div style="font-size:11px;color:var(--text-muted);margin-top:6px;word-break:break-all;">${a.permissions.map(esc).join('<br>')}</div></details>`);
+                parts.push(`<details style="margin-bottom:8px;"><summary style="cursor:pointer;font-weight:var(--fw-bold);font-size:var(--fs-body);">Permissions (${a.permissions.length})</summary><div style="font-size:var(--fs-overline);color:var(--text-muted);margin-top:6px;word-break:break-all;">${a.permissions.map(esc).join('<br>')}</div></details>`);
             }
             document.getElementById('storeDetailBody').innerHTML = parts.join('');
             const btn = document.getElementById('storeInstallBtn');
@@ -18579,9 +18579,9 @@ Type any command above (e.g. pm list packages -d)</div>
             return `<div class="store-row" data-src="${key}" data-key="${esc(k)}" onclick="storeItemOpen(this)" role="button" tabindex="0" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();storeItemOpen(this);}">
                 ${srcIconHtml(a)}
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:700;color:var(--text-main);overflow-wrap:anywhere;">${esc(a.name || k || 'App')}</div>
-                    ${sub ? `<div style="font-size:11px;color:var(--text-muted);word-break:break-all;">${sub}</div>` : ''}
-                    <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(a.desc || '')}</div>
+                    <div style="font-weight:var(--fw-bold);color:var(--text-main);overflow-wrap:anywhere;">${esc(a.name || k || 'App')}</div>
+                    ${sub ? `<div style="font-size:var(--fs-overline);color:var(--text-muted);word-break:break-all;">${sub}</div>` : ''}
+                    <div style="font-size:var(--fs-pkg);color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(a.desc || '')}</div>
                     <div style="display:flex;gap:5px;flex-wrap:wrap;">${chips.join(' ')}</div>
                     <div class="sr-status" id="st-${sid}" style="display:none;"></div>
                 </div>
@@ -18786,10 +18786,10 @@ Type any command above (e.g. pm list packages -d)</div>
             return `<div class="store-row">
                 <div class="sr-fallback">${esc(firstChar(r.name))}</div>
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:700;color:var(--text-main);">${esc(r.name)}</div>
-                    <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;">${esc(r.desc || '')}</div>
-                    <div style="font-size:11px;color:var(--text-muted);word-break:break-all;">${esc(r.address)}</div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;">
+                    <div style="font-weight:var(--fw-bold);color:var(--text-main);">${esc(r.name)}</div>
+                    <div style="font-size:var(--fs-pkg);color:var(--text-muted);margin:2px 0 6px;">${esc(r.desc || '')}</div>
+                    <div style="font-size:var(--fs-overline);color:var(--text-muted);word-break:break-all;">${esc(r.address)}</div>
+                    <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-top:7px;">
                         <button class="batch-tool-link" data-id="${esc(String(r.id))}" onclick="fdroidSelectRepo(this.dataset.id)">Browse apps</button>
                         <button class="batch-tool-link" data-text="${esc(r.address)}" onclick="copyStoreText(this.dataset.text, 'Address')">Copy address</button>
                         ${r.fingerprint ? `<button class="batch-tool-link" data-text="${esc(r.fingerprint)}" onclick="copyStoreText(this.dataset.text, 'Fingerprint')">Copy fingerprint</button>` : ''}
@@ -19020,11 +19020,11 @@ Type any command above (e.g. pm list packages -d)</div>
                         <select class="op-select" id="${key}Cat" onchange="setSrcCat('${key}', this.value)" aria-label="Category"><option value="">All categories</option></select>
                         <select class="op-select" id="${key}Sort" onchange="setSrcSort('${key}', this.value)" aria-label="Sort">${sorts}</select>
                     </div>
-                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center; flex-wrap:wrap;">
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:var(--space-4); align-items:center; flex-wrap:wrap;">
                         <button class="batch-tool-link" onclick="refreshSource('${key}')">Refresh</button>
                         <button class="batch-tool-link" onclick="storeCustomRename('${key}')">Rename</button>
                         <button class="batch-tool-link" style="color:var(--status-bloat);" onclick="storeCustomRemove('${key}')">Remove this store</button>
-                        <span id="${key}Count" style="font-size:12px; color:var(--text-muted);"></span>
+                        <span id="${key}Count" style="font-size:var(--fs-pkg); color:var(--text-muted);"></span>
                     </div>
                 </div>
                 <div id="${key}Status" class="uad-status" style="margin:6px 2px;">Loading…</div>
@@ -19115,14 +19115,14 @@ Type any command above (e.g. pm list packages -d)</div>
             const list = (shots || []).filter(u => typeof u === 'string' && /^https?:\/\//i.test(u)).slice(0, 12);
             if (!list.length) return '';
             shotSet(list);
-            return `<div class="shot-row">${list.map((x, i) => `<img class="shot-thumb" src="${esc(x)}" alt="Screenshot ${i + 1} of ${list.length}: tap to enlarge" role="button" tabindex="0" style="height:220px;border-radius:10px;" loading="lazy" onclick="shotOpen(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();shotOpen(${i});}">`).join('')}</div>`;
+            return `<div class="shot-row">${list.map((x, i) => `<img class="shot-thumb" src="${esc(x)}" alt="Screenshot ${i + 1} of ${list.length}: tap to enlarge" role="button" tabindex="0" style="height:220px;border-radius:var(--radius-md);" loading="lazy" onclick="shotOpen(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();shotOpen(${i});}">`).join('')}</div>`;
         }
         function storeGenericRender(item, det, note, isErr) {
             const esc = escapeHtml;
             const parts = [];
             det = det || {};
             const text = htmlToReadable(det.d || item.desc || '');
-            if (text) parts.push(`<div style="font-size:13px;color:var(--text-main);white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:10px;">${esc(text)}</div>`);
+            if (text) parts.push(`<div style="font-size:var(--fs-body);color:var(--text-main);white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:10px;">${esc(text)}</div>`);
             const chips = [];
             const stars = det.stars != null ? det.stars : item.stars;
             if (stars) chips.push(esc(fmtCount(stars)) + ' stars');
@@ -19133,16 +19133,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (item.size) chips.push((Math.round(item.size / 1048576 * 10) / 10) + ' MB');
             (item.cats || []).slice(0, 3).forEach(c => chips.push(esc(c)));
             (det.topics || []).slice(0, 5).forEach(c => chips.push('#' + esc(c)));
-            if (chips.length) parts.push(`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${chips.map(c => `<span style="font-size:11px;color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:8px;padding:3px 8px;">${c}</span>`).join('')}</div>`);
+            if (chips.length) parts.push(`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${chips.map(c => `<span style="font-size:var(--fs-overline);color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:var(--radius-sm);padding:3px 8px;">${c}</span>`).join('')}</div>`);
             const from = item.resolveKind === 'github' ? 'the latest GitHub release' : item.resolveKind === 'codeberg' ? 'the latest Codeberg release' : item.source === 'fdroid' ? 'the repository' : 'a direct link';
-            parts.push(`<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Installs from <b>${esc(from)}</b>, checked for this device before it is installed.</div>`);
+            parts.push(`<div style="font-size:var(--fs-pkg);color:var(--text-muted);margin-bottom:10px;">Installs from <b>${esc(from)}</b>, checked for this device before it is installed.</div>`);
             const shots = storeShotsHtml(det.shots);
             if (shots) parts.push(shots);
             const links = [];
             if (det.web && /^https?:\/\//i.test(det.web)) links.push(['Website', det.web]);
             const srcUrl = det.src || item.page || '';
             if (/^https?:\/\//i.test(srcUrl)) links.push(['Source', srcUrl]);
-            if (links.length) parts.push(`<div style="display:flex;gap:12px;flex-wrap:wrap;margin:6px 0 10px;">${links.map(l => `<button class="batch-tool-link" data-u="${esc(l[1])}" onclick="openUrlExternal(this.dataset.u)">${esc(l[0])}</button>`).join('')}</div>`);
+            if (links.length) parts.push(`<div style="display:flex;gap:var(--space-4);flex-wrap:wrap;margin:6px 0 10px;">${links.map(l => `<button class="batch-tool-link" data-u="${esc(l[1])}" onclick="openUrlExternal(this.dataset.u)">${esc(l[0])}</button>`).join('')}</div>`);
             if (note) parts.push(isErr ? `<div class="uad-status"><span class="is-err">${esc(note)}</span></div>` : `<div class="uad-status">${esc(note)}</div>`);
             if (storeCurrent && storeCurrent.generic) storeCurrent.app = { name: item.name, sourceUrl: srcUrl, url: det.web || '' };
             document.getElementById('storeDetailBody').innerHTML = parts.join('');
@@ -21538,7 +21538,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 usBar(null);
                 us.browse = r.browse || '';
                 usStatus(r.error || txT('The download did not work.'), true);
-                usEl('usGot').innerHTML = '<div class="us-acts" style="margin-top:8px;">' + (r.browse ? '<button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'' + escapeHtml(String(r.browse).replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">Open it here, in the app</button>' : '') + '<button class="mode-action-btn" onclick="usWeb(' + i + ')">Open on the web</button></div>';
+                usEl('usGot').innerHTML = '<div class="us-acts" style="margin-top:var(--space-3);">' + (r.browse ? '<button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'' + escapeHtml(String(r.browse).replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">Open it here, in the app</button>' : '') + '<button class="mode-action-btn" onclick="usWeb(' + i + ')">Open on the web</button></div>';
                 return;
             }
             us.got = r.data;
@@ -21593,7 +21593,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 }
             }
             const m = more();
-            if (m) m.innerHTML += '<div class="us-acts" style="margin-top:8px;"><button class="mode-action-btn primary" onclick="usInstallGot()">Install</button><button class="mode-action-btn" onclick="usShareGot()">Share</button></div>';
+            if (m) m.innerHTML += '<div class="us-acts" style="margin-top:var(--space-3);"><button class="mode-action-btn primary" onclick="usInstallGot()">Install</button><button class="mode-action-btn" onclick="usShareGot()">Share</button></div>';
             if (cfg.install) await usInstallGot();
         }
         async function usInstallGot() {
@@ -22466,9 +22466,9 @@ Type any command above (e.g. pm list packages -d)</div>
             else if (susp > 0) { verdict = susp + ' engine' + (susp > 1 ? 's' : '') + ' flagged this as suspicious'; color = '#F0C000'; }
             else { verdict = 'Clean — no engine flagged this file'; color = 'var(--status-running)'; }
             const link = d.permalink ? `<a href="#" onclick="openUrlExternal(${jsArg(d.permalink)}); return false;">Full VirusTotal report →</a>` : '';
-            box.innerHTML = `<div style="font-weight:700;color:${color};">${verdict}</div>
-                <div style="margin-top:6px;font-size:12px;color:var(--text-muted);">Malicious ${mal} · Suspicious ${susp} · Harmless ${harm} · Undetected ${undet}${total ? ' · ' + total + ' engines' : ''}</div>
-                ${d.name ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Known as: ${escapeHtml(d.name)}</div>` : ''}
+            box.innerHTML = `<div style="font-weight:var(--fw-bold);color:${color};">${verdict}</div>
+                <div style="margin-top:6px;font-size:var(--fs-pkg);color:var(--text-muted);">Malicious ${mal} · Suspicious ${susp} · Harmless ${harm} · Undetected ${undet}${total ? ' · ' + total + ' engines' : ''}</div>
+                ${d.name ? `<div style="font-size:var(--fs-pkg);color:var(--text-muted);margin-top:3px;">Known as: ${escapeHtml(d.name)}</div>` : ''}
                 <div style="margin-top:6px;">${link}</div>`;
         }
         window.onVtResult = onVtResult;
@@ -22479,7 +22479,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('installPkgLabel').innerText = d.label || d.pkg || 'Package';
             document.getElementById('installPkgName').innerText = d.pkg || '';
             const chips = [];
-            const chip = (k, v) => `<div style="background:rgba(var(--ov),0.08);border:1px solid var(--border-glass);border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;color:var(--text-main);">${escapeHtml(k)}: ${escapeHtml(v)}</div>`;
+            const chip = (k, v) => `<div style="background:rgba(var(--ov),0.08);border:1px solid var(--border-glass);border-radius:var(--radius-md);padding:6px 10px;font-size:var(--fs-pkg);font-weight:var(--fw-bold);color:var(--text-main);">${escapeHtml(k)}: ${escapeHtml(v)}</div>`;
             if (document.getElementById('optShowVersion').checked) {
                 chips.push(chip('Version', (d.versionName || '?') + ' (' + (d.versionCode != null ? d.versionCode : '?') + ')'));
                 if (d.installed) chips.push(chip('Installed', (d.installedVersionName || '?') + ' (' + (d.installedVersionCode != null ? d.installedVersionCode : '?') + ')'));
@@ -23226,7 +23226,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!all.length && d.raw && d.raw.trim()) {
                     // Nothing parsed but the listing wasn't empty - show the raw output so the format is visible.
                     el.innerHTML = up + '<div class="list-empty">Couldn\'t read this listing. Raw output:</div>'
-                        + '<pre style="white-space:pre-wrap; word-break:break-all; font-size:11px; color:var(--text-muted); padding:8px;">' + escapeHtml(d.raw.slice(0, 4000)) + '</pre>';
+                        + '<pre style="white-space:pre-wrap; word-break:break-all; font-size:var(--fs-overline); color:var(--text-muted); padding:8px;">' + escapeHtml(d.raw.slice(0, 4000)) + '</pre>';
                     return;
                 }
                 el.innerHTML = up + (hiddenN
@@ -25294,7 +25294,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const chip = (f, label, n) => `<button class="filter-pill${arcDiffFilter === f ? ' active' : ''}" onclick="arcDiffSetFilter('${f}')">${label} ${n}</button>`;
             const head = document.getElementById('arcDiffHead');
             head.style.display = '';
-            head.innerHTML = `<div class="arc-meta" style="font-size:11px;"><b>${escapeHtml(d.a.name)}</b> (${d.a.count}) ⇄ <b>${escapeHtml(d.b.name)}</b> (${d.b.count})</div>
+            head.innerHTML = `<div class="arc-meta" style="font-size:var(--fs-overline);"><b>${escapeHtml(d.a.name)}</b> (${d.a.count}) ⇄ <b>${escapeHtml(d.b.name)}</b> (${d.b.count})</div>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:6px 0;">
                     ${chip('all', 'All', d.added.length + d.removed.length + d.changed.length)}${chip('changed', '≠ Changed', d.changed.length)}${chip('added', '+ New', d.added.length)}${chip('removed', '− Gone', d.removed.length)}
                     <span class="arc-sep">${d.same} unchanged</span>
@@ -30013,7 +30013,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const cnt = document.getElementById('actsCount');
             if (cnt) cnt.innerText = list.length ? String(list.length) : '';
             let html = '';
-            if (list.length) html += `<div style="font-weight:800; font-size:11px; margin:4px 0 6px 0; color:var(--accent);">ACTIVITIES (${list.length} • ${unexp} unexported)</div>`;
+            if (list.length) html += `<div style="font-weight:var(--fw-heavy); font-size:var(--fs-overline); margin:4px 0 6px 0; color:var(--accent);">ACTIVITIES (${list.length} • ${unexp} unexported)</div>`;
             if (!list.length) html = '<div class="list-empty">This app has no activities.</div>';
             else if (!shown.length) html += '<div class="list-empty">None match.</div>';
             else shown.forEach(c => { html += compRowHtml(c, { launch: true }); });
@@ -30043,7 +30043,7 @@ Type any command above (e.g. pm list packages -d)</div>
             kinds.forEach(k => {
                 if (!k.list.length) return;
                 const shown = k.list.filter(match).sort((a, b) => (b.exported - a.exported) || a.name.localeCompare(b.name));
-                html += `<div style="font-weight:800; font-size:11px; margin:12px 0 6px 0; color:${k.color};">${k.key} (${k.list.length})</div>`;
+                html += `<div style="font-weight:var(--fw-heavy); font-size:var(--fs-overline); margin:12px 0 6px 0; color:${k.color};">${k.key} (${k.list.length})</div>`;
                 if (!shown.length) { html += '<div class="list-empty">None match.</div>'; return; }
                 shown.forEach(c => { html += compRowHtml(c, k); });
             });
@@ -32316,8 +32316,8 @@ Type any command above (e.g. pm list packages -d)</div>
             termAiPending[id] = cmd;
             // run at once only when it can start; otherwise it is offered with Run and Skip like any proposal, so it is not lost
             if (!txSettings.askRun && !termAiCmdBusy()) { term.insertAdjacentHTML('beforeend', '<span class="rish-note">[' + escapeHtml(who) + ' runs: ' + escapeHtml(cmd) + ']\n</span>'); termAiRunProposed(id); return; }
-            term.insertAdjacentHTML('beforeend', '<div id="' + id + '" style="margin:6px 0; border:1px solid var(--border-glass); border-radius:8px; padding:8px 10px; background:var(--input-bg);">'
-                + '<div style="color:var(--text-muted); font-size:11px;">' + escapeHtml(who) + ' wants to run this:</div>'
+            term.insertAdjacentHTML('beforeend', '<div id="' + id + '" style="margin:6px 0; border:1px solid var(--border-glass); border-radius:var(--radius-sm); padding:var(--space-3) var(--space-3h); background:var(--input-bg);">'
+                + '<div style="color:var(--text-muted); font-size:var(--fs-overline);">' + escapeHtml(who) + ' wants to run this:</div>'
                 + '<div style="color:var(--text-main); word-break:break-all;" translate="no">' + escapeHtml(cmd) + '</div>'
                 + '<div class="mode-btn-row" style="margin-top:6px;"><button class="mode-action-btn primary" onclick="termAiRunProposed(\'' + id + '\')">Run</button><button class="mode-action-btn" onclick="termAiSkipProposed(\'' + id + '\')">Skip</button></div></div>');
         }
@@ -32478,7 +32478,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 ? 'These apps are uninstalled but their data folders are still on the phone. The data of the apps you tick is deleted for good.'
                 : 'These apps are uninstalled. Without Root the app cannot see which of them still have data, so clearing all of them is safe but may find nothing for some. The data of the apps you tick is deleted for good.';
             document.getElementById('uninstDataList').innerHTML = u.rows.map(r =>
-                '<label class="confirm-list-row" style="display:flex; gap:10px; align-items:center; cursor:pointer;"><input type="checkbox" class="als-cb-in" data-pkg="' + escapeHtml(r.pkg) + '"' + (u.ticked.has(r.pkg) ? ' checked' : '') + ' onchange="uninstDataTick(this)">'
+                '<label class="confirm-list-row" style="display:flex; gap:var(--space-3h); align-items:center; cursor:pointer;"><input type="checkbox" class="als-cb-in" data-pkg="' + escapeHtml(r.pkg) + '"' + (u.ticked.has(r.pkg) ? ' checked' : '') + ' onchange="uninstDataTick(this)">'
                 + '<span style="min-width:0; flex:1;"><strong>' + escapeHtml(r.name) + '</strong><br><span class="pkg-text" style="font-size:var(--fs-pkg);">' + escapeHtml(r.pkg) + '</span></span>'
                 + (r.kb !== undefined ? '<span class="switch-sub" style="white-space:nowrap;">' + formatBytes(r.kb * 1024) + '</span>' : '') + '</label>').join('');
             uninstDataCount();
@@ -32692,7 +32692,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     list.innerHTML = listHtml;          // typing only redraws the rows: the box keeps its caret and any half-typed (IME) text
                 } else {
                     body.dataset.rendered = 'history';
-                    body.innerHTML = (wantFilter ? `<input class="modal-text-input" id="termHistFilter" placeholder="Filter history…" value="${escapeHtml(q)}" oninput="termRenderModal()" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-bottom:6px;">` : '')
+                    body.innerHTML = (wantFilter ? `<input class="modal-text-input" id="termHistFilter" placeholder="Filter history…" value="${escapeHtml(q)}" oninput="termRenderModal()" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-bottom:var(--space-2);">` : '')
                         + `<div id="termHistList">${listHtml}</div>`;
                     const f = document.getElementById('termHistFilter');
                     if (f && q) { f.focus(); f.setSelectionRange(q.length, q.length); }
@@ -32701,7 +32701,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 body.dataset.rendered = 'saved';
                 title.innerText = 'Saved commands';
                 sub.innerText = 'Run in ' + (rishActive ? 'the Rish shell' : 'the current working mode');
-                body.innerHTML = `<button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="termEditStart(-1)">＋ New saved command</button>`
+                body.innerHTML = `<button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-bottom:var(--space-2);" onclick="termEditStart(-1)">＋ New saved command</button>`
                     + (termSaved.length ? termSaved.map((x, i) => `<div class="term-row">
                             <div class="term-row-main" onclick="termSavedRun(${i})">
                                 <div class="term-row-title">${escapeHtml(x.name)}</div>
@@ -32720,7 +32720,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <input class="modal-text-input" id="termEditName" value="${escapeHtml(x.name)}" placeholder="e.g. Disabled apps" autocomplete="off" spellcheck="false">
                     <div class="switch-sub" style="margin:8px 0 4px;">Command</div>
                     <textarea class="term-textarea" id="termEditCmd" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" placeholder="pm list packages -d">${escapeHtml(x.cmd)}</textarea>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
+                    <div style="display:flex; gap:var(--space-3h); margin-top:10px;">
                         <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="termEditSave()">Save</button>
                         ${termEditIdx >= 0 ? `<button class="mode-action-btn" style="background:var(--status-bloat); padding:10px 14px;" onclick="termEditDelete()">Delete</button>` : ''}
                         <button class="mode-action-btn" style="padding:10px 16px;" onclick="termModalMode='saved'; termRenderModal()">Cancel</button>
@@ -33146,7 +33146,7 @@ Type any command above (e.g. pm list packages -d)</div>
             let css = '';
             if (fg) css += 'color:' + fg + ';';
             if (bg) css += 'background:' + bg + ';';
-            if (sgr.b) css += 'font-weight:700;';
+            if (sgr.b) css += 'font-weight:var(--fw-bold);';
             if (sgr.d) css += 'opacity:.7;';
             if (sgr.i) css += 'font-style:italic;';
             if (sgr.u) css += 'text-decoration:underline;';
@@ -35266,7 +35266,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (ag.id === 'copilot') {
                     h += '<div class="tx-sheet-sec">GitHub token (optional)</div>' + saved
                         + '<input id="txKeyInput" type="password" class="modal-text-input tx-key-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…">'
-                        + '<div class="mode-btn-row" style="margin-top:8px;"><button class="mode-action-btn" id="txKeyTestBtn" onclick="txTestKey()">Test and save the token</button><button class="mode-action-btn" onclick="openUrlExternal(\'' + ag.keyUrl + '\')">Make a token</button>' + (v.key ? '<button class="mode-action-btn" onclick="txForgetKey()">Forget</button>' : '') + '</div>'
+                        + '<div class="mode-btn-row" style="margin-top:var(--space-3);"><button class="mode-action-btn" id="txKeyTestBtn" onclick="txTestKey()">Test and save the token</button><button class="mode-action-btn" onclick="openUrlExternal(\'' + ag.keyUrl + '\')">Make a token</button>' + (v.key ? '<button class="mode-action-btn" onclick="txForgetKey()">Forget</button>' : '') + '</div>'
                         + '<div class="tx-sheet-p muted" id="txKeyStatus"></div>';
                 }
                 const step = (n, done, title, sub, btns) => '<div class="tx-check"><div class="tx-check-n' + (done ? ' done' : '') + '">' + (done ? '✓' : n) + '</div><div class="tx-check-main"><div class="tx-check-title">' + title + '</div><div class="tx-check-sub">' + sub + '</div>' + (btns ? '<div class="mode-btn-row">' + btns + '</div>' : '') + '</div></div>';
@@ -35287,7 +35287,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" id="txConnTestBtn" onclick="txConnectTest()">Test</button>'
                 + '<button class="mode-action-btn" id="txConnTestStop" style="display:none;" onclick="askStopRun(\'txConnTest\')">Stop</button></div>'
                 + '<div class="agent-ask-prog" id="txConnTestProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="txConnTestBar"><i id="txConnTestBarFill"></i></div><div class="agent-ask-prog-txt" id="txConnTestProgTxt"></div></div>'
-                + '<div class="lc-ent-ai" id="txConnTestOut" style="display:none; margin-top:8px;"></div><div class="appearance-note" id="txConnTestRes"></div>';
+                + '<div class="lc-ent-ai" id="txConnTestOut" style="display:none; margin-top:var(--space-3);"></div><div class="appearance-note" id="txConnTestRes"></div>';
         }
 
         function txToggleKeyShown() {
@@ -36353,8 +36353,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 const root = hasRootAccess();
                 tgt.style.display = 'block';
                 tgt.innerHTML = `<h4>Back up ${escapeHtml(app.name)}</h4><p>${escapeHtml(app.pkg)}${app.version ? ' • v' + escapeHtml(app.version) : ''}</p>
-                    <label class="switch-row" style="margin-top:8px;"><div><div class="switch-title">Include app data</div>
-                    <div class="switch-sub" style="font-size:11px; color:var(--text-muted);">${root ? 'Uses Root. The app is stopped while its data is copied.' : 'Needs Root, which was not found on this phone.'}</div></div>
+                    <label class="switch-row" style="margin-top:var(--space-3);"><div><div class="switch-title">Include app data</div>
+                    <div class="switch-sub" style="font-size:var(--fs-overline); color:var(--text-muted);">${root ? 'Uses Root. The app is stopped while its data is copied.' : 'Needs Root, which was not found on this phone.'}</div></div>
                     <input type="checkbox" id="backupIncludeData" ${root ? '' : 'disabled'}></label>
                     <button class="profile-btn accent" ${backupRunning ? 'disabled' : ''} onclick="startBackup()">Create backup</button>`;
             } else if (backupTargetList.length > 1) {
@@ -36362,8 +36362,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 const names = backupTargetList.map(pkg => { const a = allApps.find(x => x.pkg === pkg); return a ? a.name : pkg; });
                 tgt.style.display = 'block';
                 tgt.innerHTML = `<h4>Back up ${backupTargetList.length} apps</h4><p>${escapeHtml(names.slice(0, 4).join(', '))}${names.length > 4 ? ', …' : ''}</p>
-                    <label class="switch-row" style="margin-top:8px;"><div><div class="switch-title">Include app data</div>
-                    <div class="switch-sub" style="font-size:11px; color:var(--text-muted);">${root ? 'Uses Root. The app is stopped while its data is copied.' : 'Needs Root, which was not found on this phone.'}</div></div>
+                    <label class="switch-row" style="margin-top:var(--space-3);"><div><div class="switch-title">Include app data</div>
+                    <div class="switch-sub" style="font-size:var(--fs-overline); color:var(--text-muted);">${root ? 'Uses Root. The app is stopped while its data is copied.' : 'Needs Root, which was not found on this phone.'}</div></div>
                     <input type="checkbox" id="backupIncludeData" ${root ? '' : 'disabled'}></label>
                     <button class="profile-btn accent" ${backupRunning ? 'disabled' : ''} onclick="startBackup()">Create backup</button>`;
             } else {
@@ -36372,7 +36372,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const list = backupList();
             const el = document.getElementById('backupsList');
             if (!list.length) { el.innerHTML = emptyStateHtml({ key: 'backups-none', icon: 'archive', title: 'No backups yet.', hint: 'Select apps, open the batch menu and tap Backup, or choose a backup file from another phone.', compact: true }); return; }
-            el.innerHTML = list.map(r => `<div class="backup-item"><h4>${escapeHtml(r.label || r.pkg)} <span style="font-weight:600; color:var(--text-muted);">v${escapeHtml(r.versionName || '')}</span></h4>
+            el.innerHTML = list.map(r => `<div class="backup-item"><h4>${escapeHtml(r.label || r.pkg)} <span style="font-weight:var(--fw-semibold); color:var(--text-muted);">v${escapeHtml(r.versionName || '')}</span></h4>
                 <p>${new Date(r.createdAt).toLocaleString(langLocale())} • ${formatBytes(r.bytes)} • ${r.hasData ? 'with data' : 'APK + settings'}</p>
                 <button class="profile-btn accent" data-ref="${escapeHtml(r.ref)}" onclick="previewRestore(this.dataset.ref)">Restore</button>
                 <button class="profile-btn" data-ref="${escapeHtml(r.ref)}" data-name="${escapeHtml(r.name || 'backup.adbbackup')}" onclick="shareBackupUI(this.dataset.ref, this.dataset.name)">Share</button>
@@ -37241,7 +37241,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (sdbError[ns]) {
                     const e = sdbError[ns];
                     box.innerHTML = '<div class="sdb-err"><b>Could not read the ' + SDB_TITLES[ns].toLowerCase() + ' settings</b>' + escapeHtml(e.text) + (e.advice ? '<br><br>' + escapeHtml(e.advice) : '')
-                        + '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"><button class="mode-action-btn primary" onclick="sdbReadTable(\'' + ns + '\')">Try again</button><button class="mode-action-btn" onclick="openWorkingModesModal()">Working modes</button></div></div>';
+                        + '<div style="margin-top:10px; display:flex; gap:var(--space-3); flex-wrap:wrap;"><button class="mode-action-btn primary" onclick="sdbReadTable(\'' + ns + '\')">Try again</button><button class="mode-action-btn" onclick="openWorkingModesModal()">Working modes</button></div></div>';
                 } else {
                     box.innerHTML = '<div class="sdb-skel"></div><div class="sdb-skel"></div><div class="sdb-skel"></div><div class="sdb-skel"></div>';
                 }
@@ -39721,7 +39721,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (ovlListError) {
                     const e = ovlListError;
                     box.innerHTML = '<div class="sdb-err"><b>Could not read the overlays</b>' + escapeHtml(e.text) + (e.advice ? '<br><br>' + escapeHtml(e.advice) : '')
-                        + '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"><button class="mode-action-btn primary" onclick="ovlReadList()">Try again</button><button class="mode-action-btn" onclick="openWorkingModesModal()">Working modes</button></div></div>';
+                        + '<div style="margin-top:10px; display:flex; gap:var(--space-3); flex-wrap:wrap;"><button class="mode-action-btn primary" onclick="ovlReadList()">Try again</button><button class="mode-action-btn" onclick="openWorkingModesModal()">Working modes</button></div></div>';
                 } else {
                     box.innerHTML = '<div class="sdb-skel"></div><div class="sdb-skel"></div><div class="sdb-skel"></div><div class="sdb-skel"></div>';
                 }
@@ -39867,7 +39867,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if (ovlList) {
                     const rows = ovlFiltered() || [];
                     const on = ovlList.filter(o => o.state === 1).length;
-                    st.innerHTML = (rows.length === ovlList.length ? ovlList.length + ' overlays · ' + on + ' on' : rows.length + ' of ' + ovlList.length + ' overlays') + ' · read ' + new Date(ovlListAt).toLocaleTimeString(langLocale()) + ' <a href="#" onclick="ovlReadList(); return false;" style="color:var(--accent); font-weight:800; text-decoration:none;">Refresh</a>';
+                    st.innerHTML = (rows.length === ovlList.length ? ovlList.length + ' overlays · ' + on + ' on' : rows.length + ' of ' + ovlList.length + ' overlays') + ' · read ' + new Date(ovlListAt).toLocaleTimeString(langLocale()) + ' <a href="#" onclick="ovlReadList(); return false;" style="color:var(--accent); font-weight:var(--fw-heavy); text-decoration:none;">Refresh</a>';
                 } else st.innerHTML = '';
             }
         }
@@ -41299,7 +41299,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!mp.patchedOpen) return;
             if (!mp.patched.length) { mpSheetBody(emptyStateHtml({ key: 'patched-none', icon: 'wrench', title: 'No patched APKs yet', hint: 'The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.' })); return; }
             mpSheetBody('<div class="mp-note">' + mp.patched.length + (mp.patched.length === 1 ? ' patched APK' : ' patched APKs') + ', newest first.</div>' + mp.patched.map(p =>
-                '<div class="color-card" style="margin:0 0 10px;"><div class="mp-name" translate="no">' + escapeHtml(p.appName || p.pkg) + ' <span style="font-weight:600;color:var(--text-muted);">' + escapeHtml(p.versionName || '') + '</span></div>' +
+                '<div class="color-card" style="margin:0 0 10px;"><div class="mp-name" translate="no">' + escapeHtml(p.appName || p.pkg) + ' <span style="font-weight:var(--fw-semibold);color:var(--text-muted);">' + escapeHtml(p.versionName || '') + '</span></div>' +
                 '<div class="mp-sub" translate="no">' + escapeHtml(p.pkg) + '</div>' +
                 '<div class="mp-badges"><span class="mp-chip">' + escapeHtml(mpFmtDate(p.patchedAt)) + '</span><span class="mp-chip">' + escapeHtml(formatBytes(p.size)) + '</span><span class="mp-chip">' + ((p.patches || []).length) + ' patches</span>' +
                 (p.installed ? '<span class="mp-chip glow">Installed</span>' : '') + (p.missing ? '<span class="mp-chip bad">File not found</span>' : '') + '</div>' +
@@ -41888,7 +41888,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function mpHVersionsHtml() {
             const v = mp.h.versions;
             return '<div class="mp-group"><span>' + escapeHtml(v.name || v.pkg) + '</span><span>' + (v.versions || []).length + ' versions</span></div>' + (v.versions || []).slice(0, 40).map((x, i) =>
-                '<div class="mp-patch"><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(x.version) + ' <span style="font-weight:600;color:var(--text-muted);">' + escapeHtml(x.format || '') + (x.abi ? ' ' + escapeHtml(x.abi) : '') + '</span></div><div class="mp-patch-desc" translate="no">' + escapeHtml(x.size ? formatBytes(x.size) : '') + '</div></div><button class="mp-act" onclick="mpHGetVersion(' + i + ')">Download</button></div>').join('');
+                '<div class="mp-patch"><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(x.version) + ' <span style="font-weight:var(--fw-semibold);color:var(--text-muted);">' + escapeHtml(x.format || '') + (x.abi ? ' ' + escapeHtml(x.abi) : '') + '</span></div><div class="mp-patch-desc" translate="no">' + escapeHtml(x.size ? formatBytes(x.size) : '') + '</div></div><button class="mp-act" onclick="mpHGetVersion(' + i + ')">Download</button></div>').join('');
         }
         function mpHGotHtml() {
             const g = mp.h.got, vt = mp.h.vt;
@@ -42101,7 +42101,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!f.access) return '<div class="mp-note is-err">To look in Downloads this app needs <b>All files access</b>. <button class="batch-tool-link" onclick="requestStorageAccessForScan()">Grant access</button> or use Pick a file.</div>';
             if (!f.items.length) return '<div class="mp-note">No APK, APKM, APKS or XAPK' + (mp.h.pkg ? ' for ' + escapeHtml(mp.h.pkg) : '') + ' in Downloads' + (f.other ? ' (' + f.other + ' for other apps)' : '') + '. Save one there, or use Pick a file.</div>';
             return '<div class="mp-group"><span>In Downloads</span><span>' + f.items.length + ' found</span></div>' + f.items.map((x, i) =>
-                '<div class="mp-patch"><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(x.versionName || x.name) + ' <span style="font-weight:600;color:var(--text-muted);">' + escapeHtml(mpHFormat(x)) + '</span></div>' +
+                '<div class="mp-patch"><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(x.versionName || x.name) + ' <span style="font-weight:var(--fw-semibold);color:var(--text-muted);">' + escapeHtml(mpHFormat(x)) + '</span></div>' +
                 '<div class="mp-patch-desc" translate="no">' + escapeHtml(x.pkg) + ' &middot; ' + escapeHtml(formatBytes(x.size)) + ' &middot; ' + escapeHtml(x.name) + '</div></div><button class="mp-act" onclick="mpHAdopt(' + i + ')">Use</button></div>').join('');
         }
         async function mpHAdopt(i) {
