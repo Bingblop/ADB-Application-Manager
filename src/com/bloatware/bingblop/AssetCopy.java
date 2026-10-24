@@ -52,9 +52,13 @@ final class AssetCopy {
             }
             if (tmp.length() <= 0) return false;
             // the stamps go before the copy is replaced (a copy without a stamp is copied again), the new one only once it is in place
-            String prefix = "." + dest.getName() + ".v-";
-            File[] old = dir.listFiles();
-            if (old != null) for (File f : old) if (f.getName().startsWith(prefix)) f.delete();
+            final String prefix = "." + dest.getName() + ".v-";
+            File[] old = dir.listFiles(new java.io.FilenameFilter() {
+                public boolean accept(File d, String name) {
+                    return name.startsWith(prefix);
+                }
+            });
+            if (old != null) for (File f : old) f.delete();
             if (!tmp.renameTo(dest)) return false;                      // one step, and it also replaces a read-only copy (the folder is ours)
             new FileOutputStream(stampOf(dest, stamp)).close();
             return true;
