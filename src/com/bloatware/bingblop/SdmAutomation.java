@@ -106,7 +106,7 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
             String v = Settings.Secure.getString(c.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
             if (v == null) return false;
             String me = componentName(c), short1 = c.getPackageName() + "/." + SdmAccessService.class.getSimpleName();
-            for (String s : v.split(":")) if (s.equalsIgnoreCase(me) || s.equalsIgnoreCase(short1)) return true;
+            return SdmAcsStart.listed(v, me, short1);
         } catch (RuntimeException ignored) {}
         return false;
     }
