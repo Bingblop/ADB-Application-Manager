@@ -1,0 +1,36 @@
+ok   1. the box sums up the tracker parts of the app: 4 parts, none switched off
+ok      under each tracker its parts with their kind; a part the app ships off says so
+ok      a tracker found only by its parts (Facebook Ads) is listed too; one with no part of its own (Google AdMob) says it runs inside the app's code
+ok   2. off the gate the two switches and each tracker's switch carry the lock, with the reason
+ok      a tap offers Root Features (the Super User check) and sends nothing
+ok   3. with the system user (UID 1000) the box unlocks at once: Disable all on, Enable all off (nothing is switched off yet)
+ok   4. Disable all trackers asks the app for every tracker of the app (no ids) and shows that it is working
+ok      the answer is read back from the phone: 3 parts switched off, the toast says so, Enable all is on and Disable all off
+ok      each tracker's switch now reads ENABLE
+ok      one History step with Undo: "Disabled trackers in Alpha"
+ok      the step keeps the 3 parts it switched off (not the one the app ships off): its Undo switches back exactly those
+ok   5. a tracker's own ENABLE switches only its parts back on (ids [70]); it is not a History step of its own
+ok   6. when the app refuses (the gate on the Java side), the toast names the reason and the results show the answer
+ok      a refused switch that changed nothing is no History step
+ok   7. at 360 px the box fits the screen and its buttons are at least 36 px tall
+ok   8. switching off parts of a system app asks first (it can break the app or the system UI); a no sends nothing
+ok   9. the batch menu has Disable Trackers and Enable Trackers, with the lock while the switch is locked
+ok      off the gate a tap goes the Root way and runs nothing
+ok      the lock goes when the gate opens
+ok   10. Disable Trackers is confirmed first, on the batch confirmation sheet
+ok       then runs in the native batch runner, with results titled DISABLE TRACKERS and one History step with Undo
+ok       each app of the step keeps the parts its run changed, a failed run too (Bravo: one part changed, one refused)
+ok       with a system app selected, the note says how many and what it risks
+ok   11. Enable Trackers runs at once (as Enable does after Freeze), results titled ENABLE TRACKERS
+ok       a step that changed no part has nothing to undo: no Undo button
+ok   12. off the gate, Undo of a tracker step offers Root Features and runs nothing
+ok       a yes opens Root Features with the History closed (it would cover the tab), and still runs nothing
+ok       on the gate, Undo of "Disabled trackers in Alpha" switches back on the 3 parts that step switched off, and nothing else
+ok       the Undo step keeps the 2 parts the Undo really switched on (not the one ENABLE had already switched on), and its own Undo names only those
+ok       Undo of the batch step does so per app, Bravo's one changed part too though its run failed (newest first)
+ok       parts the app no longer has are said in the results; that Undo changed nothing, so it has no Undo of its own
+ok   13. Root Features has a "Trackers in apps" row, locked off the gate
+ok       and open with the gate
+ok       Open apps lands on the Apps tab with the Trackers filter on, and says where the switches are
+ok   no page errors
+ALL PASSED
