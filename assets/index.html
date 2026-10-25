@@ -152,17 +152,15 @@
             --shadow-pop: 0 6px 20px rgba(0, 0, 0, 0.35);        /* toasts, floating snackbars and drop-down menus */
             --shadow-float: 0 4px 14px rgba(0, 0, 0, 0.35);      /* round floating buttons (the batch button, back to top) and the bottom bar's menu */
 
-            /* ---- Logcat: one row per log entry, colored by level [fixed palette] ---- */
-            --lc-v: #9AA0A6;
-            --lc-v-dot: #2EBD6B;                     /* the colours of the levels' dots and of Live Logcat's row tints (the owner's choice, v7.14): Verbose the green Info had, */
-            --lc-d-dot: #FFD600;                     /* Debug yellow, Warn orange, Info the theme's accent (set with .lvl-I); the badges and tags keep --lc-* */
-            --lc-w-dot: #FF6D00;
-            --rec-dot: #F23B30;                      /* Live Logcat's Record to file dot: red */
-            --lc-d: #29B6F6;
-            --lc-i: #2EBD6B;
-            --lc-w: #FFA000;
+            /* ---- Logcat: one row per log entry, coloured by level [fixed palette]. ONE colour per level (v7.16.2, the owner's report that the rows did not
+               show the key's colours): the key's dot, the badge, the tag, the leading bar, the row tint and the message all take it. The colours are the
+               owner's choice (v7.14): Verbose green, Debug yellow, Info the theme's accent (set with .lvl-I), Warn orange, Error red, Fatal purple. ---- */
+            --lc-v: #2EBD6B;
+            --lc-d: #FFD600;
+            --lc-w: #FF6D00;
             --lc-e: #FF5252;
             --lc-f: #E040FB;
+            --rec-dot: #F23B30;                      /* Live Logcat's Record to file dot: red */
 
             /* ---- Syntax colours of the file viewer and diff (dark; the light set is below, after html[data-appearance="light"]) [fixed palette] ---- */
             --syn-c: #6A9955; --syn-s: #CE9178; --syn-n: #B5CEA8; --syn-k: #C586C0; --syn-t: #4FC1FF; --syn-a: #9CDCFE; --syn-v: #DCDCAA; --syn-m: #D7BA7D; --syn-add: #4EC9B0; --syn-del: #F48771;
@@ -266,7 +264,10 @@
         /* the text as in Live Logcat: the tag in the level's colour (inked darker on a light page), the message muted, so it reads on the tint */
         #cdLcOut .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); }
         html[data-appearance="light"] #cdLcOut .lc-tag { color: color-mix(in srgb, var(--lc) 45%, var(--text-main)); }
-        #cdLcOut .lc-msg { color: var(--text-muted); }
+        #cdLcOut .lc-msg { color: color-mix(in srgb, var(--lc) 70%, var(--text-main)); }
+        #cdLcOut .lc-row.lvl-V .lc-msg { color: color-mix(in srgb, var(--lc) 45%, var(--text-muted)); }
+        html[data-appearance="light"] #cdLcOut .lc-msg { color: color-mix(in srgb, var(--lc) 42%, var(--text-main)); }
+        html[data-appearance="light"] #cdLcOut .lc-row.lvl-V .lc-msg { color: color-mix(in srgb, var(--lc) 30%, var(--text-main)); }
         .find-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0; }
         .find-bar .list-search { flex: 1 1 100px; min-width: 100px; margin: 0; }          /* the buttons go on the next line when the box would get narrower than its hint */
         @media (max-width: 340px) { .find-bar .list-search { flex-basis: 100%; } }
@@ -2800,12 +2801,14 @@
             word-break: break-word;
         }
 
-        .lvl-V { --lc: var(--lc-v); --lc-dot: var(--lc-v-dot); }
-        .lvl-D { --lc: var(--lc-d); --lc-dot: var(--lc-d-dot); }
-        .lvl-I { --lc: var(--lc-i); --lc-dot: var(--accent); }
-        .lvl-W { --lc: var(--lc-w); --lc-dot: var(--lc-w-dot); }
-        .lvl-E { --lc: var(--lc-e); --lc-dot: var(--lc-e); }
-        .lvl-F { --lc: var(--lc-f); --lc-dot: var(--lc-f); }
+        /* --lc is the level's one colour; --lc-dot (the key's dots and the row tints) is the same colour, kept as a name for the rules that read it */
+        .lvl-V { --lc: var(--lc-v); --lc-dot: var(--lc); }
+        .lvl-D { --lc: var(--lc-d); --lc-dot: var(--lc); }
+        .lvl-I { --lc: var(--accent); --lc-dot: var(--lc); }
+        .lvl-W { --lc: var(--lc-w); --lc-dot: var(--lc); }
+        .lvl-E { --lc: var(--lc-e); --lc-dot: var(--lc); }
+        .lvl-F { --lc: var(--lc-f); --lc-dot: var(--lc); }
+        .lvl-I .lc-badge { color: var(--on-accent); }          /* a filled Info badge (the entry window, a recording) sits on the accent: its letter in the accent's own text colour */
 
         .lc-key {
             display: flex;
@@ -2872,6 +2875,9 @@
             border-left: 4px solid var(--lc);
             align-items: flex-start;
         }
+        /* v7.16.2: in a long live log (over 200 rows, .lc-many) a row off screen is neither laid out nor painted until it scrolls near, so thousands of rows
+           scroll smoothly; the placeholder height is one short row, the real height is kept once a row has been drawn. A short log is drawn in full. */
+        #logcatOutput.lc-many .lc-row { content-visibility: auto; contain-intrinsic-size: auto 40px; }
 
         .lc-row.lvl-W { background: rgba(255, 160, 0, 0.07); }
         .lc-row.lvl-E { background: rgba(255, 82, 82, 0.09); }
@@ -8123,6 +8129,9 @@
                 /* Live Logcat: the engine's rows, in the Kotlin idiom (a card per line, `E/tag` bold in the level colour, the message muted) */
                 #cnSegLog .logcat-box { height: 62vh; min-height: 260px; margin: var(--space-3h) 0 0; background: transparent; border: 0; border-radius: 0; padding: 0; }
                 #cnSegLog .lc-row { display: flex; gap: var(--space-1); align-items: baseline; margin-bottom: var(--space-1); padding: var(--space-2) var(--space-3); background: var(--bg-card); border: 0; border-radius: 4px; }
+                /* v7.16.2: a bar in the level's colour on the leading edge, so the level reads at a glance even with Row tints Off or on a pure black card */
+                #cnSegLog .lc-row { border-left: 3px solid var(--lc); }
+                [dir="rtl"] #cnSegLog .lc-row { border-left: 0; border-right: 3px solid var(--lc); }
                 #cnSegLog .lc-row.lvl-W, #cnSegLog .lc-row.lvl-E, #cnSegLog .lc-row.lvl-F { background: var(--bg-card); }
                 /* each row tinted in the colour of its level's dot (the owner's wish, v7.14), as strong as "Row tints" in Settings says (Off, Subtle, Normal: --rt-o);
                    a wash from the leading edge, without color-mix() so an old WebView draws it too */
@@ -8145,7 +8154,12 @@
                 #cnSegLog #logcatRecBtn::before { content: '\25CF'; color: var(--rec-dot); }
                 #cnSegLog #logcatRecBtn.is-recording { color: color-mix(in srgb, #E69100 76%, var(--text-main)); }
                 #cnSegLog #logcatRecBtn.is-recording::before { content: '\25A0'; color: inherit; }
-                #cnSegLog .lc-msg { font: 11px/1.45 ui-monospace, monospace; color: var(--text-muted); }
+                /* v7.16.2: the message in its level's colour too, pulled toward the text colour so it reads on the tint (inked darker on a light page);
+                   Verbose, the quiet level, leans toward the muted text instead; the time and the pids stay muted */
+                #cnSegLog .lc-msg { font: 11px/1.45 ui-monospace, monospace; color: color-mix(in srgb, var(--lc) 70%, var(--text-main)); }
+                #cnSegLog .lc-row.lvl-V .lc-msg { color: color-mix(in srgb, var(--lc) 45%, var(--text-muted)); }
+                html[data-appearance="light"] #cnSegLog .lc-msg { color: color-mix(in srgb, var(--lc) 42%, var(--text-main)); }
+                html[data-appearance="light"] #cnSegLog .lc-row.lvl-V .lc-msg { color: color-mix(in srgb, var(--lc) 30%, var(--text-main)); }
                 #cnSegLog .lc-key { margin: var(--space-3h) 0 0; }
                 #cnSegLog #logcatScope { font-size: var(--fs-pkg); color: var(--text-muted); margin: var(--space-3) 2px 0; overflow-wrap: anywhere; }
                 #cnSegLog #logcatScope:empty { display: none; }
@@ -8153,6 +8167,7 @@
                     .cn-icon.danger, .cn-find .find-nav.danger, .cn-card.is-fail .cn-badge { color: var(--status-bloat); }
                     .cn-card.is-ok .cn-badge { color: var(--status-running); }
                     #cnSegLog .lc-badge, #cnSegLog .lc-head .lc-tag { color: var(--lc); }
+                    #cnSegLog .lc-msg, #cdLcOut .lc-msg { color: var(--text-muted); }
                 }
             </style>
 
@@ -27821,8 +27836,11 @@ Type any command above (e.g. pm list packages -d)</div>
         let lcShowAll = false;
         let lcLastText = null;                  // the last text drawn, so an unchanged poll costs nothing
         let logcatTimer = null;
-        let logcatEntries = [];                 // parsed entries of the last fetch
-        let lcRowMap = [];                      // the entries as drawn, row by row (a tap on a row opens its entry)
+        let logcatEntries = [];                 // the parsed entries kept, oldest first (at most LC_MAX_ENTRIES; each has an id, counted up as it comes)
+        let lcRowMap = {};                      // the entries as drawn, by id (data-i: a tap on a row opens its entry)
+        let lcEntSeq = 0;
+        let lcWin = 0;                          // how many of the newest entries the box holds (the window: LC_VIEW_ROWS, or all of them after the tap)
+        let lcNoteDrawn = '';                   // the note (an app sharing its user id) the box shows
         let lcEnt = null;                       // the entry shown in its own window
         let lcEntAiBusy = false, lcEntAiText = '';
         let logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
@@ -27836,9 +27854,11 @@ Type any command above (e.g. pm list packages -d)</div>
             lcRecPoll();
         }
 
-        function logcatParse(text) {
+        // cur: the entry the text may go on with (the newest one kept, when a poll brings the rest of its stack trace): its lines grow, and only the
+        // entries that start in this text are returned.
+        function logcatParse(text, cur) {
             const out = [];
-            let cur = null;
+            cur = cur || null;
             String(text || '').split('\n').forEach(line => {
                 const raw = line.replace(/\r$/, '');
                 if (!raw.trim()) return;
@@ -27876,9 +27896,15 @@ Type any command above (e.g. pm list packages -d)</div>
             return out + escapeHtml(s.slice(last));
         }
 
-        function logcatRenderKey() {
+        // The colour key. Once its six chips stand, a poll only writes the counts that changed (full: build it again, after a tap on a chip).
+        function logcatRenderKey(full) {
             const key = document.getElementById('logcatKey');
             if (!key) return;
+            const chips = key.querySelectorAll('.lc-chip');
+            if (!full && chips.length === LC_LEVELS.length) {
+                chips.forEach(c => { const n = c.querySelector('.lc-n'), v = String(logcatCounts[c.dataset.lvl] || 0); if (n && n.textContent !== v) n.textContent = v; });
+                return;
+            }
             key.innerHTML = LC_LEVELS.map(l =>
                 `<span class="lc-chip lvl-${l[0]}${logcatHidden.has(l[0]) ? ' off' : ''}" data-lvl="${l[0]}" role="button" tabindex="0" onclick="logcatToggleLevel('${l[0]}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();logcatToggleLevel('${l[0]}');}" title="Tap to ${logcatHidden.has(l[0]) ? 'show' : 'hide'} ${l[1]} lines">` +
                 `<span class="lc-dot"></span><span class="lc-name">${l[0]} · ${l[1]}</span><span class="lc-n">${logcatCounts[l[0]] || 0}</span></span>`
@@ -27889,7 +27915,7 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             lcLastText = null;
             if (logcatHidden.has(lvl)) logcatHidden.delete(lvl); else logcatHidden.add(lvl);
-            logcatRenderKey();
+            logcatRenderKey(true);
             logcatDraw(false);
         }
 
@@ -27897,6 +27923,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function logcatNotice(msg) {
             lcLastText = msg;
             logcatEntries = [];
+            lcWin = 0; lcNoteDrawn = '';                                        // lcRowMap stays: an entry window opened from a row can still find its entry
             logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
             logcatRenderKey();
             const el = document.getElementById('logcatOutput');
@@ -27913,33 +27940,92 @@ Type any command above (e.g. pm list packages -d)</div>
                 `<div class="lc-msg">${e.lines.map(l => lcHighlight(l, rx)).join('\n')}</div>` +
                 `</div></div>`;
         }
+        // An entry of the live view as a node of the box: a row (none while its level is hidden), or a separator line of the buffer
+        function lcEntryHtml(e, rx) {
+            if (e.kind === 'meta') return `<div class="lc-meta" data-i="${e.id}">${escapeHtml(e.text)}</div>`;
+            if (logcatHidden.has(e.lvl)) return '';
+            lcRowMap[e.id] = e;
+            return lcRowHtml(e, e.id, rx);
+        }
+        function lcFilterRx() {
+            const needle = (document.getElementById('logcatFilter').value || '').trim();
+            return needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
+        }
+        // The line above the rows that says how many earlier entries the window leaves out (a tap draws them all)
+        function lcEarlierHtml(n) {
+            return `<div class="lc-meta" id="lcEarlier" style="cursor:pointer;" onclick="lcShowAll = true; logcatDraw(false)">${n} earlier entr${n === 1 ? 'y' : 'ies'} not shown · tap to show them</div>`;
+        }
+
+        // Whether the reader is at the end of the box, and the jump there. The rows off screen are placeholders until they scroll near (content-visibility),
+        // so scrollHeight is a guess until the end has been drawn: the end is read off the last row's own box, and the jump is repeated over the next
+        // frames once the rows at the end have taken their real height.
+        function lcAtBottom(el) {
+            const last = el.lastElementChild;
+            if (!last) return true;
+            return last.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom < 48;
+        }
+        function lcScrollBottom(el, n) {
+            el.scrollTop = el.scrollHeight;
+            if (n === undefined) n = 2;
+            if (n > 0) requestAnimationFrame(() => lcScrollBottom(el, n - 1));
+        }
 
         // Draws logcatEntries. toBottom: jump to the newest line; otherwise only follow the log when the
         // reader is already at the bottom, so a live update never yanks them away from what they're reading.
-        function logcatDraw(toBottom) {
+        // fresh: the entries a poll has just added (and grown: the newest entry already drawn, when the poll went on with it). With rows on the screen
+        // they are appended as rows and the oldest rows beyond the window are taken off, so a live poll costs the new lines, not the whole box
+        // (v7.16.2: 800 rows rebuilt every second stuttered on a busy log). Everything else is drawn from scratch.
+        function logcatDraw(toBottom, fresh, grown) {
             const el = document.getElementById('logcatOutput');
             if (!el) return;
-            const wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-            const needle = (document.getElementById('logcatFilter').value || '').trim();
-            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
-            let entries = logcatEntries;
+            const wasAtBottom = lcAtBottom(el);
+            const rx = lcFilterRx();
             const cap = lcShowAll ? LC_MAX_ENTRIES : LC_VIEW_ROWS;
-            const total = entries.length;
-            if (entries.length > cap) entries = entries.slice(entries.length - cap);
-            const earlier = total > entries.length
-                ? `<div class="lc-meta" style="cursor:pointer;" onclick="lcShowAll = true; logcatDraw(false)">${total - entries.length} earlier entr${total - entries.length === 1 ? 'y' : 'ies'} not shown · tap to show them</div>` : '';
-            lcRowMap = [];
-            const html = earlier + entries.map(e => {
-                if (e.kind === 'meta') return `<div class="lc-meta">${escapeHtml(e.text)}</div>`;
-                if (logcatHidden.has(e.lvl)) return '';
-                lcRowMap.push(e);
-                return lcRowHtml(e, lcRowMap.length - 1, rx);
-            }).join('');
+            const total = logcatEntries.length;
+            if (fresh && lcNoteDrawn === lcNote && lcWin > 0 && el.querySelector('.lc-row')) {
+                if (grown && !logcatHidden.has(grown.lvl)) {                                   // the newest row got more lines
+                    const r = el.querySelector(`.lc-row[data-i="${grown.id}"]`);
+                    if (r) r.outerHTML = lcRowHtml(grown, grown.id, rx);
+                }
+                lcWin = Math.min(lcWin + fresh.length, cap, total);
+                const html = fresh.map(e => lcEntryHtml(e, rx)).join('');
+                if (html) {
+                    const empty = el.querySelector('.empty-state');
+                    if (empty) empty.remove();
+                    el.insertAdjacentHTML('beforeend', html);
+                }
+                // the oldest nodes fall out of the window (and, with them, any entry no longer kept at all); the nodes stand in id order
+                const first = logcatEntries[total - lcWin].id;
+                let c = el.firstElementChild;
+                while (c) {
+                    const next = c.nextElementSibling;
+                    if (c.id !== 'lcEarlier' && c.classList.contains('empty-state') === false) {
+                        const id = +c.getAttribute('data-i');
+                        if (!(id >= first)) { delete lcRowMap[id]; c.remove(); } else break;
+                    }
+                    c = next;
+                }
+                const earlier = el.querySelector('#lcEarlier'), n = total - lcWin;
+                if (n > 0) {
+                    if (earlier) earlier.textContent = `${n} earlier entr${n === 1 ? 'y' : 'ies'} not shown · tap to show them`;
+                    else el.insertAdjacentHTML('afterbegin', lcEarlierHtml(n));
+                } else if (earlier) earlier.remove();
+                el.classList.toggle('lc-many', lcWin > 200);
+                if (toBottom || wasAtBottom) lcScrollBottom(el);
+                return;
+            }
+            lcWin = Math.min(total, cap);
+            const entries = lcWin < total ? logcatEntries.slice(total - lcWin) : logcatEntries;
+            lcRowMap = {};
+            lcNoteDrawn = lcNote;
+            const html = (total > lcWin ? lcEarlierHtml(total - lcWin) : '') + (lcNote ? `<div class="lc-meta">${escapeHtml(lcNote)}</div>` : '')
+                + entries.map(e => lcEntryHtml(e, rx)).join('');
             const anyVisible = entries.some(e => e.kind === 'entry' && !logcatHidden.has(e.lvl));
             el.innerHTML = anyVisible ? html : (html || '') + (entries.some(e => e.kind === 'entry')
                 ? emptyStateHtml({ key: 'logcat-hidden', icon: 'filter', title: 'Every level is hidden - tap the color key above to show some.', compact: true })
                 : emptyStateHtml({ key: 'logcat-none', icon: 'log', title: 'No log lines.', compact: true }));
-            if (toBottom || wasAtBottom) el.scrollTop = el.scrollHeight;
+            el.classList.toggle('lc-many', lcWin > 200);
+            if (toBottom || wasAtBottom) lcScrollBottom(el);
         }
 
         // The lines kept so far. Every poll adds the lines that are new, so a line stays on the screen after the device's small log buffer has dropped it.
@@ -27950,11 +28036,12 @@ Type any command above (e.g. pm list packages -d)</div>
         function lcSigNow() {
             return [document.getElementById('logcatLevel').value, (document.getElementById('logcatFilter').value || '').trim(), logcatApp ? logcatApp.pkg : ''].join('|');
         }
-        function lcStoreReset() { lcStore = []; lcSeen = new Set(); lcNote = ''; lcLastText = null; }
+        function lcStoreReset() { lcStore = []; lcSeen = new Set(); lcNote = ''; lcLastText = null; logcatEntries = []; lcRowMap = {}; lcWin = 0; lcNoteDrawn = ''; logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 }; }
         // Identical lines inside one fetch (a recursion's stack frames) are all kept: a line's key is the line plus how many of it came before it in the fetch.
+        // Returns the lines that are new, in order.
         function lcMerge(text) {
             const here = new Map();
-            let added = 0;
+            const added = [];
             String(text).split('\n').forEach(line => {
                 const raw = line.replace(/\r$/, '');
                 if (!raw.trim()) return;
@@ -27963,7 +28050,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 here.set(raw, k + 1);
                 const key = raw + '\u0001' + k;
                 if (lcSeen.has(key)) return;
-                lcSeen.add(key); lcStore.push(raw); added++;
+                lcSeen.add(key); lcStore.push(raw); added.push(raw);
             });
             if (lcStore.length > LC_STORE_MAX) lcStore = lcStore.slice(lcStore.length - LC_STORE_MAX);
             while (lcSeen.size > LC_SEEN_MAX) lcSeen.delete(lcSeen.values().next().value);
@@ -27983,17 +28070,27 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if (!live) showToast(notice);
                 return;
             }
-            const added = lcMerge(t);
-            if (!added && logcatEntries.length) {                      // nothing new since the last draw
-                if (toBottom) { const box = document.getElementById('logcatOutput'); if (box) box.scrollTop = box.scrollHeight; }
+            let added = lcMerge(t);
+            if (!added.length && logcatEntries.length) {                      // nothing new since the last draw
+                if (toBottom) { const box = document.getElementById('logcatOutput'); if (box) lcScrollBottom(box); }
                 return;
             }
+            if (!logcatEntries.length) added = lcStore.slice();              // a notice replaced the rows: every line kept comes back
             lcLastText = t;
-            logcatEntries = (lcNote ? [{ kind: 'meta', text: lcNote, raws: [lcNote] }] : []).concat(logcatParse(lcStore.join('\n')));
-            logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
-            logcatEntries.forEach(e => { if (e.kind === 'entry') logcatCounts[e.lvl] += e.lines.length; });
+            // only the new lines are parsed; they may go on with the newest entry kept (the rest of its stack trace)
+            const last = logcatEntries.length ? logcatEntries[logcatEntries.length - 1] : null;
+            const tail = last && last.kind === 'entry' ? last : null;
+            const before = tail ? tail.lines.length : 0;
+            const fresh = logcatParse(added.join('\n'), tail);
+            const grown = tail && tail.lines.length !== before ? tail : null;
+            if (grown) logcatCounts[grown.lvl] += grown.lines.length - before;
+            fresh.forEach(e => { e.id = ++lcEntSeq; if (e.kind === 'entry') logcatCounts[e.lvl] += e.lines.length; });
+            logcatEntries = logcatEntries.concat(fresh);
+            if (logcatEntries.length > LC_MAX_ENTRIES) {                      // the oldest entries go (their rows go with them, in logcatDraw)
+                logcatEntries.splice(0, logcatEntries.length - LC_MAX_ENTRIES).forEach(e => { if (e.kind === 'entry') logcatCounts[e.lvl] -= e.lines.length; });
+            }
             logcatRenderKey();
-            logcatDraw(toBottom);
+            logcatDraw(toBottom, fresh, grown);
         }
 
         // The actual fetch, with no privilege prompt, so the live-poll loop can't spam the guard modal.
@@ -28070,7 +28167,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // The original log lines (not the redrawn rows), skipping any level hidden via the key.
         function logcatLines() {
-            const lines = [];
+            const lines = lcNote ? [lcNote] : [];
             logcatEntries.forEach(e => { if (e.kind === 'meta' || !logcatHidden.has(e.lvl)) e.raws.forEach(r => lines.push(r)); });
             return lines;
         }
@@ -28114,7 +28211,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function lcEntryOpen(i, src) {
             const sel = window.getSelection && window.getSelection();
             if (sel && String(sel).trim()) return;                          // the person is selecting text: not a tap
-            const e = (src === 'v' ? lcv.map : lcRowMap)[i];
+            // the live view's rows name their entry by id (lcRowMap); a plain row number (a caller from before v7.16.2) is the i-th entry drawn
+            const e = src === 'v' ? lcv.map[i] : lcRowMap[i] || Object.values(lcRowMap)[i];
             if (!e || e.kind !== 'entry') return;
             haptic();
             lcEnt = e; lcEntAiText = ''; lcEntAiBusy = false;
