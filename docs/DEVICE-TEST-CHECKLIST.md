@@ -610,6 +610,36 @@ same process, and on some phones the app closed and stayed closed. None of this 
       now? The app restarts afterwards." appears; OK: the same restart, and the app comes back.
 - [ ] **A single Allow.** Allow one permission by its own button: the sheet behaves as before (the page reloads, no process restart).
 
+## 34. Live Logcat colours and speed (v7.16.2)
+
+Every level wears one colour across its whole row, and a live read adds only the new lines instead of redrawing the log. Checked in a headless browser only, not on a phone.
+
+- [ ] **Colours.** Console > Live Logcat at level Verbose, playing while you use other apps: the level letter, the tag, the bar at the row's leading edge and the message of each row are one colour, the colour of its chip in the key above (green Verbose, yellow Debug, the accent colour Info, orange Warn, red Error, purple Fatal). The message stays easy to read. Repeat with Pure black on, in the light theme, and with another Monet colour: the same, with Info following the accent. Connected Devices > Logcat: the same colours.
+- [ ] **A busy log.** Let it play for two minutes on a busy phone (open the camera, a game, the Play Store). Scrolling stays smooth; scrolled up, new lines do not pull you down; at the bottom the list follows the newest line. A stack trace stays one entry that grows instead of starting a second block.
+- [ ] **The limits.** After a long run, the "earlier entries" line above the rows counts what is not drawn, and **Show all** draws it. The key's counts keep going up while it plays.
+- [ ] **A narrow screen.** On the narrowest display size (or a small phone in portrait), nothing scrolls sideways and a long tag or message wraps.
+
+## 35. Saved lists by ticking apps (v7.16.2)
+
+New List and Edit pick apps by ticking this phone's rows; the package box is still there under Edit as text. Checked in a headless browser only, not on a phone.
+
+- [ ] **New List.** Saved Applications > New List: "Create Saved List" shows this phone's apps as the Apps tab's rows (icon, name, package, tags and tints) with Search apps and the chips All / In this list / System / User. Tap three apps and one of them again: the ticks follow, no row moves, the line reads "2 apps in this list". Save: the card holds those two apps.
+- [ ] **Edit.** That list's Edit: its apps come first, ticked. Untick one and tick another: "1 added · 1 removed". **In this list** shows the list's apps, plus the one you unticked until you change the chip or the search. Press and hold a row: it ticks, and the app menu does not open over the sheet. Save, reopen: the change is kept and the card's order is the list's.
+- [ ] **Not installed.** Edit as text: add `com.example.notinstalled` on a line of its own. A ticked row tagged NOT INSTALLED, with a letter for an icon, appears and stays after Save until you untick it. Typing a package name of an installed app there ticks its row; ticking a row adds its line.
+- [ ] **Many apps.** On a phone with hundreds of apps, All shows 150 rows and "Show 150 more · N left"; Search apps finds an app beyond them at once. The sheet keeps its height while you type.
+- [ ] **Unchanged around it.** Paste a list of package names into Edit as text and save; a second list with the same name asks before replacing; the quick list (Stop apps) still stops its apps from the tile or widget.
+
+## 36. Trackers in root mode (v7.16.2)
+
+An app's tracker parts (its screens, services, receivers and providers that belong to a tracker of the Exodus Privacy list) can be switched off and back on, in Root mode with su granted or with Shizuku running as the system user (UID 1000) or root (UID 0). Not run on a phone: Kyle's phone cannot be rooted, and it was not tried with Shizuku as UID 1000.
+
+- [ ] **Locked without Super User.** With Shizuku over ADB (UID 2000), ADB TCP or Wireless Debugging: an app's TRACKERS chip opens the Trackers box with the card "N tracker parts · 0 switched off", **Disable all trackers**, **Enable all trackers** and each tracker's DISABLE carry a small lock, and the card says *Needs Super User (Root)*. A tap sends nothing: on a phone with su it switches the working mode to Root and the root manager asks; without su it asks "Switching trackers off or on needs Super User. Open Root Features to check if your device supports Super User?" and OK opens Root Features. The batch sheet's **Disable Trackers** and **Enable Trackers** carry the same lock. Root Features' third row, **Trackers in apps**, is locked.
+- [ ] **One app, with Super User.** Root mode with su granted (or Shizuku as UID 1000 or 0): Root Features > Trackers in apps > **Open apps** shows the Apps tab with the Trackers filter on. Pick a user app you can do without; TRACKERS chip; DISABLE under one tracker: "Disabled N tracker parts", its parts read *off*, the card's count grows, and the app menu's Activities and Components tabs show the same parts disabled. **Disable all trackers**, then open the app: note whether it works. **Enable all trackers**: every part is back on, and a part the app ships switched off (*off by default*) stays off.
+- [ ] **A system app asks first.** On a system app, Disable all trackers asks "Switch off N tracker parts of the system app (package)? This can break the app or the system UI. You can switch them back on here."; Cancel changes nothing.
+- [ ] **Many apps.** Select two or three apps, batch sheet, **Disable Trackers**: "Confirm Disable Trackers" first (with a system-app line when one is selected), then the progress and Batch Results "DISABLE TRACKERS • N of N apps", each card naming what was switched off, tracker by tracker. Run again and the CSV work. **Enable Trackers** runs at once and puts every part back.
+- [ ] **History and Undo.** History shows "Disabled trackers in (app)" (or "in N apps"). Switch one part back on by hand in the Components tab, then tap the step's **Undo**: only the parts that step switched off come back on, app by app, and Undo Results says so. A step that changed nothing has no Undo. Turn Root off and tap Undo: it goes the Root way and switches nothing.
+- [ ] **What it does not do.** A tracker with no part of its own reads "No part of its own to switch off: it runs inside the app's code." An app whose trackers deliver push notifications (OneSignal, Airship, Braze and the like) may stop notifying after Disable all trackers; Enable all trackers brings them back.
+
 ## 37. Connection Check card (Working Modes)
 
 None of this has been run on a phone yet. Open the working-mode badge at the top of the app; the **Connection Check** card is the first card of the sheet.
