@@ -1,0 +1,2 @@
+#!/bin/bash
+sed -i 's/if (folder && f.isDirectory()) { \/\/ ⚡ Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes\n        String\[\] kids = f.list(); if (kids != null) for (String k : kids) new File(f, k).delete(); }/if (folder \&\& f.isDirectory()) { \/* ⚡ Bolt: minimize GC pressure *\/ String\[\] kids = f.list(); if (kids != null) for (String k : kids) new File(f, k).delete(); }/g' src/com/bloatware/bingblop/MainActivity.java

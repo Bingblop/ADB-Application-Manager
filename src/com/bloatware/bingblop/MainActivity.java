@@ -6130,7 +6130,8 @@ public class MainActivity extends Activity {
         try {
             File f = new File(path);
             if (hasStorageAccess()) {
-                if (folder && f.isDirectory()) { File[] kids = f.listFiles(); if (kids != null) for (File k : kids) k.delete(); }
+                if (folder && f.isDirectory()) { // ⚡ Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        String[] kids = f.list(); if (kids != null) for (String k : kids) new File(f, k).delete(); }
                 f.delete();
                 if (!f.exists()) return;
             }
@@ -7216,8 +7217,9 @@ public class MainActivity extends Activity {
     }
 
     private static void deleteRecursively(File f) {
-        File[] kids = f.listFiles();
-        if (kids != null) for (File k : kids) deleteRecursively(k);
+        // ⚡ Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        String[] kids = f.list();
+        if (kids != null) for (String k : kids) deleteRecursively(new File(f, k));
         f.delete();
     }
 
@@ -16196,11 +16198,12 @@ public class MainActivity extends Activity {
                 }
                 if (f.isDirectory()) {
                     out.add(new ArchiveIo.Source(name + "/", f));
-                    File[] kids = f.listFiles();
+                    // ⚡ Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        String[] kids = f.list();
                     long total = 0;
                     if (kids != null) {
-                        java.util.Arrays.sort(kids, new java.util.Comparator<File>() { @Override public int compare(File a, File b) { return a.getName().compareTo(b.getName()); } });
-                        for (File k : kids) total += czCollect(out, k, name + "/" + k.getName(), seen, problems, fileCount);
+                        java.util.Arrays.sort(kids);
+                        for (String k : kids) total += czCollect(out, new File(f, k), name + "/" + k, seen, problems, fileCount);
                     }
                     return total;
                 }
