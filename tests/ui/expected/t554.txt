@@ -1,0 +1,57 @@
+1. a labelled button in the title row, between the title and "⋯ More", named Refresh for a screen reader and on long press: true
+   it is the Apps tab's round Refresh button (same class), a 40px circle in the accent colour: true
+   the title row is title, Refresh, ⋯ More: true
+   at rest it is on, not spinning: true
+   the Apps tab's own Refresh button is still there: true
+2. a file made elsewhere is not in the list yet: true
+   one tap: the folder is read again once, the new file is listed at once: true
+   meanwhile the button is off, busy and spinning (aria-busy tells a screen reader): true
+   a moment later it is on again and still: true
+   the same folder stays open (no jump to another path, no selection mode): true
+3. three taps in a row read the folder once: true
+   and a tap after it is done reads again: true
+   Enter on the focused button refreshes too and the focus is on the button again afterwards: true
+4. in another folder it reads that folder: true
+   with search results shown it reads the folder and runs the same search again: true
+5. the "Refresh" row of the ⋯ More sheet is still there (one Refresh row, text unchanged): true
+   and reads the folder and closes the sheet: true
+6. while a read is under way the button is busy: true
+   if the read throws, the button is on again, still, and the page has no error: true
+7. in German the button is called Aktualisieren (name and long press): true
+320x640 en: a 40px circle that does not make the title row taller (36px): true
+320x640 en: it overlaps neither the title, ⋯ More nor the ?, and the title is whole: true
+320x640 en: a tap on its middle and four edges lands on it, ⋯ More and ? still take their own taps: true
+320x640 en: no sideways scroll: true
+360x800 en: a 40px circle that does not make the title row taller (36px): true
+360x800 en: it overlaps neither the title, ⋯ More nor the ?, and the title is whole: true
+360x800 en: a tap on its middle and four edges lands on it, ⋯ More and ? still take their own taps: true
+360x800 en: no sideways scroll: true
+412x915 en: a 40px circle that does not make the title row taller (36px): true
+412x915 en: it overlaps neither the title, ⋯ More nor the ?, and the title is whole: true
+412x915 en: a tap on its middle and four edges lands on it, ⋯ More and ? still take their own taps: true
+412x915 en: no sideways scroll: true
+320x640 de: a 40px circle that does not make the title row taller (36px): true
+320x640 de: it overlaps neither the title, ⋯ More nor the ?, and the title is whole: true
+320x640 de: a tap on its middle and four edges lands on it, ⋯ More and ? still take their own taps: true
+320x640 de: no sideways scroll: true
+360x800 de: a 40px circle that does not make the title row taller (36px): true
+360x800 de: it overlaps neither the title, ⋯ More nor the ?, and the title is whole: true
+360x800 de: a tap on its middle and four edges lands on it, ⋯ More and ? still take their own taps: true
+360x800 de: no sideways scroll: true
+320x640 es: a 40px circle that does not make the title row taller (36px): true
+320x640 es: it overlaps neither the title, ⋯ More nor the ?, and the title is whole: true
+320x640 es: a tap on its middle and four edges lands on it, ⋯ More and ? still take their own taps: true
+320x640 es: no sideways scroll: true
+320x640 pt-BR: a 40px circle that does not make the title row taller (36px): true
+320x640 pt-BR: it overlaps neither the title, ⋯ More nor the ?, and the title is whole: true
+320x640 pt-BR: a tap on its middle and four edges lands on it, ⋯ More and ? still take their own taps: true
+320x640 pt-BR: no sideways scroll: true
+360x800 pt-BR: a 40px circle that does not make the title row taller (36px): true
+360x800 pt-BR: it overlaps neither the title, ⋯ More nor the ?, and the title is whole: true
+360x800 pt-BR: a tap on its middle and four edges lands on it, ⋯ More and ? still take their own taps: true
+360x800 pt-BR: no sideways scroll: true
+320x640 ar: a 40px circle that does not make the title row taller (36px): true
+320x640 ar: it overlaps neither the title, ⋯ More nor the ?, and the title is whole: true
+320x640 ar: a tap on its middle and four edges lands on it, ⋯ More and ? still take their own taps: true
+320x640 ar: no sideways scroll: true
+all passed

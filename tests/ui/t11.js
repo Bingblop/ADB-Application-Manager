@@ -67,14 +67,16 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
   await page.click('#uadStateRow [data-state="uninstalled"]');
   await page.evaluate(() => { uadFilters.removal = new Set(['Recommended','Advanced','Expert','Unsafe']); renderUadList(); });
   console.log('uninstalled now:', await page.locator('#uadCount').innerText());
-  await page.click('text=Select shown'); await page.click('.uad-action-grid >> text=Restore'); await page.waitForTimeout(150);
+  await page.click('#view-debloater >> text=Select shown'); await page.click('.uad-action-grid >> text=Restore'); await page.waitForTimeout(150);
   console.log('restore review:', await page.locator('#batchConfirmSubtitle').innerText());
   await page.click('#batchConfirmExecuteBtn'); await page.waitForTimeout(400); await page.evaluate(() => closeCommandResultsModal());
   console.log('uninstalled after restore:', await page.locator('#uadCount').innerText());
   // save to list + wiki
-  await page.click('#uadStateRow [data-state="present"]'); await page.click('text=Select shown');
+  await page.click('#uadStateRow [data-state="present"]'); await page.click('#view-debloater >> text=Select shown');
   await page.click('.uad-action-grid >> text=Save to List');
   console.log('saved list:', JSON.parse(await page.evaluate(() => window.__st.lists || '[]')).map(l => l.name + ' (' + l.packages.length + ')'));
+  // v7.15: the intro card is folded; its head opens it
+  await page.click('#uadIntro .cc-head'); await page.waitForTimeout(350);
   await page.click('text=UAD-NG Wiki'); await page.click('text=Removal Levels');
   console.log('levels visible:', await page.isVisible('#uadLevels'));
   const calls = await page.evaluate(() => window.__st.calls);

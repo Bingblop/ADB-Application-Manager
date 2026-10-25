@@ -103,6 +103,8 @@ public final class PtyShell {
                 try {
                     code = PtyShell.this.process.waitFor();
                 } catch (InterruptedException ignored) {
+                } catch (RuntimeException gone) {
+                    // a Shizuku process whose server died (its connection is lost) says so with a RuntimeException: the status is unknown
                 }
                 // nothing can be sent to a program that ended: the writer stops, and later input is refused
                 synchronized (queueLock) {
@@ -158,12 +160,17 @@ public final class PtyShell {
         }
     }
 
-    /** Whether the program (the helper) is gone: seen here, not from the reader, which may still be waiting for the page to acknowledge output. */
+    /**
+     * Whether the program (the helper) is gone: seen here, not from the reader, which may still be waiting for the page to acknowledge output. A Shizuku
+     * process says "still running" with an IllegalArgumentException (its server's IllegalThreadStateException as it crosses the binder), and one whose
+     * server died with a RuntimeException: both count as running here, so the writer thread never dies of them (that would end the app); the reader
+     * still sees the program's output end and closes the session.
+     */
     private boolean ended() {
         try {
             process.exitValue();
             return true;
-        } catch (IllegalThreadStateException running) {
+        } catch (RuntimeException running) {
             return false;
         }
     }

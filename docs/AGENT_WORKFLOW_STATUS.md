@@ -27,6 +27,8 @@ Use this file as a live handoff between Claude, Copilot, Gemini, and human revie
   - **Quality & Real Telemetry**: Removed all simulated/mock data in `CleanerRepository`, `InstallerScreen`, and `ShellRepository`. Integrated real APK archive parsing via `PackageManager.getPackageArchiveInfo`, real storage inspection, and strict `ShellSafety.parseShellOutcome` error checking (C-002).
   - **Rigorous Verification**: 14 native JVM test suites (`CleanerRepositoryTest`, `InstallerSecurityTest`, `ShellOutcomeIntegrationTest`, `CriticalPackageWarningTest`, `VendorDebloatPresetTest`, etc.) passing 100%; core Java suites (`installguards`, `storagepathguard`, `archiveiosafety`, `adbserverspec`, `httpsafe`) passing.
   - **Ready for Release**: Conforms to AGENTS.md rules without deleting or breaking existing functionality.
+- **Removed (2026-10-16, the owner's choice):** the WebView app built by `build.sh` stays the only app (#149 reverted the Kotlin swap), so the
+  `app/` Gradle tree #84 left behind, which nothing built, was deleted together with the root Gradle files that only served it.
 
 ## Priority actions
 

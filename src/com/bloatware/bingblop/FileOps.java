@@ -63,6 +63,58 @@ public final class FileOps {
         return REPLACE;
     }
 
+    /** What to do with an item whose name is taken in a folder of added storage (a SAF folder): the same rule {@link #transfer} applies to two plain folders. */
+    public static final int SAF_CREATE = 0, SAF_MERGE = 1, SAF_REPLACE = 2, SAF_SKIP = 3, SAF_IN_THE_WAY = 4;
+
+    /**
+     * The name rule for one item going into a SAF folder where {@code clashDir} says what holds the name (null: nothing does).
+     * "keep" lets the provider number the copy; two folders merge under "replace" and "skip" alike (only the names that are taken
+     * inside are replaced or left); a file meeting a folder, or the reverse, is refused under "replace" and left under "skip".
+     */
+    public static int safClash(boolean srcDir, Boolean clashDir, String policyName) {
+        if (clashDir == null) return SAF_CREATE;
+        int policy = policyOf(policyName);
+        if (policy == KEEP_BOTH) return SAF_CREATE;
+        if (srcDir && clashDir) return SAF_MERGE;
+        if (policy == SKIP) return SAF_SKIP;
+        if (srcDir != clashDir) return SAF_IN_THE_WAY;
+        return SAF_REPLACE;
+    }
+
+    /**
+     * The plain path of a document of Android's own storage provider (com.android.externalstorage.documents), whose ids are
+     * "VOLUME:relative/path": "primary:" is the shared storage of {@code userId}, "home:" its Documents folder, any other volume is
+     * /storage/VOLUME. Null for another provider or an id of another shape. Used to see that a SAF folder and a plain folder are the
+     * same place (the SD card added as storage and /storage/XXXX-XXXX), so nothing is copied into itself or replaced by itself.
+     */
+    public static String externalStoragePath(String authority, String docId, int userId) {
+        if (!"com.android.externalstorage.documents".equals(authority) || docId == null) return null;
+        int c = docId.indexOf(':');
+        if (c <= 0) return null;
+        String vol = docId.substring(0, c), rel = docId.substring(c + 1);
+        if (vol.indexOf('/') >= 0 || rel.startsWith("/") || rel.indexOf(0) >= 0) return null;
+        for (String part : rel.split("/", -1)) if (part.equals("..") || part.equals(".")) return null;
+        String base = "primary".equals(vol) ? "/storage/emulated/" + userId
+                : "home".equals(vol) ? "/storage/emulated/" + userId + "/Documents"
+                : "/storage/" + vol;
+        while (rel.endsWith("/")) rel = rel.substring(0, rel.length() - 1);
+        return rel.isEmpty() ? base : base + "/" + rel;
+    }
+
+    /** Is the SAF document {@code inner} the document {@code outer} or inside it, both of one provider (path-like ids such as "VOL:a/b"). */
+    public static boolean safDocInside(String outer, String inner) {
+        if (outer == null || inner == null || outer.isEmpty()) return false;
+        if (inner.equals(outer)) return true;
+        if (outer.endsWith(":") || outer.endsWith("/")) return inner.startsWith(outer);
+        return inner.startsWith(outer + "/");
+    }
+
+    /** Is the plain path {@code inner} the path {@code outer} or inside it. */
+    public static boolean pathInside(String outer, String inner) {
+        if (outer == null || inner == null || outer.isEmpty()) return false;
+        return inner.equals(outer) || inner.startsWith(outer.endsWith("/") ? outer : outer + "/");
+    }
+
     // ---------------------------------------------------------------------------------------------
     // names
     // ---------------------------------------------------------------------------------------------

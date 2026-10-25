@@ -1,4 +1,7 @@
 ok   the tools row has a Full screen button
+ok   Copy with text selected on the screen copies that text and says so
+ok   Copy with text selected in the input line (not the screen) copies the screen and says so
+ok   Copy with nothing selected copies the screen and says so
 ok   full screen: the pane covers the whole window (top to bottom, side to side)
 ok   the screen got most of the room, more than before
 ok   the input line and the extra keys sit below the screen, inside the window

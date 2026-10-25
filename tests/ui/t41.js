@@ -51,7 +51,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const badges = await page.locator('#logcatOutput .lc-badge').allInnerTexts();
   console.log('3. badges in order:', JSON.stringify(badges) === JSON.stringify(['I', 'D', 'V', 'W', 'E', 'F', 'I']), JSON.stringify(badges));
 
-  // 4) Colors per level (the level letter and the tag wear the level colour; the message is muted like the Kotlin console's).
+  // 4) Colors per level: the level letter, the tag and (since v7.16.2) the message wear the level colour, the one the key's dot has.
   // color-mix() computes to "color(srgb r g b)" with 0..1 floats; plain colors compute to "rgb(r, g, b)" 0..255.
   const col = async lvl => page.evaluate(l => {
     const el = document.querySelector('.lc-row.lvl-' + l + ' .lc-badge');          // the level letter carries the level colour in the Console (the message is the muted text colour)
@@ -61,10 +61,10 @@ const { chromium, PAGE } = require('./lib/pw');
   }, lvl);
   const E = await col('E'), I = await col('I'), W = await col('W'), F = await col('F'), D = await col('D');
   console.log('4. E reddish:', E[0] > E[1] + 20 && E[0] > E[2] + 20, JSON.stringify(E));
-  console.log('   I greenish:', I[1] > I[0] + 20 && I[1] > I[2], JSON.stringify(I));
+  console.log('   I in the accent (v7.16.2; it was green):', await page.evaluate(() => { const p = document.createElement('i'); p.style.color = 'color-mix(in srgb, var(--accent) 74%, var(--text-main))'; document.body.appendChild(p); const c = getComputedStyle(p).color; p.remove(); return c; }) === await page.evaluate(() => getComputedStyle(document.querySelector('.lc-row.lvl-I .lc-badge')).color), JSON.stringify(I));
   console.log('   W amber:', W[0] > W[2] + 40 && W[1] > W[2], JSON.stringify(W));
   console.log('   F magenta:', F[0] > F[1] + 20 && F[2] > F[1] + 20, JSON.stringify(F));
-  console.log('   D blueish:', D[2] > D[0] + 20, JSON.stringify(D));
+  console.log('   D yellow (v7.16.2; it was blue):', D[0] > D[2] + 60 && D[1] > D[2] + 60, JSON.stringify(D));
 
   // 5) Color key: six chips with counts (E counts the 3 stack-trace lines).
   const chips = await page.locator('#logcatKey .lc-chip').count();

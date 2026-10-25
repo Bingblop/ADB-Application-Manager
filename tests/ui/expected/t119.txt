@@ -107,6 +107,9 @@ ok   with the one key from Settings approved the note says so
 ok   with a key and "ask" a Scan button appears
 ok   a clean file is shown as clean with the engine counts and a link
 ok   a flagged file is shown in red
+ok   a version downloaded from the list and scanned is flagged
+ok   the next version from the list does not carry that verdict and can be scanned
+ok   a scan that answers after another file was asked for does not label the new file
 ok   a source that changed its page says what to do
 ok   Helper settings have "Try the other sources automatically", off by default
 ok   with it on, a source that fails hands over to the others (Fast mode, the chosen one first) and the file is delivered

@@ -1,6 +1,7 @@
 // v7.0 Application Manager search: the search bar sits under all the filters (directly above the list) and has a menu at its right end:
 // 1) include application names, 2) include package names, 3) use regex matching (with a line saying that off means exact matches only).
 // All on at the start; kept between searches and launches; at least one of names and packages stays on (turning off the last one turns the other on).
+// (These are the three switch rows, the label.sm-row ones. The menu's fourth and last row, Row tints, opens Settings: t552.)
 const { chromium, PAGE } = require('./lib/pw');
 const inst = require('./lib/inst_mock.js');
 let bad = 0;
@@ -62,7 +63,7 @@ const APPS = [
   // 3) the menu: three rows, all on, the regex line
   await page.click('#searchMenuBtn');
   check('3. tapping the button opens the menu', await menuOpen(page) && (await ev(page, () => document.getElementById('searchMenuBtn').getAttribute('aria-expanded'))) === 'true');
-  const m3 = await ev(page, () => ({ rows: Array.from(document.querySelectorAll('#searchMenu .sm-row')).map(r => r.querySelector('.sm-name').innerText), sub: document.querySelector('#searchMenu .sm-sub').innerText, subIn: document.querySelector('#searchMenu .sm-sub').closest('.sm-row').querySelector('.sm-name').innerText, dividers: document.querySelectorAll('#searchMenu .sm-div').length }));
+  const m3 = await ev(page, () => ({ rows: Array.from(document.querySelectorAll('#searchMenu label.sm-row')).map(r => r.querySelector('.sm-name').innerText), sub: document.querySelector('#searchMenu .sm-sub').innerText, subIn: document.querySelector('#searchMenu .sm-sub').closest('.sm-row').querySelector('.sm-name').innerText, dividers: document.querySelectorAll('#searchMenu label.sm-row .sm-div').length }));
   check('   1) application names 2) package names 3) regex matching, in that order', m3.rows.join('|') === 'Include application names|Include package names|Use regex matching', JSON.stringify(m3.rows));
   check('   the regex row explains that off means exact matches only', m3.subIn === 'Use regex matching' && /exact/i.test(m3.sub) && /off/i.test(m3.sub), m3.sub);
   check('   every row has a divider before its switch (like the reference menu)', m3.dividers === 3);
@@ -261,7 +262,7 @@ const APPS = [
       for (let i = 0; i < 40 && still < 4; i++) { await sleep(60); const y = await ev(p, () => Math.round(scrollY)); still = y === last ? still + 1 : 0; last = y; }
       const m = await ev(p, () => {
         const tabs = document.getElementById('tabBar').getBoundingClientRect();
-        const rows = Array.from(document.querySelectorAll('#searchMenu .sm-row')).map(r => { const b = r.getBoundingClientRect(); const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return { in: b.top >= tabs.bottom - 1 && b.bottom <= innerHeight, hit: !!hit && hit.closest('.sm-row') === r }; });
+        const rows = Array.from(document.querySelectorAll('#searchMenu label.sm-row')).map(r => { const b = r.getBoundingClientRect(); const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return { in: b.top >= tabs.bottom - 1 && b.bottom <= innerHeight, hit: !!hit && hit.closest('.sm-row') === r }; });
         const fab = document.getElementById('batchFab') || document.querySelector('.batch-fab');
         return { rows, fab: fab ? getComputedStyle(fab).visibility : 'none', boxBelowTabs: document.getElementById('searchBox').getBoundingClientRect().top >= tabs.bottom - 1 };
       });

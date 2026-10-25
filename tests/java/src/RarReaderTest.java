@@ -11,7 +11,9 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.zip.CRC32;
@@ -658,6 +660,17 @@ public class RarReaderTest {
       block(hdr);
       raw(packed);
     }
+    /** a stored Unix file with LHD_LARGE (0x100): the high 32 bits of the packed and unpacked sizes follow the attributes */
+    void fileLarge(String name, byte[] data, long lowUnp, long highUnp, long ftime) throws Exception {
+      byte[] nm = name.getBytes("ISO-8859-1");
+      byte[] body = cat(new byte[]{0x74}, le16(0x8000 | 0x100), le16(0), le32(data.length), le32(lowUnp), new byte[]{3}, le32(crc(data)), le32(ftime),
+          new byte[]{29, 0x30}, le16(nm.length), le32(0100644), le32(0), le32(highUnp), nm);
+      int size = 2 + body.length;
+      body[3] = (byte) size;
+      body[4] = (byte) (size >> 8);
+      block(cat(le16((int) (crc(body) & 0xffff)), body));
+      raw(data);
+    }
     void end() { if (hpw == null) raw(new byte[]{(byte) 0xC4, 0x3D, 0x7B, 0x00, 0x40, 0x07, 0x00}); }
     byte[] bytes() { return out.toByteArray(); }
   }
@@ -686,6 +699,7 @@ public class RarReaderTest {
       testRar5UnknownSizeRoom();
       testRar5DataPasswordAsks(r);
       testRar4(r);
+      testRar4UnknownSize();
       testSfxAndMagic(r);
       testFixtures();
     } finally {
@@ -1313,6 +1327,57 @@ public class RarReaderTest {
   }
 
   // ------------------------------------------------------------------------------------------------------------ RAR 1.5 - 4.x
+
+  /**
+   * A RAR4 entry whose header leaves the unpacked size open (unrar's UnknownUnpSize: LHD_LARGE with both size words 0xFFFFFFFF, as rar -si may write;
+   * junrar reports -1). Only that entry cannot be read; the archive lists and its other entries are read. A negative size of any other kind is
+   * still a damaged archive.
+   */
+  static void testRar4UnknownSize() throws Exception {
+    int before = liveRarThreads();
+    long t1 = dosTime(2021, 7, 14, 12, 30, 40);
+    byte[] a = utf8("first\n"), u = utf8("unknown size data\n"), b = utf8("last\n");
+    W4 w = new W4(false, null);
+    w.file("a.txt", a, 3, 0100644, t1, false, null, false);
+    w.fileLarge("u.bin", u, 0xFFFFFFFFL, 0xFFFFFFFFL, t1);
+    w.file("b.txt", b, 3, 0100644, t1, false, null, false);
+    w.end();
+    File f = arc("r4-unknown.rar", w.bytes());
+    RarReader.Info info = null;
+    String err = null;
+    try { info = RarReader.list(f, null); } catch (IOException e) { err = e.getMessage(); }
+    check("RAR 4 unknown unpacked size: the archive lists (" + err + ")", info != null && info.items.size() == 3);
+    if (info == null) return;
+    check("RAR 4 unknown unpacked size: that entry has size -1, the others their own", info.items.get(1).name.equals("u.bin") && info.items.get(1).size == -1
+        && info.items.get(0).size == a.length && info.items.get(2).size == b.length);
+    check("RAR 4 unknown unpacked size: the other entries open", Arrays.equals(readAll(RarReader.open(f, "a.txt", null)), a) && Arrays.equals(readAll(RarReader.open(f, "b.txt", null)), b));
+    String msg = null;
+    try { readAll(RarReader.open(f, "u.bin", null)); } catch (IOException e) { msg = e.getMessage(); }
+    check("RAR 4 unknown unpacked size: opening that entry fails with unknown-size, not an empty file (" + msg + ")", "unknown-size".equals(msg));
+    final Map<String, String> walked = new LinkedHashMap<String, String>();
+    RarReader.walk(f, null, new RarReader.Visitor() {
+      public boolean entry(RarReader.Item it, InputStream data) throws IOException {
+        try { walked.put(it.name, new String(readAll(data), StandardCharsets.UTF_8)); } catch (IOException e) { walked.put(it.name, "ERR " + e.getMessage()); }
+        return true;
+      }
+    });
+    check("RAR 4 unknown unpacked size: walk reads the others and fails only that entry (" + walked + ")",
+        "first\n".equals(walked.get("a.txt")) && "ERR unknown-size".equals(walked.get("u.bin")) && "last\n".equals(walked.get("b.txt")));
+    // LHD_LARGE with a real size is read as before; a high word with its top bit set (a size of 2^63 bytes and more) is still damage
+    W4 wl = new W4(false, null);
+    wl.fileLarge("big.bin", u, u.length, 0, t1);
+    wl.end();
+    File fl = arc("r4-large.rar", wl.bytes());
+    check("RAR 4 LHD_LARGE with a real size reads", Arrays.equals(readAll(RarReader.open(fl, "big.bin", null)), u) && RarReader.list(fl, null).items.get(0).size == u.length);
+    W4 wn = new W4(false, null);
+    wn.file("a.txt", a, 3, 0100644, t1, false, null, false);
+    wn.fileLarge("n.bin", u, 0, 0x80000000L, t1);
+    wn.end();
+    String nerr = null;
+    try { RarReader.list(arc("r4-negative.rar", wn.bytes()), null); } catch (IOException e) { nerr = e.getMessage(); }
+    check("RAR 4 a negative unpacked size that is not the unknown marker: the archive is refused (" + nerr + ")", nerr != null && nerr.contains("negative unpacked size"));
+    check("RAR 4 unknown size: no unpacker thread is left behind", waitThreads(before));
+  }
 
   static void testRar4(Random r) throws Exception {
     int before = liveRarThreads();

@@ -54,7 +54,7 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
   check('one package selected: all four are on', (await btns()) === 'Uninstall:on | Disable:on | Restore:on | Save to List:on', await btns());
   await page.evaluate(p => toggleUadSelect(p), one);
   check('unselected again: off', (await btns()).split(' | ').every(s => s.endsWith(':off')), await btns());
-  await page.click('text=Select shown');
+  await page.click('#view-debloater >> text=Select shown');
   check('Select shown: on', (await btns()).split(' | ').every(s => s.endsWith(':on')), await btns());
   await page.evaluate(() => clearUadSelection());
   check('Clear: off', (await btns()).split(' | ').every(s => s.endsWith(':off')), await btns());
@@ -73,15 +73,15 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
       const ind = document.querySelector('#cnTabs .cn-ind').getBoundingClientRect();
       const sel = document.querySelector('#cnTabs .cn-tab[aria-selected="true"]').getBoundingClientRect();
       return {
-        overText: ['cnTabShell', 'cnTabLog'].filter(id => hit(q, text(id))),
-        overTab: ['cnTabShell', 'cnTabLog'].filter(id => hit(q, box(id))),
+        overText: ['cnTabShell', 'cnTabTerm'].filter(id => hit(q, text(id))),
+        overTab: ['cnTabShell', 'cnTabTerm'].filter(id => hit(q, box(id))),
         inRow: q.left >= document.getElementById('cnTabs').getBoundingClientRect().left && q.right <= document.getElementById('cnTabs').getBoundingClientRect().right,
         indOff: Math.round(Math.abs(ind.left - sel.left) + Math.abs(ind.width - sel.width)),
-        clipped: ['cnTabShell', 'cnTabLog'].filter(id => { const e = document.getElementById(id); return e.scrollWidth > e.clientWidth; }),
+        clipped: ['cnTabShell', 'cnTabTerm'].filter(id => { const e = document.getElementById(id); return e.scrollWidth > e.clientWidth; }),
       };
     });
     const a = await m();
-    await p.evaluate(() => cnShowSeg('log')); await p.waitForTimeout(450);
+    await p.evaluate(() => cnShowSeg('term')); await p.waitForTimeout(800);   // the Terminal starts its shell as it is shown: give the slide of the underline time to end
     const c = await m();
     await p.close();
     return { a, c };
@@ -91,7 +91,7 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
     const tag = lang || 'en';
     check(tag + ': the "?" covers neither tab nor its text, and stays inside the row', !a.overText.length && !a.overTab.length && a.inRow, JSON.stringify(a));
     check(tag + ': both tab labels fit', !a.clipped.length, JSON.stringify(a.clipped));
-    check(tag + ': the underline lines up with the selected tab (ADB Shell, then Live Logcat)', a.indOff <= 1 && c.indOff <= 1, a.indOff + ' ' + c.indOff);
+    check(tag + ': the underline lines up with the selected tab (ADB Shell, then Terminal)', a.indOff <= 1 && c.indOff <= 1, a.indOff + ' ' + c.indOff);
   }
 
   // ---- the toast on the inverse surface ----

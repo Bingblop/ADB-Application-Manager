@@ -1,5 +1,5 @@
 // v7.10.17: a row says "Working…" / "Checking…" with a spinner while its app is changed and checked (visible with the progress messages off), Force stop and Clear data come back with what the
-// phone says, and the Debloater's own list has the Removal Levels button.
+// phone says, and the Debloater's own list has the Removal Levels button. The rows "Show more" adds while a batch runs carry the chip too.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -82,6 +82,25 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   and keeps it when the list is drawn again; the same package on this phone\'s list is not marked', await ev(() => !!document.querySelector('#cdcard_com\\.w\\.one > .row-chk') && !document.querySelector('.app-card[data-pkg="com.w.one"]:not([id^="cdcard_"]) .row-chk')));
   await ev(() => rowBusySet('com.w.one', '', 'd'));
   check('   no extra text leaks into the list after the cards ("undefined")', await ev(() => !/undefined/.test(document.getElementById('cdAppList').innerText)));
+
+  // ---- 5. the rows of the next page of the Apps list ("Show more", or scrolling on) while a batch runs ----
+  const paged = await ev(() => {
+    window.IntersectionObserver = undefined;                    // the next page only by hand here
+    switchView('apps'); activeFilters.clear(); document.getElementById('searchInput').value = '';
+    allApps = Array.from({ length: 600 }, (_, i) => ({ pkg: 'com.page.app' + String(i).padStart(3, '0'), name: 'Page App ' + String(i).padStart(3, '0'), isFrozen: false, isSuspended: false, isUninstalled: false }));
+    resetAppsWindow(); renderApps();
+    const pkgs = allApps.map(a => a.pkg);
+    rowBusySet(pkgs, 'Working…');
+    const first = document.querySelectorAll('#appsListContainer .app-card').length;
+    appsShowMore();
+    const cards = [...document.querySelectorAll('#appsListContainer .app-card')];
+    const bare = cards.filter(c => { const k = c.querySelector(':scope > .row-chk'); return !k || k.innerText.trim() !== 'Working…' || !c.classList.contains('row-checking'); }).map(c => c.getAttribute('data-pkg'));
+    rowBusySet(pkgs, '');
+    const left = document.querySelectorAll('#appsListContainer .app-card .row-chk, #appsListContainer .app-card.row-checking').length;
+    return { first, cards: cards.length, bare: bare.length, sample: bare.slice(0, 3), left };
+  });
+  check('5. a batch on 600 apps: the 250 rows added by "Show more" say "Working…" too', paged.first === 250 && paged.cards === 500 && paged.bare === 0, JSON.stringify(paged));
+  check('   and lose it with the others when the batch ends', paged.left === 0, JSON.stringify(paged));
 
   check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await b.close();

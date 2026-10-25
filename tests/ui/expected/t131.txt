@@ -1,3 +1,4 @@
+ok   the Back up and restore card comes after the lists and starts folded
 ok   the Saved Applications tab has a Back up and restore card with Back up now, Choose folder, Share, Restore from a file and Restore from the folder
 ok   with no folder: says backups go to Download/ADB App Manager, no backup yet, 2 lists would be backed up; the folder-only controls are off
 ok   Back up now without a folder saves saved-lists-<date>-<time>.json to Download/ADB App Manager and says where

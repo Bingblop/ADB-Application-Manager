@@ -57,7 +57,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const bar = document.getElementById('floatingBatchBar'), cs = getComputedStyle(bar);
     const tools = Array.from(bar.querySelectorAll('.batch-sheet-tools .batch-tool-link')).map(e => ({ t: e.innerText.trim(), bw: getComputedStyle(e).borderTopWidth, bs: getComputedStyle(e).borderTopStyle }));
     return { show: bar.classList.contains('show'), handle: /linear-gradient/.test(cs.backgroundImage), pos: cs.backgroundPosition, tools,
-      copy: Array.from(bar.querySelectorAll('.copy-row button')).map(e => e.innerText.trim()), grid: Array.from(bar.querySelectorAll('.batch-actions-grid button')).map(e => e.innerText.trim()),
+      copy: Array.from(bar.querySelectorAll('.copy-row button')).map(e => e.innerText.trim()), grid: Array.from(bar.querySelectorAll('.batch-actions-grid:not(.batch-trk-row) button')).map(e => e.innerText.trim()),
       keep: document.getElementById('batchKeepSelectionToggle').checked };
   });
   check('2. the batch menu has the grab handle in the middle at the top, like the other sheets', bm.show && bm.handle && /50%|center/.test(bm.pos), bm.pos);

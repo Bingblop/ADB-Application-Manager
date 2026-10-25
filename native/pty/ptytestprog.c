@@ -1,7 +1,9 @@
 /* Test program for ptyexec (run on the pty). Not shipped.
  *   no argument:  prints its terminal size, says if stdin is a terminal, echoes one line, exits with 5.
  *   "wait":       prints its pid and "ready", then waits for a signal (SIGHUP ends it, as it does most programs).
- *   "ignore":     the same, but SIGHUP is ignored, and so it is in a child (same process group) that waits too: prints "child PID". */
+ *   "ignore":     the same, but SIGHUP is ignored, and so it is in a child (same process group) that waits too: prints "child PID".
+ *   "bg":         leaves a child in a process group of its own that keeps the terminal open (a shell's `job &`), prints "child PID" and
+ *                 "ready", and exits with 7 at once. */
 #include "sys.h"
 struct winsize { unsigned short row, col, xp, yp; };
 static void out(const char *s) { long n = 0; while (s[n]) n++; sc(SYS_write, 1, (long)s, n, 0, 0); }
@@ -11,6 +13,17 @@ static void idle(void) { for (;;) sc(SYS_ppoll, 0, 0, 0, 0, 0); }
 __attribute__((used)) void c_start(long *sp) {
     long argc = sp[0]; char **argv = (char **)(sp + 1);
     if (argc > 1 && argv[1][0] == 'w') { out("pid "); outnum(sc(SYS_getpid, 0, 0, 0, 0, 0)); out("\nready\n"); idle(); }
+    if (argc > 1 && argv[1][0] == 'b') {
+#if defined(SYS_fork)
+        long kid = sc(SYS_fork, 0, 0, 0, 0, 0);
+#else
+        long kid = sc(SYS_clone, 17, 0, 0, 0, 0);
+#endif
+        if (kid == 0) { sc(SYS_setpgid, 0, 0, 0, 0, 0); idle(); }     /* its own group: the hang-up when the program ends does not reach it */
+        sc(SYS_setpgid, kid, kid, 0, 0, 0);                  /* (also from here: the program must not end before the child has left its group) */
+        out("child "); outnum(kid); out("\nready\n");
+        sc(SYS_exit_group, 7, 0, 0, 0, 0);
+    }
     if (argc > 1 && argv[1][0] == 'i') {
         long act[4] = { 1, 0, 0, 0 };                      /* struct sigaction with SIG_IGN, no flags, empty mask */
         sc(SYS_rt_sigaction, 1, (long)act, 0, 8, 0);       /* SIGHUP */

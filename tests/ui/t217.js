@@ -62,19 +62,17 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the Help Guide has the topic of the tab and the section, and the Private DNS section starts with where it is: the Extra Settings tab, not Hidden Settings', /id:\s*"tab-extrasettings"|"id":"tab-extrasettings"/.test(guide) && /Where it is:<\/b> the <b>Extra Settings<\/b> tab[^"]*?<b>not<\/b> in the <a href=\\?"#tab-settings\\?">Hidden Settings<\/a> tab/.test(guide), 'topic found: ' + /tab-extrasettings/.test(guide));
   // the pointers
   await ev(() => switchView('prefs')); await sleep(250);
-  const gear = await ev(() => { const c = document.getElementById('extraSettingsPointerCard'); return { has: !!c, title: c && c.querySelector('.color-card-title').innerText, btn: c && c.querySelector('button').innerText, prev: c && c.previousElementSibling.id, noCard: !document.querySelector('#view-prefs #privateDnsCard') }; });
-  check('2. the gear Settings page has a small pointer card "Private DNS" (after "Reconnecting devices") with the button "Open Extra Settings", and no DNS card of its own', gear.has && gear.title === 'Private DNS' && gear.btn === 'Open Extra Settings' && gear.prev === 'cdReconnectCard' && gear.noCard, JSON.stringify(gear));
-  await ev(() => document.getElementById('extraSettingsPointerBtn').click()); await sleep(250);
-  check('   the button opens the Extra Settings tab (and lights its tab)', (await ev(() => currentViewName() + '|' + document.querySelector('.tab-btn.active').dataset.tab)) === 'extrasettings|extrasettings');
+  const gear = await ev(() => ({ pointer: !!document.getElementById('extraSettingsPointerCard') || !!document.getElementById('extraSettingsPointerBtn'), titles: [...document.querySelectorAll('#view-prefs .color-card-title')].map(t => t.textContent.trim()), noCard: !document.querySelector('#view-prefs #privateDnsCard') }));
+  check('2. the gear Settings page has nothing about Private DNS any more (7.14: the pointer card is gone; Private DNS is only in Extra Settings)', !gear.pointer && gear.noCard && !gear.titles.some(t => /Private DNS/.test(t)), JSON.stringify(gear));
   await ev(() => switchView('settings')); await sleep(300);
   const hs = await ev(() => { const n = document.getElementById('sdbPrivateDnsPointer'); return { t: n.innerText.replace(/\s+/g, ' ').trim(), top: n.getBoundingClientRect().top, vis: n.offsetParent !== null }; });
   check('   the Hidden Settings tab says "Looking for Private DNS? It is not in this tab." with a button that opens the Extra Settings tab, near the top of the page', /^Looking for Private DNS\? It is not in this tab\. Open the Extra Settings tab$/.test(hs.t) && hs.vis && hs.top < 400, JSON.stringify(hs));
   await ev(() => document.querySelector('#sdbPrivateDnsPointer button').click()); await sleep(250);
   check('   and that button opens it', (await ev(() => currentViewName())) === 'extrasettings');
   const off = await mkPage({ kv: { tab_config: JSON.stringify({ order: ['saved-lists', 'debloater', 'installer', 'files', 'terminal', 'settings', 'extrasettings', 'overlays', 'store', 'logcat', 'taskmgr', 'devices', 'morphe', 'sdm'], off: ['extrasettings'] }) } });
-  await off.evaluate(() => switchView('prefs')); await off.waitForTimeout(200);
-  await off.evaluate(() => document.getElementById('extraSettingsPointerBtn').click()); await off.waitForTimeout(200);
-  check('   with the tab switched off (Feature List) the pointer button does not open it and says where to turn it on', await off.evaluate(() => currentViewName() === 'prefs' && /Extra Settings is turned off\. Turn it on in Settings, Feature List\./.test(document.getElementById('toastMsg').innerText)));
+  await off.evaluate(() => switchView('settings')); await off.waitForTimeout(300);
+  await off.evaluate(() => document.querySelector('#sdbPrivateDnsPointer button').click()); await off.waitForTimeout(200);
+  check('   with the tab switched off (Feature List) the Hidden Settings pointer does not open it and says where to turn it on', await off.evaluate(() => currentViewName() === 'settings' && /Extra Settings is turned off\. Turn it on in Settings, Feature List\./.test(document.getElementById('toastMsg').innerText)));
   await off.close();
 
   // ---- 2. the services: one array ----

@@ -94,6 +94,28 @@ public class RestorePlanTest {
     check("the total counts an entry only after the skip of the ones that are not tried, and before its grant", skip > 0 && count > skip && grant > count);
   }
 
+  /** The result line "installed <version>" took versionName from backup.json, which a picked backup can set to anything (or leave out: "installed "),
+   *  while everything else after the APK is read, the question before the install among it, uses the APK's own version. */
+  static void checkInstalledVersion() throws Exception {
+    File d = new File(System.getProperty("user.dir")).getAbsoluteFile();
+    File f = null;
+    for (int i = 0; d != null && i < 8 && f == null; i++, d = d.getParentFile()) {
+      File c = new File(d, "src/com/bloatware/bingblop/MainActivity.java");
+      if (c.isFile()) f = c;
+    }
+    check("MainActivity.java found (installed version)", f != null);
+    if (f == null) return;
+    String src = blank(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+    int a = src.indexOf("if (installed && sameVersion) {");
+    int z = a < 0 ? -1 : src.indexOf("backupEvent(\"restore\", \"settings\"", a);
+    String branch = a < 0 || z < 0 ? "" : src.substring(a, z);
+    check("runRestore has the install branch", branch.contains("installApksIn(ordered, restoreMode)"));
+    Matcher m = Pattern.compile("res\\.put\\(\"install\",\\s*\"installed \"\\s*\\+([^;]*);").matcher(branch);
+    String expr = m.find() ? m.group(1) : "";
+    check("the installed line names the version of the APK it installed (" + expr.trim() + ")", expr.contains("archiveInfo.versionName") && expr.contains("archiveVersionCode"));
+    check("not the versionName backup.json claims", !branch.contains("meta.optString(\"versionName\")"));
+  }
+
   public static void main(String[] args) throws Exception {
     check("a system app removed for this user is brought back", RestorePlan.bringBackSystemApp(true, RestorePlan.FLAG_SYSTEM | FLAG_HAS_CODE));
     check("a system app that had an update removed for this user is brought back", RestorePlan.bringBackSystemApp(true, RestorePlan.FLAG_SYSTEM | FLAG_UPDATED_SYSTEM_APP));
@@ -124,6 +146,7 @@ public class RestorePlanTest {
     checkDownloadMime();
     checkSameVersionConfirm();
     checkPermissionCount();
+    checkInstalledVersion();
     System.out.println((fails == 0 ? "OK " : "FAILED ") + n + " checks, " + fails + " failed");
     System.exit(fails == 0 ? 0 : 1);
   }

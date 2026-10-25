@@ -27,9 +27,9 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -226,13 +226,7 @@ public final class ArchiveIo {
     /** The format of a file by its first bytes, its name as the fallback; null when it is nothing known. */
     public static String detect(File f) {
         String ext = byExt(f.getName());
-        byte[] h = new byte[512];
-        int n = 0;
-        try {
-            InputStream in = new FileInputStream(f);
-            try { n = readFully(in, h, 0, h.length); } finally { in.close(); }
-        } catch (IOException e) { n = 0; }
-        String c = n > 0 ? byMagic(h, n) : null;
+        String c = magicOf(f);
         if (c == null) return ext;
         if (isCompressor(c)) {
             try {
@@ -244,6 +238,20 @@ public final class ArchiveIo {
             }
         }
         return c;
+    }
+
+    /**
+     * The format the first bytes of a file name ("zip", "7z", "rar", "tar", "gz", "bz2", "xz", "zst", "lz4"), never its name; null when they
+     * name nothing known or the file can't be read. A compressed tar reads as its compressor here ("gz", not "tar.gz"): {@link #detect} tells.
+     */
+    static String magicOf(File f) {
+        byte[] h = new byte[512];
+        int n = 0;
+        try {
+            InputStream in = new FileInputStream(f);
+            try { n = readFully(in, h, 0, h.length); } finally { in.close(); }
+        } catch (IOException e) { n = 0; }
+        return n > 0 ? byMagic(h, n) : null;
     }
 
     private static String byMagic(byte[] b, int n) {
@@ -1713,9 +1721,65 @@ public final class ArchiveIo {
     }
 
     /**
+     * Tar hard links whose shared file the edits leave out (a link has no data of its own, so copying it unchanged would leave a link to
+     * nothing and its content would be lost). Found by reading the headers once before the copy, only when an edit drops entries.
+     */
+    private static final class LinkFix {
+        /** The file a dropped entry was -> the first link to it that stays, which carries its data instead. */
+        final Map<String, Carrier> carriers = new HashMap<String, Carrier>();
+        /** Names (no trailing slash) of the carrier links, written early at the place of the file they replace. */
+        final Set<String> carrierLinks = new HashSet<String>();
+        /** A link's name -> the name of the file it shares (following links to links). */
+        final Map<String, String> rootOf = new HashMap<String, String>();
+        /** Names (no trailing slash) of the entries the edits leave out. */
+        final Set<String> dropped = new HashSet<String>();
+    }
+
+    private static final class Carrier {
+        final String newName; final boolean renamed;
+        Carrier(String newName, boolean renamed) { this.newName = newName; this.renamed = renamed; }
+    }
+
+    /** null when nothing needs fixing: not a tar, no edit that drops entries, or no link to a dropped file stays. */
+    private static LinkFix linkFix(File src, String format, List<Edit> edits, Meter m) throws IOException {
+        if (!isTar(format)) return null;
+        boolean drops = false;
+        for (Edit e : edits) if (e.kind == Edit.DELETE || e.kind == Edit.DELETE_TREE || e.kind == Edit.ADD) drops = true;
+        if (!drops) return null;
+        LinkFix fix = new LinkFix();
+        Map<String, Boolean> fileDropped = new HashMap<String, Boolean>();
+        boolean anyLink = false;
+        Plan p = new Plan(edits);
+        Reader r = openReader(src, format, null);
+        try {
+            while (r.next()) {
+                m.poll();
+                Item it = r.item;
+                String key = stripSlash(it.name);
+                p.decide(it.name, it.dir);
+                if (p.act == Plan.DROP) fix.dropped.add(key);
+                if (it.hardLink != null) {
+                    anyLink = true;
+                    String t = stripSlash(it.hardLink);
+                    String root = fix.rootOf.containsKey(t) ? fix.rootOf.get(t) : t;
+                    fix.rootOf.put(key, root);
+                    boolean stays = p.act == Plan.KEEP || p.act == Plan.RENAME;
+                    if (stays && Boolean.TRUE.equals(fileDropped.get(root)) && !fix.carriers.containsKey(root)) {
+                        fix.carriers.put(root, new Carrier(p.newName, p.act == Plan.RENAME));
+                        fix.carrierLinks.add(key);
+                    }
+                } else if (!it.dir) fileDropped.put(key, p.act == Plan.DROP);
+            }
+        } finally { closeQuietly(r); }
+        return anyLink ? fix : null;
+    }
+
+    /**
      * Copies a 7z or tar archive into a new one of the same format with the edits applied, in one pass. Entries keep their order, mode and times;
      * folders are implicit (deleting a file keeps its folder entry, an added file adds none). A 7z archive keeps the password it was opened with.
      * Renames and adds are checked against each other: two entries ending up with one name is an {@code IOException("duplicate-name:...")}.
+     * A tar hard link whose file is left out takes that file's place: the first link that stays is written as a regular file with the file's
+     * data, mode and time where the file was, and later links point to it (the tar's headers are read once more first when entries are dropped).
      * Written as {@code dst + ".part"} and renamed; {@code dst} may be {@code src}.
      */
     public static void rewrite(File src, File dst, char[] password, List<Edit> edits, Progress cb) throws IOException {
@@ -1732,19 +1796,37 @@ public final class ArchiveIo {
         boolean ok = false;
         try {
             m.poll();
+            LinkFix fix = linkFix(src, format, edits, m);
             r = openReader(src, format, password);
             w = newWriter(part, format, "7z".equals(format) ? password : null, -1);
             while (r.next()) {
                 m.poll();
                 Item it = r.item;
                 plan.decide(it.name, it.dir);
-                if (plan.act == Plan.DROP) continue;
+                if (plan.act == Plan.DROP) {
+                    Carrier c = fix == null || it.dir || it.hardLink != null ? null : fix.carriers.get(stripSlash(it.name));
+                    if (c == null) continue;
+                    claim(names, c.newName, c.renamed);            // a link to this file stays: it gets the data here, under its own name
+                    w.copy(r, c.newName, m);
+                    continue;
+                }
                 if (plan.act == Plan.REPLACE) {
                     claim(names, it.name, true);
                     writeSource(w, it.name, plan.file, m);
                 } else {
+                    if (it.hardLink != null) {
+                        String to = plan.renamed(it.hardLink);                       // the file it shares may have been renamed too
+                        if (fix != null) {
+                            if (fix.carrierLinks.contains(stripSlash(it.name))) continue;    // already written with the data of the file it shared
+                            String t = stripSlash(it.hardLink);
+                            String root = fix.rootOf.containsKey(t) ? fix.rootOf.get(t) : t;
+                            Carrier c = fix.carriers.get(root);
+                            if (c != null) to = c.newName;                           // that file is left out: the link that carries its data
+                            else if (fix.dropped.contains(t)) to = plan.renamed(root);   // the link it named is left out, the file itself stays
+                        }
+                        it.hardLink = to;
+                    }
                     claim(names, plan.newName, plan.act == Plan.RENAME);
-                    if (it.hardLink != null) it.hardLink = plan.renamed(it.hardLink);     // the file it shares may have been renamed too
                     w.copy(r, plan.newName, m);
                 }
             }

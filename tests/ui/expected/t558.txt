@@ -1,0 +1,7 @@
+ok   1. the real terminal opens
+ok   2. xterm.js loads and renders its rows
+ok   3. the .xterm container is monospaced, not the proportional UI font
+ok   4. the .xterm-rows render area is monospaced
+ok   5. a rendered cell span is monospaced, so the grid glyphs line up (no overlap)
+ok   6. no page errors
+all passed

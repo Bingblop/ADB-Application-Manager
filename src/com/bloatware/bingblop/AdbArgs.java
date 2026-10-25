@@ -29,8 +29,13 @@ final class AdbArgs {
      * @param args the arguments after {@code adb} (and after the {@code -s serial} the app adds itself)
      * @return null when they may be run, otherwise what to tell the user
      */
-    /** Subcommands that read or write files on this phone (push, pull, install, sideload, backup, restore): their arguments may name local files. */
-    private static final Pattern LOCAL_FILE_COMMAND = Pattern.compile("push|pull|install|install-multiple|install-multi-package|sideload|backup|restore");
+    /**
+     * Subcommands that read or write files on this phone (push, pull, install, sideload, backup, restore; bugreport writes its zip to the folder or
+     * file named, keygen writes FILE and FILE.pub, pubkey reads FILE): their arguments may name local files.
+     */
+    private static final Pattern LOCAL_FILE_COMMAND = Pattern.compile("push|pull|install|install-multiple|install-multi-package|sideload|backup|restore|bugreport|keygen|pubkey");
+    /** Subcommands that make or read an adb key file. The app keeps its own key (This App's ADB Key), so the tab has no use for them. */
+    private static final Pattern KEY_COMMAND = Pattern.compile("keygen|pubkey");
 
     /**
      * The arguments of a command that may name a file on this phone, so the caller can refuse one that is part of the app's own private data (the adb key,
@@ -47,6 +52,7 @@ final class AdbArgs {
         }
         while (i < args.size() && args.get(i) != null && WAIT_COMMAND.matcher(args.get(i)).matches()) i++;
         if (i >= args.size() || args.get(i) == null || !LOCAL_FILE_COMMAND.matcher(args.get(i)).matches()) return out;
+        boolean keygen = "keygen".equals(args.get(i));
         for (int k = i + 1; k < args.size(); k++) {
             String a = args.get(k);
             if (a == null || a.isEmpty()) continue;
@@ -55,7 +61,9 @@ final class AdbArgs {
                 if (eq < 0 || eq == a.length() - 1) continue;
                 a = a.substring(eq + 1);
             }
-            out.add(a.startsWith("/") ? a : "/" + a);
+            String abs = a.startsWith("/") ? a : "/" + a;
+            out.add(abs);
+            if (keygen) out.add(abs + ".pub");          // adb keygen FILE writes FILE.pub next to it
         }
         return out;
     }
@@ -96,6 +104,7 @@ final class AdbArgs {
         while (i < args.size() && WAIT_COMMAND.matcher(args.get(i)).matches()) { i++; waited = true; }
         if (i >= args.size()) return waited ? null : "no command";      // "adb wait-for-device" alone just waits
         if (SERVER_COMMAND.matcher(args.get(i)).matches()) return "That one would stop the adb this app runs on, so it is not run.";
+        if (KEY_COMMAND.matcher(args.get(i)).matches()) return "adb keygen and pubkey are not run from here: this app keeps its own ADB key (This App's ADB Key).";
         return null;
     }
 }

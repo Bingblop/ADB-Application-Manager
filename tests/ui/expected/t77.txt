@@ -1,7 +1,7 @@
-1. the search bar is under all the filters (sort and export, then the filter pills with the counts and the tip arrow in their row) and above the list: true {"sortBottom":197,"hintTop":203,"filterTop":199,"filterBottom":245,"searchTop":257,"searchBottom":303,"listTop":313,"statsInRow":7}
+1. the search bar is under all the filters (sort and export, then the filter pills with the counts and the tip arrow in their row) and above the list: true {"sortBottom":188,"hintTop":194,"filterTop":190,"filterBottom":236,"searchTop":248,"searchBottom":294,"listTop":304,"statsInRow":7}
    nothing else sits between the filters and the search bar: true
    the box says what it searches: true Search by name or package
-2. a menu button (three dots) sits at the right end inside the search bar, just left of the Refresh button, at least 40 x 40: true {"box":{"l":16,"r":344,"t":257,"b":303,"w":328,"h":46},"input":{"l":16,"r":344,"t":257,"b":303,"w":328,"h":46},"btn":{"l":260,"r":300,"t":260,"b":300,"w":40,"h":40},"label":"Search options","text":"⋮","expanded":"false"}
+2. a menu button (three dots) sits at the right end inside the search bar, just left of the Refresh button, at least 40 x 40: true {"box":{"l":16,"r":344,"t":248,"b":294,"w":328,"h":46},"input":{"l":16,"r":344,"t":248,"b":294,"w":328,"h":46},"btn":{"l":260,"r":300,"t":251,"b":291,"w":40,"h":40},"label":"Search options","text":"⋮","expanded":"false"}
    it has a name for a screen reader and says it is closed: true
    the menu is closed at the start: true
    the clear button shows with text in the box and does not sit on the menu button: true {"clearShown":true,"apart":true}
@@ -91,6 +91,6 @@
     and the next Back goes back a tab (it is not spent on a menu nobody can see): true {"r":true,"view":"apps"}
 16. the rows of the menu and of the Feature List cannot be highlighted by a double tap: true {"row":"none","flSwitch":"none","flName":"none"}
     the note under the bar is readable on the dark page (contrast 10.8:1, at least 4.5): true {"fg":"rgb(240, 192, 0)","bg":"rgb(20, 18, 24)"}
-    the note under the bar is readable on the light page (contrast 4.8:1, at least 4.5): true {"fg":"rgb(133, 108, 0)","bg":"rgb(254, 247, 255)"}
+    the note under the bar is readable on the light page (contrast 5.1:1, at least 4.5): true {"fg":"rgb(122, 99, 0)","bg":"rgb(243, 237, 247)"}
     drawing the list again with the same bad pattern does not set the note again (a screen reader would read it out each time): true
 all checks passed

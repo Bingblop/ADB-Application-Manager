@@ -1,0 +1,9 @@
+ok   1. at 740x300 the bar is a rail, taller than the screen, More is below the fold
+ok      a finger swipe up on the rail scrolls it and More comes into view
+ok   2. a hold whose finger moves away opens no menu
+ok      and no tab change follows
+ok   3. a still hold opens the menu beside the slot
+ok      sliding down and then onto the last entry lights it and the rail does not scroll
+ok      letting go runs it (the APK Installer/Updater tab opens) and closes the menu
+ok   no page errors
+all passed

@@ -49,6 +49,30 @@ public final class HelperDownloads {
         }
     });
 
+    private static final Map<String, HelperDownloads> SHARED = new java.util.HashMap<String, HelperDownloads>();
+
+    /**
+     * The one list of this process for {@code journal}. The downloads outlive the window that started them, so every window must see the same list: a
+     * list of its own, read from the journal, would show a job that is running in another window's list as Paused, and its Resume would start a second
+     * writer on the same part file (MOR-2). The cookies and the folder rule of the call that makes the list are kept; {@code onMade} runs once, when
+     * the list is made here (the process's own listeners: the notification service), never for a list that already exists. Each caller that adds a
+     * listener of its own (a window's page) takes it off again when it goes away.
+     */
+    public static HelperDownloads shared(File journal, BrowserDownload.Cookies cookies, java.util.function.Predicate<File> folderOk,
+                                         java.util.function.Consumer<HelperDownloads> onMade) {
+        String key;
+        try { key = journal.getCanonicalPath(); } catch (IOException e) { key = journal.getAbsolutePath(); }
+        synchronized (SHARED) {
+            HelperDownloads d = SHARED.get(key);
+            if (d == null) {
+                d = new HelperDownloads(journal, cookies, folderOk);
+                if (onMade != null) onMade.accept(d);
+                SHARED.put(key, d);
+            }
+            return d;
+        }
+    }
+
     /** {@code folderOk} says which folders a journal entry may name (the Helper's two download folders): anything else in the journal is ignored. */
     public HelperDownloads(File journal, BrowserDownload.Cookies cookies, java.util.function.Predicate<File> folderOk) {
         this.journal = journal;

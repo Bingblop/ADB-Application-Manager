@@ -214,8 +214,8 @@ public final class SdmEngine {
         this.events = events;
         this.settings = new SdmSettings(env.dataDir());
         int user = 0;
-        try { Sdm.Areas a = env.areas(); if (a != null) user = a.userId(); } catch (RuntimeException e) { user = 0; }
-        this.exclusions = new SdmExclusions(env.dataDir(), user);         // /sdcard in a path exclusion is this user's storage
+        try { Sdm.Areas a = env.areas(); if (a != null) user = a.storageUserId(); } catch (RuntimeException e) { user = 0; }
+        this.exclusions = new SdmExclusions(env.dataDir(), user);         // /sdcard in a path exclusion is the shared storage the scans read (user 0's off user 0 too)
         this.history = new SdmHistory(env.dataDir(), settings);
         for (Sdm.Tool t : Sdm.Tool.values()) states.put(t, new ToolState(t));
         String[] names = { "SdmSystemCleaner", "SdmAppCleaner", "SdmCorpseFinder", "SdmDedup" };

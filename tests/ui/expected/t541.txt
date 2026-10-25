@@ -1,0 +1,10 @@
+ok   1. before the sheet: Chrome has no tag and only YouTube ReVanced is counted
+ok   2. the sheet of an app the list already tags does not redraw the list
+ok   3. as soon as Chrome's sheet has loaded, its row carries the deeper check's tag and the Patched count is 2
+ok      the sheet itself still shows no Patched / modified box
+ok   4. the list reloads with the sheet open: the tag and the count stay
+ok      and after Refresh with the sheet closed
+ok      the Patched filter still shows Chrome
+ok   5. after an update of Chrome the tag is gone and the count is 1 again
+ok      and it does not come back on the next reload
+ok   no page errors

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ADB Stub: the small app ADB Application Manager sends to a Wear OS watch (Connected Devices). While it runs, the watch keeps its screen on and
+  its Wi-Fi connected, so the phone's adb link over Wi-Fi does not drop when the watch would turn the screen off or hand the network back to
+  Bluetooth. It is started by the phone (am start) when the watch connects and stopped by the phone (broadcast, then am force-stop) on Disconnect.
+  The phone renews it about once a minute (broadcast); without a renewal for 5 minutes it lets go by itself (Lease.java).
+  Built by build.sh into assets/adb_stub.apk of the main app. versionCode must equal WearStub.VERSION (checked by the wearstub Java suite).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.bloatware.bingblop.adbstub"
+    android:versionCode="2"
+    android:versionName="1.1">
+
+    <uses-sdk android:minSdkVersion="25" android:targetSdkVersion="34" />
+
+    <uses-feature android:name="android.hardware.type.watch" android:required="false" />
+
+    <!-- screen on (wake lock), Wi-Fi held (Wi-Fi lock + a request for a Wi-Fi network), the notification of the foreground service -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:label="ADB Stub"
+        android:icon="@drawable/ic_stub"
+        android:allowBackup="false"
+        android:theme="@android:style/Theme.DeviceDefault">
+
+        <meta-data android:name="com.google.android.wearable.standalone" android:value="true" />
+
+        <activity
+            android:name=".StubActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".StubService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!-- Stop and Renew: sent by the phone over adb (am broadcast). Only the shell and the system hold DUMP, so no other app on the watch can send them. -->
+        <receiver
+            android:name=".StopReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="com.bloatware.bingblop.adbstub.STOP" />
+                <action android:name="com.bloatware.bingblop.adbstub.RENEW" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

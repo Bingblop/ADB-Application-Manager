@@ -23,6 +23,28 @@ public class FileOpsTest {
   static String rep(char c, int n) { char[] a = new char[n]; Arrays.fill(a, c); return new String(a); }
   static List<String> names(File d) { String[] a = d.list(); List<String> r = a == null ? new ArrayList<String>() : new ArrayList<String>(Arrays.asList(a)); Collections.sort(r); return r; }
 
+  static File srcDir() {
+    File d = new File(System.getProperty("user.dir")).getAbsoluteFile();
+    for (int i = 0; d != null && i < 8; i++, d = d.getParentFile()) {
+      File f = new File(d, "src/com/bloatware/bingblop");
+      if (f.isDirectory()) return f;
+    }
+    return null;
+  }
+
+  /** The body of the method declared by {@code sig}, braces matched; null when it is not there. */
+  static String bodyOf(String src, String sig) {
+    int i = src.indexOf(sig);
+    if (i < 0) return null;
+    int open = src.indexOf('{', src.indexOf(')', i)), depth = 0;
+    for (int j = open; j >= 0 && j < src.length(); j++) {
+      char c = src.charAt(j);
+      if (c == '{') depth++;
+      else if (c == '}' && --depth == 0) return src.substring(open, j + 1);
+    }
+    return null;
+  }
+
   public static void main(String[] args) throws Exception {
     // ---------- free names ----------
     File d = tmp("fo-names");
@@ -314,6 +336,74 @@ public class FileOpsTest {
     check("and edited in place (" + why + ")", why == null && ArchiveIo.list(new File(ln, a252 + ".tar"), null).items.size() == 2);
     check("no temporary file is left: " + names(ln), names(ln).equals(new ArrayList<String>(new java.util.TreeSet<String>(Arrays.asList("long.zip", "out", "src.txt", a252 + ".tar", a252 + ".zip")))));
     rm(ln);
+
+    // MA3-1: a name that is taken in a folder of added storage follows the rule of two plain folders: folders merge, nothing is deleted first
+    check("saf: a free name is created", FileOps.safClash(true, null, "replace") == FileOps.SAF_CREATE && FileOps.safClash(false, null, "skip") == FileOps.SAF_CREATE);
+    check("saf: keep both always creates (the provider numbers the copy)", FileOps.safClash(true, true, "keep") == FileOps.SAF_CREATE && FileOps.safClash(false, false, "both") == FileOps.SAF_CREATE && FileOps.safClash(false, true, "keep") == FileOps.SAF_CREATE);
+    check("saf: a folder onto a folder merges under replace and skip, the old folder is never deleted", FileOps.safClash(true, true, "replace") == FileOps.SAF_MERGE && FileOps.safClash(true, true, "skip") == FileOps.SAF_MERGE);
+    check("saf: a file onto a file is replaced or left", FileOps.safClash(false, false, "replace") == FileOps.SAF_REPLACE && FileOps.safClash(false, false, "skip") == FileOps.SAF_SKIP);
+    check("saf: a file onto a folder or a folder onto a file is refused under replace and left under skip",
+        FileOps.safClash(false, true, "replace") == FileOps.SAF_IN_THE_WAY && FileOps.safClash(true, false, "replace") == FileOps.SAF_IN_THE_WAY
+        && FileOps.safClash(false, true, "skip") == FileOps.SAF_SKIP && FileOps.safClash(true, false, "skip") == FileOps.SAF_SKIP);
+    String es = "com.android.externalstorage.documents";
+    check("saf path: primary is the user's shared storage", "/storage/emulated/0/Download/x".equals(FileOps.externalStoragePath(es, "primary:Download/x", 0))
+        && "/storage/emulated/10".equals(FileOps.externalStoragePath(es, "primary:", 10)) && "/storage/emulated/0/Download".equals(FileOps.externalStoragePath(es, "primary:Download/", 0)));
+    check("saf path: an SD card is /storage/VOLUME, home is Documents", "/storage/1234-5678/DCIM".equals(FileOps.externalStoragePath(es, "1234-5678:DCIM", 0))
+        && "/storage/emulated/0/Documents/Notes".equals(FileOps.externalStoragePath(es, "home:Notes", 0)));
+    check("saf path: another provider or an odd id has none", FileOps.externalStoragePath("com.example.drive", "primary:x", 0) == null && FileOps.externalStoragePath(es, "x", 0) == null
+        && FileOps.externalStoragePath(es, ":x", 0) == null && FileOps.externalStoragePath(es, "a/b:c", 0) == null && FileOps.externalStoragePath(es, "primary:../etc", 0) == null
+        && FileOps.externalStoragePath(es, "primary:a/./b", 0) == null && FileOps.externalStoragePath(es, "primary:/abs", 0) == null && FileOps.externalStoragePath(es, null, 0) == null);
+    check("saf ids: the same folder and what is in it are inside, a longer name is not", FileOps.safDocInside("primary:Download", "primary:Download") && FileOps.safDocInside("primary:Download", "primary:Download/a/b")
+        && !FileOps.safDocInside("primary:Download", "primary:Downloads") && FileOps.safDocInside("primary:", "primary:Download") && !FileOps.safDocInside("1234-5678:", "primary:x") && !FileOps.safDocInside(null, "primary:x"));
+    check("plain paths: inside or the same, not a longer name", FileOps.pathInside("/storage/1234/A", "/storage/1234/A/b") && FileOps.pathInside("/storage/1234/A", "/storage/1234/A")
+        && !FileOps.pathInside("/storage/1234/A", "/storage/1234/AB") && !FileOps.pathInside(null, "/x"));
+
+    // SDM-4, a source scan of MainActivity (the batch routes need Android classes): an item a move skips because the name is taken stays where it is,
+    // so it is reported in "kept" and the page keeps it on the move clipboard; every skip of the batch routes (also into a plain folder from added
+    // storage) does so
+    File sdir = srcDir();
+    if (sdir == null) System.out.println("SKIP the batch source scan: src/com/bloatware/bingblop not found");
+    else {
+      String m = new String(Files.readAllBytes(new File(sdir, "MainActivity.java").toPath()), StandardCharsets.UTF_8);
+      for (String sig : new String[] { "private void runSafBatch(", "public String fmBatch2(" }) {
+        String b = bodyOf(m, sig);
+        check(sig + " found", b != null);
+        if (b == null) continue;
+        int at = 0, skips = 0;
+        while ((at = b.indexOf("skipped++;", at)) >= 0) {
+          skips++;
+          int end = b.indexOf('}', at);
+          String rest = end < 0 ? "" : b.substring(at, end);
+          check(sig + " skip #" + skips + " puts the item into kept: " + rest.replaceAll("\\s+", " "), rest.contains("kept.put(q);"));
+          at += 10;
+        }
+        check(sig + " has skips to look at", skips > 0);
+      }
+      // MA3-1: the batch into added storage decides a taken name with FileOps.safClash and merges folders; it deletes what holds the name only to replace a file
+      String rb = bodyOf(m, "private void runSafBatch(");
+      if (rb != null) {
+        check("runSafBatch decides a taken name with FileOps.safClash and merges folders", rb.contains("FileOps.safClash(") && rb.contains("safMergeInto("));
+        int at = 0, dels = 0;
+        while ((at = rb.indexOf("deleteDocument(getContentResolver(), clash)", at)) >= 0) {
+          dels++;
+          String line = rb.substring(rb.lastIndexOf('\n', at) + 1, at);
+          check("runSafBatch deletes a taken name only for SAF_REPLACE: " + line.trim(), line.contains("FileOps.SAF_REPLACE"));
+          at += 10;
+        }
+        check("runSafBatch still replaces a file", dels > 0);
+      }
+      // MA3-2: a folder copy reads what is in the source before it creates the new folder, which may be inside the source (copy into itself without end)
+      for (String[] cp : new String[][] { { "private String safCopyInto(Uri srcUri, Uri destParentUri)", "safKids(", "createDocument(" },
+                                          { "private String safCopyPosixIntoSaf(", "listFiles()", "createDocument(" },
+                                          { "private String safCopyIntoPosix(Uri srcUri, File destDir, String asName)", "safKids(", "mkdirs()" } }) {
+        String b = bodyOf(m, cp[0]);
+        check(cp[0] + " found", b != null);
+        if (b == null) continue;
+        int list = b.indexOf(cp[1]), make = b.indexOf(cp[2]);
+        check(cp[0] + " lists the source before it makes the new folder", list >= 0 && make >= 0 && list < make);
+        check(cp[0] + " stops on cancel inside the folder", b.contains("if (fmBatchCancel) return \"Cancelled\";"));
+      }
+    }
 
     for (File f : new File[]{src, dst, cdst, tc, msrc, mdst, ddir, outside, w, sd, ss}) rm(f);
     System.out.println(fails == 0 ? "ALL PASSED (" + n + " checks)" : fails + " FAILED");

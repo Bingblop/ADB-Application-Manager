@@ -9,6 +9,7 @@ it works; write down what you saw when it does not.
 - [ ] Install the APK over the old version (it must keep your data). About shows the version you expect.
 - [ ] A working mode is on (ADB over TCP, Wireless Debugging, Shizuku or Root). Most items below need one.
 - [ ] Use a phone you do not mind changing: some items disable apps or change app ops. Everything can be undone from the same screens.
+- [ ] About > Self-test > Run self-test (with your working mode on, then once more with no mode): 27 rows appear with PASS, FAIL, INFO or SKIP, and the line under the buttons counts them. Copy report: paste it somewhere and check it holds no serial number, IP or MAC address, account name or key. Report on GitHub: the browser opens the phone bug report form with the mode, version and device filled in and the report is on the clipboard. Paste the report (or the failing rows) into the issue; this one step tells us what else on this list is worth chasing.
 
 ## 0. New in v7.10.0
 
@@ -55,7 +56,8 @@ it works; write down what you saw when it does not.
 - [ ] About > Issues and Contact (v7.10.11): Issues opens github.com/Bingblop/ADB-Application-Manager/issues in the browser. Contact the developer: write a line, Send: your email app opens with To = the alias, subject ADB App Manager and the details at the bottom of the body; the developer's own address appears nowhere. With the details switch off they are absent. With no email app installed: the sheet says so and Copy message works.
 - [ ] Morphe Helper > downloads in the background (v7.10.7): in the in-app browser start a big download (a few hundred MB), press Home and switch the screen off for a few minutes: a "Downloading ..." notification shows the progress and it keeps going (check the size when you come back). Pull the notification down: Pause all pauses it (it is still in the list, Resume continues from where it stopped), Cancel removes it. Let one finish with the app in the background: a note "... is saved" replaces the progress and opens the app when tapped. Turn off "Keep downloading in the background" under the list: leaving the app now stops the download. On Android 13+ also try with notifications turned off for the app: the download still goes on.
 - [ ] Settings > My Themes (v7.10.7): make a look (a palette style with your own source color and a color tweak, Pure black on), Save current theme, give it a name; make another look, save it; tap each one: the whole app switches, Light/Dark stays as you had it. Rename, Update (after changing the look) and Delete work; close and reopen the app: the themes are still there.
-- [ ] Settings > Palette Style (v7.10.6): tap each of the nine styles with Dark and then Light appearance: the whole app changes color, text stays readable, nothing looks broken (cards, badges, bottom sheets). Pick a source color (the circle): the tiles and the app follow it; Automatic goes back to the wallpaper's color (on Android 12+, change the wallpaper and come back: the colors follow). Close and reopen the app: the style and color are still there. Tap a curated palette: it takes over.
+- [ ] Settings > Palette Style (v7.10.6; CMF is new after v7.15.0): tap each of the ten styles (Tonal Spot to CMF) with Dark and then Light appearance: the whole app changes color, text stays readable, nothing looks broken (cards, badges, bottom sheets). Pick a source color (the circle): the tiles and the app follow it; Automatic goes back to the wallpaper's color (on Android 12+, change the wallpaper and come back: the colors follow). Close and reopen the app: the style and color are still there. Tap a curated palette: it takes over.
+- [ ] Settings > Palette Style, CMF in Dark (new after v7.15.0): with Dark appearance pick the source color #E91E63 (a strong pink) and tap CMF. The tile's first three swatches are three different pinks (the accent, a darker second accent and the frozen color between them), not one pink three times; the buttons painted from the accent to the second accent show a gradient, not one flat color; open the Curated Theme Palettes card under the Palette Style card (it starts folded; do not tap a palette there): under Granular Color Pickers the Primary System Accent, Frozen App Badge and System App Badge circles are three different colors (for #E91E63 #FFB2BE, #FF8FA4 and #E67F92), not the accent's color three times. The FROZEN and SYSTEM badges in the Apps list keep their own blue and purple in every style, so they do not show this. Do the same with #FF0000 and #4285F4.
 - [ ] Connected Devices > Reconnect all and timings (v7.10.6): with two devices dropped (two watches, or a watch and a tablet) a "2 devices not connected" line with Reconnect all appears; press it: each is tried in turn and the toast counts them. In Settings > Reconnecting devices set the timings to `0, 5` and drop a device: only two attempts are made, about 5 s apart. A bad entry (`0, x`) is refused in words. Reset restores `0, 8, 25`.
 - [ ] Connected Devices > a dropped device (v7.10.5): connect a watch over Wi-Fi, then switch its Wi-Fi off: a toast "Lost the connection" and a "Not connected" card with Reconnect and Forget appear within a few seconds. Switch Wi-Fi on: the automatic attempts (at once, 8 s, 25 s) bring it back, or Reconnect does. Switch Wireless debugging off and on (new port): Reconnect finds the new port. Unplug a USB device and press Reconnect: it says to check the cable. Disconnect in the device menu leaves no card.
 - [ ] Morphe Helper > Downloads from the browser (v7.10.4): start a big download in the in-app browser, close the browser: the row keeps going in Helper (size, speed, time left). Pause: the bytes stop; Resume: it asks for the rest only (the size goes on from where it was, not from 0). Turn Wi-Fi off mid-download: the row says it stopped and how far; Wi-Fi on, Retry: it goes on. Close and reopen the app with a paused row: it is still there and resumes. Cancel removes it; Use this file on a saved one gives "APKM, N parts".
@@ -84,7 +86,7 @@ it works; write down what you saw when it does not.
 - [ ] **Features**: a game shows OpenGL ES with "on this phone"; the Not on this phone chip lists what the phone lacks. **Configurations**: minimum / target / compiled Android versions are right for an app you know. **Signatures**: v2 / v3 are lit for a recent app; the SHA-256 matches what `apksigner verify --print-certs` (or the app's maker) says; tapping it copies it. **Libraries**: a Flutter or game app lists its .so files under arm64-v8a.
 - [ ] Uninstall, Clear Data and Rem Updates in the app menu ask first (Cancel changes nothing); Freeze and the others do not. The batch Freeze question reads "Confirm Freeze Selected Apps".
 - [ ] Settings, last card: **Trim Caches in All Applications**. Without a working mode it shows a padlock. With one: the question, then "Trimming caches…", then a report with free space before and after (a heavily used phone frees a few hundred MB or more). Apps, logins and files are intact.
-- [ ] The permissions sheet has **Install unknown apps** (Allow opens Android's screen, or grants at once with a working mode). Working Modes, Root: with Magisk / KernelSU set to deny this app the tag reads DENIED and the badge says "not ready"; after allowing it and re-selecting Root it reads ACTIVE.
+- [ ] The permissions sheet has **Install unknown apps** (Allow opens Android's screen, or grants at once with a working mode). Working Modes, Root: with the root manager set to deny this app the tag reads DENIED and the badge says "not ready"; after allowing it and re-selecting Root it reads ACTIVE.
 - [ ] The small **?** on the first card of a tab (Debloater, Installer, Files, Connected Devices, Settings, ...) opens the Help Guide at that tab's topic.
 - [ ] **Connected Devices**: Uninstall a system app on a watch that refuses with "only root can delete system app" (a Samsung watch, for example): the app is removed anyway and `/data/local/tmp` has no `adbam_unin_*.jar` left (`adb shell ls /data/local/tmp`). Reinstall brings it back.
 
@@ -241,7 +243,9 @@ Select three or four apps you do not mind changing, open the round checkmark.
 - [ ] Added storage (SD card or USB): search `content:word` finds text files that hold the word; `archive:` says it is skipped.
 - [ ] Settings, Lists, **Remember my filters** on: turn on Running + 3rd Party, force-close the app, open it again: the same filters are on. Off: it opens on All Apps.
 
-- [ ] With no working mode on, open an app's menu: the permission toggles, the App Ops modes (on the mode that is set) and every Enable / Disable, Stop and Launch button of activities, services, receivers and providers show the lock and look dimmed. Turn a working mode on and open the menu again: only install-time permissions keep the lock.
+- [ ] With no working mode on, open an app's menu: the permission toggles, the App Ops modes (on the mode that is set) and every Enable / Disable, Stop and Launch button of activities, services, receivers and providers show the lock and look dimmed. Turn the ADB shell user (UID 2000: ADB, Wireless Debugging or Shizuku started over ADB) on and open the menu again: only install-time permissions and every Enable / Disable keep the lock (the Enable / Disable lock means "Needs Super User (Root)"). In Root mode with su granted, or with Shizuku running as root (UID 0) or the system user (UID 1000), Enable / Disable is unlocked too.
+- [ ] The Enable / Disable lock off Root, on a phone with su (Shizuku over ADB, UID 2000, chosen): tap DISABLE on a screen of an app you installed. The working mode switches to Root and the root manager asks (KernelSU and APatch refuse until the app is allowed in their list). Deny: the toast reads "Super User was not granted. The working mode stays Shizuku ADB (UID 2000).", the badge reads Shizuku again, then "Enabling or disabling a component needs Super User. Open Root Features to check if your device supports Super User?" comes; OK closes the app menu and opens Root Features. Grant instead: the mode stays Root and the screen is disabled ("Component disabled"); ENABLE it again. On a phone without su the tap only brings that question. Nothing is disabled without Root in any of these.
+- [ ] Root mode, a system app (Settings, say): tap DISABLE on one of its parts and answer **Cancel** to the question "Disable … of the system app …? This can break the app or the system UI. You can turn it back on here.": nothing changes and the row still offers DISABLE.
 
 ## 12. Language, font and File Manager core (v7.1 to v7.4)
 
@@ -289,8 +293,8 @@ These came before the rest of this list and were only checked in the browser. Th
 ## 17. The Installed box (v7.12.5)
 
 - [ ] The first box reads **Installed** and its count leaves out the uninstalled apps. The **All Apps** pill still counts every app.
-- [ ] Tap **Installed**: only installed apps are listed. Also tap **Bloatware (Uninstalled)**: every app on the phone is listed and both boxes are lit. Tap **Installed** again: only the uninstalled apps remain.
-- [ ] With Installed and Bloatware (Uninstalled) lit, tap **Running**: Bloatware (Uninstalled) turns off (a running app is installed).
+- [ ] Tap **Installed**: only installed apps are listed. Then tap **Uninstalled**: Installed turns off and only the uninstalled apps are listed (Installed | Uninstalled are one choice after v7.14.0, like System | User). Tap **Installed** again: Uninstalled turns off and only installed apps are listed. Connected Devices > Apps does the same.
+- [ ] With Uninstalled lit, tap **Running**: Uninstalled turns off (a running app is installed).
 
 - [ ] App menu buttons (v7.12.5): **App Info** now stands right after **Clear Data** and **Uninstall** right after **Rem Updates**; **Uninstall** is tinted red and **Freeze** blue.
 
@@ -490,7 +494,7 @@ Fifty-four fixes, shipped as **v7.13.1** (versionCode 855, cut from `main`; #183
 
 - [ ] SD Maid → Deduplicator: scan, open a set of three copies, untick ONE copy that is not marked *Kept*, delete. The *Kept* copy and the unticked copy stay; only the third is deleted.
 - [ ] Connected Devices with two devices attached (or a watch and a phone): start a batch Freeze of three apps on device A, then switch the device select to B while it runs. The select is greyed out during the batch; every result names device A; nothing changed on B. Also: drop A's connection mid-batch (Wi-Fi off on the watch): the remaining rows say the device is gone, not "Frozen".
-- [ ] Root mode with the su prompt denied (or Magisk's grant revoked): Freeze an app. The result says root is not granted, never "Success". Re-grant, use *check Working Modes again*, and the same action works.
+- [ ] Root mode with the su prompt denied (or the root manager's grant revoked): Freeze an app. The result says root is not granted, never "Success". Re-grant, use *check Working Modes again*, and the same action works.
 - [ ] Terminal tab, full-screen terminal, app shell: run `sleep 300`, paste a few hundred lines of text, then close the terminal. The app does not freeze (no ANR), and `ps` in a new terminal shows no leftover `ptyexec` or `sleep`.
 - [ ] File Manager: in a folder with a folder `Backup` and a file `notes.txt`, rename `notes.txt` to `Backup`. Refused with a "name is taken" message; nothing moved. Renaming `notes.txt` to `Notes.txt` (case only) is allowed.
 - [ ] File Manager: Copy with a typed destination that names an existing file. Refused; the existing file is untouched.
@@ -553,7 +557,60 @@ Eleven fixes, shipped as **v7.13.2** (versionCode 856, cut from `main`; #200); t
 - [ ] Without consent, or in Read-Only mode: AppCleaner does not switch anything on by itself and shows the old "turn it on" message.
 - [ ] SD Maid tab > Exclusions (AppCleaner): this app (`com.bloatware.bingblop`) and the WebView packages (`com.google.android.webview`, its `.beta`, `.dev` and `.canary` variants, and `com.android.webview`) are listed as stock exclusions and come back with Restore default exclusions. Turn **Force-stop before clearing** on and clean all apps: this app and Android System WebView are not force-stopped and the cleaning is not cut short; they stay in the result as excluded, not failed.
 
-## 34. Screenshot and Record screen (Console tab)
+## 30. Start Shizuku from the app
+
+Needs Shizuku installed (official app, and the Shizuku+ fork if you have it) and ADB TCP or Wireless Debugging connected in this app. None of this has been run on a phone yet.
+
+- [ ] **Not running, then started.** Restart the phone (or stop Shizuku) so Shizuku is not running, connect ADB TCP or Wireless Debugging, open Working Modes: the Shizuku card says NOT RUNNING. Open the Shizuku app once and come back. Tap **Start Shizuku (ADB)**. Expected: the toast "Starting Shizuku through ADB..." and a disabled button, then, usually within ten seconds (a slow phone just after a restart can take up to about half a minute; the button stays disabled until the answer), "Shizuku is running. Tap Authorize & Use Shizuku next.", the tag changes to RUNNING (UNAUTHORIZED) or AUTHORIZED, and the button works again. Tap **Authorize & Use Shizuku**, approve, and run one command in Shizuku mode.
+- [ ] **No start script.** After clearing the Shizuku app's data (so it has not written start.sh), tap **Start Shizuku (ADB)**: the toast says Shizuku has not written its start script yet, and the Shizuku app opens. Nothing is started and no error text appears.
+- [ ] **No ADB connection.** With ADB TCP and Wireless Debugging both disconnected, tap it: the toast says to connect one of them first.
+- [ ] **Already running.** With Shizuku running, tap it: "Shizuku is already running", nothing is run.
+- [ ] **A failed start.** If Shizuku does not start (for example a Shizuku version whose start script needs another way), the toast says so and the text the script printed appears under the buttons. Please copy that text into the report: it is what we need to adjust the command for that version.
+- [ ] **Double tap.** Tap twice quickly: one start runs; the second tap says it is already being started.
+
+## 31. Shizuku offered to start at launch
+
+Needs Shizuku installed but not running, an ADB TCP or Wireless Debugging connection that this app holds (its card says CONNECTED; a port that is open but that nothing has connected to is not enough, because the start runs only through a connected target) and the working mode pinned to Shizuku (not Auto: in Auto a reachable ADB TCP or Wireless Debugging target is itself the working mode, so the offer never appears there). None of this has been run on a phone yet.
+
+- [ ] **Offered on launch.** With Shizuku running, connect ADB TCP in Working Modes (this picks ADB TCP), then pick Shizuku again (**Authorize & Use Shizuku**). Stop Shizuku in the Shizuku app, leave this app with Back (not a force stop, which also ends its ADB connection) and open it again. Expected: a dialog titled **Start Shizuku** asks "Shizuku is installed but not running. Start it now through the ADB connection so this app can use it?". Tap **OK**: Shizuku starts through ADB (as in section 30), and once it is running the app asks to authorize it, then the first-launch permissions sheet follows.
+- [ ] **Declined twice, then quiet.** Open the app and tap **Cancel** on the offer, then open it again: it offers once more. Decline again, then open a third time: it no longer offers (asked at most twice). The Shizuku card's **Start Shizuku (ADB)** button still starts it by hand.
+- [ ] **Not offered when it cannot help.** With a working mode already active (ADB TCP, Wireless Debugging or Root), or with Shizuku already running, or with no ADB target connected, or with Shizuku not installed, or with the mode on Auto: no launch dialog appears.
+- [ ] **Not offered over a port nothing has connected to.** Restart the phone with the mode on Shizuku, switch ADB TCP on again (`adb tcpip 5555` from a computer) and open the app: no **Start Shizuku** dialog (nothing has connected to the port yet, and the start would only answer "Connect ADB TCP or Wireless Debugging first, then start Shizuku."). Connect ADB TCP in Working Modes, then the Shizuku card's **Start Shizuku (ADB)** starts it.
+
+## 32. Working mode tile light
+
+Needs the **Working mode** tile added to Quick Settings (swipe down twice, tap the pencil, drag it in). The tile shows what the app last found when it checked the mode; it cannot check on its own, so it keeps that state until the app looks again (opening the app, or a tap on the tile). None of this has been run on a phone yet.
+
+- [ ] **Dim without a mode.** Set Working Modes to Read-Only, go back to the Apps tab so the app checks the mode, then pull down Quick Settings: the **Working mode** tile is dim (not lit) and says Read-Only under its name.
+- [ ] **Lit with a mode.** Connect ADB TCP, Wireless Debugging, Shizuku or Root (the Working Modes card shows it connected, authorized or granted), then pull down Quick Settings: the tile is lit. With the mode on Automatic and a connection found: lit as well.
+- [ ] **Follows a tap.** With one other mode ready, tap the tile: it says "Working mode: ..." and is lit. Tap again with nothing else reachable: it says "No other mode is ready. Using Automatic." and is lit only if Automatic still finds a connection, otherwise dim.
+- [ ] **Root from the tile asks nothing.** On a rooted phone whose root manager has not granted this app yet, with no other mode ready, tap the tile: it says "Working mode: Root" at once, no root prompt comes up and the tile is dim. Open the app: the root manager asks now; after Allow, the tile is lit.
+- [ ] **Follows a loss.** With the tile lit through ADB TCP, turn Wi-Fi off, open the app (it checks the mode again), then pull down Quick Settings: the tile is dim.
+- [ ] **Fresh install.** Right after installing, before the app was ever opened: the tile is dim.
+- [ ] **After an update.** With the tile in the panel, install this build over 7.15 (an update, not a fresh install) and do not open the app: pull down Quick Settings: the tile is dim, with the saved mode under its name. Open the app once, then pull down Quick Settings again: the tile follows the mode (lit when it is ready).
+
+## 33. Allow all restarts the app
+
+"Allow all" on the permissions sheet (and the one-time "Grant all remaining permissions" question) grants by command through the working mode, then the app
+restarts in a fresh process: the shell behind the working mode starts it again about two seconds after it closes. Earlier builds reloaded the page inside the
+same process, and on some phones the app closed and stayed closed. None of this has been run on a phone yet.
+
+- [ ] **First launch.** Install the app fresh with ADB TCP, Wireless Debugging, Shizuku or root ready, open it, and on the **Allow a few permissions** sheet tap
+      **Allow all**. Expected: a toast "Restarting the app", the app closes, and within a few seconds it opens again on its own, with the permissions granted
+      (About > Permissions shows them, or Settings > Application Permissions). If the app does not come back on its own, note that: it is the bug this build fixes.
+- [ ] **What is left.** When something had no command (Live updates on Android 16, or a permission the phone refused), the sheet opens again after the restart
+      with only those rows unfilled; Allow on one opens its Android screen as before. With Wireless Debugging, where the connection takes a moment to come
+      back after the restart, a refused row that only a working mode can grant (Read Logs, DUMP) may show a lock at first: the sheet still opens, and the row
+      gets its Allow button once the mode is back.
+- [ ] **Android 11, Install unknown apps.** On Android 11 the phone ends the app the moment Install unknown apps is allowed by command (Android 12 and later do
+      not), so that command runs last. Fresh install on Android 11 with ADB TCP or Wireless Debugging, first-launch sheet, **Allow all**: the app comes back once
+      with every row that has a command granted, and the sheet does not come back asking for a second Allow all.
+- [ ] **Nothing to grant.** Open the sheet from About with every permission already granted and tap **Allow all**: no restart, the sheet just closes.
+- [ ] **The question.** On a phone where the first-launch sheet was skipped, connect a working mode later: the question "Grant all remaining permissions with it
+      now? The app restarts afterwards." appears; OK: the same restart, and the app comes back.
+- [ ] **A single Allow.** Allow one permission by its own button: the sheet behaves as before (the page reloads, no process restart).
+
+## 40. Screenshot and Record screen (Console tab)
 
 None of this has been run on a phone yet. Open the Console tab, ADB Shell part, with a working mode connected (ADB TCP, Wireless Debugging, Shizuku or Root). Repeat the first two items in a second mode if you can, and write down which.
 

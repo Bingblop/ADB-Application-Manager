@@ -2,7 +2,7 @@ ok   en 320 tcp: one line, not wrapped
 ok   en 320 tcp:   the whole name shows (no "…")
 ok   en 320 tcp:   inside the screen, no sideways scroll, the title clear of the gear
 ok   en 320 wireless: one line, not wrapped
-ok   en 320 wireless:   the longest name ("Auto • Wireless ADB (41235)") ends in "…" at 320 px
+ok   en 320 wireless:   the whole name shows (no "…")
 ok   en 320 wireless:   inside the screen, no sideways scroll, the title clear of the gear
 ok   en 320 setup: one line, not wrapped
 ok   en 320 setup:   the whole name shows (no "…")
@@ -38,4 +38,14 @@ ok   light: the header gear is an SVG with no text (no colour emoji)
 ok   light:   drawn in the theme's text colour
 ok   light:   a tap target of at least 38 x 38 px called Settings
 ok   light:   a tap opens Settings
+ok   light setup: the badge's orange reads on its wash (4.5:1), the dot is in the same colour
+ok   light setup:   the Updater's error lines are in the theme's danger colour (bold as an error, the versions line plain as before)
+ok   light readonly: the badge's orange reads on its wash (4.5:1), the dot is in the same colour
+ok   light readonly:   the Updater's error lines are in the theme's danger colour (bold as an error, the versions line plain as before)
+ok   dark readonly: the badge's orange is the one it always was (#FFA726)
+ok   token sheet colours, Setup Mode (Read-Only): the badge as the script used to paint it
+ok   token sheet colours, Shizuku (not ready): the badge as the script used to paint it
+ok   token sheet colours, Root (Superuser): the badge as the script used to paint it
+ok   token sheet colours, ADB TCP: the badge as the script used to paint it
+ok   token sheet colours: the Updater's error lines in #FF5252 as before
 errors: []

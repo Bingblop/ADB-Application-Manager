@@ -1,0 +1,8 @@
+ok   1. the Read Logs row says what the permission is: Android's permission to read the system log (logcat) of every app. Live Logcat does not use it: it reads the log through the working mode. Granted through the working mode.
+ok      and that Live Logcat does not use it but reads the log through the working mode: Android's permission to read the system log (logcat) of every app. Live Logcat does not use it: it reads the log through the working mode. Granted through the working mode.
+ok      it no longer promises that the app reads the log itself, without the shell: Android's permission to read the system log (logcat) of every app. Live Logcat does not use it: it reads the log through the working mode. Granted through the working mode.
+ok   2. German: the row is translated and names Live-Logcat: Die Android-Berechtigung, das Systemprotokoll (logcat) aller Apps zu lesen. Live-Logcat nutzt sie nicht, sondern liest das Protokoll über den Betriebsmodus. Wird über den Betriebsmodus gewährt.
+ok   3. the Help Guide row says nothing in the app depends on Read Logs: <tr><td>Read Logs</td><td>Android's permission to read the system log (logcat) of every app. Nothing in the app depends on it: <a href=\"#tab-logcat\">Live Logcat</a> and its recordings read the log t
+ok      and no longer says the log viewer sees this app's own lines without a working mode
+ok   no page errors:
+all passed

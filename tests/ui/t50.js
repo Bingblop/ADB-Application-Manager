@@ -59,7 +59,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.locator('#lcAppList .perm-row', { hasText: 'Alpha' }).first().click(); await sleep(250);
   console.log('3. picking an app closes the picker, relabels the button and shows the clear button:', !(await page.locator('#lcAppModal.show').count()) && (await page.locator('#logcatAppBtn').innerText()) === 'Alpha ▾' && await page.locator('#logcatAppClear').isVisible());
   const calls3 = await page.evaluate(() => window.__calls.logcatFor.slice());
-  console.log('   the log was fetched for that package with the chosen level and lines:', calls3.length >= 1 && calls3[calls3.length - 1][3] === 'com.example.alpha' && calls3[calls3.length - 1][0] === 'I' && calls3[calls3.length - 1][2] === 500, JSON.stringify(calls3));
+  console.log('   the log was fetched for that package with the chosen level and lines:', calls3.length >= 1 && calls3[calls3.length - 1][3] === 'com.example.alpha' && calls3[calls3.length - 1][0] === 'I' && calls3[calls3.length - 1][2] === 1000, JSON.stringify(calls3));
   console.log('   only that app’s lines are drawn (+ the shared-UID note):', /hello from alpha/.test(await page.locator('#logcatOutput').innerText()) && !/Start proc for all/.test(await page.locator('#logcatOutput').innerText()) && /shares its user ID/.test(await page.locator('#logcatOutput').innerText()));
   console.log('   the line under the controls names the package:', /com\.example\.alpha/.test(await page.locator('#logcatScope').innerText()));
 
@@ -76,7 +76,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const saved = await page.evaluate(() => window.__calls.save.slice());
   console.log('5. Save writes one text file named after the app:', saved.length === 1 && /^logcat_com\.example\.alpha_\d{14}\.txt$/.test(saved[0][0]), JSON.stringify(saved.map(x => x[0])));
   const txt = saved[0] ? saved[0][1] : '';
-  console.log('   the file has a header (app, level, lines) and the raw lines minus the hidden level:', /^# ADB Application Manager - log export/.test(txt) && /# App: Alpha \(com\.example\.alpha\)/.test(txt) && /Level: Info and above/.test(txt) && /Hidden levels: Warn/.test(txt) && /hello from alpha/.test(txt) && /boom/.test(txt) && !/careful/.test(txt), JSON.stringify(txt.split('\n').slice(0, 6)));
+  console.log('   the file has a header (app, level, lines) and the raw lines minus the hidden level:', /^# ADB\/Root Full System Toolbox - log export/.test(txt) && /# App: Alpha \(com\.example\.alpha\)/.test(txt) && /Level: Info and above/.test(txt) && /Hidden levels: Warn/.test(txt) && /hello from alpha/.test(txt) && /boom/.test(txt) && !/careful/.test(txt), JSON.stringify(txt.split('\n').slice(0, 6)));
   console.log('   the toast says where it went:', /Download\/ADB App Manager\/logcat_com\.example\.alpha/.test(await toast()));
   await page.evaluate(() => logcatToggleLevel('W'));
 
@@ -104,7 +104,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('9. the app sheet has a Logs button:', (await page.locator('#sheetBtnLogs').count()) === 1);
   await page.evaluate(() => { window.__calls.logcatFor.length = 0; });
   await page.locator('#sheetBtnLogs').click(); await sleep(400);
-  console.log('   it opens Console on Live Logcat limited to that app:', (await page.evaluate(() => currentViewName())) === 'console' && (await page.evaluate(() => cnSeg)) === 'log' && (await page.locator('#logcatAppBtn').innerText()) === 'Alpha ▾' && (await page.evaluate(() => window.__calls.logcatFor.some(c => c[3] === 'com.example.alpha'))) && !(await page.locator('#inspectorModal.show').count()));
+  console.log('   it opens the Live Logcat tab limited to that app:', (await page.evaluate(() => currentViewName())) === 'logcat' && (await page.locator('#logcatAppBtn').innerText()) === 'Alpha ▾' && (await page.evaluate(() => window.__calls.logcatFor.some(c => c[3] === 'com.example.alpha'))) && !(await page.locator('#inspectorModal.show').count()));
 
   // 10) Back closes the picker.
   await page.locator('#logcatAppBtn').click(); await sleep(100);

@@ -1,4 +1,4 @@
-// Installer VirusTotal card: key persistence, scan, clean/malicious verdicts, upload offer.
+// Installer VirusTotal card: key persistence, scan, clean/malicious verdicts, upload offer, a late answer for a package replaced meanwhile not shown.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -60,6 +60,32 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('6. unknown file offers upload:', hasUpload);
   if (hasUpload) { await page.click('#vtResultBox button'); await page.waitForTimeout(40); }
   console.log('   upload bridge called:', (await page.evaluate(() => window.__vt)).some(c => c.startsWith('upload:')));
+
+  // 7) Another package is loaded while that upload still runs: the late answer for the first file is not shown under the second one.
+  const A = '/data/work/base.apk', B = '/data/work2/base.apk';
+  const vtState = () => page.evaluate(() => { const bx = document.getElementById('vtResultBox'); return { shown: bx.style.display !== 'none', text: bx.innerText, btnDisabled: document.getElementById('vtScanBtn').disabled, busy: vtBusyScan }; });
+  await page.evaluate((p) => window.onInstallInspected(JSON.stringify({
+    type: 'apk', pkg: 'com.other.app', label: 'Other App', versionName: '2.0', versionCode: 2, totalSize: 2048,
+    signed: true, splits: [{ path: p, name: 'base.apk', size: 2048, isBase: true, split: '' }]
+  })), B);
+  await page.waitForTimeout(40);
+  await page.evaluate((p) => window.onVtResult(JSON.stringify({ stage: 'uploading', message: 'Uploading to VirusTotal… this can take a minute.', path: p })), A);
+  await page.evaluate((p) => window.onVtResult(JSON.stringify({ stage: 'done', found: true, malicious: 0, suspicious: 0, harmless: 60, undetected: 10, total: 70, name: 'first.apk', path: p })), A);
+  await page.waitForTimeout(30);
+  let st = await vtState(), ok = !st.shown && !st.btnDisabled;
+  console.log('7. the first file\'s late answer is not shown under the second package, its Scan button stays usable:', ok, ok ? '' : JSON.stringify(st));
+
+  // 8) The second package's own scan runs: the first file's answer neither replaces its "Checking" text nor frees its button; its own answer is shown.
+  await page.evaluate(() => { document.getElementById('vtScanBtn').click(); }); await page.waitForTimeout(40);
+  console.log('8. scan bridge called for the second package:', (await page.evaluate(() => window.__vt)).includes('scan:MYKEY123:' + B));
+  await page.evaluate((p) => window.onVtResult(JSON.stringify({ stage: 'done', found: true, malicious: 5, suspicious: 0, harmless: 55, undetected: 10, total: 70, path: p })), A);
+  await page.waitForTimeout(30);
+  st = await vtState(); ok = st.shown && /Checking VirusTotal/.test(st.text) && st.btnDisabled && st.busy;
+  console.log('   the first file\'s answer during it is dropped (still checking, button off):', ok, ok ? '' : JSON.stringify(st));
+  await page.evaluate((p) => window.onVtResult(JSON.stringify({ stage: 'done', found: true, malicious: 0, suspicious: 0, harmless: 60, undetected: 10, total: 70, path: p })), B);
+  await page.waitForTimeout(30);
+  st = await vtState(); ok = st.shown && /Clean/.test(st.text) && !st.btnDisabled && !st.busy;
+  console.log('   its own answer is shown and frees the button:', ok, ok ? '' : JSON.stringify(st));
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

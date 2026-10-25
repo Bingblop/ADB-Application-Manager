@@ -11,5 +11,5 @@
    its answer is drawn and the next poll may go: true
    Pause drops the answer of a poll that was still out: true
    Refresh fetches and draws again: true
-   the level, line count and app go along: true [4,"I","",500,""]
+   the level, line count and app go along: true [4,"I","",1000,""]
 errors: []

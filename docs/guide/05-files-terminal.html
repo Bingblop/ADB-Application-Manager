@@ -22,7 +22,7 @@
 <li>Tap a file to see what you can do with it, or press and hold a row to select things (both below).</li>
 </ol>
 <p>Each row has an icon (a small picture for photos and videos), the name (folder names end with a slash) and a grey line such as <i>-rw- • 1.2 MB</i>. A first letter <b>d</b> means a folder. The other letters say what this app may do with it: r read, w write, x run (for a folder: enter). For system places listed through a working mode you see the longer form that the <code>ls</code> command prints, such as <i>drwxrwx--x</i>. The button with three dots at the right of a row opens the same actions as tapping a file, for folders too.</p>
-<p>Under the search box are <b>Select</b>, <b>+ Folder</b> and <b>+ File</b> (make a new one here). The rest is one tap further: <b>⋯ More</b>, next to the title, opens a sheet called <i>File Manager options</i> with where to search and the two search tick boxes, <b>Show hidden files</b>, <b>Show thumbnails</b>, <b>Refresh</b> and <b>Clear thumbnail cache</b>, and under <i>Go to</i> the shortcuts <b>Storage</b>, <b>/data/local/tmp</b> and <b>/system</b> (these two need a working mode), the storages you add and <b>+ Add storage</b>. A shortcut opens its folder and closes the sheet; tap outside the sheet, its X or Back to close it yourself.</p>
+<p>Under the search box are <b>Select</b>, <b>+ Folder</b> and <b>+ File</b> (make a new one here). The round arrow next to the title is <b>Refresh</b>: one tap reads the open folder again (with search results showing, it runs the search again), and the arrow turns for a moment while it works. Use it when something changed outside this app, such as a download that just finished. The rest is one tap further: <b>⋯ More</b>, next to the arrow, opens a sheet called <i>File Manager options</i> with where to search and the two search tick boxes, <b>Show hidden files</b>, <b>Show thumbnails</b>, <b>Refresh</b> and <b>Clear thumbnail cache</b>, and under <i>Go to</i> the shortcuts <b>Storage</b>, <b>/data/local/tmp</b> and <b>/system</b> (these two need a working mode), the storages you add and <b>+ Add storage</b>. A shortcut opens its folder and closes the sheet; tap outside the sheet, its X or Back to close it yourself.</p>
 
 <h4>What you can do with a file or folder</h4>
 <p>Tap a file, or the three-dot button on any row. A sheet opens with the name, the path and these buttons (only the ones that fit are shown):</p>
@@ -287,8 +287,8 @@
 </section>
 
 <section id="tab-console" data-title="Console" data-group="The tabs">
-<p class="hg-lead">The Console runs one shell command at a time on your phone and keeps every answer on a card of its own, and it shows the phone's running log live. Two tabs at the top, <b>ADB Shell</b> and <b>Live Logcat</b>, switch between the two. For a terminal that stays open, with coding assistants, see <a href="#tab-terminal">Terminal</a>.</p>
-<p><b>Where to find it:</b> the tab named <b>Console</b> (it holds what used to be the ADB Console pane of the Command-Line Interface tab and the whole Logcat Viewer tab). The tab remembers which of the two parts you used last. A small <b>?</b> at the right end of the two tabs opens this guide at this page. If the tab is missing it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>. The details of Live Logcat are in <a href="#console-logcat">Live Logcat</a>.</p>
+<p class="hg-lead">The Console holds the app's two shells. <b>ADB Shell</b> runs one shell command at a time on your phone and keeps every answer on a card of its own; <b>Terminal</b> is a terminal that stays open, with coding assistants. Two tabs at the top switch between the two. The phone's running log has a tab of its own, <a href="#tab-logcat">Live Logcat</a>.</p>
+<p><b>Where to find it:</b> the tab named <b>Console</b> (it holds what used to be the ADB Console pane of the Command-Line Interface tab and, since v7.14.0, the Terminal, which was a tab of its own before). The tab remembers which of the two parts you used last. A small <b>?</b> at the right end of the two tabs opens this guide at this page. If the tab is missing it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>. The details of the Terminal are in <a href="#tab-terminal">Terminal</a>.</p>
 
 <h4>ADB Shell</h4>
 <ul>
@@ -304,8 +304,8 @@
 <li>If the command takes long, you can leave the tab: when it ends elsewhere, a message says <i>Command finished: see the Console</i>.</li>
 </ul>
 
-<h4>Live Logcat</h4>
-<p>The second tab at the top is the phone's live log: the filter box with <b>Refresh</b> and <b>Clear</b>, a row of buttons (Play, level, lines, All apps, Record to file, Recordings, Copy, Save, Share), the colour key and one small card per log entry. It reads only while it is on screen: leaving it for ADB Shell or another tab stops the reading. Everything about it is in <a href="#console-logcat">Live Logcat</a>.</p>
+<h4>Terminal</h4>
+<p>The second tab at the top is the Terminal: shells that stay open (the sandbox, the working mode and Termux), the full-screen real terminal and the coding agents. It starts its shell when it is first shown. Everything about it is in <a href="#tab-terminal">Terminal</a>.</p>
 
 <h4>If it fails</h4>
 <ul>
@@ -315,8 +315,8 @@
 </section>
 
 <section id="tab-terminal" data-title="Terminal" data-group="The tabs">
-<p class="hg-lead">Type commands to your phone and read the answers, in one of three shells, with a full-screen real terminal and coding assistants. Coding assistants are covered in <a href="#terminal-agents">Coding agents in the terminal</a>. Single commands with a history of cards, and the phone's log, are in the <a href="#tab-console">Console</a> tab.</p>
-<p><b>Where to find it:</b> the tab named <b>Terminal</b> (before v7.12.12 the tab was called <b>Command-Line Interface</b> and held the ADB Console as its second pane; the ADB Console is now the ADB Shell of the Console tab).</p>
+<p class="hg-lead">Type commands to your phone and read the answers, in one of three shells, with a full-screen real terminal and coding assistants. Coding assistants are covered in <a href="#terminal-agents">Coding agents in the terminal</a>. Single commands with a history of cards are in the ADB Shell, the other part of the <a href="#tab-console">Console</a> tab, and the phone's log is in <a href="#tab-logcat">Live Logcat</a>.</p>
+<p><b>Where to find it:</b> the tab named <b>Console</b>, then <b>Terminal</b> at the top. From v7.12.12 to v7.13 the Terminal was a tab of its own; before v7.12.12 the tab was called <b>Command-Line Interface</b> and held the ADB Console as its second pane (the ADB Console is now the ADB Shell of the Console tab).</p>
 
 <h4>Before you start</h4>
 <p>A command is a line of text that tells the phone to do one thing. A shell is the program that reads your lines and runs them. Which shell you pick decides what the commands may do. Pick it with <b>Shell</b> above the screen. Words such as ADB and root are explained in the <a href="#glossary">Glossary</a>.</p>
@@ -328,12 +328,12 @@
 <tr><td><b>Termux (bash and packages)</b></td><td>The Termux app, in its home folder</td><td>Termux from F-Droid or GitHub, and a one-time setup</td><td>Real bash, <code>pkg install</code>, git, python</td></tr>
 </tbody>
 </table>
-<p>Termux is a separate free app that gives you a full command line (bash is its shell, and <code>pkg</code> installs programs into it). The first time, the tab picks Termux if it is set up, otherwise the working mode if one is connected, otherwise the sandbox (you can change that in the gear, under <b>Shell when the Terminal opens</b>). Each shell has its own screen and stays open while you use other tabs, so <code>cd</code> (change folder) and variables carry over. <b>Restart shell</b> starts a fresh one.</p>
+<p>Termux is a separate free app that gives you a full command line (bash is its shell, and <code>pkg</code> installs programs into it). The first time, the Terminal picks Termux if it is set up, otherwise the working mode if one is connected, otherwise the sandbox (you can change that in the gear, under <b>Shell when the Terminal opens</b>). Each shell has its own screen and stays open while you use other tabs, so <code>cd</code> (change folder) and variables carry over. <b>Restart shell</b> starts a fresh one.</p>
 <p>Next to the drop-downs at the top (<b>Coding Agents</b>, <b>Model</b>, <b>Effort</b>) are three small buttons: the gear (<b>Terminal settings</b>, which holds your keys and defaults), <b>MCP</b> and <b>Help</b> (a short explanation of the Terminal inside the app).</p>
 
 <h4>Run your first command</h4>
 <ol class="hg-steps">
-<li>Open the <b>Terminal</b> tab. The black screen prints a welcome and a line saying which shell is ready, for example <i>sh ready through ADB, running as the shell user (uid 2000) in</i> and a folder. The uid is the user number: 2000 is the ADB shell user, 0 is root.</li>
+<li>Open the <b>Console</b> tab and tap <b>Terminal</b> at its top (next to <b>ADB Shell</b>). The black screen prints a welcome and a line saying which shell is ready, for example <i>sh ready through ADB, running as the shell user (uid 2000) in</i> and a folder. The uid is the user number: 2000 is the ADB shell user, 0 is root.</li>
 <li>Tap the box at the bottom, type <code>getprop ro.product.model</code> and tap <b>RUN</b> (or Enter on the keyboard).</li>
 <li>Your line is echoed as <i>folder $ command</i> and the answer appears under it: the model name of your phone. The prompt shows <i>#</i> instead of <i>$</i> when the shell is root.</li>
 </ol>
@@ -517,12 +517,12 @@
 </ul>
 </section>
 
-<section id="console-logcat" data-title="Live Logcat" data-group="The tabs">
-<p class="hg-lead">Logcat is the phone's running diary. Android and every app write short notes into it all the time: what they are doing, warnings and errors. Live Logcat, the second part of the <a href="#tab-console">Console</a> tab, lets you read it as it is written, filter it and save or share it, which is the best way to find out why an app crashes.</p>
-<p><b>Where to find it:</b> the tab named <b>Console</b>, then <b>Live Logcat</b> at the top (before v7.12.12 this was the Logcat Viewer tab). An app's own menu also has a <b>Logs</b> button that opens Live Logcat for that app (see <a href="#apps-menu">The app menu</a>). For the log of another device, such as a watch, see <a href="#tab-devices">Connected Devices</a>.</p>
+<section id="tab-logcat" data-title="Live Logcat" data-group="The tabs">
+<p class="hg-lead">Logcat is the phone's running diary. Android and every app write short notes into it all the time: what they are doing, warnings and errors. Live Logcat, a tab of its own, lets you read it as it is written, filter it and save or share it, which is the best way to find out why an app crashes.</p>
+<p><b>Where to find it:</b> the tab named <b>Live Logcat</b>, right after Console. A small <b>?</b> at the right end of its title opens this guide at this page. From v7.12.12 to v7.13 it was the second part of the Console tab; before v7.12.12 it was the Logcat Viewer tab. An app's own menu also has a <b>Logs</b> button that opens Live Logcat for that app (see <a href="#apps-menu">The app menu</a>). For the log of another device, such as a watch, see <a href="#tab-devices">Connected Devices</a>.</p>
 
 <h4>Before you start</h4>
-<p>Reading the log needs a <a href="#modes-overview">working mode</a> (ADB, Wireless Debugging, Shizuku or Root). Without one you see <i>Working Mode Required</i> (<a href="#mode-readonly">Read-Only mode</a> cannot read it). Opening Live Logcat starts reading right away; leaving it (for <b>ADB Shell</b> or for another tab) stops it.</p>
+<p>Reading the log needs a <a href="#modes-overview">working mode</a> (ADB, Wireless Debugging, Shizuku or Root). Without one you see <i>Working Mode Required</i> (<a href="#mode-readonly">Read-Only mode</a> cannot read it). Opening Live Logcat starts reading right away; leaving it for another tab stops it.</p>
 
 <h4>How to read a line</h4>
 <p>Each entry is a small card. Its first line starts with the level letter and the tag in bold, both in the colour of the level (for example <i>E/AndroidRuntime</i>), then:</p>
@@ -545,15 +545,16 @@
 </table>
 
 <h4>The controls</h4>
-<p>Under the filter box is one row of small buttons that scrolls sideways: <b>Play</b> / <b>Pause</b>, the level and lines drop-downs, <b>All apps</b>, <b>Record to file</b>, <b>Recordings</b>, <b>Copy</b>, <b>Save</b> and <b>Share</b>.</p>
+<p>Under the filter box is one row of small buttons that scrolls sideways: <b>Play</b> / <b>Stop</b>, the level and lines drop-downs, <b>All apps</b>, <b>Record to file</b>, <b>Recordings</b>, <b>Copy</b>, <b>Save</b> and <b>Share</b>.</p>
+<p>The tab remembers its choices from one launch of the app to the next: the level, the number of lines, the filter text and the app the log is limited to.</p>
 <table class="hg-table">
 <thead><tr><th>Control</th><th>What it does</th></tr></thead>
 <tbody>
 <tr><td>Level drop-down</td><td>Starts at <b>Info</b>. Shows this level and every more serious one. <b>Error</b> shows E and F; <b>Verbose</b> shows everything.</td></tr>
-<tr><td>Lines drop-down</td><td>How many recent lines to read: 200, <b>500</b> (starting choice), 1000 or 2000. While Playing, up to 300 are read each second.</td></tr>
+<tr><td>Lines drop-down</td><td>How many recent lines to read: 200, 500, <b>1000</b> (starting choice) or 2000. While Playing, up to 300 are read each second.</td></tr>
 <tr><td>Filter box (<b>Filter tag / text...</b>, at the top)</td><td>Type a word or a tag and press Enter. It matches plain text, not a regular expression. Only lines that contain it (capital letters ignored, anywhere in the line) stay, and the word is highlighted.</td></tr>
 <tr><td><b>All apps</b></td><td>Opens <i>Log of one app</i>: a search box and a list, running apps first. Tap an app to see only the lines written by it. The button then shows the app's name and <b>Show all apps</b> appears to go back. An app that shares its user id with others shows their lines too, with a note.</td></tr>
-<tr><td><b>Play</b> / <b>Pause</b></td><td>Play reads the log once a second, adds the lines that are new to the ones already on the screen, and follows the newest line. Lines stay on the screen even after the phone's own log has dropped them, and a second with nothing new, or one where the read fails, does not empty the view (it used to). Changing the level, the filter or the app starts a fresh view; <b>Clear</b> empties it. It starts by itself when you open the tab. Pause stops it. It also stops when you leave the tab, and it does not read while the app is in the background.</td></tr>
+<tr><td><b>Play</b> / <b>Stop</b></td><td>The button is green while it says Play and red while it says Stop. Play reads the log once a second, adds the lines that are new to the ones already on the screen, and follows the newest line. Lines stay on the screen even after the phone's own log has dropped them, and a second with nothing new, or one where the read fails, does not empty the view (it used to). Changing the level, the filter or the app starts a fresh view; <b>Clear</b> empties it. It starts by itself when you open the tab. Stop stops it. It also stops when you leave the tab, and it does not read while the app is in the background.</td></tr>
 <tr><td><b>Refresh</b> (the circular arrow at the right of the filter box)</td><td>Reads once, adds what is new and jumps to the newest line.</td></tr>
 <tr><td><b>Record to file</b></td><td>Writes the log to a file while it is on, so you can look at it afterwards. See <i>Record to a file and look at it later</i> below. While it records, the button reads <b>Stop recording</b> with the number of lines written.</td></tr>
 <tr><td><b>Recordings</b></td><td>The list of recordings, newest first. Tap one to open it; the cross at the right deletes it.</td></tr>
@@ -564,7 +565,8 @@
 <p>Scrolling up stops the view from jumping to new lines. Scroll back to the bottom to follow the log again.</p>
 
 <h4>The colour key</h4>
-<p>Above the log is a row of six chips, one per level, each with a coloured dot, its letter and name, and how many lines of that level were read: for example <i>E · Error 12</i>. Tap a chip to hide that level (it turns dim); tap again to show it. If you hide all of them, the screen says <i>Every level is hidden - tap the color key above to show some.</i></p>
+<p>Above the log is a row of six chips, one per level, each with a coloured dot, its letter and name, and how many lines of that level were read: for example <i>E · Error 12</i>. Tap a chip to hide that level (it turns dim); tap again to show it. If you hide all of them, the screen says <i>Every level is hidden - tap the color key above to show some.</i> The dots are green for Verbose, yellow for Debug, the theme's accent colour for Info, orange for Warn, red for Error and purple for Fatal. Each line of the log wears that one colour too (since 7.16.2): its level letter and tag, the bar on its left edge, its message (Verbose a little quieter) and its tint, which is as strong as <b>Row tints</b> in Settings says (Off, Faint, Subtle, Normal or Vivid). The time and the process ids stay grey.</p>
+<p>While the log plays, each second's read only adds the lines that are new at the end of the list (the lines already shown are not redrawn), and lines far above the screen are not laid out until you scroll up to them, so a busy log stays smooth. The list follows the newest line while you are at the bottom; scroll up and it stays where you are reading.</p>
 <p>To keep the screen quick, only the newest 800 entries are drawn. A line at the top says <i>N earlier entries not shown · tap to show them</i>; tap it to show up to 2500. The phone itself keeps only a limited amount of log, so older lines are gone.</p>
 
 <h4>Record to a file and look at it later</h4>
@@ -587,11 +589,11 @@
 
 <h4>Example: why does my app crash?</h4>
 <ol class="hg-steps">
-<li>Open the app's menu (<a href="#tab-apps">Application Manager</a>) and tap <b>Logs</b>, or open Console, Live Logcat and use <b>All apps</b> to pick it. The log is now only that app's.</li>
+<li>Open the app's menu (<a href="#tab-apps">Application Manager</a>) and tap <b>Logs</b>, or open Live Logcat and use <b>All apps</b> to pick it. The log is now only that app's.</li>
 <li>Set the <b>Level</b> to <b>Warn</b> or <b>Error</b>, and <b>Lines</b> to 2000 so the crash does not scroll away.</li>
 <li>Optional: tap <b>Clear</b> so the log only holds what comes next. This empties the log for every app.</li>
 <li>Use the app until it crashes.</li>
-<li>Tap <b>Pause</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. A crash of an app written in Java or Kotlin has a row <i>FATAL EXCEPTION</i>, and all its lines have the tag <i>AndroidRuntime</i>: type <code>AndroidRuntime</code> in the filter and press Enter to see just the crash. (Filtering for <i>FATAL EXCEPTION</i> itself would hide the lines under it.) A crash of native code shows <i>Fatal signal</i>.</li>
+<li>Tap <b>Stop</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. A crash of an app written in Java or Kotlin has a row <i>FATAL EXCEPTION</i>, and all its lines have the tag <i>AndroidRuntime</i>: type <code>AndroidRuntime</code> in the filter and press Enter to see just the crash. (Filtering for <i>FATAL EXCEPTION</i> itself would hide the lines under it.) A crash of native code shows <i>Fatal signal</i>.</li>
 <li>Read the lines under it: <i>Process:</i> names the app, the next line names the error (for example a null pointer), and <i>Caused by:</i> lines name the real cause. The lines starting with <i>at</i> are where in the code it happened.</li>
 <li>Tap <b>Share</b> or <b>Save</b> and send the file to the app's developer.</li>
 </ol>
@@ -623,8 +625,8 @@
 
 <h4>The settings box</h4>
 <ul>
-<li><b>Auto-refresh</b>: how often to measure: Off, 1 s, 2 s, <b>3 s</b> (starting choice), 5 s or 10 s. <b>Refresh now</b> measures once. A longer time uses less battery.</li>
-<li><b>Graph speed</b>: a slider from 150 to 1000 ms (starting at 300 ms). It only changes how often the graph is redrawn, not how often the phone is measured.</li>
+<li><b>Auto-refresh</b>: how often to measure: Off, 0.5 s, <b>1 s</b> (starting choice), 2 s, 3 s, 5 s or 10 s. <b>Refresh now</b> measures once. A longer time uses less battery.</li>
+<li><b>Graph speed</b>: a slider from 50 to 1000 ms (starting at 150 ms). It only changes how often the graph is redrawn, not how often the phone is measured. A low number makes the line move more smoothly and uses a little more battery.</li>
 <li><b>Units</b> (only on the Battery page): temperature in <b>&deg;F</b> or <b>&deg;C</b> (starting at F), and current in <b>mA</b> or <b>µA</b>.</li>
 </ul>
 <p>The graphs keep the last 120 readings. Your choices are remembered.</p>
@@ -659,7 +661,8 @@
 
 <h4>GPU</h4>
 <p>The GPU draws the picture on your screen. The big number is its load. Phones do not all expose it, so you may see <i>Not available on this phone</i>. Some show <i>~40% (by clock speed)</i>, a rough guess from the chip's speed. Under it, <b>GPU Information</b> says whether <b>Vulkan</b> is supported (and its API version) and the <b>OpenGL ES</b> version (Vulkan and OpenGL ES are the two ways apps draw graphics on the chip).</p>
-<p>The <b>GPU renderer</b> card is at the very top of the tab, above the graph, and shows in large letters which renderer is in use (<b>Default</b>, <b>OpenGL</b> or <b>Vulkan</b>). Its drop-down (working mode needed) offers <b>OpenGL</b>, and <b>Vulkan</b> if the phone supports it (plus <b>Default</b> until you pick one). Choosing one sets the system's drawing engine and restarts System UI (the status and navigation bars) to apply it, with a visible flicker. To go back, choose the other one, or restart the phone (a setting made this way normally does not survive a restart).</p>
+<p>The <b>GPU renderer</b> card is at the very top of the tab, above the graph, and shows in large letters which renderer is in use (<b>Default</b>, <b>OpenGL</b>, <b>Vulkan</b> or <b>ANGLE</b>). Its drop-down (working mode needed) offers <b>OpenGL</b>, <b>Vulkan</b> if the phone supports it, and <b>ANGLE (OpenGL ES on Vulkan)</b> (plus <b>Default</b> until you pick one). Choosing OpenGL or Vulkan sets the system's drawing engine and restarts System UI (the status and navigation bars) to apply it, with a visible flicker. To go back, choose the other one, or restart the phone (a setting made this way normally does not survive a restart).</p>
+<p><b>ANGLE</b> is different: it makes every app's OpenGL ES drawing run on Vulkan, through Android's ANGLE layer. The app turns on the system setting <code>angle_gl_driver_all_angle</code> and reads it back to check; apps use ANGLE from the next time they start, and System UI is not restarted. It needs <b>Root</b> mode: in any other mode the entry reads "ANGLE (OpenGL ES on Vulkan), needs Root", a small lock button "ANGLE needs Root" sits on the card, and choosing it only says <i>ANGLE needs Root mode: switch to Root in Working Modes</i>. Choosing another renderer while ANGLE is on turns ANGLE off first (also as root), and applies the other one only when the phone says ANGLE is off.</p>
 <div class="hg-warn"><b>Careful.</b> Change the renderer only if you know why, for example to test an app. Some apps and games behave differently or look wrong with the other engine.</div>
 
 <h4>Battery</h4>
@@ -667,6 +670,16 @@
 
 <h4>Network</h4>
 <p>The big number is the speed now, down and up added together; the line under it shows each: <i>down 1.2 MB/s up 80 KB/s</i> (with arrows on screen). Below are the active connections, busiest first, for example <i>wlan0</i> (Wi-Fi) or <i>rmnet</i> (mobile data), then <b>Network Statistics</b>: <b>Total received</b> and <b>Total sent</b> since the phone started.</p>
+<h4>The speed test</h4>
+<p>At the top of the Network page is a <b>Speed test</b> button ("Ping, download and upload"). It opens a full screen called <b>Speed test</b> (the arrow at the top left, the X or Back close it). The <a href="#tab-extrasettings">Extra Settings</a> tab opens the same screen from its <b>Speed test</b> section (<b>Open speed test</b>). No working mode is needed, only an internet connection.</p>
+<ol class="hg-steps">
+<li>Two chips at the top say what you are connected through (Wi-Fi, Mobile data and so on) and the server, <b>Cloudflare</b>.</li>
+<li>Tap <b>Start</b>. The gauge (0 to 1000 Mbps) shows the speed as it is measured: first the ping, then the download, then the upload. The button turns into <b>Stop</b> while it runs, and <b>Run again</b> afterwards.</li>
+<li>On mobile data or on a network Android calls metered, the app first warns: <i>You are on mobile data</i> (or <i>This network is metered</i>), <i>A test can use up to 350 MB of data: it stops early at that amount.</i> Tap <b>Start anyway</b> or <b>Cancel</b>.</li>
+<li>The cards under the gauge: <b>Ping</b> (the median of 15 requests), <b>Jitter</b> (how much the ping varies), <b>Download</b> and <b>Upload</b> in Mbps, each with a small live graph, <b>Server</b> (the Cloudflare data centre that answered) and <b>Connection</b>.</li>
+<li>When it is done, <b>Copy result</b> and <b>Share result</b> appear. <b>History</b> keeps the last 10 results on this phone; <b>Clear</b> empties it.</li>
+</ol>
+<p>The test talks to Cloudflare's public speed test servers (<code>speed.cloudflare.com</code>), at the data centre nearest to you, so Cloudflare sees the phone's IP address, as any website does. The result is this phone, its radio and its network, not the speed of your plan. While the screen is open the Task Manager stops measuring; closing the screen, leaving the tab it was opened from, or the app going to the background stops a test that is running.</p>
 
 <h4>Why the numbers differ from other apps</h4>
 <ul>

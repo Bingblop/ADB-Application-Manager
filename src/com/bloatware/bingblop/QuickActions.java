@@ -19,6 +19,8 @@ final class QuickActions {
     static final String EXTRA_ACTION = "quick_action";
     static final String ACTION_CYCLE_MODE = "cycle_mode";
     static final String ACTION_STOP_LIST = "stop_list";
+    /** An extra of the intent that opens the app from the Stop apps notification: the id of the quick list whose sheet the page then shows. */
+    static final String EXTRA_OPEN_QUICK_LIST = "open_quick_list";
 
     private QuickActions() {}
 

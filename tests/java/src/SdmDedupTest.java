@@ -224,6 +224,7 @@ public class SdmDedupTest {
             scanBasics();
             filters();
             locations();
+            aliasSpelling();
             arbiterChoice();
             exclusionsAndLinks();
             progressAndCancel();
@@ -429,6 +430,37 @@ public class SdmDedupTest {
         is("a path that two areas reach is a candidate once", files(new SdmDedup().scan(e8.ctx()), sha(B)).size() == new HashSet<String>(files(new SdmDedup().scan(e8.ctx()), sha(B))).size(), true);
     }
 
+    /**
+     * Shared storage is case-insensitive: two search locations that name one folder in another case ("DCIM" and "dcim") find every file in it twice. The second
+     * spelling is the same file, not a copy, and must never be offered or deleted. A link "alias" -> "Alias" stands in for the case-insensitive lookup here (on a
+     * case-insensitive test disk the second spelling already exists).
+     */
+    static void aliasSpelling() throws Exception {
+        new File(root, "sd/Alias").mkdirs();
+        File link = new File(root, "sd/alias");
+        boolean made = false;
+        if (!Files.exists(link.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS)) { Files.createSymbolicLink(link.toPath(), new File(root, "sd/Alias").toPath()); made = true; }
+        try {
+            String[][] spellings = { { sd + "/Alias", sd + "/alias" }, { sd, sd + "/alias" } };
+            for (String[] locs : spellings) {
+                write("sd/Alias/Camera/one.jpg", content("ALIAS", 900), T0);
+                Env e = new Env();
+                e.settings.put("scan.location.paths", new JSONArray(Arrays.asList(locs)));
+                Sdm.Result r = new SdmDedup().scan(e.ctx());
+                boolean offered = false;
+                JSONArray g = r.groups(0, 1000);
+                for (int i = 0; i < g.length(); i++) for (String f : files(r, g.getJSONObject(i).getString("id"))) if (f.toLowerCase(java.util.Locale.ROOT).endsWith("/camera/one.jpg")) offered = true;
+                is("locations " + rel(locs[0]) + " and " + rel(locs[1]) + ": one file under two spellings is not a duplicate set", offered, false);
+                if (locs[0].equals(sd)) continue;                   // the whole card: no delete, the other tests need their files
+                new SdmDedup().delete(r, new Sdm.Selection(), e.ctx());
+                is("locations " + rel(locs[0]) + " and " + rel(locs[1]) + ": the only copy is still there after the delete", exists("sd/Alias/Camera/one.jpg"), true);
+            }
+        } finally {
+            if (made) Files.delete(link.toPath());
+            new SdmFsJava().delete(new File(root, "sd/Alias").getPath());
+        }
+    }
+
     static void arbiterChoice() throws Exception {
         String hA = sha(A);
         Env e = new Env().withVol2();
@@ -445,6 +477,18 @@ public class SdmDedupTest {
         eq("preferred path wins over depth", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Backup/deep/er/photo1.jpg");
         e.settings.put("arbiter.config", arbiter("PREFERRED_PATH:sd/Android:sd/Music"));
         eq("a preferred folder, any file below it", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Android/data/com.x/dup.jpg");
+        e.settings.put("arbiter.config", arbiter("PREFERRED_PATH:sd/Backup/", "NESTING:PREFER_SHALLOW"));
+        eq("a preferred folder typed with a trailing slash", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Backup/deep/er/photo1.jpg");
+        e.settings.put("arbiter.config", arbiter("PREFERRED_PATH:sd//Backup/./", "NESTING:PREFER_SHALLOW"));
+        eq("…with a doubled slash and a dot", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Backup/deep/er/photo1.jpg");
+        // the spellings of shared storage a person types: /sdcard, another case, a trailing slash (decide() itself: the test tree is not below /storage)
+        List<SdmDedup.Dup> two = Arrays.asList(dup("/storage/emulated/0/DCIM/Camera/IMG_1.jpg"), dup("/storage/emulated/0/Download/IMG_1.jpg"));
+        for (String typed : new String[] { "/storage/emulated/0/DCIM", "/storage/emulated/0/DCIM/", "/sdcard/DCIM", "/sdcard/DCIM/", "/storage/emulated/0/dcim", "/storage/self/primary/DCIM" }) {
+            eq("preferred " + typed + ": the DCIM copy is kept", SdmDedup.decide(two, preferThenShallow(typed)).get(0).path, "/storage/emulated/0/DCIM/Camera/IMG_1.jpg");
+        }
+        for (String typed : new String[] { "/storage/emulated/0/DCI", "DCIM" }) {
+            eq("preferred " + typed + " names no folder of the copies: the shallowest is kept", SdmDedup.decide(two, preferThenShallow(typed)).get(0).path, "/storage/emulated/0/Download/IMG_1.jpg");
+        }
         e.settings.put("arbiter.config", arbiter("LOCATION:PREFER_SECONDARY"));
         eq("secondary storage", keeper(new SdmDedup().scan(e.ctx()), hA), "vol2/photo1.jpg");
         e.settings.put("arbiter.config", arbiter("LOCATION:PREFER_PRIMARY", "MODIFIED:PREFER_NEWER"));
@@ -463,6 +507,15 @@ public class SdmDedupTest {
         eq("the setting as JSON text", keeper(new SdmDedup().scan(e.ctx()), hA), "sd/Android/data/com.x/dup.jpg");
         eq("default criteria", SdmDedup.defaultCriteria().size(), 7);
         eq("default order", SdmDedup.defaultCriteria().get(0).type + "," + SdmDedup.defaultCriteria().get(6).type, "DUPLICATE_TYPE,SIZE");
+    }
+
+    static SdmDedup.Dup dup(String path) { return new SdmDedup.Dup(new Sdm.Entry(path, 1000, T0, Sdm.FILE, -1), Boolean.TRUE); }
+
+    /** PREFERRED_PATH with one folder as the page saves it, then the shallowest copy. */
+    static List<SdmDedup.Criterium> preferThenShallow(String typed) throws Exception {
+        return SdmDedup.parseCriteria(new JSONObject().put("criteria", new JSONArray()
+                .put(new JSONObject().put("criteriumType", "PREFERRED_PATH").put("keepPreferPaths", new JSONArray().put(typed)))
+                .put(new JSONObject().put("criteriumType", "NESTING").put("mode", "PREFER_SHALLOW"))));
     }
 
     static void exclusionsAndLinks() throws Exception {

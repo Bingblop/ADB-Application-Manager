@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="858"
-    android:versionName="7.13.4-Pro">
+    android:versionCode="863"
+    android:versionName="7.16.1-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -26,10 +26,14 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <!-- DUMP: a signature|privileged|development permission, grantable only with pm grant through ADB/Shizuku/root; lets this app run dumpsys itself -->
     <uses-permission android:name="android.permission.DUMP" />
+    <!-- READ_LOGS: like DUMP, granted only with pm grant through ADB/Shizuku/root; lets this app read the system log (logcat) itself -->
+    <uses-permission android:name="android.permission.READ_LOGS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16 Live Updates: the Stop apps notification asks to be one (a chip in the status bar with how far it is); a normal permission, which the person can still turn off per app -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <!-- Connected Devices: the Bluetooth devices this phone is paired with (Android 12+ asks), and sending files to one -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
@@ -62,7 +66,7 @@
     </queries>
 
     <application
-        android:label="ADB Application Manager Pro"
+        android:label="ADB/Root Full System Toolbox"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
@@ -80,7 +84,7 @@
 
         <activity
             android:name="com.bloatware.bingblop.MainActivity"
-            android:label="ADB Application Manager Pro"
+            android:label="ADB/Root Full System Toolbox"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density|fontScale|locale|layoutDirection"
             android:windowSoftInputMode="adjustResize"
             android:exported="true">
@@ -99,6 +103,17 @@
                 <data android:scheme="file" android:mimeType="application/vnd.android.package-archive" />
             </intent-filter>
         </activity>
+
+        <!-- Long-press on a Quick Settings tile opens the app: one QS_TILE_PREFERENCES activity serves all tiles (SystemUI passes the tile via EXTRA_COMPONENT_NAME, which we ignore). An alias to MainActivity, so no second launcher icon appears. -->
+        <activity-alias
+            android:name=".TilePreferencesActivity"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- Shizuku delivers its binder to the app through this provider -->
         <provider
@@ -150,7 +165,7 @@
         <service
             android:name=".StopListTileService"
             android:exported="true"
-            android:label="Stop apps"
+            android:label="Kill Apps"
             android:icon="@drawable/ic_stat"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -162,7 +177,7 @@
         <service
             android:name=".SdmAccessService"
             android:exported="true"
-            android:label="SD Maid (AppCleaner) - ADB App Manager"
+            android:label="SD Maid (AppCleaner) - ADB/Root Full System Toolbox"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -176,7 +191,7 @@
         <receiver
             android:name=".QuickWidgetProvider"
             android:exported="true"
-            android:label="ADB App Manager">
+            android:label="ADB/Root Full System Toolbox">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -198,6 +213,11 @@
              `adb pair` in the background, so the user can pair without leaving the pairing screen -->
         <receiver
             android:name=".PairReceiver"
+            android:exported="false" />
+
+        <!-- The Cancel button of the Stop apps notification (and it being swiped away); only this app's own PendingIntents reach it -->
+        <receiver
+            android:name=".QuickStopReceiver"
             android:exported="false" />
 
         <!-- Termux hands the result of a command back here, through the PendingIntent this app gave it (not exported) -->
