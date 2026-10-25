@@ -65,8 +65,8 @@ public class ShareProvider extends ContentProvider {
         if (dirs == null) return;
         for (File d : dirs) {
             if (d.lastModified() >= cutoff) continue;
-            File[] files = d.listFiles();
-            if (files != null) for (File f : files) f.delete();
+            String[] files = d.list();
+            if (files != null) for (String f : files) new File(d, f).delete();
             d.delete();
         }
     }
