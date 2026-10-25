@@ -14431,7 +14431,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (r && r.ok && Array.isArray(r.trackers)) { r.pkg = pkg; trkParts = r; }
             } catch (e) { trkParts = null; }
         }
-        function trkCount(n) { return n === 1 ? '1 tracker part' : n + ' tracker parts'; }
+        function trkCount(n) { return n + (n === 1 ? ' tracker part' : ' tracker parts'); }
         // the box at the top: how many tracker parts the app has and how many are switched off, and the two switches for all of them
         function trkCtlHtml(pkg) {
             const p = trkParts;
@@ -14439,11 +14439,14 @@ Type any command above (e.g. pm list packages -d)</div>
             const locked = compToggleLocked();
             const lockTitle = locked ? ` title="${NEEDS_ROOT_COMP}"` : '';
             const offOk = !locked && !trkBusy && p.on > 0, onOk = !locked && !trkBusy && p.off > 0;
+            const offTxt = p.off + ' switched off';
+            // a locked button stays tappable (it goes the Root way); one with nothing to do is greyed out
+            const btn = (id, label, ok, enable) => `<button type="button" class="mode-action-btn${locked ? ' locked' : ''}" id="${id}"${lockTitle}${locked || ok ? '' : ' disabled'} onclick="trkSwitch(null, ${enable})">${locked ? XQ_LOCK_SVG + ' ' : ''}${label}</button>`;
             return '<div class="trk-ctl">'
-                + `<div class="trk-ctl-sum"><span>${trkCount(p.parts)}</span> · <span>${p.off} switched off</span></div>`
+                + `<div class="trk-ctl-sum"><span>${trkCount(p.parts)}</span> · <span>${offTxt}</span></div>`
                 + '<div class="mode-btn-row">'
-                + `<button type="button" class="mode-action-btn${locked ? ' locked' : ''}" id="trkOffAll"${lockTitle}${locked || offOk ? '' : ' disabled'} onclick="trkSwitch(null, false)">${locked ? XQ_LOCK_SVG + ' ' : ''}Disable all trackers</button>`
-                + `<button type="button" class="mode-action-btn${locked ? ' locked' : ''}" id="trkOnAll"${lockTitle}${locked || onOk ? '' : ' disabled'} onclick="trkSwitch(null, true)">${locked ? XQ_LOCK_SVG + ' ' : ''}Enable all trackers</button>`
+                + btn('trkOffAll', 'Disable all trackers', offOk, false)
+                + btn('trkOnAll', 'Enable all trackers', onOk, true)
                 + '</div>'
                 + (locked ? '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>' + NEEDS_ROOT_COMP + '</span></div>' : '')
                 + '</div>';
@@ -14480,7 +14483,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!todo) { showToast(enable ? 'No tracker part is switched off' : 'Every tracker part is already off'); return; }
             const app = allApps.find(a => a.pkg === pkg);
             const isSystemApp = !!(app && app.isSystem) || !!(inspectorData && inspectedPkg === pkg && inspectorData.isSystem);
-            if (!enable && isSystemApp && !confirm(txF('Switch off {0} tracker parts of the system app {1}? This can break the app or the system UI. You can switch them back on here.', todo, pkg))) return;
+            if (!enable && isSystemApp && !confirm(todo === 1 ? txF('Switch off 1 tracker part of the system app {0}? This can break the app or the system UI. You can switch it back on here.', pkg)
+                : txF('Switch off {0} tracker parts of the system app {1}? This can break the app or the system UI. You can switch them back on here.', todo, pkg))) return;
             haptic();
             const token = 'trk' + (++trkSeq);
             trkPending.set(token, { pkg, enable, all: !ids, name: app ? app.name : pkg });
@@ -14543,7 +14547,9 @@ Type any command above (e.g. pm list packages -d)</div>
         // the line under the batch confirmation's title for Disable Trackers
         function trkBatchNote(pkgs) {
             const sys = pkgs.filter(pkg => { const a = allApps.find(x => x.pkg === pkg); return a && a.isSystem; }).length;
-            return `${pkgs.length} apps selected • their tracker parts are switched off; Enable Trackers switches them back on` + (sys ? ` • ${sys} are system apps: switching their parts off can break them or the system UI` : '');
+            return sys
+                ? pkgs.length + ' apps selected • their tracker parts are switched off (Enable Trackers switches them back on) • system apps among them: ' + sys + ' (switching their parts off can break them or the system UI)'
+                : pkgs.length + ' apps selected • their tracker parts are switched off (Enable Trackers switches them back on)';
         }
 
         // The app menu's UAD-NG chip: what the project's list says about the open app (nothing shown when it is not in the list)

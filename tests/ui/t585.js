@@ -153,14 +153,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the lock goes when the gate opens', await ev(() => !document.querySelector('#batchTrkOff svg') && !document.getElementById('batchTrkOff').title));
   await ev(() => document.getElementById('batchTrkOff').click()); await sleep(150);
   const conf = await ev(() => ({ open: document.getElementById('batchConfirmModal').classList.contains('show'), title: document.getElementById('batchConfirmTitle').innerText, sub: document.getElementById('batchConfirmSubtitle').innerText, btn: document.getElementById('batchConfirmExecuteBtn').innerText }));
-  check('10. Disable Trackers is confirmed first, on the batch confirmation sheet', conf.open && conf.title === 'Confirm Disable Trackers' && conf.btn === 'Disable Trackers' && /^2 apps selected • their tracker parts are switched off; Enable Trackers switches them back on$/.test(conf.sub), JSON.stringify(conf));
+  check('10. Disable Trackers is confirmed first, on the batch confirmation sheet', conf.open && conf.title === 'Confirm Disable Trackers' && conf.btn === 'Disable Trackers' && /^2 apps selected • their tracker parts are switched off \(Enable Trackers switches them back on\)$/.test(conf.sub), JSON.stringify(conf));
   await ev(() => confirmPendingBatchAction()); await sleep(250);
   const res = await ev(() => ({ batch: JSON.stringify(window.__batch), sub: document.getElementById('commandResultsModal').innerText, hist: (({ title, items }) => ({ title, items }))(getHistory()[0]) }));
   check('    then runs in the native batch runner, with results titled DISABLE TRACKERS and one History step with Undo', res.batch === '[["trackers_off",["com.example.alpha","com.example.bravo"]]]' && /DISABLE TRACKERS • 2 of 2 apps/.test(res.sub) && res.hist.title === 'Disabled trackers in 2 apps' && res.hist.items.every(i => i.action === 'trackers_off'), JSON.stringify(res).slice(0, 400));
   await ev(() => document.getElementById('commandResultsModal').classList.remove('show'));
   await ev(() => { selectedPkgs.clear(); selectedPkgs.add('com.example.alpha'); selectedPkgs.add('com.android.sysapp'); batchPanelExpanded = true; updateBatchBar(); });
   await ev(() => document.getElementById('batchTrkOff').click()); await sleep(150);
-  check('    with a system app selected, the note says how many and what it risks', /• 1 are system apps: switching their parts off can break them or the system UI$/.test(await ev(() => document.getElementById('batchConfirmSubtitle').innerText)));
+  check('    with a system app selected, the note says how many and what it risks', /• system apps among them: 1 \(switching their parts off can break them or the system UI\)$/.test(await ev(() => document.getElementById('batchConfirmSubtitle').innerText)));
   await ev(() => { pendingBatchAction = null; document.getElementById('batchConfirmModal').classList.remove('show'); });
   await ev(() => document.getElementById('batchTrkOn').click()); await sleep(250);
   check('11. Enable Trackers runs at once (as Enable does after Freeze), results titled ENABLE TRACKERS', (await ev(() => JSON.stringify(window.__batch[window.__batch.length - 1]))) === '["trackers_on",["com.example.alpha","com.android.sysapp"]]' && /ENABLE TRACKERS • 2 of 2 apps/.test(await ev(() => document.getElementById('commandResultsModal').innerText)));

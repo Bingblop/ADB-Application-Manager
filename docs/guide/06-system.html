@@ -1792,7 +1792,7 @@
   <ol class="hg-steps">
     <li>On <b>Root Features</b>, tap <b>Open apps</b> (or tap the <b>Trackers</b> pill in the Application Manager yourself). The list shows the apps a tracker was found in.</li>
     <li>Open the app's menu (the <b>...</b> button at the right end of its row, or press and hold the row) and tap its <b>TRACKERS</b> chip. The <b>Trackers</b> box opens.</li>
-    <li>Read the list. To switch off one tracker only, tap <b>DISABLE</b> under it. To switch off every one, tap <b>Disable all trackers</b>. For a system app the app asks first: "Switch off (number) tracker parts of the system app (package)? This can break the app or the system UI. You can switch them back on here."; <b>Cancel</b> changes nothing.</li>
+    <li>Read the list. To switch off one tracker only, tap <b>DISABLE</b> under it. To switch off every one, tap <b>Disable all trackers</b>. For a system app the app asks first: "Switch off (number) tracker parts of the system app (package)? This can break the app or the system UI. You can switch them back on here." (for one part: "Switch off 1 tracker part ... You can switch it back on here."); <b>Cancel</b> changes nothing.</li>
     <li>A message says "Disabling tracker parts..." and the buttons grey out while it works. Then it says "Disabled (number) tracker parts", and the box shows what the phone now reports: the <b>off</b> tags, the counts and the buttons. The app menu's <b>Activities</b> and <b>Components</b> tabs show the same parts as <b>disabled</b>.</li>
     <li>If Android did not change some parts, the message says "Some tracker parts were not changed" and a <b>Trackers</b> results box lists each part with Android's answer.</li>
   </ol>
@@ -1800,7 +1800,7 @@
   <h4>Step by step: many apps</h4>
   <ol class="hg-steps">
     <li>Select the apps (the <b>Trackers</b> pill and <b>Select All</b> select every app a tracker was found in) and open the batch sheet with the round button.</li>
-    <li>Tap <b>Disable Trackers</b>. A box "Confirm Disable Trackers" opens with the line "(number) apps selected &bull; their tracker parts are switched off; Enable Trackers switches them back on" (and, when system apps are selected, how many and that switching their parts off can break them or the system UI) and the list of apps. Tap <b>Disable Trackers</b> to go on, or <b>Cancel</b>.</li>
+    <li>Tap <b>Disable Trackers</b>. A box "Confirm Disable Trackers" opens with the line "(number) apps selected &bull; their tracker parts are switched off (Enable Trackers switches them back on)" (and, when system apps are selected, "system apps among them:" with their number, and that switching their parts off can break them or the system UI) and the list of apps. Tap <b>Disable Trackers</b> to go on, or <b>Cancel</b>.</li>
     <li>The progress bar runs as for any batch. <b>Batch Results</b> opens with the subtitle "DISABLE TRACKERS &bull; (number) of (number) apps". Each app's card says what was switched off, tracker by tracker, how many parts were already off, and every part Android did not change. An app with no tracker part says "No tracker parts in this app: the trackers it holds, if any, run inside its own code." and counts as a success, because nothing failed.</li>
     <li><b>Enable Trackers</b> works the same way but starts at once, without the confirmation box (as <b>Enable</b> does after <b>Freeze</b>).</li>
   </ol>
