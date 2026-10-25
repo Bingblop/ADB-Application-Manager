@@ -3691,6 +3691,16 @@
             border: 1px solid var(--line-user);
         }
 
+        /* Connection check card (Working Modes): one row per thing a privileged connection needs */
+        .cc-row { display: flex; align-items: flex-start; gap: var(--space-3h); padding: var(--space-3) 0; border-top: 1px solid var(--border-glass); }
+        .cc-row:first-of-type { border-top: 0; }
+        .cc-main { flex: 1 1 auto; min-width: 0; }
+        .cc-title { font-size: var(--fs-item); font-weight: var(--fw-heavy); }
+        .cc-detail { font-size: var(--fs-body); color: var(--text-muted); line-height: 1.45; margin-top: 2px; overflow-wrap: anywhere; }
+        .cc-data { color: var(--text-primary, inherit); font-weight: var(--fw-bold); }
+        .cc-row .mode-btn-row { margin-top: var(--space-2); }
+        .cc-row .mode-status-tag { flex: 0 0 auto; margin-top: 1px; }
+
         .mode-card.pending-mode {
             border-color: var(--status-user);
             background: var(--tint-user);
@@ -10499,6 +10509,23 @@ Type any command above (e.g. pm list packages -d)</div>
             </div>
             <div class="modal-helper" style="margin-bottom:10px;">New to this? The <a href="#" style="color:var(--accent); font-weight:var(--fw-heavy);" onclick="closeWorkingModesModal(); openHelpGuide('modes-overview'); return false;">Help Guide</a> explains each mode and how to set it up, step by step.</div>
 
+            <!-- Connection check: what a privileged connection needs, one row each, with a button that fixes or opens the place to fix it -->
+            <div class="mode-card" id="connCheckCard" style="display:none;">
+                <div class="mode-card-header">
+                    <div class="mode-card-title">
+                        <span>Connection Check</span>
+                    </div>
+                    <span class="mode-status-tag inactive" id="connCheckTag">…</span>
+                </div>
+                <div class="mode-card-desc">
+                    Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.
+                </div>
+                <div id="connCheckRows"></div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn" onclick="connCheckRun(true)">Check again</button>
+                </div>
+            </div>
+
             <!-- ADB key (per install) -->
             <div class="mode-card" id="adbKeyCard">
                 <div class="mode-card-header">
@@ -13799,6 +13826,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('modesModal').classList.add('show');
             renderAdbKeyInfo();
             checkAllWorkingModes(false);
+            connCheckRun(false);
         }
 
         function closeWorkingModesModal() {
@@ -16232,6 +16260,127 @@ Type any command above (e.g. pm list packages -d)</div>
             if (r.status === 'ok') showToast(txF('Saved {0} ({1}).', name, formatBytes(r.bytes)));
             else if (r.status === 'no_access') showToast(txT('This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.'));
             else showToast(r.text ? txF('The phone did not save it: {0}', String(r.text).split('\n').slice(-1)[0]) : txT('The phone did not save it.'));
+        }
+
+        // ---- Connection check (Working Modes) ----
+        // connCheckRows turns the mode probe (getWorkingMode) and the facts (getConnectionFacts) into rows; it reads nothing itself, so a script can feed it any phone.
+        // state: 'ok' | 'check' (something to do) | 'info'. fix: the name of a page function that fixes it or opens the place to fix it.
+        function connCheckRows(d, f) {
+            d = d || {}; f = f || {};
+            const tcp = d.adbTcp || {}, wl = d.adbWireless || {}, sz = d.shizuku || {};
+            const rows = [];
+            if (f.wifiIp) rows.push({ id: 'wifi', title: 'Wi-Fi', state: 'ok', detail: 'Connected to a Wi-Fi network.', data: f.wifiIp });
+            else rows.push({ id: 'wifi', title: 'Wi-Fi', state: 'check', detail: 'Not on Wi-Fi. Wireless Debugging needs a Wi-Fi network.' });
+
+            if (f.sdk && f.sdk < 30) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'info', detail: 'Needs Android 11 or newer.' });
+            else if (f.developerOptions === 0) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'check', detail: 'Developer options are off. Turn them on first: Settings, About phone, tap Build number seven times.' });
+            else if (f.wirelessDebugging === 1) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'ok', detail: 'Switched on.' });
+            else if (f.wirelessDebugging === 0 && (f.secureSettings || d.isPrivileged)) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'check', detail: 'Switched off. The button turns it on; Android then picks a new port, and it switches off again when you leave this Wi-Fi.', fix: 'connCheckWdOn', fixLabel: 'Turn on Wireless Debugging' });
+            else if (f.wirelessDebugging === 0) rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'check', detail: 'Switched off. Turn on Wireless debugging in Developer options.', fix: 'openDevOptionsUI', fixLabel: 'Open Developer Options' });
+            else rows.push({ id: 'wd', title: 'Wireless Debugging switch', state: 'info', detail: 'This phone does not say whether it is on.' });
+
+            if (tcp.connected || wl.connected) {
+                const t = wl.connected ? (wl.host || '127.0.0.1') + ':' + wl.port : (tcp.host || '127.0.0.1') + ':' + tcp.port;
+                rows.push({ id: 'adb', title: 'ADB connection', state: 'ok', detail: 'Connected.', data: t });
+            } else if (wl.port > 0) {
+                rows.push({ id: 'adb', title: 'ADB connection', state: 'check', detail: 'The saved port is not answering. Wireless Debugging picks a new port each time it is switched on.', data: String(wl.port), fix: 'autoDetectWirelessUI', fixLabel: 'Auto-Detect Ports' });
+            } else if (tcp.portOpen) {
+                rows.push({ id: 'adb', title: 'ADB connection', state: 'check', detail: 'The ADB port is open but not connected. Allow debugging on the phone if it asks.', data: String(tcp.port) });
+            } else {
+                rows.push({ id: 'adb', title: 'ADB connection', state: 'info', detail: 'Not connected. Pair and connect under Wireless Debugging below, or run adb tcpip 5555 once from a computer.' });
+            }
+
+            if (sz.authorized) rows.push({ id: 'shizuku', title: 'Shizuku', state: 'ok', detail: 'Authorized.' });
+            else if (sz.running && sz.preV11) rows.push({ id: 'shizuku', title: 'Shizuku', state: 'check', detail: 'This Shizuku version is too old. Update Shizuku.', fix: 'openShizukuAppUI', fixLabel: 'Open Shizuku' });
+            else if (sz.running) rows.push({ id: 'shizuku', title: 'Shizuku', state: 'check', detail: 'Running, but this app is not allowed to use it yet.', fix: 'handleShizukuTap', fixLabel: 'Authorize & Use Shizuku' });
+            else if (sz.installed) rows.push({ id: 'shizuku', title: 'Shizuku', state: 'check', detail: 'Installed but not running. Start it from the Shizuku app.', fix: 'openShizukuAppUI', fixLabel: 'Open Shizuku' });
+            else rows.push({ id: 'shizuku', title: 'Shizuku', state: 'info', detail: 'Not installed. It is optional.' });
+
+            if (f.secureSettings) rows.push({ id: 'secure', title: 'Secure settings access', state: 'ok', detail: 'Granted.' });
+            else if (d.isPrivileged) rows.push({ id: 'secure', title: 'Secure settings access', state: 'check', detail: 'Not granted yet. The connection you have can grant it.', fix: 'connCheckGrantSecure', fixLabel: 'Grant now' });
+            else rows.push({ id: 'secure', title: 'Secure settings access', state: 'info', detail: 'Not granted. Connect a working mode first, then grant it here.' });
+            return rows;
+        }
+
+        let connCheckFixes = [];
+
+        function connCheckRender(rows) {
+            const box = document.getElementById('connCheckRows');
+            if (!box) return;
+            connCheckFixes = [];
+            box.innerHTML = '';
+            const tags = { ok: ['active', txT('OK')], check: ['warning', txT('CHECK')], info: ['inactive', txT('INFO')] };
+            rows.forEach(r => {
+                const row = document.createElement('div');
+                row.className = 'cc-row';
+                row.setAttribute('data-cc', r.id);
+                const main = document.createElement('div');
+                main.className = 'cc-main';
+                const title = document.createElement('div'); title.className = 'cc-title'; title.textContent = r.title;
+                const detail = document.createElement('div'); detail.className = 'cc-detail';
+                const t = document.createElement('span'); t.textContent = r.detail; detail.appendChild(t);
+                if (r.data) {
+                    const dt = document.createElement('span'); dt.className = 'cc-data'; dt.setAttribute('translate', 'no'); dt.textContent = ' ' + r.data;
+                    detail.appendChild(dt);
+                }
+                main.appendChild(title); main.appendChild(detail);
+                if (r.fix) {
+                    const br = document.createElement('div'); br.className = 'mode-btn-row';
+                    const btn = document.createElement('button'); btn.className = 'mode-action-btn'; btn.textContent = r.fixLabel;
+                    const idx = connCheckFixes.push(r.fix) - 1;
+                    btn.onclick = () => connCheckFix(idx);
+                    br.appendChild(btn); main.appendChild(br);
+                }
+                const tag = document.createElement('span');
+                tag.className = 'mode-status-tag ' + tags[r.state][0]; tag.textContent = tags[r.state][1];
+                row.appendChild(main); row.appendChild(tag);
+                box.appendChild(row);
+            });
+            const todo = rows.filter(r => r.state === 'check').length;
+            setTag('connCheckTag', todo ? 'warning' : 'active', todo ? txT('NEEDS ATTENTION') : txT('ALL GOOD'));
+        }
+
+        function connCheckFix(idx) {
+            const name = connCheckFixes[idx];
+            if (name && typeof window[name] === 'function') window[name]();
+        }
+
+        // Only a button press gets here: the app never switches Wireless Debugging by itself. The phone reads the setting back; the answer is its word, not a command's text.
+        function connCheckWdOn() {
+            haptic();
+            let got = '';
+            try { got = String(window.AndroidBridge.setWirelessDebugging(true) || ''); } catch (e) {}
+            const say = {
+                on: 'Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.',
+                no_wifi: 'Connect to Wi-Fi first: Wireless Debugging switches itself off without it.',
+                no_access: 'Connect a working mode (ADB or Shizuku) or grant secure settings access first.',
+                unsupported: 'This phone does not allow turning Wireless Debugging on from here.'
+            };
+            showToast(say[got] || 'The phone did not switch it on. Open Developer Options and turn it on there.');
+            connCheckRun(false);
+        }
+
+        function connCheckGrantSecure() {
+            haptic();
+            let got = '';
+            try { got = String(window.AndroidBridge.requestWriteSecureSettings() || ''); } catch (e) {}
+            showToast(got === 'granted' ? 'Secure settings access granted.' : 'Could not grant it. Check that a working mode is connected.');
+            connCheckRun(false);
+        }
+
+        // fresh: the button (a real probe); otherwise the quiet check when the window opens
+        function connCheckRun(fresh) {
+            const card = document.getElementById('connCheckCard');
+            if (!card) return;
+            const b = window.AndroidBridge;
+            if (!b || !b.getConnectionFacts || !b.getWorkingMode) { card.style.display = 'none'; return; }
+            if (fresh) haptic();
+            try {
+                const d = JSON.parse((fresh && b.getWorkingModeFresh ? b.getWorkingModeFresh() : b.getWorkingMode()) || '{}');
+                const f = JSON.parse(b.getConnectionFacts() || '{}');
+                card.style.display = '';
+                connCheckRender(connCheckRows(d, f));
+            } catch (e) { card.style.display = 'none'; }
         }
 
         function copyAdbKeyFingerprint() {
