@@ -139,6 +139,16 @@ public class TrackerPartsTest {
     check("report: nothing to switch off", TrackerParts.report(false, 2, none, 2, none, noOut).equals("2 parts were already off."));
     check("report: nothing to switch back on", TrackerParts.report(true, 2, none, 0, none, noOut).equals("No tracker part was switched off, so nothing was enabled."));
     check("report: one part enabled (singular)", TrackerParts.report(true, 2, ch.subList(2, 3), 0, none, noOut).equals("Enabled 1 tracker part:\n  Google AdMob: AdActivity"));
+    check("missing: the names not reached, in the order asked; none when no names were asked",
+        TrackerParts.missing(Arrays.asList("a.A", "a.B", "a.C"), new java.util.HashSet<String>(Arrays.asList("a.B"))).toString().equals("[a.A, a.C]")
+        && TrackerParts.missing(null, new java.util.HashSet<String>()).isEmpty() && TrackerParts.missing(Arrays.asList("a.A"), null).toString().equals("[a.A]"));
+    List<String[]> notListed = new ArrayList<String[]>();
+    notListed.add(new String[] { TrackerParts.NOT_LISTED, "com.google.android.gms.measurement.AppMeasurementReceiver" });
+    String undoRep = TrackerParts.report(true, 0, notListed, 0, 1, none, noOut);
+    check("report: an Undo part no tracker covers now is still reported (not \"No tracker parts in this app\"), and a part the app lost is named", undoRep.equals(
+        "Enabled 1 tracker part:\n  No longer on the tracker list: AppMeasurementReceiver\n1 part is no longer in the app."), undoRep);
+    check("report: only parts the app lost", TrackerParts.report(true, 3, none, 0, 2, none, noOut).equals("2 parts are no longer in the app."));
+    check("report: the old form is the new one with nothing gone", TrackerParts.report(false, 0, none, 0, none, noOut).equals(TrackerParts.report(false, 0, none, 0, 0, none, noOut)));
     check("shortName: the last segment, the whole name when there is none", TrackerParts.shortName("a.b.C").equals("C") && TrackerParts.shortName("C").equals("C") && TrackerParts.shortName("a.").equals("a.") && TrackerParts.shortName(null).equals(""));
 
     sourceScan();
@@ -190,16 +200,31 @@ public class TrackerPartsTest {
     check("source: the switch opens for Root, or a Shizuku server authorized as uid 0 or 1000 (as setComponentEnabled)", allowed != null && allowed.contains("\"root\".equals(trkMode)")
         && allowed.contains("isShizukuAuthorized()") && allowed.contains("trkSzUid == 0 || trkSzUid == 1000") && !allowed.contains("2000"));
     String set = bodyOf(m, "private JSONObject setTrackerParts(String pkg, int[] ids, List<String> only, boolean enable) throws Exception {");
-    check("source: setTrackerParts checks the package name and the gate before any command", before(set, "isPackageName(pkg)", "executeShell(")
-        && before(set, "if (!trackerSwitchAllowed())", "executeShell(") && set.contains("needsRoot"));
-    check("source: an empty id list switches nothing (not every tracker)", before(set, "if (ids != null && ids.length == 0)", "executeShell("));
-    check("source: an empty part list switches nothing (not every part)", before(set, "if (only != null && only.isEmpty())", "executeShell("));
-    check("source: only the parts asked for are looked at, before which need a command", before(set, "TrackerParts.wanted(t.db, g, ids)", "TrackerParts.wanted(p, only)")
-        && before(set, "TrackerParts.wanted(p, only)", "TrackerParts.needs(p, enable)") && before(set, "TrackerParts.needs(p, enable)", "executeShell("));
+    String one = bodyOf(m, "private void switchTrackerPart(String pkg, String tracker, TrackerParts.Part p, boolean enable, List<String[]> changed, int[] already,");
+    check("source: setTrackerParts runs no command itself: every part goes through switchTrackerPart", set != null && !set.contains("executeShell(") && set.contains("switchTrackerPart(pkg, tracker, p, enable,"));
+    check("source: setTrackerParts checks the package name and the gate before any part is switched", before(set, "isPackageName(pkg)", "switchTrackerPart(")
+        && before(set, "if (!trackerSwitchAllowed())", "switchTrackerPart(") && set.contains("needsRoot"));
+    check("source: an empty id list switches nothing (not every tracker)", before(set, "if (ids != null && ids.length == 0)", "switchTrackerPart("));
+    check("source: an empty part list switches nothing (not every part)", before(set, "if (only != null && only.isEmpty())", "switchTrackerPart("));
+    check("source: only the parts asked for are looked at, and each one reached is noted", before(set, "TrackerParts.wanted(t.db, g, ids)", "TrackerParts.wanted(p, only)")
+        && before(set, "TrackerParts.wanted(p, only)", "seen.add(p.name)") && before(set, "seen.add(p.name)", "switchTrackerPart(pkg, tracker, p, enable,"));
+    check("source: a part named by Undo that no tracker covers now is still looked up among the app's parts and switched, or counted as gone (never skipped)",
+        before(set, "Set<String> missing = TrackerParts.missing(only, seen);", "readNamedParts(pkg, missing)") && set.contains("if (p == null) gone++;")
+        && set.contains("switchTrackerPart(pkg, TrackerParts.NOT_LISTED, p, enable,") && set.contains("TrackerParts.report(enable, partsInApp, changed, already[0], gone, failed, failedOut)"));
+    String named = bodyOf(m, "private Map<String, TrackerParts.Part> readNamedParts(String pkg, Set<String> names) throws PackageManager.NameNotFoundException {");
+    check("source: readNamedParts reads every part of the app, the disabled ones too, and keeps only the names asked for, with their pm override", named != null && named.contains("MATCH_DISABLED_COMPONENTS")
+        && named.contains("GET_ACTIVITIES") && named.contains("GET_RECEIVERS") && named.contains("GET_SERVICES") && named.contains("GET_PROVIDERS") && named.contains("!names.contains(c[0])")
+        && named.contains("componentOverrideState(pkg, c[0])"));
     check("source: the answer names the parts changed (changedParts: what the History's Undo switches back)", set != null && set.contains("put(\"changedParts\", names)") && set.contains("for (String[] c : changed) names.put(c[1])"));
-    check("source: every command is ShellArgs.componentCommand (pm enable / pm disable on one part), nothing else", set != null && set.contains("ShellArgs.componentCommand(pkg, p.name, enable)") && set.contains("executeShell(cmd)"));
-    check("source: success is the part's state read back (componentOverrideState), not what pm printed", set != null && set.contains("componentOverrideState(pkg, p.name)")
-        && set.contains("state != null && state.booleanValue() == enable") && set.contains("put(\"ok\", failed.isEmpty())"));
+    check("source: a part is switched only when it needs it, and every command is ShellArgs.componentCommand (pm enable / pm disable on one part)",
+        before(one, "if (!TrackerParts.needs(p, enable))", "ShellArgs.componentCommand(pkg, p.name, enable)") && before(one, "ShellArgs.componentCommand(pkg, p.name, enable)", "executeShell(cmd)")
+        && one.indexOf("executeShell(") == one.lastIndexOf("executeShell("));
+    check("source: success is the part's state read back (componentOverrideState), not what pm printed", before(one, "executeShell(cmd)", "componentOverrideState(pkg, p.name)")
+        && one.contains("state != null && state.booleanValue() == enable") && set.contains("put(\"ok\", failed.isEmpty())"));
+    String tar = bodyOf(m, "public String trackerActionResult(String action, String pkg) {");
+    check("source: the History's Undo bridge checks the package name and the action before it runs, and answers the whole result (with changedParts)",
+        before(tar, "isPackageName(pkg)", "trackerAction(pkg, action)") && before(tar, "TrackerParts.isAction(action)", "trackerAction(pkg, action)") && tar.contains("trackerAction(pkg, action).toString()")
+        && m.contains("@JavascriptInterface\n        public String trackerActionResult("));
     String read = bodyOf(m, "private List<TrackerParts.Group> readTrackerParts(String pkg, Trackers t) throws PackageManager.NameNotFoundException {");
     check("source: the parts are read with the disabled ones too (MATCH_DISABLED_COMPONENTS), all four kinds", read != null && read.contains("MATCH_DISABLED_COMPONENTS") && read.contains("GET_ACTIVITIES")
         && read.contains("GET_RECEIVERS") && read.contains("GET_SERVICES") && read.contains("GET_PROVIDERS"));
@@ -232,6 +257,12 @@ public class TrackerPartsTest {
     String uh = bodyOf(h, "function undoHistory(id) {");
     check("source: Undo runs histUndoAction's action (not the bare other switch), and Undo is offered by the same test", uh != null && uh.contains("filter(i => histUndoAction(i))")
         && uh.contains("run = histUndoAction(i)") && uh.contains("performDetailedBatchAction(run, [i.pkg])") && h.contains("const undoable = e.items.some(i => histUndoAction(i));"));
+    check("source: Undo of a tracker step is gated as the switches are (the Root way first, then the Undo again), before anything runs",
+        before(uh, "if (items.some(isTrk) && !isRootActive()) { promptRootThenOpen(txT('Switching trackers off or on')).then(ok => { if (ok) undoHistory(id); }); return; }", "setTimeout("));
+    check("source: the Undo step keeps the parts its own run changed (trackerActionResult's changedParts), not the step's list, whatever ok is",
+        before(uh, "b.trackerActionResult(run, i.pkg)", "parts: Array.isArray(r.changedParts) ? r.changedParts : []") && !uh.contains("{ parts: i.parts }"));
+    check("source: the Root way from the History closes the History first (else it covers Root Features)", bodyOf(h, "function rootOfferTab(featureName) {") != null
+        && before(bodyOf(h, "function rootOfferTab(featureName) {"), "classList.contains('show')) document.getElementById('historyModal').classList.remove('show')", "switchView('rootfeatures')"));
     check("source: the History keeps the parts of a step (recordHistory), from the box's switch and from the batch runner's rows",
         h.contains("Array.isArray(r.parts) ? { parts: r.parts } : {}") && h.contains("parts: r.changedParts || []") && h.contains("label: r.label, parts: r.parts }"));
     String again = bodyOf(h, "function batchRunAgain(onlyFailed) {");

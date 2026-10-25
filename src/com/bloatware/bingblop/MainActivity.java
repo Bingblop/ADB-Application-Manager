@@ -4129,6 +4129,29 @@ public class MainActivity extends Activity {
         return TrackerParts.group(t.db, pkg, parts);
     }
 
+    /**
+     * The app's parts with these names, whatever the tracker list says of them now (name -> part, with its manifest default and pm override). The
+     * History's Undo names the parts its step switched, and a newer tracker list (Update the list, or a newer app) may no longer count one of them as a
+     * tracker's: it is still the app's part, and still switched. A name the app no longer has is left out.
+     */
+    private Map<String, TrackerParts.Part> readNamedParts(String pkg, Set<String> names) throws PackageManager.NameNotFoundException {
+        Map<String, TrackerParts.Part> out = new java.util.LinkedHashMap<String, TrackerParts.Part>();
+        if (names == null || names.isEmpty()) return out;
+        int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES | PackageManager.GET_PROVIDERS
+                | PackageManager.MATCH_DISABLED_COMPONENTS;
+        PackageInfo info = getPackageManager().getPackageInfo(pkg, flags);
+        List<String[]> all = new ArrayList<String[]>();                     // {name, kind, manifest enabled}
+        if (info.activities != null) for (ActivityInfo a : info.activities) all.add(new String[] { a.name, "activity", String.valueOf(a.enabled) });
+        if (info.services != null) for (ServiceInfo sv : info.services) all.add(new String[] { sv.name, "service", String.valueOf(sv.enabled) });
+        if (info.receivers != null) for (ActivityInfo rc : info.receivers) all.add(new String[] { rc.name, "receiver", String.valueOf(rc.enabled) });
+        if (info.providers != null) for (android.content.pm.ProviderInfo pv : info.providers) all.add(new String[] { pv.name, "provider", String.valueOf(pv.enabled) });
+        for (String[] c : all) {
+            if (c[0] == null || !names.contains(c[0]) || out.containsKey(c[0])) continue;
+            out.put(c[0], new TrackerParts.Part(c[0], c[1], Boolean.parseBoolean(c[2]), componentOverrideState(pkg, c[0])));
+        }
+        return out;
+    }
+
     /** Adds one part when it belongs to a tracker; its pm override is asked only then (one call to the package manager per tracker part, not per part of the app). */
     private void addTrackerPart(List<TrackerParts.Part> parts, Trackers t, String pkg, String name, String kind, boolean manifestEnabled) {
         if (name == null || TrackerParts.trackerOf(t.db, pkg, name) < 0) return;
@@ -16974,6 +16997,21 @@ public class MainActivity extends Activity {
             return "root".equals(trkMode) || ("shizuku".equals(trkMode) && isShizukuAuthorized() && (trkSzUid == 0 || trkSzUid == 1000));
         }
 
+        /**
+         * The History's Undo of a tracker step, run at once (as executeAppAction is) but answering the whole result as JSON, so the page can keep the
+         * parts this Undo really changed: {ok, needsRoot, changed, changedParts, failed, output}.
+         */
+        @JavascriptInterface
+        public String trackerActionResult(String action, String pkg) {
+            try {
+                if (!BackupScripts.isPackageName(pkg)) return new JSONObject().put("ok", false).put("output", "Error: \"" + pkg + "\" is not a valid package name").toString();
+                if (!TrackerParts.isAction(action)) return new JSONObject().put("ok", false).put("output", "Error: not a tracker action").toString();
+                return trackerAction(pkg, action).toString();
+            } catch (Throwable e) {
+                try { return new JSONObject().put("ok", false).put("output", "Error: " + errMsg(e)).toString(); } catch (Exception x) { return "{\"ok\":false}"; }
+            }
+        }
+
         /** A batch action string (trackers_off / trackers_on, with ids or part names after the colon: TrackerParts) run on one app. */
         private JSONObject trackerAction(String pkg, String action) throws Exception {
             return setTrackerParts(pkg, TrackerParts.ids(action), TrackerParts.parts(action), TrackerParts.enables(action));
@@ -16983,7 +17021,9 @@ public class MainActivity extends Activity {
          * Switches the tracker parts of one app off or back on (ids null: every tracker of the app; parts null: every part of those trackers), one pm
          * command per part that needs it: to switch off, the parts that run; to switch on, the parts in the switched-off state (an explicit DISABLED,
          * whoever set it; never one the manifest ships off). Success is each part's state read back afterwards (componentOverrideState), not what pm
-         * printed. {ok, needsRoot, parts, changed, changedParts: [names], failed, output}.
+         * printed. Parts named by name (only: the History's Undo) are all accounted for: one the tracker list no longer counts is still switched
+         * (readNamedParts), one the app no longer has is reported as gone, never skipped in silence.
+         * {ok, needsRoot, parts, changed, changedParts: [names], failed, output}.
          */
         private JSONObject setTrackerParts(String pkg, int[] ids, List<String> only, boolean enable) throws Exception {
             JSONObject r = new JSONObject();
@@ -16998,26 +17038,46 @@ public class MainActivity extends Activity {
             List<TrackerParts.Group> groups = readTrackerParts(pkg, t);
             List<String[]> changed = new ArrayList<String[]>(), failed = new ArrayList<String[]>();
             List<String> failedOut = new ArrayList<String>();
-            int partsInApp = 0, already = 0;
+            int partsInApp = 0;
+            int[] already = { 0 };
+            Set<String> seen = new HashSet<String>();
             for (TrackerParts.Group g : groups) {
                 partsInApp += g.parts.size();
                 if (!TrackerParts.wanted(t.db, g, ids)) continue;
                 String tracker = t.db.name[g.index];
                 for (TrackerParts.Part p : g.parts) {
                     if (!TrackerParts.wanted(p, only)) continue;
-                    if (!TrackerParts.needs(p, enable)) { if (enable ? p.on() : !p.on()) already++; continue; }
-                    String cmd = ShellArgs.componentCommand(pkg, p.name, enable);
-                    if (cmd == null) { failed.add(new String[] { tracker, p.name }); failedOut.add("not a valid component name"); continue; }
-                    String out = executeShell(cmd);
-                    Boolean state = componentOverrideState(pkg, p.name);
-                    if (state != null && state.booleanValue() == enable) changed.add(new String[] { tracker, p.name });
-                    else { failed.add(new String[] { tracker, p.name }); failedOut.add(out == null ? "" : out.trim()); }
+                    seen.add(p.name);
+                    switchTrackerPart(pkg, tracker, p, enable, changed, already, failed, failedOut);
+                }
+            }
+            // the names asked for that no tracker of the list covers now: the app's part all the same (readNamedParts), or no longer in the app
+            Set<String> missing = TrackerParts.missing(only, seen);
+            int gone = 0;
+            if (!missing.isEmpty()) {
+                Map<String, TrackerParts.Part> named = readNamedParts(pkg, missing);
+                for (String name : missing) {
+                    TrackerParts.Part p = named.get(name);
+                    if (p == null) gone++;
+                    else switchTrackerPart(pkg, TrackerParts.NOT_LISTED, p, enable, changed, already, failed, failedOut);
                 }
             }
             JSONArray names = new JSONArray();
             for (String[] c : changed) names.put(c[1]);
             return r.put("ok", failed.isEmpty()).put("parts", partsInApp).put("changed", changed.size()).put("changedParts", names).put("failed", failed.size())
-                    .put("output", TrackerParts.report(enable, partsInApp, changed, already, failed, failedOut));
+                    .put("output", TrackerParts.report(enable, partsInApp, changed, already[0], gone, failed, failedOut));
+        }
+
+        /** One part to the asked state when it needs it: the pm command, then the state read back; counted in changed, already or failed. */
+        private void switchTrackerPart(String pkg, String tracker, TrackerParts.Part p, boolean enable, List<String[]> changed, int[] already,
+                                       List<String[]> failed, List<String> failedOut) {
+            if (!TrackerParts.needs(p, enable)) { if (enable ? p.on() : !p.on()) already[0]++; return; }
+            String cmd = ShellArgs.componentCommand(pkg, p.name, enable);
+            if (cmd == null) { failed.add(new String[] { tracker, p.name }); failedOut.add("not a valid component name"); return; }
+            String out = executeShell(cmd);
+            Boolean state = componentOverrideState(pkg, p.name);
+            if (state != null && state.booleanValue() == enable) changed.add(new String[] { tracker, p.name });
+            else { failed.add(new String[] { tracker, p.name }); failedOut.add(out == null ? "" : out.trim()); }
         }
 
         /** Saves an app's icon (256 px PNG) to Download/ADB App Manager/Icons. Result via window.onAppIconSaved(json{ok, pkg, path, error}). */

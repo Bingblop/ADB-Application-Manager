@@ -23,8 +23,12 @@ ok       each app of the step keeps the parts its run changed, a failed run too 
 ok       with a system app selected, the note says how many and what it risks
 ok   11. Enable Trackers runs at once (as Enable does after Freeze), results titled ENABLE TRACKERS
 ok       a step that changed no part has nothing to undo: no Undo button
-ok   12. Undo of "Disabled trackers in Alpha" switches back on the 3 parts that step switched off, and nothing else
+ok   12. off the gate, Undo of a tracker step offers Root Features and runs nothing
+ok       a yes opens Root Features with the History closed (it would cover the tab), and still runs nothing
+ok       on the gate, Undo of "Disabled trackers in Alpha" switches back on the 3 parts that step switched off, and nothing else
+ok       the Undo step keeps the 2 parts the Undo really switched on (not the one ENABLE had already switched on), and its own Undo names only those
 ok       Undo of the batch step does so per app, Bravo's one changed part too though its run failed (newest first)
+ok       parts the app no longer has are said in the results; that Undo changed nothing, so it has no Undo of its own
 ok   13. Root Features has a "Trackers in apps" row, locked off the gate
 ok       and open with the gate
 ok       Open apps lands on the Apps tab with the Trackers filter on, and says where the switches are

@@ -31,6 +31,8 @@ final class TrackerParts {
     static final String OFF = "trackers_off", ON = "trackers_on", PARTS = "parts=";
     /** No more ids (or part names) than this in one action: more than the list holds is not a real request. */
     static final int MAX_IDS = 1000;
+    /** The tracker a part named by the History's Undo is reported under when the tracker list no longer counts it as any tracker's. */
+    static final String NOT_LISTED = "No longer on the tracker list";
 
     /** One part of the app, as Android lists it. {@code override} is the state someone set with pm (or the app itself): true, false, or null for none. */
     static final class Part {
@@ -182,6 +184,17 @@ final class TrackerParts {
         return out;
     }
 
+    /**
+     * The names asked for that the switch did not reach among the tracker parts (null or none asked: none), in the order asked. The caller looks them up
+     * among all the app's parts: an Undo must account for every part its step changed, not skip one in silence.
+     */
+    static java.util.Set<String> missing(List<String> parts, java.util.Set<String> seen) {
+        java.util.Set<String> out = new java.util.LinkedHashSet<String>();
+        if (parts == null) return out;
+        for (String n : parts) if (seen == null || !seen.contains(n)) out.add(n);
+        return out;
+    }
+
     /** Whether a part is one of the names asked for (null: every part). */
     static boolean wanted(Part p, List<String> parts) { return parts == null || parts.contains(p.name); }
 
@@ -207,8 +220,13 @@ final class TrackerParts {
      * did not change, with its answer. {@code changed} and {@code failed} hold "tracker name / part name" pairs; {@code failedOut} the answers, in order.
      */
     static String report(boolean enable, int partsInApp, List<String[]> changed, int already, List<String[]> failed, List<String> failedOut) {
+        return report(enable, partsInApp, changed, already, 0, failed, failedOut);
+    }
+
+    /** The same, with {@code gone}: parts named by the History's Undo that the app no longer has (an update removed them), so nothing to switch. */
+    static String report(boolean enable, int partsInApp, List<String[]> changed, int already, int gone, List<String[]> failed, List<String> failedOut) {
         StringBuilder sb = new StringBuilder();
-        if (partsInApp == 0) return "No tracker parts in this app: the trackers it holds, if any, run inside its own code.";
+        if (partsInApp == 0 && changed.isEmpty() && already == 0 && gone == 0 && failed.isEmpty()) return "No tracker parts in this app: the trackers it holds, if any, run inside its own code.";
         if (!changed.isEmpty()) {
             sb.append(enable ? "Enabled " : "Disabled ").append(changed.size()).append(changed.size() == 1 ? " tracker part" : " tracker parts").append(":");
             appendByTracker(sb, changed);
@@ -216,6 +234,10 @@ final class TrackerParts {
         if (already > 0) {
             if (sb.length() > 0) sb.append('\n');
             sb.append(already).append(already == 1 ? " part was " : " parts were ").append(enable ? "already on." : "already off.");
+        }
+        if (gone > 0) {
+            if (sb.length() > 0) sb.append('\n');
+            sb.append(gone).append(gone == 1 ? " part is" : " parts are").append(" no longer in the app.");
         }
         if (!failed.isEmpty()) {
             if (sb.length() > 0) sb.append('\n');

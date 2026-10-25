@@ -86,7 +86,18 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
         return 'started';
       },
       appBatchCancel() {},
-      executeAppAction(action, pkg) { window.__exec.push([action, pkg]); return 'OK: Enabled 3 tracker parts'; },
+      executeAppAction(action, pkg) { window.__exec.push([action, pkg]); return 'OK: done'; },
+      // the History's Undo of a tracker step: at once, with the whole answer; the parts named are switched where the "phone" has them and need it
+      trackerActionResult(action, pkg) {
+        window.__exec.push([action, pkg]);
+        const m = /^trackers_(on|off):parts=(.*)$/.exec(action); if (!m) return JSON.stringify({ ok: false, output: 'Error: not a tracker action' });
+        const enable = m[1] === 'on', app = window.__parts[pkg] || {}, changedParts = []; let gone = 0;
+        m[2].split(',').forEach(n => {
+          const t = Object.values(app).find(t => t.parts[n]); if (!t) { gone++; return; }
+          const x = t.parts[n]; if (enable ? x.override === false : on(x)) { x.override = enable ? null : false; changedParts.push(n); }
+        });
+        return JSON.stringify({ ok: true, changed: changedParts.length, changedParts, output: (enable ? 'Enabled ' : 'Disabled ') + changedParts.length + ' tracker parts' + (gone ? '\n' + gone + ' parts are no longer in the app.' : '') });
+      },
     };
   }, apps);
   await page.goto(PAGE); await page.waitForTimeout(900);
@@ -203,20 +214,39 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { document.getElementById('commandResultsModal').classList.remove('show'); clearBatchSelection(); });
 
   // ---- Undo from the History: the other switch, on exactly the parts the step changed
-  answer = true;
   const id = await ev(() => getHistory().find(e => e.title === 'Disabled trackers in Alpha').id);
+  // off the gate (Shizuku as the shell user) a tracker step's Undo goes the Root way first, from over the History, and runs nothing
+  await gate(false);
+  await ev(() => { openHistoryModal(); }); await until(() => document.getElementById('historyModal').classList.contains('show'));
+  dialogs.length = 0; answer = false;
+  await ev(i => undoHistory(i), id); await dialogsUntil(1);
+  check('12. off the gate, Undo of a tracker step offers Root Features and runs nothing', dialogs.length === 1 && /Switching trackers off or on needs Super User/.test(dialogs[0])
+    && (await ev(() => window.__exec.length)) === 0, JSON.stringify(dialogs));
+  answer = true; dialogs.length = 0;
+  await ev(i => undoHistory(i), id); await dialogsUntil(1); await until(() => document.getElementById('historyModal').classList.contains('show') === false);
+  const yes = await ev(() => ({ v: currentViewName(), h: document.getElementById('historyModal').classList.contains('show'), n: window.__exec.length }));
+  check('    a yes opens Root Features with the History closed (it would cover the tab), and still runs nothing', yes.v === 'rootfeatures' && !yes.h && yes.n === 0, JSON.stringify({ yes, dialogs }));
+  await gate(true); await ev(() => switchView('apps'));
+  // on the gate: ENABLE under Facebook Ads (check 5) already switched one of the step's 3 parts back on, so the Undo changes 2
   await ev(i => undoHistory(i), id); await until(() => window.__exec.length > 0 && document.getElementById('commandResultsModal').classList.contains('show'));
   const ex1 = await ev(() => JSON.stringify(window.__exec));
-  check('12. Undo of "Disabled trackers in Alpha" switches back on the 3 parts that step switched off, and nothing else',
+  check('    on the gate, Undo of "Disabled trackers in Alpha" switches back on the 3 parts that step switched off, and nothing else',
     ex1 === JSON.stringify([['trackers_on:parts=com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar,com.google.android.gms.measurement.AppMeasurementReceiver,com.facebook.ads.AudienceNetworkActivity', 'com.example.alpha']]), ex1);
+  const u1 = await ev(() => { const e = getHistory()[0]; return { title: e.title, items: e.items.map(i => [i.action, i.success, i.parts]), undo: e.items.map(histUndoAction) }; });
+  check('    the Undo step keeps the 2 parts the Undo really switched on (not the one ENABLE had already switched on), and its own Undo names only those',
+    u1.title === 'Undo: Disabled trackers in Alpha' && JSON.stringify(u1.items) === JSON.stringify([['trackers_on', true, ['com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar', 'com.google.android.gms.measurement.AppMeasurementReceiver']]])
+    && u1.undo[0] === 'trackers_off:parts=com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar,com.google.android.gms.measurement.AppMeasurementReceiver', JSON.stringify(u1));
   await ev(() => { document.getElementById('commandResultsModal').classList.remove('show'); window.__exec = []; });
   const id2 = await ev(() => getHistory().find(e => e.title === 'Disabled trackers in 2 apps').id);
   await ev(i => undoHistory(i), id2); await until(() => window.__exec.length > 1 && document.getElementById('commandResultsModal').classList.contains('show'));
   const ex2 = await ev(() => JSON.stringify(window.__exec));
   check('    Undo of the batch step does so per app, Bravo\'s one changed part too though its run failed (newest first)',
     ex2 === JSON.stringify([['trackers_on:parts=com.flurry.android.FlurryReceiver', 'com.example.bravo'], ['trackers_on:parts=com.example.alpha.trk.A,com.example.alpha.trk.B', 'com.example.alpha']]), ex2);
+  const u2 = await ev(() => { const e = getHistory()[0]; renderHistory(); return { title: e.title, undo: e.items.map(histUndoAction).join(''), res: document.getElementById('commandResultsModal').innerText, btn: !!document.querySelector('#historyList .hist-entry:first-child [data-id]') }; });
+  check('    parts the app no longer has are said in the results; that Undo changed nothing, so it has no Undo of its own',
+    u2.title === 'Undo: Disabled trackers in 2 apps' && u2.undo === '' && !u2.btn && /parts are no longer in the app/.test(u2.res), JSON.stringify(u2).slice(0, 400));
   answer = false;
-  await ev(() => document.getElementById('commandResultsModal').classList.remove('show'));
+  await ev(() => { document.getElementById('commandResultsModal').classList.remove('show'); closeHistoryModal(); });
 
   // ---- Root Features: the row
   await gate(false);

@@ -5382,7 +5382,7 @@
 {"k":"Enabled {0} tracker parts","ctx":"built by the code of: on tracker parts set"},
 {"k":"Enabling {0} of {1}…","ctx":"built by the code of: als bulk comp"},
 {"k":"Entries {0}–{1} of {2}","ctx":"built by the code of: lcv draw"},
-{"k":"Error: {0}","ctx":"built by the code of: select mode ui"},
+{"k":"Error: {0}","ctx":"built by the code of: undo history"},
 {"k":"Every app that is not enabled is saved. {0} app would be saved now.","ctx":"built by the code of: render profiles"},
 {"k":"Every app that is not enabled is saved. {0} apps would be saved now.","ctx":"built by the code of: render profiles"},
 {"k":"Exported {0} apps to {1}","ctx":"built by the code of: export app list"},

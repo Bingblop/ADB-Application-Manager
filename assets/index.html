@@ -15251,6 +15251,9 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!guardPrivilege('Undo')) return;
             const items = e.items.filter(i => histUndoAction(i));
             if (!items.length) return;
+            // a tracker step's Undo sits on the Root Features gate, as the tracker switches do: off it, the Root way first, then this Undo again
+            const isTrk = i => i.action === 'trackers_off' || i.action === 'trackers_on';
+            if (items.some(isTrk) && !isRootActive()) { promptRootThenOpen(txT('Switching trackers off or on')).then(ok => { if (ok) undoHistory(id); }); return; }
             if (!confirm(`Undo "${e.title}"?\n\n${items.length} package${items.length === 1 ? '' : 's'} will be reverted.`)) return;
             haptic();
             showToast('Undoing ' + items.length + ' actions...');
@@ -15258,8 +15261,16 @@ Type any command above (e.g. pm list packages -d)</div>
                 const rows = [];
                 // Newest step first, so a profile run that touched one app twice is unwound in the right order
                 items.slice().reverse().forEach(i => {
-                    const undo = UNDO_ACTION[i.action], run = histUndoAction(i);
-                    performDetailedBatchAction(run, [i.pkg]).rows.forEach(r => rows.push(Object.assign({ pkg: i.pkg, name: i.name, action: undo, success: r.success, output: r.output, removal: i.removal }, r.success && i.parts ? { parts: i.parts } : {})));
+                    const undo = UNDO_ACTION[i.action], run = histUndoAction(i), b = window.AndroidBridge;
+                    // a tracker step: the Undo's own answer names the parts it really changed (a part already back on is not one), and that, not the
+                    // step's list, is what the Undo step keeps for its own Undo, also when Android refused another part
+                    if (isTrk(i) && b && b.trackerActionResult) {
+                        let r = {};
+                        try { r = JSON.parse(b.trackerActionResult(run, i.pkg) || '{}') || {}; } catch (err) { r = { ok: false, output: 'Error: ' + err.message }; }
+                        rows.push({ pkg: i.pkg, name: i.name, action: undo, success: !!r.ok, output: r.output || '', removal: i.removal, parts: Array.isArray(r.changedParts) ? r.changedParts : [] });
+                        return;
+                    }
+                    performDetailedBatchAction(run, [i.pkg]).rows.forEach(r => rows.push({ pkg: i.pkg, name: i.name, action: undo, success: r.success, output: r.output, removal: i.removal }));
                 });
                 recordHistory('undo', 'Undo: ' + e.title, rows);
                 renderHistory();
@@ -29268,6 +29279,7 @@ Type any command above (e.g. pm list packages -d)</div>
             // the funnel's callers run inside a sheet (the app sheet, the Activity Launcher), which would cover the tab: close it first, as
             // every other way from a sheet to a tab does (T-054). A no above leaves the sheet as it was.
             if (document.getElementById('trackersModal').classList.contains('show')) document.getElementById('trackersModal').classList.remove('show');
+            if (document.getElementById('historyModal').classList.contains('show')) document.getElementById('historyModal').classList.remove('show');
             if (document.getElementById('inspectorModal').classList.contains('show')) closeInspector();
             if (alsIsOpen()) closeAppListSheet();
             switchView('rootfeatures');
