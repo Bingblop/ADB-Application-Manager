@@ -1828,10 +1828,6 @@ public class MainActivity extends Activity {
         return new File(getApplicationInfo().nativeLibraryDir, "libptyexec.so");
     }
 
-    private static String shq(String s) {
-        return RishShell.quote(s);
-    }
-
     /** The process that runs a shell on a pty for {@code backend}: app (this app's sandbox), priv (the working mode: Shizuku, Root or ADB) or termux. */
     private Process ptyProcess(String backend, int rows, int cols) throws Exception {
         File helper = ptyHelper();
