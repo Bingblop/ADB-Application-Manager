@@ -14508,7 +14508,8 @@ Type any command above (e.g. pm list packages -d)</div>
             else showToast(r.needsRoot ? NEEDS_ROOT_COMP : 'Some tracker parts were not changed');
             if (!r.ok) showCommandResults('Trackers', p.enable ? 'Enable trackers' : 'Disable trackers', [{ name: p.name, pkg: p.pkg, output: r.output || '', success: false }]);
             // every tracker of the app at once is one step of the History, with Undo (the other switch); a single tracker's switch is not, as a single part's is not
-            if (p.all && n) recordHistory('apps', (p.enable ? ACTION_LABELS.trackers_on : ACTION_LABELS.trackers_off) + ' ' + p.name, [{ pkg: p.pkg, name: p.name, action: p.enable ? 'trackers_on' : 'trackers_off', success: !!r.ok }]);
+            // (the step keeps the parts it changed: its Undo switches back exactly those, histUndoAction)
+            if (p.all && n) recordHistory('apps', (p.enable ? ACTION_LABELS.trackers_on : ACTION_LABELS.trackers_off) + ' ' + p.name, [{ pkg: p.pkg, name: p.name, action: p.enable ? 'trackers_on' : 'trackers_off', success: !!r.ok, parts: r.changedParts || [] }]);
             // read the phone again: the box, and the app menu's Activities and Components tabs when they show this app
             if (trkPartsPkg === p.pkg) trkPartsRead(p.pkg);
             if (trkParts && trkParts.pkg === p.pkg && inspectorData && inspectedPkg === p.pkg) {
@@ -15175,6 +15176,15 @@ Type any command above (e.g. pm list packages -d)</div>
         const UNDO_ACTION = { uninstall: 'reinstall', reinstall: 'uninstall', freeze: 'unfreeze', unfreeze: 'freeze', suspend: 'unsuspend', unsuspend: 'suspend', trackers_off: 'trackers_on', trackers_on: 'trackers_off' };
         const ACTION_LABELS = { clear_removed_data: 'Cleared leftover data of', uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates', update: 'Updated', trackers_off: 'Disabled trackers in', trackers_on: 'Enabled trackers in' };
         let debloatHistory = null;
+        // The Undo of one History item, or '' when it has none. A tracker step is undone part by part: the other switch on exactly the parts that step
+        // changed ("trackers_on:parts=a.B,a.C"), never on every tracker part of the app. A step that changed nothing has nothing to undo; one that
+        // changed some parts and not others (Android refused one) still undoes the ones it changed.
+        function histUndoAction(i) {
+            const undo = i ? UNDO_ACTION[i.action] : '';
+            if (!undo) return '';
+            if (i.action === 'trackers_off' || i.action === 'trackers_on') return Array.isArray(i.parts) && i.parts.length ? undo + ':parts=' + i.parts.join(',') : '';
+            return i.success ? undo : '';
+        }
 
         function getHistory() {
             if (debloatHistory === null) debloatHistory = loadStoreJson('debloat_history', []);
@@ -15182,7 +15192,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return debloatHistory;
         }
 
-        // rows: [{pkg, name, action, success, removal?}]
+        // rows: [{pkg, name, action, success, removal?, parts?}] (parts: the tracker parts a trackers_off / trackers_on step changed)
         function recordHistory(source, title, rows) {
             if (!rows || !rows.length) return;
             const h = getHistory();
@@ -15191,7 +15201,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 at: Date.now(),
                 source: source,
                 title: title,
-                items: rows.map(r => ({ pkg: r.pkg, name: r.name || r.pkg, action: r.action, success: !!r.success, removal: r.removal || '' }))
+                items: rows.map(r => Object.assign({ pkg: r.pkg, name: r.name || r.pkg, action: r.action, success: !!r.success, removal: r.removal || '' }, Array.isArray(r.parts) ? { parts: r.parts } : {}))
             });
             if (h.length > HISTORY_LIMIT) h.length = HISTORY_LIMIT;
             saveStoreJson('debloat_history', h);
@@ -15218,7 +15228,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             list.innerHTML = h.map(e => {
                 const ok = e.items.filter(i => i.success).length;
-                const undoable = e.items.some(i => i.success && UNDO_ACTION[i.action]);
+                const undoable = e.items.some(i => histUndoAction(i));
                 const when = new Date(e.at).toLocaleString(langLocale());
                 const pkgs = e.items.map(i => `<span class="${i.success ? 'ok' : 'bad'}">${i.success ? '✓' : '✕'}</span> ${escapeHtml(ACTION_LABELS[i.action] || i.action)} ${escapeHtml(i.name)}${i.name !== i.pkg ? ' <span style="opacity:.7">(' + escapeHtml(i.pkg) + ')</span>' : ''}`).join('<br>');
                 return `
@@ -15239,7 +15249,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const e = getHistory().find(x => x.id === id);
             if (!e) return;
             if (!guardPrivilege('Undo')) return;
-            const items = e.items.filter(i => i.success && UNDO_ACTION[i.action]);
+            const items = e.items.filter(i => histUndoAction(i));
             if (!items.length) return;
             if (!confirm(`Undo "${e.title}"?\n\n${items.length} package${items.length === 1 ? '' : 's'} will be reverted.`)) return;
             haptic();
@@ -15248,8 +15258,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 const rows = [];
                 // Newest step first, so a profile run that touched one app twice is unwound in the right order
                 items.slice().reverse().forEach(i => {
-                    const undo = UNDO_ACTION[i.action];
-                    performDetailedBatchAction(undo, [i.pkg]).rows.forEach(r => rows.push({ pkg: i.pkg, name: i.name, action: undo, success: r.success, output: r.output, removal: i.removal }));
+                    const undo = UNDO_ACTION[i.action], run = histUndoAction(i);
+                    performDetailedBatchAction(run, [i.pkg]).rows.forEach(r => rows.push(Object.assign({ pkg: i.pkg, name: i.name, action: undo, success: r.success, output: r.output, removal: i.removal }, r.success && i.parts ? { parts: i.parts } : {})));
                 });
                 recordHistory('undo', 'Undo: ' + e.title, rows);
                 renderHistory();
@@ -21340,13 +21350,13 @@ Type any command above (e.g. pm list packages -d)</div>
             const action = res.action, total = res.total, stopped = !!res.cancelled;
             const rows = (res.rows || []).map(r => {
                 const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
-                return { name: app.name, pkg: r.pkg, output: r.output, success: r.success, label: r.label };      // label: what the phone said afterwards (Uninstalled, Still installed, Frozen...)
+                return { name: app.name, pkg: r.pkg, output: r.output, success: r.success, label: r.label, parts: r.parts };      // label: what the phone said afterwards (Uninstalled, Still installed, Frozen...); parts: the tracker parts changed
             });
             const success = rows.filter(r => r.success).length, failed = rows.length - success;
             const label = `${batchRunLabel || ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
             const histAction = batchRunHist || action, shownAction = batchRunHist ? (batchRunHist === 'custom' ? 'Command' : 'App Ops') : (action === 'clear_removed_data' ? 'CLEAR LEFTOVER DATA' : action === 'trackers_off' ? 'DISABLE TRACKERS' : action === 'trackers_on' ? 'ENABLE TRACKERS' : action.toUpperCase());
             batchRunLabel = ''; batchRunHist = '';
-            recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: histAction, success: r.success })));
+            recordHistory('apps', label, rows.map(r => Object.assign({ pkg: r.pkg, name: r.name, action: histAction, success: r.success }, Array.isArray(r.parts) ? { parts: r.parts } : {})));
             showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
             const csvAction = action.startsWith('custom:') ? action.slice(7) : action.startsWith('appops:') ? action.slice(7) : action;
             const failedPkgs = rows.filter(r => !r.success).map(r => r.pkg);

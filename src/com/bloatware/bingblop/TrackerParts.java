@@ -12,8 +12,9 @@ import java.util.Map;
  * with {@code pm disable} / {@code pm enable} on each part (the Trackers box of the app menu, and Disable / Enable Trackers in the batch menu).
  * A part belongs to a tracker when one of the tracker's code signatures occurs in the part's class name on whole name segments ({@link #onSegments}):
  * stricter than the dex scan's plain substring ({@link TrackerDb}), because here a match is switched off. Tune's "com.tune" names a tracker in
- * "com.tune.TuneTracker" but not in TuneIn Radio's own "com.tunein.player.Main". When two trackers match one name, the longer signature (the more specific
- * library) wins.
+ * "com.tune.TuneTracker" but not in TuneIn Radio's own "com.tunein.player.Main". A signature that overlaps the app's own package is skipped too
+ * ({@link #ownCode}): the app is the tracker's maker, and its parts are its own code (LiveMe, com.cmcm.live, is not "Cheetah Ads" com.cmcm.).
+ * When two trackers match one name, the longer signature (the more specific library) wins.
  * No Android classes: tested on a computer (tests/java/src/TrackerPartsTest.java). MainActivity reads the parts from Android and runs the commands.
  *
  * What switching parts off does and does not do: the tracker's own receivers, services, screens and providers stop (a disabled receiver hears nothing,
@@ -23,9 +24,12 @@ import java.util.Map;
 final class TrackerParts {
     private TrackerParts() { }
 
-    /** The batch actions (MainActivity.executeAppAction): every tracker of the app, or only the ids after the colon ("trackers_off:49,312"). */
-    static final String OFF = "trackers_off", ON = "trackers_on";
-    /** No more ids than this in one action: more than the list holds is not a real request. */
+    /**
+     * The batch actions (MainActivity.executeAppAction): every tracker of the app, only the ids after the colon ("trackers_off:49,312"), or only the
+     * parts named after "parts=" ("trackers_on:parts=com.a.B,com.a.C": the History's Undo, which switches back exactly what one step changed).
+     */
+    static final String OFF = "trackers_off", ON = "trackers_on", PARTS = "parts=";
+    /** No more ids (or part names) than this in one action: more than the list holds is not a real request. */
     static final int MAX_IDS = 1000;
 
     /** One part of the app, as Android lists it. {@code override} is the state someone set with pm (or the app itself): true, false, or null for none. */
@@ -51,18 +55,33 @@ final class TrackerParts {
         int switchedOff() { int c = 0; for (Part p : parts) if (p.switchedOff()) c++; return c; }
     }
 
-    /** The tracker a class name belongs to: the index of the one whose signature matches ({@link #onSegments}) and is the longest (the lower id on a tie), or -1 for none. */
-    static int trackerOf(TrackerDb db, String className) {
+    /**
+     * The tracker a part of the app {@code pkg} belongs to: the index of the one whose signature matches the class name ({@link #onSegments}), is not
+     * the app's own code ({@link #ownCode}) and is the longest (the lower id on a tie), or -1 for none. A null pkg skips the own-code test.
+     */
+    static int trackerOf(TrackerDb db, String pkg, String className) {
         if (db == null || className == null || className.isEmpty()) return -1;
         int best = -1, bestLen = 0;
         for (int t = 0; t < db.n; t++) {
             for (String alt : db.alts[t]) {
                 int len = alt.length();
                 if (len < bestLen || (len == bestLen && best >= 0 && db.id[t] >= db.id[best])) continue;
-                if (onSegments(className, alt)) { best = t; bestLen = len; }
+                if (onSegments(className, alt) && !ownCode(pkg, alt)) { best = t; bestLen = len; }
             }
         }
         return best;
+    }
+
+    /**
+     * Whether a signature overlaps the app's own package, so what it matches is the app's own code: the package lies in the signature's namespace
+     * (LiveMe com.cmcm.live under com.cmcm., the Hound app com.hound.android.app under com.hound), or the signature names a package inside the app's
+     * (com.tencent.mm.plugin.location. inside WeChat, com.tencent.mm; com.google.android.gms.measurement inside Google Play services).
+     */
+    static boolean ownCode(String pkg, String sig) {
+        if (pkg == null || pkg.isEmpty() || sig == null || sig.isEmpty()) return false;
+        if (onSegments(pkg + ".", sig)) return true;
+        String s = sig.endsWith(".") ? sig.substring(0, sig.length() - 1) : sig;
+        return s.equals(pkg) || s.startsWith(pkg + ".");
     }
 
     /**
@@ -83,12 +102,12 @@ final class TrackerParts {
 
     private static boolean isSep(char c) { return c == '.' || c == '$'; }
 
-    /** The parts that belong to a tracker, grouped by tracker (in the order of the trackers' names), each group's parts by name. Other parts are left out. */
-    static List<Group> group(TrackerDb db, List<Part> parts) {
+    /** The parts of the app {@code pkg} that belong to a tracker, grouped by tracker (in the order of the trackers' names), each group's parts by name. Other parts are left out. */
+    static List<Group> group(TrackerDb db, String pkg, List<Part> parts) {
         Map<Integer, Group> by = new LinkedHashMap<Integer, Group>();
         if (parts != null) {
             for (Part p : parts) {
-                int t = trackerOf(db, p.name);
+                int t = trackerOf(db, pkg, p.name);
                 if (t < 0) continue;
                 Group g = by.get(t);
                 if (g == null) { g = new Group(t); by.put(t, g); }
@@ -126,7 +145,7 @@ final class TrackerParts {
     static int[] ids(String action) {
         if (action == null) return new int[0];
         int c = action.indexOf(':');
-        if (c < 0) return null;
+        if (c < 0 || action.startsWith(PARTS, c + 1)) return null;
         String rest = action.substring(c + 1).trim();
         if (rest.isEmpty()) return new int[0];
         String[] bits = rest.split(",", -1);
@@ -142,6 +161,29 @@ final class TrackerParts {
         for (int i = 0; i < r.length; i++) r[i] = out.get(i);
         return r;
     }
+
+    /**
+     * The part names an action names after "parts=": null when it names none (every part of the trackers asked for), the names otherwise (duplicates
+     * dropped). Anything that is not a list of class names, or more of them than {@link #MAX_IDS}, gives an empty list: nothing is switched.
+     */
+    static List<String> parts(String action) {
+        if (action == null) return null;
+        int c = action.indexOf(':');
+        if (c < 0 || !action.startsWith(PARTS, c + 1)) return null;
+        List<String> out = new ArrayList<String>();
+        String rest = action.substring(c + 1 + PARTS.length());
+        if (rest.isEmpty()) return out;
+        String[] bits = rest.split(",", -1);
+        if (bits.length > MAX_IDS) return out;
+        for (String b : bits) {
+            if (!b.matches("[A-Za-z0-9_$][A-Za-z0-9._$]{0,299}")) { out.clear(); return out; }
+            if (!out.contains(b)) out.add(b);
+        }
+        return out;
+    }
+
+    /** Whether a part is one of the names asked for (null: every part). */
+    static boolean wanted(Part p, List<String> parts) { return parts == null || parts.contains(p.name); }
 
     /** Whether a group is one of the ids asked for (null: every tracker). */
     static boolean wanted(TrackerDb db, Group g, int[] ids) {

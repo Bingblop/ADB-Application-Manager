@@ -25,7 +25,8 @@ public class TrackerPartsTest {
       + "\"313\":{\"id\":313,\"name\":\"Google Ads\",\"code_signature\":\"com.google.android.gms.ads\",\"categories\":[\"Advertisement\"]},"
       + "\"90\":{\"id\":90,\"name\":\"Tune\",\"code_signature\":\"com.tune\",\"categories\":[\"Analytics\"]},"
       + "\"91\":{\"id\":91,\"name\":\"Sizmek\",\"code_signature\":\".sizmek.\",\"categories\":[\"Advertisement\"]},"
-      + "\"92\":{\"id\":92,\"name\":\"Short\",\"code_signature\":\"ads\",\"categories\":[]}"
+      + "\"92\":{\"id\":92,\"name\":\"Short\",\"code_signature\":\"ads\",\"categories\":[]},"
+      + "\"93\":{\"id\":93,\"name\":\"Cheetah Ads\",\"code_signature\":\"com.cmcm.\",\"categories\":[\"Advertisement\"]}"
       + "}}";
 
   public static void main(String[] args) throws Exception {
@@ -37,16 +38,35 @@ public class TrackerPartsTest {
     check("a signature ending in '.' is a whole segment already", name(db, "io.fabric.Fabric").equals("Google CrashLytics"));
     check("the longest matching signature wins (gms.ads.identifier is AdMob, not the shorter gms.ads)", name(db, "com.google.android.gms.ads.identifier.AdvertisingIdService").equals("Google AdMob"));
     check("on a tie of length the lower id wins (gms.ads: AdMob 312 before Google Ads 313)", name(db, "com.google.android.gms.ads.AdActivity").equals("Google AdMob"));
-    check("only whole name segments count: com.tune is not in TuneIn Radio's com.tunein.player.Main", TrackerParts.trackerOf(db, "com.tunein.player.Main") == -1);
+    check("only whole name segments count: com.tune is not in TuneIn Radio's com.tunein.player.Main", TrackerParts.trackerOf(db, APP, "com.tunein.player.Main") == -1);
     check("but com.tune is in com.tune.TuneTracker", name(db, "com.tune.TuneTracker").equals("Tune"));
     check("a signature starting with '.' may sit anywhere (.sizmek.)", name(db, "com.example.sizmek.AdView").equals("Sizmek"));
     check("an inner class ($) is a segment boundary", name(db, "com.tune$Receiver").equals("Tune"));
-    check("a signature of three characters or fewer is never used (as Exodus does)", TrackerParts.trackerOf(db, "com.example.ads.Banner") == -1);
-    check("the app's own parts belong to no tracker", TrackerParts.trackerOf(db, "com.example.app.MainActivity") == -1);
-    check("null and empty names: none, no exception", TrackerParts.trackerOf(db, null) == -1 && TrackerParts.trackerOf(db, "") == -1 && TrackerParts.trackerOf(null, "x") == -1);
+    check("a signature of three characters or fewer is never used (as Exodus does)", TrackerParts.trackerOf(db, APP, "com.example.ads.Banner") == -1);
+    check("the app's own parts belong to no tracker", TrackerParts.trackerOf(db, APP, "com.example.app.MainActivity") == -1);
+    check("null and empty names: none, no exception", TrackerParts.trackerOf(db, APP, null) == -1 && TrackerParts.trackerOf(db, APP, "") == -1 && TrackerParts.trackerOf(null, APP, "x") == -1);
     check("onSegments: the match at the very end of the name counts", TrackerParts.onSegments("com.crashlytics", "com.crashlytics"));
     check("onSegments: a later occurrence on segments counts when an earlier one does not", TrackerParts.onSegments("com.tunex.com.tune.R", "com.tune"));
     check("onSegments: a segment that only starts with it does not count", !TrackerParts.onSegments("com.crashlyticsx.R", "com.crashlytics") && !TrackerParts.onSegments("xcom.crashlytics.R", "com.crashlytics"));
+
+    // ---- the app's own code is never a tracker's (the app is the tracker's maker)
+    check("ownCode: the app's package lies in the signature's namespace (LiveMe com.cmcm.live under Cheetah's com.cmcm.)", TrackerParts.ownCode("com.cmcm.live", "com.cmcm."));
+    check("ownCode: the same without a trailing '.' (the Hound app com.hound.android.app under com.hound)", TrackerParts.ownCode("com.hound.android.app", "com.hound"));
+    check("ownCode: the signature names a package inside the app's (WeChat's com.tencent.mm.plugin.location., Play services' gms.measurement)",
+        TrackerParts.ownCode("com.tencent.mm", "com.tencent.mm.plugin.location.") && TrackerParts.ownCode("com.google.android.gms", "com.google.android.gms.measurement"));
+    check("ownCode: the signature is the package itself", TrackerParts.ownCode("com.tune", "com.tune"));
+    check("ownCode: whole segments only (TuneIn's com.tunein.player is not Tune's com.tune; com.cmcmx is not com.cmcm.)",
+        !TrackerParts.ownCode("com.tunein.player", "com.tune") && !TrackerParts.ownCode("com.cmcmx.app", "com.cmcm.") && !TrackerParts.ownCode("com.google.android.gmsx", "com.google.android.gms.measurement"));
+    check("ownCode: an unrelated app, and null or empty input: false", !TrackerParts.ownCode(APP, "com.google.android.gms.measurement") && !TrackerParts.ownCode(null, "com.tune")
+        && !TrackerParts.ownCode("", "com.tune") && !TrackerParts.ownCode(APP, null) && !TrackerParts.ownCode(APP, ""));
+    check("ownCode: a signature that may sit anywhere ('.sizmek.') is own code in an app whose package holds it", TrackerParts.ownCode("com.sizmek.app", ".sizmek.") && !TrackerParts.ownCode(APP, ".sizmek."));
+    check("trackerOf: LiveMe's own parts are not Cheetah Ads, another app's com.cmcm. parts are", name(db, "com.cmcm.live", "com.cmcm.live.message.PushReceiver").equals("-")
+        && name(db, "com.cmcm.ads.AdReceiver").equals("Cheetah Ads"));
+    check("trackerOf: Google Play services' own measurement parts are not Firebase Analytics, an app's copy is",
+        name(db, "com.google.android.gms", "com.google.android.gms.measurement.AppMeasurementReceiver").equals("-") && name(db, "com.google.android.gms.measurement.AppMeasurementReceiver").equals("Google Firebase Analytics"));
+    check("trackerOf: every signature that overlaps the package is skipped (Play services' gms.ads parts are neither AdMob nor Google Ads), no other one is (its io.fabric. parts are still CrashLytics)",
+        name(db, "com.google.android.gms", "com.google.android.gms.ads.AdActivity").equals("-") && name(db, "com.google.android.gms", "io.fabric.sdk.android.services.FabricInitProvider").equals("Google CrashLytics"));
+    check("trackerOf: a null package skips the own-code test", name(db, null, "com.cmcm.live.X").equals("Cheetah Ads"));
 
     // ---- grouping
     List<TrackerParts.Part> parts = new ArrayList<TrackerParts.Part>(Arrays.asList(
@@ -56,14 +76,14 @@ public class TrackerPartsTest {
         new TrackerParts.Part("com.google.android.gms.measurement.AppMeasurementJobService", "service", false, null),
         new TrackerParts.Part("com.google.android.gms.ads.AdActivity", "activity", true, null),
         new TrackerParts.Part("io.fabric.sdk.android.services.FabricInitProvider", "provider", false, Boolean.TRUE)));
-    List<TrackerParts.Group> g = TrackerParts.group(db, parts);
+    List<TrackerParts.Group> g = TrackerParts.group(db, APP, parts);
     List<String> order = new ArrayList<String>();
     for (TrackerParts.Group x : g) order.add(db.name[x.index] + ":" + x.parts.size());
     check("grouped by tracker in the order of the names, the app's own parts left out", order.toString().equals("[Google AdMob:1, Google CrashLytics:1, Google Firebase Analytics:3]"), order);
     TrackerParts.Group fa = g.get(2);
     check("each group's parts sorted by name", fa.parts.get(0).name.endsWith("AppMeasurementJobService") && fa.parts.get(1).name.endsWith("AppMeasurementReceiver") && fa.parts.get(2).name.endsWith("AppMeasurementService"));
     check("a group counts the parts that run and the parts switched off", fa.on() == 1 && fa.switchedOff() == 1, fa.on() + "/" + fa.switchedOff());
-    check("null parts: no groups, no exception", TrackerParts.group(db, null).isEmpty());
+    check("null parts: no groups, no exception", TrackerParts.group(db, APP, null).isEmpty());
 
     // ---- a part's state
     TrackerParts.Part shipOff = new TrackerParts.Part("x.A", "service", false, null), pmOff = new TrackerParts.Part("x.B", "service", true, Boolean.FALSE),
@@ -85,6 +105,22 @@ public class TrackerPartsTest {
     for (int i = 0; i <= TrackerParts.MAX_IDS; i++) many.append(i == 0 ? "" : ",").append(i);
     check("ids: more than MAX_IDS names nothing", TrackerParts.ids(many.toString()).length == 0);
     check("wanted: null is every tracker, else only the ids named", TrackerParts.wanted(db, fa, null) && TrackerParts.wanted(db, fa, new int[] { 49 }) && !TrackerParts.wanted(db, fa, new int[] { 312 }));
+    check("isAction / enables: the parts= form too", TrackerParts.isAction("trackers_on:parts=a.B") && TrackerParts.enables("trackers_on:parts=a.B") && !TrackerParts.enables("trackers_off:parts=a.B"));
+    check("ids: the parts= form names no ids (null: every tracker; the part names choose)", TrackerParts.ids("trackers_on:parts=com.a.B") == null);
+    check("parts: no parts= means every part (null)", TrackerParts.parts("trackers_on") == null && TrackerParts.parts("trackers_on:49,312") == null && TrackerParts.parts(null) == null);
+    check("parts: the names in order, duplicates dropped, inner classes ($) kept",
+        TrackerParts.parts("trackers_on:parts=com.a.B,com.a.C$D,com.a.B").toString().equals("[com.a.B, com.a.C$D]"), TrackerParts.parts("trackers_on:parts=com.a.B,com.a.C$D,com.a.B"));
+    check("parts: anything that is not a list of class names names nothing (empty: nothing is switched)", TrackerParts.parts("trackers_on:parts=").isEmpty()
+        && TrackerParts.parts("trackers_on:parts=com.a.B,,com.a.C").isEmpty() && TrackerParts.parts("trackers_on:parts=com.a.B c").isEmpty()
+        && TrackerParts.parts("trackers_on:parts=com.a.B;reboot").isEmpty() && TrackerParts.parts("trackers_on:parts=.a.B").isEmpty() && TrackerParts.parts("trackers_on:parts=com/a").isEmpty());
+    StringBuilder manyParts = new StringBuilder("trackers_on:parts=");
+    for (int i = 0; i <= TrackerParts.MAX_IDS; i++) manyParts.append(i == 0 ? "" : ",").append("a.P").append(i);
+    check("parts: more than MAX_IDS names nothing", TrackerParts.parts(manyParts.toString()).isEmpty());
+    StringBuilder longName = new StringBuilder("a");
+    for (int i = 0; i < 300; i++) longName.append('b');
+    check("parts: a name longer than 300 characters names nothing", TrackerParts.parts("trackers_on:parts=" + longName).isEmpty());
+    check("wanted(part): null is every part, else only the names given", TrackerParts.wanted(fa.parts.get(0), null) && TrackerParts.wanted(fa.parts.get(0), Arrays.asList(fa.parts.get(0).name))
+        && !TrackerParts.wanted(fa.parts.get(0), Arrays.asList(fa.parts.get(1).name)) && !TrackerParts.wanted(fa.parts.get(0), new ArrayList<String>()));
 
     // ---- the report
     List<String[]> none = new ArrayList<String[]>();
@@ -110,7 +146,9 @@ public class TrackerPartsTest {
     if (fails > 0) System.exit(1);
   }
 
-  static String name(TrackerDb db, String cls) { int t = TrackerParts.trackerOf(db, cls); return t < 0 ? "-" : db.name[t]; }
+  static final String APP = "com.example.app";
+  static String name(TrackerDb db, String cls) { return name(db, APP, cls); }
+  static String name(TrackerDb db, String pkg, String cls) { int t = TrackerParts.trackerOf(db, pkg, cls); return t < 0 ? "-" : db.name[t]; }
 
   // ------------------------------------------------------------------------------------------ the wiring, read from the source
 
@@ -121,6 +159,13 @@ public class TrackerPartsTest {
       if (f.exists()) return f;
     }
     return null;
+  }
+
+  /** Both pieces are in s, and a comes first (a missing piece fails: indexOf's -1 would otherwise come "before" anything). */
+  static boolean before(String s, String a, String b) {
+    if (s == null) return false;
+    int i = s.indexOf(a), j = s.indexOf(b);
+    return i >= 0 && j >= 0 && i < j;
   }
 
   static String read(File f) throws Exception { return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8); }
@@ -144,25 +189,36 @@ public class TrackerPartsTest {
     String allowed = bodyOf(m, "private boolean trackerSwitchAllowed() {");
     check("source: the switch opens for Root, or a Shizuku server authorized as uid 0 or 1000 (as setComponentEnabled)", allowed != null && allowed.contains("\"root\".equals(trkMode)")
         && allowed.contains("isShizukuAuthorized()") && allowed.contains("trkSzUid == 0 || trkSzUid == 1000") && !allowed.contains("2000"));
-    String set = bodyOf(m, "private JSONObject setTrackerParts(String pkg, int[] ids, boolean enable) throws Exception {");
-    check("source: setTrackerParts checks the package name and the gate before any command", set != null && set.indexOf("isPackageName(pkg)") < set.indexOf("executeShell(")
-        && set.indexOf("if (!trackerSwitchAllowed())") < set.indexOf("executeShell(") && set.contains("needsRoot"));
-    check("source: an empty id list switches nothing (not every tracker)", set != null && set.contains("if (ids != null && ids.length == 0)") && set.indexOf("ids.length == 0") < set.indexOf("executeShell("));
+    String set = bodyOf(m, "private JSONObject setTrackerParts(String pkg, int[] ids, List<String> only, boolean enable) throws Exception {");
+    check("source: setTrackerParts checks the package name and the gate before any command", before(set, "isPackageName(pkg)", "executeShell(")
+        && before(set, "if (!trackerSwitchAllowed())", "executeShell(") && set.contains("needsRoot"));
+    check("source: an empty id list switches nothing (not every tracker)", before(set, "if (ids != null && ids.length == 0)", "executeShell("));
+    check("source: an empty part list switches nothing (not every part)", before(set, "if (only != null && only.isEmpty())", "executeShell("));
+    check("source: only the parts asked for are looked at, before which need a command", before(set, "TrackerParts.wanted(t.db, g, ids)", "TrackerParts.wanted(p, only)")
+        && before(set, "TrackerParts.wanted(p, only)", "TrackerParts.needs(p, enable)") && before(set, "TrackerParts.needs(p, enable)", "executeShell("));
+    check("source: the answer names the parts changed (changedParts: what the History's Undo switches back)", set != null && set.contains("put(\"changedParts\", names)") && set.contains("for (String[] c : changed) names.put(c[1])"));
     check("source: every command is ShellArgs.componentCommand (pm enable / pm disable on one part), nothing else", set != null && set.contains("ShellArgs.componentCommand(pkg, p.name, enable)") && set.contains("executeShell(cmd)"));
     check("source: success is the part's state read back (componentOverrideState), not what pm printed", set != null && set.contains("componentOverrideState(pkg, p.name)")
         && set.contains("state != null && state.booleanValue() == enable") && set.contains("put(\"ok\", failed.isEmpty())"));
     String read = bodyOf(m, "private List<TrackerParts.Group> readTrackerParts(String pkg, Trackers t) throws PackageManager.NameNotFoundException {");
     check("source: the parts are read with the disabled ones too (MATCH_DISABLED_COMPONENTS), all four kinds", read != null && read.contains("MATCH_DISABLED_COMPONENTS") && read.contains("GET_ACTIVITIES")
         && read.contains("GET_RECEIVERS") && read.contains("GET_SERVICES") && read.contains("GET_PROVIDERS"));
-    check("source: the batch runner's action trackers_off / trackers_on goes to setTrackerParts", m.contains("if (TrackerParts.isAction(action)) {") && m.contains("setTrackerParts(pkg, TrackerParts.ids(action), TrackerParts.enables(action))"));
+    String ta = bodyOf(m, "private JSONObject trackerAction(String pkg, String action) throws Exception {");
+    check("source: an action string goes to setTrackerParts with its ids, its part names and its direction", ta != null && ta.contains("setTrackerParts(pkg, TrackerParts.ids(action), TrackerParts.parts(action), TrackerParts.enables(action))"));
+    String exec = bodyOf(m, "public String executeAppAction(String action, String pkg) {");
+    check("source: a single app's action trackers_off / trackers_on (Undo) goes to trackerAction", exec != null && before(exec, "if (TrackerParts.isAction(action)) {", "trackerAction(pkg, action)"));
+    check("source: the batch runner runs the tracker actions itself, and each row carries the parts changed", before(m, "if (TrackerParts.isAction(action)) {\n                                // the tracker switches run here directly", "tr = trackerAction(pkg, action)")
+        && m.contains("trkParts = tr.optJSONArray(\"changedParts\")") && m.contains("if (trkParts != null) row.put(\"parts\", trkParts)"));
+    check("source: the parts are matched with the app's package (its own code is never a tracker's)", read != null && read.contains("TrackerParts.group(t.db, pkg, parts)")
+        && m.contains("TrackerParts.trackerOf(t.db, pkg, name) < 0"));
     String ps = bodyOf(m, "public String trackerPartsSet(final String pkg, final String idsJson, final boolean enable, final String token) {");
     check("source: trackerPartsSet runs off the page's thread, one run at a time, and always answers (busy cleared in finally)", ps != null && ps.contains("submitJob(") && ps.contains("return \"busy\"")
         && ps.contains("finally") && ps.contains("trackerPartsBusy = false") && ps.contains("window.onTrackerPartsSet"));
 
     // the page: the gate, the funnel, the batch, the History
     String sw = bodyOf(h, "function trkSwitch(ids, enable) {");
-    check("source: the box's switch goes the Root way off the gate and sends nothing then", sw != null && sw.contains("if (!isRootActive()) { promptRootThenOpen(") && sw.indexOf("promptRootThenOpen(") < sw.indexOf("trackerPartsSet("));
-    check("source: switching parts of a system app off asks first", sw != null && sw.contains("isSystemApp") && sw.contains("the system app") && sw.indexOf("confirm(") < sw.indexOf("trackerPartsSet("));
+    check("source: the box's switch goes the Root way off the gate and sends nothing then", sw != null && sw.contains("if (!isRootActive()) { promptRootThenOpen(") && before(sw, "promptRootThenOpen(", "trackerPartsSet("));
+    check("source: switching parts of a system app off asks first", sw != null && sw.contains("isSystemApp") && sw.contains("the system app") && before(sw, "confirm(", "trackerPartsSet("));
     String ctl = bodyOf(h, "function trkCtlHtml(pkg) {"), parts = bodyOf(h, "function trkPartsHtml(pkg, t) {");
     check("source: the box's switches carry the component lock (compToggleLocked, NEEDS_ROOT_COMP)", ctl != null && parts != null && ctl.contains("compToggleLocked()") && ctl.contains("NEEDS_ROOT_COMP")
         && parts.contains("compToggleLocked()") && parts.contains("NEEDS_ROOT_COMP"));
@@ -170,6 +226,14 @@ public class TrackerPartsTest {
     check("source: Disable Trackers in the batch menu is gated, then confirmed; Enable Trackers runs at once", batch != null && batch.contains("if (!isRootActive())") && batch.contains("promptRootThenOpen(")
         && batch.contains("requestBatchConfirmation('trackers_off', arr)") && batch.contains("runBatchAction('trackers_on', arr)"));
     check("source: History: labels for both, and each one's Undo is the other", h.contains("trackers_off: 'trackers_on', trackers_on: 'trackers_off'") && h.contains("trackers_off: 'Disabled trackers in', trackers_on: 'Enabled trackers in'"));
+    String hu = bodyOf(h, "function histUndoAction(i) {");
+    check("source: a tracker step's Undo names exactly the parts it changed (even when Android refused others), a step that changed none has no Undo, any other step needs success",
+        before(hu, "if (i.action === 'trackers_off' || i.action === 'trackers_on') return Array.isArray(i.parts) && i.parts.length ? undo + ':parts=' + i.parts.join(',') : '';", "return i.success ? undo : '';"));
+    String uh = bodyOf(h, "function undoHistory(id) {");
+    check("source: Undo runs histUndoAction's action (not the bare other switch), and Undo is offered by the same test", uh != null && uh.contains("filter(i => histUndoAction(i))")
+        && uh.contains("run = histUndoAction(i)") && uh.contains("performDetailedBatchAction(run, [i.pkg])") && h.contains("const undoable = e.items.some(i => histUndoAction(i));"));
+    check("source: the History keeps the parts of a step (recordHistory), from the box's switch and from the batch runner's rows",
+        h.contains("Array.isArray(r.parts) ? { parts: r.parts } : {}") && h.contains("parts: r.changedParts || []") && h.contains("label: r.label, parts: r.parts }"));
     String again = bodyOf(h, "function batchRunAgain(onlyFailed) {");
     check("source: Run again of a tracker batch is gated and confirms Disable again", again != null && again.contains("(b.action === 'trackers_off' || b.action === 'trackers_on') && !isRootActive()") && again.contains("'trackers_off'].includes(b.action)"));
     check("source: a change of working mode redraws the locks (rootOnModeChange -> trkOnModeChange)", h.contains("renderRootFeatures(); trkOnModeChange(); }"));
