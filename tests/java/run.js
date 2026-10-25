@@ -181,6 +181,7 @@ const SUITES = [
   { name: 'signwritefail', title: 'APK signer: a write that fails half way (disk full, simulated with ulimit -f) leaves no truncated APK and reports the write error', tests: ['SignWriteFailTest'], main: 'SignWriteFailTest', needs: ['apk', 'keys', 'bash'] },
   { name: 'signmismatch', title: 'APK signer refuses a key that does not match its certificate', tests: ['SignMismatchTest'], main: 'SignMismatchTest', needs: ['apk', 'keys'] },
   { name: 'axml', title: 'Manifest decoder reads every compiled XML file of a real APK', tests: ['AxmlTest'], main: 'AxmlTest', needs: ['apk', 'stubs'] },
+  { name: 'virustotal', title: 'VirusTotal utilities: sha256', tests: ['VirusTotalTest'], main: 'com.bloatware.bingblop.VirusTotalTest', needs: ['json'] },
 ];
 
 // ---------- prerequisites ----------
