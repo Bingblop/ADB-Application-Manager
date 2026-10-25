@@ -1485,6 +1485,10 @@
             grid-template-columns: repeat(3, 1fr);
             gap: var(--space-3);
         }
+        /* Disable / Enable Trackers (v7.16.2): a row of two under the grid, so the grid keeps its three full columns */
+        .batch-actions-grid.batch-trk-row { grid-template-columns: repeat(2, 1fr); margin-top: var(--space-3); }
+        .batch-trk-row .trk-lock { margin-right: var(--space-1); }
+        .batch-trk-row .trk-lock:empty { display: none; }
 
         .batch-grid-btn {
             height: 44px;
@@ -1858,6 +1862,19 @@
         .trk-row:last-child { border-bottom: 0; }
         .trk-name { font-weight:var(--fw-heavy); }
         .trk-cats { font-size: var(--fs-pill); color: var(--text-muted); }
+        /* the tracker parts of the open app (v7.16.2): a box with how many there are and the two switches for all of them, then under each tracker its
+           parts and its own switch, or a line that says it has no part of its own (it runs inside the app's code) */
+        .trk-ctl { background: var(--fill-1); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: var(--space-3); margin-bottom: var(--space-2); }
+        .trk-ctl-sum { font-weight: var(--fw-bold); }
+        .trk-ctl .mode-btn-row { margin-top: var(--space-2); }
+        .trk-ctl .mode-action-btn { flex: 1; justify-content: center; }
+        .trk-ctl .pm-lock { max-width: none; text-align: left; margin-top: var(--space-2); }
+        .trk-parts { margin-top: var(--space-2); }
+        .trk-parts-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); font-size: var(--fs-pill); color: var(--text-muted); }
+        .trk-part { font-size: var(--fs-pkg); color: var(--text-muted); padding: 2px 0; overflow-wrap: anywhere; }
+        .trk-part .perm-kind { margin-left: var(--space-1); margin-right: 0; }
+        .trk-part .trk-off { color: var(--status-user); }
+        .trk-noparts { font-size: var(--fs-pill); color: var(--text-muted); margin-top: var(--space-1); }
         .uad-chip.uad-chip-row { font-size: var(--fs-overline); padding: 1px var(--space-2); gap: var(--space-1); margin: 0 var(--space-1) var(--space-1) 0; line-height: 1.5; vertical-align: middle; }
         .sheet-avatar:empty { display: none; }
         .perm-name.fm-dir { color: var(--text-main); font-weight:var(--fw-heavy); }          /* v7.15: the name in the text colour; the folder icon carries the accent */
@@ -8543,6 +8560,10 @@ Type any command above (e.g. pm list packages -d)</div>
             <button class="batch-grid-btn" onclick="batchBackup()">Backup</button>
             <button class="batch-grid-btn" onclick="openBatchCmd()">Command</button>
         </div>
+        <div class="batch-actions-grid batch-trk-row">
+            <button class="batch-grid-btn" id="batchTrkOff" onclick="batchTrackers(false)"><span class="trk-lock" aria-hidden="true"></span>Disable Trackers</button>
+            <button class="batch-grid-btn" id="batchTrkOn" onclick="batchTrackers(true)"><span class="trk-lock" aria-hidden="true"></span>Enable Trackers</button>
+        </div>
     </div>
 
     <!-- Batch Ops: pick app ops and a value for each, set on every selected app -->
@@ -13664,10 +13685,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const labels = {
                 freeze: ['Confirm Freeze Selected Apps', 'Confirm Freeze'],
                 uninstall: ['Confirm Uninstall Selected Apps', 'Confirm Uninstall'],
-                suspend: ['Confirm Suspend Selected Apps', 'Confirm Suspend']
+                suspend: ['Confirm Suspend Selected Apps', 'Confirm Suspend'],
+                trackers_off: ['Confirm Disable Trackers', 'Disable Trackers']
             }[action] || ['Confirm Action', 'Confirm'];
             document.getElementById('batchConfirmTitle').innerText = labels[0];
-            document.getElementById('batchConfirmSubtitle').innerText = pkgs.length + ' apps selected' +
+            document.getElementById('batchConfirmSubtitle').innerText = action === 'trackers_off' ? trkBatchNote(pkgs) : pkgs.length + ' apps selected' +
                 (action === 'suspend' ? ' • suspended apps stay installed but can\'t be opened until unsuspended' : '');
             document.getElementById('batchConfirmExecuteBtn').innerText = labels[1];
             document.getElementById('batchConfirmList').innerHTML = pkgs.map(pkg => {
@@ -14338,27 +14360,36 @@ Type any command above (e.g. pm list packages -d)</div>
             chip.setAttribute('aria-label', e.ids.length + ' trackers found: tap for the list');
         }
         function openTrackersInfo() {
-            const pkg = inspectedPkg, e = trackerMap[pkg], b = window.AndroidBridge;
+            const pkg = inspectedPkg, b = window.AndroidBridge;
             if (!pkg || !b || !b.trackerInfo) return;
             haptic();
             const app = allApps.find(a => a.pkg === pkg);
             document.getElementById('trackersApp').innerText = (app ? app.name + ' · ' : '') + pkg;
+            trkPartsRead(pkg);
+            trackersRenderBody(pkg);
+            document.getElementById('trackersModal').classList.add('show');
+        }
+        // The box's list: the trackers the code scan found, then any tracker only the app's parts show (a part's class name keeps its tracker's name even
+        // where a shrinker renamed the code); with an app that can switch parts (trackerParts), each tracker's parts and switches (trkPartsHtml).
+        function trackersRenderBody(pkg) {
+            const e = trackerMap[pkg], b = window.AndroidBridge;
             const ids = e && e.ok ? e.ids : [];
             let info = {};
             try { info = JSON.parse(b.trackerInfo(JSON.stringify(ids)) || '{}'); } catch (x) { info = {}; }
             trackerMeta = info;
             const rows = ids.map(id => (info.trackers || {})[id]).filter(Boolean);
+            (trkParts && trkParts.pkg === pkg ? trkParts.trackers : []).forEach(t => { if (t.parts && t.parts.length && !rows.some(r => r.id === t.id)) rows.push(t); });
             let html;
-            if (!e) html = '<div class="list-empty" style="padding:8px 0;">Still looking…</div>';
-            else if (!e.ok) html = '<div class="list-empty" style="padding:8px 0;">This app\'s code could not be read (it has none, or the file is not readable), so nothing can be said about trackers.</div>';
+            if (!rows.length && !e) html = '<div class="list-empty" style="padding:8px 0;">Still looking…</div>';
+            else if (!rows.length && !e.ok) html = '<div class="list-empty" style="padding:8px 0;">This app\'s code could not be read (it has none, or the file is not readable), so nothing can be said about trackers.</div>';
             else if (!rows.length) html = '<div class="list-empty" style="padding:8px 0;">No known tracker library was found in the class names of this app.</div>';
-            else html = rows.map(t => '<div class="trk-row"><div class="trk-name" translate="no">' + escapeHtml(t.name) + '</div>'
+            else html = trkCtlHtml(pkg) + rows.map(t => '<div class="trk-row"><div class="trk-name" translate="no">' + escapeHtml(t.name) + '</div>'
                 + (t.categories ? '<div class="trk-cats">' + escapeHtml(t.categories) + '</div>' : '')
+                + trkPartsHtml(pkg, t)
                 + agentBtnHtml('tracker', t.name, ['Found in the app: ' + pkg, t.categories ? 'Exodus Privacy category: ' + t.categories : ''])
                 + (t.website ? '<div><a href="#" translate="no" onclick="openUrlExternal(this.dataset.u); return false;" data-u="' + escapeHtml(t.website) + '">' + escapeHtml(t.website.replace(/^https?:\/\//, '')) + '</a></div>' : '') + '</div>').join('');
             document.getElementById('trackersBody').innerHTML = html;
             document.getElementById('trackersCredit').innerText = 'Found by reading the class names in the app\'s code on this phone; nothing is sent anywhere. Tracker list: Exodus Privacy' + (info.count ? ' (' + info.count + ' trackers, copied ' + info.retrieved + ')' : '') + ', licensed ODbL 1.0. Code renamed by a shrinker (R8, ProGuard) or loaded later can hide a tracker, so a low number is not proof that there are none.';
-            document.getElementById('trackersModal').classList.add('show');
         }
         // "Update the list": fetch the current Exodus list (a plain download, nothing sent), then look at every app again with it
         function trackersUpdateList() {
@@ -14381,6 +14412,139 @@ Type any command above (e.g. pm list packages -d)</div>
             if (inspectedPkg && document.getElementById('inspectorModal').classList.contains('show')) loadSheetTrackers(inspectedPkg);
         };
         function closeTrackersInfo() { haptic(); document.getElementById('trackersModal').classList.remove('show'); }
+
+        // ---- Tracker parts (v7.16.2): the parts of the open app (screens, services, receivers, providers) that belong to a known tracker, read from Android's
+        // list of the app's components (trackerParts: no working mode needed), and the switches that turn them off and on again (pm disable / pm enable on each
+        // part, trackerPartsSet). A switch here is the single part's switch (toggleComponent) for every part of a tracker at once, so it sits on the same
+        // gate: compToggleLocked (Root with su, or Shizuku as UID 1000 or root UID 0). Otherwise it carries the lock, and a tap goes the Root way
+        // (promptRootThenOpen) and sends nothing. A tracker that runs inside the app's own code has no part of its own: the box says so instead of
+        // offering a switch that would change nothing. What the box shows is always read back from the phone after a switch, never assumed.
+        let trkParts = null, trkPartsPkg = null, trkBusy = false, trkSeq = 0;
+        const trkPending = new Map();
+        const TRK_KIND = { activity: 'screen', service: 'service', receiver: 'receiver', provider: 'provider' };
+        function trkPartsRead(pkg) {
+            const b = window.AndroidBridge;
+            trkParts = null; trkPartsPkg = pkg;
+            if (!b || !b.trackerParts) return;                      // an older app: the box lists the trackers only, as it did
+            try {
+                const r = JSON.parse(b.trackerParts(pkg) || '{}');
+                if (r && r.ok && Array.isArray(r.trackers)) { r.pkg = pkg; trkParts = r; }
+            } catch (e) { trkParts = null; }
+        }
+        function trkCount(n) { return n === 1 ? '1 tracker part' : n + ' tracker parts'; }
+        // the box at the top: how many tracker parts the app has and how many are switched off, and the two switches for all of them
+        function trkCtlHtml(pkg) {
+            const p = trkParts;
+            if (!p || p.pkg !== pkg || !p.parts) return '';
+            const locked = compToggleLocked();
+            const lockTitle = locked ? ` title="${NEEDS_ROOT_COMP}"` : '';
+            const offOk = !locked && !trkBusy && p.on > 0, onOk = !locked && !trkBusy && p.off > 0;
+            return '<div class="trk-ctl">'
+                + `<div class="trk-ctl-sum"><span>${trkCount(p.parts)}</span> · <span>${p.off} switched off</span></div>`
+                + '<div class="mode-btn-row">'
+                + `<button type="button" class="mode-action-btn${locked ? ' locked' : ''}" id="trkOffAll"${lockTitle}${locked || offOk ? '' : ' disabled'} onclick="trkSwitch(null, false)">${locked ? XQ_LOCK_SVG + ' ' : ''}Disable all trackers</button>`
+                + `<button type="button" class="mode-action-btn${locked ? ' locked' : ''}" id="trkOnAll"${lockTitle}${locked || onOk ? '' : ' disabled'} onclick="trkSwitch(null, true)">${locked ? XQ_LOCK_SVG + ' ' : ''}Enable all trackers</button>`
+                + '</div>'
+                + (locked ? '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>' + NEEDS_ROOT_COMP + '</span></div>' : '')
+                + '</div>';
+        }
+        // under one tracker: its parts with their kind and state, and its own switch (DISABLE while one of them runs, ENABLE once all are switched off)
+        function trkPartsHtml(pkg, t) {
+            const p = trkParts;
+            if (!p || p.pkg !== pkg) return '';
+            const g = (p.trackers || []).find(x => x.id === t.id);
+            if (!g || !g.parts || !g.parts.length) return '<div class="trk-noparts">No part of its own to switch off: it runs inside the app\'s code.</div>';
+            const on = g.parts.filter(x => x.on).length, off = g.parts.filter(x => x.off).length;
+            const locked = compToggleLocked(), enable = on === 0;
+            const btn = (on || off) ? `<button type="button" class="perm-toggle-btn ${locked ? 'locked' : (enable ? 'granted' : 'revoked')}"${locked ? ` title="${NEEDS_ROOT_COMP}"` : ''}${trkBusy ? ' disabled' : ''} style="cursor:pointer;" data-trk="${g.id}" onclick="trkSwitch([+this.dataset.trk], ${enable})">${lk(locked)}${enable ? 'ENABLE' : 'DISABLE'}</button>` : '';
+            const parts = g.parts.map(x => `<div class="trk-part"><span translate="no" title="${escapeHtml(x.name)}">${escapeHtml(x.name.split('.').pop())}</span><span class="perm-kind">${TRK_KIND[x.kind] || 'part'}</span>`
+                + (x.on ? '' : `<span class="perm-kind trk-off">${x.off ? 'off' : 'off by default'}</span>`) + '</div>').join('');
+            return `<div class="trk-parts"><div class="trk-parts-head"><span>${g.parts.length === 1 ? '1 part' : g.parts.length + ' parts'} · ${off} off</span>${btn}</div>${parts}</div>`;
+        }
+        // the box drawn again (the lock, a run that started or ended), when it is open
+        function trkRefresh() {
+            if (trkPartsPkg && document.getElementById('trackersModal').classList.contains('show')) trackersRenderBody(trkPartsPkg);
+        }
+        function trkOnModeChange() { trkRefresh(); trkBatchSync(); }
+        // One switch for a whole tracker (ids: [its id]) or for every tracker of the app (ids null). Off root it goes the Root way first, as a single
+        // part's switch does, and carries the tap through when Super User is granted. Switching parts of a system app off asks first. The run is off the
+        // page's thread; its answer (onTrackerPartsSet) reads the parts again from Android before anything is redrawn.
+        function trkSwitch(ids, enable) {
+            const pkg = trkPartsPkg;
+            if (!pkg || trkBusy) return;
+            if (!isRootActive()) { promptRootThenOpen(txT('Switching trackers off or on')).then(ok => { trkRefresh(); if (ok) trkSwitch(ids, enable); }); return; }
+            const b = window.AndroidBridge;
+            if (!b || !b.trackerPartsSet) { showToast('Needs the app build'); return; }
+            const groups = ((trkParts && trkParts.pkg === pkg && trkParts.trackers) || []).filter(g => !ids || ids.includes(g.id));
+            const todo = groups.reduce((n, g) => n + g.parts.filter(x => enable ? x.off : x.on).length, 0);
+            if (!todo) { showToast(enable ? 'No tracker part is switched off' : 'Every tracker part is already off'); return; }
+            const app = allApps.find(a => a.pkg === pkg);
+            const isSystemApp = !!(app && app.isSystem) || !!(inspectorData && inspectedPkg === pkg && inspectorData.isSystem);
+            if (!enable && isSystemApp && !confirm(txF('Switch off {0} tracker parts of the system app {1}? This can break the app or the system UI. You can switch them back on here.', todo, pkg))) return;
+            haptic();
+            const token = 'trk' + (++trkSeq);
+            trkPending.set(token, { pkg, enable, all: !ids, name: app ? app.name : pkg });
+            let started = '';
+            try { started = b.trackerPartsSet(pkg, JSON.stringify(ids || []), !!enable, token); } catch (e) { started = ''; }
+            if (started !== 'started') { trkPending.delete(token); showToast(started === 'busy' ? 'Trackers are already being switched' : 'Could not start'); return; }
+            trkBusy = true;
+            progressToast(enable ? 'Enabling tracker parts…' : 'Disabling tracker parts…');
+            rowBusySet(pkg, 'Working…');
+            trkRefresh();
+        }
+        window.onTrackerPartsSet = function (token, r) {
+            const p = trkPending.get(token);
+            if (!p) return;
+            trkPending.delete(token);
+            trkBusy = false;
+            rowBusySet(p.pkg, '');
+            r = r || {};
+            const n = r.changed || 0;
+            if (r.ok) showToast(n ? (p.enable ? (n === 1 ? 'Enabled 1 tracker part' : 'Enabled ' + n + ' tracker parts') : (n === 1 ? 'Disabled 1 tracker part' : 'Disabled ' + n + ' tracker parts')) : 'Nothing to change');
+            else showToast(r.needsRoot ? NEEDS_ROOT_COMP : 'Some tracker parts were not changed');
+            if (!r.ok) showCommandResults('Trackers', p.enable ? 'Enable trackers' : 'Disable trackers', [{ name: p.name, pkg: p.pkg, output: r.output || '', success: false }]);
+            // every tracker of the app at once is one step of the History, with Undo (the other switch); a single tracker's switch is not, as a single part's is not
+            if (p.all && n) recordHistory('apps', (p.enable ? ACTION_LABELS.trackers_on : ACTION_LABELS.trackers_off) + ' ' + p.name, [{ pkg: p.pkg, name: p.name, action: p.enable ? 'trackers_on' : 'trackers_off', success: !!r.ok }]);
+            // read the phone again: the box, and the app menu's Activities and Components tabs when they show this app
+            if (trkPartsPkg === p.pkg) trkPartsRead(p.pkg);
+            if (trkParts && trkParts.pkg === p.pkg && inspectorData && inspectedPkg === p.pkg) {
+                const st = new Map();
+                trkParts.trackers.forEach(g => g.parts.forEach(x => st.set(x.name, x.on)));
+                ['activityInfo', 'receiverInfo', 'serviceInfo', 'providerInfo'].forEach(key => (inspectorData[key] || []).forEach(c => { if (st.has(c.name)) c.enabled = st.get(c.name); }));
+                renderComponentTabs();
+            }
+            trkRefresh();
+        };
+        // Disable / Enable Trackers in the batch menu: the same switch for every selected app, run by the native batch runner (executeAppAction
+        // 'trackers_off' / 'trackers_on') with its progress sheet, results, CSV, Run again and the History's Undo. Same gate as the Trackers box;
+        // switching off is confirmed on the batch confirmation sheet first, switching back on runs at once (as Enable does after Freeze).
+        async function batchTrackers(enable) {
+            if (selectedPkgs.size === 0) return;
+            if (!isRootActive()) {
+                const ok = await promptRootThenOpen(txT('Switching trackers off or on'));
+                trkBatchSync();
+                if (!ok) return;
+            }
+            const arr = Array.from(selectedPkgs);
+            if (!enable) { requestBatchConfirmation('trackers_off', arr); return; }
+            runBatchAction('trackers_on', arr);
+        }
+        // the two batch buttons carry the lock while the switch is locked
+        function trkBatchSync() {
+            const locked = compToggleLocked();
+            ['batchTrkOff', 'batchTrkOn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                const ic = btn.querySelector('.trk-lock');
+                if (ic) ic.innerHTML = locked ? XQ_LOCK_SVG : '';
+                if (locked) btn.setAttribute('title', NEEDS_ROOT_COMP); else btn.removeAttribute('title');
+            });
+        }
+        // the line under the batch confirmation's title for Disable Trackers
+        function trkBatchNote(pkgs) {
+            const sys = pkgs.filter(pkg => { const a = allApps.find(x => x.pkg === pkg); return a && a.isSystem; }).length;
+            return `${pkgs.length} apps selected • their tracker parts are switched off; Enable Trackers switches them back on` + (sys ? ` • ${sys} are system apps: switching their parts off can break them or the system UI` : '');
+        }
 
         // The app menu's UAD-NG chip: what the project's list says about the open app (nothing shown when it is not in the list)
         let sheetUadInfo = null;
@@ -15002,8 +15166,8 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---------- Debloat history ----------
         const HISTORY_LIMIT = 150;
-        const UNDO_ACTION = { uninstall: 'reinstall', reinstall: 'uninstall', freeze: 'unfreeze', unfreeze: 'freeze', suspend: 'unsuspend', unsuspend: 'suspend' };
-        const ACTION_LABELS = { clear_removed_data: 'Cleared leftover data of', uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates', update: 'Updated' };
+        const UNDO_ACTION = { uninstall: 'reinstall', reinstall: 'uninstall', freeze: 'unfreeze', unfreeze: 'freeze', suspend: 'unsuspend', unsuspend: 'suspend', trackers_off: 'trackers_on', trackers_on: 'trackers_off' };
+        const ACTION_LABELS = { clear_removed_data: 'Cleared leftover data of', uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates', update: 'Updated', trackers_off: 'Disabled trackers in', trackers_on: 'Enabled trackers in' };
         let debloatHistory = null;
 
         function getHistory() {
@@ -20998,6 +21162,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             document.getElementById('batchCountText').innerText = `${count} Selected`;
             document.getElementById('batchFabBadge').innerText = count;
+            trkBatchSync();
             bar.classList.toggle('show', batchPanelExpanded); if (!batchPanelExpanded) bar.classList.remove('sheet-expanded');
             fab.classList.toggle('show', !batchPanelExpanded);
         }
@@ -21173,7 +21338,7 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             const success = rows.filter(r => r.success).length, failed = rows.length - success;
             const label = `${batchRunLabel || ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
-            const histAction = batchRunHist || action, shownAction = batchRunHist ? (batchRunHist === 'custom' ? 'Command' : 'App Ops') : (action === 'clear_removed_data' ? 'CLEAR LEFTOVER DATA' : action.toUpperCase());
+            const histAction = batchRunHist || action, shownAction = batchRunHist ? (batchRunHist === 'custom' ? 'Command' : 'App Ops') : (action === 'clear_removed_data' ? 'CLEAR LEFTOVER DATA' : action === 'trackers_off' ? 'DISABLE TRACKERS' : action === 'trackers_on' ? 'ENABLE TRACKERS' : action.toUpperCase());
             batchRunLabel = ''; batchRunHist = '';
             recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: histAction, success: r.success })));
             showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
@@ -21207,7 +21372,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 runBatchAction(b.action, pkgs);
                 return;
             }
-            if (['freeze', 'uninstall', 'suspend'].includes(b.action)) { requestBatchConfirmation(b.action, pkgs); return; }
+            // the tracker switches sit on the Root Features gate, as the Disable / Enable Trackers buttons do: off it, the Root way first
+            if ((b.action === 'trackers_off' || b.action === 'trackers_on') && !isRootActive()) { promptRootThenOpen(txT('Switching trackers off or on')).then(ok => { if (ok) batchRunAgain(onlyFailed); }); return; }
+            if (['freeze', 'uninstall', 'suspend', 'trackers_off'].includes(b.action)) { requestBatchConfirmation(b.action, pkgs); return; }
             runBatchAction(b.action, pkgs);
         }
 
@@ -28892,7 +29059,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // system user (UID 1000) or root (UID 0) - the same sysPrivActive gate as the Root Features surface (v7.16.1, widened from Root-only in
         // v7.15.1). The ADB shell user (UID 2000) cannot change components of apps it does not own, so it stays locked. LAUNCH and STOP keep the ordinary working-mode lock.
         function compToggleLocked() { return !isRootActive(); }
-        function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); }
+        function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); trkOnModeChange(); }
         // ACTIVE is su's last answer, kept in memory (isRootGranted): a grant taken back in the root manager since then would still read ACTIVE here and
         // leave the rows unlocked (T-044). So a tab about to open unlocked asks su once more first (the fresh check of Check Status, without its
         // "Mode: ..." toast: opening a tab is not a request to check), and a no locks it.
@@ -28930,7 +29097,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const d = lastModesData || {};
             const managerHere = isRootActive() && !!d.rootAvailable;
             return rootFeatureRow('Super User for apps', 'Manage which apps get root in your manager.', 'Open manager', 'rfSuAppsBtn', 'rootManageSuperuser()', managerHere)
-                + rootFeatureRow('App components', 'Enable or disable activities, services, receivers and providers for any app.', 'Open apps', 'rfComponentsBtn', 'rootManageComponents()', isRootActive());
+                + rootFeatureRow('App components', 'Enable or disable activities, services, receivers and providers for any app.', 'Open apps', 'rfComponentsBtn', 'rootManageComponents()', isRootActive())
+                + rootFeatureRow('Trackers in apps', 'Switch off the tracker parts (ads, analytics) of any app.', 'Open apps', 'rfTrackersBtn', 'rootManageTrackers()', isRootActive());
         }
         function renderRootFeatures() {
             const gate = document.getElementById('rootGate');
@@ -29028,6 +29196,15 @@ Type any command above (e.g. pm list packages -d)</div>
             switchView('apps');
             showToast(txT('Open an app, then use its Activities and Components tabs to enable or disable each one.'));
         }
+        // "Trackers in apps": the Application Manager with the Trackers filter on (the apps a tracker was found in). The switches are in each app's
+        // Trackers box (the TRACKERS chip of its menu) and, for many apps at once, Disable / Enable Trackers in the batch menu.
+        function rootManageTrackers() {
+            if (!switchView('apps')) return;
+            const had = activeFilters.delete('uninstalled');                 // uninstalled apps have no code to read: the two filters together show nothing
+            if (!activeFilters.has('trackers')) { const pill = document.querySelector('.filter-pill[data-filter="trackers"]'); if (pill) setFilter('trackers', pill); }
+            else if (had) { resetAppsWindow(); syncFilterUi(); renderApps(); }
+            showToast(txT('Open an app and tap its TRACKERS chip, or select apps and use Disable Trackers in the batch menu.'));
+        }
         // Coming back from the root manager: re-read the working mode fresh so a grant just approved there unlocks the Root Features. The way back is
         // taken from whichever of three signs comes first (the pending mark makes it one read): the page shown again (the manager covered this
         // app); the activity resuming (onAppResume: Android 9 and older pause, but do not hide, the other window of a split screen); and the window
@@ -29074,6 +29251,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!confirm(why + txT('Open Root Features to check if your device supports Super User?'))) return false;
             // the funnel's callers run inside a sheet (the app sheet, the Activity Launcher), which would cover the tab: close it first, as
             // every other way from a sheet to a tab does (T-054). A no above leaves the sheet as it was.
+            if (document.getElementById('trackersModal').classList.contains('show')) document.getElementById('trackersModal').classList.remove('show');
             if (document.getElementById('inspectorModal').classList.contains('show')) closeInspector();
             if (alsIsOpen()) closeAppListSheet();
             switchView('rootfeatures');

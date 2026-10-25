@@ -1,0 +1,75 @@
+ok   1. the box sums up the tracker parts of the app: 4 parts, none switched off: 4 tracker parts · 0 switched off
+ok      under each tracker its parts with their kind; a part the app ships off says so: 4 tracker parts · 0 switched off
+Disable all trackers
+Enable all trackers
+Needs Super User (Root)
+Google Firebase Analytics
+Analytics
+3 parts · 0 off
+🔒 DISABLE
+AppMeasurementJobServiceSERVICEOFF BY DEFAULT
+AppMeasurementReceiverRECEIVER
+AnalyticsConnectorRegistrarSERVICE
+Ask agent
+firebase.google.com/
+Google AdMob
+Advertisement
+No part of its own to switch off: it runs inside the app's code.
+Ask agent
+admob.google.com
+Facebook Ads
+Advertisement
+1 part · 0 off
+🔒 DISABLE
+AudienceNetworkActivitySCREEN
+Ask agent
+developers.facebook.com/docs/android
+ok      a tracker found only by its parts (Facebook Ads) is listed too; one with no part of its own (Google AdMob) says it runs inside the app's code: 4 tracker parts · 0 switched off
+Disable all trackers
+Enable all trackers
+Needs Super User (Root)
+Google Firebase Analytics
+Analytics
+3 parts · 0 off
+🔒 DISABLE
+AppMeasurementJobServiceSERVICEOFF BY DEFAULT
+AppMeasurementReceiverRECEIVER
+AnalyticsConnectorRegistrarSERVICE
+Ask agent
+firebase.google.com/
+Google AdMob
+Advertisement
+No part of its own to switch off: it runs inside the app's code.
+Ask agent
+admob.google.com
+Facebook Ads
+Advertisement
+1 part · 0 off
+🔒 DISABLE
+AudienceNetworkActivitySCREEN
+Ask agent
+developers.facebook.com/docs/android
+ok   2. off the gate the two switches and each tracker's switch carry the lock, with the reason: {"body":"4 tracker parts · 0 switched off\nDisable all trackers\nEnable all trackers\nNeeds Super User (Root)\nGoogle Firebase Analytics\nAnalytics\n3 parts · 0 off\n🔒 DISABLE\nAppMeasurementJobServiceSERVICEOFF BY DEFAULT\nAppMeasurementReceiverRECEIVER\nAnalyticsConnectorRegistrarSERVICE\nAsk agent\nfirebase.google.com/\nGoogle AdMob\nAdvertisement\nNo part of its own to switch off: it runs inside the app's code.\nAsk agent\nadmob.google.com\nFacebook Ads\nAdvertisement\n1 part · 0 off\n🔒 DISABLE\nAudienceNetworkActivitySCREEN\nAsk agent\ndevelopers.facebook.com/docs/android","sum":"4 tracker parts · 0 switched off","offAll":{"locked":true,"svg":true,"title":"Needs Super User (Root)"},"lockLine":"Needs Super User (Root)","perTracker":["🔒 DISABLE","🔒 DISABLE"]}
+ok      a tap offers Root Features (the Super User check) and sends nothing: ["Switching trackers off or on needs Super User.\n\nOpen Root Features to check if your device supports Super User?"]
+ok   3. with the system user (UID 1000) the box unlocks at once: Disable all on, Enable all off (nothing is switched off yet): {"off":false,"on":true,"locked":false,"lock":false}
+ok   4. Disable all trackers asks the app for every tracker of the app (no ids) and shows that it is working: {"set":"[[\"com.example.alpha\",\"[]\",false]]","busy":true,"toast":"Disabling tracker parts…"}
+ok      the answer is read back from the phone: 3 parts switched off, the toast says so, Enable all is on and Disable all off: {"sum":"4 tracker parts · 3 switched off","toast":"Disabled 3 tracker parts","off":true,"on":false,"tbtn":["ENABLE","ENABLE"],"hist":{"title":"Disabled trackers in Alpha","items":[{"pkg":"com.example.alpha","name":"Alpha","action":"trackers_off","success":true,"removal":""}]}}
+ok      each tracker's switch now reads ENABLE: ENABLE,ENABLE
+ok      one History step with Undo: "Disabled trackers in Alpha": {"title":"Disabled trackers in Alpha","items":[{"pkg":"com.example.alpha","name":"Alpha","action":"trackers_off","success":true,"removal":""}]}
+ok   5. a tracker's own ENABLE switches only its parts back on (ids [70]); it is not a History step of its own: {"set":"[\"com.example.alpha\",\"[70]\",true]","sum":"4 tracker parts · 2 switched off","hist":1}
+ok   6. when the app refuses (the gate on the Java side), the toast names the reason and the results show the answer: {"toast":"Needs Super User (Root)","res":true,"out":"Trackers\n\nEnable trackers\n\n✕\nAlpha\nFAILED\ncom.example.alpha\nError: switching tracker parts on or off needs Super User (Root) or the system user (UID 1000).\nDone"}
+ok   7. at 360 px the box fits the screen and its buttons are at least 36 px tall: {"wide":0,"btns":[36,36]}
+ok   8. switching off parts of a system app asks first (it can break the app or the system UI); a no sends nothing: ["Switch off 1 tracker parts of the system app com.android.sysapp? This can break the app or the system UI. You can switch them back on here."]
+ok   9. the batch menu has Disable Trackers and Enable Trackers, with the lock while the switch is locked: [{"text":"Disable Trackers","svg":true,"title":"Needs Super User (Root)","shown":true},{"text":"Enable Trackers","svg":true,"title":"Needs Super User (Root)","shown":true}]
+ok      off the gate a tap goes the Root way and runs nothing: ["Switching trackers off or on needs Super User.\n\nOpen Root Features to check if your device supports Super User?"]
+ok      the lock goes when the gate opens
+ok   10. Disable Trackers is confirmed first, on the batch confirmation sheet: {"open":true,"title":"Confirm Disable Trackers","sub":"2 apps selected • their tracker parts are switched off; Enable Trackers switches them back on","btn":"Disable Trackers"}
+ok       then runs in the native batch runner, with results titled DISABLE TRACKERS and one History step with Undo: {"batch":"[[\"trackers_off\",[\"com.example.alpha\",\"com.example.bravo\"]]]","sub":"Batch Results\n\nDISABLE TRACKERS • 2 of 2 apps\n\n✕\nAlpha\nSUCCESS\ncom.example.alpha\nDisabled 3 tracker parts:\nBravo\nFAILED\ncom.example.bravo\nNot changed by Android (1):\n  Facebook Ads: AudienceNetworkActivity\nRun again\nRun again on the 1 that failed\nShare CSV\nDone","hist":{"title":"Disabled trackers
+ok       with a system app selected, the note says how many and what it risks
+ok   11. Enable Trackers runs at once (as Enable does after Freeze), results titled ENABLE TRACKERS
+ok   12. Undo of "Disabled trackers in Alpha" switches its trackers back on (trackers_on): [["trackers_on","com.example.alpha"]]
+ok   13. Root Features has a "Trackers in apps" row, locked off the gate: {"locked":true,"text":"Trackers in apps\nSwitch off the tracker parts (ads, analytics) of any app.\nLocked\nNeeds Super User"}
+ok       and open with the gate
+ok       Open apps lands on the Apps tab with the Trackers filter on, and says where the switches are: {"view":"apps","f":true,"toast":"Open an app and tap its TRACKERS chip, or select apps and use Disable Trackers in the batch menu."}
+ok   no page errors:
+ALL PASSED

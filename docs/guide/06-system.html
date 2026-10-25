@@ -1642,7 +1642,7 @@
   <h4>What you see on the tab</h4>
   <p><b>The top card, "Root Features".</b> Its subtitle says it plainly: "Features that need root or the system user (UID 1000). They unlock in Root mode with su granted, or with Shizuku running as UID 1000 or root (UID 0)." The chip on its right is the state of root for this app. It reads "Checking..." for a moment, then one of four words:</p>
   <table class="hg-table"><thead><tr><th>Chip</th><th>Meaning</th></tr></thead><tbody>
-    <tr><td><b>ACTIVE</b> (green)</td><td>A privileged mode is in use: Root is the working mode and <code>su</code> answered as root, <i>or</i> your Shizuku server is running as the system user (UID 1000) or as root (UID 0). The features that mode can use are unlocked (App components always; Super User for apps only on a rooted phone).</td></tr>
+    <tr><td><b>ACTIVE</b> (green)</td><td>A privileged mode is in use: Root is the working mode and <code>su</code> answered as root, <i>or</i> your Shizuku server is running as the system user (UID 1000) or as root (UID 0). The features that mode can use are unlocked (App components and Trackers in apps always; Super User for apps only on a rooted phone).</td></tr>
     <tr><td><b>AVAILABLE</b> (orange)</td><td>The phone has a <code>su</code> program, but Root is not your chosen working mode. The chip says nothing about whether this app is allowed: choosing Root is what asks.</td></tr>
     <tr><td><b>DENIED</b> (orange)</td><td><code>su</code>'s last answer to this app was no: your root manager did not grant it, or you did not answer its question in time. Root may still be your chosen mode (not ready), or another mode is, for example the one <b>Request Super User</b> kept after the refusal.</td></tr>
     <tr><td><b>NOT FOUND</b> (grey)</td><td>The app can see no <code>su</code> program. An unrooted phone always shows this. A phone rooted with KernelSU, KernelSU Next or APatch can show it too until this app is allowed there: those managers show <code>su</code> only to the apps they allow. Then <b>Open root manager</b> is the way out (<a href="#rootfeatures-grant">Getting Super User</a>, Way B).</td></tr>
@@ -1654,6 +1654,7 @@
   <ul>
     <li><b>Super User for apps</b> ("Manage which apps get root in your manager."): see <a href="#rootfeatures-su-apps">Super User for apps</a>.</li>
     <li><b>App components</b> ("Enable or disable activities, services, receivers and providers for any app."): see <a href="#rootfeatures-components">App components under Super User</a>.</li>
+    <li><b>Trackers in apps</b> ("Switch off the tracker parts (ads, analytics) of any app."): see <a href="#rootfeatures-trackers">Switching trackers off in apps</a>.</li>
   </ul>
   <p>The tab reads the state again by itself when the working mode changes and when you come back after tapping <b>Open root manager</b> or <b>Open manager</b> here, so a grant you just approved shows up without a restart (when Root is not your chosen mode yet, it first asks whether to switch to Root, see <a href="#rootfeatures-grant">Getting Super User</a>). Each time you open the tab while it would read <b>ACTIVE</b>, the app first asks <code>su</code> again, so a grant you took back in the manager since then shows as <b>DENIED</b> and the rows lock. If you opened the manager another way (from the home screen, say), tap <b>Request Super User</b>, or <b>Check Status</b> in Working Modes, to make the app ask again.</p>
 
@@ -1665,7 +1666,7 @@
     <li><b>Some apps will notice.</b> Banking, payment and some streaming apps refuse to run on a rooted phone whether or not this app has root. That is between them and your root manager; this app changes nothing about it.</li>
   </ul>
   <div class="hg-danger"><b>Risky.</b> Granting this app Super User gives it the same power as your root manager has. Do it only on a phone you rooted yourself and understand; if your root manager offers a time limit, pick one (such as "60 mins") rather than a lasting grant until you are sure, or take a lasting grant back in the manager when you are done (a "once" grant is no help here: it covers one request only, see <a href="#rootfeatures-grant">Getting Super User</a>); in KernelSU, KernelSU Next or APatch switch the app off again in the list when you are done; and look at the manager's list of apps with root now and then. To take it back: deny or remove ADB/Root Full System Toolbox in the manager, then choose any other mode in Working Modes.</div>
-  <p>Next: <a href="#rootfeatures-grant">Getting Super User</a>, <a href="#rootfeatures-su-apps">Super User for apps</a>, <a href="#rootfeatures-components">App components under Super User</a>, and the recipe <a href="#recipe-root-features">Unlock Root Features on a rooted phone, and take root back</a>.</p>
+  <p>Next: <a href="#rootfeatures-grant">Getting Super User</a>, <a href="#rootfeatures-su-apps">Super User for apps</a>, <a href="#rootfeatures-components">App components under Super User</a>, <a href="#rootfeatures-trackers">Switching trackers off in apps</a>, and the recipe <a href="#recipe-root-features">Unlock Root Features on a rooted phone, and take root back</a>.</p>
 </section>
 
 <section id="rootfeatures-grant" data-title="Getting Super User: request it, or grant it in your root manager" data-group="The tabs">
@@ -1773,3 +1774,56 @@
   </ul>
   <div class="hg-warn"><b>Careful.</b> Disable one part, then use the phone for a while, before the next. Keep a note of the full names of the parts you disable. If an app misbehaves, enable its parts again before you try anything else.</div>
 </section>
+
+<section id="rootfeatures-trackers" data-title="Switching trackers off in apps" data-group="The tabs">
+  <p class="hg-lead">Switch off the parts of an app that belong to a known tracker (advertising, analytics, crash reporting), one app at a time or many at once, and switch them back on. It works where <a href="#rootfeatures-components">App components</a> works: in the Root working mode with Super User granted, or with Shizuku running as the Android system user (UID 1000) or as root (UID 0).</p>
+  <p><b>Where it is:</b> three places. The <b>Trackers</b> box of an app (the <b>TRACKERS</b> chip in its menu, see <a href="#apps-menu">The app menu</a>); <b>Disable Trackers</b> and <b>Enable Trackers</b> at the bottom of the batch sheet (see <a href="#apps-batch">Selecting many apps</a>); and the third row of the <b>Features</b> card on the <b>Root Features</b> tab, "Trackers in apps", "Switch off the tracker parts (ads, analytics) of any app.", whose <b>Open apps</b> button opens the Application Manager with the <b>Trackers</b> filter on and says "Open an app and tap its TRACKERS chip, or select apps and use Disable Trackers in the batch menu."</p>
+
+  <h4>What a tracker part is</h4>
+  <p>An app tells Android about its parts in its manifest: its screens (activities), services (work that runs in the background), receivers (they wake up when something happens, such as the phone starting) and providers (they hand data to other apps or start early). A tracker library often brings parts of its own; Google Firebase Analytics, for example, brings a receiver and services named <code>com.google.android.gms.measurement.AppMeasurementReceiver</code> and <code>AppMeasurementService</code>. The app compares the full name of every part with the same <a href="https://exodus-privacy.eu.org">Exodus Privacy</a> list the <b>TRACKERS</b> chip uses. A part counts only when a tracker's code name covers whole pieces of the part's name: <code>com.tune</code> (the Tune tracker) counts in <code>com.tune.TuneTracker</code> but not in <code>com.tunein.player.Main</code>, a part of the TuneIn Radio app itself. Reading the parts needs no working mode; switching them does.</p>
+  <p><b>What switching off does.</b> The app runs <code>pm disable</code> on each part (<code>pm enable</code> to switch it back on), then asks Android for the part's state and believes only that. A switched-off receiver no longer hears anything, a switched-off service no longer starts, a switched-off screen cannot be opened and a switched-off provider no longer starts early.</p>
+  <p><b>What it does not do.</b> Most trackers also run inside the app's own code, which no switch reaches. A tracker with no part of its own says so in the box: "No part of its own to switch off: it runs inside the app's code." So switching off cuts what a tracker does through its own parts; it does not stop all tracking, and it is not a firewall. Code renamed by a shrinker keeps no tracker name, so its parts are not found either.</p>
+
+  <h4>The Trackers box</h4>
+  <p>When the app has tracker parts, the box opens with a small card: "(number) tracker parts &middot; (number) switched off", and two buttons, <b>Disable all trackers</b> and <b>Enable all trackers</b>. A button with nothing to do is greyed out (Enable all trackers until a part is switched off). Then, under each tracker's name and kind, a line such as "3 parts &middot; 0 off" with that tracker's own button: <b>DISABLE</b> while any of its parts runs, <b>ENABLE</b> once none does. Under it, each part: the last piece of its name, its kind (<b>screen</b>, <b>service</b>, <b>receiver</b> or <b>provider</b>), and <b>off</b> when it is switched off, or <b>off by default</b> when the app itself ships it switched off. A tracker found only through its parts (its code was renamed, its part names were not) is listed too.</p>
+  <p><b>When it is locked.</b> Without Super User or the system user the buttons carry a small lock, and the card says <i>Needs Super User (Root)</i>. A tap goes the Root way, as the component switch does: on a phone with <code>su</code> the app switches the working mode to Root and your root manager asks (see <a href="#rootfeatures-grant">Getting Super User</a>); otherwise it asks "Switching trackers off or on needs Super User. Open Root Features to check if your device supports Super User?". Nothing is switched until it is unlocked.</p>
+
+  <h4>Step by step: one app</h4>
+  <ol class="hg-steps">
+    <li>On <b>Root Features</b>, tap <b>Open apps</b> (or tap the <b>Trackers</b> pill in the Application Manager yourself). The list shows the apps a tracker was found in.</li>
+    <li>Open the app's menu (the <b>...</b> button at the right end of its row, or press and hold the row) and tap its <b>TRACKERS</b> chip. The <b>Trackers</b> box opens.</li>
+    <li>Read the list. To switch off one tracker only, tap <b>DISABLE</b> under it. To switch off every one, tap <b>Disable all trackers</b>. For a system app the app asks first: "Switch off (number) tracker parts of the system app (package)? This can break the app or the system UI. You can switch them back on here."; <b>Cancel</b> changes nothing.</li>
+    <li>A message says "Disabling tracker parts..." and the buttons grey out while it works. Then it says "Disabled (number) tracker parts", and the box shows what the phone now reports: the <b>off</b> tags, the counts and the buttons. The app menu's <b>Activities</b> and <b>Components</b> tabs show the same parts as <b>disabled</b>.</li>
+    <li>If Android did not change some parts, the message says "Some tracker parts were not changed" and a <b>Trackers</b> results box lists each part with Android's answer.</li>
+  </ol>
+
+  <h4>Step by step: many apps</h4>
+  <ol class="hg-steps">
+    <li>Select the apps (the <b>Trackers</b> pill and <b>Select All</b> select every app a tracker was found in) and open the batch sheet with the round button.</li>
+    <li>Tap <b>Disable Trackers</b>. A box "Confirm Disable Trackers" opens with the line "(number) apps selected &bull; their tracker parts are switched off; Enable Trackers switches them back on" (and, when system apps are selected, how many and that switching their parts off can break them or the system UI) and the list of apps. Tap <b>Disable Trackers</b> to go on, or <b>Cancel</b>.</li>
+    <li>The progress bar runs as for any batch. <b>Batch Results</b> opens with the subtitle "DISABLE TRACKERS &bull; (number) of (number) apps". Each app's card says what was switched off, tracker by tracker, how many parts were already off, and every part Android did not change. An app with no tracker part says "No tracker parts in this app: the trackers it holds, if any, run inside its own code." and counts as a success, because nothing failed.</li>
+    <li><b>Enable Trackers</b> works the same way but starts at once, without the confirmation box (as <b>Enable</b> does after <b>Freeze</b>).</li>
+  </ol>
+
+  <h4>How to undo it</h4>
+  <ul>
+    <li><b>Enable all trackers</b> in the app's Trackers box, or <b>ENABLE</b> under one tracker.</li>
+    <li><b>Enable Trackers</b> in the batch sheet, for many apps at once.</li>
+    <li>The History (the clock button in the <a href="#tab-debloater">UAD-NG Debloater</a>): <b>Disable all trackers</b> writes a step "Disabled trackers in (app)", and the batch "Disabled trackers in (number) apps". Its <b>Undo</b> switches each app's trackers back on. A single tracker's <b>DISABLE</b> is not written there, as a single part's switch is not.</li>
+    <li>Each part's <b>ENABLE</b> in the app menu's <b>Activities</b> and <b>Components</b> tabs, or <code>pm enable</code> with the app's package and the part's full name in the Console.</li>
+  </ul>
+  <p>Switching back on only touches parts that were switched off with <code>pm</code>. A part the app itself ships switched off (<b>off by default</b>) stays as the app wants it.</p>
+
+  <h4>What you are getting into</h4>
+  <ul>
+    <li><b>Notifications can stop.</b> Some trackers on the list also deliver push notifications: OneSignal, Pushwoosh, Urbanairship (Airship), Batch, Braze, LeanPlum and Pusher among them. Switch one of those off and the app may stop showing notifications. To keep them, use <b>DISABLE</b> under the other trackers instead of <b>Disable all trackers</b>.</li>
+    <li><b>An app can break.</b> An app that opens a switched-off screen (an ad screen, a sign-in screen of a tracker's library) can crash or show nothing there. If an app misbehaves, switch its trackers back on before you try anything else.</li>
+    <li><b>The app is stopped while its parts change.</b> Android applies a part's new state by stopping the app that holds it. Close anything you were writing in it first. For a system app such as System UI this can make the screen flash or restart.</li>
+    <li><b>System apps are the dangerous ones.</b> Parts of Google Play Services, the phone app or System UI can be what makes other apps, calls or the lock screen work. Switch off the trackers of a system app only when you know what that app does, one app at a time.</li>
+    <li><b>The change holds.</b> It survives restarts of the app and the phone, and app updates. Clear Data does not reset it; uninstalling the app and installing it again does.</li>
+    <li><b>It needs root every time.</b> If Super User (or Shizuku as the system user) goes away, the switched-off parts stay off and switching them back on is refused for the same reason. Switch them back on before you give root up.</li>
+    <li><b>Not tried on a phone yet.</b> This feature has been checked on a computer, not yet on a rooted phone or with Shizuku as the system user.</li>
+  </ul>
+  <div class="hg-warn"><b>Careful.</b> Start with one app you can do without, use it for a day, then go on. Leave the trackers of system apps alone unless you have a reason.</div>
+</section>
+
