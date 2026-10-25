@@ -5231,12 +5231,13 @@ x: {
 "Request Super User": "Superuser anfordern",
 "Root Features": "Root-Funktionen",
 "Root Features need the Root working mode with su granted to this app.": "Root-Funktionen brauchen den Betriebsmodus Root mit einem dieser App gewährten su.",
-"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Superuser-Funktionen (Root). Sie werden freigeschaltet, wenn der Betriebsmodus Root ist und su dieser App den Zugriff gewährt hat.",
+"Features that need root or the system user (UID 1000). They unlock in Root mode with su granted, or with Shizuku running as UID 1000 or root (UID 0).": "Funktionen, die Root oder den Systembenutzer (UID 1000) benötigen. Sie werden im Root-Modus mit erteiltem su freigeschaltet oder wenn Shizuku als UID 1000 oder Root (UID 0) läuft.",
 "Super User access": "Superuser-Zugriff",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Dieses Gerät hat su. Wählen Sie unter „Betriebsmodi“ Root und erlauben Sie diese App, wenn su fragt.",
 "Your root manager did not grant this app su. Allow it there, then choose Root again.": "Ihr Root-Manager hat dieser App kein su gewährt. Erlauben Sie es dort und wählen Sie dann erneut Root."
 },
 p: [
+["Shizuku (UID {0})", "Shizuku (UID {0})"],
   ["Opening {0} — manage which apps get Super User there.", "{0} wird geöffnet – verwalte dort, welche Apps Super User erhalten."],
   ["Allow this app in {0}, then come back.", "Erlaube dieser App in {0} den Zugriff und komm dann zurück."],
   ["A list named \"{0}\" already exists.", "Eine Liste namens „{0}“ ist bereits vorhanden."],

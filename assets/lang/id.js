@@ -5231,12 +5231,13 @@ x: {
 "Request Super User": "Minta Superuser",
 "Root Features": "Fitur Root",
 "Root Features need the Root working mode with su granted to this app.": "Fitur Root memerlukan mode kerja Root dengan su yang diberikan ke aplikasi ini.",
-"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "Fitur Superuser (root). Terbuka saat mode kerja adalah Root dan su telah memberi aplikasi ini akses.",
+"Features that need root or the system user (UID 1000). They unlock in Root mode with su granted, or with Shizuku running as UID 1000 or root (UID 0).": "Fitur yang memerlukan Root atau pengguna sistem (UID 1000). Terbuka dalam mode Root dengan su diberikan, atau saat Shizuku berjalan sebagai UID 1000 atau Root (UID 0).",
 "Super User access": "Akses Superuser",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "Perangkat Anda memiliki su. Pilih Root di Mode Kerja dan izinkan aplikasi ini saat su bertanya.",
 "Your root manager did not grant this app su. Allow it there, then choose Root again.": "Pengelola root Anda tidak memberi su ke aplikasi ini. Izinkan di sana, lalu pilih Root lagi."
 },
 p: [
+["Shizuku (UID {0})", "Shizuku (UID {0})"],
   ["Opening {0} — manage which apps get Super User there.", "Membuka {0} — atur di sana aplikasi mana yang mendapat Super User."],
   ["Allow this app in {0}, then come back.", "Izinkan aplikasi ini di {0}, lalu kembali."],
   ["A list named \"{0}\" already exists.", "Daftar bernama “{0}” sudah ada."],

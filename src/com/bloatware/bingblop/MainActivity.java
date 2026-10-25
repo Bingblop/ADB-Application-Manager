@@ -1414,10 +1414,12 @@ public class MainActivity extends Activity {
             boolean authorized = isShizukuAuthorized();
             boolean preV11 = false;
             int version = 0;
+            int uid = -1;
             if (running) {
                 try {
                     preV11 = Shizuku.isPreV11();
                     version = Shizuku.getVersion();
+                    uid = Shizuku.getUid();                 // 0 root, 1000 system, 2000 ADB shell; the gate (RootGate) reads it
                 } catch (Throwable ignored) {}
             }
             obj.put("installed", pkg != null || running);
@@ -1426,8 +1428,19 @@ public class MainActivity extends Activity {
             obj.put("authorized", authorized);
             obj.put("preV11", preV11);
             obj.put("version", version);
+            obj.put("uid", uid);
         } catch (Exception ignored) {}
         return obj;
+    }
+
+    /** The uid the Shizuku server runs as (0 root, 1000 system, 2000 ADB shell), or -1 when the binder is down or it cannot be read. */
+    private int shizukuServerUid() {
+        try {
+            if (!isShizukuBinderAlive()) return -1;
+            return Shizuku.getUid();
+        } catch (Throwable t) {
+            return -1;
+        }
     }
 
     private static Method shizukuNewProcessMethod;
@@ -4874,8 +4887,9 @@ public class MainActivity extends Activity {
      * "disable", their ids) with root, and reports it as window.onOverlayFab(json): req, op, ids (the overlay identifiers written or
      * switched off), ok, state (the first overlay as the list has it: 1 on, 0 off, -1 cannot be switched, -2 not listed), list, answer,
      * lookups (resource -> what Android printed for it), error, advice, needsPrivilege, unknown, mode.
-     * Root only (RootGate.active): cmd overlay fabricate turns away anyone but root, and Shizuku and ADB run as the shell user, so the
-     * gate is checked before any shell runs. Whether it worked is decided by the list and the lookups that follow the write
+     * The root user only (RootGate.uid0): cmd overlay fabricate turns away anyone but uid 0, so this is Root with su granted, or a
+     * Shizuku server started as root (uid 0). The system user (uid 1000) and the ADB shell user (uid 2000) are refused and stay
+     * locked. The gate is checked before any shell runs. Whether it worked is decided by the list and the lookups that follow the write
      * (OverlayRules.judgeFabricate), never by the commands' own text. {@code profile}: the build family the bridge checked the plan for
      * (MonetProfile's id), which also decides the entries looked up after the write.
      */
@@ -4891,11 +4905,16 @@ public class MainActivity extends Activity {
                 settingsReply("onOverlayFab", res);
                 return;
             }
-            String mode = activeWorkingMode;
+            String mode = resolveExecMode();
             res.put("mode", mode);
-            // su is asked only while Root is the chosen mode (probeWorkingMode does the same): a root manager's prompt must not pop up in another mode
+            // Writing a fabricated colour overlay needs the root user (uid 0): Android's overlay service refuses `cmd overlay fabricate`
+            // to anyone else, the ADB and system shell users included. That is Root with su, or a Shizuku server started as root (uid 0).
+            // Shizuku as the system user (uid 1000) is privileged but still refused here, and is kept locked on the page. su is asked only
+            // while Root is the mode (probeWorkingMode does the same), so no root-manager prompt pops up under Shizuku or ADB.
             boolean suGranted = "root".equals(mode) && isRootGranted();
-            if (!RootGate.active(mode, suGranted)) {
+            int fabSzUid = "shizuku".equals(mode) ? shizukuServerUid() : -1;
+            boolean fabShizuku = "shizuku".equals(mode) && isShizukuAuthorized();
+            if (!RootGate.uid0(mode, suGranted, fabShizuku, fabSzUid)) {
                 res.put("ok", false);
                 res.put("needsPrivilege", true);
                 res.put("error", "Needs Super User");
@@ -4907,7 +4926,7 @@ public class MainActivity extends Activity {
                 for (String id : wrote) idArr.put(id);
                 res.put("ids", idArr);
                 String script = disable ? OverlayRules.disableScript(ids) : OverlayRules.fabricateScript(sdk, profile, entries);
-                String out = runPrivilegedShell("root", script, 30000);
+                String out = runPrivilegedShell(mode, script, 30000);
                 // the script is long, not secret, but a release build logs sizes only (the rule is general); a debuggable build the whole exchange
                 if (isDebuggableBuild()) Log.d(TAG, "overlayFabricate [" + op + "]: " + script + " -> " + (out != null ? out.trim() : ""));
                 else Log.d(TAG, "overlayFabricate [" + op + "]: " + script.length() + " chars -> " + (out != null ? out.length() : 0) + " chars");
@@ -8706,6 +8725,14 @@ public class MainActivity extends Activity {
                     else if ("root".equals(configured)) available = rootGrantedNow;
                     else available = false;
                 }
+
+                // The privileged-feature gate the page reads. sysPrivActive unlocks the Root Features surface and the app-component
+                // toggle: Root with su, or Shizuku as the system user (uid 1000) or root (uid 0). rootUidActive is the stricter uid-0
+                // tier for writing colour overlays: Root with su, or Shizuku started as root (uid 0). Both key off the RESOLVED mode, so
+                // Auto that lands on a uid-1000 Shizuku unlocks too; a uid-2000 ADB-shell Shizuku and an unknown uid stay locked. See RootGate.
+                int szUid = shizukuObj.optInt("uid", -1);
+                obj.put("sysPrivActive", RootGate.unlocked(resolved, rootGrantedNow, shizukuAuthorized, szUid));
+                obj.put("rootUidActive", RootGate.uid0(resolved, rootGrantedNow, shizukuAuthorized, szUid));
 
                 obj.put("configuredMode", configured);
                 obj.put("activeMode", resolved);
@@ -12742,9 +12769,10 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Enables or disables one component (pm enable/disable pkg/component). Super User (Root) only in v7.15.1, for every app:
-         * the ADB/Shizuku shell uid cannot change components of apps it does not own (a system-app toggle from uid 2000 just fails),
-         * and the feature was scoped to Root. The page keeps the control locked off root; this is the enforcing floor for every caller.
+         * Enables or disables one component (pm enable/disable pkg/component). Android allows a single component's state change to the
+         * root user (uid 0) and the system user (uid 1000) but refuses it to the ADB shell (uid 2000: a system-app toggle from the shell
+         * just fails), so this unlocks in Root mode with su granted and under a Shizuku server running as uid 0 or uid 1000 (v7.16.1,
+         * widened from Root-only in v7.15.1). The page keeps the same gate (compToggleLocked -> sysPrivActive); this is the enforcing floor for every caller.
          * Success is read from the component's real state (AGENTS.md), not from pm's printed text.
          */
         @JavascriptInterface
@@ -12755,9 +12783,15 @@ public class MainActivity extends Activity {
                 if (cmd == null) {
                     r.put("ok", false); r.put("output", "Error: invalid component name"); return r.toString();
                 }
-                if (!"root".equals(resolveExecMode())) {
+                // Android refuses a single component's state change to the ADB shell user (uid 2000); it is allowed to root (uid 0) and
+                // to the system user (uid 1000). So this unlocks in Root mode and under a Shizuku server running as uid 0 or 1000.
+                String compMode = resolveExecMode();
+                int compSzUid = "shizuku".equals(compMode) ? shizukuServerUid() : -1;
+                boolean compAllowed = "root".equals(compMode)
+                        || ("shizuku".equals(compMode) && isShizukuAuthorized() && (compSzUid == 0 || compSzUid == 1000));
+                if (!compAllowed) {
                     r.put("ok", false); r.put("needsRoot", true);
-                    r.put("output", "Error: enabling or disabling a component needs Super User (Root)."); return r.toString();
+                    r.put("output", "Error: enabling or disabling a component needs Super User (Root) or the system user (UID 1000)."); return r.toString();
                 }
                 String out = executeShell(cmd);
                 // Decide success by reading the component's real state back: after the command the pm override must be exactly

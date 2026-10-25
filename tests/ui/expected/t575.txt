@@ -1,0 +1,7 @@
+Shizuku uid 1000 (system user): isRootActive=true compToggleLocked=false ovlCanWriteOverlays=false
+Shizuku uid 0 (root): isRootActive=true compToggleLocked=false ovlCanWriteOverlays=true
+Shizuku uid 2000 (ADB shell): isRootActive=false compToggleLocked=true ovlCanWriteOverlays=false
+Root with su: isRootActive=true compToggleLocked=false ovlCanWriteOverlays=true
+back-compat older app, Root (no new fields): isRootActive=true compToggleLocked=false ovlCanWriteOverlays=true
+back-compat older app, Shizuku (no new fields): isRootActive=false compToggleLocked=true ovlCanWriteOverlays=false
+errors: []

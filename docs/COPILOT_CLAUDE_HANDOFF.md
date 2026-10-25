@@ -194,6 +194,22 @@ Things the next person should know:
 - **Known flaky CI scripts** (each passes alone; none caused by these fixes): t137 and t261 under two parallel jobs, and t104 under CPU load (its first click on the Enabled pill used to race the layout shift of the filters hint being dismissed; the script now waits for the hint, so a failure of it again is news), plus the list in the v7.13.0 section. Java `extractspace` and `sdmengine` fail under disk load and pass alone; seven Java suites skip here for a missing prerequisite (`storedetail`, `fdroid`, `morpheengine`, `signer`, `signwritefail`, `signmismatch`, `axml`).
 - **The native pty helper was rebuilt** (SIGPIPE ignored) for arm64-v8a, armeabi-v7a and x86_64 with clang 18 and lld; `native/pty/test.sh` runs its nine qemu checks. Rebuild it the same way if `ptyexec.c` changes again; the binaries are committed.
 
+## v7.16.1 (cut from `main`; written 2026-10-25)
+
+One change the owner asked for after v7.16.0: the Root Features tab and the per-app component Enable / Disable now unlock when the Shizuku server runs as the system user (UID 1000) or as root (UID 0), not only in Root mode with su granted. His words were to ship v7.16.1 as soon as the UID 1000 change was in, so the arm64 APK phone-test gate of v7.15.0/v7.16.0 is waived here (`docs/RELEASE-CHECKLIST-v7.16.1.md` step 5b). The release pull request is this change plus the version bump.
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| this | `RootGate.unlocked` (UID 0/1000) and `RootGate.uid0` (UID 0 only); `MainActivity` reads the Shizuku server UID (`shizukuServerUid`, `Shizuku.getUid`) and reports `sysPrivActive`/`rootUidActive` from `probeWorkingMode`; the component toggle and the overlay fabricate gate key off them; the page reads the two flags (`isRootActive`, `ovlCanWriteOverlays`), the badge names the real UID | `rootgate` (+14), `componentgate`, `overlayrules`, `modetilelight`, t575, t563, t559; i18n --strict; guide build --check --strict | PHONE-SCRIPT-v7.16.1 B, C |
+| bump | Version 7.16.1 (863), changelog, README, guides, `docs/LAUNCH.md`, `docs/RELEASE-CHECKLIST-v7.16.1.md`, `docs/PHONE-SCRIPT-v7.16.1.md` | the full Java and UI suites, i18n --strict, guide build --check --strict, docs shell blocks | none |
+
+Things the next person should know:
+
+- **Two tiers, because Android draws the line at the component versus the overlay.** A single component's state change (`pm enable/disable`) is refused to the ADB shell user (UID 2000) but allowed to the system user (UID 1000) and root (UID 0), so the Root Features tab and the component toggle unlock at UID 1000. Writing a fabricated colour overlay (`cmd overlay fabricate`) is allowed only to UID 0, so the root theme card stays locked under UID 1000. `RootGate.unlocked` is the broad tier, `RootGate.uid0` the strict one; the page mirrors them as `sysPrivActive` and `rootUidActive`, with the old root-only rule as the fallback when an older app omits the fields.
+- **UID 1000 is the system user, not root.** Nothing in the app, the strings or the guide calls it root; the guide's UID glossary entry spells out 0 / 1000 / 2000.
+- **Not run on a device.** The unlock only shows on a phone whose Shizuku runs with system or root rights (a rooted phone started Shizuku with root). On an ordinary phone Shizuku is UID 2000 and the features stay locked, unchanged — which is the testable part on an unrootable phone.
+- **No manifest permission changed.**
+
 ## v7.16.0 (cut from `main`; written 2026-10-21)
 
 The root features, the root theme card (the ColorBlendr items) and the first-launch privilege flow the owner asked for after v7.15.0, with the fixes of two test passes over them (T-002 to T-079). The release pull request is the version bump on top of #283 (Android 14 QPR1-QPR3), which was in CI when the bump was written. The owner tests the `arm64-v8a` APK before anything is published (`docs/RELEASE-CHECKLIST-v7.16.0.md` step 5b).
