@@ -4485,7 +4485,7 @@
                     <div class="mode-alert-desc" id="driftDesc"></div>
                 </div>
                 <button class="mode-alert-btn" onclick="reviewDrift()">Review</button>
-                <button class="mode-alert-btn" onclick="dismissDrift()" style="margin-left:6px;">✕</button>
+                <button class="mode-alert-btn" onclick="dismissDrift\(\)" style="margin-left:6px;" aria-label="Dismiss alert">✕</button>
             </div>
 
             <!-- Sort and export -->
@@ -5093,12 +5093,12 @@
                     <button class="batch-tool-link" onclick="fmClipSet('mv')">Move</button>
                     <button class="batch-tool-link" id="fmSelCompressBtn" onclick="czOpenSelected()">Compress</button>
                     <button class="batch-tool-link" style="color:var(--status-bloat);" onclick="fmDeleteSelected()">Delete</button>
-                    <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
+                    <button class="batch-tool-link" onclick="fmSelExit\(\)" aria-label="Exit selection">✕</button>
                 </div>
                 <div class="fm-selbar" id="fmClipBar" style="display:none;">
                     <span class="fm-count" id="fmClipText"></span>
                     <button class="batch-tool-link" id="fmPasteBtn" onclick="fmPaste()">Paste here</button>
-                    <button class="batch-tool-link" onclick="fmClipClear()">✕</button>
+                    <button class="batch-tool-link" onclick="fmClipClear\(\)" aria-label="Clear clipboard">✕</button>
                 </div>
                 <div id="fmBatchStatus" class="uad-status" style="display:none; margin-bottom:8px;"></div>
                 <div id="fmSearchStatus" class="uad-status" style="display:none; margin-bottom:8px;"></div>
@@ -5955,7 +5955,7 @@
                         <div class="ovl-slider"><b>Lightness</b><input type="range" id="ovlL" min="0" max="100" step="1" value="49" oninput="ovlSliderInput()" aria-label="Lightness"></div>
                         <div class="ovl-recent" id="ovlRecent" style="display:none;"></div>
 
-                        <button type="button" class="ovl-preset-head" id="ovlPresetHead" onclick="ovlTogglePresets()" aria-expanded="false"></button>
+                        <button type="button" class="ovl-preset-head" id="ovlPresetHead" onclick="ovlTogglePresets\(\)" aria-expanded="false" aria-label="Presets"></button>
                         <div id="ovlPresets" style="display:none;">
                             <div class="sdb-searchwrap" style="margin-top:4px;">
                                 <input type="text" class="list-search" id="ovlPresetSearch" placeholder="Search by name or hex…" oninput="ovlPresetSearchInput()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Search the preset colors" style="width:100%; height:38px; font-size:13px;">
@@ -9282,9 +9282,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 </div>
             </div>
             <div class="sheet-header-actions">
-                <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
+                <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo\(\)" aria-haspopup="dialog" aria-label="UAD Info"></button>
                 <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none; align-self:flex-start;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>Ask agent</span></button>
-                <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
+                <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo\(\)" aria-haspopup="dialog" aria-label="Trackers Info"></button>
             </div>
             <div class="sheet-meta">
                 <div class="copy-row">
@@ -11692,7 +11692,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const pinned = bnavPinnedShown(), more = bnavMoreKeys();
             const item = k => '<button type="button" class="bn-item" data-tab="' + k + '"' + (bnavScList(k).length ? ' aria-haspopup="menu" aria-keyshortcuts="Shift+Enter"' : '') + ' onclick="bnavTap(\'' + k + '\')"><span class="bn-ico">' + bnavIcon(k) + bnavBadgeHtml(bnavBadges[k]) + '</span><span class="bn-lbl">' + escapeHtml(bnavShort(k)) + '</span></button>';
             nav.innerHTML = '<span class="bn-ind" aria-hidden="true"></span>' + pinned.map(item).join('')
-                + '<button type="button" class="bn-item" data-more="1" aria-haspopup="dialog" aria-expanded="false" onclick="bnavMoreOpen()"></button>';
+                + '<button type="button" class="bn-item" data-more="1" aria-haspopup="dialog" aria-expanded="false" onclick="bnavMoreOpen\(\)" aria-label="More options"></button>';
             bnavSync(false);
         }
 
@@ -16205,7 +16205,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 .replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<b>$1</b>').replace(/(^|[^\w])__(\S(?:.*?\S)?)__(?!\w)/g, '$1<b>$2</b>')
                 .replace(/(^|[^\w*])\*(?!\s)([^*]+?)\*(?![\w*])/g, '$1<i>$2</i>').replace(/(^|[^\w])_(?!\s)([^_]+?)_(?!\w)/g, '$1<i>$2</i>')
                 .replace(/`([^`]+)`/g, '<code>$1</code>')
-                .replace(/~~(.+?)~~/g, '$1').replace(/\\([\\`*_{}\[\]()#+\-.!|])/g, '$1');
+                .replace(/~~(.+?)~~/g, '$1').replace(/()([()`*_{}\[\]()#+\-.!|])/g, '$1');
             const out = []; let para = [], list = '', fence = false;
             const flush = () => { if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para = []; } };
             const endList = () => { if (list) { out.push('</' + list + '>'); list = ''; } };
@@ -17979,7 +17979,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- E. Doze & power governor ----
         const XDZ_DEEP = ['ACTIVE', 'INACTIVE', 'IDLE_PENDING', 'SENSING', 'LOCATING', 'IDLE', 'IDLE_MAINTENANCE', 'QUICK_DOZE_DELAY'];
         const XDZ_LIGHT = ['ACTIVE', 'INACTIVE', 'PRE_IDLE', 'IDLE', 'WAITING_FOR_NETWORK', 'IDLE_MAINTENANCE', 'OVERRIDE'];
-        const XDZ_READ_CMD = 'dumpsys deviceidle get deep; echo ' + XQ_SEP + '; dumpsys deviceidle get light; echo ' + XQ_SEP + '; dumpsys deviceidle get force; echo ' + XQ_SEP + "; dumpsys deviceidle | grep -E 'm(UseMotionSensor|MotionListener\\.active|MotionSensor|State|LightState|ForceIdle)=' | head -n 12";
+        const XDZ_READ_CMD = 'dumpsys deviceidle get deep; echo ' + XQ_SEP + '; dumpsys deviceidle get light; echo ' + XQ_SEP + '; dumpsys deviceidle get force; echo ' + XQ_SEP + "; dumpsys deviceidle | grep -E 'm(UseMotionSensor|MotionListener().active|MotionSensor|State|LightState|ForceIdle)=' | head -n 12";
         const XDZ_ACTS = {
             force:  { cmd: 'dumpsys deviceidle force-idle deep', hue: 255 },
             step:   { cmd: 'dumpsys deviceidle step deep', hue: 200 },
@@ -19470,8 +19470,8 @@ Type any command above (e.g. pm list packages -d)</div>
             };
             for (let i = 0; i < p.length; i++) {
                 const c = p[i];
-                if (c === '\\') { i++; if (times(i + 1) > 20) open[open.length - 1] = true; continue; }
-                if (c === '[') { while (i < p.length && p[i] !== ']') { if (p[i] === '\\') i++; i++; } if (times(i + 1) > 20) open[open.length - 1] = true; continue; }
+                if (c === '()') { i++; if (times(i + 1) > 20) open[open.length - 1] = true; continue; }
+                if (c === '[') { while (i < p.length && p[i] !== ']') { if (p[i] === '()') i++; i++; } if (times(i + 1) > 20) open[open.length - 1] = true; continue; }
                 if (c === '(') { open.push(false); continue; }
                 if (c === ')') {
                     const inner = open.length > 1 ? open.pop() : false;
@@ -20701,7 +20701,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     </div>
                     <div class="app-actions">
                         ${leftoverBtnHtml(app)}${actionBtnHtml(app)}
-                        <button class="btn-mini row-menu" title="Menu" onclick="openInspector(this.closest('.app-card').dataset.pkg)">⋯</button>
+                        <button class="btn-mini row-menu" title="Menu" aria-label="App options" onclick="openInspector(this.closest('.app-card').dataset.pkg)">⋯</button>
                     </div>
                 </div>
             `;
@@ -21538,7 +21538,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 usBar(null);
                 us.browse = r.browse || '';
                 usStatus(r.error || txT('The download did not work.'), true);
-                usEl('usGot').innerHTML = '<div class="us-acts" style="margin-top:8px;">' + (r.browse ? '<button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'' + escapeHtml(String(r.browse).replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">Open it here, in the app</button>' : '') + '<button class="mode-action-btn" onclick="usWeb(' + i + ')">Open on the web</button></div>';
+                usEl('usGot').innerHTML = '<div class="us-acts" style="margin-top:8px;">' + (r.browse ? '<button class="mode-action-btn primary" onclick="usBrowse(' + i + ',\'' + escapeHtml(String(r.browse).replace(/()/g, '()()').replace(/'/g, "()'")) + '\')">Open it here, in the app</button>' : '') + '<button class="mode-action-btn" onclick="usWeb(' + i + ')">Open on the web</button></div>';
                 return;
             }
             us.got = r.data;
@@ -22540,7 +22540,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // The name a split goes by: its manifest's split="…", else its file name ("3__split_config.en.apk" -> "config.en")
         function splitConfigName(s) {
             let n = String(s.split || '').trim();
-            if (!n) n = String(s.name || '').replace(/^.*[\\/]/, '').replace(/^\d+__/, '').replace(/\.apk$/i, '').replace(/^split_/, '');
+            if (!n) n = String(s.name || '').replace(/^.*[()/]/, '').replace(/^\d+__/, '').replace(/\.apk$/i, '').replace(/^split_/, '');
             return n;
         }
 
@@ -23137,7 +23137,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const sz = parseInt(parts[4], 10); if (!isNaN(sz)) size = sz;
             // the name is cut from the line as ls printed it (one space after the time), not put together again from its words:
             // "a  b.txt", a tab or a leading space in a name is kept, so the row's actions reach that file and not a near twin
-            const at = timeIdx >= 0 ? ln.match(new RegExp('^(\\S+\\s+){' + timeIdx + '}\\S+\\s')) : null;          // a plain group: tests/i18n/extract.js would take '(?:' for text
+            const at = timeIdx >= 0 ? ln.match(new RegExp('^(()S+()s+){' + timeIdx + '}()S+()s')) : null;          // a plain group: tests/i18n/extract.js would take '(?:' for text
             if (at && at[0].length < ln.length) name = ln.slice(at[0].length);
             else name = parts[parts.length - 1];
             let link = null;
@@ -24273,41 +24273,41 @@ Type any command above (e.g. pm list packages -d)</div>
             // groups: 1 block comment, 2 line comment, 3 string, 4 meta, 5 number, 6 word
             parts[0] = o.block ? '(' + o.block + ')' : '((?!))';
             parts.push(o.line ? '(' + o.line + ')' : '((?!))');
-            parts.push('(' + (o.str || '"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?') + ')');
+            parts.push('(' + (o.str || '"(?:[^"()()()n]|()().)*"?|\'(?:[^\'()()()n]|()().)*\'?') + ')');
             parts.push(o.meta ? '(' + o.meta + ')' : '((?!))');
-            parts.push('(0[xX][0-9a-fA-F_]+[uUlLfF]*|\\b\\d[\\d_]*(?:\\.\\d+)?(?:[eE][+-]?\\d+)?[a-zA-Z]{0,2}\\b)');
-            parts.push('([A-Za-z_$][\\w$]*' + (o.wordExtra || '') + ')');
+            parts.push('(0[xX][0-9a-fA-F_]+[uUlLfF]*|()b()d[()d_]*(?:().()d+)?(?:[eE][+-]?()d+)?[a-zA-Z]{0,2}()b)');
+            parts.push('([A-Za-z_$][()w$]*' + (o.wordExtra || '') + ')');
             return (SYN_RE[key] = new RegExp(parts.join('|'), o.flags || 'g'));
         }
         const SYN_CFG = {
-            c: { kw: 'c', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '^[ \\t]*#[ \\t]*\\w+|@\\w+', flags: 'gm' },
-            java: { kw: 'java', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '@\\w+(?:\\.\\w+)*', str: '"""[\\s\\S]*?(?:"""|$)|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
-            js: { kw: 'js', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', str: '`(?:[^`\\\\]|\\\\[\\s\\S])*`?|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
-            cs: { kw: 'cs', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '^[ \\t]*#[ \\t]*\\w+', flags: 'gm', str: '@"(?:[^"]|"")*"?|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
-            go: { kw: 'go', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', str: '`[^`]*`?|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
-            rust: { kw: 'rust', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '#!?\\[[^\\]\\n]*\\]' },
-            swift: { kw: 'swift', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '@\\w+|#\\w+' },
-            dart: { kw: 'dart', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '@\\w+' },
-            php: { kw: 'php', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*|#[^\\n]*', meta: '<\\?(?:php)?|\\?>|\\$\\w+' },
-            py: { kw: 'py', line: '#[^\\n]*', meta: '@[\\w.]+', str: '"""[\\s\\S]*?(?:"""|$)|\'\'\'[\\s\\S]*?(?:\'\'\'|$)|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
-            sh: { kw: 'sh', line: '#[^\\n]*', meta: '\\$\\{[^}\\n]*\\}|\\$[A-Za-z_@#?*!$0-9][\\w]*|\\$[@#?*!$]', str: '"(?:[^"\\\\]|\\\\[\\s\\S])*"?|\'[^\']*\'?' },
-            lua: { kw: 'lua', block: '--\\[=*\\[[\\s\\S]*?(?:\\]=*\\]|$)', line: '--[^\\n]*', str: '"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?|\\[=*\\[[\\s\\S]*?(?:\\]=*\\]|$)' },
-            rb: { kw: 'rb', block: '^=begin[\\s\\S]*?(?:^=end|$)', line: '#[^\\n]*', meta: ':[A-Za-z_]\\w*|@@?\\w+|\\$\\w+', flags: 'gm' },
-            pl: { kw: 'pl', line: '#[^\\n]*', meta: '[$@%][A-Za-z_]\\w*' },
-            r: { kw: 'r', line: '#[^\\n]*', wordExtra: '(?:\\.[\\w.]+)*' },
-            sql: { kw: 'sql', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '--[^\\n]*|#[^\\n]*', str: '\'(?:[^\']|\'\')*\'?|"(?:[^"]|"")*"?|`[^`]*`?', flags: 'gi' },
-            bat: { kw: 'bat', line: '(?:^|\\s)(?:rem|::)[^\\n]*', meta: '%[\\w~]+%|%%?\\w|!\\w+!', flags: 'gim' },
-            gradle: { kw: 'gradle', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', str: '"""[\\s\\S]*?(?:"""|$)|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
-            smali: { kw: 'smali', line: '#[^\\n]*', meta: '^[ \\t]*\\.[a-z-]+|:[\\w$]+|\\b[vp]\\d+\\b|L[\\w$/]+;', flags: 'gm', wordExtra: '(?:-[\\w-]+)*' },
-            json: { kw: 'bool', str: '"(?:[^"\\\\\\n]|\\\\.)*"?' },
-            yaml: { kw: 'bool', line: '#[^\\n]*', meta: '^[ \\t]*-?[ \\t]*[\\w.\\/"\' -]+(?=[ \\t]*:(?:[ \\t]|$))|[&*]\\w+|^---|^\\.\\.\\.', flags: 'gm', wordExtra: '(?:-\\w+)*' },
-            toml: { kw: 'bool', line: '#[^\\n]*', meta: '^[ \\t]*\\[[^\\]\\n]*\\]|^[ \\t]*[\\w."-]+(?=[ \\t]*=)', flags: 'gm', str: '"""[\\s\\S]*?(?:"""|$)|\'\'\'[\\s\\S]*?(?:\'\'\'|$)|"(?:[^"\\\\\\n]|\\\\.)*"?|\'[^\'\\n]*\'?' },
-            ini: { kw: 'bool', line: '^[ \\t]*[#;][^\\n]*', meta: '^[ \\t]*\\[[^\\]\\n]*\\]|^[ \\t]*[\\w.\\-/\\[\\]]+(?=[ \\t]*[=:])|\\$\\{?\\w+\\}?', flags: 'gm', str: '"(?:[^"\\\\\\n]|\\\\.)*"?|\'[^\'\\n]*\'?' },
-            log: { kw: 'bool', line: '(?!)', meta: '\\b(?:E|F)\\/[^\\n]*|\\b(?:ERROR|FATAL|Exception)\\b', str: '"(?:[^"\\\\\\n]|\\\\.)*"?' },
+            c: { kw: 'c', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*', meta: '^[ ()t]*#[ ()t]*()w+|@()w+', flags: 'gm' },
+            java: { kw: 'java', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*', meta: '@()w+(?:().()w+)*', str: '"""[()s()S]*?(?:"""|$)|"(?:[^"()()()n]|()().)*"?|\'(?:[^\'()()()n]|()().)*\'?' },
+            js: { kw: 'js', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*', str: '`(?:[^`()()]|()()[()s()S])*`?|"(?:[^"()()()n]|()().)*"?|\'(?:[^\'()()()n]|()().)*\'?' },
+            cs: { kw: 'cs', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*', meta: '^[ ()t]*#[ ()t]*()w+', flags: 'gm', str: '@"(?:[^"]|"")*"?|"(?:[^"()()()n]|()().)*"?|\'(?:[^\'()()()n]|()().)*\'?' },
+            go: { kw: 'go', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*', str: '`[^`]*`?|"(?:[^"()()()n]|()().)*"?|\'(?:[^\'()()()n]|()().)*\'?' },
+            rust: { kw: 'rust', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*', meta: '#!?()[[^()]()n]*()]' },
+            swift: { kw: 'swift', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*', meta: '@()w+|#()w+' },
+            dart: { kw: 'dart', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*', meta: '@()w+' },
+            php: { kw: 'php', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*|#[^()n]*', meta: '<()?(?:php)?|()?>|()$()w+' },
+            py: { kw: 'py', line: '#[^()n]*', meta: '@[()w.]+', str: '"""[()s()S]*?(?:"""|$)|\'\'\'[()s()S]*?(?:\'\'\'|$)|"(?:[^"()()()n]|()().)*"?|\'(?:[^\'()()()n]|()().)*\'?' },
+            sh: { kw: 'sh', line: '#[^()n]*', meta: '()$(){[^}()n]*()}|()$[A-Za-z_@#?*!$0-9][()w]*|()$[@#?*!$]', str: '"(?:[^"()()]|()()[()s()S])*"?|\'[^\']*\'?' },
+            lua: { kw: 'lua', block: '--()[=*()[[()s()S]*?(?:()]=*()]|$)', line: '--[^()n]*', str: '"(?:[^"()()()n]|()().)*"?|\'(?:[^\'()()()n]|()().)*\'?|()[=*()[[()s()S]*?(?:()]=*()]|$)' },
+            rb: { kw: 'rb', block: '^=begin[()s()S]*?(?:^=end|$)', line: '#[^()n]*', meta: ':[A-Za-z_]()w*|@@?()w+|()$()w+', flags: 'gm' },
+            pl: { kw: 'pl', line: '#[^()n]*', meta: '[$@%][A-Za-z_]()w*' },
+            r: { kw: 'r', line: '#[^()n]*', wordExtra: '(?:().[()w.]+)*' },
+            sql: { kw: 'sql', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '--[^()n]*|#[^()n]*', str: '\'(?:[^\']|\'\')*\'?|"(?:[^"]|"")*"?|`[^`]*`?', flags: 'gi' },
+            bat: { kw: 'bat', line: '(?:^|()s)(?:rem|::)[^()n]*', meta: '%[()w~]+%|%%?()w|!()w+!', flags: 'gim' },
+            gradle: { kw: 'gradle', block: '()/()*[()s()S]*?(?:()*()/|$)', line: '()/()/[^()n]*', str: '"""[()s()S]*?(?:"""|$)|"(?:[^"()()()n]|()().)*"?|\'(?:[^\'()()()n]|()().)*\'?' },
+            smali: { kw: 'smali', line: '#[^()n]*', meta: '^[ ()t]*().[a-z-]+|:[()w$]+|()b[vp]()d+()b|L[()w$/]+;', flags: 'gm', wordExtra: '(?:-[()w-]+)*' },
+            json: { kw: 'bool', str: '"(?:[^"()()()n]|()().)*"?' },
+            yaml: { kw: 'bool', line: '#[^()n]*', meta: '^[ ()t]*-?[ ()t]*[()w.()/"\' -]+(?=[ ()t]*:(?:[ ()t]|$))|[&*]()w+|^---|^().().().', flags: 'gm', wordExtra: '(?:-()w+)*' },
+            toml: { kw: 'bool', line: '#[^()n]*', meta: '^[ ()t]*()[[^()]()n]*()]|^[ ()t]*[()w."-]+(?=[ ()t]*=)', flags: 'gm', str: '"""[()s()S]*?(?:"""|$)|\'\'\'[()s()S]*?(?:\'\'\'|$)|"(?:[^"()()()n]|()().)*"?|\'[^\'()n]*\'?' },
+            ini: { kw: 'bool', line: '^[ ()t]*[#;][^()n]*', meta: '^[ ()t]*()[[^()]()n]*()]|^[ ()t]*[()w.()-/()[()]]+(?=[ ()t]*[=:])|()$(){?()w+()}?', flags: 'gm', str: '"(?:[^"()()()n]|()().)*"?|\'[^\'()n]*\'?' },
+            log: { kw: 'bool', line: '(?!)', meta: '()b(?:E|F)()/[^()n]*|()b(?:ERROR|FATAL|Exception)()b', str: '"(?:[^"()()()n]|()().)*"?' },
         };
         // JSON: a string followed by a colon is a key; mark it like an attribute
         function synJson(t) {
-            const re = /("(?:[^"\\\n]|\\.)*"?)(\s*:)?|(-?\d[\d.eE+\-]*)|\b(true|false|null)\b/g;
+            const re = /("(?:[^"()\n]|().)*"?)(\s*:)?|(-?\d[\d.eE+\-]*)|\b(true|false|null)\b/g;
             let out = '', last = 0, m;
             while ((m = re.exec(t))) {
                 out += synEsc(t.slice(last, m.index));
@@ -24356,7 +24356,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return out;
         }
         function synCss(t) {
-            const re = /(\/\*[\s\S]*?(?:\*\/|$))|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?)|(@[\w-]+)|(#[0-9a-fA-F]{3,8}\b)|(-?\d*\.?\d+(?:px|em|rem|%|vh|vw|s|ms|deg|pt|fr|ch|ex)?\b)|([\w-]+)(?=\s*:(?!:))|(!important)/g;
+            const re = /(\/\*[\s\S]*?(?:\*\/|$))|("(?:[^"()\n]|().)*"?|'(?:[^'()\n]|().)*'?)|(@[\w-]+)|(#[0-9a-fA-F]{3,8}\b)|(-?\d*\.?\d+(?:px|em|rem|%|vh|vw|s|ms|deg|pt|fr|ch|ex)?\b)|([\w-]+)(?=\s*:(?!:))|(!important)/g;
             let out = '', last = 0, m;
             while ((m = re.exec(t))) {
                 out += synEsc(t.slice(last, m.index));
@@ -25799,7 +25799,7 @@ Type any command above (e.g. pm list packages -d)</div>
             let from = Math.max(0, at - 70), to = Math.min(raw.length, at + 150);
             if (from > 0) { const sp = raw.indexOf(' ', from); if (sp >= 0 && sp < at) from = sp + 1; }
             if (to < raw.length) { const sp = raw.lastIndexOf(' ', to); if (sp > at) to = sp; }
-            const rx = new RegExp('(' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+            const rx = new RegExp('(' + words.map(w => w.replace(/[.*+?^${}()|[\]()]/g, '()$&')).join('|') + ')', 'gi');
             return (from > 0 ? '... ' : '') + raw.slice(from, to).split(rx).map((p, i) => i % 2 ? '<mark class="hg-hit">' + escapeHtml(p) + '</mark>' : escapeHtml(p)).join('') + (to < raw.length ? ' ...' : '');
         }
         function hgSearchApply(q) {
@@ -25854,9 +25854,9 @@ Type any command above (e.g. pm list packages -d)</div>
         const CD_PLACES = [['Storage', '/sdcard'], ['Download', '/sdcard/Download'], ['Temp', '/data/local/tmp'], ['All storage', '/storage'], ['System', '/system'], ['Root', '/']];
         const CD_INFO_CMD = [
             'for p in ro.product.manufacturer ro.product.model ro.product.name ro.build.version.release ro.build.version.sdk ro.product.cpu.abilist ro.sf.lcd_density ro.build.characteristics persist.sys.locale ro.product.locale; do echo "$p=$(getprop $p)"; done',
-            'echo "wmsize=$(wm size | tr \'\\n\' \' \')"',
-            'echo "wmdens=$(wm density | tr \'\\n\' \' \')"',
-            'echo "batt=$(dumpsys battery | grep -E \'^ *(level|status):\' | tr \'\\n\' \' \')"'
+            'echo "wmsize=$(wm size | tr \'()n\' \' \')"',
+            'echo "wmdens=$(wm density | tr \'()n\' \' \')"',
+            'echo "batt=$(dumpsys battery | grep -E \'^ *(level|status):\' | tr \'()n\' \' \')"'
         ].join('; ');
         const CD_APPS_CMD = "echo '#ALL'; pm list packages -f -u; echo '#INST'; pm list packages; echo '#DIS'; pm list packages -d; echo '#SYS'; pm list packages -s -u";
         const CD_APP_CMDS = {
@@ -25888,7 +25888,7 @@ Type any command above (e.g. pm list packages -d)</div>
         let cdSeq = 0;
 
         // quoted for the shell on the device
-        function cdQ(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
+        function cdQ(s) { return "'" + String(s).replace(/'/g, "'()''") + "'"; }
         function cdBridge() { return window.AndroidBridge && window.AndroidBridge.cdAdb ? window.AndroidBridge : null; }
         function cdCur() { return cd.devices.find(d => d.serial === cd.serial) || null; }
         function cdReady() { const d = cdCur(); return !!d && d.state === 'device'; }
@@ -27197,7 +27197,7 @@ Type any command above (e.g. pm list packages -d)</div>
             let cur = '', q = '', has = false;
             for (let i = 0; i < s.length; i++) {
                 const c = s[i];
-                if (q) { if (c === q) q = ''; else if (c === '\\' && q === '"' && i + 1 < s.length) cur += s[++i]; else cur += c; }
+                if (q) { if (c === q) q = ''; else if (c === '()' && q === '"' && i + 1 < s.length) cur += s[++i]; else cur += c; }
                 else if (c === '"' || c === "'") { q = c; has = true; }
                 else if (/\s/.test(c)) { if (cur || has) { out.push(cur); cur = ''; has = false; } }
                 else cur += c;
@@ -27316,7 +27316,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const el = document.getElementById('cdLcOut');
             if (!el) return;
             const needle = (document.getElementById('cdLcFilter').value || '').trim(), low = needle.toLowerCase();
-            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
+            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]()]/g, '()$&'), 'ig') : null;
             const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
             let entries = cd.lcEntries.filter(e => e.kind === 'entry' && (!low || (e.tag + '\n' + e.lines.join('\n')).toLowerCase().includes(low)));
             cdLcRenderKey(entries);                                                          // the key counts what the filter box lets through, as Live Logcat's does
@@ -27919,7 +27919,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!el) return;
             const wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
             const needle = (document.getElementById('logcatFilter').value || '').trim();
-            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
+            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]()]/g, '()$&'), 'ig') : null;
             let entries = logcatEntries;
             const cap = lcShowAll ? LC_MAX_ENTRIES : LC_VIEW_ROWS;
             const total = entries.length;
@@ -28283,7 +28283,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function lcvDraw(page) {
             const out = document.getElementById('lcvOut');
             const needle = lcvNeedle();
-            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
+            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]()]/g, '()$&'), 'ig') : null;
             const all = lcvMatching();
             lcv.view = all;
             const pages = Math.max(1, Math.ceil(all.length / LCV_PAGE));
@@ -33205,7 +33205,7 @@ Type any command above (e.g. pm list packages -d)</div>
             sc.tail = '';
             // an escape code or a \r cut off at the end waits for the rest
             const esc = s.lastIndexOf('\x1b');
-            if (esc >= 0 && esc > s.length - 40 && !/^\x1b(?:\[[0-9;?]*[ -\/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)|[^\[\]])/.test(s.slice(esc))) { sc.tail = s.slice(esc); s = s.slice(0, esc); }
+            if (esc >= 0 && esc > s.length - 40 && !/^\x1b(?:\[[0-9;?]*[ -\/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b())|[^\[\]])/.test(s.slice(esc))) { sc.tail = s.slice(esc); s = s.slice(0, esc); }
             if (s.endsWith('\r')) { sc.tail = '\r' + sc.tail; s = s.slice(0, -1); }
             let buf = '';
             const flush = () => { if (buf) { txPut(sc, buf); buf = ''; } };
@@ -33222,7 +33222,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         i += m[0].length - 1;
                         continue;
                     }
-                    m = /^\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/.exec(s.slice(i, i + 600));
+                    m = /^\x1b\][^\x07\x1b]*(?:\x07|\x1b())/.exec(s.slice(i, i + 600));
                     if (m) { i += m[0].length - 1; continue; }
                     i += 1;                                      // ESC + one character (charset switches and the like)
                     continue;
@@ -33610,7 +33610,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function txGlobWord(w) {
             let pre = '';
             if (w === '~' || w.indexOf('~/') === 0) { pre = '"$HOME"'; w = w.slice(1); }
-            return pre + w.replace(/[^A-Za-z0-9_\/.,:@%+=\-\u0080-\uffff]/g, ch => '\\' + ch);
+            return pre + w.replace(/[^A-Za-z0-9_\/.,:@%+=\-\u0080-\uffff]/g, ch => '()' + ch);
         }
         async function txComplete() {
             const inp = document.getElementById('txInput');
@@ -33621,7 +33621,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const pos = inp.selectionStart;
             const before = inp.value.slice(0, pos);
             const word = (/(\S*)$/.exec(before) || ['', ''])[1].replace(/^!/, '');
-            const cmd = 'printf "%s\\n" "$HOME"; for f in ' + txGlobWord(word) + '*; do [ -e "$f" ] || continue; if [ -d "$f" ]; then printf "%s/\\n" "$f"; else printf "%s\\n" "$f"; fi; done 2>/dev/null | head -n 200';
+            const cmd = 'printf "%s()n" "$HOME"; for f in ' + txGlobWord(word) + '*; do [ -e "$f" ] || continue; if [ -d "$f" ]; then printf "%s/()n" "$f"; else printf "%s()n" "$f"; fi; done 2>/dev/null | head -n 200';
             const r = await txExec(b, cmd, 'quiet');
             const lines = String(r.output || '').split('\n');
             const home = lines.shift() || '';
@@ -33785,7 +33785,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const txChat = { msgs: [], busy: false, stop: false, reqId: null, steps: 0, allowRun: {}, allowWrite: false, allowAll: false, undo: [], usage: { in: 0, out: 0 }, cursorAgent: '', cliCont: {}, ask: null };
 
         function txAgentDef(id) { return TX_AGENTS.find(a => a.id === id) || null; }
-        function txQ(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
+        function txQ(s) { return "'" + String(s).replace(/'/g, "'()''") + "'"; }
 
         function txRefreshVault() {
             try { txVault = JSON.parse((window.AndroidBridge && window.AndroidBridge.aiVaultStatus && window.AndroidBridge.aiVaultStatus()) || '{}') || {}; } catch (e) { txVault = {}; }
@@ -34345,7 +34345,7 @@ Type any command above (e.g. pm list packages -d)</div>
         async function txReallyInside(b, abs) {
             const cwd = txAbs(b, txSess[b].cwd || '/');
             const n = txNonce();
-            const r = await txExec(b, 'for p in ' + txQ(abs) + ' ' + txQ(cwd) + '; do q=$(readlink -f "$p" 2>/dev/null); printf "@@R' + n + ' %s\\n" "${q:-$p}"; done', 'quiet');
+            const r = await txExec(b, 'for p in ' + txQ(abs) + ' ' + txQ(cwd) + '; do q=$(readlink -f "$p" 2>/dev/null); printf "@@R' + n + ' %s()n" "${q:-$p}"; done', 'quiet');
             const real = String(r.output || '').split('\n').filter(l => l.indexOf('@@R' + n + ' ') === 0).map(l => l.slice(n.length + 4));
             if (real.length !== 2 || !real[0] || !real[1] || real[1] === '/') return false;             // not sure: ask
             return real[0] === real[1] || real[0].indexOf(real[1] + '/') === 0;
@@ -34353,7 +34353,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function txNonce() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 
         // Output for a model: no colour codes, no keys, the start and the end of long output
-        function txStripAnsi(s) { return String(s || '').replace(/\x1b\[[0-9;?]*[ -\/]*[@-~]/g, '').replace(/\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g, '').replace(/\r(?!\n)/g, '\n'); }
+        function txStripAnsi(s) { return String(s || '').replace(/\x1b\[[0-9;?]*[ -\/]*[@-~]/g, '').replace(/\x1b\][^\x07\x1b]*(\x07|\x1b())/g, '').replace(/\r(?!\n)/g, '\n'); }
         function txRedact(s) {
             return String(s || '').replace(/(sk-ant-[A-Za-z0-9_\-]{6})[A-Za-z0-9_\-]{10,}/g, '$1…').replace(/(sk-(?:proj-)?[A-Za-z0-9]{4})[A-Za-z0-9_\-]{16,}/g, '$1…')
                 .replace(/(AIza[0-9A-Za-z_\-]{4})[0-9A-Za-z_\-]{20,}/g, '$1…').replace(/(github_pat_[A-Za-z0-9]{4})[A-Za-z0-9_]{20,}/g, '$1…')
@@ -34452,7 +34452,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (out.indexOf('@@NONE' + n) >= 0) return { exists: false };
             if (out.indexOf('@@NOTFILE' + n) >= 0) return { error: 'not a regular file' };
             if (out.indexOf('@@BIG' + n) >= 0) return { error: 'the file is over 1 MB' };
-            const m = new RegExp('@@B64' + n + ' (\\d+)\\n([\\s\\S]*?)@@END' + n).exec(out);
+            const m = new RegExp('@@B64' + n + ' (()d+)()n([()s()S]*?)@@END' + n).exec(out);
             if (!m) return { error: out.trim().slice(0, 200) || 'could not read it' };
             let bytes = null;
             try { bytes = txB64Decode(m[2].split('\n').filter(l => /^[A-Za-z0-9+\/=]+$/.test(l.trim())).join('')); } catch (e) { bytes = null; }   // atob refuses a broken string
@@ -34468,14 +34468,14 @@ Type any command above (e.g. pm list packages -d)</div>
             if (r.exit !== 0) return { error: (r.output || '').trim() || 'could not create the file' };
             for (let i = 0; i < bytes.length; i += CH) {
                 const b64 = txB64Encode(bytes.subarray(i, i + CH)).replace(/(.{76})/g, '$1\n');
-                r = await txExec(b, "printf '%s\\n' '" + b64 + "' | base64 -d >> " + tmp, 'quiet');
+                r = await txExec(b, "printf '%s()n' '" + b64 + "' | base64 -d >> " + tmp, 'quiet');
                 if (r.exit !== 0) { await txExec(b, 'rm -f ' + tmp, 'quiet'); return { error: (r.output || '').trim() || 'writing failed' }; }
                 if (txChat.stop) { await txExec(b, 'rm -f ' + tmp, 'quiet'); return { error: 'stopped' }; }
             }
             const n = txNonce();
             r = await txExec(b, 'if [ -e ' + q + ' ]; then m=$(stat -c %a ' + q + ' 2>/dev/null); [ -n "$m" ] && chmod "$m" ' + tmp + '; o=$(stat -c %u:%g ' + q + ' 2>/dev/null); [ -n "$o" ] && chown "$o" ' + tmp + ' 2>/dev/null; fi; mv -f ' + tmp + ' ' + q + ' && echo "@@W' + n + ' $(wc -c < ' + q + ' | tr -d \' \')"', 'quiet');
             if (r.exit !== 0) return { error: (r.output || '').trim() || 'could not finish writing' };
-            const wm = new RegExp('@@W' + n + ' (\\d+)').exec(String(r.output || ''));
+            const wm = new RegExp('@@W' + n + ' (()d+)').exec(String(r.output || ''));
             return { bytes: wm ? parseInt(wm[1], 10) : 0 };
         }
 
@@ -34521,12 +34521,12 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (e1 - s1 > 1999) e1 = s1 + 1999;
                 txNote('[' + who + ' reads ' + p + (act.attrs.start || act.attrs.end ? ', lines ' + s1 + '-' + e1 : '') + ']', b);
                 const nn = txNonce();          // markers with a fresh nonce: output of a job running in the background cannot pass for them
-                const r = await txExec(b, 'f=' + txQ(abs) + '; if [ -f "$f" ]; then printf "@@N' + nn + ' %s\\n" "$(wc -l < "$f" | tr -d " ")"; sed -n "' + s1 + ',' + e1 + 'p" "$f" | head -c 60000; elif [ -d "$f" ]; then echo "@@DIR' + nn + '"; ls -la "$f" | head -n 300; else echo "@@NONE' + nn + '"; fi', 'quiet');
+                const r = await txExec(b, 'f=' + txQ(abs) + '; if [ -f "$f" ]; then printf "@@N' + nn + ' %s()n" "$(wc -l < "$f" | tr -d " ")"; sed -n "' + s1 + ',' + e1 + 'p" "$f" | head -c 60000; elif [ -d "$f" ]; then echo "@@DIR' + nn + '"; ls -la "$f" | head -n 300; else echo "@@NONE' + nn + '"; fi', 'quiet');
                 const out = String(r.output || '');
                 if (out.indexOf('@@NONE' + nn) >= 0) return { text: '<result action="read" path="' + txAttr(p) + '" status="error">no such file</result>' };
                 const di = out.indexOf('@@DIR' + nn + '\n');
                 if (di >= 0) return { text: '<result action="read" path="' + txAttr(p) + '" status="directory">\n' + txForModel(out.slice(di + nn.length + 6)) + '\n</result>' };
-                const m = new RegExp('@@N' + nn + ' (\\d+)\\n([\\s\\S]*)$').exec(out);
+                const m = new RegExp('@@N' + nn + ' (()d+)()n([()s()S]*)$').exec(out);
                 if (!m) return { text: '<result action="read" path="' + txAttr(p) + '" status="error">' + txAttr(out.trim().slice(0, 300)) + '</result>' };
                 const n = parseInt(m[1], 10);
                 return { text: '<result action="read" path="' + txAttr(p) + '" lines="' + s1 + '-' + Math.min(e1, Math.max(n, s1)) + ' of ' + n + '">\n' + txRedact(m[2]) + '\n</result>' };
@@ -35456,7 +35456,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // Installs vim, nano, git, python and the rest through Termux's pkg (the steps run one by one in the Termux shell, visibly) and writes starter ~/.bashrc, ~/.vimrc and
         // ~/.nanorc. Only a marked block is ever written, so what the person has in those files stays; running it again refreshes the block, it never adds a second.
         const TX_STARTER = {
-         "bashrc": "# >>> ADB App Manager starter >>>\n# A starter for bash in Termux, written by ADB Application Manager (Terminal > Termux setup > Set up now).\n# Only the lines between the markers are managed: setting up again replaces them, anything above or below stays yours.\nexport EDITOR=vim VISUAL=vim PAGER=less LESS='-R -F -X'\nexport LANG=en_US.UTF-8\nexport HISTSIZE=50000 HISTFILESIZE=100000 HISTCONTROL=ignoreboth:erasedups\ncase $- in *i*)\n    shopt -s histappend checkwinsize cdspell globstar 2>/dev/null\n    # the prompt: folder, git branch, and a red $ when the last command failed\n    __adbmgr_branch() { local b; b=$(git symbolic-ref --short HEAD 2>/dev/null) && printf ' (%s)' \"$b\"; }\n    __adbmgr_prompt() { local rc=$? c='\\[\\e[32m\\]'; [ $rc -ne 0 ] && c='\\[\\e[31m\\]'; PS1=\"\\[\\e[36m\\]\\w\\[\\e[0m\\]\\[\\e[33m\\]$(__adbmgr_branch)\\[\\e[0m\\] ${c}\\$\\[\\e[0m\\] \"; }\n    PROMPT_COMMAND=__adbmgr_prompt\n    ;;\nesac\nalias ls='ls --color=auto' ll='ls -lh' la='ls -lAh' l='ls -CF'\nalias ..='cd ..' ...='cd ../..' ....='cd ../../..'\nalias grep='grep --color=auto' egrep='grep -E --color=auto' fgrep='grep -F --color=auto'\nalias df='df -h' du='du -h' free='free -h' cls='clear'\nalias gs='git status -sb' ga='git add' gc='git commit' gp='git push' gl='git log --oneline --graph --decorate -20' gd='git diff'\nalias py='python'\nalias sd='cd ~/storage/shared' dl='cd ~/storage/downloads'\nalias update='pkg update && pkg upgrade'\nmkcd() { mkdir -p -- \"$1\" && cd -- \"$1\"; }\nextract() {\n    case \"$1\" in\n        *.tar.gz|*.tgz) tar xzf \"$1\";; *.tar.bz2|*.tbz2) tar xjf \"$1\";; *.tar.xz|*.txz) tar xJf \"$1\";; *.tar) tar xf \"$1\";;\n        *.zip) unzip \"$1\";; *.gz) gunzip \"$1\";; *.bz2) bunzip2 \"$1\";; *.xz) unxz \"$1\";; *.7z) 7z x \"$1\";;\n        *) echo \"extract: do not know how to open: $1\" >&2; return 1;;\n    esac\n}\nserve() { python -m http.server \"${1:-8000}\"; }\nif [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi\n# <<< ADB App Manager starter <<<\n",
+         "bashrc": "# >>> ADB App Manager starter >>>\n# A starter for bash in Termux, written by ADB Application Manager (Terminal > Termux setup > Set up now).\n# Only the lines between the markers are managed: setting up again replaces them, anything above or below stays yours.\nexport EDITOR=vim VISUAL=vim PAGER=less LESS='-R -F -X'\nexport LANG=en_US.UTF-8\nexport HISTSIZE=50000 HISTFILESIZE=100000 HISTCONTROL=ignoreboth:erasedups\ncase $- in *i*)\n    shopt -s histappend checkwinsize cdspell globstar 2>/dev/null\n    # the prompt: folder, git branch, and a red $ when the last command failed\n    __adbmgr_branch() { local b; b=$(git symbolic-ref --short HEAD 2>/dev/null) && printf ' (%s)' \"$b\"; }\n    __adbmgr_prompt() { local rc=$? c='()[()e[32m()]'; [ $rc -ne 0 ] && c='()[()e[31m()]'; PS1=\"()[()e[36m()]()w()[()e[0m()]()[()e[33m()]$(__adbmgr_branch)()[()e[0m()] ${c}()$()[()e[0m()] \"; }\n    PROMPT_COMMAND=__adbmgr_prompt\n    ;;\nesac\nalias ls='ls --color=auto' ll='ls -lh' la='ls -lAh' l='ls -CF'\nalias ..='cd ..' ...='cd ../..' ....='cd ../../..'\nalias grep='grep --color=auto' egrep='grep -E --color=auto' fgrep='grep -F --color=auto'\nalias df='df -h' du='du -h' free='free -h' cls='clear'\nalias gs='git status -sb' ga='git add' gc='git commit' gp='git push' gl='git log --oneline --graph --decorate -20' gd='git diff'\nalias py='python'\nalias sd='cd ~/storage/shared' dl='cd ~/storage/downloads'\nalias update='pkg update && pkg upgrade'\nmkcd() { mkdir -p -- \"$1\" && cd -- \"$1\"; }\nextract() {\n    case \"$1\" in\n        *.tar.gz|*.tgz) tar xzf \"$1\";; *.tar.bz2|*.tbz2) tar xjf \"$1\";; *.tar.xz|*.txz) tar xJf \"$1\";; *.tar) tar xf \"$1\";;\n        *.zip) unzip \"$1\";; *.gz) gunzip \"$1\";; *.bz2) bunzip2 \"$1\";; *.xz) unxz \"$1\";; *.7z) 7z x \"$1\";;\n        *) echo \"extract: do not know how to open: $1\" >&2; return 1;;\n    esac\n}\nserve() { python -m http.server \"${1:-8000}\"; }\nif [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi\n# <<< ADB App Manager starter <<<\n",
          "vimrc": "\" >>> ADB App Manager starter >>>\n\" A starter for vim in Termux. Only the lines between the markers are managed; your own lines above or below stay.\nset nocompatible\nsyntax on\nfiletype plugin indent on\nset number ruler showcmd wildmenu incsearch hlsearch ignorecase smartcase\nset tabstop=4 shiftwidth=4 expandtab autoindent\nset mouse=a\nset backspace=indent,eol,start\nset encoding=utf-8\nset background=dark\nset nobackup noswapfile\n\" <<< ADB App Manager starter <<<\n",
          "nanorc": "# >>> ADB App Manager starter >>>\n# A starter for nano in Termux. Only the lines between the markers are managed; your own lines above or below stay.\nset linenumbers\nset mouse\nset tabsize 4\nset tabstospaces\nset autoindent\nset smooth\ninclude \"/data/data/com.termux/files/usr/share/nano/*.nanorc\"\n# <<< ADB App Manager starter <<<\n"
         };
@@ -35478,11 +35478,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const start = cp + ' >>> ADB App Manager starter >>>', end = cp + ' <<< ADB App Manager starter <<<';
             const b64 = btoa(unescape(encodeURIComponent(text)));
             const f = '"$HOME/' + file + '"';
-            return 'f=' + f + '; touch "$f"; sed -i ' + txQ('/^' + start.replace(/[\/.*[\]^$]/g, '\\$&') + '/,/^' + end.replace(/[\/.*[\]^$]/g, '\\$&') + '/d') + ' "$f"; ' +
+            return 'f=' + f + '; touch "$f"; sed -i ' + txQ('/^' + start.replace(/[\/.*[\]^$]/g, '()$&') + '/,/^' + end.replace(/[\/.*[\]^$]/g, '()$&') + '/d') + ' "$f"; ' +
                 '[ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; printf %s ' + txQ(b64) + ' | base64 -d >> "$f" && echo "wrote the starter block of ~/' + file + '"';
         }
         // login shells (the real terminal runs bash -l) read ~/.bash_profile, not ~/.bashrc: make that file pass on to ~/.profile and ~/.bashrc, unless the person has one
-        const TX_BASH_PROFILE_CMD = 'if [ ! -e "$HOME/.bash_profile" ] && [ ! -e "$HOME/.bash_login" ]; then printf \'%s\\n\' \'# ADB App Manager: a login shell reads ~/.profile and ~/.bashrc\' \'[ -f "$HOME/.profile" ] && . "$HOME/.profile"\' \'[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\' > "$HOME/.bash_profile" && echo "made ~/.bash_profile (it reads ~/.profile and ~/.bashrc)"; else echo "~/.bash_profile is yours: left as it is (make it read ~/.bashrc if you want the starter in login shells)"; fi';
+        const TX_BASH_PROFILE_CMD = 'if [ ! -e "$HOME/.bash_profile" ] && [ ! -e "$HOME/.bash_login" ]; then printf \'%s()n\' \'# ADB App Manager: a login shell reads ~/.profile and ~/.bashrc\' \'[ -f "$HOME/.profile" ] && . "$HOME/.profile"\' \'[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\' > "$HOME/.bash_profile" && echo "made ~/.bash_profile (it reads ~/.profile and ~/.bashrc)"; else echo "~/.bash_profile is yours: left as it is (make it read ~/.bashrc if you want the starter in login shells)"; fi';
         function txToolsSteps(o) {
             o = o || txTools;
             const pk = (o.pkgs || []).filter(id => TX_TOOL_PKGS.some(p => p.id === id));
@@ -35491,7 +35491,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (o.bashrc) steps.push({ label: 'Write the starter ~/.bashrc', cmd: txStarterCmd('.bashrc', TX_STARTER.bashrc, '#') + '; ' + TX_BASH_PROFILE_CMD });
             if (o.vimrc) steps.push({ label: 'Write the starter ~/.vimrc', cmd: txStarterCmd('.vimrc', TX_STARTER.vimrc, '"') });
             if (o.nanorc) steps.push({ label: 'Write the starter ~/.nanorc', cmd: txStarterCmd('.nanorc', TX_STARTER.nanorc, '#') });
-            if (pk.length) steps.push({ label: 'Check what is installed', cmd: pk.map(id => { const c = TX_TOOL_CMD[id] || id; return 'printf "%-10s %s\\n" ' + txQ(c) + ' "$(command -v ' + c + ' >/dev/null 2>&1 && echo installed || echo MISSING)"'; }).join('; ') });
+            if (pk.length) steps.push({ label: 'Check what is installed', cmd: pk.map(id => { const c = TX_TOOL_CMD[id] || id; return 'printf "%-10s %s()n" ' + txQ(c) + ' "$(command -v ' + c + ' >/dev/null 2>&1 && echo installed || echo MISSING)"'; }).join('; ') });
             return steps;
         }
         async function txToolsRun(useSaved) {
@@ -37003,7 +37003,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // adb frames a request with four hex digits, so a command of 64 KiB or more is corrupted on the way (SettingsDb.MAX_QUOTED_VALUE_BYTES)
         const SDB_MAX_QUOTED_BYTES = 62000;
         function sdbQuotedBytes(value) {
-            const q = "'" + value.replace(/'/g, "'\\''") + "'";
+            const q = "'" + value.replace(/'/g, "'()''") + "'";
             try { return unescape(encodeURIComponent(q)).length; } catch (e) { return q.length * 3; }
         }
 
@@ -37034,7 +37034,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function sdbMark(text, terms) {
             if (!terms.length) return escapeHtml(text);
-            const re = new RegExp('(' + terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+            const re = new RegExp('(' + terms.map(t => t.replace(/[.*+?^${}()|[\]()]/g, '()$&')).join('|') + ')', 'gi');
             return text.split(re).map((part, i) => i % 2 ? '<mark class="find-hit">' + escapeHtml(part) + '</mark>' : escapeHtml(part)).join('');
         }
 
@@ -37047,7 +37047,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function sdbShellCommand(ns, key, value) {
-            const q = s => "'" + String(s).replace(/'/g, "'\\''") + "'";
+            const q = s => "'" + String(s).replace(/'/g, "'()''") + "'";
             return 'settings put ' + ns + ' ' + q(key) + ' ' + q(value);
         }
 
@@ -39837,7 +39837,7 @@ Type any command above (e.g. pm list packages -d)</div>
             else if (what === 'off') ovlSet(o.id, 'disable');
             else if (what === 'name') { copyText(o.id); showToast('Copied the overlay name'); }
             else if (what === 'target') { copyText(o.target); showToast('Copied the target'); }
-            else if (what === 'cmd') { copyText('cmd overlay ' + (o.state === 1 ? 'disable' : 'enable') + " '" + o.id.replace(/'/g, "'\\''") + "'"); showToast('Copied the command'); }
+            else if (what === 'cmd') { copyText('cmd overlay ' + (o.state === 1 ? 'disable' : 'enable') + " '" + o.id.replace(/'/g, "'()''") + "'"); showToast('Copied the command'); }
         }
 
         // ---- the rest of the page ----
@@ -43921,7 +43921,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // xterm.js (assets/xterm.js, loaded the first time) draws it; the app runs the program on a pty (PtyShell + the helper libptyexec.so) and sends the bytes both ways.
         // Closing the screen (X or Back) leaves the session running; typing exit (or Restart) ends it.
         var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null, token: null, pend: [], pendLen: 0, failed: false };
-        const RT_SYMS = ['|', '~', '$', ';', ':', '"', "'", '\\', '`', '{', '}', '[', ']', '(', ')', '<', '>', '*', '&', '#', '=', '+', '_', '?', '!', '@', '%', '^', '.', ','];
+        const RT_SYMS = ['|', '~', '$', ';', ':', '"', "'", '()', '`', '{', '}', '[', ']', '(', ')', '<', '>', '*', '&', '#', '=', '+', '_', '?', '!', '@', '%', '^', '.', ','];
         function rtLoad(then) {
             if (window.Terminal && window.FitAddon) { then(); return; }
             if (rt.loading) return;
@@ -44060,7 +44060,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (ch.length === 1) {
                 if (c >= 97 && c <= 122) return String.fromCharCode(c - 96);
                 if (c >= 65 && c <= 90) return String.fromCharCode(c - 64);
-                if (ch === '[') return '\x1b'; if (ch === '\\') return '\x1c'; if (ch === ']') return '\x1d'; if (ch === '^') return '\x1e'; if (ch === '_' || ch === '/') return '\x1f';
+                if (ch === '[') return '\x1b'; if (ch === '()') return '\x1c'; if (ch === ']') return '\x1d'; if (ch === '^') return '\x1e'; if (ch === '_' || ch === '/') return '\x1f';
                 if (ch === ' ' || ch === '@' || ch === '2') return '\x00';
                 if (ch === '?') return '\x7f';
             }

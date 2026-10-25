@@ -1,0 +1,3 @@
+## 2024-10-25 - Missing ARIA labels on icon-only buttons
+**Learning:** Found a recurring accessibility issue where icon-only buttons (like ✕ for close, ⋯ for menus, and empty buttons with background images) lack `aria-label`s. This makes them invisible or confusing to screen reader users. The application heavily uses these minimal buttons in alerts, batch tools, and inline menus.
+**Action:** Adding explicit `aria-label` attributes to these icon-only buttons across `assets/index.html` to ensure full screen reader support and keyboard accessibility. Next time, always check icon buttons and empty elements with background sprites for appropriate ARIA labels.
