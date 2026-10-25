@@ -1,0 +1,31 @@
+ok   dark: every level has a row, and the key's dot, the bar and the tint of each row are the level's colour
+ok   dark: the level letter, the tag and the message lean toward the level's colour (nearer to it than to the text colour; a light page inks them darker), the time and pid stay muted
+ok   dark: Verbose's message is quieter than the other levels' (further from its colour)
+ok   dark: every coloured text reads at 4.5:1 or more on its row
+ok   pure black: every level has a row, and the key's dot, the bar and the tint of each row are the level's colour
+ok   pure black: the level letter, the tag and the message lean toward the level's colour (nearer to it than to the text colour; a light page inks them darker), the time and pid stay muted
+ok   pure black: Verbose's message is quieter than the other levels' (further from its colour)
+ok   pure black: every coloured text reads at 4.5:1 or more on its row
+ok   light: every level has a row, and the key's dot, the bar and the tint of each row are the level's colour
+ok   light: the level letter, the tag and the message lean toward the level's colour (nearer to it than to the text colour; a light page inks them darker), the time and pid stay muted
+ok   light: Verbose's message is quieter than the other levels' (further from its colour)
+ok   light: every coloured text reads at 4.5:1 or more on its row
+ok   dark, a green Monet accent: every level has a row, and the key's dot, the bar and the tint of each row are the level's colour
+ok   dark, a green Monet accent: the level letter, the tag and the message lean toward the level's colour (nearer to it than to the text colour; a light page inks them darker), the time and pid stay muted
+ok   dark, a green Monet accent: Verbose's message is quieter than the other levels' (further from its colour)
+ok   dark, a green Monet accent: every coloured text reads at 4.5:1 or more on its row
+ok   the Live Logcat rows: the Kotlin look is kept (no border but the bar, the card colour, a 4 px radius)
+ok   2. 1000 lines: the newest 800 are drawn, the line above them counts the 200 earlier ones
+ok      a poll with 3 new lines (and 20 already seen) appends 3 rows: the rows that were there are the same nodes, the 3 oldest left the window
+ok      the line above counts 203 earlier entries, the Warn chip counts the 3 new lines
+ok      two more lines of the newest entry grow its row (3 lines, still one row), the count follows
+ok      Warn hidden through the key: no Warn row is drawn, a new Warn line stays hidden, a new Error line is appended
+ok      showing Warn again brings the rows back (800 drawn, Warn among them)
+ok      at the bottom, a new line is scrolled into view
+ok      scrolled to the top, a new line is added without moving the reader
+ok      rows far below the screen are not laid out (content-visibility: auto), the ones on screen are
+ok   3. 2600 more lines: 2500 entries are kept (the oldest went, with their counts), 800 drawn, 1700 counted above
+ok      the tap on the line draws them all
+ok      and a poll then keeps all of them on the screen (2500 rows, the newest at the end)
+ok   4. at 360 px nothing scrolls sideways; a 70-letter tag and a 120-letter message wrap
+errors: []
