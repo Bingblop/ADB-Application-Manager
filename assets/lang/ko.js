@@ -5305,7 +5305,25 @@ x: {
 "Turn on Wireless Debugging": "무선 디버깅 켜기",
 "Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.": "연결이 되거나 되지 않는 이유: Wi-Fi, 무선 디버깅, 저장된 포트, Shizuku, 그리고 이 앱이 스스로 부여할 수 있는 하나의 권한.",
 "Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.": "무선 디버깅이 켜졌습니다. ‘포트 자동 감지’를 눌러 새 포트에 연결하세요.",
-"Wireless Debugging switch": "무선 디버깅 스위치"
+"Wireless Debugging switch": "무선 디버깅 스위치",
+"A screenshot or recording is already running.": "스크린샷 또는 녹화가 이미 진행 중입니다.",
+"Nothing is recording.": "녹화 중인 것이 없습니다.",
+"Record screen": "화면 녹화",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "녹화 중입니다. 돌아와서 ‘녹화 중지’를 누르세요. 3분 뒤에는 저절로 멈춥니다.",
+"Records the screen for up to 3 minutes": "화면을 최대 3분간 녹화합니다",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "화면 녹화에는 작동 모드가 필요합니다: ADB, 무선 디버깅, Shizuku 또는 Root.",
+"Screen recording works in the app on a phone, not in a browser.": "화면 녹화는 브라우저가 아니라 휴대폰의 앱에서 작동합니다.",
+"Screenshot": "스크린샷",
+"Screenshot in 3 seconds. Open the screen you want.": "3초 뒤에 스크린샷을 찍습니다. 원하는 화면을 여세요.",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "스크린샷에는 작동 모드가 필요합니다: ADB, 무선 디버깅, Shizuku 또는 Root.",
+"Screenshots work in the app on a phone, not in a browser.": "스크린샷은 브라우저가 아니라 휴대폰의 앱에서 작동합니다.",
+"Stop recording": "녹화 중지",
+"Stopping the recording…": "녹화를 중지하는 중…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "3초 뒤 휴대폰의 스크린샷을 찍어, 원하는 화면을 열 시간을 줍니다",
+"The phone did not save it.": "휴대폰이 저장하지 않았습니다.",
+"The recording could not be started.": "녹화를 시작할 수 없습니다.",
+"The screenshot could not be started.": "스크린샷을 시작할 수 없습니다.",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "이 기능에는 작동 모드가 필요합니다: ADB, 무선 디버깅, Shizuku 또는 Root."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6477,5 +6495,7 @@ p: [
   ["From your wallpaper (#{0})", "배경화면에서 (#{0})"],
   ["From the color above (#{0})", "위의 색상에서 (#{0})"],
   ["From Google blue: #{0} is too grey for this style", "Google 파란색 기준: #{0}은(는) 이 스타일에 쓰기에는 너무 회색입니다"],
+["Saved {0} ({1}).", "{0} 저장됨 ({1})."],
+["The phone did not save it: {0}", "휴대폰이 저장하지 않았습니다: {0}"],
 ]
 };

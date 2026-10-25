@@ -642,6 +642,18 @@ Needs Android 11 or newer, this app paired with Wireless Debugging, and the Wi-F
 - [ ] **Nothing else changes.** Type a wrong port by hand in the Wireless Debugging card and tap **Connect**: it fails as before and does not jump to another port (a typed port is never replaced). Turn Wireless debugging off completely and select the mode: it says it is not connected; no error loop, no crash.
 - [ ] **A second phone is never picked.** If another phone with Wireless debugging on is on the same Wi-Fi, the app still only reconnects to the address it was saved with (or this phone's own Wi-Fi address when it was saved as 127.0.0.1).
 
+## 40. Screenshot and Record screen (Console tab)
+
+None of this has been run on a phone yet. Open the Console tab, ADB Shell part, with a working mode connected (ADB TCP, Wireless Debugging, Shizuku or Root). Repeat the first two items in a second mode if you can, and write down which.
+
+- [ ] **Screenshot.** Tap **Screenshot**: the toast says it is coming in 3 seconds. Open another screen quickly. About 3 seconds later a toast names `Pictures/ADB App Manager/screenshot-....png` with its size. Open the file in your Gallery or file manager: it shows the screen you opened, not this app. Write down whether the Gallery listed it at once or only after a restart.
+- [ ] **Record screen.** Tap **Record screen**: the button reads **Stop recording**. Switch to another app, scroll around for about 10 seconds, come back and tap **Stop recording**. A toast names `Movies/ADB App Manager/screenrecord-....mp4` with its size, the button reads Record screen again, and the video plays to the end without being cut off.
+- [ ] **The 3-minute limit.** Start a recording and leave it: after 3 minutes the file is finished by itself and the button resets. (Android's own limit; skip this one if you are short of time.)
+- [ ] **One at a time.** While a recording runs, tap **Screenshot**: the toast says one is already running. Tap **Record screen** during the 3 seconds before a screenshot: the same.
+- [ ] **No working mode.** In Read-Only mode both buttons say they need a working mode, and nothing is created.
+- [ ] **Protected screens.** Take a screenshot of an app that blocks screenshots: the file is saved but black, which is Android's doing; the toast still names the file.
+- [ ] **Another language:** the two buttons, their hints and the toasts are translated and nothing is cut off.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue

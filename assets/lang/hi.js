@@ -5305,7 +5305,25 @@ x: {
 "Turn on Wireless Debugging": "वायरलेस डीबगिंग चालू करें",
 "Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.": "कनेक्शन क्यों चलता है या नहीं चलता: Wi-Fi, वायरलेस डीबगिंग, सहेजा हुआ पोर्ट, Shizuku और वह एक अनुमति जो यह ऐप खुद को दे सकता है।",
 "Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.": "वायरलेस डीबगिंग चालू है। नए पोर्ट से जुड़ने के लिए “पोर्ट अपने-आप खोजें” पर टैप करें।",
-"Wireless Debugging switch": "वायरलेस डीबगिंग स्विच"
+"Wireless Debugging switch": "वायरलेस डीबगिंग स्विच",
+"A screenshot or recording is already running.": "स्क्रीनशॉट या रिकॉर्डिंग पहले से चल रही है।",
+"Nothing is recording.": "कुछ भी रिकॉर्ड नहीं हो रहा।",
+"Record screen": "स्क्रीन रिकॉर्ड करें",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "रिकॉर्डिंग चल रही है। वापस आकर “रिकॉर्डिंग रोकें” पर टैप करें; 3 मिनट बाद यह अपने-आप रुक जाती है।",
+"Records the screen for up to 3 minutes": "स्क्रीन को 3 मिनट तक रिकॉर्ड करता है",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "स्क्रीन रिकॉर्डिंग के लिए कार्य मोड चाहिए: ADB, वायरलेस डीबगिंग, Shizuku या Root।",
+"Screen recording works in the app on a phone, not in a browser.": "स्क्रीन रिकॉर्डिंग ब्राउज़र में नहीं, फ़ोन पर ऐप में काम करती है।",
+"Screenshot": "स्क्रीनशॉट",
+"Screenshot in 3 seconds. Open the screen you want.": "3 सेकंड में स्क्रीनशॉट। जो स्क्रीन चाहिए उसे खोलें।",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "स्क्रीनशॉट के लिए कार्य मोड चाहिए: ADB, वायरलेस डीबगिंग, Shizuku या Root।",
+"Screenshots work in the app on a phone, not in a browser.": "स्क्रीनशॉट ब्राउज़र में नहीं, फ़ोन पर ऐप में काम करते हैं।",
+"Stop recording": "रिकॉर्डिंग रोकें",
+"Stopping the recording…": "रिकॉर्डिंग रोकी जा रही है…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "3 सेकंड बाद फ़ोन का स्क्रीनशॉट लेता है, ताकि आप मनचाही स्क्रीन खोल सकें",
+"The phone did not save it.": "फ़ोन ने इसे सहेजा नहीं।",
+"The recording could not be started.": "रिकॉर्डिंग शुरू नहीं हो सकी।",
+"The screenshot could not be started.": "स्क्रीनशॉट शुरू नहीं हो सका।",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "इसके लिए कार्य मोड चाहिए: ADB, वायरलेस डीबगिंग, Shizuku या Root।"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6477,5 +6495,7 @@ p: [
   ["From your wallpaper (#{0})", "आपके वॉलपेपर से (#{0})"],
   ["From the color above (#{0})", "ऊपर के रंग से (#{0})"],
   ["From Google blue: #{0} is too grey for this style", "Google नीले से: #{0} इस स्टाइल के लिए बहुत ग्रे है"],
+["Saved {0} ({1}).", "{0} सहेजा गया ({1})।"],
+["The phone did not save it: {0}", "फ़ोन ने इसे सहेजा नहीं: {0}"],
 ]
 };

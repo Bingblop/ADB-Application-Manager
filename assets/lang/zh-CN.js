@@ -5305,7 +5305,25 @@ x: {
 "Turn on Wireless Debugging": "开启无线调试",
 "Why a connection works or does not: Wi-Fi, Wireless Debugging, the saved port, Shizuku and the one permission this app can give itself.": "连接为何可用或不可用：Wi-Fi、无线调试、已保存的端口、Shizuku，以及此应用可以授予自己的那一项权限。",
 "Wireless Debugging is on. Tap Auto-Detect Ports to connect to its new port.": "无线调试已开启。点按“自动检测端口”连接到新端口。",
-"Wireless Debugging switch": "无线调试开关"
+"Wireless Debugging switch": "无线调试开关",
+"A screenshot or recording is already running.": "已有截图或录制正在进行。",
+"Nothing is recording.": "当前没有在录制。",
+"Record screen": "录制屏幕",
+"Recording. Come back and tap Stop recording; it stops by itself after 3 minutes.": "正在录制。请回来点按“停止录制”；3 分钟后会自动停止。",
+"Records the screen for up to 3 minutes": "最长录制屏幕 3 分钟",
+"Screen recording needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "录制屏幕需要一种工作模式：ADB、无线调试、Shizuku 或 Root。",
+"Screen recording works in the app on a phone, not in a browser.": "录制屏幕需在手机上的应用中使用，不能在浏览器中使用。",
+"Screenshot": "截图",
+"Screenshot in 3 seconds. Open the screen you want.": "3 秒后截图。请打开你想要的画面。",
+"Screenshots need a working mode: ADB, Wireless Debugging, Shizuku or Root.": "截图需要一种工作模式：ADB、无线调试、Shizuku 或 Root。",
+"Screenshots work in the app on a phone, not in a browser.": "截图需在手机上的应用中使用，不能在浏览器中使用。",
+"Stop recording": "停止录制",
+"Stopping the recording…": "正在停止录制…",
+"Takes a screenshot of the phone after 3 seconds, so you can open the screen you want": "3 秒后对手机截图，让你有时间打开想要的画面",
+"The phone did not save it.": "手机没有保存。",
+"The recording could not be started.": "无法开始录制。",
+"The screenshot could not be started.": "无法开始截图。",
+"This needs a working mode: ADB, Wireless Debugging, Shizuku or Root.": "这需要一种工作模式：ADB、无线调试、Shizuku 或 Root。"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6477,5 +6495,7 @@ p: [
   ["From your wallpaper (#{0})", "来自你的壁纸 (#{0})"],
   ["From the color above (#{0})", "来自上方的颜色 (#{0})"],
   ["From Google blue: #{0} is too grey for this style", "来自 Google 蓝：#{0} 对此样式来说太灰"],
+["Saved {0} ({1}).", "已保存 {0}（{1}）。"],
+["The phone did not save it: {0}", "手机没有保存：{0}"],
 ]
 };
