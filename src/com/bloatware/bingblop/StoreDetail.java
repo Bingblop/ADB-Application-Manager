@@ -40,9 +40,7 @@ public final class StoreDetail {
     public static JSONObject fromFile(File f, String pkg) {
         if (f == null || !f.isFile() || pkg == null || pkg.isEmpty()) return null;
         String head = "{\"p\":" + JSONObject.quote(pkg) + ",";
-        BufferedReader r = null;
-        try {
-            r = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"), 65536);
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"), 65536)) {
             String line;
             while ((line = r.readLine()) != null) {
                 if (!line.startsWith(head)) continue;
@@ -50,8 +48,6 @@ public final class StoreDetail {
                 return o.optJSONObject("v");
             }
         } catch (Exception ignored) {
-        } finally {
-            if (r != null) try { r.close(); } catch (Exception ignored) {}
         }
         return null;
     }
