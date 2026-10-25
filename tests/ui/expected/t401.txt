@@ -1,0 +1,11 @@
+ok   1. an extraction runs and shows its line
+ok      View contents of a tar.zst now is refused in words
+ok      ... nothing is asked of the app
+ok      the line and its Cancel still belong to the extraction
+ok      the extraction's progress goes to its own line
+ok      when it ends the line goes
+ok   2. with nothing running the open goes ahead and waits in the line
+ok   3. while a compression runs it is refused the same way
+ok      while a file job runs it says so
+ok   no page errors
+all passed

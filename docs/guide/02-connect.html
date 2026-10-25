@@ -8,7 +8,7 @@
 <ul>
 <li><b>ADB over TCP</b> and <b>Wireless Debugging</b> let the app's own built-in copy of ADB talk to the phone's ADB service, from the inside, as the shell user.</li>
 <li><b>Shizuku</b> is a separate app that has already started a helper running as the shell user (or as root) and lets this app use it.</li>
-<li><b>Root</b> runs the commands as root through the phone's <code>su</code> program, which your root manager (Magisk, KernelSU or APatch) controls. The app counts Root as ready only when the root manager has really allowed it.</li>
+<li><b>Root</b> runs the commands as root through the phone's <code>su</code> program, which your root manager (such as KernelSU or APatch) controls. The app counts Root as ready only when the root manager has really allowed it.</li>
 <li><b>Read-Only</b> is what you get when none of these is ready: the app can look, and cannot change.</li>
 <li><b>Auto</b> is not a route of its own. It tries some of the above in a fixed order, and uses the first that is ready.</li>
 </ul>
@@ -245,12 +245,19 @@
 <li>In Shizuku, choose the option for rooted phones and approve the root request from your root manager.</li>
 <li>Shizuku has a setting to start by itself when the phone starts, for rooted phones.</li>
 </ol>
+<h5>Method 4: from this app, over a connection you already have</h5>
+<ol class="hg-steps">
+<li>Connect <a href="#mode-tcp">ADB over TCP</a> or <a href="#mode-wireless">Wireless Debugging</a> in this app first (the card must say it is connected).</li>
+<li>Open the Shizuku app once. It writes its own start script (<code>start.sh</code>, in its data folder) the first time; this app does not carry a copy.</li>
+<li>Back here, in the Shizuku card, tap <b>Start Shizuku (ADB)</b>. The app runs that script through your ADB connection and then checks whether Shizuku answers. If it does, tap <b>Authorize &amp; Use Shizuku</b>. If it does not, the card shows what the script printed.</li>
+</ol>
+<p>This is the same command as Method 2, run by the app instead of a computer. It does not survive a restart either: after the phone restarts, start Shizuku again.</p>
 
 <h4>Connecting this app to Shizuku</h4>
 <ol class="hg-steps">
 <li>Check that Shizuku says it is running.</li>
 <li>In this app, tap the badge and find the <b>Shizuku ADB Service</b> card. Its tag tells you where things stand.</li>
-<li>Tap <b>Authorize &amp; Use Shizuku</b>. Shizuku shows its own question asking whether to allow ADB Application Manager Pro to use Shizuku. Tap the button that allows it (Shizuku's wording may differ a little between versions).</li>
+<li>Tap <b>Authorize &amp; Use Shizuku</b>. Shizuku shows its own question asking whether to allow ADB/Root Full System Toolbox to use Shizuku. Tap the button that allows it (Shizuku's wording may differ a little between versions).</li>
 <li>A message says "Shizuku authorized. Using Shizuku mode.". The tag becomes <b>AUTHORIZED</b>, and the badge turns green and reads "Shizuku ADB (UID 2000)".</li>
 </ol>
 <p>The card also has <b>Open Shizuku</b>, which opens the Shizuku app, and <b>Check Status</b>, which looks again. Authorizing Shizuku makes Shizuku your working mode, and it works alongside ADB over TCP.</p>
@@ -279,8 +286,9 @@
 <p class="hg-lead">Root means the phone has been modified so that apps can ask for full administrator rights. If your phone is already rooted, this mode is the simplest and the most lasting.</p>
 
 <h4>What root is</h4>
-<p>Android normally stops anyone from changing the system. <b>Rooting</b> adds a program called <code>su</code> (for "superuser") and a manager app that decides which apps may use it. The three managers this app names are Magisk, KernelSU and APatch. With root, a command runs as the all-powerful root user, one step above the shell user that ADB uses.</p>
-<div class="hg-danger"><b>Risky.</b> This app cannot root your phone, and it will not help you do it. Rooting is done with other tools, usually needs an unlocked bootloader (the program that starts Android, which is normally locked), normally erases the phone, usually voids the warranty and, on Samsung phones, permanently trips the Knox counter (a Samsung record that the phone was modified), which can disable Samsung Pay and Secure Folder. Do not root a phone just to use this app: Wireless Debugging or Shizuku does most of the same work on Android 11 and newer. If you root, back up everything first.</div>
+<p>Android normally stops anyone from changing the system. <b>Rooting</b> adds a program called <code>su</code> (for "superuser") and a manager app (the root manager) that decides which apps may use it. With root, a command runs as the all-powerful root user, one step above the shell user that ADB uses.</p>
+<div class="hg-danger"><b>Risky.</b> This app cannot root your phone, and it will not help you do it. Rooting is done with other tools, normally erases the phone, usually voids the warranty and, on Samsung phones, permanently trips the Knox counter (a Samsung record that the phone was modified), which can disable Samsung Pay and Secure Folder. Do not root a phone just to use this app: Wireless Debugging or Shizuku does most of the same work on Android 11 and newer. If you root, back up everything first.</div>
+<div class="hg-danger"><b>Locked bootloader.</b> Never flash a patched boot image onto a phone whose bootloader is locked; it can leave the phone unable to start. This app only uses root that is already on the phone. It never installs a root manager and never roots a phone.</div>
 
 <h4>Before you start</h4>
 <ul>
@@ -300,7 +308,7 @@
 <h4>How the app knows that root really works</h4>
 <p>Having a <code>su</code> program is not enough: your root manager may have refused this app. So, while Root is your chosen mode, the app asks <code>su</code> to run <code>id</code> and counts Root as working only when the answer says <code>uid=0</code> (the root user). The four tags mean:</p>
 <table class="hg-table"><thead><tr><th>Tag</th><th>Meaning</th></tr></thead><tbody>
-<tr><td><b>NOT FOUND</b></td><td>No <code>su</code> program on the phone.</td></tr>
+<tr><td><b>NOT FOUND</b></td><td>No <code>su</code> program the app can see. KernelSU, KernelSU Next and APatch show <code>su</code> only to the apps they allow, so on such a phone this app has to be allowed there first.</td></tr>
 <tr><td><b>AVAILABLE</b></td><td>A <code>su</code> program exists, but Root is not your chosen mode. The app has not asked it anything, so no root prompt appears.</td></tr>
 <tr><td><b>ACTIVE</b></td><td>Root is your chosen mode and <code>su</code> answered <code>uid=0</code>. The badge is violet.</td></tr>
 <tr><td><b>DENIED</b> (orange)</td><td>Root is your chosen mode, but <code>su</code> did not answer <code>uid=0</code>: your root manager refused this app, or you did not answer in time. The badge reads "Root (Superuser) (not ready)".</td></tr>
@@ -314,6 +322,7 @@
 <li><b>Backups of app data.</b> Backing up an app's APK, permissions and app ops works in any working mode, but including its <i>data</i> (logins, saved games, settings) is root-only. The Backup sheet says "Uses Root. The app is stopped while its data is copied." Without root, the switch is greyed out with the words "Needs Root, which was not found on this phone." Restoring data needs root too (<a href="#apps-backup">Backups</a>).</li>
 <li><b>Removing system apps directly.</b> With ADB or Shizuku, if Android refuses to remove a system app for your user, the app tries a fallback (a direct call to Android's package service); with root the app does not use that fallback. In every case the app's file stays in the system area.</li>
 <li>Root reaches places the shell user cannot, such as other apps' private folders. That is how data backup works.</li>
+<li><b>The Root Features tab.</b> Its rows unlock with root: the hand-off to your root manager to manage which apps get root, the switches for single parts of an app (activities, receivers, services, providers), and the switches that turn off the parts of apps that belong to a tracker. App components and the tracker switches also unlock when Shizuku runs as the Android system user (UID 1000) or as root (UID 0), because Android lets root (UID 0) and the system user (UID 1000) change an app's parts but refuses the ADB shell user (UID 2000). The hand-off to your root manager unlocks under that Shizuku too, but only on a phone that has <code>su</code> (a rooted phone), since it opens the root manager installed there. What each one does and what it risks is in <a href="#tab-rootfeatures">Root Features</a>.</li>
 </ul>
 
 <h4>Risks</h4>
@@ -325,9 +334,9 @@
 
 <h4>If it does not work</h4>
 <ul>
-<li><b>Tag says NOT FOUND.</b> No <code>su</code> was found. The root manager may not be installed or may have been disabled. Fix that, then open the sheet again or tap <b>Check Status</b> on the Shizuku card, which re-checks everything.</li>
+<li><b>Tag says NOT FOUND.</b> No <code>su</code> was found. The root manager may not be installed or may have been disabled, or, with KernelSU, KernelSU Next or APatch, it has not allowed this app yet (they show <code>su</code> only to the apps they allow: allow the app in the manager's list, or use <b>Open root manager</b> on Root Features, see <a href="#rootfeatures-grant">Getting Super User</a>). Fix that, then open the sheet again or tap <b>Check Status</b> on the Shizuku card, which re-checks everything.</li>
 <li><b>"Root was denied or is not available".</b> You tapped Deny, or the root manager did not answer in time. Tap <b>Request Root Access</b> again and approve it, or look for the app in the root manager's list and allow it there.</li>
-<li><b>Tag says DENIED, and the badge says "Root (Superuser) (not ready)".</b> <code>su</code> exists but did not answer as root for this app, so nothing privileged runs. Open your root manager (Magisk, KernelSU or APatch), find ADB Application Manager Pro in its list of apps, set it to allow, then choose Root again with <b>Request Root Access</b> in Working Modes. If you allowed it after the question had timed out, the tag stays DENIED until you do this.</li>
+<li><b>Tag says DENIED, and the badge says "Root (Superuser) (not ready)".</b> <code>su</code> exists but did not answer as root for this app, so nothing privileged runs. Open your root manager, find ADB/Root Full System Toolbox in its list of apps, set it to allow, then choose Root again with <b>Request Root Access</b> in Working Modes. If you allowed it after the question had timed out, the tag stays DENIED until you do this.</li>
 </ul>
 </section>
 
@@ -362,7 +371,7 @@
 <li>Freeze, enable, suspend, force stop, clear data, uninstall, reinstall, or launch an app through the menu.</li>
 <li>Run batch actions, apply profiles, or make or restore backups.</li>
 <li>Switch permissions, app ops or components on and off.</li>
-<li>Read the log in Live Logcat (Console tab), change Hidden Settings or overlays, or use the working-mode shell in the Console or the Terminal. The Task Manager works only in part: its CPU, RAM, battery and network views work, but its process list and GPU view need a working mode.</li>
+<li>Read the log in Live Logcat, change Hidden Settings or overlays, or use the working-mode shell in the ADB Shell or the Terminal of the Console tab. The Task Manager works only in part: its CPU, RAM, battery and network views work, but its process list and GPU view need a working mode.</li>
 <li>Trim the caches of every app (<b>Trim Caches</b> in the SD Maid tab, see <a href="#tab-sdm">SD Maid</a>). The button shows a padlock.</li>
 <li>Install silently. The <b>No privilege</b> choice of the APK Installer's <b>Authorizer</b> setting hands the file to Android's own installer, which asks you to confirm. This app is listed under Android's "Install unknown apps" (it has its own row, <b>Install unknown apps</b>, in the <a href="#app-permissions">Permissions sheet</a>), and Android asks whether to allow it the first time an install is made this way.</li>
 </ul>
@@ -375,7 +384,7 @@
 </ul>
 
 <h4>The lock symbol</h4>
-<p>In Read-Only, buttons that would change something show a small lock and look dimmed: the permission buttons (GRANTED, REVOKED, DENIED), the app-op mode buttons (the lock is on the mode that is set), and the ENABLE, DISABLE and STOP buttons of an app's components, and LAUNCH (SHELL) for components that are not exported. A tap still helps: instead of doing nothing it opens a sheet called <b>Working Mode Required</b>, which says which action needs one and offers <b>Set Up Working Mode</b> or <b>Cancel</b>. With a working mode on, the locks go away, except on <i>install-time</i> permissions, which nobody can change (<a href="#basics">Words you will see</a>).</p>
+<p>In Read-Only, buttons that would change something show a small lock and look dimmed: the permission buttons (GRANTED, REVOKED, DENIED), the app-op mode buttons (the lock is on the mode that is set), the STOP buttons of an app's services, and LAUNCH (SHELL) for components that are not exported. A tap still helps: instead of doing nothing it opens a sheet called <b>Working Mode Required</b>, which says which action needs one and offers <b>Set Up Working Mode</b> or <b>Cancel</b>. With a working mode on, these locks go away, except on <i>install-time</i> permissions, which nobody can change (<a href="#basics">Words you will see</a>). The ENABLE and DISABLE buttons of an app's screens and components are locked too, but their lock means "Needs Super User (Root)": it lifts in Root mode (with su granted) and under a Shizuku server running as the system user (UID 1000) or as root (UID 0) — the users Android lets change a component — and stays for the ADB shell user (UID 2000: ADB over TCP, Wireless Debugging and Shizuku started over ADB) and in Read-Only, where a tap goes the Root way instead (<a href="#rootfeatures-components">App components under Super User</a>).</p>
 <div class="hg-note"><b>Tip.</b> Starting in Read-Only costs nothing and risks nothing. You can look around, learn what your phone has, and set a working mode up when you are ready. See <a href="#modes-overview">Working modes</a> to choose.</div>
 </section>
 
@@ -390,14 +399,16 @@
 </ul>
 
 <h4>The permissions sheet</h4>
-<p>The first time the app opens, a couple of seconds after the list appears, a sheet called <b>Allow a few permissions</b> slides up. At the top of this first-launch sheet is a <b>Language</b> drop-down: the app starts in the language of your phone when it has it (Español, Français, Deutsch and the others listed under <a href="#prefs">Language</a>) and in English otherwise, and the drop-down changes it at once. You can open the sheet again at any time from the <b>About</b> tab, with the <b>Permissions</b> button; there it is called <b>Permissions</b>, and it says "Allow what you like and skip the rest: every one can be changed later."</p>
+<p>The first time the app opens, a couple of seconds after the list appears, a sheet called <b>Allow a few permissions</b> slides up. At the top of this first-launch sheet is a <b>Language</b> drop-down: the app starts in the language of your phone when it has it (Español, Français, Deutsch and the others listed under <a href="#prefs">Language</a>) and in English otherwise, and the drop-down changes it at once. You can open the sheet again at any time from the <b>About</b> tab, with the <b>Permissions</b> button; there it is called <b>Permissions</b>, and it says "Allow what you like and skip the rest: every one can be changed later." In <b>Settings</b>, right under Language, the <b>Application Permissions</b> button opens the same sheet with every permission marked <b>Granted</b> or <b>Not granted</b>, a <b>Grant</b> button on each missing one and a <b>Grant all</b> button.</p>
+<p>If Shizuku is running but has not authorized this app, and no other working mode is ready (ADB over TCP 5555, Wireless Debugging or Root) while the mode is Auto or Shizuku, the app asks Shizuku for it with Shizuku's own dialog as it starts, on every start, until you have said no twice (the Shizuku card in Working Modes always asks when you tap it). On the first launch the permissions sheet comes after your answer, so with a yes it can already grant everything through Shizuku.</p>
 <ol class="hg-steps">
-<li>Each row has a name, a one-line reason, and either an <b>Allow</b> button or a tick and the word "Allowed".</li>
-<li>Tap <b>Allow</b> on a row to open the Android screen for it (switch it on, then press Back to return), or, for the ones the app can grant itself, to grant it at once.</li>
-<li><b>Allow all</b>: with a working mode on, the app grants at once everything that has a command (Allow Restricted Settings first, then the rest) and starts again so that it all takes effect. What has no command, or what the phone refused, is opened one Android screen after another; closing the sheet cancels the rest.</li>
+<li>Each row has a name, the Android name of the permission under it (such as <code>READ_LOGS</code>), a one-line reason, and either an <b>Allow</b> button, a tick and the word "Allowed", or, for what only a working mode can grant while none is on, a lock and "Needs ADB, Shizuku or root".</li>
+<li>Tap <b>Allow</b> on a row. With a working mode on, the app grants it at once by command (All files access included). Without one, the Android screen for it opens (switch it on, then press Back to return), or, for Bluetooth Connect and Notifications, Android's own question. <b>Live updates</b> (Android 16 and newer) has no command: its <b>Allow</b> asks for Notifications first (by command with a working mode, otherwise with Android's own question) and, once that is allowed, opens the phone's Live updates screen for this app by itself.</li>
+<li><b>Allow all</b>: with a working mode on, the app grants at once everything that has a command (Allow Restricted Settings first, then the rest) and then restarts: a toast says "Restarting the app", the app closes and a moment later opens again by itself, in a fresh process, so that it all takes effect (the shell behind the working mode starts it again). What the phone refused, and what has no command, is on the sheet again after the restart; without a working mode everything is asked for one after another, and closing the sheet cancels the rest. Locked rows are left out. On Android 16 and newer <b>Live updates</b> comes last: no command can switch it on, so after Notifications the phone's Live updates screen opens and you switch the app on there.</li>
 <li><b>Copy grant commands</b> (shown while something is still missing): copies, one per line, the <code>adb shell pm grant</code> and <code>adb shell appops set</code> commands for what the phone does not hold yet, with this app's package name filled in. There is no line for <b>Allow Restricted Settings</b>: the app could not tell afterwards that it was done, so use its <b>Allow</b> button or <b>Allow all</b> for that one. Run the commands on a computer with USB debugging; when you come back to the app the sheet reads the phone again and shows the ticks by itself.</li>
-<li><b>Not now</b> closes the sheet. When everything is allowed, the same button says <b>Done</b>. If you allowed something while the first-launch sheet was open, closing it starts the app again so that the change takes effect everywhere.</li>
+<li><b>Not now</b> closes the sheet. When everything is allowed, the same button says <b>Done</b>. If you allowed something while the sheet was open, closing it starts the app again so that the change takes effect everywhere.</li>
 </ol>
+<p>The first time a working mode is ready after the app was installed, while permissions are still missing, the app asks once: "Grant all remaining permissions with it now?" Yes grants them all by command, and the app restarts the same way (it closes and comes back by itself). It is not asked while the permissions sheet is open (its <b>Allow all</b> does the same), and not again after that.</p>
 <p>On Android 10 and older there is no "All files" switch, so <b>Allow</b> shows Android's ordinary storage question instead.</p>
 <p>Separately, when you do something that needs file access and the app has neither that nor a working mode, it opens the same sheet with only that one row, headed "File access needed", and carries on once you allow it.</p>
 
@@ -411,12 +422,16 @@
 <tr><td>Read/Write External Storage</td><td>The older storage permission that some apps still check. On Android 10 and older, it is the storage permission itself.</td><td>Nothing noticeable on Android 11 and newer.</td><td>Yes</td></tr>
 <tr><td>Write Secure Settings</td><td>Lets the app change a few protected system settings used by some advanced features.</td><td>Those advanced features. Nothing in everyday use is known to need it.</td><td>Yes</td></tr>
 <tr><td>Dump system services (DUMP)</td><td>Lets the app read the phone's own status reports (<code>dumpsys</code>), such as battery, power and memory details, without asking the shell each time.</td><td>The app asks the shell for those reports instead. Nothing in everyday use depends on it.</td><td>Yes</td></tr>
+<tr><td>Read Logs</td><td>Android's permission to read the system log (logcat) of every app. Nothing in the app depends on it: <a href="#tab-logcat">Live Logcat</a> and its recordings read the log through the working mode.</td><td>Nothing changes. Live Logcat needs a working mode either way; without one it shows <i>Working Mode Required</i>.</td><td>Yes</td></tr>
+<tr><td>Bluetooth Connect</td><td>Lists the Bluetooth devices the phone is paired with (Connected Devices) and sends files to one. Android 12 and newer ask for it; older versions do not need it, and the row says "Not needed".</td><td>Connected Devices cannot list paired Bluetooth devices.</td><td>Yes</td></tr>
+<tr><td>Notifications</td><td>Lets the app show its notifications, such as the Wireless debugging pairing prompt. Android 13 and newer ask for it; older versions do not need it.</td><td>Those notifications do not appear.</td><td>Yes</td></tr>
+<tr><td>Live updates</td><td>Shows the progress of the <b>Kill Apps</b> notification in the status bar as a Live Update (a small chip such as 3/12). Android 16 and newer only: on an older phone the row is not shown. It needs Notifications too, and the switch for this app in the phone's notification settings (the row's <b>Allow</b> opens it).</td><td>The Kill Apps notification is an ordinary progress notification, with no chip.</td><td>Yes</td></tr>
 </tbody></table>
-<p>All files access, Usage access, Display over other apps and Install unknown apps are always in the sheet. The others (Allow Restricted Settings, Read/Write External Storage, Write Secure Settings, Dump system services) only appear while a working mode is on, because the app grants them by running a command through that mode (most of them have no screen of their own in Android).</p>
+<p>Every row is always in the sheet. Read/Write External Storage, Write Secure Settings, Dump system services and Read Logs can only be granted by running a command through a working mode (they have no screen of their own in Android): without one they show a lock, and <b>Copy grant commands</b> still lists them.</p>
 <p><b>The Install unknown apps row.</b> Tap <b>Allow</b>. With a working mode on, the app grants it at once (if that does not take, Android's screen opens as below). Without one, Android's own <b>Install unknown apps</b> screen for this app opens: switch it on (the switch reads <b>Allow from this source</b> on most phones), press Back, and the row shows a tick. If your copy of the app is an old build that does not report this access, the row is not shown. On a phone older than Android 8 Android has one switch for all apps, so the row would simply say Allowed (this app itself needs Android 8 or newer).</p>
 
 <h4>What the app can grant for itself</h4>
-<p>With a working mode on (ADB, Wireless Debugging, Shizuku or Root), all of these but All files access can be switched on by the app itself, by running a command as the shell user (UID 2000) or as root. Only All files access always needs Android's own screen.</p>
+<p>With a working mode on (ADB, Wireless Debugging, Shizuku or Root), all of these can be switched on by the app itself, by running a command as the shell user (UID 2000) or as root.</p>
 <table class="hg-table"><thead><tr><th>Access</th><th>Command the app runs</th></tr></thead><tbody>
 <tr><td>Allow Restricted Settings</td><td><code>appops set com.bloatware.bingblop ACCESS_RESTRICTED_SETTINGS allow</code> (counts as allowed when the command passes)</td></tr>
 <tr><td>Usage access</td><td><code>appops set com.bloatware.bingblop GET_USAGE_STATS allow</code> and <code>pm grant com.bloatware.bingblop android.permission.PACKAGE_USAGE_STATS</code>. When you allow Usage access by hand in Android's settings, the app runs the <code>pm grant</code> in the background too.</td></tr>
@@ -425,21 +440,26 @@
 <tr><td>Read/Write External Storage</td><td><code>pm grant com.bloatware.bingblop android.permission.READ_EXTERNAL_STORAGE</code>, and the same with WRITE_EXTERNAL_STORAGE</td></tr>
 <tr><td>Write Secure Settings</td><td><code>pm grant com.bloatware.bingblop android.permission.WRITE_SECURE_SETTINGS</code></td></tr>
 <tr><td>Dump system services (DUMP)</td><td><code>pm grant com.bloatware.bingblop android.permission.DUMP</code></td></tr>
+<tr><td>Read Logs</td><td><code>pm grant com.bloatware.bingblop android.permission.READ_LOGS</code></td></tr>
+<tr><td>Bluetooth Connect</td><td><code>pm grant com.bloatware.bingblop android.permission.BLUETOOTH_CONNECT</code> (Android 12 and newer)</td></tr>
+<tr><td>Notifications</td><td><code>pm grant com.bloatware.bingblop android.permission.POST_NOTIFICATIONS</code> (Android 13 and newer)</td></tr>
+<tr><td>All files access</td><td><code>appops set com.bloatware.bingblop MANAGE_EXTERNAL_STORAGE allow</code></td></tr>
 </tbody></table>
-<p>If the grant does not take, the app opens the matching Android screen (or the app's own info page) instead. Write Secure Settings and Dump system services have no screen at all, so for those two nothing opens. The row is shown only if your copy of the app reports this access, and a row counts as allowed only when the phone itself says the permission is held.</p>
+<p><b>Live updates</b> is not in this list because no command sets it: the permission is part of the app, and what can still be missing is Notifications (granted as above) and the switch for this app on the phone's own Live updates screen, which the row's <b>Allow</b> opens.</p>
+<p>If the grant does not take, the app opens the matching Android screen (or the app's own info page) instead. Write Secure Settings, Dump system services and Read Logs have no screen at all, so for those nothing opens and the app says the phone did not grant it. The row is shown only if your copy of the app reports this access, and a row counts as allowed only when the phone itself says the permission is held.</p>
 
 <h4>Permissions that come with a pop-up</h4>
 <table class="hg-table"><thead><tr><th>On screen</th><th>What it is for</th><th>Without it</th><th>Optional?</th></tr></thead><tbody>
-<tr><td>Notifications (Android 13 and newer)</td><td>The code box for <b>Pair via Notification</b>; progress and a Cancel button for long file jobs; a reminder after a system update if you are Watching a profile.</td><td><b>Pair via Notification</b> cannot be used (the app asks again). The update reminder is skipped, though the banner inside the app still tells you.</td><td>Yes</td></tr>
+<tr><td>Notifications (Android 13 and newer)</td><td>The code box for <b>Pair via Notification</b>; progress and a Cancel button for long file jobs and for <a href="#quick-tiles">Kill Apps</a>; a reminder after a system update if you are Watching a profile.</td><td><b>Pair via Notification</b> cannot be used (the app asks again). The update reminder is skipped, though the banner inside the app still tells you.</td><td>Yes</td></tr>
 <tr><td>Nearby devices (Bluetooth, Android 12 and newer)</td><td>In <a href="#tab-devices">Connected Devices</a>, lists the Bluetooth devices this phone is paired with, to find a Wear OS watch, and sends files to one.</td><td>The Bluetooth part of Connected Devices cannot list devices. The Wi-Fi part works.</td><td>Yes</td></tr>
-<tr><td>Run commands in Termux</td><td>The Terminal tab's shell that uses your own Termux. Termux itself must also allow it (the setting <code>allow-external-apps</code> in its properties file).</td><td>That one shell is unavailable. The other shells work.</td><td>Yes</td></tr>
+<tr><td>Run commands in Termux</td><td>The Terminal's shell (in the Console tab) that uses your own Termux. Termux itself must also allow it (the setting <code>allow-external-apps</code> in its properties file).</td><td>That one shell is unavailable. The other shells work.</td><td>Yes</td></tr>
 <tr><td>Storage (Android 10 and older)</td><td>Android's ordinary storage question, the same as All files access above.</td><td>As All files access.</td><td>Yes</td></tr>
 </tbody></table>
 <p>On Android 11 and older, the Bluetooth permission is an ordinary one, and no question is asked.</p>
 
 <h4>The Shizuku permission</h4>
 <table class="hg-table"><thead><tr><th>On screen</th><th>What it is for</th><th>Without it</th></tr></thead><tbody>
-<tr><td>A question from the Shizuku app: allow ADB Application Manager Pro to use Shizuku?</td><td>Lets the app run commands through Shizuku. The Android names are <code>moe.shizuku.manager.permission.API_V23</code> and <code>rikka.shizuku.permission.USE_SHIZUKU</code>. It is asked when you tap <b>Authorize &amp; Use Shizuku</b> (<a href="#mode-shizuku">Shizuku</a>).</td><td>Shizuku mode is not available. Every other mode still works.</td></tr>
+<tr><td>A question from the Shizuku app: allow ADB/Root Full System Toolbox to use Shizuku?</td><td>Lets the app run commands through Shizuku. The Android names are <code>moe.shizuku.manager.permission.API_V23</code> and <code>rikka.shizuku.permission.USE_SHIZUKU</code>. It is asked when you tap <b>Authorize &amp; Use Shizuku</b> (<a href="#mode-shizuku">Shizuku</a>).</td><td>Shizuku mode is not available. Every other mode still works.</td></tr>
 </tbody></table>
 
 <h4>Install unknown apps</h4>
@@ -457,5 +477,5 @@
 <h4>What it does not ask for</h4>
 <p>The app has no permission for the camera, the microphone, your location, contacts, calendar, messages, call log or accounts. It is not an accessibility service or a device administrator.</p>
 <div class="hg-note"><b>Tip.</b> Do not mix up the two uses of "Install unknown apps". When you download this app, the switch that matters is the one for the app you download <i>with</i>, such as your browser (<a href="#install-and-update">Installing and updating the app</a>). The switch for this app itself (the row <b>Install unknown apps</b> in the Permissions sheet) only matters when it hands a file to Android's installer. Setting up a working mode avoids that step, because the app then installs the file itself.</div>
-<p>To take anything back, open Android's Settings, then <b>Apps</b>, then <b>ADB Application Manager Pro</b>, and look under <b>Permissions</b>. Special accesses are under Settings, Apps, <b>Special app access</b> (the names vary by phone), or just use the sheet in About again. See also <a href="#privacy">Privacy</a>.</p>
+<p>To take anything back, open Android's Settings, then <b>Apps</b>, then <b>ADB/Root Full System Toolbox</b>, and look under <b>Permissions</b>. Special accesses are under Settings, Apps, <b>Special app access</b> (the names vary by phone), or just use the sheet in About again. See also <a href="#privacy">Privacy</a>.</p>
 </section>

@@ -168,6 +168,18 @@ const tx = require('./lib/tx_mock');
   await say('and run the tests'); await until(() => !txChat.busy && !txRuns.termux);
   cl = await page.evaluate(() => window.__tx.runs.filter(r => /claude -p/.test(r.cmd)).pop());
   console.log('   the next one continues the same Claude Code conversation:', /--continue/.test(cl.cmd), 'with the model chosen:', cl.cmd.includes("--model '\\''claude-opus-5-5'\\''"));
+  // an answer that says "not installed" or "command not found" is the answer (exit 0), not a missing Claude Code; a failed run that says so still is
+  await page.evaluate(() => { const f = window.__tx.fake; window.__tx.fake = (b, cmd) => /claude -p/.test(cmd) && /docker/.test(cmd) ? { out: 'Docker is not installed on this device: the shell said "docker: command not found".\n', exit: 0, cwd: window.__tx.dirs[b] } : /claude -p/.test(cmd) && /container/.test(cmd) ? { out: "Error: distribution 'debian' is not installed.\n", exit: 1, cwd: window.__tx.dirs[b] } : f(b, cmd); });
+  const notInst = async () => (await scrT()).split('\n').filter(l => /does not seem/.test(l)).length;
+  const n0 = await notInst(), m0 = await page.evaluate(() => txChat.msgs.length);
+  await say('is docker on this phone?'); await until(() => !txChat.busy && !txRuns.termux);
+  const ans = await page.evaluate(() => txChat.msgs.slice(-1)[0]);
+  const keptOk = ans.role === 'assistant' && /Docker is not installed/.test(ans.text) && (await notInst()) === n0;
+  console.log((keptOk ? '' : 'FAIL ') + '   an answer that says "not installed" goes into the chat, without the install note:', JSON.stringify(ans), (await notInst()) - n0);
+  await say('and in the container?'); await until(() => !txChat.busy && !txRuns.termux);
+  const missOk = (await notInst()) === n0 + 1;
+  console.log((missOk ? '' : 'FAIL ') + '   a failed run that says the Debian container is not installed still offers the install:', JSON.stringify(await page.locator('#txScreen-termux .tx-btnrow').last().innerText()));
+  await page.evaluate(n => { txChat.msgs.length = n; txSaveChat(); }, m0);   // the later steps hand the chat so far to other agents: as before
 
   // ---------------------------------------------------------------- Gemini CLI not installed
   await page.evaluate(() => { txSettings.connect.gemini = 'cli'; txSaveSettings(); });

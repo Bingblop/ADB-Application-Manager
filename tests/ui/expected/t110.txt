@@ -1,4 +1,9 @@
 ok   in read-only mode the banner shows with its X in the top right corner, clear of Set Up
+ok   no letter of the title lies under the X
+ok   Arabic at 320 px: the X sits in the top left corner, clear of Set Up and of every letter of the title
+ok   Arabic at 360 px: the X sits in the top left corner, clear of Set Up and of every letter of the title
+ok   Arabic at 400 px: the X sits in the top left corner, clear of Set Up and of every letter of the title
+ok   back in English the X is in the top right corner again
 ok   the X puts it away
 ok   it stays away while read-only goes on (tab changes, a mode check)
 ok   nothing was kept: the choice is not saved

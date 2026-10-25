@@ -1,7 +1,7 @@
 package com.bloatware.bingblop;
 
 /**
- * What a privileged command that was run as {@code cmd; echo "<marker>:$?"} came to. The exit status right after the marker is the
+ * What a privileged command that was run as {@code cmd} followed by {@code echo "<marker>:$?"} (see {@link #withStatus}) came to. The exit status right after the marker is the
  * verdict: the digits up to the end of the line, nothing else, so a note the runner appends after it (the {@code [Process timed out ...]}
  * note) is not read as part of the number. The verdict is "fail closed": without the marker the command never got to finish (a timeout,
  * a backend that did not start (adb, su), Shizuku without permission, an output cut short), and that is a failure, not a success; so is a
@@ -14,6 +14,15 @@ final class ShellOutcome {
     final String text;
 
     private ShellOutcome(boolean ok, String text) { this.ok = ok; this.text = text; }
+
+    /**
+     * {@code cmd} with the status line after it. The echo is on a line of its own: on the same line a command that ends in a
+     * {@code # comment} would swallow it (and one that ends in a lone {@code &} would be a syntax error), so a command that worked would
+     * read as one that never ran.
+     */
+    static String withStatus(String cmd, String marker) {
+        return cmd + "\necho \"" + marker + ":$?\"";
+    }
 
     static ShellOutcome parse(String raw, String marker) {
         if (raw == null) raw = "";

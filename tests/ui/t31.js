@@ -1,4 +1,4 @@
-// File manager: ls parsing (toybox, busybox, fallback), path joins, access hint; Logcat play/pause polling
+// File manager: ls parsing (toybox, busybox, fallback, names with odd spaces), path joins, access hint; Logcat play/pause polling
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -67,7 +67,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // ---- logcat play/pause: opening the tab now starts playing on its own ----
   await page.evaluate(() => { window.__which = 'toybox'; window.__calls.length = 0; switchView('logcat'); }); await page.waitForTimeout(150);
-  console.log('5. opening the tab already starts playing (a fetch happened, Pause shown):', (await page.evaluate(() => window.__calls.length >= 1)) && (await page.locator('#logcatPlayBtn').innerText()) === 'Pause');
+  console.log('5. opening the tab already starts playing (a fetch happened, Stop shown):', (await page.evaluate(() => window.__calls.length >= 1)) && (await page.locator('#logcatPlayBtn').innerText()) === 'Stop');
   await page.waitForTimeout(3300); // ~3 more polls at 1s, with no need to press Play by hand
   const pollCount = await page.evaluate(() => window.__calls.length);
   console.log('6. polling continues on its own (expect >=2):', pollCount >= 2, pollCount);
@@ -156,6 +156,36 @@ const { chromium, PAGE } = require('./lib/pw');
   });
   console.log('20. default storage path:', defPath.current, '| input:', defPath.input);
   console.log('    uses /storage/emulated/0:', defPath.current === '/storage/emulated/0' && defPath.input === '/storage/emulated/0');
+
+  // ---- a name is kept as ls printed it: runs of spaces, a tab, a leading or trailing space, " -> " in a file's name ----
+  // (it used to be put together again from its words, so "a  b.txt" became "a b.txt" and Delete on that row removed the other file)
+  const ODD = [
+    'total 40',
+    '-rw-rw---- 1 u0_a1 sdcard_rw 10 2024-05-03 18:02 a  b.txt',
+    '-rw-rw---- 1 u0_a1 sdcard_rw 11 2024-05-03 18:02 a b.txt',
+    '-rw-rw---- 1 u0_a1 sdcard_rw 12 2024-05-03 18:02 x -> y.txt',
+    '-rw-rw---- 1 u0_a1 sdcard_rw 13 2024-05-03 18:02  lead.txt',
+    '-rw-rw---- 1 u0_a1 sdcard_rw 14 2024-05-03 18:02 trail.txt ',
+    '-rw-rw---- 1 u0_a1 sdcard_rw 15 2024-05-03 18:02 tab\there.txt',
+    'drwxrwx--- 2 u0_a1 sdcard_rw 3452 2024-05-03 18:02 Camera  Roll',
+    'lrwxrwxrwx 1 root root 8 2024-05-03 18:02 lnk -> a  b.txt',
+    '-rw-rw----    1 u0_a1    sdcard_r        16 May  3 18:02 bb  two.txt\r',
+  ].join('\n');
+  const WANT = ['a  b.txt', 'a b.txt', 'x -> y.txt', ' lead.txt', 'trail.txt ', 'tab\there.txt', 'Camera  Roll', 'lnk', 'bb  two.txt'];
+  const odd = await page.evaluate((raw) => {
+    const p = parseLsOutput(raw).entries;
+    window.AndroidBridge.fmList = (path) => JSON.stringify({ path, parent: '/data/local/tmp', source: 'shell', raw, names: '' });
+    switchView('files'); fmGo('/data/local/tmp/t');
+    cd.fm.path = '/sdcard/Download';
+    return { names: p.map(e => e.name), links: p.map(e => e.link), sizes: p.map(e => e.size), rows: fmRows.filter(r => r.name !== '..').map(r => r.full), cdPaths: p.map(cdFmPathOf) };
+  }, ODD);
+  console.log('21. names as ls printed them:', JSON.stringify(odd.names));
+  console.log('    all kept exactly, sizes read:', JSON.stringify(odd.names) === JSON.stringify(WANT) && odd.sizes.join(',') === '10,11,12,13,14,15,3452,8,16');
+  console.log('    "x -> y.txt" is a file with no link target; the real link keeps its target "a  b.txt":', odd.links[2] === null && odd.links[7] === 'a  b.txt');
+  const rowsWant = WANT.map(n => '/data/local/tmp/t/' + n);
+  const rowsOk = odd.rows.length === WANT.length && rowsWant.every(f => odd.rows.includes(f)) && new Set(odd.rows).size === odd.rows.length;
+  console.log('    Files tab: the paths View, Rename and Delete use are the exact names, none twice:', rowsOk + (rowsOk ? '' : ' ' + JSON.stringify(odd.rows)));
+  console.log('    Connected Devices > Files: the same exact names in its paths:', JSON.stringify(odd.cdPaths) === JSON.stringify(WANT.map(n => '/sdcard/Download/' + n)));
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

@@ -1,4 +1,4 @@
-// v7.8 Terminal tab (named Command-Line Interface until v7.12.12): the one-line tab label, one page with no switch (the ADB console and the log are in the Console tab),
+// v7.8 Terminal (a tab named Command-Line Interface until v7.12.12, a segment of Console since v7.14.0): the segment label, one page with no switch (the ADB console and the log are in the Console tab),
 // one persistent shell per backend with its own screen (commands run in a real /bin/sh here), history,
 // Termux's extra keys, TAB completion, colours / progress lines / split escape codes, full-screen programs offered in Termux, exit
 // and restart, CTRL-C, and what the screen says (with the button that fixes it) when a shell cannot start.
@@ -17,8 +17,9 @@ const tx = require('./lib/tx_mock');
   const until = async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < (ms || 4000)) { if (await page.evaluate(fn)) return true; await sleep(25); } return false; };
 
   // ---------------------------------------------------------------- the tab (the ADB console and the log moved to the Console tab)
-  console.log('1. the tab reads Terminal:', JSON.stringify(await page.locator('.tab-btn[data-tab="terminal"]').innerText()));
-  console.log('   the Feature List calls it Terminal:', await page.evaluate(() => tabDef('terminal').name));
+  // v7.14.0: the Terminal is the second segment of the Console tab ("ADB Shell | Terminal"); switchView('terminal') opens Console on it
+  console.log('1. Console\'s second segment reads Terminal:', JSON.stringify(await page.locator('#cnTabTerm').innerText()));
+  console.log('   there is no Terminal tab, its name leads to Console:', (await page.locator('.tab-btn[data-tab="terminal"]').count()) === 0, await page.evaluate(() => tabDef('terminal').name));
   await page.evaluate(() => switchView('terminal')); await sleep(150);
   console.log('2. the Terminal page is the whole tab (no Terminal | ADB Console switch any more):', await page.locator('#txPaneTerminal').isVisible() && (await page.locator('#txSwitch').count()) === 0 && (await page.locator('#view-terminal #termCmd').count()) === 0);
   console.log('3. the ADB shell is in the Console tab instead:', await page.evaluate(() => { cnApplySeg('shell'); switchView('console'); return !!document.querySelector('#view-console #cnSegShell #termCmd') && !!document.querySelector('#view-console #rishBtn'); }), await page.locator('#cnSegShell').isVisible());

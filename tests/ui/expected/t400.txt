@@ -1,0 +1,59 @@
+ok   1. the sheet lists every permission the app uses, in this order
+ok      each row names the Android permission under it (READ_LOGS, BLUETOOTH_CONNECT, PACKAGE_USAGE_STATS, SYSTEM_ALERT_WINDOW, DUMP, ...)
+ok      the permission names are not translated
+ok      what only ADB, Shizuku or root can grant is listed with a lock and a note, no Allow button
+ok      the rest has an Allow button (Bluetooth Connect and Notifications too: their Android dialog)
+ok      a locked one cannot be asked for (nothing is called, a toast says why)
+ok      Allow on Bluetooth Connect asks the app (its permission dialog) and the sheet stays
+ok      the dialog answered yes: the row shows the tick
+ok      "Allow all" walks only through what can be asked for here: never a locked row
+ok      closing after Bluetooth Connect was allowed starts the app again (once)
+ok      below Android 12 Bluetooth Connect is not needed and the row says so
+ok      closing with nothing granted does not start the app again
+ok   2. with a working mode nothing is locked: every missing row has an Allow button
+ok      Allow on Read Logs grants it by command at once (the phone holds it after) and ticks the row
+ok      All files access is granted by command too (no Android screen)
+ok      and Bluetooth Connect (pm grant)
+ok      the app does not start again after each one
+ok      it starts again (once) when the sheet closes
+ok      a grant the phone does not hold afterwards leaves the row asking, and says so
+ok      "Allow all" grants everything by command (one call), closes the sheet and starts the app again
+ok      a working mode arriving while the sheet is open turns the locks into Allow buttons
+ok   3. Settings has an "Application Permissions" button right after the language setting
+ok      it opens the sheet listing every permission
+ok      each says whether it is granted ("✓ Granted", or "Not granted" with a Grant button)
+ok      and there is a "Grant all" button
+ok      Grant on one grants it
+ok      Grant all grants the rest by command and starts the app again
+ok      without a working mode, with only a locked one missing, there is nothing to grant here: it shows the lock, no Grant all, "Done"
+ok   4. the first time a working mode is ready with permissions missing, a question offers to grant them all
+ok      the native dialog gets its title first ("Grant permissions")
+ok      yes: everything is granted by command and the app starts again
+ok      it is remembered in the app's settings
+ok      and not asked again
+ok      a phone where it was asked before is not asked again (a new start of the app)
+ok      without a working mode nothing is asked
+ok      when one comes later, it is asked then
+ok      no: nothing is granted, nothing starts again, and it is not asked again
+ok      with nothing missing there is nothing to ask
+ok      while the sheet is open it does not ask (the sheet's "Allow all" does the same)
+ok      and once the sheet was seen with the working mode, it does not ask afterwards either
+ok      on the very first launch the first-launch sheet comes instead of the question
+ok   5. first launch, no working mode, Shizuku running but not authorized: its dialog is asked for by itself
+ok      the first-launch sheet waits for the answer
+ok      after a yes it comes, already able to grant through Shizuku (no locks)
+ok      and the one-time question does not come on top of it
+ok      asked once only
+ok      with no answer for a while the sheet comes anyway (with locks: nothing was authorized)
+ok      asked on a later start too (not only the first)
+ok      a no is counted in the app's settings
+ok      and not asked again in the same start
+ok      after one no it still asks; the second no is counted
+ok      after two noes it stops asking by itself
+ok      the Shizuku card still asks when tapped
+ok      not while a working mode is ready (ADB)
+ok      not when another mode is chosen (ADB TCP)
+ok      not when Shizuku is not running
+ok      not when it is too old (before v11)
+ok      asked when Shizuku is the chosen mode
+all passed

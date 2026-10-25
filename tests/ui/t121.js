@@ -201,11 +201,17 @@ const { chromium, PAGE } = require('./lib/pw');
   check('and sends the delete of that tool with nothing taken out', !!d2 && d2.a.tool === 'deduplicator' && d2.a.selection.dropGroups.length === 0 && d2.a.selection.dropItems.length === 0 && d2.a.selection.options.deleteAll === false, JSON.stringify(d2));
 
   // ---- Delete all results ----
+  // a group taken out in Details and the sheet closed: the question names what is left of that tool, not its whole scan
+  await ev(() => { sdReview('systemcleaner'); }); await wait(300);
+  await ev(() => { document.querySelectorAll('#sdSheetBody .sd-row input')[1].click(); }); await wait(100);
+  await page.click('#sdSheetBtns button:has-text("Close")'); await wait(150);
   await ev(() => { window.__calls.length = 0; });
   await page.click('#sdDelAll'); await wait(150);
   check('Delete all results asks once, listing the tools with data', /Delete results in all tools\?/.test(await text('#mpAskText')) && /SystemCleaner/.test(await text('#mpAskText')) && /Deduplicator/.test(await text('#mpAskText')));
+  check('a tool with something taken out is listed with what is left of it, the others with their result, and it says what was taken out is kept', await ev(() => { const t = document.getElementById('mpAskText').innerText; return /SystemCleaner: 4 selected items \(3\.0 MB\)/.test(t) && !/6 filter match/.test(t) && /Deduplicator: 1 duplicate set\(s\) found/.test(t) && /\n\nWhat you took out in Details is kept\.$/.test(t); }), JSON.stringify(await text('#mpAskText')));
   await okAsk();
   check('it deletes in every tool that has data', (await ops('delete')).map(c => c.a.tool).join() === 'systemcleaner,deduplicator', JSON.stringify((await ops('delete')).map(c => c.a.tool)));
+  check('and what was taken out stays out', await ev(() => { const d = window.__calls.filter(c => c.op === 'delete'); return JSON.stringify(d[0].a.selection.dropGroups) === '["trash"]' && d[1].a.selection.dropGroups.length === 0; }));
 
   // ---- the accessibility service ----
   check('the card says the service is off and consent is not given', /Service off/.test(await text('#sdAcsChips')) && /Consent not given/.test(await text('#sdAcsChips')));

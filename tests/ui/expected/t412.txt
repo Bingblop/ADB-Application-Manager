@@ -1,0 +1,38 @@
+ok   the token sheet has its color-mix() tokens (26), each a colour mixed with transparent
+ok   dark material3: color-mix() is there in the test browser, and missing in the rewritten page
+ok   dark material3: with color-mix(), no token is written inline (the sheet's own mixes are used)
+ok   dark material3, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (26)
+ok   dark material3, no color-mix(): the FROZEN, SYSTEM and RUNNING badges and the sheet and batch buttons have the same fill and outline as with color-mix()
+ok   dark material3, no color-mix(): the gear, the sheet and row buttons, the Navigation choice and the stat pills are drawn from the tokens (no text-coloured outline, no missing fill)
+ok   dark cyberpunk: color-mix() is there in the test browser, and missing in the rewritten page
+ok   dark cyberpunk: with color-mix(), no token is written inline (the sheet's own mixes are used)
+ok   dark cyberpunk, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (26)
+ok   dark cyberpunk, no color-mix(): the FROZEN, SYSTEM and RUNNING badges and the sheet and batch buttons have the same fill and outline as with color-mix()
+ok   dark cyberpunk, no color-mix(): the gear, the sheet and row buttons, the Navigation choice and the stat pills are drawn from the tokens (no text-coloured outline, no missing fill)
+ok   light material3: color-mix() is there in the test browser, and missing in the rewritten page
+ok   light material3: with color-mix(), no token is written inline (the sheet's own mixes are used)
+ok   light material3, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (26)
+ok   light material3, no color-mix(): the FROZEN, SYSTEM and RUNNING badges and the sheet and batch buttons have the same fill and outline as with color-mix()
+ok   light material3, no color-mix(): the gear, the sheet and row buttons, the Navigation choice and the stat pills are drawn from the tokens (no text-coloured outline, no missing fill)
+ok   light cyberpunk: color-mix() is there in the test browser, and missing in the rewritten page
+ok   light cyberpunk: with color-mix(), no token is written inline (the sheet's own mixes are used)
+ok   light cyberpunk, no color-mix(): every color-mix() token is written inline as its colour at the mix's alpha (26)
+ok   light cyberpunk, no color-mix(): the FROZEN, SYSTEM and RUNNING badges and the sheet and batch buttons have the same fill and outline as with color-mix()
+ok   light cyberpunk, no color-mix(): the gear, the sheet and row buttons, the Navigation choice and the stat pills are drawn from the tokens (no text-coloured outline, no missing fill)
+ok   colorMixCompute() gives the browser's own color-mix() result (8 mixes: two colours, translucent, transparent, var(), no percentage, both percentages)
+ok   two colours give a blended hex, a mix with transparent the colour at that alpha, anything else nothing
+ok   no color-mix(), a theme change: --tint-accent is computed again from the new accent
+ok   Chrome/100: the notice is shown on start
+ok   it names the version, says colours may look wrong, where to update it and the debloat case
+ok   its buttons are Update and Not now
+ok   it is remembered as soon as it is shown
+ok   Update opens the store page of Android System WebView (market:// through openInStore) and closes the notice
+ok   About: the WebView line carries the version from the user agent when the app does not name the package
+ok   the next question has its Cancel button back
+ok   Chrome/100, the next start: no notice (it is shown once)
+ok   Not now closes it without opening anything, and it stays remembered
+ok   About: the WebView line is the package and version the app reads
+ok   where Chrome provides the WebView (Android 7-9), Update opens Chrome's store page
+ok   a current WebView (Chrome/141): no notice, nothing remembered
+ok   the version is read from the user agent: 74 for a WebView UA, 0 (no notice) for one without Chrome
+errors: []

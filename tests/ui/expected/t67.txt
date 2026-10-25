@@ -1,5 +1,5 @@
 1. a theme change made before Settings was opened keeps the 3 earlier journal entries (and adds its own): true ["theme_customization_overlay_packages","key1","key2","key3"]
-2. after the answer the note is still there, marked finished, with the value to Undo to: true {"t":<epoch ms>,"sub":"theme","undo":"null","done":true,"n":0,"kind":"apply"}
+2. after the answer the note is still there, marked finished, with the value to Undo to: true {"t":<epoch ms>,"sub":"theme","undo":"null","done":true,"n":0,"kind":"apply","prev":null}
    a restart after the answer comes back to Overlays with the Undo bar: true {"view":"overlays","snack":"Theme changed"}
    the note is counted (1) and kept for a second restart: true
    a second restart still comes back (counted: 2): true {"view":"overlays","n":2}
@@ -10,11 +10,11 @@
    ... the change is logged in Settings (old value null): true ["theme_customization_overlay_packages:null>{\"android.theme.customization."]
    ... and the note is marked finished, so it is not done twice: true
    a restart where the phone does not hold the theme: no recent colour, no log entry: true {"done":false}
-3. Undo writes a note (no second Undo in it): true {"t":<epoch ms>,"sub":"theme","undo":null,"done":true,"n":0,"kind":"undo"}
-   and keeps it once it is answered: true {"t":<epoch ms>,"sub":"theme","undo":null,"done":true,"n":0,"kind":"undo"}
+3. Undo writes a note (no second Undo in it): true {"t":<epoch ms>,"sub":"theme","undo":null,"done":true,"n":0,"kind":"undo","prev":null}
+   and keeps it once it is answered: true {"t":<epoch ms>,"sub":"theme","undo":null,"done":true,"n":0,"kind":"undo","prev":null}
    the bridge was told it is an Undo (the switch goes back too): true [true]
    a refused change leaves no note: true null
-   an unanswered one keeps the note (the restart may still come): true {"t":<epoch ms>,"sub":"theme","undo":null,"done":false,"n":0,"kind":"apply","source":"preset","hex":"43A047","style":"TONAL_SPOT","from":""}
+   an unanswered one keeps the note (the restart may still come): true {"t":<epoch ms>,"sub":"theme","undo":null,"done":false,"n":0,"kind":"apply","source":"preset","hex":"43A047","style":"TONAL_SPOT","from":"","root":null,"at":null,"prev":null}
    Default is not an Undo: true
 4. the read-out says "Monochromatic", not Tonal Spot: true From your wallpaper Monochromatic style
    Apply does not claim it is already the same: true Android repaints in a moment, and apps may restart.

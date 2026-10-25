@@ -49,14 +49,18 @@ function describe(name) {
   return out.join(' ').replace(/\s+/g, ' ').trim();
 }
 
-function runScript(name, timeoutS) {
+function runScript(name, timeoutS, file = path.join(UI, name + '.js')) {
   return new Promise(resolve => {
     const dir = path.join(OUT, name);
     fs.rmSync(dir, { recursive: true, force: true });
     fs.mkdirSync(dir, { recursive: true });
     const started = Date.now();
-    const child = spawn(process.execPath, [path.join(UI, name + '.js')], { cwd: dir, env: Object.assign({}, process.env, { TEST_OUT: dir }) });
+    const child = spawn(process.execPath, [file], { cwd: dir, env: Object.assign({}, process.env, { TEST_OUT: dir }) });
     let out = '';
+    // Decode as text here, not piece by piece: a pipe hands the output over in reads of up to 64 KiB, and a character cut in two by
+    // a read would turn into two U+FFFD marks (the decoder keeps the first half until the rest arrives).
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
     child.stdout.on('data', d => { out += d; });
     child.stderr.on('data', d => { out += d; });
     let timedOut = false;
@@ -156,4 +160,5 @@ async function main() {
   return bad.length ? 1 : 0;
 }
 
-main().then(code => process.exit(code), e => { console.error(e); process.exit(2); });
+module.exports = { runScript };          // for ui/t505, which checks how the output of a script is collected
+if (require.main === module) main().then(code => process.exit(code), e => { console.error(e); process.exit(2); });

@@ -7,4 +7,9 @@ ok   Rish mode is on
 ok   Rish mode: id goes to the Rish shell
 ok   Rish mode: what was typed stays in the box
 ok   Enter runs what is typed and empties the box
+ok   agent: a proposal while a command runs shows Run and Skip
+ok   agent: Run while the command runs keeps the box and the proposal, runs nothing, and says why
+ok   agent: once the command is done, Run runs the proposed command and the box goes
+ok   agent, "Ask before running" off, while a command runs: offered with Run and Skip, not said to run
+ok   agent, "Ask before running" off, nothing running: it runs at once, as before
 errors: []

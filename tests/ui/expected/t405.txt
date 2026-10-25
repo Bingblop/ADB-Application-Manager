@@ -1,0 +1,8 @@
+ok   1. a trim Android refuses: the Zram sheet says it did not work, with Android's words
+ok      ... and the line under the numbers says the same, not in green
+ok   2. a trim that printed a failure: not reported as done
+ok   3. a trim that could not start says so
+ok   4. a trim still running after 3 minutes: says Android has not finished yet (not Done, and not that it did not work)
+ok   5. a trim that worked still says Done with the numbers, in green
+ok   no page errors
+all passed

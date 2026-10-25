@@ -72,6 +72,14 @@ public final class SdmAreas implements Sdm.Areas {
 
     @Override public int userId() { return cfg.userId; }
 
+    private static final Pattern EMULATED = Pattern.compile("/storage/emulated/(\\d{1,6})");
+
+    /** The user of the primary public root (/storage/emulated/&lt;n&gt;), read from the config alone (no probe); the app's user when the root names none. */
+    @Override public int storageUserId() {
+        java.util.regex.Matcher m = cfg.publicRoots.isEmpty() ? null : EMULATED.matcher(cfg.publicRoots.get(0));
+        return m != null && m.matches() ? Integer.parseInt(m.group(1)) : cfg.userId;
+    }
+
     /** The mounted public volumes of this phone: the primary one, then every {@code /storage/XXXX-XXXX}. */
     public static List<String> discoverPublicRoots(Sdm.Fs fs, String primary) {
         List<String> out = new ArrayList<String>();

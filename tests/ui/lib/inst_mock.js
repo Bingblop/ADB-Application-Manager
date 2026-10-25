@@ -51,22 +51,40 @@ exports.initScript = function (opts) {
     loadPackages() { return JSON.stringify(opts.apps || [{ pkg: 'com.example.app', name: 'Example App', isSystem: false }]); },
     getWorkingMode() {
       const priv = window.__mode.priv;
-      return JSON.stringify({ adbTcp: priv ? { connected: true, port: 5555 } : {}, adbWireless: {}, shizuku: {}, configuredMode: 'auto', activeMode: priv ? 'adb_tcp' : 'unprivileged', modeAvailable: true, isPrivileged: priv });
+      // mode.shizuku: what Shizuku reports ({ running, authorized, preV11 }); mode.configured: the chosen mode (default auto)
+      return JSON.stringify({ adbTcp: priv ? { connected: true, port: 5555 } : {}, adbWireless: {}, shizuku: window.__mode.shizuku || {}, configuredMode: window.__mode.configured || 'auto', activeMode: priv ? 'adb_tcp' : 'unprivileged', modeAvailable: true, isPrivileged: priv });
     },
+    // Shizuku's own dialog: the script answers it later with window.onShizukuPermissionResult(granted)
+    requestShizukuPermission() { calls.shizukuAsk = (calls.shizukuAsk || 0) + 1; const sz = window.__mode.shizuku || {}; if (!sz.running) return 'not_running'; if (sz.preV11) return 'pre_v11'; return sz.authorized ? 'granted' : 'requested'; },
     getAppDetails() { return '{}'; },
     loadSetting(k) { return window.__kv[k] || ''; }, saveSetting(k, v) { window.__kv[k] = v; calls.kv.push(k + '=' + v); },
     // ---- permissions ----
     hasAllFilesAccess() { return !!window.__perm.files; },
     getPermissionStatus() { return JSON.stringify(Object.assign({ sdk: window.__device.sdk }, window.__perm)); },
     requestAllFilesAccess() { calls.perms.push('files'); },
+    // the sheet's Allow for All files access: granted by command with a working mode when opts.grantFilesByShell, else Android's screen (as requestAllFilesAccess)
+    grantAllFilesAccess() { calls.perms.push('files'); if (window.__mode.priv && opts.grantFilesByShell) { window.__perm.files = true; return 'granted'; } return 'settings'; },
+    // 'read_logs', 'bluetooth' and 'notifications' are not in the default window.__perm either (an older build): a test passes them to have the rows
+    requestReadLogsAccess() { calls.perms.push('read_logs'); if (window.__mode.priv && !opts.refuseReadLogs) { window.__perm.read_logs = true; return 'granted'; } return 'failed'; },
+    requestBluetoothAccess() { calls.perms.push('bluetooth'); if (window.__mode.priv) { window.__perm.bluetooth = true; return 'granted'; } return 'dialog'; },
+    requestNotificationAccess() { calls.perms.push('notifications'); if (window.__mode.priv) { window.__perm.notifications = true; return 'granted'; } return 'dialog'; },
     requestUsageAccess() { calls.perms.push('usage'); if (window.__mode.priv && opts.grantUsageByShell) { window.__perm.usage = true; return 'granted'; } return 'settings'; },
     requestOverlayAccess() { calls.perms.push('overlay'); if (window.__mode.priv && opts.grantOverlayByShell) { window.__perm.overlay = true; return 'granted'; } return 'settings'; },
     requestLegacyStorageAccess() { calls.perms.push('storage_legacy'); if (window.__mode.priv) { window.__perm.storage_legacy = true; return 'granted'; } return 'settings'; },
     requestWriteSecureSettings() { calls.perms.push('secure_settings'); if (window.__mode.priv) { window.__perm.secure_settings = true; return 'granted'; } return 'settings'; },
     // 'dump' is not in the default window.__perm: like an older build of the app, the mock does not report it unless a test passes perm: { dump: false|true }
     requestDumpAccess() { calls.perms.push('dump'); if (window.__mode.priv) { window.__perm.dump = true; return 'granted'; } return 'settings'; },
-    // "Allow all" through the working mode: opts.grantAll = the keys it manages to allow (true = every one); the page then starts the app again (reloadApp)
-    grantAllPermissions() { calls.grantAll = (calls.grantAll || 0) + 1; if (window.__mode.priv && opts.grantAll) { (opts.grantAll === true ? Object.keys(window.__perm) : opts.grantAll).forEach(k => { if (k !== 'sdk') window.__perm[k] = true; }); } return JSON.stringify(Object.assign({ sdk: window.__device.sdk }, window.__perm)); },
+    // "Allow all" through the working mode: opts.grantAll = the keys it manages to allow (true = every one). With opts.restart (v7.16: the app left a watcher
+    // behind through the working mode) the answer says restarting:true once something changed, and the page restarts the app (restartApp); without it the
+    // page starts itself again (reloadApp), as an older build does
+    grantAllPermissions() {
+      calls.grantAll = (calls.grantAll || 0) + 1;
+      let changed = false;
+      if (window.__mode.priv && opts.grantAll) { (opts.grantAll === true ? Object.keys(window.__perm) : opts.grantAll).forEach(k => { if (k !== 'sdk' && window.__perm[k] !== true) { window.__perm[k] = true; changed = true; } }); }
+      const st = Object.assign({ sdk: window.__device.sdk }, window.__perm);
+      if (opts.restart && changed) st.restarting = true;
+      return JSON.stringify(st);
+    },
     // the adb lines for what is not held yet (opt-in: opts.grantCommands, so a test that does not look at the button never has it on the sheet); the real list is MainActivity.getGrantCommands
     getGrantCommands() {
       if (!opts.grantCommands) return '';
@@ -80,11 +98,15 @@ exports.initScript = function (opts) {
       if (miss('storage_legacy')) { out.add(pm + 'READ_EXTERNAL_STORAGE'); out.add(pm + 'WRITE_EXTERNAL_STORAGE'); }
       if (miss('secure_settings')) out.add(pm + 'WRITE_SECURE_SETTINGS');
       if (miss('dump')) out.add(pm + 'DUMP');
+      if (miss('read_logs')) out.add(pm + 'READ_LOGS');
+      if (miss('bluetooth')) out.add(pm + 'BLUETOOTH_CONNECT');
+      if (miss('notifications')) out.add(pm + 'POST_NOTIFICATIONS');
       return Array.from(out).join('\n');
     },
     copyToClipboard(t) { (calls.copied = calls.copied || []).push(t); },
     syncUsageGrant() { calls.sync = (calls.sync || 0) + 1; },
     reloadApp() { calls.reload = (calls.reload || 0) + 1; },
+    restartApp() { calls.restart = (calls.restart || 0) + 1; },
     requestRestrictedSettingsAccess() { calls.perms.push('restricted_settings'); if (window.__mode.priv) { window.__perm.restricted_settings = true; return 'granted'; } return 'settings'; },
     // ---- the device, for the splits ----
     getDeviceProfile() { return JSON.stringify(window.__device); },

@@ -59,7 +59,11 @@ final class BackupScripts {
             + "[ -d user_de/0/" + pkg + " ] && paths=\"$paths user_de/0/" + pkg + "\"\n"
             + "[ -n \"$paths\" ] || { echo 'ERROR: " + pkg + " has no data folder'; exit 3; }\n"
             + "rm -f " + quote(outFile) + "\n"
-            + "tar -cf " + quote(outFile) + " $paths >/dev/null 2>&1; rc=$?\n"
+            // installd links "lib" in the data folder of a 32-bit app to its install folder (/data/app/...). That absolute
+            // link means nothing after a reinstall (installd makes a new one), so it stays out of the backup; an app's own
+            // real folder called lib is kept.
+            + "ex=''; [ -L user/0/" + pkg + "/lib ] && ex='--exclude=user/0/" + pkg + "/lib'\n"
+            + "tar -cf " + quote(outFile) + " $ex $paths >/dev/null 2>&1; rc=$?\n"
             // tar's own exit codes: 0 ok, 1 "some files differ" (e.g. a file changed while being read -
             // recoverable, the archive is still usable). Anything else is a real failure (I/O error, out of
             // space, ...) and the partial file it may have produced must not be kept as if it were a backup.
@@ -77,6 +81,7 @@ final class BackupScripts {
     static String dataRestore(String dataRoot, String pkg, String tarFile) {
         checkedPackage(pkg);
         String re = "^(user/0|user_de/0)/" + pkg.replace(".", "\\.") + "(/|$)";
+        String lib = "user/0/" + pkg + "/lib";
         String t = quote(tarFile);
         return ""
             + "cd " + quote(dataRoot) + " || { echo 'ERROR: cannot open the data folder'; exit 2; }\n"
@@ -84,13 +89,18 @@ final class BackupScripts {
             + "[ -n \"$uid\" ] || { echo 'ERROR: " + pkg + " is not installed for this user'; exit 2; }\n"
             + "[ -s " + t + " ] || { echo 'ERROR: the backup has no data'; exit 3; }\n"
             + "tar -tf " + t + " >/dev/null 2>&1 || { echo 'ERROR: the data archive is damaged'; exit 5; }\n"
+            // Older backups of a 32-bit app hold installd's "lib" link to the install folder of that time (/data/app/...),
+            // which the link check refused, so the backup could never be restored. When the archive has that link, it (and
+            // anything under it) is left out of every check below and of the extraction alike: nothing the checks do not
+            // see is written. The link installd made for the app as it is installed now is kept instead.
+            + "ex=''; if tar -tvf " + t + " 2>/dev/null | grep -q -E '^l.* " + lib.replace(".", "\\.") + " -> '; then ex='--exclude=" + lib + "'; fi\n"
             // Only this app's own folders, nothing with a parent-directory step, no hard links,
             // and links only when they point inside (relative, without ..)
-            + "if tar -tf " + t + " | grep -v -E '" + re + "' | grep -q .; then echo 'ERROR: the archive has files outside this app'; exit 6; fi\n"
-            + "if tar -tf " + t + " | grep -q -E '(^|/)\\.\\.(/|$)'; then echo 'ERROR: the archive has unsafe paths'; exit 6; fi\n"
-            + "if tar -tvf " + t + " | grep -q -E '^h'; then echo 'ERROR: the archive has hard links'; exit 6; fi\n"
-            + "if tar -tvf " + t + " | grep -q -E '^[bcp]'; then echo 'ERROR: the archive has device or FIFO entries'; exit 6; fi\n"
-            + "if tar -tvf " + t + " | grep -E '^l' | grep -q -E -- ' -> (/|.*\\.\\.)'; then echo 'ERROR: the archive has links that point outside the app'; exit 6; fi\n"
+            + "if tar -tf " + t + " $ex | grep -v -E '" + re + "' | grep -q .; then echo 'ERROR: the archive has files outside this app'; exit 6; fi\n"
+            + "if tar -tf " + t + " $ex | grep -q -E '(^|/)\\.\\.(/|$)'; then echo 'ERROR: the archive has unsafe paths'; exit 6; fi\n"
+            + "if tar -tvf " + t + " $ex | grep -q -E '^h'; then echo 'ERROR: the archive has hard links'; exit 6; fi\n"
+            + "if tar -tvf " + t + " $ex | grep -q -E '^[bcp]'; then echo 'ERROR: the archive has device or FIFO entries'; exit 6; fi\n"
+            + "if tar -tvf " + t + " $ex | grep -E '^l' | grep -q -E -- ' -> (/|.*\\.\\.)'; then echo 'ERROR: the archive has links that point outside the app'; exit 6; fi\n"
             + "am force-stop " + pkg + " >/dev/null 2>&1\n"
             // The app's current data must survive any failure from here on, so it's moved aside rather than
             // deleted: a disk-full or interrupted extraction (the preceding checks can't rule those out)
@@ -99,8 +109,11 @@ final class BackupScripts {
             + "restore_rollback() { for d in user/0/" + pkg + " user_de/0/" + pkg + "; do rm -rf \"$d\"; [ -d \"$d.restorebak\" ] && mv \"$d.restorebak\" \"$d\"; done; }\n"
             + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do rm -rf \"$d.restorebak\"; [ -d \"$d\" ] && mv \"$d\" \"$d.restorebak\"; done\n"
             + "mkdir -p user/0/" + pkg + " user_de/0/" + pkg + "\n"
-            + "tar -xf " + t + " -C " + quote(dataRoot) + " >/dev/null 2>&1; rc=$?\n"
+            + "tar -xf " + t + " -C " + quote(dataRoot) + " $ex >/dev/null 2>&1; rc=$?\n"
             + "[ $rc -eq 0 ] || { restore_rollback; echo \"ERROR: extracting failed ($rc)\"; exit 4; }\n"
+            // The link installd made for the app as it is installed now moves over to the restored folder: without it a
+            // 32-bit app that loads its code through dataDir/lib finds nothing until installd makes it again at a reboot
+            + "[ -L " + lib + " ] || [ -e " + lib + " ] || { [ -L user/0/" + pkg + ".restorebak/lib ] && ln -s \"$(readlink user/0/" + pkg + ".restorebak/lib)\" " + lib + "; }\n"
             + "fail=0\n"
             + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do if [ -d \"$d\" ]; then chown -R $uid:$uid \"$d\" || fail=1; restorecon -RF \"$d\" >/dev/null 2>&1 || fail=1; fi; done\n"
             + "[ \"$fail\" -eq 0 ] || { restore_rollback; echo 'ERROR: could not restore ownership or SELinux labels on the restored data'; exit 7; }\n"

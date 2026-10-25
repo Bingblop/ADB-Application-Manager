@@ -38,6 +38,27 @@ public class ApkFlagsTest {
     l = new ArrayList<ApkFlags.Item>(); l.add(n1); l.add(n2); l.add(n0);
     ApkFlags.compute(l);
     check("two copies of the newest version: one is a duplicate, neither is older, the old one is older than the kept copy", n2.duplicateOf.equals(n1.path) && !n1.older && !n2.older && n0.older && n0.newestPath.equals(n1.path));
+
+    // duplicate copies of an older version
+    ApkFlags.Item o1 = item("/d/o1.apk", 10, 100, "com.o", 1, "hash1"), o2 = item("/d/o2.apk", 10, 100, "com.o", 1, "hash1"), n3 = item("/d/n3.apk", 20, 200, "com.o", 2, "hash2");
+    l = new ArrayList<ApkFlags.Item>(); l.add(o1); l.add(o2); l.add(n3);
+    ApkFlags.compute(l);
+    check("duplicate older version: kept old version gets older=true, duplicate gets older=true, both point to newest",
+          o1.older && o2.older && o1.newestPath.equals(n3.path) && o2.newestPath.equals(n3.path) && (o1.duplicateOf != null || o2.duplicateOf != null));
+
+    // identical files sorting tie-breaker (same mtime, same path length)
+    ApkFlags.Item a1 = item("/d/a-1.apk", 10, 100, "com.z", 1, "hashz"), a2 = item("/d/b-1.apk", 10, 100, "com.z", 1, "hashz");
+    l = new ArrayList<ApkFlags.Item>(); l.add(a2); l.add(a1); // add out of alphabetical order
+    ApkFlags.compute(l);
+    check("identical files sorting: tie breaker uses alphabetical path, a-1 comes before b-1",
+          a1.duplicateOf == null && a2.duplicateOf.equals(a1.path));
+
+    // same version code twice, different files, newest path is the one with highest mtime
+    ApkFlags.Item s3 = item("/d/s3.apk", 1, 100, "com.s", 5, ""), s4 = item("/d/s4.apk", 2, 200, "com.s", 5, ""), s0 = item("/d/s0.apk", 3, 50, "com.s", 4, "");
+    l = new ArrayList<ApkFlags.Item>(); l.add(s3); l.add(s4); l.add(s0);
+    ApkFlags.compute(l);
+    check("multiple files with newest version code: older version points to the one with highest mtime", s0.older && s0.newestPath.equals(s4.path));
+
     // other builds of a package (another signer, another set of native libraries) are not "newer"
     ApkFlags.Item m1 = item("/d/m1.apk", 1, 1, "com.m", 10, ""), m2 = item("/d/m2.apk", 2, 2, "com.m", 99, ""), m3 = item("/d/m3.apk", 3, 3, "com.m", 99, "");
     m1.signer = "AAAA"; m2.signer = "BBBB"; m3.signer = "AAAA"; m3.abis = "x86";

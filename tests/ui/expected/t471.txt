@@ -1,0 +1,12 @@
+ok   320px the row is "Sort", the sort menu, "Button" and the picker, nothing else
+ok   320px "Sort" is the sort menu's label; "Button" stands before the picker, which keeps its full name for a screen reader; both words bold
+ok   320px the row fits on one line without scrolling sideways, and both menus get room (at least 90px)
+ok   360px the row is "Sort", the sort menu, "Button" and the picker, nothing else
+ok   360px "Sort" is the sort menu's label; "Button" stands before the picker, which keeps its full name for a screen reader; both words bold
+ok   360px the row fits on one line without scrolling sideways, and both menus get room (at least 90px)
+ok      Saved Applications has New List, Profiles, CSV and Backups in one row (CSV still named for what it does)
+ok      and they open App Profiles, share the CSV and open Backups
+ok   412px the row is "Sort", the sort menu, "Button" and the picker, nothing else
+ok   412px "Sort" is the sort menu's label; "Button" stands before the picker, which keeps its full name for a screen reader; both words bold
+ok   412px the row fits on one line without scrolling sideways, and both menus get room (at least 90px)
+errors: []

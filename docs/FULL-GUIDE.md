@@ -16,7 +16,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v7.13.4-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v7.16.1-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -66,7 +66,7 @@ tell you when a new version is out (see [Updates](#updates)).
 
 | | |
 |---|---|
-| **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled, **updated in the last 7 days** and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · **the big counters at the top light up for the filter you are looking at** · a clean row layout (name, package and badges flush left; checkbox, letter icon, gear and ⋯ together on the right) · versions and update hints in the list (versions are off by default; the Versions filter turns them on) · select many and run batch actions · save selections as named lists · export everything to CSV |
+| **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · **the big counters at the top light up for the filter you are looking at** · a clean row layout (name, package and badges flush left; checkbox, letter icon, gear and ⋯ together on the right) · versions and update hints in the list (versions are off by default; the Versions filter turns them on) · select many and run batch actions · save selections as named lists · export everything to CSV |
 | **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 (a system app that needs root falls back automatically to a direct Binder call, the same workaround App Manager and Canta use - see below) · Reinstall removed system apps · Remove Updates · App Info · **Extract APK**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · **Backup** (each selected app in turn) · **Keep selection after running** (optional switch: run another batch command on the same apps without reselecting them) · batch actions, Dex optimization and applying a profile all run **off the page's thread with a live progress bar (app name and package, fill bar) and a Stop button**, so the page never freezes while they work |
 | **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
 | **Installer** | All-in-one installer for `.apk`, `.apks` (bundletool), `.apkm` (APKMirror) and `.xapk` (with OBB / game data) · reads the package name, version, SDK range, size and signing certificate first · pick the authorizer (ADB / Shizuku / Root / none; in Read-Only mode only none, the system installer, is offered) and every `pm install` flag (grant all permissions, downgrade, test, all users, update ownership …) · an install through ADB / Shizuku / Root asks first in a dialog of the app · signature-mismatch and unknown-signature gates · optional dex optimization and auto-delete · **storage search** with a progress bar that lists every package file on the phone, where **press and hold deletes a file with Undo** · **the splits that fit the phone are ticked** (CPU, screen density, language) · **▾ lists of common installers and requesters** for the `-i` and `--originating-uri` boxes · **Launch Application / Application Settings** buttons once an install worked · optional **VirusTotal** check with your own API key (a SHA-256 lookup; nothing is uploaded unless you say so) · the app can be Android's handler for APK files |
@@ -86,11 +86,11 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Overlays** | **New in v6.0:** change Android's **Material You** theme from the phone — the **wallpaper** or **any color** (hex, sliders or 657 named presets) with one of six **styles** (Tonal Spot … Spritz), and the palette Android is really using shown afterwards · list every **overlay** (`cmd overlay list`) grouped by the app it restyles, search and filter it, **switch one on or off** with its switch or by **pressing and holding** its row · every change is read back to prove it, with **Undo** — see [Overlays and Material You](#overlays-and-material-you) |
 | **App Stores** | **ShizuStore**, **GitHub** (up to 5,000 apps, live search), **F-Droid** (any known repository, streamed) and **Orion** as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode (after the app's own question) or the system installer · a successful install offers **Launch Application** and **Application Settings**, the same as the APK Installer/Updater |
 | **Modes** | ADB over TCP · Wireless Debugging (pairing, mDNS port detection, and **🔔 pairing from a notification** so the code can't expire while you switch apps) · Shizuku · Root · Automatic · Read-Only |
-| **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · **nine palette styles** (Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow, Monotone) built from a source color you pick · **My Themes** (save a look under a name, switch with a tap) · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning · **Expressive Animations** (Material 3 Expressive's springier motion across the whole app, on by default, with its own switch under Settings → Motion) |
+| **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · **ten palette styles** (Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow, Monotone, CMF) built from a source color you pick · **My Themes** (save a look under a name, switch with a tap) · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning · **Expressive Animations** (Material 3 Expressive's springier motion across the whole app, on by default, with its own switch under Settings → Motion) |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
 | **Navigation** | A Back button that closes the open sheet, clears a selection, steps up a folder or out of an archive, returns to the previous tab, and only then asks for a deliberate second press to leave (it also asks first while an install, update, file job or command is running) |
 | **Permissions** | A first-launch sheet offers **All files access**, **Usage access** and **Display over other apps** (each optional, also under About); with a working mode it also offers **Read/Write External Storage**, **Write Secure Settings** and **Access Restricted Settings**, granted straight through the shell. An action that fails for want of file access asks for it on the spot and carries on once it is allowed — see [Permissions](#permissions) |
-| **About** | The developer and the GitHub repo, this build's version, device and **signing certificate** (✅ for the official release key), a **Device Specs** card (hardware, software, system, battery, network, camera and sensors, refreshed when the tab opens), copyable debug info for bug reports, the **🔐 Permissions** sheet, and an optional **☕ Buy me a coffee** (PayPal, $1 or any amount) |
+| **About** | The developer and the GitHub repo, this build's version, device and **signing certificate** (✅ for the official release key), a **Self-test** card (27 read-only checks in the current working mode, with a copyable report and a pre-filled GitHub issue), a **Device Specs** card (hardware, software, system, battery, network, camera and sensors, refreshed when the tab opens), copyable debug info for bug reports, the **🔐 Permissions** sheet, and an optional **☕ Buy me a coffee** (PayPal, $1 or any amount) |
 
 ## The tabs
 
@@ -113,13 +113,14 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, freeze, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
 | **Morphe Patcher** | Morphe patching on the phone: patch sources and the community finder, apps marked **Installed**, Morphe Helper (ten APK download sources, an in-app browser for sites with a browser check, optional VirusTotal), Simple and Advanced patching, install when finished, live log, Patched APKs |
 | **SD Maid** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator ported from SD Maid SE: scan, review and untick, delete, optional 1-tap scan and delete, exclusions, history, accessibility cache clearing |
+| **Root Features** | The features that need Super User (root), right before About: the state of root for this app (ACTIVE, AVAILABLE, DENIED, NOT FOUND), **Request Super User** and **Open root manager** on a rooted phone (with its root manager, such as KernelSU, KernelSU Next or APatch; the grant is approved in the manager), **Super User for apps** (its **Open manager** opens the installed manager the way its home-screen icon does, not on its list of apps with root: you go to that list in the manager) and **App components** (enable or disable single parts of an app, which Android allows to root and refuses to the shell user). Locked but never hidden without root; this app roots nothing |
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
 ## New in v7.9
 
-**v7.13.4 is the latest build** (Backup moved from the app menu to the batch menu, where it backs up the selected apps one after another; `docs/PHONE-SCRIPT-v7.13.4.md` is the phone script; before it, v7.13.3 was a screen-layout release: the Apps tab list starts near the top and the app icon is its checkbox, the File Manager options moved under ⋯ More, readable small text and badge contrast, one look for empty lists, 44 px tap areas, nothing else changes; `docs/PHONE-SCRIPT-v7.13.3.md` is the one-page phone script; before it, v7.13.2 was a fix release: the SD Maid accessibility cleaner starts on its own and never force-stops this app or Android System WebView, and the serious findings of a second review pass: file pickers, the device a Connected Devices action runs on, the real terminal while it starts, Morphe patches across an app reopen, the update count; section 29 of the device checklist is one phone step per fix; before it, v7.13.1 had fifty-four fixes from the code review of 2026-10-13 and nothing new: section 28 of the device checklist is one phone step per fix; before it, v7.13.0 added the Extra Settings tab: Private DNS with a speed test, animation speed, brightness bias, device telemetry, power & reboot, Doze & power governor, zram & memory; the bottom navigation bar with long-press shortcuts; the Console tab with the Terminal as its own tab; the rebuilt Updater check; an Install button on every ShizuStore row; the DUMP row; before it, v7.12.11 added a Private DNS card in Settings, a result line in the ADB Console, the app's own question before an install from the Installer, the Updater (and Update All), a restore or the Morphe Patcher (not before updating the app itself), and no privileged install in Read-Only mode, readable text on the App Stores buttons; before it, v7.12.10 asked before installing a downloaded app and fixed archive and Morphe Patcher problems, and v7.12.9 was a security and stability release and v7.12.8 added the APK Installer/Updater; also Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.16.1 is the latest build** (the Root Features tab and the per-app component Enable / Disable now unlock under Shizuku running as the system user (UID 1000) or root (UID 0), not only in Root mode with su granted; the ADB shell user (UID 2000) stays locked, and the root theme card still needs UID 0; the working-mode badge names the Shizuku server's real UID; `docs/PHONE-SCRIPT-v7.16.1.md` is the phone script; before it, v7.16.0 was a feature release — a Root Features tab for a phone that is already rooted: Request Super User, Open root manager, Super User for apps and App components, whose enable and disable is now Root only, for system apps too; a root theme card on the RRO/Monet Customization tab: pure black backgrounds, Color spec 2021, 2025 or 2026, more styles (Fidelity, Content, Monochrome, CMF), the Intensity sliders, your own secondary and tertiary accents and Accurate shades, on Android 14 and its quarterly updates, 15.0, 15 QPR1 and QPR2, 16.0, 16 QPR1 and QPR2, and 17, One UI included, locked on other versions; CMF as a tenth palette style in Settings; Start Shizuku (ADB) and an offer at launch; Allow all restarts the app; the Kill Apps tile, a Working mode tile lit only while a mode is ready, Overwrite or Create new for a list name in use, and the fixes of two test passes; `docs/PHONE-SCRIPT-v7.16.0.md` is the phone script; before it, v7.15.0 was a top-to-bottom UI pass and a new name, ADB/Root Full System Toolbox: the header is the name in one colour with only the Android and One UI versions under it, every tab is calmer, and the things used most are closer: Running, Frozen and Uninstalled on a hold of the Apps tab, Search files, Storage and Downloads on a hold of Files, Select shown next to Clear filters, the Debloater's Update List and History beside its search, the path in Files as tappable crumbs; nothing the app does changed; `docs/PHONE-SCRIPT-v7.15.0.md` is the phone script; before it, v7.14.1: Stop apps shows its progress in a notification with a Cancel button, a Live Update on Android 16 and newer, and never stops this app, the WebView app or Media Picker; a Live updates row in the permissions sheet; a Speed test section in Extra Settings; a Refresh button in the File Manager; Installed | Uninstalled as one choice; a Gradient switch and a shortcut for Row tints; the Updated 7d filter is gone, sort by Last updated instead; and 57 fixes from a full review: Replace onto an SD card or USB drive merges folders, the full-screen terminal in Shizuku mode no longer closes the app, SD Maid keeps what its exclusions protect, a failed install keeps its files; `docs/PHONE-SCRIPT-v7.14.1.md` is the phone script; before it, v7.14.0 was a feature release: the app is now called ADB System Manager; a speed test in Task Manager, the ADB Stub for Wear OS watches, a Self-test in About, a history of the last 100 Hidden Settings changes, permissions granted by command, ANGLE, Live Logcat as its own tab, Connected Devices lists like the Apps tab, filled gradient buttons, five-step Row tints, folding Settings cards; `docs/PHONE-SCRIPT-v7.14.0.md` is the phone script; before it, v7.13.4 moved Backup from the app menu to the batch menu, where it backs up the selected apps one after another; `docs/PHONE-SCRIPT-v7.13.4.md` is the phone script; before it, v7.13.3 was a screen-layout release: the Apps tab list starts near the top and the app icon is its checkbox, the File Manager options moved under ⋯ More, readable small text and badge contrast, one look for empty lists, 44 px tap areas, nothing else changes; `docs/PHONE-SCRIPT-v7.13.3.md` is the one-page phone script; before it, v7.13.2 was a fix release: the SD Maid accessibility cleaner starts on its own and never force-stops this app or Android System WebView, and the serious findings of a second review pass: file pickers, the device a Connected Devices action runs on, the real terminal while it starts, Morphe patches across an app reopen, the update count; section 29 of the device checklist is one phone step per fix; before it, v7.13.1 had fifty-four fixes from the code review of 2026-10-13 and nothing new: section 28 of the device checklist is one phone step per fix; before it, v7.13.0 added the Extra Settings tab: Private DNS with a speed test, animation speed, brightness bias, device telemetry, power & reboot, Doze & power governor, zram & memory; the bottom navigation bar with long-press shortcuts; the Console tab with the Terminal as its own tab; the rebuilt Updater check; an Install button on every ShizuStore row; the DUMP row; before it, v7.12.11 added a Private DNS card in Settings, a result line in the ADB Console, the app's own question before an install from the Installer, the Updater (and Update All), a restore or the Morphe Patcher (not before updating the app itself), and no privileged install in Read-Only mode, readable text on the App Stores buttons; before it, v7.12.10 asked before installing a downloaded app and fixed archive and Morphe Patcher problems, and v7.12.9 was a security and stability release and v7.12.8 added the APK Installer/Updater; also Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -651,12 +652,15 @@ that expect it there, never into the file itself. Already-added servers are list
 | **Automatic** (default) | — | Uses the first ready backend: ADB TCP → Wireless Debugging → Shizuku |
 | **ADB over TCP** | `adb tcpip 5555` once | Connects to `127.0.0.1:5555` or any `IP:port` |
 | **Wireless Debugging** | Android 11+ | Pair with code, then connect. Fields accept `IP:port` or just the port; **Auto-Detect Ports** uses mDNS. Android picks a new port each time Wireless debugging is switched on; when the saved port no longer connects, the app looks up the current one over mDNS (on the saved address only), connects and saves it, so you do not pair or type again |
-| **Shizuku** | Shizuku running | Tap **Authorize &amp; Use Shizuku** and approve the prompt |
-| **Root** | su (Magisk / KernelSU / APatch) | Requested on demand |
+| **Shizuku** | Shizuku running | Tap **Authorize &amp; Use Shizuku** and approve the prompt. Shizuku not running while ADB TCP or Wireless Debugging is connected: **Start Shizuku (ADB)** runs the start script the Shizuku app wrote into its own data folder (`/sdcard/Android/data/<Shizuku package>/start.sh`, the same command Shizuku shows for a computer) through that connection, then checks that Shizuku answers; if it does not, the script's own output is shown. Open the Shizuku app once first, or the script does not exist yet |
+| **Root** | su on a phone that is already rooted | Requested on demand. This app never roots a phone or installs a root manager |
 | **Read-Only** | — | Inspect only |
 
 Every mode card has a **Use This Mode** button, so you can switch at any time, including while ADB TCP 5555
 is enabled. Status checks never change the selected mode.
+
+**Root needs a phone that is already rooted.** Never flash a patched boot image onto a phone whose bootloader is locked;
+it can leave the phone unable to start. This app only uses root that is already on the phone.
 
 **ADB key:** each install generates its own private ADB key (nothing is bundled in the APK). Working Modes
 shows its fingerprint, which matches the phone's "Allow USB debugging?" prompt, with Copy and Regenerate.
@@ -794,6 +798,314 @@ style the palette is worked out with:
   phones) are kept: only the color keys are replaced. Every theme change is also kept in **Hidden Settings → ⋯ → Changes** with a
   **Revert**. Android tends to restart apps (this one included) when the palette changes; the app notices that it was
   restarted, whether that came before or after the answer, and comes back to this tab with the Undo bar waiting.
+- **Root-only theme controls** (the last card of the Theme half): colors Android takes only from an overlay written as root
+  (`cmd overlay fabricate`, which Android's overlay service accepts from root alone, so ADB and Shizuku get locked rows, as on
+  the Root Features tab). The first control is **Pure black backgrounds**: with Super User and the switch on, **Apply theme**
+  also writes the overlay `com.android.shell:aam_monet` (true black dark backgrounds and a few dark greys for the panels; on
+  Android 12 and 13 only the two darkest neutral shades, one overlay each; light mode keeps its colors, except that its darkest text
+  becomes pure black: the two shade 900 entries belong to both modes, and Android's light theme takes its main text from neutral1 900;
+  on 16 QPR1, QPR2 and 17 the two shades are written as `system_neutral1_900_dark` and `system_neutral2_900_dark` only, so light mode keeps
+  every color there: `ovlBuildBlackPlan(sdk, qpr)`, 11 entries either way, and the subtitle drops "except that its darkest text becomes
+  pure black"), reads the list and the colors back to judge it (listed
+  on with a color that comes back as Android's: the toast and the sheet's title say *The pure black overlay is on, but Android shows
+  its own colors*, or *The theme overlay is on, but Android shows its own colors* with a style's colors, and the record is kept), and
+  **Default** and Apply with the switch off switch it off again (it stays listed as off: the shell cannot remove a
+  fabricated overlay). **Undo** (the bar after Apply or Default, also after a restart) puts back what was there before the
+  change: the old theme and this app's overlay as it was, switched off when there was none, written again when there was one
+  (a record with a style's colours keeps the source color, the mode and the contrast for this; one from an earlier version
+  without them, or one still waiting for its own write's answer, is switched off, and the message says so; when the Undo's
+  theme answer is lost to a restart, the overlay follows once the theme reads back as put back). Apply takes the switch, More styles and Color spec when it is tapped, with the other choices: a change
+  while it reads Applying… counts for the next Apply only. When the theme's own answer is lost (the app restarted first, or no
+  answer), the resume record keeps that Apply's overlay half and its choices: once the theme reads back as written, the overlay is
+  written as that tap would have; read back as not written, nothing is written and a toast says *The colors were not written. Tap
+  Apply theme again.* Not yet tried on a rooted phone.
+- **Which Android versions:** each Android release builds its theme colors its own way (the shade rule, the list of
+  roles and their names, the write order, the color spec), so the app computes the root colors for the build family the phone is
+  and writes them with that release's names in its order; everything else is locked (fail closed). `MonetProfile` (Java, no
+  Android classes) decides from the SDK level, which of six framework color names `getIdentifier(name, "color", "android")`
+  finds (`system_inverse_surface_light`, `system_theme_notif_light`, `system_on_theme_app_ring_light`, `system_primary_dim_light`,
+  `system_semantic_red_container_high_light`, `system_primary_fixed_light`), whether `getIdentifier("config_repairModeSupported", "bool",
+  "android")` finds the framework boolean (`BOOL_PROBES`, the same try, no root, no shell; only its name counts, not its value); `getSystemPalette` reports it as `profile` and
+  `profileReason`, with `build` (`Build.FINGERPRINT`), `contrast` (`UiModeManager.getContrast()` on Android 14+, held to
+  [-1, 1], 0 when it cannot be read) and, on One UI only, `oneUi` (the version, or `?` when a Samsung phone's could not be read:
+  getprop fails or times out and `SEM_PLATFORM_INT` gives none; that answer is not kept). Since PR 13 One UI is decided like any other
+  phone, by its SDK level and names (Android 16 with One UI 8.5 is the P16 family by its names); `oneUi` only shows the card's
+  note *On One UI these colors reach Google apps and other apps that use Android's Monet colors. Samsung's own apps may keep
+  Samsung's palette, and changing the Color palette in Samsung's settings can replace them; apply again if it does.* (inferred from
+  how overlays work, not measured on a Samsung phone with root). Live: Android 12 and 13 (`P12`, Pure black only), 14.0 (`P14`: SDK 34 without
+  `config_repairModeSupported`, or with names that could not be read: Android 14.0's own maths, part 1, the answer every SDK 34 phone
+  had before T-049 PR 12, and what an APK from before PR 12 still reports on every Android 14 build), 14 QPR1-QPR3 (`P14Q`, since
+  T-050 / T-049 PR 12: SDK 34 with `config_repairModeSupported`, a plain `values/config.xml` entry and java-symbol from
+  android14-qpr1-release on, absent on android14-release; no color name tells 14.0 from QPR1/QPR2. Read in AOSP: on 19 branch heads
+  and all 71 `android-14.0.0_rN` tags of frameworks/base the name is present exactly where SystemUI's ThemeOverlayController imports
+  libmonet (55 tags with, 16 without; the whole 14.0 core/res tree has no such name); not checked on phone makers' builds. The QPR
+  SystemUI computes the 44 roles and 12 fixed colors with libmonet android14-qpr1/qpr2/qpr3-release (one tree, 9e15d1a7, not pinned
+  by the manifests) through `MaterialDynamicColors(isExtendedFidelity = false)` (`Flags.COLOR_FIDELITY` is an unreleasedFlag, taken
+  as off: inferred, not checked on a phone), roles `_dark` then `_light`, fixed from the light scheme; ColorScheme.kt and Shades.java
+  are 14.0's. So P14Q has P14's palettes, 65 shades, names, 165-entry layout and order, lookups, native spec 2021, routing, Pure black
+  and record handling, and at 2021 its roles follow the a14q rules (`ColorSpecDelegateA14Q`: fixed surface tones, ContrastCurve(1, 1,
+  3, 7) for outline_variant, the containers and the accent fixed colors, (3, 4.5, 7, 11) for primary/secondary/tertiary/error and
+  inverse_primary, a container tone delta of 15, Albers on Fidelity/Content containers, and a15's on_*_container rules and linear
+  key-color walk); at 2025, 2026 and CMF, which no Android 14 build computes, P14Q is P14 (Tonal Spot, Vibrant, Expressive, Spritz and
+  CMF give exactly P14's results, the fallback styles their a14q 2021 colors). Measured: libmonet a14q compiled and run with TOC
+  qpr3's dynamic-overlay writer transcribed, nine styles, 71 seeds (raw and `seed()`), contrast -1, -0.5, 0, 0.25, 0.5, 0.75 and 1,
+  light and dark: 8,946 plans, 894,600 role and fixed entries, 0 differences in values and names, shades equal to P14's (the raw seed
+  000000 in Vibrant/Expressive differs on a hue breakpoint, which `seed()` makes unreachable). P14Q against P14, six seeds, 2021: at
+  contrast 0 only `outline_light` with the six list styles and Monochrome, about 1 in 10 role and fixed values with Fidelity and
+  Content (on-colors, `outline_light`, dark primary/tertiary containers); 34-43 in 100 at contrast 0.5 and 1. Not run on an Android 14
+  phone with root), 15.0
+  (`P15`, since T-049 PR 11: SDK 35 with `system_on_theme_app_ring_light`, which 15 QPR1 renamed `system_theme_notif_light`; the
+  names, layout, lookups, native spec 2021, routing, Pure black, record and stale note of P15Q1; SystemUI computes its roles with
+  libmonet android15-release, which is MCU 2021 except for on_primary/secondary/tertiary/error_container (light tone 10 with
+  ContrastCurve(4.5, 7, 11, 21), not T30 with (3, 4.5, 7, 11)) and the key color (a linear walk out from T50, Android 14's
+  algorithm, not KeyColor's bisection: Monochrome's key 0xFF070707, not 0xFF777777); monet.js takes these two rules wherever the
+  scheme's spec after MCU's fallback is 2021 (`LIBMONET_A15`, `MCU.schemeOf(..., 'a15')`), so at 2025, 2026 and CMF, which 15.0
+  never computes and for which there is no a15 reference, Tonal Spot, Vibrant, Expressive, Spritz and CMF give exactly P15Q1's
+  results and the fallback styles their a15 2021 colors; measured: SystemUI a15's ColorScheme, TonalPalette and DynamicColors
+  compiled with libmonet a15, TOC a15's createOverlays/assignColorsToOverlay transcribed (PR 5's harness), nine styles, 71 seeds,
+  contrast 0/0.5/1 (56 seeds also -1, -0.5, 0.25 and 0.75), light and dark, 2021: 0 differences in values, names and order
+  (1,297,890 entries); against P15Q1, six seeds, contrast 0/0.5/1, both modes, 2021: 1,470 of 53,460 entries differ; not run on
+  a 15.0 phone with root), 15 QPR1 (`P15Q1`, 165
+  entries with Android 14's 44 roles in its order), 15 QPR2 (`P15Q2`) and 16.0 (`P16`, 177 entries: the 44 plus inverse_surface,
+  inverse_on_surface, inverse_primary, shadow, scrim and surface_tint), and 16 QPR1 (`P16Q1`) and 16 QPR2 (`P16Q2`) since T-049 PR 9:
+  SystemUI computes them with AOSP libmonet at spec 2025 for every style (monet.js part 2 with each branch's libmonet rules where they
+  differ from MCU main's 2025), and the app writes what SystemUI writes there, in its qpr2 order: the 65 palette shades as
+  `system_<row>_<shade>_light` (light scheme) and `_dark` (dark scheme), 55 roles (the 50 plus primary_dim, secondary_dim,
+  tertiary_dim, error_dim and palette_key_color_error) light and dark, and the 12 fixed colors from the light scheme: 252 entries,
+  both modes in one Apply; never the unsuffixed palette aliases (the Java side refuses them on P16Q1/P16Q2), no error shades, no
+  custom colors. `OverlayRules.MAX_FAB_ENTRIES` is 320. After the write the Java side looks up by name there
+  (`system_accent1_600_light`, `_dark`, `system_primary_light`, `system_surface_dark`, `system_primary_dim_dark`, those the plan has,
+  then the plan's first others up to four), and the plan keeps SystemUI's order. Measured: SystemUI's DynamicColors and TonalPalette
+  of each branch compiled with its libmonet and run, nine styles (all but CMF, which libmonet lacks and which stays MCU main's 2026),
+  71 seeds, contrast 0/0.5/1, light and dark, specs 2021 and 2025: 0 differences in values, names and order, except that at 2021
+  the four *_dim roles are left out on purpose (SystemUI's MaterialDynamicColors takes them from ColorSpec2025 at any spec and
+  would write all 252; the app writes 244 there by design, and the oracle drops the four to compare). Not run on a QPR phone
+  with root. Live since T-049 PR 10: 17 (`P17`, SDK 37 with `system_primary_fixed_light`, which 17 has and no earlier release
+  has; 37 without it, or with names that could not be read, and every SDK above 37 stay unknown). SystemUI's ColorScheme asks for
+  SPEC_2026 for every style and libmonet android17-release falls back as MCU's rule does (CMF keeps 2026; Tonal Spot, Vibrant,
+  Expressive and Spritz 2026 to 2025; the rest 2021); monet.js part 2 takes the a17 rules where they differ from MCU main 2026
+  (Expressive's primary, control_activated / control_normal / text_primary_inverse from spec 2025 on, the 2021 'darker' polarity) and
+  libmonet's own SchemeCmf (CMF on 17 differs from MCU main's CMF in 1,271 of 51,120 values: 1,268 are
+  control_activated, control_normal and text_primary_inverse, the role changes above, which every style gets, and only 3, all
+  inverse_primary, are not (a yellow's tone 99, which libmonet a17 does not average); the CMF palettes are the same). The app writes what SystemUI writes there, in
+  TOC a17's order: the 65 shades `_light`/`_dark`, the 55 roles light and dark and the 12 fixed colors `_light` (light scheme) and
+  `_dark` (dark scheme), 264 entries, both modes in one Apply; the unsuffixed fixed names are aliases there (values/colors.xml to
+  `_light`, values-night/colors.xml to `_dark`) and are never written (the Java side refuses them and the unsuffixed shades on
+  P17). The four dims follow the spec asked for: left out at 2021 (256), written at 2025 and 2026 for every style, also for those
+  that fall back to 2021 (SystemUI writes them with the 2025 definition), so the page's plan and record carry the spec chosen on P17.
+  Lookups there: the QPR five, then `system_primary_fixed_dark` (`P17_LOOKUPS`, at most six). Measured: TOC a17's
+  createOverlays/assignColorsToOverlay transcribed over SystemUI a17's DynamicColors and TonalPalette compiled with libmonet a17,
+  nine styles plus CMF, 71 seeds, contrast 0/0.5/1, light and dark, specs 2021, 2025, 2026 and the default (SPEC_2026): 0
+  differences in values, names and order (at 2021 the oracle's four dims dropped, as on QPR). Not run on a 17 phone with root.
+  Locked, all six rows, with Super User or without:
+  any SDK above 37 and any build that matches no row (*Not supported on this Android version yet*; an APK from before PR 9,
+  which reports 16 QPR1/QPR2 as `notYet`, keeps them locked too, one from before PR 10 keeps 17 locked the same way and one from
+  before PR 11 keeps 15.0 locked, one from before PR 12 reports every Android 14 build as P14; no current profile is `notYet`). A phone with One UI is not locked for being One UI: it gets the card of
+  its Android version (see above). An older APK that reports no profile counts as *Update the
+  app* on SDK 35 and up. Lock order: *Update the app* (no overlay bridge), the version lock, *Needs Super User*. A locked card's
+  note says only whether an overlay written before is still on; with Super User, Apply (a disable), **Default** and **Undo**
+  switch it off. Without Super User the note is *Shizuku and ADB cannot write these colors; Root can.* with the *is written* / *may be
+  written* line under it when an overlay is still on, and **Default** (which then writes the theme setting only) ends its question with *The overlay stays
+  on: switching it off needs Super User.* On 15.0, 15 QPR1, 15 QPR2 and 16.0 shade s is tone (1000 - s) / 10 of the palette (500 is tone 50; Android 14 uses
+  49.6), with no chroma cap, from the scheme of the mode the phone is in at Apply (on 16 QPR1 and QPR2 the same integers, no yellow
+  tone-99 averaging, `_light` from the light scheme and `_dark` from the dark one; on 17 the fixed colors too); SystemUI's own 21, 22 or (17) 27 custom colors (clock,
+  shade, notification, widget and others) are not written and keep Android's values for the list style. Phone makers can change
+  Android's color engine and names; none of this was checked on a phone.
+- **Contrast and Android updates:** a style's roles and fixed colors are computed at the phone's contrast read when **Apply theme**
+  is tapped (the palettes, the preview and Pure black do not depend on it; on 16 QPR1, QPR2 and 17 both modes' roles at that contrast);
+  after changing the contrast in Settings, tap Apply again. The record (`ovl_root_applied`) also keeps `profile` (when it is not P14) and `build`; when the record's build and the
+  phone's are both known and differ, the record's profile is not the phone's (a monthly update within one profile gives no note: the
+  colors depend on the profile, not the build, so Apply would write the same entries), the record carries a style's colors and Apply
+  would write a style's colors (Pure black alone is the same on every build and gives none), a note under the card reads *Android was updated after
+  these colors were written. Tap Apply theme to write them for this version.* Nothing runs by itself. The note has no light/dark part
+  (decision 9 of PR 9: on 16 QPR1 and QPR2 the overlay holds both modes, so a mode change makes nothing stale; the Color spec note's
+  mode sentence is left out there). After 16.0 to QPR, a 16.0 overlay's unsuffixed palette entries override the aliases in both modes
+  (read, not tried) until Apply rewrites or switches off the overlay; on 17 likewise, and a QPR overlay's unsuffixed fixed entries
+  override the fixed aliases in both modes (read, not tried). 14.0 to a QPR build gives the note (P14 to P14Q; the names are the same, so a 14.0 overlay keeps giving 14.0's roles until Apply), QPR to QPR none; a P14 record written on a QPR build by an APK from before PR 12 gives it after the next build change, not before. 15.0 to 15 QPR1 or QPR2 gives the note (another profile; the names are the same, so a 15.0 overlay keeps giving 15.0's
+  on-containers and key colors, and on QPR2 the six roles it lacks are Android's, until Apply); QPR to 17 gives the note too; with nothing stored the
+  card's spec on 17 is 2026. After an update to a locked release (an SDK above 37, for example)
+  locked release the rows lock instead and the overlay stays on (an overlay's entries whose names the new release lacks are
+  skipped, read in idmap2) until it is switched off.
+- **Color spec** (the second control of that card, between Pure black and More styles; Super User on Android 14 (14.0, QPR1, QPR2, QPR3), 15 (15.0, QPR1, QPR2),
+  16 (16.0, QPR1, QPR2) or 17, locked like More styles: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app*
+  without the overlay bridge or the spec maths): **2021** (the colors Android computes itself; the default, and what Android 14,
+  15 and 16.0 build their own theme with, 14 QPR1-QPR3 with libmonet android14-qpr*-release's own 2021 rules, which P14Q follows, 15.0 with libmonet android15-release's two own 2021 rules, which P15 follows; 17 builds its at 2026), **2025**
+  (Google's newer tuning of the same styles) and **2026** (the 2025 tuning, plus the CMF style), kept in `ovl_spec`. On 16 QPR1 and
+  QPR2 (`ovlQpr`: `MonetPlan.lib.LIBMONET` has the profile) the phone's own spec is 2025 (`ovlNativeSpec`), the default when none
+  is stored, and the row reads *With root, 2021 recolors every style. CMF needs 2026.* with **2021** *The colors earlier Android
+  versions compute.*, **2025** *The colors Android computes itself.* and **2026** *The 2025 colors, plus the CMF style.*; libmonet's
+  rule (`MonetPlan.specFor(style, spec, profile)`) gives every style but CMF 2021 at 2021 and 2025 at 2025 and 2026 (Rainbow, Fruit
+  Salad, Fidelity, Content and Monochrome: 2025 roles on 2021 palettes). There a list style at 2025/2026 with nothing else set
+  is native (theme setting only), and at 2021 its 2021 colors are written (*Also writes this style's 2021 colors with root, in
+  place of Android's.*, its pure black form, and *Also writes this style's 2021 colors with root, adjusted by the Intensity
+  sliders.* / *…, adjusted by the Intensity sliders, and pure black with root.*), 244 entries: spec 2021 has no primary_dim,
+  secondary_dim, tertiary_dim or error_dim (libmonet's ColorSpec2021 gives null), so Android keeps its 2025 values for those four.
+  The note under 2025/2026 there is *Android computes these colors itself: a style of the list above is written with root only at
+  2021, or with Intensity, an accent or Accurate shades off.* A stored spec survives an update (2021 picked on 16.0 writes 2021 on
+  QPR). On 17 (`ovlA17`: `ovlQpr` and profile P17) the phone's own spec is 2026 (`ovlNativeSpec`), the default when none is
+  stored; the row reads *With root, 2021 recolors Tonal Spot, Vibrant, Expressive and Spritz. CMF needs 2026.* with **2021** *The
+  colors earlier Android versions compute.*, **2025** *The same colors as 2026, without the CMF style.* and **2026** *The colors
+  Android computes itself, plus the CMF style.* A list style is native there when the spec chosen gives it what 2026 gives it
+  (`MonetPlan.specFor(style, spec, 'P17')` against `specFor(style, '2026', 'P17')`): 2025 and 2026 for every list style, and 2021
+  too for Rainbow and Fruit Salad (their 2021 colors are Android's own; the a17 oracle's rows at 2021 equal 2026 for them except
+  the dims, which Android keeps); Tonal Spot, Vibrant, Expressive and Spritz at 2021 are written (256 entries) with the QPR 2021
+  hints; a list style written at its native colors (a slider, an accent or Accurate shades off) gets the hints without a year
+  (*Also writes this style's colors with root.* and its variants). The note under 2025/2026 is *Android computes these colors
+  itself: a style of the list above is written with root only with Intensity, an accent or Accurate shades off, or at 2021 for
+  Tonal Spot, Vibrant, Expressive and Spritz.* Google's own
+  rule (Material Color Utilities' `maybeFallbackSpecVersion`) gives the newer colors to Tonal Spot, Vibrant, Expressive and Spritz only
+  (2025, also at 2026), CMF its 2026, and keeps Rainbow, Fruit Salad, Fidelity, Content and Monochrome at 2021 (on 16 QPR1/QPR2
+  libmonet's rule above; on 17 libmonet a17 follows Google's rule). At 2025 or 2026, with one
+  of those four in the style list and More styles on **Off**, **Apply theme** writes the theme setting as before and then that style's 2025
+  colors over Android's with root, the same 165 or 177 colors and overlay as More styles (a More style chosen wins); the hint reads *Also writes
+  this style's 2025 colors with root, in place of Android's.* From 2025 the base palettes of Tonal Spot and Expressive differ between light
+  and dark (Vibrant's, Spritz's and CMF's do not), so the 65 shades are those of the mode the phone is in when Apply is tapped (switch mode,
+  tap Apply again; the preview is drawn again on a mode switch); the roles are written for both modes.
+  The 2025 and 2026 maths is `assets/monet.js` part 2, a port of Material Color Utilities on GitHub (main, commit bd811e4, 2026,
+  Apache-2.0); on 15.0, 15 QPR1, 15 QPR2 and 16.0 part 2 computes every spec, 2021 included, at the phone's contrast (on 15.0
+  with the two a15 rules wherever the spec is 2021). A grey custom
+  color (chroma under 5) becomes Google blue for these styles and CMF, as Android does, and the preview says
+  *From Google blue: #808080 is too grey for this style*. **2021** (**2025** on 16 QPR1/QPR2, **2026** or **2025** on 17) then Apply (with More styles on Off, Pure black off, the Intensity
+  sliders at 100, no accent set and Accurate shades on) and **Default** switch the overlay off; **Undo** puts back the overlay from before (off when there was none). Not yet tried on a rooted phone.
+- **More styles** (the third control of that card; Super User on Android 14 (14.0, QPR1, QPR2, QPR3), 15 (15.0, QPR1, QPR2), 16 (16.0, QPR1, QPR2) or 17, a locked row reading *Needs Android 14* on
+  12 and 13 and the version locks above elsewhere):
+  **Off**, **Fidelity** (accents keep your exact color; backgrounds take a faint tint of it), **Content** (like Fidelity, with a third accent
+  chosen to sit beside your color) and **Monochrome** (no color at all: black, white and greys), styles Android has no setting for, and,
+  while Color spec is 2026, **CMF** (one color family: accents and backgrounds are your color at different strengths; leaving 2026 sets
+  More styles back to Off). The app computes their colors itself (`assets/monet.js`: on Android 14 a port of Android 14's color engine
+  from AOSP and Google's Material Color Utilities 0.4.0, both Apache-2.0, on 14 QPR1-QPR3 with the roles and fixed colors from part 2 with
+  libmonet a14q's 2021 rules (P14Q, checked against that libmonet compiled and run); on 15.0, 15 QPR1, 15 QPR2 and 16.0 part 2 at 2021 (on 15.0 with
+  libmonet a15's on-container and key-color rules), Fidelity and Content with MCU main's TemperatureCache, checked against those releases' SystemUI and libmonet compiled and run; CMF from part 2,
+  see Color spec, on 17 libmonet a17's SchemeCmf; on 17 Fidelity, Content and Monochrome take their 2021 colors at every spec, the
+  four dims following the spec chosen; Android 14 to 17 accept Monochrome as a theme style, none Fidelity or Content, and 17's code has a CMF case that it
+  does not accept as a style) from the custom color, else the wallpaper's
+  color (the one the theme setting carries for a wallpaper source, not a custom color it carries; else the first main color Android
+  reports for the wallpaper set last, lock or home by WallpaperManager id as SystemUI does, that is not almost grey; SystemUI ranks
+  the whole color map by hue, which apps cannot read, so this may differ from the color Android picks), else Google blue, taken when Apply is tapped; a **Preview** under the options (also with **Off**, for a
+  list style Color spec recolors) shows the five rows (13 shades each) and names the source.
+  **Apply theme** still writes the theme setting from the style list first and then the overlay on top: 165 colors on Android 14,
+  15.0 and 15 QPR1 (65 palette shades, the 44 roles light and dark, 12 fixed), 177 on 15 QPR2 and 16.0 (50 roles), 252 on 16 QPR1 and QPR2
+  (244 at spec 2021; Fidelity, Content and Monochrome follow the chosen spec there), 264 on 17 (256 at spec 2021), with each release's names in
+  its order, Pure black's values winning where both name a resource; the choice is kept in `ovl_root_style`,
+  what the overlay carries in `ovl_root_applied` (with `spec` when it is not 2021, `adjust` when an Intensity slider is not at 100,
+  `accents` when a Secondary or tertiary accent is set, `accurate: false` when Accurate shades was off, `profile` when it is not P14 and `build`; PR 2's `ovl_black_applied` is read as a fallback).
+  Messages then speak of the *theme overlay*; **Off** then Apply and **Default** switch it off; **Undo** puts back the overlay from before (off when there was none). Spritz in the style list is the
+  style other theming apps call Neutral; Android has it from 13, so it needs no root. Not yet tried on a rooted phone.
+- **Intensity** (the fourth control of that card, under More styles and above the accents; Super User on Android 14 (14.0, QPR1, QPR2, QPR3), 15 (15.0, QPR1, QPR2), 16 (16.0, QPR1, QPR2) or 17, locked like More
+  styles: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge or
+  when `monet.js` has no `MonetPlan.lib.adjustOf`; the locked row keeps its line): three native range sliders, **Accent saturation**,
+  **Background saturation** and **Background lightness**, 0 to 200 % in steps of 5, 100 % when never moved, the row's line *100% leaves
+  Android's colors as they are.* and a **Reset** text button that sets all three to 100 (greyed out at 100/100/100). The values are kept
+  in `ovl_adj_accent_sat`, `ovl_adj_bg_sat` and `ovl_adj_bg_light` when a slider is let go (its change event); moving one (its input
+  event) only redraws the value, the hint and the preview, writes nothing and runs nothing in the background. The maths is
+  `opts.adjust = { accentSat, bgSat, bgLight }` in `assets/monet.js`, both parts, with formulas written for this project, applied to the
+  scheme's tonal palettes before anything is derived from them: accent saturation scales the chroma of primary, secondary and
+  tertiary, background saturation that of neutral and neutral variant, and background lightness has those two give, for tone t, the
+  colour at clamp(t + 0.1 · (v − 100) · min(1, t / 10, (100 − t) / 10), 0, 100) (tones 0 and 100 never move: shade 0 stays #FFFFFF and
+  shade 1000 #000000; at 200 shades 10, 50 and 100 of a neutral row reach white, at 0 shade 900 reaches black; so at 200 the light
+  background roles from about tone 90 up, `background`, `surface`, `surface_bright` and the five `surface_container` ones, all turn
+  white (at 2025 `surface_container_highest` at times only next to it), and at 0 `background`, `surface`, `surface_dim` and the lowest containers turn black in dark mode: the tiers stop
+  differing). The error palette is never touched; the engine still solves every role on the adjusted palettes, and the tone map
+  comes after it. With any slider not at
+  100, **Apply theme** writes a style's colors with root: a More style as before, adjusted, else the list style at the spec Google's rule
+  gives it (2021 included), adjusted; the hints are *Also writes this style's colors with root, adjusted by the Intensity sliders.*,
+  the 2025 one, the More style and CMF ones (*…, in place of the style above, adjusted by the Intensity sliders.*) and each with pure
+  black. Apply takes the values at the tap; the preview follows them live and appears or goes away as a value leaves or reaches 100
+  (the page scrolls by as much, so the slider stays under the finger). All three at 100 change nothing: the plans, hints and records
+  are the ones from before. Monochrome is unchanged by both saturation sliders and Rainbow's neutrals by background saturation (no
+  chroma). Measured WCAG contrast (`MonetPlan.roles()`, saturation at 100, contrast 0, seeds 6750A4 1B6EF3 B5651D 00FF00 808080
+  FFDE3F, light and dark; P14, P14Q and P16 equal, P15 equal to P16 for these pairs), worst case at bgLight 100 / 0 / 200: on_surface on surface 14.29 / 12.29 / 13.07 for the
+  nine styles at 2021, 11.53 / 13.05 / 8.29 for Tonal Spot, Vibrant, Expressive and Spritz at 2025, 12.09 / 13.07 / 9.00 for CMF;
+  on_surface_variant on surface_container_highest 7.17 / 7.10 / 6.42, 4.84 / 5.38 / 4.13 and 4.92 / 5.41 / 4.42 (for these two pairs the
+  drop is mostly in light mode at 200). Accent text does not follow bgLight while the panels do, so its worst cases are at the other
+  ends: primary on surface_container_highest 4.96 / 3.76 / 5.05 at 2021, 4.84 / 3.72 / 5.00 at 2025, 4.95 / 3.74 / 4.14 for CMF (0 in
+  light mode, CMF's 200 in dark mode); inverse_primary on inverse_surface (P16) 4.96 / 3.76 / 5.44 at 2021 (0 in dark mode), 6.04 /
+  5.76 / 5.60 at 2025, 6.06 / 5.77 / 5.59 for CMF. **Reset** then Apply,
+  **Default** and **Undo** act as for More styles. Not yet tried on a rooted phone.
+- **Secondary and tertiary accents** (the fifth control of that card, under Intensity; Super User on Android 14 (14.0, QPR1, QPR2, QPR3), 15 (15.0, QPR1, QPR2),
+  16 (16.0, QPR1, QPR2) or 17, locked like Intensity: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the
+  overlay bridge or when `monet.js` has no `MonetPlan.lib.accentsOf`; the locked row keeps its line): the row's line *Your own colors for
+  the second and third accent. The main color stays as it is.* and two entries, **Secondary accent** and **Tertiary accent**, each the
+  color bubble of Settings' Granular Color Pickers (the swatch and `#RRGGBB` when set, a dashed empty circle and *From the style* when
+  not), with a **Clear** text button on a set entry. Tapping an entry opens the page's color popup (titled *Secondary accent* or
+  *Tertiary accent*) at the stored color (*Current color #E91E63 • Apply theme writes it to the phone*) or, unset, at the key color the
+  style gives that row now, for the style Apply would write without the accents and the sliders (*The style gives #7B748A now • Apply
+  theme writes your color to the phone*); its **Apply** stores the color (an unchanged one too), **Cancel** stores nothing, and neither
+  calls the bridge. Kept in `ovl_accent_secondary` and `ovl_accent_tertiary` (`RRGGBB` in capitals; `''`, nothing or any other value
+  is "from the style"). The maths is `opts.accents = { secondary, tertiary }` in `assets/monet.js`, both parts, a rule written for this
+  project: for a color X the scheme of the same style, spec, mode, contrast and profile is built from X as the seed (X as it is: the
+  Google-blue rule for greys is not applied), and its primary palette P replaces the secondary (accent2) or tertiary (accent3) palette
+  before the shades, the roles, the fixed colors and `palette_key_color_*` are derived; where P's hue is not X's within 0.5 degrees
+  (Expressive at 2021, seed hue + 240, and Fruit Salad at every spec, seed hue - 50), the palette at X's hue with P's chroma takes its
+  place. So the hue picked is kept in every style and the style sets the chroma: at 2021 that of the style's primary, 36 Tonal Spot, 200
+  Vibrant, 40 Expressive, 48 Rainbow and Fruit Salad, 12 Spritz, on every profile and for every color (the styles' own secondary /
+  tertiary: 16/24, 24/32, 24/32, 16/24, 36/36, 8/16); Fidelity, Content and CMF keep X's chroma (under CMF the tertiary and
+  tertiary_container roles, and so the tertiary fixed colors, keep the seed's tone: CMF's 2026 rules take it from a second source
+  color and the app gives CMF one, the seed; 6750A4 with FFDE3F gives tertiary_container 6F5E00); at 2025 Tonal Spot and Expressive differ
+  between light and dark and Spritz gives blue hues 12, others 8. Grey colors give a colored row at the style's chroma in the stock
+  styles (808080 and FFFFFF teal, 000000 pink). The accents come before `opts.adjust`, so Accent saturation scales them. Only accent2 and
+  the secondary roles (accent3 and the tertiary roles) change; Monochrome's entries are the same with them, so under Monochrome the page
+  passes none. With an accent set, **Apply theme** writes a style's colors with root: a More style as before, with the accents, else the
+  list style at the spec Google's rule gives it (2021 included); the 2021 hints are *Also writes this style's colors with root.* and
+  *Also writes this style's colors and pure black with root.*, the 2025, adjusted and More style ones are reused, and a second sentence
+  names the accents (*Secondary accent: your color.*, *Tertiary accent: your color.*, *Secondary and tertiary accents: your colors.*).
+  Apply takes the colors at the tap; the preview follows them as they are stored. With none set, the plans, hints and records are the
+  ones from before; the record gains `accents` (the set ones) only when it has a style and one is set. Any source color works (the
+  custom color, the wallpaper's, Google blue). **Clear** on both then Apply, **Default** and **Undo** act as for More
+  styles. Not yet tried on a rooted phone.
+- **Accurate shades** (the sixth control of that card, under the accents; Super User on Android 14 (14.0, QPR1, QPR2, QPR3), 15 (15.0, QPR1, QPR2), 16 (16.0, QPR1, QPR2) or 17, locked like
+  the accents: *Needs Super User*, *Needs Android 14* on 12 and 13, the version locks above, *Update the app* without the overlay bridge
+  or when `monet.js` has no `MonetPlan.lib.accurateOf`; the locked row keeps its line, and a stored off counts as on while locked): a
+  switch drawn like Pure black's, on by default, the row's line *On: every accent shade keeps its own tone. Off: the pale accent colors
+  (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.* Kept in
+  `ovl_accurate_shades` (`'0'` is off, `'1'` on; nothing or any other value is on). Flipping it redraws the preview and the hint, writes
+  nothing and runs nothing in the background. The maths is `opts.accurate` in `assets/monet.js`, both parts, a rule written for this
+  project (Android and Material Color Utilities have no such option): `false` makes the scheme's primary, secondary and tertiary
+  palettes (after the accents and the Intensity sliders) answer tone 90 with their tone-70 color, so everything taken from them at
+  exactly tone 90 gets the tone-70 color: `system_accentN_100` (which equals `system_accentN_300` on every profile; P14's shade rule
+  with its chroma cap is unchanged) and every role, fixed and `palette_key_color_*` color whose computed tone is exactly 90. Tones are
+  not changed: contrast still moves a role's tone first, and the tone rules that read a palette (Fidelity/Content's containers) read
+  it as it is with the switch on. Neutral, neutral variant and error palettes never change; palettes() still reports each palette's
+  own hue, chroma and key. `true`, `null` or left out change nothing (byte for byte the results from before the option); any other
+  value throws. Which roles that is (measured on six seeds, no accents or sliders, every profile): at 2021 the light containers
+  (`primary/secondary/tertiary_container`; Fidelity/Content only `secondary_container` for 2 of 6 seeds, on P15/P15Q1/P15Q2/P16 but not
+  P14 or P14Q), the dark on-containers, the three `_fixed` colors (all but Monochrome; `tertiary_fixed` like the other two) and light
+  `control_activated` (all), and for Monochrome its greys at 90 (light `on_primary`, `on_tertiary`, the two `on_*_fixed_variant`; dark
+  `on_secondary_container`, `tertiary`); at 2025/2026 only what lands on 90 (light `control_activated`, some containers and fixed
+  colors for some seeds, `inverse_primary` with Expressive on P15Q2/P16, dark `secondary`/`tertiary` with Vibrant at 2025); at
+  contrast 0.5 most of these move off tone 90 (P14Q keeps Monochrome's light `on_primary` and dark `tertiary` there as well; at contrast 0
+  P14Q lands on 90 exactly where P14 does, every spec). `palette_key_color_*` did not land on 90 for any seed checked. On P16Q1/P16Q2 (measured separately, six seeds, contrast 0): at
+  2021 the same kinds; at 2025/2026 light `secondary_container`/`secondary_fixed` with every style, `control_activated`,
+  `primary_container`, `primary_fixed` with Tonal Spot, Expressive, Rainbow and Spritz, and for some seeds `inverse_primary`,
+  `secondary_fixed_dim`, `tertiary_fixed_dim`, dark `secondary`/`tertiary` (Vibrant), `tertiary`/`primary`/`surface_tint` (Rainbow),
+  `tertiary_dim` (Tonal Spot); the QPR lookups never change. On P17 (six seeds, contrast 0 and 0.5): at 2021 the same kinds, the
+  fixed colors `_light` and `_dark`; at 2025/2026 Rainbow and Fruit Salad (2021 colors there) the 2021 kinds, Fidelity and Content
+  their fixed colors and light `control_activated`, the others what lands on 90 (light `control_activated`, `primary_container`,
+  `secondary_container`, fixed colors, `inverse_primary` with Expressive; dark `secondary`/`tertiary` (Vibrant), `tertiary_dim`
+  (Tonal Spot), the dims of Rainbow, Fidelity, Content and Monochrome); at contrast 0.5 the dark fixed colors mostly stay at 90.
+  The P17 lookup `system_primary_fixed_dark` does change (every style but Monochrome at 2021, most at 2025/2026, and
+  `system_primary_dim_dark` with Rainbow for one seed), so on 17 the check sees the darker color there. Example: 6750A4, Tonal
+  Spot, 2021, every profile: accent1_100 E9DDFF becomes B3A2E1, and so do light `primary_container`, dark `on_primary_container`,
+  `primary_fixed` and light `control_activated`; light `secondary_container` E8DEF8 becomes B0A7C0, light `tertiary_container`
+  FFD9E3 becomes D29DAD; light `primary` 65558F and the neutral rows stay. At 2025 (P15Q2) light `secondary_container` changes the
+  same way while `primary_container` (D4C3FD, not at 90) stays. Text contrast falls with it (WCAG ratio, same example): light
+  `on_primary_container` on `primary_container` 7.26 to 4.09 (P14, P14Q and P15: 13.25 to 7.48), dark 7.26 to 4.09 on every profile (P17 included). Where this
+  shows is inferred, not measured: Material 3 components put `secondary_container` behind tonal buttons, selected chips and the
+  navigation bar's indicator and `primary_container` behind FABs, so apps following Material You's role colors would show it in
+  light mode at 2021; apps reading `system_accentN_100` show the darker shade. Which screens do is not known. The page's own Colors
+  in use reads those shades (`getSystemPalette`); the app's own Material You look (`materialYouScheme`) reads accent shades 200 and
+  600 and the neutral rows only, so it does not change. ColorBlendr's switch of the same name, read in its source and not run,
+  changes the same kind of colors (shade 100 and what its roles read at that tone); one difference: it leaves `tertiary_fixed` light,
+  this app does not. With the switch off, **Apply theme** writes a style's colors with root: a More style as before, with the
+  darker colors (Monochrome too: E2E2E2 becomes ABABAB), else the list style at the spec Google's rule gives it (2021 included); the
+  first sentence of the hint is the one the accents brought (*Also writes this style's colors with root.* and its pure black form at
+  2021, else the 2025, adjusted or More style one), and a last sentence, after the accents' one, says *Accurate shades: off.* Apply
+  takes the value at the tap (a tap, a resume record or a record without it counts as on); the record gains `accurate: false` only
+  when it has a style and the switch was off, and Undo writes an overlay from before with the record's value, not the switch's. With
+  the switch on, the plans, hints and records are the ones from before. The preview shows the shades only (shade 100 in shade 300's
+  color), not the roles. Pure black names only neutral shades and dark backgrounds and surfaces, none of which the switch changes.
+  The overlay check after a write reads accent1_600, neutral1_500, primary_light and surface_dark, none of which change. Turning it on
+  then Apply, **Default** and **Undo** act as for More styles. Not yet tried on a rooted phone.
 
 **Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,
 `com.android.systemui` …), each group showing how many of its overlays are on:
@@ -861,7 +1173,13 @@ non-system app), and needs a working mode that isn't already Root (Root removes 
 - **Activities**: all activities (exported and unexported) with **Launch**, **Enable / Disable** and an exported filter. Unexported
   activities launch through ADB / Shizuku / Root; a launch that goes through just opens the activity, and Android's answer is
   shown only if it refuses
-- **Components**: receivers, services (with **Stop**) and providers, each with its exported / enabled / permission state
+- **Components**: receivers, services (with **Stop**) and providers, each with its exported / enabled / permission state.
+  **Enable / Disable** on an activity or component works in Root mode (su granted) or with Shizuku running as root (UID 0) or the
+  system user (UID 1000): Android allows a single part's change to root (UID 0) and the system user (UID 1000) but refuses it to the
+  ADB shell user (UID 2000) with "Shell cannot change component state". For the ADB shell user (UID 2000: ADB, ADB over TCP,
+  Wireless Debugging and Shizuku started over ADB) and in Read-Only the button carries a padlock, which here means "Needs Super
+  User (Root)", and sends nothing to Android. A tap switches the working mode to Root when the phone has `su` (a no from `su` puts the
+  mode you had back and offers the Root Features tab), else it offers that tab. Disabling a part of a system app asks to confirm first
 - **Manifest**: decoded `AndroidManifest.xml` with search, copy, share and save to Downloads
 - **Raw**: the full details JSON
 - **Features**: the `uses-feature` list, each marked required or optional and *on this phone* or not (the OpenGL ES version is
@@ -954,12 +1272,29 @@ Two tiles and one widget run **without opening the app**:
 
 | | Does |
 |---|---|
-| **Working mode** tile / **🔄 Mode** widget button | Switches to the next mode that is ready (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic. The tile shows the current mode |
-| **Stop apps** tile / **🛑 Stop apps** widget button | Force-stops every app in your **quick list** |
+| **Working mode** tile / **🔄 Mode** widget button | Switches to the next mode that is ready (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic. The tile shows the current mode and is lit when the app last found a working mode usable: ADB TCP reachable (connected, or its port open), Wireless Debugging connected, Shizuku authorized or Root granted. It is dim with Automatic finding nothing, or Read-Only, and, after a new install or an update from 7.15 or older, until the app has been opened once. A tap that switches to Root asks no `su` (the root manager's question would come up behind the closing panel). So the tile stays dim after that tap, even where root works, until you open the app, which then asks; it is lit at once only when the app is still running and already has `su`'s yes |
+| **Kill Apps** tile / **Kill Apps** widget button | Force-stops every app in your **quick list**, one after the other, with a notification that shows how far it is |
 
 Choose the quick list in **Saved Lists** with **🛑 Quick list** on a card. To add the tiles, swipe down twice,
-tap ✏️ and drag **Working mode** and **Stop apps** into your panel. For the widget, long-press the home
+tap ✏️ and drag **Working mode** and **Kill Apps** into your panel. For the widget, long-press the home
 screen → Widgets → ADB App Manager.
+
+**The Kill Apps notification.** While the run goes on, a notification *Stopping apps* shows the place it has
+reached (*3 of 12 · Chrome*), the list's name and a progress bar. It goes away when the run ends, and the usual
+short message follows (*Force-stopped 5 apps*, with *, 1 failed* and *, 2 left alone* when they apply).
+
+- **Cancel** stops the run after the app it is on, leaves the apps it did not reach as they are, and clears the
+  notification (*Cancelled after 3 of 12 apps*).
+- **Tapping the notification** opens the app on **Saved Lists** with the *Edit Saved List* sheet of the quick
+  list. The run is not touched: it goes on while you look.
+- On **Android 16 and newer** it asks to be a *Live Update* (a small chip in the status bar, *3/12*). That needs
+  the **Live updates** row of the Permissions sheet (and Notifications); no command can switch it on, so its
+  **Allow** asks for Notifications first and then opens the phone's Live updates screen for this app. Where the
+  phone does not show a Live Update, you get the same notification without the chip.
+- A second tap while a run goes on does not start another one.
+- **Never stopped, whatever the list says:** this app, the phone's WebView app (the one that draws this
+  app's window) and Media Picker (`com.google.android.providers.media.module`). They stay in the list and the
+  message counts them as *left alone*.
 
 Both go through `QuickActionActivity`, which is `MainActivity` without its UI, so the ADB, Shizuku and Root
 code is shared instead of duplicated:
@@ -1006,7 +1341,8 @@ there is no Android screen for any of them, so they only ever show up once there
 shell with nothing to open. **Allow all** walks through the ones still missing, one after the other (leaving a screen without
 allowing does not stop the walk, and closing the sheet cancels the rest); with ADB, Shizuku or Root the app switches Usage
 access, Display over other apps and the three privileged-only accesses on for itself, so only All files access ever needs its
-own screen. **Not now** skips them all: the same sheet is under **About → 🔐 Permissions** and shows what is allowed. On Android
+own screen, and then restarts (a toast says "Restarting the app"; it closes and comes back by itself a moment later, in a fresh
+process, so that what was granted holds everywhere). **Not now** skips them all: the same sheet is under **About → 🔐 Permissions** and shows what is allowed. On Android
 10 and older there is no All-files switch, so **Allow** shows Android's own storage dialog (and, after "don't ask again", the
 app's settings page); the app asks Android 10 for its legacy file access so that permission is enough there.
 
@@ -1029,8 +1365,8 @@ for nothing, and a working mode reads storage without it.
 wallpaper changes) come first, followed by six classic palettes. Every palette has light and dark variants,
 colors can be fine-tuned per mode, and everything is remembered between launches.
 
-**Palette Style** (Settings, above the palettes): one **source color** (your wallpaper's, Material purple, or any color you pick) turned into a whole light and dark theme in one of nine
-styles: Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow or Monotone. The colors are worked out in the HCT color space with tonal palettes, as in Google's
+**Palette Style** (Settings, above the palettes): one **source color** (your wallpaper's, Material purple, or any color you pick) turned into a whole light and dark theme in one of ten
+styles: Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow, Monotone or CMF. The colors are worked out in the HCT color space with tonal palettes, as in Google's
 [Material Color Utilities](https://github.com/material-foundation/material-color-utilities) (Apache-2.0); text stays readable for any source color.
 
 **My Themes** (Settings, below Palette Style): save the look in use (palette or palette style, source color, color tweaks, Pure black) under a name, switch between up to 30 themes with a tap, rename, update or delete them;

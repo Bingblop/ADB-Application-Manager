@@ -20,7 +20,6 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -51,7 +50,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -72,6 +70,8 @@ public class MainActivity extends Activity {
     private boolean pageReady = false;
     // An APK opened from outside (default-installer intent) waiting to be handed to the Installer tab.
     private String pendingInstallRef = null;
+    // The Stop apps notification was tapped: the id of the quick list whose sheet the page opens once it is ready (takeQuickOpen).
+    private String pendingQuickOpen = null;
     private Vibrator vibrator;
     private SharedPreferences prefs;
     private boolean buildChangedThisLaunch = false;
@@ -103,6 +103,9 @@ public class MainActivity extends Activity {
     private final Object trackerLock = new Object();
     private final ExecutorService trackerExecutor = Executors.newSingleThreadExecutor();
     private volatile boolean trackerBusy, trackerCancel;
+    // one switch of an app's tracker parts at a time (trackerPartsSet): a second tap while a run is going is told "busy"
+    private final Object trackerPartsLock = new Object();
+    private boolean trackerPartsBusy;
 
     private Trackers trackers() throws Exception {
         Trackers t = trackersLib;
@@ -275,6 +278,8 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         setContentView(webView);
+        // the newest window is the one a Morphe patch that is going asks for the installer, also before this page makes a Morphe call (MOR-1)
+        try { MorpheBridge.windowOpened(morpheHost()); } catch (Throwable t) { Log.w(TAG, "Morphe window registration failed: " + t.getMessage()); }
 
         webView.setVerticalScrollBarEnabled(true);
         webView.setHorizontalScrollBarEnabled(false);
@@ -291,12 +296,14 @@ public class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(false);
         settings.setUseWideViewPort(false);
 
-        webView.setWebChromeClient(new WebChromeClient());
+        // alert(), confirm() and prompt() of the page as dialogs in the app's look, with a real title (PageDialogs); every one is answered exactly once
+        webView.setWebChromeClient(pageDialogs.client());
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 pageReady = true;
                 deliverPendingInstall();
+                deliverPendingQuickOpen();
             }
 
             // The page holds a powerful bridge (shell, files, installs), so it never navigates away from the
@@ -373,6 +380,8 @@ public class MainActivity extends Activity {
         }
         Intent launch = getIntent();
         if (launch != null && IncomingInstall.handOverAtCreate(launch.getAction(), launch.getFlags(), savedInstanceState != null)) handleIncomingIntent(launch);
+        // a tap on the Stop apps notification that starts the window: handed over once, not again by a recreate or a start from Recents
+        if (launch != null && QuickStopRun.openAtCreate(savedInstanceState != null, launch.getFlags())) takeQuickOpen(launch);
         maybeRequestFirstLaunchPermissions();
         // A package file deleted with an Undo whose few seconds ran out while the app was closed: it is deleted for good now
         if (prefs != null && prefs.getBoolean("apk_trash_pending", false)) {
@@ -386,16 +395,26 @@ public class MainActivity extends Activity {
     }
 
     private static final int REQ_STORAGE_PERM = 9301;
+    /** A runtime permission asked for from the permissions sheet (Bluetooth Connect, Notifications): a refusal for good sends the person to the app's settings page too */
+    private static final int REQ_SHEET_RUNTIME_PERM = 9304;
+    /** The sheet's last request as it stood before Android's dialog (for PermRefusal): the permission, its rationale, and whether the sheet had asked for it before. UI thread only. */
+    private String sheetAskPerm = "";
+    private boolean sheetRationaleBefore, sheetAskedBefore;
 
     /** The system's permission dialog was answered: tell the page, and after a refusal for good send the user to the app's settings page, where the switch is. */
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         try {
-            if (requestCode == REQ_STORAGE_PERM) {
+            if (requestCode == REQ_STORAGE_PERM || requestCode == REQ_SHEET_RUNTIME_PERM) {
                 boolean never = false;
                 for (String p : permissions) {
-                    if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED && !shouldShowRequestPermissionRationale(p)) never = true;
+                    boolean granted = checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED, rationale = shouldShowRequestPermissionRationale(p);
+                    if (requestCode == REQ_SHEET_RUNTIME_PERM) {
+                        // a dialog dismissed on a first ask (Back, a tap outside) leaves no rationale either: only an earlier answer makes it a refusal for good
+                        boolean same = p.equals(sheetAskPerm);
+                        if (PermRefusal.forGood(granted, same && sheetRationaleBefore, rationale, same && sheetAskedBefore)) never = true;
+                    } else if (!granted && !rationale) never = true;
                 }
                 if (never) {
                     Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
@@ -452,6 +471,28 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleIncomingIntent(intent);
+        takeQuickOpen(intent);
+    }
+
+    /**
+     * The Stop apps notification was tapped (QuickStopNotice): remembers which quick list's sheet to show. The extra is taken out of the intent, so a
+     * window that is created again from it does not open the sheet a second time.
+     */
+    private void takeQuickOpen(Intent intent) {
+        if (intent == null || isHeadless()) return;
+        String id = intent.getStringExtra(QuickActions.EXTRA_OPEN_QUICK_LIST);
+        if (id == null) return;
+        intent.removeExtra(QuickActions.EXTRA_OPEN_QUICK_LIST);
+        pendingQuickOpen = id;
+        deliverPendingQuickOpen();
+    }
+
+    /** Hands the tap on the Stop apps notification to the page once it is ready: Saved Applications, with the quick list's sheet. */
+    private void deliverPendingQuickOpen() {
+        if (!pageReady || pendingQuickOpen == null) return;
+        final String id = pendingQuickOpen;
+        pendingQuickOpen = null;
+        notifyJs("window.onQuickStopOpen && window.onQuickStopOpen(" + JSONObject.quote(id) + ")");
     }
 
     /** Picks up an APK opened from outside (the default-installer intent-filter) and remembers it. */
@@ -626,20 +667,20 @@ public class MainActivity extends Activity {
         return o;
     }
 
-    private void extractAsset(String assetName, File destFile) {
+    /** Copies an asset into the app's files once per app version, whole or not at all (a copy cut short is not kept; see AssetCopy). */
+    private void extractAsset(final String assetName, File destFile) {
+        String stamp;
         try {
-            if (destFile.exists() && destFile.length() > 0) return;
-            InputStream in = getAssets().open(assetName);
-            OutputStream out = new FileOutputStream(destFile);
-            byte[] buf = new byte[8192];
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
+            stamp = String.valueOf(versionCodeOf(getPackageManager().getPackageInfo(getPackageName(), 0)));
+        } catch (Exception e) {
+            stamp = "0";
+        }
+        AssetCopy.copy(new AssetCopy.Source() {
+            @Override
+            public InputStream open() throws IOException {
+                return getAssets().open(assetName);
             }
-            in.close();
-            out.flush();
-            out.close();
-        } catch (Exception ignored) {}
+        }, destFile, stamp);
     }
 
     /** Whether the terminal a queued script is for is still the current one when the script is about to run. */
@@ -707,7 +748,15 @@ public class MainActivity extends Activity {
             public void run() {
                 String message;
                 try {
-                    if (QuickActions.ACTION_CYCLE_MODE.equals(action)) message = quickCycleMode();
+                    if (QuickActions.ACTION_CYCLE_MODE.equals(action)) {
+                        message = quickCycleMode();
+                        // the mode just changed and the page may not be open to probe it: probe here (the cache was invalidated), so the
+                        // light the probe publishes (publishModeTileLight) follows the new mode; the passive tile reads it the next time the
+                        // panel opens. This window asks no su (see probeWorkingMode), so its answer is not kept: the app's next look probes,
+                        // and asks su, by itself.
+                        try { new AndroidBridge().getWorkingMode(); } catch (Throwable ignored) {}
+                        invalidateModeCache();
+                    }
                     else if (QuickActions.ACTION_STOP_LIST.equals(action)) message = quickStopList();
                     else message = "Unknown quick action";
                 } catch (Exception e) {
@@ -724,13 +773,29 @@ public class MainActivity extends Activity {
             public void run() {
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 QuickWidgetProvider.refreshAll(MainActivity.this);
-                try {
-                    android.service.quicksettings.TileService.requestListeningState(MainActivity.this, new android.content.ComponentName(MainActivity.this, ModeTileService.class));
-                    android.service.quicksettings.TileService.requestListeningState(MainActivity.this, new android.content.ComponentName(MainActivity.this, StopListTileService.class));
-                } catch (Throwable ignored) {}
+                // No tile refresh: both tiles are passive (no ACTIVE_TILE meta-data) and Android ignores requestListeningState for a passive
+                // tile. Each tile reads its state in onStartListening the next time the panel opens (the tap's startActivityAndCollapse closed it).
                 finish();
             }
         });
+    }
+
+    /**
+     * Keeps the Working mode tile's light in step with the probe. The tile runs without this activity, so the probe's resolved mode and
+     * whether it was available go to the preferences the tile reads (ModeTileLight.PREF_MODE / PREF_AVAILABLE); they are written only
+     * when they changed. The tile is a passive one (no ACTIVE_TILE meta-data): Android calls its onStartListening, where it reads the keys
+     * again, every time the Quick Settings panel opens, and a panel already open keeps the light it showed until it is opened again.
+     * requestListeningState is not called here: Android ignores it for a passive tile.
+     */
+    private void publishModeTileLight(String resolved, boolean available) {
+        try {
+            String mode = resolved == null ? "" : resolved;
+            android.content.SharedPreferences p = QuickActions.prefs(this);
+            String oldMode = p.getString(ModeTileLight.PREF_MODE, "");
+            boolean oldAvailable = p.getBoolean(ModeTileLight.PREF_AVAILABLE, false);
+            if (mode.equals(oldMode) && available == oldAvailable) return;
+            p.edit().putString(ModeTileLight.PREF_MODE, mode).putBoolean(ModeTileLight.PREF_AVAILABLE, available).apply();
+        } catch (Throwable ignored) {}
     }
 
     /**
@@ -738,11 +803,26 @@ public class MainActivity extends Activity {
      * (60101 = 6.1.1, 90000 = 9.0) and, on older One UI, from Build.VERSION.SEM_PLATFORM_INT (150000 = 6.0: take away 90000).
      */
     private String oneUiVersion() {
+        return oneUiVersion(null);
+    }
+
+    /** Build.MANUFACTURER or Build.BRAND says samsung. */
+    private static boolean isSamsung() {
+        return "samsung".equalsIgnoreCase(Build.MANUFACTURER) || "samsung".equalsIgnoreCase(Build.BRAND);
+    }
+
+    /**
+     * oneUiVersion(), and in propertyUnset[0] (when given) whether getprop ro.build.version.oneui ran and printed nothing, that is the
+     * property is not set (false when getprop failed, timed out or printed anything else): MonetProfile.oneUi tells "not One UI" from "could
+     * not be read" with it (monetOneUi, the root theme card's note).
+     */
+    private String oneUiVersion(boolean[] propertyUnset) {
         try {
-            if (!"samsung".equalsIgnoreCase(Build.MANUFACTURER) && !"samsung".equalsIgnoreCase(Build.BRAND)) return "";
+            if (!isSamsung()) return "";
             int v = 0;
             try {
                 String line = runProcessWithTimeout(new ProcessBuilder("getprop", "ro.build.version.oneui"), 2000).trim();
+                if (propertyUnset != null) propertyUnset[0] = line.isEmpty();
                 if (line.matches("\\d{4,7}")) v = Integer.parseInt(line);
             } catch (Throwable ignored) {}
             if (v <= 0) {
@@ -754,6 +834,63 @@ public class MainActivity extends Activity {
             return AppExtras.oneUi(v);
         } catch (Throwable t) {
             return "";
+        }
+    }
+
+    /** The theme-colour profile, worked out once: the build and the colour names it has do not change while the app runs. */
+    private volatile MonetProfile.Result monetProfileCache;
+
+    /**
+     * Which Android build family builds this phone's theme colours (MonetProfile): the SDK level, which of MonetProfile.PROBES the
+     * framework has (getIdentifier(name, "color", "android") != 0) and which of MonetProfile.BOOL_PROBES (getIdentifier(name, "bool",
+     * "android") != 0; no root, no shell). One UI is decided the same way (PR 13). A lookup that throws leaves the answer locked (fail
+     * closed) and is not kept, so the next call looks again.
+     */
+    private MonetProfile.Result monetProfile() {
+        MonetProfile.Result r = monetProfileCache;
+        if (r != null) return r;
+        Set<String> present = new HashSet<String>();
+        try {
+            Resources res = getResources();
+            for (String name : MonetProfile.PROBES) if (res.getIdentifier(name, "color", "android") != 0) present.add(name);
+            for (String name : MonetProfile.BOOL_PROBES) if (res.getIdentifier(name, "bool", "android") != 0) present.add(name);
+        } catch (Throwable t) {
+            return MonetProfile.of(Build.VERSION.SDK_INT, null);
+        }
+        r = MonetProfile.of(Build.VERSION.SDK_INT, present);
+        monetProfileCache = r;
+        return r;
+    }
+
+    /** The One UI value for the root theme card's note, worked out once it could be read (One UI does not change while the app runs). */
+    private volatile String monetOneUiCache;
+
+    /**
+     * The One UI value getSystemPalette reports as "oneUi" (MonetProfile.oneUi: "" on a phone that is not One UI, the version on one,
+     * MonetProfile.ONE_UI_UNREAD on a Samsung phone whose version could not be read, which is not kept so the next call reads again). It only
+     * shows the page's note on the root theme card; it does not lock anything.
+     */
+    private String monetOneUi() {
+        String v = monetOneUiCache;
+        if (v != null) return v;
+        boolean[] unset = {false};
+        String version = oneUiVersion(unset);
+        String oneUi = MonetProfile.oneUi(isSamsung(), version, unset[0]);
+        if (!MonetProfile.ONE_UI_UNREAD.equals(oneUi)) monetOneUiCache = oneUi;
+        return oneUi;
+    }
+
+    /**
+     * The phone's contrast setting, the value SystemUI builds the theme colours at (UiModeManager.getContrast, Android 14 and newer),
+     * through MonetProfile.contrast; 0 before Android 14 or when it cannot be read. Read on every call: it changes in Settings.
+     */
+    private double systemContrast() {
+        if (Build.VERSION.SDK_INT < 34) return 0;
+        try {
+            android.app.UiModeManager um = (android.app.UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+            return um == null ? 0 : MonetProfile.contrast(um.getContrast());
+        } catch (Throwable t) {
+            return 0;
         }
     }
 
@@ -834,23 +971,63 @@ public class MainActivity extends Activity {
         return sdmHostInstance;
     }
 
-    /** Force-stops every app in the quick list. */
+    /**
+     * Force-stops every app in the quick list, except this app, the WebView provider and Media Picker (QuickStopRun.protectedPackages): stopping those
+     * would end this run or the window it is shown in. A notification shows how far it is and has Cancel (QuickStopNotice); it goes when the run ends.
+     */
     private String quickStopList() throws Exception {
         JSONObject list = QuickActions.quickList(this);
         if (list == null) return "No quick list set. Open Saved Applications in the app and tap Quick list.";
         if ("standard".equals(resolveExecMode())) return "Needs ADB, Shizuku or Root. Set up a working mode first.";
+        List<String> listed = new ArrayList<String>();
         org.json.JSONArray pkgs = list.optJSONArray("packages");
-        AndroidBridge bridge = new AndroidBridge();
-        int ok = 0, failed = 0;
-        for (int i = 0; pkgs != null && i < pkgs.length(); i++) {
-            String out = bridge.executeAppAction("force_stop", pkgs.optString(i));
-            // force_stop is flagged by its own real exit status (see AndroidBridge.runShellAction) - read that
-            // rather than guessing from the text, same reasoning as the rest of executeAppAction's callers.
-            if (out != null && out.length() >= 2 && out.charAt(0) == '\u0001') { if (out.charAt(1) == '1') ok++; else failed++; }
-            else if (launchOutputFailed(out)) failed++;
-            else ok++;
+        for (int i = 0; pkgs != null && i < pkgs.length(); i++) listed.add(pkgs.optString(i));
+        final Context app = getApplicationContext();                 // the notification does not depend on this (headless) window staying
+        QuickStopRun run = new QuickStopRun(list.optString("id"), list.optString("name"), listed, QuickStopRun.protectedPackages(getPackageName(), webViewPackageName()));
+        if (!QuickStopRun.begin(run, android.os.SystemClock.elapsedRealtime())) return "Kill Apps is already running. Tap Cancel in its notification to stop it.";
+        // No tile refresh here or in finishQuickAction: the Kill Apps tile is passive (no ACTIVE_TILE meta-data), and
+        // TileService.requestListeningState does nothing for a passive tile. Android reads QuickStopRun.tileActive() in the tile's
+        // onStartListening each time the panel opens, so the tile is lit when the panel is opened while a run is going. Making the tile
+        // active instead would change when Android redraws it (also its "list (N apps)" subtitle), which only a phone can show; not done.
+        try {
+            AndroidBridge bridge = new AndroidBridge();
+            for (String pkg : run.targets()) {
+                if (run.cancelled()) break;                          // Cancel: the apps not reached yet are left as they are
+                run.starting(appLabel(pkg));
+                if (run.shouldPost(android.os.SystemClock.elapsedRealtime())) QuickStopNotice.show(app, run);
+                String out = bridge.executeAppAction("force_stop", pkg);
+                // force_stop is flagged by its own real exit status (see AndroidBridge.runShellAction) - read that
+                // rather than guessing from the text, same reasoning as the rest of executeAppAction's callers.
+                boolean stopped;
+                if (out != null && out.length() >= 2 && out.charAt(0) == '\u0001') stopped = out.charAt(1) == '1';
+                else stopped = !launchOutputFailed(out);
+                run.finished(stopped);
+            }
+        } finally {
+            QuickStopRun.end(run);
+            QuickStopNotice.clear(app, run);
         }
-        return "Force-stopped " + ok + " app" + (ok == 1 ? "" : "s") + (failed > 0 ? ", " + failed + " failed" : "");
+        return run.summary();
+    }
+
+    /** The package of the WebView this phone uses (Android System WebView, or Chrome on a phone that uses it), or "" when the phone does not say. */
+    private static String webViewPackageName() {
+        try {
+            PackageInfo pi = WebView.getCurrentWebViewPackage();
+            return pi == null || pi.packageName == null ? "" : pi.packageName;
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** The name people know an app by, or its package name when the phone has none to give. */
+    private String appLabel(String pkg) {
+        try {
+            PackageManager pm = getPackageManager();
+            CharSequence label = pm.getApplicationLabel(pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES));
+            if (label != null && label.length() > 0) return label.toString();
+        } catch (Exception ignored) {}
+        return pkg;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -1148,6 +1325,49 @@ public class MainActivity extends Activity {
         return null;
     }
 
+    private final java.util.concurrent.atomic.AtomicBoolean shizukuStarting = new java.util.concurrent.atomic.AtomicBoolean();
+
+    private static JSONObject shizukuStartResult(String status, String pkg, ShizukuStart.Result r) {
+        JSONObject o = new JSONObject();
+        try {
+            o.put("status", status);
+            o.put("pkg", pkg == null ? "" : pkg);
+            if (r != null) {
+                o.put("script", r.script);
+                o.put("exit", r.exit);
+                o.put("text", r.text);
+            }
+        } catch (Exception ignored) {}
+        return o;
+    }
+
+    /**
+     * Runs the start script the installed Shizuku app wrote (see {@link ShizukuStart}) through a ready ADB TCP or Wireless Debugging connection,
+     * then reads the binder back: "started" only when Shizuku answers afterwards, whatever the script printed. Usually a few seconds; the bound is
+     * about 36 seconds (adb devices 2.5 s, a reconnect of 5 s when the link had dropped, the script up to ShizukuStart.SCRIPT_TIMEOUT_MS = 20 s,
+     * then the binder poll of 16 x 500 ms), so it runs on the executor.
+     */
+    private JSONObject startShizukuNow() {
+        if (isShizukuBinderAlive()) return shizukuStartResult("already_running", installedShizukuPackage(), null);
+        String pkg = installedShizukuPackage();
+        if (pkg == null) return shizukuStartResult("not_installed", "", null);
+        String devices = adbDevicesOutput();
+        String target = isTargetReady(devices, tcpTarget()) ? tcpTarget()
+                : (adbWirelessPort > 0 && isTargetReady(devices, wirelessTarget())) ? wirelessTarget() : null;
+        if (target == null) return shizukuStartResult("no_adb", pkg, null);
+        String cmd = ShizukuStart.command(pkg);
+        if (cmd == null) return shizukuStartResult("failed", pkg, null);
+        ShizukuStart.Result r = ShizukuStart.parse(runAdbShell(target, cmd, ShizukuStart.SCRIPT_TIMEOUT_MS));     // not the 8 s of a plain command: a slow start is not cut off
+        if (r.noScript) return shizukuStartResult("no_script", pkg, r);
+        boolean alive = false;
+        for (int i = 0; i < 16 && !activityDestroyed; i++) {
+            if (isShizukuBinderAlive()) { alive = true; break; }
+            try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+        }
+        invalidateModeCache();
+        return shizukuStartResult(alive ? "started" : "failed", pkg, r);
+    }
+
     private String connectTcp(String host, int port, boolean select) {
         if (host == null || host.trim().isEmpty()) host = "127.0.0.1";
         if (port <= 0) port = 5555;
@@ -1167,11 +1387,15 @@ public class MainActivity extends Activity {
     }
 
     private String runAdbShell(String target, String cmd) {
-        String output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), 8000);
+        return runAdbShell(target, cmd, 8000);
+    }
+
+    private String runAdbShell(String target, String cmd, int timeoutMs) {
+        String output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), timeoutMs);
         if (output != null && output.contains("device '") && output.contains("' not found")) {
             // The connection dropped (e.g. adbd restarted). Reconnect once without changing the mode.
             runProcessWithTimeout(buildAdbProcess("connect", target), 5000);
-            output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), 8000);
+            output = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), timeoutMs);
         }
         return output != null ? output : "";
     }
@@ -1220,10 +1444,12 @@ public class MainActivity extends Activity {
             boolean authorized = isShizukuAuthorized();
             boolean preV11 = false;
             int version = 0;
+            int uid = -1;
             if (running) {
                 try {
                     preV11 = Shizuku.isPreV11();
                     version = Shizuku.getVersion();
+                    uid = Shizuku.getUid();                 // 0 root, 1000 system, 2000 ADB shell; the gate (RootGate) reads it
                 } catch (Throwable ignored) {}
             }
             obj.put("installed", pkg != null || running);
@@ -1232,8 +1458,19 @@ public class MainActivity extends Activity {
             obj.put("authorized", authorized);
             obj.put("preV11", preV11);
             obj.put("version", version);
+            obj.put("uid", uid);
         } catch (Exception ignored) {}
         return obj;
+    }
+
+    /** The uid the Shizuku server runs as (0 root, 1000 system, 2000 ADB shell), or -1 when the binder is down or it cannot be read. */
+    private int shizukuServerUid() {
+        try {
+            if (!isShizukuBinderAlive()) return -1;
+            return Shizuku.getUid();
+        } catch (Throwable t) {
+            return -1;
+        }
     }
 
     private static Method shizukuNewProcessMethod;
@@ -1557,13 +1794,18 @@ public class MainActivity extends Activity {
             };
         }
         if ("adb".equals(kind)) {
-            final String target = "adb_wireless".equals(resolveExecMode()) ? wirelessTarget() : tcpTarget();
+            final boolean tcp = !"adb_wireless".equals(resolveExecMode());
+            final String target = tcp ? tcpTarget() : wirelessTarget();
+            final String host = tcp ? adbTcpHost : adbWirelessHost;
+            final int port = tcp ? adbTcpPort : adbWirelessPort;
             return new RishShell.Spawner() {
                 @Override
                 public Process spawn(String[] argv) throws Exception {
+                    if (argv.length >= 3 && "-c".equals(argv[1])) return buildAdbProcess("-s", target, "shell", argv[2]).start();   // a helper (Stop, ps) next to a shell that is up
+                    // the shell itself: a link that dropped (adbd restarted) is connected again first, as every other adb command does
+                    if (!isAdbTargetConnected(target)) performConnect(host, port, null);
                     // -T: no terminal on the phone's side; the shell reads the commands this app writes
-                    return (argv.length >= 3 && "-c".equals(argv[1]) ? buildAdbProcess("-s", target, "shell", argv[2])
-                            : buildAdbProcess("-s", target, "shell", "-T")).start();
+                    return buildAdbProcess("-s", target, "shell", "-T").start();
                 }
             };
         }
@@ -1628,10 +1870,6 @@ public class MainActivity extends Activity {
         return new File(getApplicationInfo().nativeLibraryDir, "libptyexec.so");
     }
 
-    private static String shq(String s) {
-        return RishShell.quote(s);
-    }
-
     /** The process that runs a shell on a pty for {@code backend}: app (this app's sandbox), priv (the working mode: Shizuku, Root or ADB) or termux. */
     private Process ptyProcess(String backend, int rows, int cols) throws Exception {
         File helper = ptyHelper();
@@ -1659,7 +1897,9 @@ public class MainActivity extends Activity {
         }
         if ("adb".equals(kind)) {
             // adb's own client gets the terminal: it then asks the phone for a terminal of the same size and follows resizes
-            String target = "adb_wireless".equals(resolveExecMode()) ? wirelessTarget() : tcpTarget();
+            boolean tcp = !"adb_wireless".equals(resolveExecMode());
+            String target = tcp ? tcpTarget() : wirelessTarget();
+            if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);   // a link that dropped is connected again first
             ProcessBuilder adb = buildAdbProcess("-s", target, "shell");
             ProcessBuilder pb = new ProcessBuilder(PtyShell.command(h, rows, cols, adb.command()));
             pb.environment().putAll(adb.environment());
@@ -1833,6 +2073,13 @@ public class MainActivity extends Activity {
         return ok;
     }
 
+    /** The su verdict as already known, without asking (no prompt): not asked yet counts as not granted. */
+    private boolean rootGrantedKnown() {
+        synchronized (modeCacheLock) {
+            return Boolean.TRUE.equals(rootGrant);
+        }
+    }
+
     private boolean isRootAvailable() {
         for (String path : SU_PATHS) {
             if (new File(path).exists()) return true;
@@ -1889,14 +2136,6 @@ public class MainActivity extends Activity {
         cachedAutoMode = resolved;
         cachedAutoModeAt = now;
         return resolved;
-    }
-
-    private static int parsePort(String value, int fallback) {
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (Exception e) {
-            return fallback;
-        }
     }
 
     private static String deviceWifiIp() {
@@ -2243,6 +2482,8 @@ public class MainActivity extends Activity {
 
     /** The check that is running now (Cancel and onDestroy reach it here); null when none is. */
     private volatile UpdateChecker updateCheckRun;
+    /** Cancel was pressed (or the window closed) while the run was still listing the apps, before its checker existed. */
+    private volatile boolean updateCancelRequested;
     private final UpdateChecker.Generation updateRunGeneration = new UpdateChecker.Generation();   // a callback of an older check is dropped once a newer one has started
     /** The last full result (everything the page lists under the updates: not tracked, Obtainium-only, could not be checked ...); kept on disk for the next start. */
     private volatile JSONObject updateLastSummary;
@@ -2322,6 +2563,7 @@ public class MainActivity extends Activity {
 
     /** Stops the check that is running, if any: what it found stays, the rest is reported as not checked. */
     private void cancelUpdateCheckRun() {
+        updateCancelRequested = true;              // read by a run that has not made its checker yet
         UpdateChecker c = updateCheckRun;
         if (c != null) c.cancel();
     }
@@ -2354,10 +2596,26 @@ public class MainActivity extends Activity {
         }
     };
 
+    // ---------------------------------------------------------------------------------------------
+    // Internet speed test (Task Manager > Network > Speed test): SpeedTest (pure Java) does the work; this is the bridge. Needs no working mode: it only
+    // opens HTTPS connections of its own to speed.cloudflare.com through HttpSafe. Runs only while its screen is open (the page stops it on Close, Back
+    // and when the app is hidden); a pool of its own whose idle threads end, stopped in onDestroy.
+    // ---------------------------------------------------------------------------------------------
+    private final ExecutorService speedTestExec = SpeedTest.newPool();
+    private final SpeedTest.Runner speedTest = new SpeedTest.Runner(new SpeedTest.Config());
+
+    private final SpeedTest.Sink speedTestSink = new SpeedTest.Sink() {
+        @Override
+        public void emit(String json) {
+            notifyJs("window.onSpeedTest && window.onSpeedTest(" + JSONObject.quote(json) + ")");
+        }
+    };
+
 
     private void runUpdateCheck(final boolean force, final boolean retryFailed) {
         if (updateCheckRunning) return;
         updateCheckRunning = true;
+        updateCancelRequested = false;
         try {
             executor.submit(new Runnable() {
                 @Override
@@ -2412,10 +2670,11 @@ public class MainActivity extends Activity {
                             };
                             if (retried == null) {
                                 PackageInfo me = pm.getPackageInfo(getPackageName(), 0);
-                                o.self = new UpdateChecker.App(getPackageName(), "ADB Application Manager Pro", currentVersionName(), versionCodeOf(me), null, false, false, false);
+                                o.self = new UpdateChecker.App(getPackageName(), "ADB/Root Full System Toolbox", currentVersionName(), versionCodeOf(me), null, false, false, false);
                             }
                             UpdateChecker checker = new UpdateChecker(UpdateManager.netHttp(5000, 8000), UpdateChecker.SYSTEM_CLOCK, updateCache());
                             updateCheckRun = checker;
+                            if (updateCancelRequested) checker.cancel();   // Cancel pressed while the apps were being listed
                             summary = checker.check(apps, o, new UpdateChecker.Listener() {
                                 @Override
                                 public void onUpdate(JSONObject row) {
@@ -2762,9 +3021,9 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     selfUpdateProgress("error", 0, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
                 } finally {
-                    // The system installer reads the file asynchronously, so keep it in that path; the
-                    // privileged path has already consumed it and can clean up.
-                    if (!standard) apk.delete();
+                    // Used up either way: launchSystemInstaller hands the system installer a copy of its own (in cache/share, swept
+                    // by ShareProvider), and the privileged install has read it. Kept, it stayed in the cache for good.
+                    apk.delete();
                     installingUpdates.remove("self");
                 }
             }
@@ -2900,23 +3159,29 @@ public class MainActivity extends Activity {
      * Puts back the assistant settings saved by {@link #launchViaAssistant} and clears the record, but only once a read-back shows
      * the values are really back (if the backend is not connected the record stays for the next try).
      */
-    private synchronized void recoverPendingAssistant() {
-        String[] old = AssistantRestore.decode(prefs.getString("assistant_restore_pending", null));
-        if (old == null) {
-            if (prefs.contains("assistant_restore_pending")) prefs.edit().remove("assistant_restore_pending").commit();
-            return;
-        }
-        try {
-            AndroidBridge sh = new AndroidBridge();
-            restoreSecureSetting(sh, "assistant", old[0]);
-            restoreSecureSetting(sh, "voice_interaction_service", old[1]);
-            boolean back = trimSetting(sh.executeShell("settings get secure assistant")).equals(old[0])
-                    && trimSetting(sh.executeShell("settings get secure voice_interaction_service")).equals(old[1]);
-            if (back) prefs.edit().remove("assistant_restore_pending").commit();
-        } catch (Throwable t) {
-            Log.w(TAG, "assistant restore: " + t.getMessage());
+    private void recoverPendingAssistant() {
+        // A lock of its own, not the activity's: the shell commands below can take minutes on a backend that does not answer, and the
+        // activity's monitor is also taken on the UI thread (onDestroy, the Morphe picker) and by every lazy getter (secrets(), vault() ...).
+        synchronized (assistantLock) {
+            String[] old = AssistantRestore.decode(prefs.getString("assistant_restore_pending", null));
+            if (old == null) {
+                if (prefs.contains("assistant_restore_pending")) prefs.edit().remove("assistant_restore_pending").commit();
+                return;
+            }
+            try {
+                AndroidBridge sh = new AndroidBridge();
+                restoreSecureSetting(sh, "assistant", old[0]);
+                restoreSecureSetting(sh, "voice_interaction_service", old[1]);
+                boolean back = trimSetting(sh.executeShell("settings get secure assistant")).equals(old[0])
+                        && trimSetting(sh.executeShell("settings get secure voice_interaction_service")).equals(old[1]);
+                if (back) prefs.edit().remove("assistant_restore_pending").commit();
+            } catch (Throwable t) {
+                Log.w(TAG, "assistant restore: " + t.getMessage());
+            }
         }
     }
+
+    private final Object assistantLock = new Object();
 
     /** X.500 subject DNs of a package's signing certificates (for repackage / debug-key detection). */
     private List<String> signerDnList(String pkg) {
@@ -3082,7 +3347,7 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     storeInstallProgress(key, "error", 0, errMsg(e));
                 } finally {
-                    if (!standard && apk != null) apk.delete();
+                    if (apk != null) apk.delete();         // the system installer reads its own copy (launchSystemInstaller)
                     storeInstalling.remove(key);
                 }
             }
@@ -3164,6 +3429,9 @@ public class MainActivity extends Activity {
         }
         return yes[0] ? BundleApprovals.Answer.ALLOW : BundleApprovals.Answer.DENY;
     }
+
+    /** The page's alert / confirm / prompt in the app's look (its colours come from the page); see PageDialogs. */
+    private final PageDialogs pageDialogs = new PageDialogs(this);
 
     /** The install questions on screen now (one per install waiting for an answer); touched on the UI thread. */
     private final java.util.Set<android.content.DialogInterface> installConfirmDialogs = new java.util.HashSet<android.content.DialogInterface>();
@@ -3695,7 +3963,8 @@ public class MainActivity extends Activity {
 
     /**
      * Scans a local APK with VirusTotal. A SHA-256 lookup (private, no upload) when upload=false; a full
-     * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json).
+     * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json), each with the
+     * path it is for, so the page can drop a late answer for a package that was replaced while the scan ran.
      */
     private void runVirusTotalScan(final String apiKey, final String path, final boolean upload) {
         executor.submit(new Runnable() {
@@ -3717,17 +3986,19 @@ public class MainActivity extends Activity {
                     f = staged;
                     notifyUpdates("onVtResult", new JSONObject()
                             .put("stage", upload ? "uploading" : "scanning")
-                            .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…"));
+                            .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…")
+                            .put("path", path));
                     String sha = VirusTotal.sha256(f);
                     JSONObject res = upload
                             ? VirusTotal.uploadAndWait(apiKey.trim(), f, sha, 180000)
                             : VirusTotal.lookup(apiKey.trim(), sha);
                     res.put("stage", "done");
                     res.put("size", f.length());
+                    res.put("path", path);
                     notifyUpdates("onVtResult", res);
                 } catch (Exception e) {
                     try {
-                        notifyUpdates("onVtResult", new JSONObject().put("stage", "error").put("error", errMsg(e)));
+                        notifyUpdates("onVtResult", new JSONObject().put("stage", "error").put("error", errMsg(e)).put("path", path));
                     } catch (Exception ignored) {}
                 } finally {
                     if (staged != null) staged.delete();
@@ -3859,6 +4130,61 @@ public class MainActivity extends Activity {
         return manifestEnabled;
     }
 
+    /** The explicit pm override of a component (ENABLED/DISABLED), or null when none is set (the manifest default is in force). Used to read a toggle back from the real state. */
+    private Boolean componentOverrideState(String pkg, String name) {
+        try {
+            int st = getPackageManager().getComponentEnabledSetting(new android.content.ComponentName(pkg, name));
+            if (st == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) return Boolean.TRUE;
+            if (st == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) return Boolean.FALSE;
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    /**
+     * The parts of an app that belong to a known tracker (TrackerParts.group), with each part's manifest default and its pm override. Disabled parts are
+     * listed too (MATCH_DISABLED_COMPONENTS): a part switched off must stay in the list so it can be switched back on.
+     */
+    private List<TrackerParts.Group> readTrackerParts(String pkg, Trackers t) throws PackageManager.NameNotFoundException {
+        int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES | PackageManager.GET_PROVIDERS
+                | PackageManager.MATCH_DISABLED_COMPONENTS;
+        PackageInfo info = getPackageManager().getPackageInfo(pkg, flags);
+        List<TrackerParts.Part> parts = new ArrayList<TrackerParts.Part>();
+        if (info.activities != null) for (ActivityInfo a : info.activities) addTrackerPart(parts, t, pkg, a.name, "activity", a.enabled);
+        if (info.services != null) for (ServiceInfo s : info.services) addTrackerPart(parts, t, pkg, s.name, "service", s.enabled);
+        if (info.receivers != null) for (ActivityInfo r : info.receivers) addTrackerPart(parts, t, pkg, r.name, "receiver", r.enabled);
+        if (info.providers != null) for (android.content.pm.ProviderInfo p : info.providers) addTrackerPart(parts, t, pkg, p.name, "provider", p.enabled);
+        return TrackerParts.group(t.db, pkg, parts);
+    }
+
+    /**
+     * The app's parts with these names, whatever the tracker list says of them now (name -> part, with its manifest default and pm override). The
+     * History's Undo names the parts its step switched, and a newer tracker list (Update the list, or a newer app) may no longer count one of them as a
+     * tracker's: it is still the app's part, and still switched. A name the app no longer has is left out.
+     */
+    private Map<String, TrackerParts.Part> readNamedParts(String pkg, Set<String> names) throws PackageManager.NameNotFoundException {
+        Map<String, TrackerParts.Part> out = new java.util.LinkedHashMap<String, TrackerParts.Part>();
+        if (names == null || names.isEmpty()) return out;
+        int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES | PackageManager.GET_PROVIDERS
+                | PackageManager.MATCH_DISABLED_COMPONENTS;
+        PackageInfo info = getPackageManager().getPackageInfo(pkg, flags);
+        List<String[]> all = new ArrayList<String[]>();                     // {name, kind, manifest enabled}
+        if (info.activities != null) for (ActivityInfo a : info.activities) all.add(new String[] { a.name, "activity", String.valueOf(a.enabled) });
+        if (info.services != null) for (ServiceInfo sv : info.services) all.add(new String[] { sv.name, "service", String.valueOf(sv.enabled) });
+        if (info.receivers != null) for (ActivityInfo rc : info.receivers) all.add(new String[] { rc.name, "receiver", String.valueOf(rc.enabled) });
+        if (info.providers != null) for (android.content.pm.ProviderInfo pv : info.providers) all.add(new String[] { pv.name, "provider", String.valueOf(pv.enabled) });
+        for (String[] c : all) {
+            if (c[0] == null || !names.contains(c[0]) || out.containsKey(c[0])) continue;
+            out.put(c[0], new TrackerParts.Part(c[0], c[1], Boolean.parseBoolean(c[2]), componentOverrideState(pkg, c[0])));
+        }
+        return out;
+    }
+
+    /** Adds one part when it belongs to a tracker; its pm override is asked only then (one call to the package manager per tracker part, not per part of the app). */
+    private void addTrackerPart(List<TrackerParts.Part> parts, Trackers t, String pkg, String name, String kind, boolean manifestEnabled) {
+        if (name == null || TrackerParts.trackerOf(t.db, pkg, name) < 0) return;
+        parts.add(new TrackerParts.Part(name, kind, manifestEnabled, componentOverrideState(pkg, name)));
+    }
+
     private JSONObject componentEntry(String pkg, String name, boolean exported, boolean manifestEnabled, String permission) throws Exception {
         JSONObject o = new JSONObject();
         o.put("name", name);
@@ -3986,11 +4312,6 @@ public class MainActivity extends Activity {
         } catch (Exception e) { return ""; }
     }
 
-    private static String fmSizeText(long b) {
-        if (b >= 1048576L) return String.format(java.util.Locale.US, "%.1f MB", b / 1048576.0);
-        return Math.max(1, b / 1024) + " KB";
-    }
-
     private static boolean fmProtectedPath(String p) {
         return FileRules.isProtected(p);
     }
@@ -4038,7 +4359,7 @@ public class MainActivity extends Activity {
         // A folder of its own: an install still running from the package read before keeps its files (and its own OBB data, see runInstallSelected).
         InstallerStage<XapkInfo.Extra> stage = installStage();
         List<File> stale = new ArrayList<File>();
-        File work = stage.beginRead(sourceNameOf(ref), stale);
+        File work = stage.beginRead(sourceNameOf(ref), ref, stale);
         final long gen = stage.generation();
         for (File f : stale) deleteRecursively(f);
         work.mkdirs();
@@ -4636,6 +4957,81 @@ public class MainActivity extends Activity {
         settingsReply("onOverlayOp", res);
     }
 
+    /**
+     * Writes this app's fabricated colour overlay (op "fabricate", the plan's entries) or switches off the overlays it wrote (op
+     * "disable", their ids) with root, and reports it as window.onOverlayFab(json): req, op, ids (the overlay identifiers written or
+     * switched off), ok, state (the first overlay as the list has it: 1 on, 0 off, -1 cannot be switched, -2 not listed), list, answer,
+     * lookups (resource -> what Android printed for it), error, advice, needsPrivilege, unknown, mode.
+     * The root user only (RootGate.uid0): cmd overlay fabricate turns away anyone but uid 0, so this is Root with su granted, or a
+     * Shizuku server started as root (uid 0). The system user (uid 1000) and the ADB shell user (uid 2000) are refused and stay
+     * locked. The gate is checked before any shell runs. Whether it worked is decided by the list and the lookups that follow the write
+     * (OverlayRules.judgeFabricate), never by the commands' own text. {@code profile}: the build family the bridge checked the plan for
+     * (MonetProfile's id), which also decides the entries looked up after the write.
+     */
+    private void overlayFabricateJob(int req, String op, String profile, List<OverlayRules.FabEntry> entries, List<String> ids, long queuedAt) {
+        JSONObject res = new JSONObject();
+        try {
+            res.put("req", req);
+            res.put("op", op);
+            if (settingsJobStale(queuedAt)) {
+                res.put("ok", false);
+                res.put("stale", true);
+                res.put("error", "Skipped: it waited too long behind other requests");
+                settingsReply("onOverlayFab", res);
+                return;
+            }
+            String mode = resolveExecMode();
+            res.put("mode", mode);
+            // Writing a fabricated colour overlay needs the root user (uid 0): Android's overlay service refuses `cmd overlay fabricate`
+            // to anyone else, the ADB and system shell users included. That is Root with su, or a Shizuku server started as root (uid 0).
+            // Shizuku as the system user (uid 1000) is privileged but still refused here, and is kept locked on the page. su is asked only
+            // while Root is the mode (probeWorkingMode does the same), so no root-manager prompt pops up under Shizuku or ADB.
+            boolean suGranted = "root".equals(mode) && isRootGranted();
+            int fabSzUid = "shizuku".equals(mode) ? shizukuServerUid() : -1;
+            boolean fabShizuku = "shizuku".equals(mode) && isShizukuAuthorized();
+            if (!RootGate.uid0(mode, suGranted, fabShizuku, fabSzUid)) {
+                res.put("ok", false);
+                res.put("needsPrivilege", true);
+                res.put("error", "Needs Super User");
+            } else {
+                int sdk = Build.VERSION.SDK_INT;
+                boolean disable = "disable".equals(op);
+                List<String> wrote = disable ? ids : OverlayRules.fabricateIds(sdk, entries);
+                JSONArray idArr = new JSONArray();
+                for (String id : wrote) idArr.put(id);
+                res.put("ids", idArr);
+                String script = disable ? OverlayRules.disableScript(ids) : OverlayRules.fabricateScript(sdk, profile, entries);
+                String out = runPrivilegedShell(mode, script, 30000);
+                // the script is long, not secret, but a release build logs sizes only (the rule is general); a debuggable build the whole exchange
+                if (isDebuggableBuild()) Log.d(TAG, "overlayFabricate [" + op + "]: " + script + " -> " + (out != null ? out.trim() : ""));
+                else Log.d(TAG, "overlayFabricate [" + op + "]: " + script.length() + " chars -> " + (out != null ? out.length() : 0) + " chars");
+                OverlayRules.FabResult fr = OverlayRules.parseFabricate(out);
+                OverlayRules.FabVerdict v = OverlayRules.judgeFabricate(op, wrote, profile, disable ? null : entries, fr);
+                res.put("ok", v.ok);
+                res.put("state", v.state);
+                if (v.unknown) res.put("unknown", true);
+                // an empty list after a change is not "this phone has no overlays": the page keeps the list it has and looks again
+                if (fr.change.all != null && !fr.change.all.isEmpty()) res.put("list", overlaysToJson(fr.change.all));
+                if (!fr.change.answer.isEmpty()) res.put("answer", clipAnswer(fr.change.answer));
+                if (!fr.lookups.isEmpty()) {
+                    JSONObject lk = new JSONObject();
+                    for (Map.Entry<String, String> e : fr.lookups.entrySet()) lk.put(e.getKey(), clipAnswer(e.getValue()));
+                    res.put("lookups", lk);
+                }
+                if (!v.ok) {
+                    res.put("error", v.error);
+                    res.put("advice", OverlayRules.advice(fr.change.answer + "\n" + fr.change.listError));
+                }
+            }
+        } catch (Throwable t) {
+            try {
+                res.put("ok", false);
+                res.put("error", errMsg(t));
+            } catch (Exception ignored) {}
+        }
+        settingsReply("onOverlayFab", res);
+    }
+
     private void saveFlagSnapshot(String snapshot) {
         if (snapshot == null || snapshot.isEmpty()) prefs.edit().remove("ovl_flag_snap").apply();
         else prefs.edit().putString("ovl_flag_snap", snapshot).apply();
@@ -4722,6 +5118,17 @@ public class MainActivity extends Activity {
                 o.put("error", "Material You colors need Android 12 or newer (this phone runs Android " + Build.VERSION.RELEASE + ").");
                 return o.toString();
             }
+            // for the root-only colours: the Android build family they are computed for ("profile", MonetProfile's id or "unknown", and
+            // "profileReason": ok, notYet or unknown), the build itself (the page keeps it with the colours it wrote, so it can
+            // tell when Android was updated after), the contrast SystemUI computes at and, on One UI only, "oneUi" (MonetProfile.oneUi: the
+            // page shows its One UI note on the card; PR 13)
+            MonetProfile.Result profile = monetProfile();
+            o.put("profile", profile.profile);
+            o.put("profileReason", profile.reason);
+            String oneUi = monetOneUi();
+            if (!oneUi.isEmpty()) o.put("oneUi", oneUi);
+            o.put("build", Build.FINGERPRINT == null ? "" : Build.FINGERPRINT);
+            o.put("contrast", systemContrast());
             int[] tones = {0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
             String[] names = {"accent1", "accent2", "accent3", "neutral1", "neutral2"};
             JSONArray t = new JSONArray();
@@ -4731,6 +5138,30 @@ public class MainActivity extends Activity {
                 JSONArray a = new JSONArray();
                 for (int tone : tones) a.put(colorHex(systemColor("system_" + n + "_" + tone)));
                 o.put(n, a);
+            }
+            // "wallpaper": up to three RRGGBB, the primary, secondary and tertiary colours of the wallpaper set most recently (API 27+, no
+            // permission; the seed the page's root-only styles fall back to when the theme setting names no colour). Lock or home is chosen
+            // as SystemUI does (MonetProfile.lockWallpaperIsLatest: the higher WallpaperManager id); a lock wallpaper without colours of its
+            // own falls back to the home one. These are WallpaperColors' main colours, ranked by chroma and population; SystemUI ranks the
+            // whole colour map by hue (ColorScheme.getSeedColors), and that map is not public (getAllColors is @hide), so the colour can
+            // differ from the one Android picks. Anything going wrong leaves it out.
+            if (Build.VERSION.SDK_INT >= 27) {
+                try {
+                    android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(this);
+                    android.app.WallpaperColors wc = null;
+                    if (wm != null) {
+                        if (MonetProfile.lockWallpaperIsLatest(wm.getWallpaperId(android.app.WallpaperManager.FLAG_LOCK), wm.getWallpaperId(android.app.WallpaperManager.FLAG_SYSTEM))) {
+                            wc = wm.getWallpaperColors(android.app.WallpaperManager.FLAG_LOCK);
+                        }
+                        if (wc == null) wc = wm.getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
+                    }
+                    if (wc != null) {
+                        JSONArray w = new JSONArray();
+                        Color[] picks = {wc.getPrimaryColor(), wc.getSecondaryColor(), wc.getTertiaryColor()};
+                        for (Color c : picks) if (c != null) w.put(String.format("%06X", 0xFFFFFF & c.toArgb()));
+                        o.put("wallpaper", w);
+                    }
+                } catch (Throwable ignored) {}
             }
             o.put("ok", true);
         } catch (Throwable t) {
@@ -4763,10 +5194,15 @@ public class MainActivity extends Activity {
     private void finishInstall(final JSONObject res, final JSONObject opts, final String mode, final InstallerStage.Snapshot<XapkInfo.Extra> snap) {
         // The no-privilege install result arrives on the main thread; copying GB-sized OBB files there would ANR.
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
-            executor.submit(new Runnable() {
+            Runnable end = new Runnable() {
                 @Override
                 public void run() { finishInstallImpl(res, opts, mode, snap); }
-            });
+            };
+            try {
+                executor.submit(end);
+            } catch (java.util.concurrent.RejectedExecutionException e) {
+                new Thread(end, "install-end").start();       // the window is gone (its executor stopped): the install's folder is still released
+            }
             return;
         }
         finishInstallImpl(res, opts, mode, snap);
@@ -4906,19 +5342,23 @@ public class MainActivity extends Activity {
                 }
             }
             if (success && opts.optBoolean("autoDelete", false)) {
-                String ref = opts.optString("sourceRef");
+                // The file this install was read from, as the Installer recorded it: not a path the page names (which could be any file,
+                // the app's own data among them), and never the app's private data.
+                String ref = snap == null || snap.sourceRef == null ? "" : snap.sourceRef;
                 boolean deleted = false;
                 try {
                     if (ref.startsWith("content://")) {
                         deleted = android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(ref));
-                    } else if (!ref.isEmpty()) {
+                    } else if (!ref.isEmpty() && !isPrivateData(new File(ref))) {
                         deleted = new File(ref).delete();
                     }
                 } catch (Exception ignored) {}
                 try { res.put("sourceDeleted", deleted); } catch (Exception ignored) {}
             }
         } catch (Exception ignored) {}
-        endInstallStage(snap, true);           // its own files only: a package read since keeps its folder
+        // Its own files only (a package read since keeps its folder), and only a successful install uses them up: after a failure or a
+        // Cancel in the system installer they stay, so "turn on Allow downgrade and install again" does not need the package picked again.
+        endInstallStage(snap, res.optBoolean("ok", false));
         notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
     }
 
@@ -4960,7 +5400,7 @@ public class MainActivity extends Activity {
                         Intent confirm = (Intent) i.getParcelableExtra(Intent.EXTRA_INTENT);
                         if (confirm != null) {
                             confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            try { startActivity(confirm); } catch (Exception ignored) {}
+                            try { c.startActivity(confirm); } catch (Exception ignored) {}
                         }
                         return; // not terminal - wait for the user to confirm or cancel
                     }
@@ -4979,8 +5419,11 @@ public class MainActivity extends Activity {
                 }
             };
             android.content.IntentFilter filter = new android.content.IntentFilter(action);
-            if (Build.VERSION.SDK_INT >= 33) registerReceiver(rcv, filter, Context.RECEIVER_NOT_EXPORTED);
-            else registerReceiver(rcv, filter);
+            // On the application, not this window: a window re-created (theme change) or closed while the system's install question is open
+            // would take the receiver with it, and the result (the release of the install's work folder, "delete after install") would be lost.
+            Context appCtx = getApplicationContext();
+            if (Build.VERSION.SDK_INT >= 33) appCtx.registerReceiver(rcv, filter, Context.RECEIVER_NOT_EXPORTED);
+            else appCtx.registerReceiver(rcv, filter);
             int piFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? android.app.PendingIntent.FLAG_MUTABLE : 0);
             android.app.PendingIntent sender = android.app.PendingIntent.getBroadcast(this, sessionId, new Intent(action).setPackage(getPackageName()), piFlags);
             session.commit(sender.getIntentSender());
@@ -5194,9 +5637,16 @@ public class MainActivity extends Activity {
     private CpuStats.Reading tmLastCpu;
     private NetStats.Reading tmLastNet;
     private long tmLastSampleAt;
-    private static final String TM_M1 = "@@TM1-CPU@@", TM_M2 = "@@TM2-MEM@@", TM_M3 = "@@TM3-NET@@", TM_M4 = "@@TM4-PS@@",
-            TM_M5 = "@@TM5-GPUBUSY@@", TM_M6 = "@@TM6-GPUPCT@@", TM_M7 = "@@TM7-MALI@@", TM_M8 = "@@TM8-FREQCUR@@", TM_M9 = "@@TM9-FREQMAX@@",
-            TM_M10 = "@@TM10-THREADS@@";
+    // a tick that is still running makes the next one (a scheduled one or "Refresh now") a no-op instead of a second shell round trip queued behind it
+    private final java.util.concurrent.atomic.AtomicBoolean tmTickBusy = new java.util.concurrent.atomic.AtomicBoolean(false);
+    // the thread count reads every process's status file: it is taken at most once every TM_THREADS_EVERY_MS and the last count is shown in between
+    private static final long TM_THREADS_EVERY_MS = 3000;
+    private long tmThreadsAt;
+    private long tmThreadsLast = -1;
+    // what does not change while the app runs is read once: the GPU facts, each core's min / max clock, which thermal zone is the CPU's
+    private volatile JSONObject tmGpuInfoCache;
+    private volatile long[] tmCpuMinHz, tmCpuMaxHz;
+    private volatile String tmThermalPath;              // "" when no zone was readable
 
     private static final class ArcSlot {
         final ZipTool.Archive archive;
@@ -5386,19 +5836,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Opens a zip first (a bounded scan for its end record, cheap even to rule a huge non-zip file out); a file that isn't one is tried
-     *  as a RAR, then as whatever {@link ArchiveIo} recognises (7z, the tar family, or a single compressed file). */
+    /** Opens any archive format this app reads, decided by the file's first bytes (a tar of APKs is a tar, not its last APK); see {@link ZipTool#openAny}. */
     private ZipTool.Archive openAnyArchive(File use, char[] password, ArchiveIo.Progress cb) throws IOException {
-        IOException zipErr;
-        try {
-            return ZipTool.open(use);
-        } catch (IOException e) {
-            zipErr = e;
-        }
-        if (RarReader.isRar(use)) return RarSource.open(use, password);
-        String fmt = ArchiveIo.detect(use);
-        if (fmt != null && ArchiveIo.supportsRead(fmt)) return ArchiveIoSource.open(use, fmt, password, cb);
-        throw zipErr;
+        return ZipTool.openAny(use, password, cb);
     }
 
     /** Forgets an archive that changed on disk, and removes the shell-staged copy it was read from. */
@@ -5894,7 +6334,8 @@ public class MainActivity extends Activity {
                 long t0 = System.currentTimeMillis();
                 try {
                     boolean fsAccess = hasStorageAccess();
-                    boolean privileged = !"standard".equals(resolveExecMode());
+                    String mode = resolveExecMode();
+                    boolean privileged = !"standard".equals(mode);
                     res.put("fs", fsAccess);
                     res.put("shell", privileged);
                     if (!fsAccess && !privileged) {
@@ -5945,8 +6386,11 @@ public class MainActivity extends Activity {
                         }
                         AndroidBridge sh = new AndroidBridge();
                         sendApkScanProgress(scanId, -1, fsAccess ? "Searching Android/data and Android/obb with the privileged mode…" : "Searching storage with the privileged mode…", found.size(), true);
-                        String out = sh.executeShell("find " + where.toString().trim() + " -maxdepth 12 " + ApkScan.FIND_PREDICATE
-                                + " 2>/dev/null | head -n 2500");
+                        // find gets a time of its own: executeShell's 8-10 s cut a search of a full storage short, and what it had read so far
+                        // looked complete. No end line means a partial list, and the page says the search stopped early.
+                        String out = runPrivilegedShell(mode, "find " + where.toString().trim() + " -maxdepth 12 " + ApkScan.FIND_PREDICATE
+                                + " 2>/dev/null | head -n 2500; echo " + ApkScan.FIND_END, 25000);
+                        if (!ApkScan.findComplete(out)) lim.hitLimit = true;
                         List<String> unreadable = new ArrayList<String>();
                         for (String path : ApkScan.parseFindOutput(out, 2500)) {
                             if (found.size() >= lim.maxResults) { lim.hitLimit = true; break; }
@@ -6034,6 +6478,45 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
+    }
+
+    /** adb -s serial, then these arguments (the ADB Stub's calls). */
+    private static List<String> cdStubArgs(String serial, String... rest) {
+        List<String> a = new ArrayList<String>();
+        a.add("-s");
+        a.add(serial);
+        java.util.Collections.addAll(a, rest);
+        return a;
+    }
+
+    /** The ADB Stub APK this build carries (assets/adb_stub.apk), copied out once per app version into the cache; null when there is none. */
+    private File cdStubApk() {
+        try {
+            int ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+            File dir = new File(getCacheDir(), "adb_stub");
+            File f = new File(dir, "adb_stub_" + ver + "_" + WearStub.VERSION + ".apk");
+            if (f.length() > 0) return f;
+            dir.mkdirs();
+            File[] old = dir.listFiles();
+            if (old != null) for (File o : old) o.delete();
+            File tmp = new File(dir, "partial.tmp");
+            InputStream in = getAssets().open("adb_stub.apk");
+            try {
+                OutputStream out = new FileOutputStream(tmp);
+                try {
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                } finally {
+                    out.close();
+                }
+            } finally {
+                in.close();
+            }
+            if (tmp.length() > 0 && tmp.renameTo(f)) return f;
+            tmp.delete();
+        } catch (Exception ignored) {}
+        return null;
     }
 
     /**
@@ -6283,7 +6766,9 @@ public class MainActivity extends Activity {
             if (in == null) throw new java.io.FileNotFoundException("cannot open the backup file");
             return in;
         }
-        return new java.io.FileInputStream(ref);
+        // A path the page (or an "Open with" intent) names: never the app's own private data, which would otherwise be copied into the
+        // Installer's work folder, a folder the share sheet and VirusTotal may read.
+        return openUnlessPrivate(new File(ref));
     }
 
     /**
@@ -6349,6 +6834,9 @@ public class MainActivity extends Activity {
             return false;
         }
     }
+
+    /** Held for every read-modify-write of the backups list (a backup that finishes, a delete, the pruning of missing files). */
+    private final Object backupIndexLock = new Object();
 
     private JSONArray backupIndex() {
         try {
@@ -6528,11 +7016,13 @@ public class MainActivity extends Activity {
                     rec.put("createdAt", meta.getLong("createdAt"));
                     rec.put("bytes", total);
                     rec.put("hasData", withData);
-                    JSONArray index = backupIndex();
-                    JSONArray next = new JSONArray();
-                    next.put(rec);
-                    for (int i = 0; i < index.length() && next.length() < 200; i++) next.put(index.get(i));
-                    prefs.edit().putString("backups_index", next.toString()).apply();
+                    synchronized (backupIndexLock) {
+                        JSONArray index = backupIndex();
+                        JSONArray next = new JSONArray();
+                        next.put(rec);
+                        for (int i = 0; i < index.length() && next.length() < 200; i++) next.put(index.get(i));
+                        prefs.edit().putString("backups_index", next.toString()).apply();
+                    }
 
                     res.put("ok", true);
                     res.put("label", label);
@@ -6735,7 +7225,8 @@ public class MainActivity extends Activity {
                         backupEvent("restore", "install", 40, "Installing " + meta.optString("label", pkg) + "...");
                         String out = installApksIn(ordered, restoreMode);
                         if (!out.contains("Success")) throw new IllegalStateException(installHint(out));
-                        res.put("install", "installed " + meta.optString("versionName"));
+                        // the version of the APK that was installed (the same one the question above showed), not backup.json's claim
+                        res.put("install", "installed " + (archiveInfo.versionName != null ? archiveInfo.versionName : String.valueOf(archiveVersionCode)));
                     }
 
                     // Permissions and app ops
@@ -7172,6 +7663,35 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** READ_LOGS (signature|privileged|development): like DUMP, granted only with pm grant through ADB/Shizuku/root, and read back from the phone's own permission check. */
+    private boolean hasReadLogsAccess() {
+        try {
+            return checkSelfPermission(android.Manifest.permission.READ_LOGS) == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** BLUETOOTH_CONNECT is a runtime permission from Android 12 on; below that the app needs nothing to be allowed (it counts as held). */
+    private boolean hasBluetoothConnectAccess() {
+        if (Build.VERSION.SDK_INT < 31) return true;
+        try {
+            return checkSelfPermission("android.permission.BLUETOOTH_CONNECT") == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** POST_NOTIFICATIONS is a runtime permission from Android 13 on; below that notifications need no permission (it counts as held). */
+    private boolean hasNotificationAccess() {
+        if (Build.VERSION.SDK_INT < 33) return true;
+        try {
+            return checkSelfPermission("android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** "Allow restricted settings" - an app-op (android:read_write_restricted_settings), not a manifest
      *  permission, so there is nothing to declare in AndroidManifest.xml for this one. */
     /** "Install unknown apps" for this app (Android 8+): whether it may start the installation of package files. Older phones have one global switch: nothing to ask. */
@@ -7578,6 +8098,7 @@ public class MainActivity extends Activity {
     private static final int REQ_PICK_MORPHE = 4292;
     private volatile String morphePickTag = "";
     private MorpheBridge morpheBridge;
+    private MorpheBridge.Host morpheHostInstance;
 
     private AuthManager authManagerInstance;
 
@@ -7660,7 +8181,16 @@ public class MainActivity extends Activity {
     }
 
     private synchronized MorpheBridge morphe() {
-        if (morpheBridge == null) morpheBridge = new MorpheBridge(new MorpheBridge.Host() {
+        if (morpheBridge == null) morpheBridge = new MorpheBridge(morpheHost(), new File(getFilesDir(), "morphe"));
+        return morpheBridge;
+    }
+
+    /**
+     * What this window gives the Morphe bridge. Made without the bridge (which reads its files) so onCreate can name this window as the newest one
+     * (MorpheBridge.windowOpened) before its page makes any Morphe call: a patch that is going then asks this window, not a closed one, for the installer.
+     */
+    private synchronized MorpheBridge.Host morpheHost() {
+        if (morpheHostInstance == null) morpheHostInstance = new MorpheBridge.Host() {
             @Override public Context context() { return MainActivity.this; }
             @Override public void js(String script) { notifyJs(script); }
             @Override public boolean pick(final String tag, String kind) {
@@ -7711,9 +8241,7 @@ public class MainActivity extends Activity {
                     throw new IllegalStateException("Android no longer lets this app use that folder: choose it again");
                 }
             }
-            @Override public BrowserDownload.Cookies cookies() {
-                return new BrowserDownload.Cookies() { @Override public String forUrl(String u) { try { return android.webkit.CookieManager.getInstance().getCookie(u); } catch (Throwable t) { return null; } } };
-            }
+            @Override public BrowserDownload.Cookies cookies() { return new WebViewCookies(); }
             @Override public Runnable openBrowser(final String url, final File dir, final HelperDownloads downloads, final BrowserDownload.Events events) {
                 final HelperBrowser[] box = new HelperBrowser[1];
                 runOnUiThread(new Runnable() {
@@ -7724,8 +8252,13 @@ public class MainActivity extends Activity {
                 });
                 return new Runnable() { @Override public void run() { runOnUiThread(new Runnable() { @Override public void run() { if (box[0] != null) box[0].close(); } }); } };
             }
-        }, new File(getFilesDir(), "morphe"));
-        return morpheBridge;
+        };
+        return morpheHostInstance;
+    }
+
+    /** The in-app browser's cookies for an address. A static class: the Helper's download list is the process's and keeps it, so it must not hold a window. */
+    private static final class WebViewCookies implements BrowserDownload.Cookies {
+        @Override public String forUrl(String u) { try { return android.webkit.CookieManager.getInstance().getCookie(u); } catch (Throwable t) { return null; } }
     }
 
     private boolean morpheConnectionOk(String conn) {
@@ -7773,23 +8306,22 @@ public class MainActivity extends Activity {
         }
         StringBuilder notes = new StringBuilder();
         List<File> files = new ArrayList<File>();
-        File tmp = null;
         String name = apk.getName().toLowerCase(java.util.Locale.ROOT);
-        if (name.endsWith(".apks") || name.endsWith(".apkm") || name.endsWith(".xapk")) {
-            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
-            files.addAll(MorpheLibrary.unzipApks(apk, tmp));
-        } else {
-            // A plain APK may sit in shared storage (Downloads), where another app can swap it between the manifest read below and the
-            // install: copy it into the private cache first, like a bundle, so the file confirmed is the file installed.
-            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
-            tmp.mkdirs();
-            File copy = new File(tmp, apk.getName());
-            copyFile(apk, copy);
-            files.add(copy);
-        }
+        // the folder the APK is copied (or the bundle unpacked) into: filled inside the try below, so a copy that fails half way is removed too
+        File tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
         String out;
         String insidePkg = null;       // the package the APK itself names; outside the try so the retry decision below can use it too
         try {
+            if (name.endsWith(".apks") || name.endsWith(".apkm") || name.endsWith(".xapk")) {
+                files.addAll(MorpheLibrary.unzipApks(apk, tmp));
+            } else {
+                // A plain APK may sit in shared storage (Downloads), where another app can swap it between the manifest read below and the
+                // install: copy it into the private cache first, like a bundle, so the file confirmed is the file installed.
+                tmp.mkdirs();
+                File copy = new File(tmp, apk.getName());
+                copyFile(apk, copy);
+                files.add(copy);
+            }
             if (files.isEmpty()) throw new IOException("there is no APK inside " + apk.getName());
             // A privileged install has no system installer in front of it, and the page chose the file: ask here, in a dialog the page cannot press,
             // with the package and version read from the APK itself. Before anything is removed or installed.
@@ -7812,7 +8344,7 @@ public class MainActivity extends Activity {
             }
             out = installApksIn(files, mode);          // the mode the question named and the removal above used
         } finally {
-            if (tmp != null) { File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete(); }
+            File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete();
         }
         boolean ok = InstallHints.success(out);
         r.put("ok", ok);
@@ -7907,7 +8439,11 @@ public class MainActivity extends Activity {
                 root.mkdirs();
                 long old = System.currentTimeMillis() - 24L * 60 * 60 * 1000;
                 File[] dirs = root.listFiles();
-                if (dirs != null) for (File d : dirs) if (d.lastModified() < old) { File[] fs = d.listFiles(); if (fs != null) for (File f : fs) f.delete(); d.delete(); }
+                if (dirs != null) {
+                    java.util.List<File> toDelete = new java.util.ArrayList<File>();
+                    for (File d : dirs) if (d.lastModified() < old) toDelete.add(d);
+                    if (!toDelete.isEmpty()) FileOps.delete(toDelete, null);
+                }
                 for (Uri u : uris) {
                     try {
                         String nm = cdSafeName(cdDisplayName(u));
@@ -8050,6 +8586,36 @@ public class MainActivity extends Activity {
             } catch (Throwable t) {
                 return "error: " + t.getMessage();
             }
+        }
+
+        /**
+         * Starts the Shizuku service through ADB (the installed Shizuku app's own start script). Returns at once: "started_async" (the result comes
+         * to window.onShizukuStartResult({status, pkg, script, exit, text}), status being started, already_running, not_installed, no_adb,
+         * no_script or failed), or "busy" while an earlier start is still running.
+         */
+        @JavascriptInterface
+        public String startShizukuViaAdb() {
+            if (!shizukuStarting.compareAndSet(false, true)) return "busy";
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res;
+                        try {
+                            res = startShizukuNow();
+                        } catch (Throwable t) {
+                            res = shizukuStartResult("failed", "", null);
+                        } finally {
+                            shizukuStarting.set(false);
+                        }
+                        notifyJs("window.onShizukuStartResult && window.onShizukuStartResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                shizukuStarting.set(false);
+                return "error";
+            }
+            return "started_async";
         }
 
         @JavascriptInterface
@@ -8199,9 +8765,21 @@ public class MainActivity extends Activity {
 
                 boolean rootAvailable = isRootAvailable();
                 obj.put("rootAvailable", rootAvailable);
-                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode
-                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && isRootGranted();
+                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode, and
+                // never from the headless window of a tile tap (QuickActionActivity): the root manager's prompt would come up behind the
+                // collapsing panel, and one left unanswered would be remembered as a refusal. There only a verdict already known counts; not
+                // asked yet reads as not granted (the tile stays dim) until the app is opened and asks.
+                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());
                 if (rootAvailable && "root".equals(activeWorkingMode)) obj.put("rootGranted", rootGrantedNow);
+                else if (rootAvailable) {
+                    // in another mode su is not asked, but its last answer is still known: a refusal (Request Super User puts the mode the user had back
+                    // after one) reads as DENIED on Root Features until a fresh check forgets it (probeAndCacheMode(true) clears rootGrant)
+                    Boolean lastAnswer;
+                    synchronized (modeCacheLock) { lastAnswer = rootGrant; }
+                    if (Boolean.FALSE.equals(lastAnswer)) obj.put("rootGranted", false);
+                }
+                // the Root Features gate (RootGate.active): Root is the chosen mode and su really granted it, as one verdict the page can read
+                obj.put("rootWorkingModeActive", rootGrantedNow);
                 obj.put("deviceIp", deviceWifiIp());
 
                 String configured = activeWorkingMode;
@@ -8223,10 +8801,19 @@ public class MainActivity extends Activity {
                     else available = false;
                 }
 
+                // The privileged-feature gate the page reads. sysPrivActive unlocks the Root Features surface and the app-component
+                // toggle: Root with su, or Shizuku as the system user (uid 1000) or root (uid 0). rootUidActive is the stricter uid-0
+                // tier for writing colour overlays: Root with su, or Shizuku started as root (uid 0). Both key off the RESOLVED mode, so
+                // Auto that lands on a uid-1000 Shizuku unlocks too; a uid-2000 ADB-shell Shizuku and an unknown uid stay locked. See RootGate.
+                int szUid = shizukuObj.optInt("uid", -1);
+                obj.put("sysPrivActive", RootGate.unlocked(resolved, rootGrantedNow, shizukuAuthorized, szUid));
+                obj.put("rootUidActive", RootGate.uid0(resolved, rootGrantedNow, shizukuAuthorized, szUid));
+
                 obj.put("configuredMode", configured);
                 obj.put("activeMode", resolved);
                 obj.put("modeAvailable", available);
                 obj.put("isPrivileged", available && !"unprivileged".equals(resolved));
+                publishModeTileLight(resolved, available);
                 return obj.toString();
             } catch (Exception e) {
                 return "{\"activeMode\":\"unprivileged\",\"configuredMode\":\"auto\",\"isPrivileged\":false}";
@@ -8404,6 +8991,59 @@ public class MainActivity extends Activity {
         }
 
         /**
+         * Writes this app's fabricated colour overlay with root, or switches it off. The plan is JSON: {"action":"fabricate",
+         * "entries":[{"resource":"android:color/system_neutral1_900","argb":"0xFF000000"}, ...]} (action may be left out), or
+         * {"action":"disable","ids":["com.android.shell:aam_monet", ...]}. It is checked here, before anything is queued: a resource
+         * outside android:color/system_*, a value that is not 0xAARRGGBB, a resource named twice, more than OverlayRules.MAX_FAB_ENTRIES
+         * (320) entries or ids, an unsuffixed palette shade on Android 16 QPR1, QPR2 and 17 or an unsuffixed fixed colour on Android 17
+         * (the phone's profile, MonetProfile, as getSystemPalette reports it; the script is built and its lookups chosen for the same
+         * profile), or an id that is not one of this
+         * app's overlays is refused with "error: ...". Returns "started". The answer arrives as window.onOverlayFab(json); without Super
+         * User it says needsPrivilege.
+         */
+        @JavascriptInterface
+        public String overlayFabricate(final int req, final String planJson) {
+            JSONObject plan;
+            try {
+                plan = new JSONObject(planJson == null ? "" : planJson);
+            } catch (Exception notJson) {
+                return "error: the plan is not JSON";
+            }
+            final String op = plan.optString("action", "fabricate");
+            final List<OverlayRules.FabEntry> entries = new ArrayList<OverlayRules.FabEntry>();
+            final List<String> ids = new ArrayList<String>();
+            final String profile = monetProfile().profile;
+            try {
+                if ("disable".equals(op)) {
+                    JSONArray a = plan.optJSONArray("ids");
+                    int n = a == null ? 0 : Math.min(a.length(), OverlayRules.MAX_FAB_ENTRIES + 1);      // past the cap the check refuses it; no need to copy a huge array first
+                    for (int i = 0; i < n; i++) ids.add(a.optString(i, ""));
+                    OverlayRules.disablePlanOk(ids);
+                } else if ("fabricate".equals(op)) {
+                    JSONArray a = plan.optJSONArray("entries");
+                    int n = a == null ? 0 : Math.min(a.length(), OverlayRules.MAX_FAB_ENTRIES + 1);
+                    for (int i = 0; i < n; i++) {
+                        JSONObject e = a.optJSONObject(i);
+                        entries.add(new OverlayRules.FabEntry(e == null ? null : e.optString("resource", null), e == null ? null : e.optString("argb", null)));
+                    }
+                    OverlayRules.fabricatePlanOk(profile, entries);
+                } else {
+                    return "error: unknown action";
+                }
+            } catch (IllegalArgumentException bad) {
+                return "error: " + bad.getMessage();
+            }
+            final long queuedAt = android.os.SystemClock.elapsedRealtime();
+            if (!submitSettingsJob(new Runnable() {
+                @Override
+                public void run() {
+                    overlayFabricateJob(req, op, profile, entries, ids, queuedAt);
+                }
+            })) return "error: the app is closing";
+            return "started";
+        }
+
+        /**
          * Sets the Material You theme: source "preset" (with a colour, six hex digits) or "home_wallpaper", and a style (TONAL_SPOT,
          * VIBRANT, EXPRESSIVE, FRUIT_SALAD, RAINBOW or SPRITZ). Returns "started", or "error: ...". The answer arrives as window.onThemeOp(json).
          */
@@ -8440,7 +9080,10 @@ public class MainActivity extends Activity {
             return "started";
         }
 
-        /** The colours the system uses now (JSON: ok, sdk, tones, accent1..3, neutral1..2), read without any privileged mode. */
+        /**
+         * The colours the system uses now (JSON: ok, sdk, tones, accent1..3, neutral1..2, wallpaper) and what the root-only colours are
+         * computed for (profile, profileReason, build, contrast), read without any privileged mode.
+         */
         @JavascriptInterface
         public String getSystemPalette() {
             return systemPaletteJson();
@@ -9069,7 +9712,7 @@ public class MainActivity extends Activity {
             };
             try {
                 checkTermuxReady();
-                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB App Manager check", new TermuxLink.Callback() {
+                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB/Root Full System Toolbox check", new TermuxLink.Callback() {
                     @Override
                     public void onResult(TermuxLink.Result r) {
                         if (!answered.compareAndSet(false, true)) return;
@@ -9337,6 +9980,100 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "{}";
             }
+        }
+
+        private final java.util.concurrent.atomic.AtomicBoolean selfTestRunning = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+        /**
+         * About tab, Self-test: runs the read-only checks of {@link SelfTest} in the current working mode, off the page's thread.
+         * Returns "started" (progress arrives as window.onSelfTestStep(runId, done, total, title), the answer as
+         * window.onSelfTestDone(runId, json)), "busy" while one is running, or "error: ..." when the app is closing.
+         */
+        @JavascriptInterface
+        public String runSelfTest(final String runId) {
+            final String id = runId == null ? "" : runId;
+            if (!selfTestRunning.compareAndSet(false, true)) return "busy";
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            selfTestJob(id);
+                        } catch (Throwable t) {
+                            notifyJs("window.onSelfTestDone && window.onSelfTestDone(" + JSONObject.quote(id) + "," + JSONObject.quote("{\"error\":" + JSONObject.quote(errMsg(t)) + "}") + ")");
+                        } finally {
+                            selfTestRunning.set(false);
+                        }
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                selfTestRunning.set(false);
+                return "error: the app is closing";
+            }
+            return "started";
+        }
+
+        private void selfTestJob(final String id) throws Exception {
+            final SelfTest.Shell shell = new SelfTest.Shell() {
+                @Override
+                public String run(String cmd) {
+                    if (activityDestroyed) return "Error: the app is closing";
+                    return executeShell(cmd);
+                }
+            };
+            final List<SelfTest.Probe> probes = SelfTest.probes(getPackageName());
+            List<SelfTest.Row> rows = SelfTest.run(probes, shell, new SelfTest.Listener() {
+                @Override
+                public void onRow(int done, int total, SelfTest.Row row) {
+                    notifyJs("window.onSelfTestStep && window.onSelfTestStep(" + JSONObject.quote(id) + "," + done + "," + total + "," + JSONObject.quote(row.probe.title) + ")");
+                }
+            });
+            java.util.LinkedHashMap<String, String> facts = selfTestFacts();
+            String mode = resolveExecMode();
+            JSONObject out = new JSONObject();
+            JSONArray arr = new JSONArray();
+            for (SelfTest.Row r : rows) {
+                JSONObject o = new JSONObject();
+                o.put("id", r.probe.id);
+                o.put("group", r.probe.group);
+                o.put("title", r.probe.title);
+                o.put("status", r.result.status.name().toLowerCase(java.util.Locale.ROOT));
+                o.put("detail", SelfTest.sanitize(r.result.detail));
+                arr.put(o);
+            }
+            out.put("rows", arr);
+            out.put("passed", SelfTest.count(rows, SelfTest.Status.PASS));
+            out.put("failed", SelfTest.count(rows, SelfTest.Status.FAIL));
+            out.put("info", SelfTest.count(rows, SelfTest.Status.INFO));
+            out.put("skipped", SelfTest.count(rows, SelfTest.Status.SKIP));
+            out.put("report", SelfTest.report(facts, rows));
+            out.put("issueUrl", SelfTest.issueUrl(mode, facts.get("App"), facts.get("Phone") + ", Android " + facts.get("Android"), facts, rows));
+            notifyJs("window.onSelfTestDone && window.onSelfTestDone(" + JSONObject.quote(id) + "," + JSONObject.quote(out.toString()) + ")");
+        }
+
+        /** The lines at the top of a self-test report: the app, the phone, the working mode, Shizuku, root and the two switches the page needs. No address, serial or account. */
+        private java.util.LinkedHashMap<String, String> selfTestFacts() {
+            java.util.LinkedHashMap<String, String> f = SelfTest.facts();
+            try {
+                PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+                f.put("App", "ADB Application Manager Pro " + pi.versionName + " (" + versionCodeOf(pi) + ")");
+            } catch (Exception e) {
+                f.put("App", "ADB Application Manager Pro");
+            }
+            f.put("Android", Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")" + (Build.VERSION.SDK_INT >= 23 && Build.VERSION.SECURITY_PATCH != null ? ", patch " + Build.VERSION.SECURITY_PATCH : ""));
+            f.put("Phone", Build.MANUFACTURER + " " + Build.MODEL);
+            f.put("Working mode", "configured " + activeWorkingMode + ", running as " + resolveExecMode());
+            try {
+                JSONObject sz = shizukuStatus();
+                f.put("Shizuku", (sz.optBoolean("installed") ? "installed" : "not installed") + ", " + (sz.optBoolean("running") ? "running" : "not running")
+                    + ", " + (sz.optBoolean("authorized") ? "authorized" : "not authorized") + (sz.optInt("version") > 0 ? ", version " + sz.optInt("version") : ""));
+            } catch (Throwable ignored) {}
+            f.put("Root", isRootAvailable() ? "su found" : "no su");
+            f.put("Secure settings access", hasWriteSecureSettingsAccess() ? "granted" : "not granted");
+            String ip = deviceWifiIp();
+            f.put("Wi-Fi", ip != null && !ip.isEmpty() ? "connected" : "not connected");
+            f.put("Wireless Debugging port", adbWirelessPort > 0 ? "saved" : "none saved");
+            return f;
         }
 
         /** The authorization code (About tab): {code}. */
@@ -9695,7 +10432,9 @@ public class MainActivity extends Activity {
                     o.put("isSystem", true);
                     o.put("isRunning", false);
                     o.put("isFrozen", true);
-                    o.put("isSuspended", false);
+                    // the user's own flag: Android keeps a package's state per user after an uninstall for that user, and the app menu shows
+                    // Suspend or Unsuspend for an uninstalled app from this
+                    o.put("isSuspended", uninstalledSuspended(pm, pkg));
                     o.put("isUninstalled", true);
                     o.put("targetSdk", 0);
                     arr.put(o);
@@ -9704,6 +10443,16 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "[]";
             }
+        }
+
+        /** Whether a package uninstalled for the current user is suspended for that user (FLAG_SUSPENDED of its per-user
+         *  ApplicationInfo, which MATCH_UNINSTALLED_PACKAGES still returns); false when it cannot be read. */
+        private boolean uninstalledSuspended(PackageManager pm, String pkg) {
+            try {
+                ApplicationInfo info = pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                return (info.flags & ApplicationInfo.FLAG_SUSPENDED) != 0;
+            } catch (Exception ignored) {}
+            return false;
         }
 
         /** The real app name for a package that's uninstalled-for-this-user but still has a stub on this system
@@ -9728,6 +10477,12 @@ public class MainActivity extends Activity {
                 if (!BackupScripts.isPackageName(pkg)) return "Error: \"" + pkg + "\" is not a valid package name";
                 // Batch App Ops: "appops:OP=mode,OP=mode" sets each op on this app
                 if (action != null && action.startsWith("appops:")) return batchAppOps(action.substring(7), pkg);
+                // Disable / Enable Trackers: "trackers_off" or "trackers_on", or with ":id,id" for some trackers only, or ":parts=a.B,a.C" for some parts only (the
+                // History's Undo) (TrackerParts); success is read back per part
+                if (TrackerParts.isAction(action)) {
+                    JSONObject r = trackerAction(pkg, action);
+                    return flagged(r.optBoolean("ok", false), r.optString("output", ""));
+                }
                 // Batch Command: "custom:<command>" runs the user's command with $package replaced by this app's package name
                 if (action != null && action.startsWith("custom:")) {
                     String tpl = action.substring(7).trim();
@@ -9847,11 +10602,20 @@ public class MainActivity extends Activity {
                             notifyJs("window.onAppBatchProgress && window.onAppBatchProgress(" + i + "," + total + "," + JSONObject.quote(pkg) + ")");
                             String kind = clearKind(action);
                             long[] dataBefore = kind != null ? dataStatFor(kind, pkg) : null;       // Clear data: what is in the app's folder before (private folder in Root mode, its storage folder otherwise)
-                            String flagged = executeAppAction(action, pkg);
+                            JSONArray trkParts = null;
+                            String flagged;
+                            if (TrackerParts.isAction(action)) {
+                                // the tracker switches run here directly, so the row can carry the parts this app's run changed (the History's Undo switches back exactly those)
+                                JSONObject tr;
+                                try { tr = trackerAction(pkg, action); } catch (Exception e) { tr = new JSONObject().put("ok", false).put("output", "Error: " + errMsg(e)); }
+                                flagged = flagged(tr.optBoolean("ok", false), tr.optString("output", ""));
+                                trkParts = tr.optJSONArray("changedParts");
+                            } else flagged = executeAppAction(action, pkg);
                             boolean ok = flagOk(flagged);
                             String out = flagText(flagged);
                             if (ok) done++;
                             JSONObject row = new JSONObject().put("pkg", pkg).put("output", out).put("success", ok);
+                            if (trkParts != null) row.put("parts", trkParts);
                             if (dataBefore != null) { row.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1])); row.put("dataKind", kind); }
                             rows.put(row);
                         }
@@ -9994,7 +10758,9 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < rows.length(); i++) {
                     String pkg = rows.getJSONObject(i).optString("pkg", "");
                     Boolean sus = null;
-                    if (installed.contains(pkg) && BackupScripts.isPackageName(pkg)) {
+                    // read for an app uninstalled for the user too: its "User 0:" line (installed=false) still carries the flag, and the app menu
+                    // offers Suspend / Unsuspend for it. A package the phone does not know has no such line and stays unknown.
+                    if (BackupScripts.isPackageName(pkg)) {
                         try { sus = BatchVerify.suspendedFrom(executeShell("dumpsys package " + pkg)); } catch (Throwable ignored) {}
                     }
                     if (sus == null) unknown.add(pkg); else if (sus.booleanValue()) suspended.add(pkg);
@@ -10052,7 +10818,7 @@ public class MainActivity extends Activity {
 
         private String runShellAction(String cmd) {
             String marker = "__RC" + System.nanoTime() + "__";
-            String raw = executeShell(cmd + "; echo \"" + marker + ":$?\"");
+            String raw = executeShell(ShellOutcome.withStatus(cmd, marker));
             ShellOutcome o = ShellOutcome.parse(raw, marker);          // no marker + an Error: line or a timeout note = failed, not ok
             // Every backend here runs a shell, so the marker is missing only when the command never ran (su refused or not granted, a
             // backend that did not start, a timeout): that is a failure whatever else was printed, never an "ok" from an empty answer.
@@ -10974,6 +11740,91 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** The ADB Stub this build carries for Wear OS watches: {bundled, version}. */
+        @JavascriptInterface
+        public String cdStubInfo() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("bundled", cdStubApk() != null);
+                o.put("version", WearStub.VERSION);
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /**
+         * The ADB Stub on a connected watch (see WearStub). action: "status", "install" (the APK this build carries, with its permissions granted),
+         * "start" (phone: the name the stub's screen gives this phone; empty: its model), "renew" (the stub's lease, about once a minute while it runs)
+         * or "stop" (phone "quick": the stop before Disconnect, a short wait and no status read, so a watch that does not answer does not hold up
+         * Disconnect). Every other action ends with a fresh status.
+         * Answer: window.onCdResult({tag, ok, out, installed, version, running}); a quick stop, and a status adb could not read, leave out installed,
+         * version and running (a status action that adb could not read is ok: false).
+         */
+        @JavascriptInterface
+        public void cdStub(final String tag, final String serial, final String action, final String phone) {
+            final String t = tag == null ? "" : tag;
+            final String a = action == null ? "" : action;
+            final boolean quick = a.equals("stop") && "quick".equals(phone);
+            if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
+            if (!a.equals("status") && !a.equals("install") && !a.equals("start") && !a.equals("renew") && !a.equals("stop")) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: unknown action") + ")");
+                return;
+            }
+            cdCancelled.remove(t);
+            try {
+                cdExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res = new JSONObject();
+                        try {
+                            res.put("tag", t);
+                            boolean ok = true;
+                            String out = "";
+                            if (a.equals("install")) {
+                                File apk = cdStubApk();
+                                if (apk == null) {
+                                    ok = false;
+                                    out = "Error: this build of the app does not carry the ADB Stub.";
+                                } else {
+                                    out = cdExec(t, cdStubArgs(serial, "install", "-r", "-g", apk.getAbsolutePath()), 180000);
+                                    ok = DeviceLink.installed(out);
+                                }
+                            } else if (a.equals("start")) {
+                                String name = phone == null || phone.trim().isEmpty() ? (Build.MODEL == null ? "" : Build.MODEL) : phone;
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.startCmd(name)), 20000);
+                                ok = WearStub.started(out);
+                            } else if (a.equals("renew")) {
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.renewCmd()), 15000);
+                                ok = WearStub.renewed(out);
+                            } else if (a.equals("stop")) {
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.stopCmd()), quick ? WearStub.QUICK_STOP_MS : 20000);
+                                ok = out.contains("stopped") && !out.startsWith("Error");
+                            }
+                            if (!quick) {
+                                String st = cdExec(t, cdStubArgs(serial, "shell", WearStub.statusCmd()), 20000);
+                                if (WearStub.adbFailed(st)) {
+                                    // adb could not ask the watch: the answer leaves out what the stub has, so the page keeps what it knew (and asks again later)
+                                    if (a.equals("status")) { ok = false; out = st; }
+                                } else {
+                                    WearStub.Status s = WearStub.parseStatus(st);
+                                    res.put("installed", s.installed);
+                                    res.put("version", s.version);
+                                    res.put("running", s.running);
+                                }
+                            }
+                            res.put("ok", ok);
+                            res.put("out", out.trim());
+                        } catch (Exception e) {
+                            try { res.put("ok", false); res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+                        }
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
         /** The Morphe Patcher tab: one call that answers through window.onMorphe({tag, ok, data | error}) (see MorpheBridge). */
         @JavascriptInterface
         public void morphe(String tag, String op, String argsJson) {
@@ -11291,17 +12142,28 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getBackups() {
             JSONArray index = backupIndex();
-            JSONArray keep = new JSONArray();
             try {
+                // which files are gone is asked without the lock (it can be slow); the list is then pruned of exactly those, re-read under
+                // the lock, so a backup that finished meanwhile is not dropped
+                Set<String> gone = new HashSet<String>();
                 for (int i = 0; i < index.length(); i++) {
-                    JSONObject rec = index.getJSONObject(i);
-                    if (backupExists(rec.optString("ref"))) keep.put(rec);
+                    String ref = index.getJSONObject(i).optString("ref");
+                    if (!backupExists(ref)) gone.add(ref);
                 }
-                if (keep.length() != index.length()) prefs.edit().putString("backups_index", keep.toString()).apply();
+                synchronized (backupIndexLock) {
+                    JSONArray now = backupIndex();
+                    if (gone.isEmpty()) return now.toString();
+                    JSONArray keep = new JSONArray();
+                    for (int i = 0; i < now.length(); i++) {
+                        JSONObject rec = now.getJSONObject(i);
+                        if (!gone.contains(rec.optString("ref"))) keep.put(rec);
+                    }
+                    prefs.edit().putString("backups_index", keep.toString()).apply();
+                    return keep.toString();
+                }
             } catch (Exception e) {
                 return index.toString();
             }
-            return keep.toString();
         }
 
         @JavascriptInterface
@@ -11315,11 +12177,14 @@ public class MainActivity extends Activity {
                 if (!PrivatePaths.listedRef(ref, listedRefs)) return "Error: not a known backup";
                 if (ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
                 else ok = new File(ref).delete();
-                JSONArray keep = new JSONArray();
-                for (int i = 0; i < index.length(); i++) {
-                    if (!index.getJSONObject(i).optString("ref").equals(ref)) keep.put(index.get(i));
+                synchronized (backupIndexLock) {                 // re-read: a backup may have been added while the file was deleted
+                    JSONArray now = backupIndex();
+                    JSONArray keep = new JSONArray();
+                    for (int i = 0; i < now.length(); i++) {
+                        if (!now.getJSONObject(i).optString("ref").equals(ref)) keep.put(now.get(i));
+                    }
+                    prefs.edit().putString("backups_index", keep.toString()).apply();
                 }
-                prefs.edit().putString("backups_index", keep.toString()).apply();
                 return ok ? "" : "Error: could not delete the file (it may already be gone)";
             } catch (Exception e) {
                 return "Error: " + e.getMessage();
@@ -11906,6 +12771,50 @@ public class MainActivity extends Activity {
             dnsProbe.cancel(id);
         }
 
+        /**
+         * Internet speed test: starts latency, download and upload against Cloudflare (see SpeedTest for the contract and limits). Returns
+         * {"ok":true,"id":..} or {"ok":false,"error":..}; events arrive in window.onSpeedTest(json), ending with one {"type":"done",..}.
+         */
+        @JavascriptInterface
+        public String speedTestStart(String requestJson) {
+            return speedTest.start(requestJson, speedTestExec, speedTestSink);
+        }
+
+        /** Stops the running speed test if it has this id (its connections are closed at once). */
+        @JavascriptInterface
+        public void speedTestStop(String id) {
+            speedTest.cancel(id);
+        }
+
+        /** The active network for the speed test's cards and its mobile-data warning: {"type":"wifi|cellular|ethernet|vpn|other|none","metered":bool}. */
+        @JavascriptInterface
+        public String speedTestNetInfo() {
+            JSONObject o = new JSONObject();
+            try {
+                String type = "none";
+                boolean metered = false;
+                android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                if (cm != null) {
+                    android.net.Network n = cm.getActiveNetwork();
+                    android.net.NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+                    if (nc != null) {
+                        if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)) type = "wifi";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) type = "cellular";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) type = "ethernet";
+                        else if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN)) type = "vpn";
+                        else type = "other";
+                    }
+                    metered = cm.isActiveNetworkMetered();
+                }
+                o.put("type", type);
+                o.put("metered", metered);
+                o.put("maxBytes", speedTest.maxBytes());
+            } catch (Throwable t) {
+                try { o.put("type", "other"); o.put("metered", false); } catch (Exception ignored) {}
+            }
+            return o.toString();
+        }
+
         /** What an address is for a custom store. Answer: window.onStoreCustomProbe(json). */
         @JavascriptInterface
         public void storeCustomProbe(String id, String url) {
@@ -11949,7 +12858,13 @@ public class MainActivity extends Activity {
             return prefs.getString("kv_" + key, "");
         }
 
-        /** Enables or disables one component (pm enable/disable pkg/component) via the active backend. */
+        /**
+         * Enables or disables one component (pm enable/disable pkg/component). Android allows a single component's state change to the
+         * root user (uid 0) and the system user (uid 1000) but refuses it to the ADB shell (uid 2000: a system-app toggle from the shell
+         * just fails), so this unlocks in Root mode with su granted and under a Shizuku server running as uid 0 or uid 1000 (v7.16.1,
+         * widened from Root-only in v7.15.1). The page keeps the same gate (compToggleLocked -> sysPrivActive); this is the enforcing floor for every caller.
+         * Success is read from the component's real state (AGENTS.md), not from pm's printed text.
+         */
         @JavascriptInterface
         public String setComponentEnabled(String pkg, String component, boolean enable) {
             JSONObject r = new JSONObject();
@@ -11958,12 +12873,22 @@ public class MainActivity extends Activity {
                 if (cmd == null) {
                     r.put("ok", false); r.put("output", "Error: invalid component name"); return r.toString();
                 }
-                if ("standard".equals(resolveExecMode())) {
-                    r.put("ok", false); r.put("output", "Error: enabling or disabling a component needs ADB, Shizuku or Root."); return r.toString();
+                // Android refuses a single component's state change to the ADB shell user (uid 2000); it is allowed to root (uid 0) and
+                // to the system user (uid 1000). So this unlocks in Root mode and under a Shizuku server running as uid 0 or 1000.
+                String compMode = resolveExecMode();
+                int compSzUid = "shizuku".equals(compMode) ? shizukuServerUid() : -1;
+                boolean compAllowed = "root".equals(compMode)
+                        || ("shizuku".equals(compMode) && isShizukuAuthorized() && (compSzUid == 0 || compSzUid == 1000));
+                if (!compAllowed) {
+                    r.put("ok", false); r.put("needsRoot", true);
+                    r.put("output", "Error: enabling or disabling a component needs Super User (Root) or the system user (UID 1000)."); return r.toString();
                 }
                 String out = executeShell(cmd);
-                String low = out == null ? "" : out.toLowerCase();
-                r.put("ok", low.contains("new state") || low.contains(enable ? "enabled" : "disabled"));
+                // Decide success by reading the component's real state back: after the command the pm override must be exactly
+                // what was asked. No override (the manifest default still in force) means the command did not take -> not ok.
+                String full = component.startsWith(".") ? pkg + component : component;
+                Boolean state = componentOverrideState(pkg, full);
+                r.put("ok", state != null && state.booleanValue() == enable);
                 r.put("output", out != null ? out.trim() : "");
             } catch (Exception e) {
                 try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
@@ -12091,7 +13016,7 @@ public class MainActivity extends Activity {
                         @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
                     }, 2000, 25L * 1024 * 1024);
                     java.util.ArrayList<String> head = new java.util.ArrayList<String>();
-                    head.add("ADB Application Manager - log recording");
+                    head.add("ADB/Root Full System Toolbox - log recording");
                     head.add("Started: " + new java.util.Date());
                     head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
                     head.add("Level: " + lv + " and above");
@@ -12164,7 +13089,7 @@ public class MainActivity extends Activity {
         /** Starts (or restarts, at a new period) the native poll. Each tick runs {@link #tmTick()} on the shared executor. */
         @JavascriptInterface
         public String tmStart(int intervalMs) {
-            if (intervalMs < 1000) intervalMs = 1000;
+            if (intervalMs < 500) intervalMs = 500;            // the page's fastest choice; the fixed delay below keeps ticks from piling up even then
             if (intervalMs > 10000) intervalMs = 10000;
             synchronized (tmLock) {
                 if (tmClosed) return "closed";
@@ -12208,39 +13133,59 @@ public class MainActivity extends Activity {
          *  missing piece never corrupts another), plus a synchronous battery read (no shell, no permission needed).
          *  Pushes window.onTaskMgrData(json); never throws (a failure is reported in the JSON, not as a crash). */
         private void tmTick() {
+            if (!tmTickBusy.compareAndSet(false, true)) return;          // the previous one is still running: skip, do not queue
+            try {
+                tmTickOnce();
+            } finally {
+                tmTickBusy.set(false);
+            }
+        }
+
+        private void tmTickOnce() {
             JSONObject res = new JSONObject();
             try {
                 res.put("ts", System.currentTimeMillis());
                 boolean havePriv = !"standard".equals(resolveExecMode());
                 res.put("privileged", havePriv);
                 String blob = null;
+                long tickAt = System.currentTimeMillis();
+                boolean wantThreads;
+                synchronized (tmLock) { wantThreads = tmThreadsLast < 0 || tickAt - tmThreadsAt >= TM_THREADS_EVERY_MS; }
                 if (havePriv) {
                     try {
                         blob = executeShell(
-                                "cat /proc/stat 2>/dev/null; echo " + TM_M1 + "; "
-                                        + "cat /proc/meminfo 2>/dev/null; echo " + TM_M2 + "; "
-                                        + "cat /proc/net/dev 2>/dev/null; echo " + TM_M3 + "; "
-                                        + "ps -A -o PID,PPID,USER,RSS,%CPU,NAME 2>/dev/null; echo " + TM_M4 + "; "
-                                        + "cat /sys/class/kgsl/kgsl-3d0/gpubusy 2>/dev/null; echo " + TM_M5 + "; "
-                                        + "cat /sys/class/kgsl/kgsl-3d0/gpu_busy_percentage 2>/dev/null; echo " + TM_M6 + "; "
-                                        + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TM_M7 + "; "
-                                        + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TM_M8 + "; "
-                                        + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TM_M9 + "; "
-                                        + "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; echo " + TM_M10);
+                                "cat /proc/stat 2>/dev/null; echo " + TaskMgrBlob.M1 + "; "
+                                        + "cat /proc/meminfo 2>/dev/null; echo " + TaskMgrBlob.M2 + "; "
+                                        + "cat /proc/net/dev 2>/dev/null; echo " + TaskMgrBlob.M3 + "; "
+                                        + "ps -A -o PID,PPID,USER,RSS,%CPU,NAME 2>/dev/null; echo " + TaskMgrBlob.M4 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpubusy 2>/dev/null; echo " + TaskMgrBlob.M5 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpu_busy_percentage 2>/dev/null; echo " + TaskMgrBlob.M6 + "; "
+                                        + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TaskMgrBlob.M7 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TaskMgrBlob.M8 + "; "
+                                        + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TaskMgrBlob.M9 + "; "
+                                        + (wantThreads ? "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; " : "") + "echo " + TaskMgrBlob.M10);
                     } catch (Throwable t) {
                         blob = null;
                     }
-                } else {
+                    // a backend that is down (adb lost the device, Shizuku stopped after a reboot, su refused) answers with its error
+                    // text, not an exception, and that text parsed as it is reads as 0 % CPU, no RAM, no network and no processes. This
+                    // tick then reads CPU, RAM and network itself, as below, and says it is unprivileged, so Processes and GPU show
+                    // their lock instead of an empty list.
+                    if (!TaskMgrBlob.scriptRan(blob)) {
+                        havePriv = false;
+                        res.put("privileged", false);
+                    }
+                }
+                if (!havePriv) {
                     // no privileged backend: /proc/stat, /proc/meminfo and /proc/net/dev are world-readable, so this app can read
                     // them itself with no shell at all; only the process list and GPU need a privileged shell and stay empty.
                     try {
-                        blob = readWorldReadable("/proc/stat") + TM_M1 + readWorldReadable("/proc/meminfo") + TM_M2
-                                + readWorldReadable("/proc/net/dev") + TM_M3 + TM_M4 + TM_M5 + TM_M6 + TM_M7 + TM_M8 + TM_M9 + TM_M10;
+                        blob = TaskMgrBlob.direct(readWorldReadable("/proc/stat"), readWorldReadable("/proc/meminfo"), readWorldReadable("/proc/net/dev"));
                     } catch (Throwable t) {
                         blob = null;
                     }
                 }
-                String[] parts = blob == null ? new String[0] : splitTm(blob);
+                String[] parts = blob == null ? new String[0] : TaskMgrBlob.split(blob);
                 long now = System.currentTimeMillis();
 
                 // CPU
@@ -12335,7 +13280,12 @@ public class MainActivity extends Activity {
                 cpuJson.put("uptimeMs", android.os.SystemClock.elapsedRealtime());
                 if (havePriv) {
                     cpuJson.put("processes", ps.procs.size());
-                    cpuJson.put("threads", ProcStats.sumThreads(parts.length > 9 ? parts[9] : ""));
+                    long threads;
+                    synchronized (tmLock) {
+                        if (wantThreads) { tmThreadsLast = ProcStats.sumThreads(parts.length > 9 ? parts[9] : ""); tmThreadsAt = tickAt; }
+                        threads = tmThreadsLast;
+                    }
+                    if (threads >= 0) cpuJson.put("threads", threads);
                 }
 
                 // GPU: the first known-good reading wins (real busy-time readings before the clock-speed proxy).
@@ -12352,7 +13302,9 @@ public class MainActivity extends Activity {
                 if (gpu.percent != null) gpuJson.put("percent", gpu.percent.doubleValue());
                 gpuJson.put("approx", gpu.approx != null && gpu.approx);
                 gpuJson.put("label", GpuStats.label(gpu));
-                mergeInto(gpuJson, gpuInfoJson());
+                JSONObject gpuInfo = tmGpuInfoCache;
+                if (gpuInfo == null) { gpuInfo = gpuInfoJson(); tmGpuInfoCache = gpuInfo; }
+                mergeInto(gpuJson, gpuInfo);
                 res.put("gpu", gpuJson);
 
                 // Battery: a plain sticky-broadcast + BatteryManager read, no shell, no permission.
@@ -12373,19 +13325,6 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "";
             }
-        }
-
-        private String[] splitTm(String blob) {
-            String[] markers = {TM_M1, TM_M2, TM_M3, TM_M4, TM_M5, TM_M6, TM_M7, TM_M8, TM_M9, TM_M10};
-            String[] out = new String[markers.length];
-            int from = 0;
-            for (int i = 0; i < markers.length; i++) {
-                int at = blob.indexOf(markers[i], from);
-                if (at < 0) { out[i] = ""; continue; }
-                out[i] = blob.substring(from, at);
-                from = at + markers[i].length();
-            }
-            return out;
         }
 
         /** Battery level, temperature, voltage, current, charge state and health: the public BatteryManager API and the
@@ -12468,17 +13407,25 @@ public class MainActivity extends Activity {
                 if (tempC != null) o.put("tempC", tempC.doubleValue());
 
                 int cores = Runtime.getRuntime().availableProcessors();
-                long[] minHz = new long[cores], curHz = new long[cores], maxHz = new long[cores];
+                long[] curHz = new long[cores];
+                // a core's hardware min / max clock never changes: read them on the first poll only (three files per core every tick added up at 0.5 s);
+                // a core whose limits could not be read (its whole cluster offline answers -EBUSY) is read again on later polls until it answers
+                long[] minHz = tmCpuMinHz, maxHz = tmCpuMaxHz;
+                boolean readLimits = minHz == null || maxHz == null || minHz.length != cores || maxHz.length != cores;
+                if (readLimits) { minHz = new long[cores]; maxHz = new long[cores]; }
                 boolean anyFreq = false;
                 for (int i = 0; i < cores; i++) {
                     String base = "/sys/devices/system/cpu/cpu" + i + "/cpufreq/";
                     // cpufreq reports in kHz (a long-standing Linux kernel convention), not Hz - scale up so these
                     // fields are genuinely in Hz, matching their name, for a plain JS-side Hz formatter.
-                    minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
+                    if (readLimits || maxHz[i] <= 0) {
+                        minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
+                        maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
+                    }
                     curHz[i] = 1000L * parseLongOr(readWorldReadable(base + "scaling_cur_freq"), 0);
-                    maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
                     if (maxHz[i] > 0) anyFreq = true;
                 }
+                if (readLimits) { tmCpuMinHz = minHz; tmCpuMaxHz = maxHz; }
                 if (anyFreq) {
                     JSONArray clusters = new JSONArray();
                     for (CpuStats.Cluster c : CpuStats.groupClusters(minHz, curHz, maxHz)) {
@@ -12501,17 +13448,25 @@ public class MainActivity extends Activity {
          *  of a degree on some) are not standardized across devices. */
         private Double cpuThermalC() {
             try {
+                // which zone is the CPU's does not change: it is looked for once (a phone can have 80+ zones, two files each), then only its temp is read
+                String known = tmThermalPath;
+                if (known != null) {
+                    if (known.isEmpty()) return null;
+                    String raw = readWorldReadable(known).trim();
+                    return raw.isEmpty() ? null : millidegreesToC(raw);
+                }
                 File[] zones = new File("/sys/class/thermal").listFiles();
-                if (zones == null) return null;
-                String fallback = null;
+                if (zones == null) { tmThermalPath = ""; return null; }
+                String fallback = null, fallbackPath = null;
                 for (File z : zones) {
                     if (!z.getName().startsWith("thermal_zone")) continue;
                     String raw = readWorldReadable(z.getPath() + "/temp").trim();
                     if (raw.isEmpty()) continue;
-                    if (fallback == null) fallback = raw;
+                    if (fallback == null) { fallback = raw; fallbackPath = z.getPath() + "/temp"; }
                     String type = readWorldReadable(z.getPath() + "/type").trim();
-                    if (type.toLowerCase(java.util.Locale.US).contains("cpu")) return millidegreesToC(raw);
+                    if (type.toLowerCase(java.util.Locale.US).contains("cpu")) { tmThermalPath = z.getPath() + "/temp"; return millidegreesToC(raw); }
                 }
+                tmThermalPath = fallbackPath == null ? "" : fallbackPath;
                 return fallback == null ? null : millidegreesToC(fallback);
             } catch (Throwable t) {
                 return null;
@@ -12838,7 +13793,7 @@ public class MainActivity extends Activity {
             } catch (Exception e) { return false; }
         }
 
-        /** Which of the three special accesses this app has right now: {files, usage, overlay, sdk}. */
+        /** Which of the accesses and permissions of the permissions sheet this app holds right now, read from the phone's own checks: {files, usage, overlay, ..., sdk}. */
         @JavascriptInterface
         public String getPermissionStatus() {
             JSONObject o = new JSONObject();
@@ -12851,6 +13806,13 @@ public class MainActivity extends Activity {
                 o.put("secure_settings", hasWriteSecureSettingsAccess());
                 o.put("dump", hasDumpAccess());
                 o.put("restricted_settings", hasRestrictedSettingsAccess());
+                o.put("read_logs", hasReadLogsAccess());
+                o.put("bluetooth", hasBluetoothConnectAccess());
+                o.put("notifications", hasNotificationAccess());
+                if (QuickStopNotice.liveSupported()) o.put("live_updates", QuickStopNotice.liveAllowed(MainActivity.this));          // Android 16 and later only: an older phone has no such row
+                // runtime permissions this Android version does not have yet: held without asking, and the sheet says "Not needed"
+                o.put("bluetooth_na", Build.VERSION.SDK_INT < 31);
+                o.put("notifications_na", Build.VERSION.SDK_INT < 33);
                 o.put("sdk", Build.VERSION.SDK_INT);
             } catch (Exception ignored) {}
             return o.toString();
@@ -12946,6 +13908,137 @@ public class MainActivity extends Activity {
             return "settings"; // nothing to open - this one has no Settings screen at all without a shell
         }
 
+        /** READ_LOGS - no Settings screen either: pm grant through the working mode, read back with the permission check. Answer: "granted" or "failed". */
+        @JavascriptInterface
+        public String requestReadLogsAccess() {
+            if (hasReadLogsAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " android.permission.READ_LOGS");
+                if (hasReadLogsAccess()) return "granted";
+            }
+            return "failed";
+        }
+
+        /** Bluetooth Connect (Android 12+): pm grant through the working mode when there is one, else Android's own permission dialog
+         *  (window.onPermissionsChanged follows the answer). Answer: "granted" or "dialog". */
+        @JavascriptInterface
+        public String requestBluetoothAccess() {
+            return requestRuntimeForSheet("android.permission.BLUETOOTH_CONNECT", 31);
+        }
+
+        /** Notifications (Android 13+): the same way as Bluetooth Connect. Answer: "granted" or "dialog". */
+        @JavascriptInterface
+        public String requestNotificationAccess() {
+            return requestRuntimeForSheet("android.permission.POST_NOTIFICATIONS", 33);
+        }
+
+        /**
+         * Live updates (Android 16 and later) for the permissions sheet. No command sets it: the permission is in the manifest, so what can be missing is Notifications
+         * (asked for first, the way the Notifications row asks: a working mode grants it by command, otherwise Android's own dialog comes up) and the switch for this app on
+         * the phone's own Live updates screen, which opens. Answer: "granted", "dialog" or "settings".
+         */
+        @JavascriptInterface
+        public String requestLiveUpdatesAccess() {
+            if (!QuickStopNotice.liveSupported() || QuickStopNotice.liveAllowed(MainActivity.this)) return "granted";
+            if (!hasNotificationAccess()) {
+                String asked = requestNotificationAccess();
+                if (!"granted".equals(asked)) return asked;              // Android's dialog is up: the page asks again once it is answered (permThen), and then the screen below opens
+                if (QuickStopNotice.liveAllowed(MainActivity.this)) return "granted";
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent in = QuickStopNotice.liveSettingsIntent(MainActivity.this);
+                        if (in == null) {
+                            in = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        }
+                        startActivity(in);
+                    } catch (Exception e) { openOwnAppInfo(); }
+                }
+            });
+            return "settings";
+        }
+
+        /**
+         * Opens the installed root manager (KernelSU, APatch or Magisk) with a normal launch intent so the user can grant this app Super User there.
+         * This holds no root or grant mechanics: the grant is approved inside the manager, and the app reads the result back afterwards through the
+         * usual working-mode check (the Root Features tab re-checks on resume and unlocks when su was granted). Answer: {"ok":true,"name":"KernelSU"}
+         * only once startActivity has returned for the manager; {"ok":false} when none of the known managers is installed; and
+         * {"ok":false,"reason":"launch","name":"KernelSU"} when one is installed but the start did not happen, so the page does not tell the user to
+         * install a manager they have. This answer is the page's only source of the manager's name (its toasts name it; the buttons keep fixed labels).
+         * A manager with an empty label (RootManagers: one whose name is never shown) answers "name":null, and the page then says "your root manager".
+         */
+        @JavascriptInterface
+        public String openRootManager() {
+            RootManagers.Manager m = RootManagers.pick(installedRootManagers());
+            if (m == null) return "{\"ok\":false}";
+            String name = m.label.isEmpty() ? "null" : org.json.JSONObject.quote(m.label);
+            // The start runs here, on the bridge thread, and decides the answer (as composeEmail does): Activity.startActivity may be called from any
+            // thread and throws when Android refuses the start (ActivityNotFoundException, SecurityException). Posting it to the UI thread and
+            // answering ok at once would let the page say "Allow this app in X" although nothing opened. A start that Android drops without telling
+            // the caller (a background-start block) cannot be seen from here; after an ok the page still reads su back when the app is shown again.
+            try {
+                Intent in = getPackageManager().getLaunchIntentForPackage(m.pkg);
+                if (in == null) return "{\"ok\":false,\"reason\":\"launch\",\"name\":" + name + "}";   // disabled or removed since installedRootManagers() looked
+                in.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(in);
+            } catch (Exception e) {
+                return "{\"ok\":false,\"reason\":\"launch\",\"name\":" + name + "}";
+            }
+            return "{\"ok\":true,\"name\":" + name + "}";
+        }
+
+        /** The known root managers that are installed on this phone (a launch intent exists for them). */
+        private java.util.Set<String> installedRootManagers() {
+            java.util.Set<String> s = new java.util.HashSet<String>();
+            PackageManager pm = getPackageManager();
+            for (RootManagers.Manager m : RootManagers.known()) {
+                try { if (pm.getLaunchIntentForPackage(m.pkg) != null) s.add(m.pkg); } catch (Throwable ignored) {}
+            }
+            return s;
+        }
+
+        private String requestRuntimeForSheet(final String perm, int fromSdk) {
+            if (Build.VERSION.SDK_INT < fromSdk) return "granted";
+            if (checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " " + perm);
+                if (checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return "granted";
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        // read before asking: afterwards a dismissed dialog and a refusal for good look the same (PermRefusal)
+                        sheetAskPerm = perm;
+                        sheetRationaleBefore = shouldShowRequestPermissionRationale(perm);
+                        sheetAskedBefore = prefs != null && prefs.getBoolean("sheet_perm_asked_" + perm, false);
+                        if (prefs != null) prefs.edit().putBoolean("sheet_perm_asked_" + perm, true).apply();
+                        requestPermissions(new String[]{perm}, REQ_SHEET_RUNTIME_PERM);
+                    } catch (Exception e) { openOwnAppInfo(); }
+                }
+            });
+            return "dialog";
+        }
+
+        /** All files access for the sheet's Allow button: through the working mode it is granted by command (appops MANAGE_EXTERNAL_STORAGE, or the storage
+         *  permissions below Android 11) and read back from the phone; without one (or when the phone refuses it) Android's screen opens as before.
+         *  Answer: "granted" or "settings". */
+        @JavascriptInterface
+        public String grantAllFilesAccess() {
+            if (hasStorageAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                String pkg = getPackageName();
+                if (Build.VERSION.SDK_INT >= 30) executeShell("appops set " + pkg + " MANAGE_EXTERNAL_STORAGE allow");
+                else executeShell("pm grant " + pkg + " android.permission.READ_EXTERNAL_STORAGE; pm grant " + pkg + " android.permission.WRITE_EXTERNAL_STORAGE");
+                if (hasStorageAccess()) return "granted";
+            }
+            requestAllFilesAccess();
+            return "settings";
+        }
+
         /** "Allow restricted settings": the one way to do it by command is {@code appops set <package> ACCESS_RESTRICTED_SETTINGS allow} through the working mode.
          *  When that passes the access counts as granted (and is remembered); without a working mode, or when the command fails, this app's own App info opens
          *  (three dots, Allow restricted settings). Answer: "granted" or "settings". */
@@ -12974,8 +14067,12 @@ public class MainActivity extends Activity {
 
         /**
          * "Allow all" through the working mode: everything that has a command is granted at once ({@code appops set} and {@code pm grant}), restricted settings first,
-         * because Usage access needs it. Answer: the permission status ({@link #getPermissionStatus}) after it. What is still missing has no command and needs
-         * its Android screen.
+         * because Usage access needs it. (Live updates has no command: see {@link #requestLiveUpdatesAccess}.) Answer: the permission status ({@link #getPermissionStatus}) after it,
+         * with {@code restarting: true} when something was granted: the app is then to run anew in a fresh process, so that what was allowed holds everywhere (the
+         * storage group among others). The app cannot do that from its own code, and a phone may end the process itself while a permission is set, so before the
+         * commands a watcher is left behind through the working mode ({@link AppRestart}) that starts the app again once the process is gone; the page shows its
+         * toast and calls {@link #restartApp}. Without a watcher (the shell cannot see this process) the page reloads itself, as before. What is still missing has
+         * no command and needs its Android screen.
          */
         @JavascriptInterface
         public String grantAllPermissions() {
@@ -12993,14 +14090,30 @@ public class MainActivity extends Activity {
                     sb.append("pm grant ").append(pkg).append(" android.permission.PACKAGE_USAGE_STATS; ");
                 }
                 if (!hasOverlayAccess()) sb.append("appops set ").append(pkg).append(" SYSTEM_ALERT_WINDOW allow; ");
-                if (!hasInstallUnknownAccess()) sb.append("appops set ").append(pkg).append(" REQUEST_INSTALL_PACKAGES allow; ");
                 if (!hasLegacyStorageAccess()) {
                     sb.append("pm grant ").append(pkg).append(" android.permission.READ_EXTERNAL_STORAGE; ");
                     sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_EXTERNAL_STORAGE; ");
                 }
                 if (!hasWriteSecureSettingsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_SECURE_SETTINGS; ");
                 if (!hasDumpAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.DUMP; ");
-                if (sb.length() > 0) executeShell(sb.toString() + "true");
+                if (!hasReadLogsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.READ_LOGS; ");
+                if (!hasBluetoothConnectAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.BLUETOOTH_CONNECT; ");
+                if (!hasNotificationAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.POST_NOTIFICATIONS; ");
+                // last: on Android 11 the phone ends this app's uid when this op becomes allowed (StorageManagerService.onAppOpsChanged; from Android 12 only
+                // when it is taken away, and All files access ends it only when denied); that takes the adb client and server this app started with it and
+                // can cut the commands after it under ADB (likely Shizuku too), so everything else is granted first; the watcher brings the app back
+                if (!hasInstallUnknownAccess()) sb.append("appops set ").append(pkg).append(" REQUEST_INSTALL_PACKAGES allow; ");
+                if (sb.length() > 0) {
+                    String before = getPermissionStatus();
+                    String watcher = null;
+                    try { watcher = AppRestart.watcherPid(executeShell(AppRestart.watchScript(android.os.Process.myPid(), AppRestart.userOf(android.os.Process.myUid()), AppRestart.component(pkg, MainActivity.class.getName())))); } catch (Throwable ignored) {}
+                    executeShell(sb.toString() + "true");
+                    String after = getPermissionStatus();
+                    if (watcher == null) return after;                                                                      // no watcher: the page reloads itself, as before
+                    if (after.equals(before)) { try { executeShell(AppRestart.killScript(watcher)); } catch (Throwable ignored) {} return after; }     // nothing was granted: no restart, and the watcher goes
+                    restartPending = true;
+                    try { JSONObject o = new JSONObject(after); o.put("restarting", true); return o.toString(); } catch (Exception e) { return after; }
+                }
             }
             return getPermissionStatus();
         }
@@ -13035,6 +14148,9 @@ public class MainActivity extends Activity {
             }
             if (!hasWriteSecureSettingsAccess()) out.add(pm + "WRITE_SECURE_SETTINGS");
             if (!hasDumpAccess()) out.add(pm + "DUMP");
+            if (!hasReadLogsAccess()) out.add(pm + "READ_LOGS");
+            if (!hasBluetoothConnectAccess()) out.add(pm + "BLUETOOTH_CONNECT");
+            if (!hasNotificationAccess()) out.add(pm + "POST_NOTIFICATIONS");
             StringBuilder sb = new StringBuilder();
             for (String line : out) { if (sb.length() > 0) sb.append('\n'); sb.append(line); }
             return sb.toString();
@@ -13059,6 +14175,29 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     try { recreate(); } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        private volatile boolean restartPending;       // set by grantAllPermissions once a watcher waits for this process to end: only then may restartApp end it
+
+        /**
+         * Ends this process after "Allow all" so that the watcher {@link #grantAllPermissions} left behind through the working mode ({@link AppRestart}) starts the
+         * app anew; the page shows its toast first, then calls this. The task goes too, so the app comes back fresh. Does nothing when no watcher waits (the
+         * app would otherwise just close).
+         */
+        @JavascriptInterface
+        public void restartApp() {
+            if (!restartPending) return;
+            restartPending = false;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try { finishAndRemoveTask(); } catch (Throwable ignored) {}
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+                        @Override
+                        public void run() { android.os.Process.killProcess(android.os.Process.myPid()); }
+                    }, 400);
                 }
             });
         }
@@ -13766,20 +14905,13 @@ public class MainActivity extends Activity {
                 if (name == null) return "Could not read the source";
                 boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
                 if (isDir) {
+                    List<String[]> kids = safKids(srcUri);                // read before the new folder exists: it may be inside the source
                     Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
                     if (newDir == null) return "Could not create " + name;
-                    Uri srcTree = safTreeUri(srcUri);
-                    String srcDocId = safCurrentDocId(srcUri);
-                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
-                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
-                    if (kids != null) {
-                        try {
-                            while (kids.moveToNext()) {
-                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
-                                String err = safCopyInto(kidUri, newDir);
-                                if (err != null) return err;
-                            }
-                        } finally { kids.close(); }
+                    for (String[] k : kids) {
+                        if (fmBatchCancel) return "Cancelled";
+                        String err = safCopyInto(Uri.parse(k[0]), newDir);
+                        if (err != null) return err;
                     }
                     return null;
                 }
@@ -13796,10 +14928,14 @@ public class MainActivity extends Activity {
                 android.content.ContentResolver cr = getContentResolver();
                 String name = srcFile.getName();
                 if (srcFile.isDirectory()) {
+                    File[] kids = srcFile.listFiles();                    // read before the new folder exists: it may be inside the source
                     Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
                     if (newDir == null) return "Could not create " + name;
-                    File[] kids = srcFile.listFiles();
-                    if (kids != null) for (File k : kids) { String err = safCopyPosixIntoSaf(k, newDir); if (err != null) return err; }
+                    if (kids != null) for (File k : kids) {
+                        if (fmBatchCancel) return "Cancelled";
+                        String err = safCopyPosixIntoSaf(k, newDir);
+                        if (err != null) return err;
+                    }
                     return null;
                 }
                 String mime = fmMime(name);
@@ -13837,19 +14973,12 @@ public class MainActivity extends Activity {
                 String canonRoot = destDir.getCanonicalPath();
                 if (!dest.getCanonicalPath().startsWith(canonRoot.endsWith(File.separator) ? canonRoot : canonRoot + File.separator)) return "Could not copy " + name;
                 if (isDir) {
+                    List<String[]> kids = safKids(srcUri);                // read before the new folder exists: it may be inside the source
                     if (!dest.isDirectory() && !dest.mkdirs()) return "Could not create " + name;
-                    Uri srcTree = safTreeUri(srcUri);
-                    String srcDocId = safCurrentDocId(srcUri);
-                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
-                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
-                    if (kids != null) {
-                        try {
-                            while (kids.moveToNext()) {
-                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
-                                String err = safCopyIntoPosix(kidUri, dest);
-                                if (err != null) return err;
-                            }
-                        } finally { kids.close(); }
+                    for (String[] k : kids) {
+                        if (fmBatchCancel) return "Cancelled";
+                        String err = safCopyIntoPosix(Uri.parse(k[0]), dest);
+                        if (err != null) return err;
                     }
                     return null;
                 }
@@ -13928,6 +15057,91 @@ public class MainActivity extends Activity {
             return null;
         }
 
+        /** The children of a SAF folder, read once before anything is written into it: {document URI, name, MIME type}. A copy that
+         *  lists a folder after it created its own target folder there would find that folder and copy it into itself without end. */
+        private List<String[]> safKids(Uri dir) {
+            List<String[]> out = new ArrayList<String[]>();
+            Uri tree = safTreeUri(dir);
+            Uri kids = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(tree, safCurrentDocId(dir));
+            android.database.Cursor c = getContentResolver().query(kids, new String[]{
+                    android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE}, null, null, null);
+            if (c == null) return out;
+            try {
+                while (c.moveToNext()) out.add(new String[]{ android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0)).toString(), c.getString(1), c.getString(2) });
+            } finally { c.close(); }
+            return out;
+        }
+
+        /** Whether a SAF document is a folder (null when it cannot be read). */
+        private Boolean safIsDir(Uri doc) {
+            try {
+                android.database.Cursor c = getContentResolver().query(doc, new String[]{ android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE }, null, null, null);
+                if (c == null) return null;
+                try { return c.moveToFirst() ? android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(c.getString(0)) : null; } finally { c.close(); }
+            } catch (Throwable t) { return null; }
+        }
+
+        /** The plain path of a file manager item: the path itself, or for a document of Android's own storage provider the path it is
+         *  under /storage (see {@link FileOps#externalStoragePath}); null when it has none the app can know. */
+        private String fmPlainPathOf(String ref) {
+            if (!ref.startsWith("content://")) return ref;
+            try {
+                Uri u = Uri.parse(ref);
+                return FileOps.externalStoragePath(u.getAuthority(), safCurrentDocId(u), android.os.Process.myUid() / 100000);
+            } catch (Throwable t) { return null; }
+        }
+
+        /**
+         * Puts the children of the folder {@code src} (a SAF document URI or a plain path) into the SAF folder {@code destDir} that
+         * already holds a folder of the same name, the way two plain folders merge (FileOps.transfer): a folder meets a folder and is
+         * merged, a file meets a file and replaces it ("replace") or is left ("skip"), a file meets a folder or the reverse and is
+         * refused ("replace") or left ("skip"). For a move, what went across is removed from the source, and the source folder too
+         * when nothing was left in it. {@code left[0]} counts what was left alone. Returns null, or why it stopped.
+         */
+        private String safMergeInto(String src, Uri destDir, String policyName, boolean move, int[] left) throws Exception {
+            boolean srcSaf = src.startsWith("content://");
+            List<String[]> kids = new ArrayList<String[]>();              // {ref, name, isDir}
+            if (srcSaf) {
+                for (String[] k : safKids(Uri.parse(src))) kids.add(new String[]{ k[0], k[1], String.valueOf(android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(k[2])) });
+            } else {
+                File[] fs = new File(src).listFiles();
+                if (fs != null) for (File f : fs) kids.add(new String[]{ f.getPath(), f.getName(), String.valueOf(f.isDirectory() && !java.nio.file.Files.isSymbolicLink(f.toPath())) });
+            }
+            int leftBefore = left[0];
+            for (String[] k : kids) {
+                if (fmBatchCancel) return "Cancelled";
+                String ref = k[0], name = k[1];
+                if (name == null || FileOps.badName(name) != null) { left[0]++; continue; }
+                boolean kidDir = Boolean.parseBoolean(k[2]);
+                Uri clash = safChildNamed(destDir, name);
+                Boolean clashDir = clash == null ? null : safIsDir(clash);
+                if (clash != null && clashDir == null) return "Could not read " + name;
+                int action = FileOps.safClash(kidDir, clashDir, policyName);
+                if (action == FileOps.SAF_SKIP) { left[0]++; continue; }
+                if (action == FileOps.SAF_IN_THE_WAY) return (kidDir ? "A file with that name is in the way: " : "A folder with that name is in the way: ") + name;
+                String err;
+                if (action == FileOps.SAF_MERGE) {
+                    err = safMergeInto(ref, clash, policyName, move, left);
+                    if (err != null) return err;
+                    continue;                                              // the merge removed what it moved, and the folder when it was emptied
+                }
+                if (action == FileOps.SAF_REPLACE && !android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash)) return "Could not replace " + name;
+                err = srcSaf ? safCopyInto(Uri.parse(ref), destDir) : safCopyPosixIntoSaf(new File(ref), destDir);
+                if (err != null) return err;
+                if (move) {
+                    if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(ref));
+                    else FileOps.delete(java.util.Collections.singletonList(new File(ref)), null);
+                }
+            }
+            if (move && left[0] == leftBefore) {                          // everything in it went across: the emptied source folder goes too
+                if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(src));
+                else new File(src).delete();
+            }
+            return null;
+        }
+
         private String safDisplayName(String ref) {
             if (!ref.startsWith("content://")) return new File(ref).getName();
             try {
@@ -13967,30 +15181,53 @@ public class MainActivity extends Activity {
                             if (q.equals(dest)) throw new IOException("Can't put a folder inside itself");
                             if (q.startsWith("content://") && dest.startsWith("content://")) {
                                 try {
-                                    String sd = android.provider.DocumentsContract.getDocumentId(Uri.parse(q));
-                                    String dd = android.provider.DocumentsContract.getDocumentId(Uri.parse(dest));
-                                    if (safTreeUri(Uri.parse(q)).equals(safTreeUri(Uri.parse(dest))) && (dd.equals(sd) || dd.startsWith(sd + "/"))) throw new IOException("Can't put a folder inside itself");
+                                    Uri qu = Uri.parse(q), du = Uri.parse(dest);
+                                    // two added roots of one provider can reach the same folder: the ids decide, not the tree they were reached through
+                                    String sd = safCurrentDocId(qu), dd = safCurrentDocId(du);
+                                    if (String.valueOf(qu.getAuthority()).equals(du.getAuthority()) && FileOps.safDocInside(sd, dd)) throw new IOException("Can't put a folder inside itself");
                                 } catch (IllegalArgumentException ignored) {}
                             }
                             if (!dest.startsWith("content://") && (dest.equals(q) || dest.startsWith(q + "/"))) throw new IOException("Can't put a folder inside itself");
                             String name = safDisplayName(q);
+                            // the SD card added as storage and /storage/XXXX-XXXX are one place seen two ways: the same plain-path rules apply
+                            String qp = fmPlainPathOf(q), dp = fmPlainPathOf(dest);
+                            if (qp != null && dp != null) {
+                                if (FileOps.pathInside(qp, dp)) throw new IOException("Can't put a folder inside itself");
+                                if (!name.isEmpty() && FileOps.policyOf(policyName) != FileOps.KEEP_BOTH && qp.equals(dp + "/" + name)) { skipped++; kept.put(q); continue; }   // already there: the item itself
+                            }
                             if (dest.startsWith("content://") && !name.isEmpty()) {
                                 Uri clash = safChildNamed(Uri.parse(dest), name);
                                 if (clash != null) {
                                     if (clash.equals(Uri.parse(q))) { skipped++; kept.put(q); continue; }
-                                    if ("skip".equals(policyName)) { skipped++; kept.put(q); continue; }
-                                    if (!"keep".equals(policyName)) android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash);
+                                    Boolean qDir = q.startsWith("content://") ? safIsDir(Uri.parse(q)) : Boolean.valueOf(new File(q).isDirectory());
+                                    Boolean clashDir = safIsDir(clash);
+                                    if (qDir == null || clashDir == null) throw new IOException("Could not read " + name);
+                                    int action = FileOps.safClash(qDir, clashDir, policyName);
+                                    if (action == FileOps.SAF_SKIP) { skipped++; kept.put(q); continue; }
+                                    if (action == FileOps.SAF_IN_THE_WAY) throw new IOException(qDir ? "A file with that name is in the way" : "A folder with that name is in the way");
+                                    if (action == FileOps.SAF_MERGE) {
+                                        // folders merge, as the sheet says and as two plain folders do: nothing that is only in the old folder is lost
+                                        int[] left = new int[1];
+                                        String err = safMergeInto(q, clash, policyName, "mv".equals(op), left);
+                                        if (err != null && fmBatchCancel) { cancelled = true; break; }
+                                        if (err != null) failed.put(new JSONObject().put("p", q).put("error", err.length() > 200 ? err.substring(0, 200) : err));
+                                        else if (left[0] > 0 && "mv".equals(op)) { skipped++; kept.put(q); }   // some of it was left in the source: it stays on the move clipboard
+                                        else done++;
+                                        continue;
+                                    }
+                                    if (action == FileOps.SAF_REPLACE && !android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash)) throw new IOException("Could not replace " + name);
                                 }
                             } else if (!dest.startsWith("content://") && !name.isEmpty() && FileOps.badName(name) == null) {
                                 // the same rule for a plain folder: skip leaves the file that is there, keep both writes "name (1).ext" next to it
                                 if (FileOps.exists(new File(dest, name))) {
-                                    if ("skip".equals(policyName)) { skipped++; continue; }
+                                    if ("skip".equals(policyName)) { skipped++; kept.put(q); continue; }   // left where it is: it stays on the move clipboard
                                     if ("keep".equals(policyName)) asName = FileOps.uniqueName(new File(dest), name);
                                 }
                             }
                         }
                         String err = fmOpSaf(op, q, dest, asName);
                         if (err.isEmpty()) done++;
+                        else if (fmBatchCancel) { cancelled = true; break; }      // stopped inside a folder: a cancel, not a failure
                         else failed.put(new JSONObject().put("p", q).put("error", err.length() > 200 ? err.substring(0, 200) : err));
                     } catch (Throwable t) {
                         try { failed.put(new JSONObject().put("p", q).put("error", errMsg(t))); } catch (Exception ignored) {}
@@ -15703,6 +16940,173 @@ public class MainActivity extends Activity {
             return "ok";
         }
 
+        // ---- Tracker parts: the parts of an app (activities, services, receivers, providers) that belong to a known tracker, and their switches ----
+
+        /**
+         * The app's parts that belong to a known tracker (TrackerParts), read from Android's list of the app's components: no working mode needed.
+         * {ok, parts, on, off, trackers: [{id, name, categories, website, parts: [{name, kind, on, off}]}]}: on = the part runs now, off = it was
+         * switched off with pm (Enable Trackers can switch it back on); a part the manifest ships off has neither.
+         */
+        @JavascriptInterface
+        public String trackerParts(String pkg) {
+            try {
+                if (!BackupScripts.isPackageName(pkg)) return new JSONObject().put("ok", false).put("error", "not a package name").toString();
+                Trackers t = trackers();
+                List<TrackerParts.Group> groups = readTrackerParts(pkg, t);
+                JSONArray arr = new JSONArray();
+                int parts = 0, on = 0, off = 0;
+                for (TrackerParts.Group g : groups) {
+                    JSONObject o = t.db.info(g.index);
+                    JSONArray ps = new JSONArray();
+                    for (TrackerParts.Part p : g.parts) {
+                        ps.put(new JSONObject().put("name", p.name).put("kind", p.kind).put("on", p.on()).put("off", p.switchedOff()));
+                        parts++;
+                        if (p.on()) on++;
+                        if (p.switchedOff()) off++;
+                    }
+                    arr.put(o.put("parts", ps));
+                }
+                return new JSONObject().put("ok", true).put("parts", parts).put("on", on).put("off", off).put("trackers", arr).toString();
+            } catch (PackageManager.NameNotFoundException gone) {
+                return "{\"ok\":false,\"error\":\"not installed\"}";
+            } catch (Throwable th) {
+                try { return new JSONObject().put("ok", false).put("error", String.valueOf(th.getMessage())).toString(); } catch (Exception e) { return "{\"ok\":false}"; }
+            }
+        }
+
+        /**
+         * Switches the tracker parts of one app off (enable false) or back on, off the page's thread: every tracker of the app when idsJson is empty or
+         * "[]", only the trackers with these ids otherwise. Answers "started", "busy" while a run is going, or "error"; the result arrives as
+         * window.onTrackerPartsSet(token, {ok, needsRoot, changed, failed, output}). Behind the same gate as the component switch (trackerSwitchAllowed).
+         */
+        @JavascriptInterface
+        public String trackerPartsSet(final String pkg, final String idsJson, final boolean enable, final String token) {
+            synchronized (trackerPartsLock) {
+                if (trackerPartsBusy) return "busy";
+                trackerPartsBusy = true;
+            }
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res;
+                    try {
+                        int[] ids = null;
+                        JSONArray a = (idsJson == null || idsJson.trim().isEmpty()) ? new JSONArray() : new JSONArray(idsJson);
+                        if (a.length() > 0) {
+                            StringBuilder spec = new StringBuilder("x:");
+                            for (int i = 0; i < a.length(); i++) { if (i > 0) spec.append(','); spec.append(a.get(i)); }
+                            ids = TrackerParts.ids(spec.toString());
+                        }
+                        res = setTrackerParts(pkg, ids, null, enable);
+                    } catch (Throwable t) {
+                        res = new JSONObject();
+                        try { res.put("ok", false).put("output", "Error: " + errMsg(t)); } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (trackerPartsLock) { trackerPartsBusy = false; }
+                    }
+                    notifyJs("window.onTrackerPartsSet && window.onTrackerPartsSet(" + JSONObject.quote(token == null ? "" : token) + "," + res + ")");
+                }
+            })) {
+                synchronized (trackerPartsLock) { trackerPartsBusy = false; }
+                return "error";
+            }
+            return "started";
+        }
+
+        /**
+         * Android allows a single component's state change to the root user (uid 0) and the system user (uid 1000) but refuses it to the ADB shell
+         * (uid 2000), so the tracker switches open where the component switch does (setComponentEnabled): Root mode, or a Shizuku server running as
+         * uid 0 or 1000. The page keeps the same gate (compToggleLocked -> sysPrivActive); this is the enforcing floor for every caller.
+         */
+        private boolean trackerSwitchAllowed() {
+            String trkMode = resolveExecMode();
+            int trkSzUid = "shizuku".equals(trkMode) ? shizukuServerUid() : -1;
+            return "root".equals(trkMode) || ("shizuku".equals(trkMode) && isShizukuAuthorized() && (trkSzUid == 0 || trkSzUid == 1000));
+        }
+
+        /**
+         * The History's Undo of a tracker step, run at once (as executeAppAction is) but answering the whole result as JSON, so the page can keep the
+         * parts this Undo really changed: {ok, needsRoot, changed, changedParts, failed, output}.
+         */
+        @JavascriptInterface
+        public String trackerActionResult(String action, String pkg) {
+            try {
+                if (!BackupScripts.isPackageName(pkg)) return new JSONObject().put("ok", false).put("output", "Error: \"" + pkg + "\" is not a valid package name").toString();
+                if (!TrackerParts.isAction(action)) return new JSONObject().put("ok", false).put("output", "Error: not a tracker action").toString();
+                return trackerAction(pkg, action).toString();
+            } catch (Throwable e) {
+                try { return new JSONObject().put("ok", false).put("output", "Error: " + errMsg(e)).toString(); } catch (Exception x) { return "{\"ok\":false}"; }
+            }
+        }
+
+        /** A batch action string (trackers_off / trackers_on, with ids or part names after the colon: TrackerParts) run on one app. */
+        private JSONObject trackerAction(String pkg, String action) throws Exception {
+            return setTrackerParts(pkg, TrackerParts.ids(action), TrackerParts.parts(action), TrackerParts.enables(action));
+        }
+
+        /**
+         * Switches the tracker parts of one app off or back on (ids null: every tracker of the app; parts null: every part of those trackers), one pm
+         * command per part that needs it: to switch off, the parts that run; to switch on, the parts in the switched-off state (an explicit DISABLED,
+         * whoever set it; never one the manifest ships off). Success is each part's state read back afterwards (componentOverrideState), not what pm
+         * printed. Parts named by name (only: the History's Undo) are all accounted for: one the tracker list no longer counts is still switched
+         * (readNamedParts), one the app no longer has is reported as gone, never skipped in silence.
+         * {ok, needsRoot, parts, changed, changedParts: [names], failed, output}.
+         */
+        private JSONObject setTrackerParts(String pkg, int[] ids, List<String> only, boolean enable) throws Exception {
+            JSONObject r = new JSONObject();
+            if (!BackupScripts.isPackageName(pkg)) return r.put("ok", false).put("output", "Error: \"" + pkg + "\" is not a valid package name");
+            if (ids != null && ids.length == 0) return r.put("ok", false).put("output", "Error: no tracker was named");
+            if (only != null && only.isEmpty()) return r.put("ok", false).put("output", "Error: no tracker part was named");
+            if (!trackerSwitchAllowed()) {
+                return r.put("ok", false).put("needsRoot", true)
+                        .put("output", "Error: switching tracker parts on or off needs Super User (Root) or the system user (UID 1000).");
+            }
+            Trackers t = trackers();
+            List<TrackerParts.Group> groups = readTrackerParts(pkg, t);
+            List<String[]> changed = new ArrayList<String[]>(), failed = new ArrayList<String[]>();
+            List<String> failedOut = new ArrayList<String>();
+            int partsInApp = 0;
+            int[] already = { 0 };
+            Set<String> seen = new HashSet<String>();
+            for (TrackerParts.Group g : groups) {
+                partsInApp += g.parts.size();
+                if (!TrackerParts.wanted(t.db, g, ids)) continue;
+                String tracker = t.db.name[g.index];
+                for (TrackerParts.Part p : g.parts) {
+                    if (!TrackerParts.wanted(p, only)) continue;
+                    seen.add(p.name);
+                    switchTrackerPart(pkg, tracker, p, enable, changed, already, failed, failedOut);
+                }
+            }
+            // the names asked for that no tracker of the list covers now: the app's part all the same (readNamedParts), or no longer in the app
+            Set<String> missing = TrackerParts.missing(only, seen);
+            int gone = 0;
+            if (!missing.isEmpty()) {
+                Map<String, TrackerParts.Part> named = readNamedParts(pkg, missing);
+                for (String name : missing) {
+                    TrackerParts.Part p = named.get(name);
+                    if (p == null) gone++;
+                    else switchTrackerPart(pkg, TrackerParts.NOT_LISTED, p, enable, changed, already, failed, failedOut);
+                }
+            }
+            JSONArray names = new JSONArray();
+            for (String[] c : changed) names.put(c[1]);
+            return r.put("ok", failed.isEmpty()).put("parts", partsInApp).put("changed", changed.size()).put("changedParts", names).put("failed", failed.size())
+                    .put("output", TrackerParts.report(enable, partsInApp, changed, already[0], gone, failed, failedOut));
+        }
+
+        /** One part to the asked state when it needs it: the pm command, then the state read back; counted in changed, already or failed. */
+        private void switchTrackerPart(String pkg, String tracker, TrackerParts.Part p, boolean enable, List<String[]> changed, int[] already,
+                                       List<String[]> failed, List<String> failedOut) {
+            if (!TrackerParts.needs(p, enable)) { if (enable ? p.on() : !p.on()) already[0]++; return; }
+            String cmd = ShellArgs.componentCommand(pkg, p.name, enable);
+            if (cmd == null) { failed.add(new String[] { tracker, p.name }); failedOut.add("not a valid component name"); return; }
+            String out = executeShell(cmd);
+            Boolean state = componentOverrideState(pkg, p.name);
+            if (state != null && state.booleanValue() == enable) changed.add(new String[] { tracker, p.name });
+            else { failed.add(new String[] { tracker, p.name }); failedOut.add(out == null ? "" : out.trim()); }
+        }
+
         /** Saves an app's icon (256 px PNG) to Download/ADB App Manager/Icons. Result via window.onAppIconSaved(json{ok, pkg, path, error}). */
         @JavascriptInterface
         public String saveAppIcon(final String pkg, final String label, final String pack) {
@@ -15911,7 +17315,7 @@ public class MainActivity extends Activity {
                     try {
                         ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                         if (cm != null) {
-                            cm.setPrimaryClip(ClipData.newPlainText("ADB App Manager", text));
+                            cm.setPrimaryClip(ClipData.newPlainText("ADB/Root Full System Toolbox", text));
                             Toast.makeText(MainActivity.this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {
@@ -15932,6 +17336,18 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "";
             }
+        }
+
+        /** The page's colours and the words of its dialogs (applyTheme sends them): the look of alert / confirm / prompt (PageDialogs). */
+        @JavascriptInterface
+        public void setDialogTheme(String json) {
+            pageDialogs.setTheme(json);
+        }
+
+        /** The title of the page's next alert / confirm / prompt (nextDialogTitle in the page); used once. */
+        @JavascriptInterface
+        public void setNextDialogTitle(String title) {
+            pageDialogs.setNextTitle(title);
         }
 
         /** Tints the status and navigation bars to match the active theme background. */
@@ -16005,8 +17421,11 @@ public class MainActivity extends Activity {
             // A tile or the widget switched the mode while the app was in the background
             activeWorkingMode = saved;
             cachedAutoMode = null;
-            notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes(false)");
         }
+        // Check the mode again on every return, not only after a tile changed it: a connection lost meanwhile (Wi-Fi off, Shizuku stopped,
+        // adbd gone) must dim the header badge and the Working mode tile now, not when the Working Modes sheet is next opened. The quiet
+        // check reuses a probe from the last 2.5 s (MODE_CACHE_MS), so a quick back-and-forth costs nothing.
+        notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes(false)");
         notifyJs("window.onAppResume && window.onAppResume()");
     }
 
@@ -16094,10 +17513,13 @@ public class MainActivity extends Activity {
         super.onDestroy();
         activityDestroyed = true;
         try { MorpheBridge mb = morpheBridge; if (mb != null) mb.release(); } catch (Throwable ignored) {}      // a patch that is going goes on; the next window takes over its events
+        try { MorpheBridge.Host mh = morpheHostInstance; if (mh != null) MorpheBridge.windowClosed(mh); } catch (Throwable ignored) {}   // never asked for the installer again
         cancelUpdateCheckRun();             // a running update check stops asking the network (its pool ends with it)
         cancelArchiveOpenOnDestroy();       // a huge compressed tar still being listed must not keep this window alive for minutes
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
         dismissAllInstallConfirms();
+        // the page's own dialogs too: each one still open answers its page with Cancel, so nothing waits on a window that is gone
+        try { pageDialogs.dismissAll(); } catch (Throwable ignored) {}
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
         // SD Maid SE: drop the calls still queued, then stop the engine's own pool and timer (they hold hooks that capture this
         // activity, and the page that would show their results is gone). Only when the tab was ever used.
@@ -16109,10 +17531,16 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { thumbExec.shutdownNow(); } catch (Throwable ignored) {}      // File Manager thumbnails: the page that asked for them is gone
+        // the tracker scan: stop its pool FIRST (a trackerScan that comes in now is rejected), then the scan that runs, which would read
+        // every app's dex for minutes and keep this activity alive; it ends after the app it is reading and saves what it found to the cache
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
+        trackerCancel = true;
         // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
         try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
+        // the internet speed test: refuse new tests and close the running one's connections, then stop its pool
+        try { speedTest.shutdown(); } catch (Throwable ignored) {}
+        try { speedTestExec.shutdownNow(); } catch (Throwable ignored) {}
         // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
         try {
             synchronized (tmLock) {

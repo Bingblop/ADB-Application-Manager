@@ -1,0 +1,11 @@
+ok   1. the Installer tab started a search
+ok   2. a partial list says the search stopped early
+ok      ... and lists what was found
+ok   3. a search that stopped before it found anything says it took too long
+ok      ... and does not say there are no package files on the device
+ok      ... and lists nothing
+ok      ... also when the list is drawn again
+ok   4. a complete search with no files says none were found
+ok   5. a complete list carries no note
+ok   no page errors
+all passed

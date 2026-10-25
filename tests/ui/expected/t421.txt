@@ -1,0 +1,10 @@
+ok   1. Settings, top to bottom
+ok   2. one card holds Palette Style (the source color and the nine styles) and, under it, My Themes with its own heading, Save and the saved themes
+ok   3. the Default Ask Agent card comes right after Curated Theme Palettes and holds the VirusTotal API key below the agent choice (its own heading, the field, Test key, the state and quota lines)
+ok      typing a key still goes through vtKeyTyped to the same store (kv vt_key; vtKey reads it back)
+ok   4. Settings has no Private DNS card or button (the Feature List may still name what the Extra Settings tab holds) and no Reconnecting devices card any more
+ok      Private DNS is still in Extra Settings
+ok   5. Connected Devices has the Reconnecting devices card right under its top card, shown with no device dropped, with the saved choices (off, 0, 5, 15) and its note
+ok      switching it on there is the same setting (kv cd_autore) and the note shows the timings
+ok      the dropped-devices list no longer carries its own on/off link (the card is the one place)
+errors: []

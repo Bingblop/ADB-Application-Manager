@@ -16,7 +16,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const tabs = (await page.locator('.tab-btn').allInnerTexts()).map(t => t.trim());
   console.log('1. tab order:', JSON.stringify(tabs));
   console.log('   Saved Applications right after Application Manager:', tabs[0].includes('Application') && tabs[1].includes('Saved'));
-  console.log('   About is the last tab, Task Manager and Connected Devices in a row before the patcher tabs, no Logcat Viewer tab (it moved into Console), Console right before Terminal:', tabs[tabs.length - 1].includes('About') && tabs.findIndex(t => t.includes('Task')) + 1 === tabs.findIndex(t => t.includes('Connected')) && !tabs.some(t => t.includes('Logcat')) && tabs.findIndex(t => t === 'Console') + 1 === tabs.findIndex(t => t === 'Terminal'));
+  console.log('   About is the last tab, Task Manager and Connected Devices in a row before the patcher tabs, Console right before Live Logcat, no Terminal tab (it is a segment of Console):', tabs[tabs.length - 1].includes('About') && tabs.findIndex(t => t.includes('Task')) + 1 === tabs.findIndex(t => t.includes('Connected')) && !tabs.includes('Terminal') && tabs.findIndex(t => t === 'Console') + 1 === tabs.findIndex(t => t === 'Live\nLogcat'));
   console.log('   no "Color" tab button:', !tabs.some(t => t.includes('Color')));
 
   // ---- the header gear opens Settings ----
@@ -29,7 +29,9 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.click('.tab-btn[data-tab="apps"]'); await page.waitForTimeout(100);
   console.log('3. back to Applications active:', await page.evaluate(() => { const a = document.querySelector('.tab-btn.active'); return !!a && a.innerText.includes('Application'); }));
   await page.evaluate(() => switchView('logcat')); await page.waitForTimeout(100);
-  console.log('   switchView(logcat) activates the Console tab, on Live Logcat (the Logcat Viewer tab moved into it):', await page.evaluate(() => { const a = document.querySelector('.tab-btn.active'); return !!a && a.innerText.includes('Console') && cnSeg === 'log' && !document.getElementById('cnSegLog').hidden; }));
+  console.log('   switchView(logcat) activates the Live Logcat tab:', await page.evaluate(() => { const a = document.querySelector('.tab-btn.active'); return !!a && a.dataset.tab === 'logcat' && !!document.getElementById('cnSegLog').offsetParent; }));
+  await page.evaluate(() => switchView('terminal')); await page.waitForTimeout(100);
+  console.log('   switchView(terminal) activates the Console tab, on its Terminal segment:', await page.evaluate(() => { const a = document.querySelector('.tab-btn.active'); return !!a && a.innerText.includes('Console') && cnSeg === 'term' && !document.getElementById('cnSegTerm').hidden; }));
 
   // ---- main "Check for Updates" also triggers the self-update check ----
   await page.evaluate(() => {

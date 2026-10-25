@@ -1,6 +1,7 @@
 the card is in the SD Maid tab and no longer in Settings: true
 button text: "🔒\nTrim Caches in All Applications"
 explanation is below the button: true
+the explanation starts folded: What does this do?
 explanation parts: ["What it runs=true","What it does=true","What is trimmed=true","What is not touched=true","What you may notice=true","How long it takes=true"]
 names the command (both forms): true | words: 349
 locked without a working mode: true | lock shown: true

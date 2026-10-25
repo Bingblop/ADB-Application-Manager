@@ -1,0 +1,5 @@
+ok   dark: while the log runs the button says Stop, filled with the red gradient, black text and outline, aria-pressed true
+ok   dark: stopped it says Play, filled with the green gradient, black text and outline, aria-pressed false
+ok   light: while the log runs the button says Stop, filled with the red gradient, black text and outline, aria-pressed true
+ok   light: stopped it says Play, filled with the green gradient, black text and outline, aria-pressed false
+errors: []

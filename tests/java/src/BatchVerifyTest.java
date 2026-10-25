@@ -83,6 +83,16 @@ public class BatchVerifyTest {
         JSONArray r8 = rows(true, "com.a", "com.b");
         ok = BatchVerify.apply("unsuspend", r8, new BatchVerify.State(set("com.a", "com.b"), null, set("com.a"), null));
         check("unsuspend: a suspended app is Still suspended", ok == 1 && r8.getJSONObject(0).getString("label").equals("Still suspended") && r8.getJSONObject(1).getString("label").equals("Not suspended"));
+        // an app uninstalled for the user (not in the installed list) keeps its own flag: Suspend / Unsuspend are judged by that flag alone
+        String dumpGone = "    User 0: ceDataInode=0 installed=false hidden=false suspended=true distractionFlags=0 stopped=true notLaunched=true enabled=0\n";
+        check("the flag of an app uninstalled for the user is read from its installed=false line", Boolean.TRUE.equals(BatchVerify.suspendedFrom(dumpGone)));
+        JSONArray ru1 = rows(true, "com.u", "com.v");
+        ok = BatchVerify.apply("suspend", ru1, new BatchVerify.State(set("com.a"), null, set("com.u"), null));
+        check("suspend of apps uninstalled for the user: suspended counts, a refused one reads Not suspended", ok == 1 && ru1.getJSONObject(0).getString("label").equals("Suspended")
+                && !ru1.getJSONObject(1).getBoolean("success") && ru1.getJSONObject(1).getString("label").equals("Not suspended"));
+        JSONArray ru2 = rows(true, "com.u");
+        ok = BatchVerify.apply("unsuspend", ru2, new BatchVerify.State(set("com.a"), null, null, null));
+        check("unsuspend of an app uninstalled for the user counts once its flag is off", ok == 1 && ru2.getJSONObject(0).getString("label").equals("Not suspended"));
 
         // Clear data in Root mode: the app's own folder, counted before and after
         long[] st1 = BatchVerify.parseDataStat("KB=3480\nFILES=12\n");

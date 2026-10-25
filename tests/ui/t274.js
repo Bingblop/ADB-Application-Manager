@@ -83,7 +83,7 @@ const A = '192.168.1.20:5555', B = '10.0.0.9:5555';
     check('3. ' + how + ': the live log plays on A', (await sent(page, /^logcat -d/)).every(c => c.startsWith(A + ' ')) && (await sent(page, /^logcat -d/)).length >= 1 && await page.evaluate(() => !!cd.lcTimer));
     if (how === 'automatic') await drop(page); else await page.evaluate(b => cdSelect(b), B);
     await page.waitForTimeout(3200);
-    // the sub-tab reads the new device's log once on its own (-t 500); the live poll reads -t 300
+    // the sub-tab reads the new device's log once on its own (-t 1000, the default since v7.14); the live poll reads -t 300
     const liveB = (await sent(page, /^logcat -d .* -t 300 /)).filter(c => c.startsWith(B + ' '));
     check('   after the change to B the live poll does not read B and the button says Play', liveB.length === 0 && await page.evaluate(() => !cd.lcTimer && document.getElementById('cdLcPlay').innerText === 'Play'), liveB.join('|'));
     await page.close();

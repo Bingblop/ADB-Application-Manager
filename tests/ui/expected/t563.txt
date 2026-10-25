@@ -1,0 +1,21 @@
+ok   1. off root the ENABLE/DISABLE control is locked, with the lock icon and the "Needs Super User (Root)" reason
+ok      LAUNCH/STOP keep the ordinary working-mode lock (not root): STOP is not locked while privileged
+ok      a tap off root runs no pm command (setComponentEnabled not called) and funnels through the root prompt
+ok   2. on root the control is unlocked (no lock icon, no Root reason)
+ok      a user app component toggles straight away, no confirmation dialog
+ok   3. disabling a system app component asks to confirm, naming the component and the system app and the risk
+ok      a yes carries the toggle through
+ok      a no leaves it alone (nothing run)
+ok   4. enabling a system app component does not prompt (only disabling warns)
+ok   5. the bulk toggle off root runs no pm command and funnels through the root prompt
+ok   6. T-054 the app sheet: a tap on the locked DISABLE, OK on the offer: the app sheet is closed and Root Features is the view on screen, no pm command
+ok      Cancel on the offer leaves the app sheet open where it was and opens nothing
+ok      the Activity Launcher: Disable selected, OK on the offer: the Activity Launcher is closed and Root Features is the view on screen, no pm command
+ok      a single locked DISABLE in the Activity Launcher, OK: the same, the sheet closed and Root Features on screen
+ok   7. T-055 su on the phone, a system app: the tap switches to Root (su grants), Cancel on the system-app confirm runs nothing, and every row is drawn unlocked (no lock, no Root reason)
+ok      the Activity Launcher's Disable selected: switches to Root, Cancel on Change activities runs nothing, and its rows are drawn unlocked
+ok   8. T-051 the guide's app menu topic: ENABLE/DISABLE carries the padlock "Needs Super User (Root)" in every mode but Root and sends nothing, a tap goes the Root way; no "runs, says Failed", no "(started by ADB)"
+ok      its App components under Super User topic: the same padlock, Shizuku started with root included; the switch to Root, the refusal toast and the Root Features offer as the page words them; the system-app question; no "fail with Failed"
+ok      the other lock paragraphs (Read-Only's lock symbol, the quick start, Troubleshooting), FULL-GUIDE.md and the device checklist name the ENABLE/DISABLE padlock as Root-only
+ok   9. no page errors
+all passed

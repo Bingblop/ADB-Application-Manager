@@ -1,4 +1,4 @@
-1. RRO/Monet Customization sits right of Hidden Settings and its Extra Settings tab (added in v7.12.12), and before App Stores: true ["Application Manager","Saved Applications","UAD-NG Debloater","Installer/ Updater","File Manager","Console","Terminal","Hidden Settings","Extra Settings","RRO/Monet Customization","App Stores","Task Manager","Connected Devices","Morphe Patcher","SD Maid","About"]
+1. RRO/Monet Customization sits right of Hidden Settings and its Extra Settings tab (added in v7.12.12), and before App Stores: true ["Application Manager","Saved Applications","UAD-NG Debloater","Installer/ Updater","File Manager","Console","Live Logcat","Hidden Settings","Extra Settings","RRO/Monet Customization","App Stores","Task Manager","Connected Devices","Morphe Patcher","SD Maid","Root Features","About"]
    it activates its own button and view: true
    Hidden Settings is still itself: true
    App Stores and About keep their buttons: true

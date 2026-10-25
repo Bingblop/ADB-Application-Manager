@@ -121,6 +121,11 @@ public final class Sdm {
         AreaInfo areaOf(String path);
         /** The Android user this app runs as (0 on the system user): the per-user areas (app data, the user's system folders) are that user's. */
         default int userId() { return 0; }
+        /**
+         * The Android user whose shared storage the public storage area is: /sdcard in an exclusion names that storage. It is the user of the primary public root,
+         * which is not always {@link #userId()}: off user 0 the host still reads /storage/emulated/0.
+         */
+        default int storageUserId() { return userId(); }
     }
 
     public static final class Pkg {

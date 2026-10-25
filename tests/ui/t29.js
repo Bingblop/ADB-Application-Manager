@@ -13,8 +13,8 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
       vibrate() {}, loadPreferences() { return '{}'; }, savePreferences() {}, loadCustomLists() { return '[]'; },
       getSystemInfo() { return '{}'; }, isSystemDarkMode() { return true; }, setSystemBarColor() {},
       saveStore() { return true; }, loadStore() { return ''; },
-      loadPackages() { return JSON.stringify([{ pkg: 'com.x', name: 'X App', isSystem: true }, { pkg: 'com.y', name: 'Y App', isSystem: false }]); },
-      getWorkingMode() { return JSON.stringify({ adbTcp: { connected: true, port: 5555 }, adbWireless: {}, shizuku: {}, configuredMode: 'auto', activeMode: 'adb_tcp', modeAvailable: true, isPrivileged: true }); },
+      loadPackages() { return JSON.stringify([{ pkg: 'com.x', name: 'X App', isSystem: false }, { pkg: 'com.y', name: 'Y App', isSystem: false }]); },
+      getWorkingMode() { return JSON.stringify({ adbTcp: { connected: true, port: 5555 }, adbWireless: {}, shizuku: {}, configuredMode: 'root', activeMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true }); },
       getAppDetails() {
         return JSON.stringify({
           permissions: [], appopsRaw: '',

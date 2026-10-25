@@ -77,13 +77,12 @@
 }
 
 .xterm .composition-view {
-    /* TODO: Composition position got messed up somewhere */
     background: #000;
     color: #FFF;
     display: none;
     position: absolute;
     white-space: nowrap;
-    z-index: 1;
+    z-index: 6;
 }
 
 .xterm .composition-view.active {

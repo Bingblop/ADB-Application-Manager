@@ -23,7 +23,7 @@ const NEWPAGE = async (b, kv, vp) => {
   let page = await NEWPAGE(b, { tab_config: JSON.stringify({ order: ['files', 'terminal', 'nonsense', 'installer'], off: ['store', 'gone'] }) });
   check('1. an old tab_config without "pinned" gets the default pinned tabs (in the saved order; its Command-Line Interface is Console now)', await bar(page) === 'apps,console,extrasettings,installer', await bar(page));
   const cfg = await page.evaluate(() => tabConfig);
-  check('   unknown keys are dropped, the order is completed, the pinned list is made', !cfg.order.includes('nonsense') && !cfg.off.includes('gone') && cfg.order.length === 14 && cfg.pinned.join() === 'apps,installer,extrasettings,console', JSON.stringify(cfg.pinned));
+  check('   unknown keys are dropped, the order is completed, the pinned list is made', !cfg.order.includes('nonsense') && !cfg.off.includes('gone') && cfg.order.length === 15 && cfg.pinned.join() === 'apps,installer,extrasettings,console', JSON.stringify(cfg.pinned));
   await page.close();
 
   // ---- 2. a saved pinned list: Application Manager is always there, at most four, off tabs and unknown keys leave ----
@@ -32,9 +32,9 @@ const NEWPAGE = async (b, kv, vp) => {
   check('2. pinned: Application Manager first, the tab that is off, unknown keys and the old Logcat Viewer dropped, no repeats, at most four', cfg2.join() === 'apps,store,files,sdm', cfg2.join());
   check('   the bar shows them in the Feature List order', await bar(page) === 'apps,files,store,sdm', await bar(page));
   await page.close();
-  // a record from before the Console tab (v7.12.12) with the Command-Line Interface ('terminal') pinned: Console takes its place on the bar, the new Terminal tab waits under More
+  // a record from before the Console tab (v7.12.12) with the Command-Line Interface ('terminal') pinned: Console takes its place on the bar; Live Logcat (in the old place of Terminal since v7.14.0) waits under More
   page = await NEWPAGE(b, { tab_config: JSON.stringify({ order: ['installer', 'terminal', 'files'], off: [], pinned: ['apps', 'terminal', 'files'] }) });
-  check('   an old record with the Command-Line Interface pinned: Console is pinned in its place (the new Terminal tab is not)', await page.evaluate(() => tabConfig.pinned.join()) === 'apps,console,files' && await bar(page) === 'apps,console,files', await bar(page));
+  check('   an old record with the Command-Line Interface pinned: Console is pinned in its place (Live Logcat is not)', await page.evaluate(() => tabConfig.pinned.join()) === 'apps,console,files' && await bar(page) === 'apps,console,files', await bar(page));
 
   // ---- 3. the Feature List: pin, unpin, the limit, off, reset ----
   page = await NEWPAGE(b);
@@ -49,7 +49,7 @@ const NEWPAGE = async (b, kv, vp) => {
   check('   and the tab goes on the bar in its place in the list', await pins() === 'installer,files,console' && await bar(page) === 'apps,installer,files,console', await bar(page));
   const labels = await page.evaluate(() => [...document.querySelectorAll('#featureList .fl-row[data-tab="files"] .fl-pin')].map(b => b.getAttribute('aria-label') + '|' + b.getAttribute('aria-pressed')));
   check('   the pin button says what it does for a screen reader', labels.join() === 'Unpin File Manager from the bottom bar|true', labels.join());
-  check('   the choice is saved in tab_config (the same record as the order)', await page.evaluate(() => { const c = JSON.parse(window.__kv.tab_config); return c.pinned.slice().sort().join() + '/' + c.order.length; }) === 'apps,console,files,installer/14');
+  check('   the choice is saved in tab_config (the same record as the order)', await page.evaluate(() => { const c = JSON.parse(window.__kv.tab_config); return c.pinned.slice().sort().join() + '/' + c.order.length; }) === 'apps,console,files,installer/15');
   // switch a pinned tab off: it leaves the bar and the pins; back on, it is not pinned again
   await page.evaluate(() => featureToggle('files', false)); await page.waitForTimeout(100);
   check('4. a tab switched off leaves the bar and the pinned list', await bar(page) === 'apps,installer,console' && !(await page.evaluate(() => tabConfig.pinned.includes('files'))));
@@ -73,13 +73,13 @@ const NEWPAGE = async (b, kv, vp) => {
   check('   with the bar only, the top tab bar takes no room (--tabs-h is 0)', n.tabsH === '0px', n.tabsH);
   await page.click('.nav-opt[data-nav-mode="both"]'); await page.waitForTimeout(250);
   n = await nav();
-  check('7. Bottom bar + top bar: both are there, the page has room for the bar', n.checked === 'both' && n.top !== 'none' && n.bottom !== 'none' && n.padB >= 216 && n.tabsH !== '0px', JSON.stringify(n));
+  check('7. Bottom bar + top bar: both are there, the page has room for the bar', n.checked === 'both' && n.top !== 'none' && n.bottom !== 'none' && n.padB >= 144 && n.tabsH !== '0px', JSON.stringify(n));
   check('   the top tab bar and the bottom bar agree on the lit tab (a tab that is not pinned lights More)', await page.evaluate(() => { switchView('files'); return document.querySelector('#tabBar .tab-btn.active').dataset.tab + '/' + document.querySelector('#bnav .bn-item.active').dataset.more + '/' + document.querySelector('#bnav .bn-item.active .bn-lbl').innerText; }) === 'files/1/Files');
   await page.screenshot({ path: 'nav_both.png' });
   await page.evaluate(() => switchView('prefs')); await page.waitForTimeout(200);
   await page.click('.nav-opt[data-nav-mode="top"]'); await page.waitForTimeout(250);
   n = await nav();
-  check('8. Top bar only: the bar is gone, the page is as it was (no extra room, --bnav-h is 0)', n.checked === 'top' && n.bottom === 'none' && n.top !== 'none' && n.h === '0px' && n.padB === 160, JSON.stringify(n));
+  check('8. Top bar only: the bar is gone, the page is as it was (no extra room, --bnav-h is 0)', n.checked === 'top' && n.bottom === 'none' && n.top !== 'none' && n.h === '0px' && n.padB === 88, JSON.stringify(n));
   check('   the choice is saved as nav_mode', await page.evaluate(() => window.__kv.nav_mode) === '"top"');
   await page.reload(); await page.waitForTimeout(600);
   n = await nav();

@@ -4,7 +4,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const b = await chromium.launch(); const page = await b.newPage({ viewport: { width: 400, height: 860 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(PAGE);
-  await page.evaluate(() => switchView('prefs')); await page.waitForTimeout(300);
+  await page.evaluate(() => { switchView('prefs'); ccReveal(document.getElementById('curatedCard')); }); await page.waitForTimeout(300);   // the Curated Theme Palettes card starts folded (7.14)
   console.log(await page.locator('.palette-presets-grid:not(#psStyleGrid) .preset-name').allInnerTexts());
   console.log('cards inside grid:', await page.locator('.palette-presets-grid:not(#psStyleGrid) > .palette-preset-card').count());
   await page.click('.palette-preset-card[data-preset="material3"]');

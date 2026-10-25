@@ -1,0 +1,24 @@
+ok   1. Installed alone lists the installed apps
+ok      Uninstalled takes the place of Installed (one of the pair, not both): only the uninstalled apps
+ok      and Installed takes the place of Uninstalled
+ok      tapping the half that is on turns it off: All Apps, every app
+ok      Installed combines with another pair: Installed + System
+ok      Uninstalled still starts a clean list (System and Installed go off)
+ok      a filter tapped after it narrows it: Uninstalled + System
+ok      Installed then replaces Uninstalled and System stays
+ok      Running still turns Uninstalled off (a running app is installed)
+ok      the rule itself: Installed leaves the uninstalled app out, Uninstalled the installed one
+ok   2. Saved Applications: the Uninstalled pill shows the uninstalled apps of a list
+ok      its row has no Installed pill, but its filters share the Apps tab's pairs: Installed takes Uninstalled's place
+ok      and a tap on Uninstalled turns Installed off again (never both)
+ok   3. Connected Devices: Installed alone lists the installed apps
+ok      Uninstalled takes the place of Installed: only the uninstalled app
+ok      and Installed takes the place of Uninstalled
+ok      Installed combines with another pair: Installed + User (the line says so)
+ok      Uninstalled still starts a clean list (User and Installed go off)
+ok      tapping it again turns it off: All Apps
+ok   4. Installed + Uninstalled remembered by an older version comes back as neither: All Apps, every app (what both together showed)
+ok      with another filter next to them, that one stays
+ok      a remembered Uninstalled alone is kept
+ok   no page errors
+all passed

@@ -37,7 +37,7 @@ A bug, a question, an idea
 ✕
 Write your message and tap Send: your email app opens with it ready, addressed to a contact alias (bingblop.coral666@simplelogin.fr) that forwards to the developer. The subject is ADB App Manager. The developer's own address is not in this app, an
 ok      with no alias, the window says the address is not set up: The contact address is not set up in this build yet. You can still copy your message.
-ok      the message is followed by the app version, Android version and phone: "It crashes when I tap X\n\n--\nApp: ADB Application Manager Pro 7.10.11-Pro (build 831)\nAndroid: 14 (API 34)\nPhone: Test Phone\nWorking mode: Auto • ADB TCP (5555)"
+ok      the message is followed by the app version, Android version and phone: "It crashes when I tap X\n\n--\nApp: ADB/Root Full System Toolbox 7.10.11-Pro (build 831)\nAndroid: 14 (API 34)\nPhone: Test Phone\nWorking mode: Auto • ADB TCP (5555)"
 ok      with the switch off only the message is sent
 ok      Copy message copies the subject and the message: To: bingblop.coral666@simplelogin.fr
 Subject: ADB App Manager

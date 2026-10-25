@@ -1,5 +1,248 @@
 # Changelog
 
+## v7.16.1-Pro (versionCode 863)
+
+A patch release on top of v7.16.0. It widens the privileged-mode gate so the **Root Features** tab and the per-app **component Enable / Disable** unlock not only in Root mode with su granted, but also when the **Shizuku** server runs as the Android **system user (UID 1000)** or as **root (UID 0)** — the users Android lets change a single app component. Shizuku started over ADB (the shell user, **UID 2000**) still leaves them locked, and so does an unknown UID. Writing the root theme card's fabricated colour overlay still needs **UID 0** (real root, or a Shizuku server started as root); Shizuku as the system user (UID 1000) keeps that one card locked, because Android refuses `cmd overlay fabricate` to anyone but root. The working-mode badge now names the Shizuku server's real UID instead of always saying 2000. UID 1000 is the Android system user, not root, and nothing in the app or the guide says otherwise. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. This app roots nothing: the unlock only reaches a phone whose Shizuku already runs with system or root rights. **Nothing in it has been run on a phone** by the people and tools that wrote it. `docs/PHONE-SCRIPT-v7.16.1.md` is the phone script.
+
+- **Root Features and app components unlock under a privileged Shizuku.** The Root Features tab (before About) and the ENABLE / DISABLE buttons on an app's activities, services, receivers and providers now unlock when Shizuku runs as the system user (UID 1000) or as root (UID 0), as well as in Root mode with su granted. Android allows a single component's state change to UID 0 and UID 1000 but refuses it to the ADB shell (UID 2000), so Shizuku started over ADB still shows them locked with *Needs Super User (Root)*.
+- **The root theme card stays root-only.** Writing a fabricated colour overlay (Pure black, Color spec, More styles and the rest of the Root-only theme controls) needs the root user (UID 0): real root, or a Shizuku server started as root. Under Shizuku as the system user (UID 1000) the card stays locked, since Android lets only UID 0 write these overlays.
+- **The working-mode badge names the real UID.** In Shizuku mode the header now reads *Shizuku (UID 0)*, *Shizuku (UID 1000)* or *Shizuku (UID 2000)* to match the server, instead of always claiming UID 2000.
+- **The Help Guide** now explains the UID 1000 / UID 0 unlock in the Root Features chapter, the app-components section and the UID glossary entry, and never calls UID 1000 "root".
+
+## v7.16.0-Pro (versionCode 862)
+
+A feature release on top of v7.15.0, cut from `main` (#253 to #286): a **Root Features** tab for what only Super User can do, a **root theme card** on the RRO/Monet Customization tab that writes Android's own theme colours as root (pure black backgrounds, more styles, Google's newer colour rules, saturation and lightness sliders, your own second and third accents) on Android 14, 15, 16 and 17 and their quarterly updates, a tenth palette style (**CMF**) for the app itself, **Start Shizuku** from the app over an ADB connection, **Allow all** that brings the app back by itself, and the fixes of two test passes over the new code. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. This app roots nothing: every root feature needs a phone that is already rooted, and is shown locked (never hidden) without it. **Nothing in it has been run on a phone** by the people and tools that wrote it; the root theme colours were checked on a computer against each Android release's own colour code, not on a phone. `docs/PHONE-SCRIPT-v7.16.0.md` is the phone script.
+
+**Root Features**
+
+- **A Root Features tab** (right before About) shows the state of root for this app (ACTIVE, AVAILABLE, DENIED, NOT FOUND) and unlocks once Root is the working mode and su is granted to this app (#254). **Request Super User** asks su on a phone that has it; when su says no, the working mode you had stays chosen and a toast says so.
+- **Open root manager** opens your root manager (KernelSU, KernelSU Next, APatch and the other common ones are recognised) so you allow this app there, where the grant lives; when you come back the app reads su again and offers to switch the working mode to Root (#257). A manager installed under a different name gets a message that says so. No text in the app or the guide tells anyone to install or flash a root manager, and the guide warns never to flash a patched boot image onto a phone whose bootloader is locked (#286).
+- **Super User for apps:** once root is active, **Open manager** opens the root manager so you choose which other apps get Super User in its own list (#258).
+- **App components:** **Open apps** leads to the app inspector, where single activities, services, receivers and providers of any app are switched on or off (#259). This toggle is now **Super User (Root) only, for user and system apps alike**: Android refuses it to the ADB and Shizuku shell for parts it does not own, so a system app's parts can now be switched with root, and disabling a part of a system app asks first (#265). Off root, a tap offers to switch to Root or opens Root Features.
+- **The Help Guide** has a full Root Features chapter: what root managers ask (some offer Once or a time limit, others a switch per app), what the app can and cannot do, and the steps to get Super User (#263, #276).
+
+**Root theme card (RRO/Monet Customization tab)**
+
+- **Root-only theme controls**, the last card of the Theme half, write colours that Android takes only from a colour overlay written as root (ADB and Shizuku cannot write them; the rows show locked with *Needs Super User*). **Apply theme** writes them with the theme, **Default** switches them off, and **Undo** puts back what was there before. Six controls:
+  - **Pure black backgrounds:** true black dark backgrounds with the panels a few dark greys lighter (#266). Android 12 and 13 get this one only.
+  - **Color spec:** 2021, 2025 or 2026, the version of Google's colour rules a style's colours are written with (#272).
+  - **More styles:** **Fidelity**, **Content** and **Monochrome**, which Android has no setting for, and **CMF** with the 2026 spec (#271, #272). A preview under the choices shows the colours Apply will write.
+  - **Intensity:** **Accent saturation**, **Background saturation** and **Background lightness**, 0 to 200 % each, with Reset (#274).
+  - **Secondary and tertiary accents:** your own colours for the second and third accent (#275).
+  - **Accurate shades:** a switch, on by default; off, the palest accent colours take a darker colour (#279).
+- **Android versions:** the colours are worked out the way each release builds its own theme and written with that release's names and order: Android 14 (its first release and its quarterly updates QPR1 to QPR3), Android 15 (15.0, QPR1 and QPR2), Android 16 (16.0, QPR1 and QPR2) and Android 17 (#273, #280, #281, #282, #283). A Samsung phone with One UI is served by its Android version like any other phone, with a note that the colours reach Google apps and other apps that use Android's Monet colours while Samsung's own apps may keep Samsung's palette (#286; inferred from how overlays work, not measured). Any other version is **locked** (*Not supported on this Android version yet*), with or without Super User. The phone's contrast setting is read when Apply is tapped, and after an update to another Android release a note asks you to tap Apply theme again.
+- **Fixes from the second test pass (#278):** Apply takes Pure black, the style and the spec at the moment of the tap; an Apply whose answer is lost to the restart Android causes is completed when the app comes back; Undo puts back the overlay that was on before; the note says when an overlay is still on without Super User or when Android shows its own colours over it.
+
+**Settings and the app's own theme**
+
+- **CMF**, a tenth palette style in Settings > Palette Style (#264): one hue at five strengths, from the 2026 Material colour spec. In dark mode its three accents stay apart for strong colours (#277), and the note under the tiles is translated (#277).
+
+**Working modes and permissions**
+
+- **Start Shizuku (ADB)** on the Shizuku card of Working Modes starts an installed Shizuku through an ADB TCP or Wireless Debugging connection this app holds, with no computer (#255). Each outcome has its own message; a failed start shows what Shizuku's start script printed.
+- **At launch**, with the working mode set to Shizuku, Shizuku installed but not running and a connected ADB target, the app offers to start it, at most twice (#256, #267).
+- **Allow all restarts the app:** after granting by command the app closes and opens again by itself about two seconds later, so the permissions hold everywhere; on first run it used to close and stay closed (#262). Install unknown apps is granted last (Android 11 ends the app when it changes), the copy of the app in a work profile is the one restarted, and the first-launch sheet comes back for what is left (#269).
+
+**Quick Settings, saved lists and the terminal**
+
+- **Kill Apps:** the Stop apps tile, its widget button and its notification channel are now called Kill Apps; a long press on either Quick Settings tile opens the app (#253, #267).
+- **The Working mode tile** is lit only while ADB TCP, Wireless Debugging, Shizuku or Root is really ready, and dim on Read-Only or when nothing is found (#260); the app checks the mode again on every return, and a tap on the tile no longer raises a root prompt behind the panel (#267).
+- **Saved lists:** saving under a name another list already uses asks **Overwrite**, **Create new list** or **Cancel** instead of making a second list of the same name (#253); Create new list now makes a new list after a rename too (#267).
+- **The full-screen real terminal** is monospaced again: its letters no longer run into each other (#253).
+
+**Fixes found in two test passes**
+
+- **Root Features (#268, #270, #276):** Open root manager reports a manager that did not start instead of "install one"; the read-back after the manager also runs when it was beside the app (split screen); the tab asks su again when it opens unlocked, so a grant taken back in the manager shows, without a "Mode:" toast; a link to the tab first checks that the tab is on; the App components row names providers too.
+- **Translations:** the Quick Settings tiles are named as the phone shows them (in English) in every language; German Sie-form on the Shizuku card and the theme card; Japanese asks the Shizuku question as a question (#267, #278).
+- **Tests:** a restart check that could not fail now can, and the terminal and free-space Java checks no longer depend on how busy the test machine is (#269, #277).
+
+## v7.15.0-Pro (versionCode 861)
+
+A look-and-reach release on top of v7.14.1: the app is renamed **ADB/Root Full System Toolbox** and every tab got a top-to-bottom UI pass, so the screens are calmer and the things used most are one tap or one hold away (#251, #252). What the app does is unchanged: no feature was taken out, no setting changes meaning, and the package, the signing certificate, the APK file names and the permissions are the same, so it installs over every earlier version. The owner's earlier choices stay: the check marks beside the app icons, the row tints and gradient buttons, the Settings order of v7.14, an app menu that asks before nothing, the Private DNS pointer in Hidden Settings, Live Logcat's green Play and red Stop, and the Console's long-press menu. **Nothing in it has been run on a phone** by the people and tools that wrote it; `docs/PHONE-SCRIPT-v7.15.0.md` is the phone script.
+
+**Name and header**
+
+- **ADB/Root Full System Toolbox** is the name under the icon, on the widget, in the page title, in About, the console banner, shared texts and the Help Guide, in all 14 languages; the header shows it on two lines ("ADB/Root Full" over "System Toolbox"), and a launcher may shorten it under the icon. Package, folders, APK file names and the release name are unchanged.
+- **The header** is the name in one colour, and under it only the Android and One UI versions ("Android 16 • One UI 8.5"; no maker or model, each part kept whole). The mode badge shows the short mode name and, when the chosen mode is not ready, says so in the warning colour ("Shizuku (not ready)"); a tap still opens Working Modes. The gear is a quiet tonal button and the only gear: the Extra Settings tab has a switch icon, and the row's Action Button set to App info shows an (i).
+- **Colours and type:** softer shadows on sheets and menus, white cards on a tinted page in the Material 3 palette's light theme (Material You from the wallpaper and the Palette Styles keep their own light colours), and one weight ladder (titles and the selected state heavier, chips and buttons a step lighter).
+
+**Easier to reach**
+
+- **Long-press shortcuts:** the **Apps** tab lists Running, Frozen and Uninstalled (the list with only that filter on); **Files** lists Search files, Storage and Downloads; **History** (the ADB Shell's command history) can be chosen for the **Console** tab in Settings > Navigation > Shortcuts.
+- **Select shown** sits next to **Clear filters** while a filter is on, and selects every app the list shows.
+- **The Debloater's** top card starts folded to its name and the list's status (a tap opens it, and it stays as you leave it); **Update List** and **History** (with Undo) are round buttons beside the search, so they stay one tap away.
+- **Files** shows the open folder's path as a row of crumbs: a tap on a folder above this one (or on the "/" after it) opens it; each crumb is a full-size tap, the path reads from the root in every language, and the path field still takes a typed path.
+- **Saved Applications** puts the lists first, right under the filters; Back up and restore and Quick actions fold at the bottom.
+
+**Every tab, calmer**
+
+- **Apps and the app menu:** rows a little shorter, the row's Action Button quiet until pressed, filter rows that fade at the edge with more; in the app menu the permission chips sit on one line, long permission names break at "." and "_", and the tab counts are plain numbers.
+- **Bottom bar:** lighter labels on the tabs that are not open; the More tiles use short labels on narrow screens.
+- **Console:** the "Active mode" card under the command field is gone while a working mode is ready (the header badge names the mode); a tinted card says when no working mode is ready, with Configure, and explains the Rish shell while Rish mode is on. The mode button, the field and Run are one height; the output area is a console card waiting at a "$" prompt; the find row comes with the first output.
+- **Live Logcat** opens on a title row with Play beside the title; its tools are two rows and the level key wraps so every level is in view.
+- **Hidden Settings:** the search bar's buttons are as tall as the field; a setting's value and Ask agent share one line.
+- **Installer** and **Morphe Patcher:** Application Installer | Application Updater and Apps | Community are segmented controls like Light / Dark / System; Morphe's Sources, Helper, Patched APKs and Settings are one row that scrolls sideways; Patch a file is tonal.
+- **Settings:** long descriptions show two lines and open with a tap (a small arrow marks text that has more); Palette Style shows three swatches a row (two on a narrow screen, so no name breaks).
+- **Task Manager:** the sort buttons are chips, the chosen one tinted; Graph speed shares a line with its label where the slider keeps room to drag, else the slider and its value take the next line together. **Extra Settings:** the section icons sit on a tinted tile.
+- **SD Maid:** each tool's Scan is tonal, so Scan all is the one bright button in the top card and the tool list (Clear Data from Uninstalled Apps and Trim Caches keep their bright buttons in their own cards); the long explanations of Clear Data from Uninstalled Apps and Trim Caches fold under "What does this do?".
+- **About:** Handy to know, Privacy and Credits start folded. **Connected Devices** with no device shows only Refresh in its top card (the empty state below has + Add device). The tab rows of App Stores and Connected Devices fade at the edge with more.
+
+**Fixes found on the way**
+
+- **Debloater:** a row's buttons no longer take the sticky action bar's layout (they shared a class name), so they sit at the end of the row.
+- **A folded card's ?** sits left of the fold button, and their tap areas no longer overlap.
+- **Live Logcat's All apps** button reads in the text colour like the Level and Lines selects beside it.
+
+## v7.14.1-Pro (versionCode 860)
+
+A release on top of v7.14.0, cut from `main`: the 57 fixes of a full review of `main` and of the v7.14.0 changes (#238), a check in the release workflow (#239), two unused leftovers taken out of the repository (#240, #241), and seven changes the owner asked for after v7.14.0 (#242 to #248): a progress notification for the Stop apps tile, a Speed test section in Extra Settings, a Refresh button in the File Manager, Installed | Uninstalled as one choice, a Gradient switch and a shortcut for Row tints, and the Updated 7d filter taken out. Each fix and each change comes with a Java suite or a UI script that fails on the old code, except the two CI workflow changes (BLD-4, BLD-6), which were checked by parsing the YAML and running their steps on a computer. **Nothing in it has been run on a phone** by the people and tools that wrote it; the Live Update part of the Stop apps notification calls Android 16's documented API and has not run on any phone. `docs/PHONE-SCRIPT-v7.14.1.md` is one phone step per change.
+
+**New**
+
+- **Stop apps shows its progress** (#246). The Quick Settings tile and the widget button now start a notification, *Stopping apps*: the list's name, how far the run is (*3 of 12 · Chrome*) and a progress bar. It is cleared when the run ends. **Cancel** in the notification stops the run after the app it is on, leaves the apps it did not reach as they are and clears the notification (*Cancelled after 3 of 12 apps*). A tap on the notification opens the app on Saved Applications with the *Edit Saved List* sheet of the quick list; the run goes on and nothing is stopped, saved or changed by the tap. On Android 16 and newer the notification asks to be a Live Update (a chip like *3/12* in the status bar); where the phone does not show it as one, and before Android 16, it is the same notification without the chip. Whatever the list says, this app, the phone's WebView app (and Android System WebView) and Media Picker (`com.google.android.providers.media.module`) are never stopped; the message counts them as *left alone*. A second tap while a run goes on does not start another one.
+- **Live updates** is a new row of the permissions sheet on Android 16 and newer, and the manifest declares `android.permission.POST_PROMOTED_NOTIFICATIONS` (the only new permission). No command can switch it on, so **Allow** asks for Notifications first (by command with a working mode, otherwise with Android's own question) and then opens the phone's Live updates screen for this app by itself; **Allow all** ends there. Closing the sheet after only Live updates changed no longer starts the app again.
+- **Extra Settings has a Speed test section** (#245), right after Private DNS, that opens the same full-screen test as Task Manager > Network > Speed test. Its pill shows the download speed of the newest saved result, and a chip in the header shows it once there is one.
+- **The File Manager has a round Refresh button** (#247) in its title row, the same one as the Apps tab: one tap reads the open folder (or the search results) again, and the arrow turns while it does.
+- **Installed | Uninstalled is one choice** (#242), like System | User and Enabled | Frozen, in the Apps tab, Saved Applications and Connected Devices: tapping one turns the other off.
+- **Row tints:** a **Gradient** switch under the slider (#244; off: each tinted row is one even colour, in the Apps tab, Connected Devices and both Logcats), and a last row in the three-dot menu of the Apps search bar that opens Settings on the Row tints card (#243).
+- **Updated 7d is no longer a filter** (#248) in the Apps tab, Saved Applications or the Debloater: sort by **Last updated** to see what changed lately. Connected Devices never had the filter.
+
+**Files and archives**
+
+- **Replace onto an SD card or a USB drive merges.** Copying or moving a folder onto added storage where a folder of that name was already there deleted that folder, with everything in it, before copying. Now folders merge, a file replaces a file and a file meeting a folder is refused, as on internal storage. The same place seen two ways (the card added as storage and `/storage/<card>`) is recognised, so nothing is copied into itself or replaced by itself; a copy into the source's own subfolder ends, and Cancel stops it.
+- **Names are kept exactly** in the Files tab's shell listing and in Connected Devices > Files: two spaces, a tab, a leading or trailing space, or " -> " in a plain file's name no longer send View, Rename or Delete to another file.
+- **A tar or a stored 7z that holds an APK opens as itself**, not as the APK inside it (and a tar holding a RAR as the tar), so "Delete the archive afterwards" no longer deletes the tar and its other files after extracting only that APK's contents.
+- **File search inside archives** goes on past a zip entry it cannot read (a password, an unsupported method, damage), so a later entry holding the text is found.
+- **Extracting one symbolic link on its own** is refused in words instead of writing an empty file (with Replace it emptied the file of that name). A hard link that is left out says why: the file it shares was already there and left as it was, or could not be extracted.
+
+**SD Maid**
+
+- **AppCleaner** keeps a file that a Segment exclusion protects inside a cache folder it otherwise deletes whole.
+- **Deduplicator:** one folder found under two spellings ("DCIM" and "dcim") is no longer its own duplicate (keep one deleted the only copy). **Preferred locations** also matches `/sdcard/...`, a trailing slash or another case.
+- **An exclusion typed as `/sdcard/...`** now protects that path in `/storage/emulated/0`, the storage the scans read, when the app runs in a work profile or as a second user (it used to point at `/storage/emulated/<user>`, which no scan visits).
+- **SystemCleaner's Temporary system files** stays out of app and user data (`/data/user`, `/data/user_de`, `/data/media/<user>`, `/data/misc_ce`, `/data/misc_de`).
+- **Delete all** names what is left after Details took groups or items out, and says that what was taken out is kept.
+
+**Installer, backups and updates**
+
+- **A failed or cancelled install keeps its files**, so Install works again after following the advice (for example Allow downgrade) instead of asking to pick the package again.
+- **A package whose manifest.json unpacks to gigabytes** no longer leaves the Installer on "Reading package…".
+- **The package-file search says when it stopped early** on a large storage instead of reporting the list as complete or "No APK, APKS, APKM or XAPK files found".
+- **A VirusTotal verdict** is shown only for the package it was scanned for.
+- **A 32-bit app's data backup can be restored again** (the restore refused its `lib` link); new backups leave that link out. Restore names the version read from the APK it installed.
+- **Read-Only mode** no longer leaves a self-update or a Store download in the cache.
+- **Updates:** an update an open-source source found for a Galaxy Store app is kept when the Galaxy Store check times out.
+- **Connected Devices:** a feature module sent to a device keeps its own CPU and density splits.
+- **App menu:** opening the menu of an app that only mentions ReVanced or Morphe (this app included) no longer puts a ReVanced or Morphe tag on its row or lists it under the Patched filter. In the app's code, only classes it defines under `app.revanced.*` or `app.morphe.*` count, and the patcher library does not; the package name, the installer and the APK's file names are checked as before.
+
+**Terminal and Console**
+
+- **The full-screen terminal in Shizuku mode no longer ends the app**, and it ends when its shell exits even with a job left in the background.
+- **With ADB TCP or Wireless Debugging as the working mode**, the Terminal connects again before opening the shell (after adbd restarted it said "the shell ended right after it started").
+- **The Shizuku fallback** writes rish and its dex whole and replaces an older copy when the app is updated.
+- **A coding agent's answer that mentions "not installed"** is no longer taken for a missing CLI; **Copy** says "Copied the screen" when the selection was outside the screen; in the **ADB Console** the agent's proposed command is kept while a typed command still runs.
+
+**Morphe Helper**
+
+- A second **Download** tap in All versions starts nothing while a download runs, and a new version no longer shows the previous file's VirusTotal verdict.
+- Helper downloads and VirusTotal uploads stop with the window that started them, and the in-app browser closes with it (a download the browser started goes on in the downloads list); two windows reading the patch list no longer break each other.
+- A browser download whose name carries a language tag (`filename*=UTF-8'en'app.apk`) is saved as named, and the downloads notification no longer counts a retried download as stopped.
+
+**Speed test, Task Manager and permissions**
+
+- **Speed test:** ping and jitter no longer include Cloudflare's server time (a 10 ms line showed about 40 ms). A change of network during a test (Wi-Fi dropped, a metered network) stops it with "The network changed during the test." and nothing is saved.
+- **Task Manager:** a working mode that stopped answering falls back to what Standard mode reads (the phone's RAM, and CPU and network where Android lets the app read them); Processes shows its lock and GPU says "Needs a working mode", instead of an empty list and zeros.
+- **Trackers:** a running scan stops when its window closes. **Logcat:** a recording that stops by itself (25 MB, a write error) no longer leaves a thread behind.
+- **Permissions sheet:** dismissing the Bluetooth or Notifications dialog the first time the sheet asks for it no longer sends you to App info (a second refusal or dismissal still does), and the Read Logs row says what the grant does today.
+
+**Screens**
+
+- **Hidden Settings:** Revert reads a table it has not read yet before it writes (it could delete the setting).
+- **Apps tab:** a patch tag found by the app menu's deeper check stays on the row and in the Patched filter; Profiles, CSV and Backups appear under Sort and Button while Saved Applications is switched off; rows added by "Show more" during a batch show "Working…" too.
+- **History** labels the Updater's entries "Updater". **Live Logcat's** texts and the Help Guide name its own tab.
+- **Colours:** the Read-Only banner's X no longer covers the Arabic title; the Delete links of the Installer and the File Manager, the mode badge and the Updater's error lines take the theme's colours, and "Delete from this device" is the solid red with white text of the other delete confirmations.
+
+**Build and release**
+
+- `build.sh` stops when the 64-bit adb is missing. CI builds against android-34 and build-tools 35.0.0, like the release, and runs the docs shell-block check.
+- `release.yml` stops before it builds when the version is not the one in `AndroidManifest.xml` and `CHANGELOG.md` (#239).
+- `metadata.json` (an AI Studio leftover) and `app/` (the unused Kotlin copy) are gone from the repository, together with the root Gradle files that only served `app/` (`settings.gradle.kts`, `build.gradle.kts`, `gradle.properties`, `gradle/libs.versions.toml`; `engine/` keeps its own) (#240, #241); none of them was ever part of the APK.
+
+**Tests**
+
+- New UI scripts t490, t495, t505, t535 to t537, t540 to t543, t546, t549 and t552 to t555; new Java suites assetcopy, backupscripts, patchclasses, permrefusal, quickstop, taskmgrblob and releaseversion; t13, t17, t31, t37, t70, t77, t91, t104, t110, t119, t121, t125, t140, t171, t250, t296, t331, t337 and t478 extended, t105, t217, t251, t263 and t325 re-recorded for the screens that changed, t150 re-recorded (the Updater's error colour under Material 3 dark), t75 and t412 adjusted.
+
+## v7.14.0-Pro (versionCode 859)
+
+A feature release on top of v7.13.4, cut from `main`. It carries the owner's v7.14 change list and the follow-ups he asked for (#234), the ADB Stub for Wear OS watches (#233), the on-device Self-test (#229, with its fix #232), the 42 fixes of the v7.12 to v7.14 code review (#235), and the fixes from a code review of the #234 changes. The app is now called **ADB System Manager**; the package name (`com.bloatware.bingblop`), the `Download/ADB App Manager` folders and the signing certificate are unchanged, so it installs over every earlier version. Each change is tested on a computer (the UI suite, the Java suites, a signed build). **Nothing in this release has been run on a phone or a watch by the people and tools that wrote it.** `docs/PHONE-SCRIPT-v7.14.0.md` is one phone step per change.
+
+**New**
+
+- **Speed test.** Task Manager > Network starts with a **Speed test** button that opens a screen of its own: a gauge, a live graph per phase, cards for ping, jitter, download, upload, the data centre and the connection, Start / Stop / Run again, copy and share, and the last 10 results. It measures against Cloudflare (`speed.cloudflare.com`) with parallel streams through the app's safe connection code. On mobile data or a metered network it warns first: a test can use up to 350 MB and stops at that amount. Stop, closing it, leaving the tab or sending the app to the background stops the test.
+- **ADB Stub for Wear OS watches** (#233). Connected Devices shows an **ADB Stub** card under a connected Wear OS watch: Install, Update, Start, Stop. While it runs, the watch keeps its screen on and its Wi-Fi connected, and its one screen shows the connection. It starts by itself when the watch connects (a switch in the device menu, on by default); **Disconnect** stops it first, so the watch's Wi-Fi goes back to normal.
+- **Self-test** in the About tab (#229, #232). 27 read-only checks in the current working mode, each PASS, FAIL, INFO or SKIP. **Copy report** puts a redacted report on the clipboard; **Report on GitHub** copies it and opens the bug-report form. No serial, IP or MAC address, account name, key or setting value goes into the report.
+- **Hidden Settings keeps a history of the last 100 changes**, saved between launches. A new clock button next to the search box opens it (it is also under ⋯ > Changes). Each entry shows the table, how long ago, the date and time, and old → new, with **Revert**.
+- **Permissions.** The permissions sheet lists every permission the app uses, with Android's name under each row; new rows: **Read Logs**, **Bluetooth Connect**, **Notifications** and **Allow Restricted Settings**. With a working mode, **Allow** grants by command and the result is read back from the phone. The first working mode after install offers once to grant everything that is left; an installed but unauthorized Shizuku is asked at start (until you say no twice). **Settings > Language** has an **Application Permissions** button that opens the sheet. The manifest now asks for `READ_LOGS` (approved by the owner).
+- **ANGLE** in Task Manager's GPU renderer drop-down ("ANGLE (OpenGL ES on Vulkan)"). It needs Root: outside Root mode it is locked and explains why. Choosing it is read back from the phone.
+- **Back to top.** A round up-arrow button appears once a screen has been scrolled more than one and a half screens.
+- **App menu tabs open full screen**: a round expand button on each tab of an app's menu; the X, a pull down or Back returns to the menu.
+
+**Apps tab and app menu**
+
+- **Filters in the owner's order:** All Apps, Installed | Uninstalled, System | User, Enabled | Frozen, Running, Updated 7d, Suspended, Trackers, Patched. **"3rd Party" is now "User".** Saved Applications, the Debloater and Connected Devices follow the same order.
+- **The top row has only Sort and Button** (the Action Button picker). **Profiles, CSV and Backups** moved to Saved Applications, beside New List.
+- **Only a selected row is outlined;** a running, frozen or uninstalled app gets a soft glow in its colour instead, and a tap that selects a row sweeps a band of light across it. **Frozen is a clear blue.**
+- **Row tints has five steps:** Off, Faint, Subtle (the default), Normal, Vivid. Vivid stops where the badges and Live Logcat's text keep 4.5:1 contrast. Row tints also tints Live Logcat.
+- **Filled colour buttons:** Uninstall is a red gradient, Freeze ice blue, Reinstall green and Enable the accent, all with black text where it reads better. Every filled button is a gradient.
+- **The app menu's buttons stand in four fixed groups** (Open, Control, Maintenance, Package). A button that does not apply stays in its place, dimmed, and a tap says why; nothing moves when the app's state changes. The Patched / modified box is gone from the menu; Share, Copy package and Copy name have centred labels.
+- **Suspend state of apps uninstalled for the user** is read from the phone, so Suspend / Unsuspend shows the real state and its result is checked.
+
+**Live Logcat and the Console**
+
+- **Live Logcat is its own tab again;** Console holds **ADB Shell | Terminal**. A saved tab layout carries over (the Terminal's place goes to Live Logcat). The Terminal takes the theme's colours.
+- Live Logcat reads **1000 lines** by default and **keeps its level, line count, filter and app** between launches. Play / Stop is a filled button (Pause is now Stop). The level dots are in the owner's colours (Verbose dark green, Debug yellow, Info the accent, Warn orange) and each row is tinted in its level's colour. Record to file has a red dot.
+
+**Connected Devices**
+
+- **A device's app list works like the Apps tab:** the same filter pills (only the states a device can report: All Apps, Installed | Uninstalled, System | User, Enabled | Frozen), the same row with the icon as the selection box, the row tints, the Action Button and the Sort / Button row. The button's choices are those a device can run (App Settings, Force Stop, App Launcher, Enable / Disable, Install / Uninstall, None). Holding it opens that device app's menu.
+- **The device Logcat matches Live Logcat:** 1000 lines, remembered choices, the colour key with a count per level, the filled Play / Stop and the level colours. It has no app picker and no Record to file.
+- The **Reconnecting devices** card moved here from Settings and starts folded.
+
+**Settings and the whole app**
+
+- **Settings cards fold** (a round chevron or a tap on the title); the choice is kept. "Palette Style & My Themes" is one card; the VirusTotal key sits in the Default Ask Agent card; the Private DNS pointer left Settings (Private DNS stays in Extra Settings).
+- **The page's dialogs** (alerts, questions, text prompts) are drawn in the app's look with a real title, instead of WebView's "The page at file:// says".
+- **Task Manager is quicker:** the graph speed goes down to 50 ms (default 150 ms) and auto-refresh to 0.5 s (default 1 s); nothing faster is offered.
+- **Undo bars last 3 seconds at most** and sit just above the bottom bar.
+- **Old WebView:** on a WebView older than Chrome 111 the colours are computed by the app so rows, buttons and badges draw correctly, and a one-time notice offers to update Android System WebView.
+- The Help Guide describes all of this; every new string is in all 13 translations.
+
+**Fixes from the v7.12 to v7.14 code review (#235)**
+
+Forty-two findings, each fixed with a test that fails on the old code. The ones you are most likely to notice:
+
+- **The ADB Stub lets the watch go when the phone is gone:** it holds the watch's screen and Wi-Fi on a 5-minute lease that the phone renews every minute, so a killed app or lost Wi-Fi no longer keeps the watch bright until its battery runs out (the stub's version goes to 2, so a watch offers Update). A failed stub install says why, Disconnect no longer stalls on a watch that stopped answering, and Running means the service really runs.
+- **SD Maid SystemCleaner** no longer offers or deletes a folder as "Empty folder" when it holds a file with a line break in its name; **CorpseFinder** no longer offers user 0's folders in a work profile or for a second user; an injected tap no longer lands on the progress cover's Cancel.
+- **Archives:** deleting a file from a tar keeps the content of its hard links; a RAR 4 entry of unknown size no longer stops the archive from opening.
+- **Morphe:** "Install when finished" asks the window that is open; a running Helper download is no longer shown as Paused in a new window (resuming it corrupted the file); Stop at the very end of a patch is no longer ignored.
+- **Updates and installs:** a cancelled Retry keeps the failed apps; offline with an earlier result the App Updater no longer says "Couldn't check (0)"; a path the page hands to the Installer or a restore can never be the app's private data; an escaped or full-width spelling of 127.0.0.1 counts as loopback; "Delete the package after install" deletes only the file the package was read from; `adb keygen` and `adb pubkey` are refused.
+- **The page:** Stop in one Ask window no longer cancels other agent requests; File Manager's View contents waits for a running extraction; the File Manager bars stay below the header; the navigation rail scrolls on a short landscape screen; Trim app caches no longer says Done when it failed; an old tab choice no longer hides the updater or the live log.
+- **Self-test:** a log line or setting that mentions a denied permission is no longer a failed check.
+
+**Release workflow (#236):** a test run with the throwaway key is published as a draft prerelease, never as a normal release.
+
+**Fixes from the code review of the #234 changes**
+
+- The speed test closes a connection that was answered with an error, and its warm-up is the first answer, not the first try (a failed first request no longer inflated the jitter).
+- Task Manager reads a CPU core's min/max clock again when it could not be read the first time.
+- The Apps tab's filters and selection no longer repaint or untick a connected device's rows.
+- Hiding every level of a device's log keeps the key's counts and says every level is hidden.
+- "✓ Granted", "✓ Not needed", three "Console → Terminal" texts and the speed test's data warning are translated in all 13 languages.
+
+**Tests**
+
+- New UI scripts t350, t400 to t407, t410 to t412, t420 to t422, t430 to t432, t440 to t443, t450, t455, t460, t463 and t470 to t481; new Java suites speedmath, speedtest, pagedialogs, selftest and wearstub, and new checks in many others for #235. Goldens follow the new layout.
+
 ## v7.13.4-Pro (versionCode 858)
 
 A small release on top of v7.13.3, cut from `main`: Backup moved from the single-app menu to the batch menu (#230), and nothing else. Not run on a device.

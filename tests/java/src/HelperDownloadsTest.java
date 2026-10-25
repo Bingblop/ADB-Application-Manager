@@ -208,6 +208,61 @@ public class HelperDownloadsTest {
             Files.write(journal.toPath(), "not json at all {".getBytes(StandardCharsets.UTF_8));
             is("bad journal: garbage gives an empty list, no crash", new HelperDownloads(journal, ck, ok).list().isEmpty());
             d4.shutdown();
+
+            // ---- two windows (MOR-2, the reviewer's TwoWindowsProbe): window 1 starts a download, the window is recreated, the new window's bridge
+            // asks for the list, the person presses Resume there. Before, each bridge made its own list from the journal: the new one showed the
+            // running job as Paused, and Resume started a second writer on the same part file
+            File twoDir = new File(root, "two");
+            File twoJournal = new File(twoDir, "helper_downloads.json");
+            File twoFolder = new File(twoDir, "helper");
+            java.util.function.Predicate<File> twoOk = f -> f.equals(twoFolder);
+            final AtomicInteger made = new AtomicInteger();
+            java.util.function.Consumer<HelperDownloads> onMade = d -> made.incrementAndGet();
+            slowMs = 60;
+            reqs.clear();
+            HelperDownloads w1 = HelperDownloads.shared(twoJournal, ck, twoOk, onMade);
+            BrowserDownload.Job t1 = w1.start(base + "/f?n=twowin", "UA", "", twoFolder);
+            until(() -> t1.state == BrowserDownload.State.RUNNING && t1.done > 0, 5000);
+            HelperDownloads w2 = HelperDownloads.shared(new File(twoDir, "./helper_downloads.json"), ck, twoOk, onMade);   // the new window's bridge
+            BrowserDownload.Job t2 = w2.get(t1.id);
+            is("two windows: the second window gets the same list (one per journal in the process), and the process's own listeners are added once", w2 == w1 && made.get() == 1, "same=" + (w2 == w1) + " made=" + made.get());
+            is("two windows: the second window sees the running download as running, not Paused", t2 != null && (t2.state == BrowserDownload.State.RUNNING || t2.state == BrowserDownload.State.QUEUED), t2 == null ? "absent" : t2.state.name());
+            w2.resume(t1.id);                                                              // the person presses Resume in the new window
+            boolean twoDone = until(() -> t1.state == BrowserDownload.State.DONE, 20000);
+            slowMs = 0;
+            Thread.sleep(300);
+            long twoReqs = reqs.stream().filter(q -> q.startsWith("n=twowin")).count();
+            byte[] twoGot = t1.file != null && t1.file.isFile() ? Files.readAllBytes(t1.file.toPath()) : new byte[0];
+            String[] twoLeft = twoFolder.list();
+            is("two windows: Resume in the second window starts no second writer: one request, the file whole, no other file", twoDone && twoReqs == 1 && Arrays.equals(twoGot, BODY) && twoLeft != null && twoLeft.length == 1,
+                    "done=" + twoDone + " requests=" + twoReqs + " bytes=" + twoGot.length + " files=" + Arrays.toString(twoLeft));
+            w1.shutdown();
+
+            // the bridge uses the process's list, and each window takes its page listener off when it goes away
+            File src = null;
+            for (File dd = new File(System.getProperty("user.dir")).getAbsoluteFile(); dd != null && src == null; dd = dd.getParentFile()) { File f = new File(dd, "src/com/bloatware/bingblop/MorpheBridge.java"); if (f.isFile()) src = f; }
+            is("the bridge source was found", src != null);
+            if (src != null) {
+                String m = new String(Files.readAllBytes(src.toPath()), StandardCharsets.UTF_8);
+                int dp = m.indexOf("private synchronized HelperDownloads downloads()");
+                String db = dp < 0 ? "" : m.substring(dp, Math.min(m.length(), dp + 2500));
+                is("the bridge takes the process's download list (HelperDownloads.shared), never a list of its own", db.contains("HelperDownloads.shared(") && !m.contains("new HelperDownloads("), db.length() + "");
+                int rl = m.indexOf("public void release()"), re = rl < 0 ? -1 : m.indexOf("\n    }\n", rl);
+                String rb = rl < 0 ? "" : m.substring(rl, re < 0 ? Math.min(m.length(), rl + 600) : re);
+                is("release() takes this window's page listener off the process's list", rb.contains("downloadList.removeListener(pagePush)"), rb);
+                // MOR-3 (full main review): a Helper download or VirusTotal upload of a window that is gone stops; a patch (same pool) goes on
+                int cancelsOnClose = m.split("public boolean cancelled\\(\\) \\{ return closing; \\}", -1).length - 1;
+                is("release() stops this window's Helper downloads and VirusTotal uploads: both progress objects answer cancelled() with the closing flag release() sets",
+                        rb.contains("closing = true;") && m.contains("private volatile boolean closing;") && cancelsOnClose == 2 && !m.contains("cancelled() { return false; }"), "release sets it=" + rb.contains("closing = true;") + " progress objects=" + cancelsOnClose);
+                is("...and it does not interrupt the bridge's threads (a patch or a catalog read on the same pool goes on)", !rb.contains("shutdownNow"), rb);
+                // MOR-4 (full main review): the in-app browser's dialog is closed with its window, so its WebView is destroyed and its watcher leaves the process's list
+                int bc = rb.indexOf("final Runnable closer = browserCloser;");
+                is("release() closes this window's in-app browser (takes the closer, clears it, runs it)", bc >= 0 && rb.indexOf("browserCloser = null;", bc) > bc && rb.indexOf("closer.run();", bc) > bc, rb);
+                is("what the process's list keeps holds no window: the folder rule and the service listener are static classes with the application context",
+                        m.contains("private static final class HelperFolders") && m.contains("private static final class ServiceSync") && db.contains("getApplicationContext()") && db.contains("new HelperFolders(") && db.contains("new ServiceSync(app,"));
+                String main = new String(Files.readAllBytes(new File(src.getParentFile(), "MainActivity.java").toPath()), StandardCharsets.UTF_8);
+                is("...and the cookies the list keeps are a static class too", main.contains("public BrowserDownload.Cookies cookies() { return new WebViewCookies(); }") && main.contains("private static final class WebViewCookies implements BrowserDownload.Cookies"));
+            }
         } finally {
             srv.stop(0);
             deleteTree(root);

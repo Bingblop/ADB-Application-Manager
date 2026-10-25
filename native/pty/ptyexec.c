@@ -9,6 +9,7 @@
  * stdout carries what the program wrote to its terminal, as it is. The exit status is the program's (128 + the signal when killed).
  * The environment is the caller's (TERM and the like are set by the app).
  * When the app goes away (stdin ends) the program gets SIGHUP; one that is still there 500 ms later is killed with its process group (SIGKILL).
+ * When the program ends, so does this helper, even while something it left running in the background still has the terminal open.
  *
  * No C library: this is a static executable that uses system calls only, for aarch64, 32-bit ARM and (to test it on a computer) x86_64.
  * Android runs it from the app's native library folder, as it does libadb.so. Source and build: native/pty/build.sh.
@@ -28,6 +29,10 @@
 #define SIGCHLD 17
 #define EINTR 4
 #define WNOHANG 1
+#define SIG_BLOCK 0
+#define SIG_SETMASK 2
+#define SFD_NONBLOCK 0x800
+#define SFD_CLOEXEC 0x80000
 #define CLOCK_MONOTONIC 1
 #define GRACE_NS 500000000L      /* how long the program has to leave after the hang-up (PtyShell.close() ends this helper after 800 ms) */
 #define TIOCSCTTY 0x540E
@@ -54,6 +59,7 @@ static long wr_all(int fd, const void *b, long n) {
 }
 static __attribute__((noreturn)) void die(int code) { for (;;) sc(SYS_exit_group, code, 0, 0, 0, 0); }
 static int num(const char *s) { int v = 0; while (*s >= '0' && *s <= '9') v = v * 10 + (*s++ - '0'); return v; }
+static int exit_code(int status) { return (status & 0x7f) == 0 ? ((status >> 8) & 0xff) : 128 + (status & 0x7f); }      /* from wait4's status */
 static void put_err(const char *s) { long n = 0; while (s[n]) n++; wr_all(2, s, n); }
 /* the hang-up: SIGHUP to the program, and from then on the clock runs; a program that ignores it is killed when the grace period is over (see reap) */
 static struct timespec hup_at; static int hupped;
@@ -95,6 +101,22 @@ static int feed(int master, const u8 *p, long n) {
    behind (a program that ignores SIGHUP would live on). The program itself gets the default back before it runs. */
 static void sigpipe(void *handler) { struct ksigaction sa; memset(&sa, 0, sizeof sa); sa.handler = handler; sc(SYS_rt_sigaction, SIGPIPE, (long)&sa, 0, NSIG_BYTES, 0); }
 
+/* The program ended but its terminal stays open (a job it left running in the background, `job &` and then `exit`, still has it): pass on the
+   output that is still on its way (the program's last lines), for a moment and up to 64 KB, as the job may go on writing. */
+static void drain(int master, u8 *buf, long size) {
+    long total = 0;
+    for (int i = 0; i < 20 && total < 65536; i++) {
+        struct pollfd p; p.fd = master; p.events = POLLIN; p.revents = 0;
+        struct timespec tmo; tmo.sec = 0; tmo.nsec = 50000000L;
+        long r = sc(SYS_ppoll, (long)&p, 1, (long)&tmo, 0, 0);
+        if (r == -EINTR) continue;
+        if (r <= 0) break;                                   /* nothing more within 50 ms */
+        long n = rd(master, buf, size);
+        if (n <= 0 || wr_all(1, buf, n) < 0) break;          /* the terminal is closed for good, or nobody reads the output */
+        total += n;
+    }
+}
+
 __attribute__((used)) void c_start(long *sp) {
     long argc = sp[0]; char **argv = (char **)(sp + 1); char **envp = argv + argc + 1;
     sigpipe(SIG_IGN);
@@ -114,6 +136,11 @@ __attribute__((used)) void c_start(long *sp) {
     int slave = (int)sc(SYS_openat, AT_FDCWD, (long)path, O_RDWR | O_NOCTTY, 0, 0);
     if (slave < 0) { put_err("ptyexec: cannot open the terminal\n"); die(3); }
     setsize(master, rows, cols);
+    /* SIGCHLD is held back from here on and read from a descriptor (signalfd) in the main loop: the loop learns that the program ended even while a job
+       it left in the background keeps its terminal open, so the master never ends. Held back before the fork, so that an early end is not missed; the
+       program gets the old mask back. */
+    unsigned long chld[2] = { 1UL << (SIGCHLD - 1), 0 }, oldmask[2] = { 0, 0 };
+    sc(SYS_rt_sigprocmask, SIG_BLOCK, (long)chld, (long)oldmask, NSIG_BYTES, 0);
 #if defined(SYS_fork)
     long pid = sc(SYS_fork, 0, 0, 0, 0, 0);
 #else
@@ -122,6 +149,7 @@ __attribute__((used)) void c_start(long *sp) {
     if (pid < 0) { put_err("ptyexec: cannot start the program\n"); die(3); }
     if (pid == 0) {
         sigpipe(SIG_DFL);                                    /* an ignored signal would stay ignored across execve: the program gets the default */
+        sc(SYS_rt_sigprocmask, SIG_SETMASK, (long)oldmask, 0, NSIG_BYTES, 0);     /* and a blocked one blocked: SIGCHLD is the shell's own business */
         sc(SYS_close, master, 0, 0, 0, 0);
         sc(SYS_setsid, 0, 0, 0, 0, 0);
         sc(SYS_ioctl, slave, TIOCSCTTY, 0, 0, 0);
@@ -132,16 +160,23 @@ __attribute__((used)) void c_start(long *sp) {
         die(127);
     }
     sc(SYS_close, slave, 0, 0, 0, 0);
+    int sfd = (int)sc(SYS_signalfd4, -1, (long)chld, NSIG_BYTES, SFD_NONBLOCK | SFD_CLOEXEC, 0);       /* none (an error): the end of the output still ends the loop */
     u8 buf[16384];
-    int stdin_open = 1, out_open = 1;
+    int stdin_open = 1, out_open = 1, status = 0, reaped = 0;
     for (;;) {
-        struct pollfd fds[2];
+        struct pollfd fds[3];
         fds[0].fd = stdin_open ? 0 : -1; fds[0].events = POLLIN; fds[0].revents = 0;
         fds[1].fd = master; fds[1].events = out_open ? POLLIN : 0; fds[1].revents = 0;       /* without a reader only the end (POLLHUP) is of interest */
+        fds[2].fd = sfd < 0 ? -1 : sfd; fds[2].events = POLLIN; fds[2].revents = 0;
         struct timespec tmo; tmo.sec = 0; tmo.nsec = hupped ? grace_left() : 0;
         if (hupped && !tmo.nsec) break;                      /* the grace period is over: reap kills what is left */
-        long r = sc(SYS_ppoll, (long)fds, 2, hupped ? (long)&tmo : 0, 0, 0);
+        long r = sc(SYS_ppoll, (long)fds, 3, hupped ? (long)&tmo : 0, 0, 0);
         if (r < 0) { if (r == -EINTR) continue; break; }
+        if (fds[2].revents & POLLIN) {                       /* a SIGCHLD: the program may have ended (or only stopped) */
+            u8 si[128];
+            while (rd(sfd, si, sizeof si) > 0) {}
+            if (sc(SYS_wait4, pid, (long)&status, WNOHANG, 0, 0) == pid) { reaped = 1; break; }
+        }
         if (fds[1].revents & (POLLIN | POLLHUP | POLLERR)) {
             long n = rd(master, buf, sizeof buf);
             if (n <= 0) break;                               /* the program closed its terminal */
@@ -153,8 +188,12 @@ __attribute__((used)) void c_start(long *sp) {
             else if (feed(master, fbuf, n) < 0) stdin_open = 0;
         }
     }
+    if (reaped) {
+        if (out_open) drain(master, buf, sizeof buf);
+        die(exit_code(status));
+    }
     /* reap: wait for the program. After a hang-up it gets the rest of the grace period, then it and everything in its process group (it leads the session) is killed */
-    int status = 0, flags = hupped ? WNOHANG : 0;
+    int flags = hupped ? WNOHANG : 0;
     for (;;) {
         long w = sc(SYS_wait4, pid, (long)&status, flags, 0, 0);
         if (w == -EINTR) continue;
@@ -164,6 +203,5 @@ __attribute__((used)) void c_start(long *sp) {
         struct timespec nap; nap.sec = 0; nap.nsec = left < 2000000L ? left : 2000000L;
         sc(SYS_ppoll, 0, 0, (long)&nap, 0, 0);
     }
-    int code = (status & 0x7f) == 0 ? ((status >> 8) & 0xff) : 128 + (status & 0x7f);
-    die(code);
+    die(exit_code(status));
 }
