@@ -2487,6 +2487,27 @@
         .saved-list-actions > .apps-tool-btn.active { border-color: var(--accent); color: var(--accent); }
         .saved-list-actions > .sl-delete { background: transparent; color: var(--status-bloat); }
 
+        /* The list editor (New List, Edit; v7.16.2, the owner's wish): the list's apps are ticked on this phone's apps, in the Apps tab's rows (the icon is the
+           tick box, with the check badge on its corner). The rows take the room the sheet has left and scroll on their own; the package box folds away under
+           "Edit as text" (the summary is drawn like the "What does this do?" folds of Extra Settings) */
+        #listEditorModal .modal-sheet { display: flex; flex-direction: column; }
+        #listEditorModal .modal-sheet > * { flex-shrink: 0; }
+        #listEditorModal .modal-sheet:not(.sheet-expanded) { height: 85vh; }          /* the sheets' 85%, also when a search leaves a few rows: it does not drop away under the finger */
+        #listEditorModal .modal-sheet.sheet-expanded { height: calc(100vh - 14px); }
+        #listEditorModal .modal-sheet > .le-list { flex: 1 1 0; min-height: 160px; overflow-y: auto; overscroll-behavior: contain; margin-bottom: var(--space-2); }
+        .le-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-1) var(--space-3); margin: 0 var(--space-1) var(--space-3); }
+        .le-count { font-size: var(--fs-body); font-weight: var(--fw-heavy); }
+        .le-diff { font-size: var(--fs-pill); color: var(--text-muted); }
+        #listEditorSearch { flex: 0 0 auto; width: 100%; margin-bottom: var(--space-3); }          /* (.list-search grows, for the rows it sits in elsewhere: here the rows take the room) */
+        .le-list .app-meta { cursor: pointer; }
+        .le-more { text-align: center; padding: var(--space-4); }
+        .le-text { margin-bottom: var(--space-1); border-top: 1px solid var(--border-glass); }
+        .le-text summary { display: flex; align-items: center; min-height: 44px; font-size: var(--fs-body); font-weight: var(--fw-heavy); cursor: pointer; list-style: none; color: var(--accent); }
+        .le-text summary::-webkit-details-marker { display: none; }
+        .le-text summary::after { content: '\25BE'; margin-inline-start: var(--space-2); display: inline-block; }
+        .le-text[open] summary::after { transform: rotate(180deg); }
+        .le-text summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
         .modal-text-input,
         .modal-textarea {
             width: 100%;
@@ -9555,13 +9576,15 @@ Type any command above (e.g. pm list packages -d)</div>
         </div>
     </div>
 
+    <!-- New List and Edit (v7.16.2, the owner's wish): the name, the description, and the list's apps ticked on this phone's apps. The package box folds
+         away under "Edit as text": it stays the list's record (a tick writes it, a name typed there ticks the row) and is what Save reads. -->
     <div class="modal-overlay" id="listEditorModal" onclick="if(event.target===this) closeListEditorModal()">
-        <div class="modal-sheet">
+        <div class="modal-sheet" role="dialog" aria-labelledby="listEditorTitle">
             <div class="sheet-header">
                 <div class="sheet-app-hero">
                     <div class="sheet-title">
                         <h3 id="listEditorTitle">Create Saved List</h3>
-                        <p>Name the list and edit package names one per line.</p>
+                        <p>Name the list, then tick the apps that belong in it.</p>
                     </div>
                 </div>
                 <button type="button" class="sheet-close" aria-label="Close" onclick="closeListEditorModal()">✕</button>
@@ -9569,8 +9592,18 @@ Type any command above (e.g. pm list packages -d)</div>
             <input type="hidden" id="listEditorId">
             <input class="modal-text-input" id="listEditorName" placeholder="List name">
             <input class="modal-text-input" id="listEditorDesc" placeholder="Optional description">
-            <textarea class="modal-textarea" id="listEditorPackages" placeholder="com.example.one&#10;com.example.two"></textarea>
-            <div class="modal-helper">One package per line. Duplicate entries are removed automatically.</div>
+            <div class="le-head">
+                <div class="le-count" id="listEditorCount" role="status" aria-live="polite"></div>
+                <div class="le-diff" id="listEditorDiff"></div>
+            </div>
+            <input type="text" class="list-search" id="listEditorSearch" placeholder="Search apps" aria-label="Search apps" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="leSearch()">
+            <div class="chip-row" id="listEditorFilters" role="group" aria-label="Show"></div>
+            <div class="le-list" id="listEditorList"></div>
+            <details class="le-text" id="listEditorText">
+                <summary>Edit as text</summary>
+                <textarea class="modal-textarea" id="listEditorPackages" placeholder="com.example.one&#10;com.example.two" oninput="leFromText()"></textarea>
+                <div class="modal-helper">One package per line. Duplicate entries are removed automatically. A name typed here is ticked above, and an app ticked above is added here.</div>
+            </details>
             <div style="display:flex; gap:var(--space-3h); margin-top:var(--space-3);">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="saveListFromEditor()">Save List</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeListEditorModal()">Cancel</button>
@@ -13194,12 +13227,177 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('listEditorName').value = list ? (list.name || '') : '';
             document.getElementById('listEditorDesc').value = list ? (list.description || '') : '';
             document.getElementById('listEditorPackages').value = list ? ((list.packages || []).join(String.fromCharCode(10))) : '';
+            leOpen();
             document.getElementById('listEditorModal').classList.add('show');
         }
 
         function closeListEditorModal() {
             haptic();
             document.getElementById('listEditorModal').classList.remove('show');
+        }
+
+        // ---- The list editor's apps (v7.16.2, the owner's wish: "editing saved lists easier by just selecting which applications to add or remove") ----
+        // Every app of this phone is a row like the Apps tab's (the icon is the tick box, the same tags and state tints); the list's apps are ticked. A tap
+        // or a hold ticks or unticks, search and the chips narrow the rows, and nothing moves under the finger: the order is set when the sheet opens (the
+        // list's apps first, then the rest, each by name). A package of the list that is not on this phone keeps a row of its own, ticked, so it is never
+        // dropped without a tap. The package box under "Edit as text" stays the list's record: a tick rewrites it, typing there ticks the rows, and
+        // saveListFromEditor reads it as it always has.
+        const LE_PAGE = 150;            // rows drawn at once; "Show more" adds another page (search finds the rest)
+        let leSel = [];                 // the packages ticked, in the list's order (a new tick goes at the end)
+        let leWas = new Set();          // the list's packages when the sheet opened: the rows on top, and what "added" and "removed" count from
+        let leFilter = 'all';           // all | in (ticked) | system | user
+        let leShown = LE_PAGE;
+        let leTimer = null;
+        const LE_FILTERS = [['all', 'All'], ['in', 'In this list'], ['system', 'System'], ['user', 'User']];          // the Apps tab's order: System before User
+        function leOpen() {
+            clearTimeout(leTimer);
+            leSel = parsePackageLines(document.getElementById('listEditorPackages').value);
+            leWas = new Set(leSel);
+            leFilter = 'all';
+            leShown = LE_PAGE;
+            document.getElementById('listEditorSearch').value = '';
+            document.getElementById('listEditorText').open = false;
+            // the chips are drawn once and only change their state, so a chip pressed from the keyboard keeps the focus
+            document.getElementById('listEditorFilters').innerHTML = LE_FILTERS.map(f => '<span class="filter-chip" role="button" tabindex="0" data-f="' + f[0] + '" onclick="leSetFilter(this.dataset.f)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();this.click();}">' + f[1] + '</span>').join('');
+            leRender();
+        }
+        function leSetFilter(f) { haptic(); leFilter = f; leShown = LE_PAGE; leRender(); }
+        // the search box: a long app list waits for a pause in typing, as the Apps tab's search does
+        function leSearch() {
+            clearTimeout(leTimer);
+            leShown = LE_PAGE;
+            if ((typeof allApps !== 'undefined' ? allApps.length : 0) <= 250) { leRender(); return; }
+            leTimer = setTimeout(leRender, 130);
+        }
+        function leClearSearch() {
+            const s = document.getElementById('listEditorSearch');
+            s.value = '';
+            leShown = LE_PAGE;
+            leRender();
+            s.focus();
+        }
+        function leShowAll() { leSetFilter('all'); document.getElementById('listEditorSearch').focus(); }
+        function leMore() {
+            haptic();
+            const n = document.querySelectorAll('#listEditorList .le-row').length;
+            leShown += LE_PAGE;
+            leRender(true);
+            const first = document.querySelectorAll('#listEditorList .le-row')[n];          // the focus goes on to the first row the button added
+            if (first) first.querySelector('.app-sel').focus();
+        }
+        // the rows the search and the chip leave, in the order of the sheet
+        function leRows() {
+            const q = (document.getElementById('listEditorSearch').value || '').trim().toLowerCase();
+            const sel = new Set(leSel);
+            const apps = typeof allApps !== 'undefined' ? allApps : [];
+            const onPhone = new Set(apps.map(a => a.pkg));
+            const rows = apps.map(a => ({ pkg: a.pkg, name: String(a.name || a.pkg), app: a }));
+            const gone = new Set();          // a package of the list (then or now) that is not on this phone
+            leWas.forEach(p => { if (!onPhone.has(p)) gone.add(p); });
+            leSel.forEach(p => { if (!onPhone.has(p)) gone.add(p); });
+            gone.forEach(p => rows.push({ pkg: p, name: p, app: null }));
+            return rows.filter(r => {
+                if (leFilter === 'in' && !sel.has(r.pkg)) return false;
+                if (leFilter === 'user' && (!r.app || r.app.isSystem)) return false;
+                if (leFilter === 'system' && (!r.app || !r.app.isSystem)) return false;
+                return !q || r.pkg.toLowerCase().includes(q) || r.name.toLowerCase().includes(q);
+            }).sort((a, b) => {
+                const ta = leWas.has(a.pkg) || !a.app, tb = leWas.has(b.pkg) || !b.app;
+                if (ta !== tb) return ta ? -1 : 1;
+                return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+            });
+        }
+        // a row: the Apps tab's (appCardHtml) without its buttons; a package that is not on this phone has its first letter for an icon, as in Connected Devices
+        // (and no tag while the phone's apps are not read: then nobody knows whether it is installed)
+        function leRowHtml(r, on, known) {
+            const a = r.app, pk = escapeHtml(r.pkg);
+            let badges = '', state = '';
+            if (!a) badges = known ? '<span class="tag-badge tag-bloat">NOT INSTALLED</span>' : '';
+            else {
+                if (a.isRunning) badges += '<span class="tag-badge tag-running">RUNNING</span>';
+                if (a.isFrozen && !a.isUninstalled) badges += '<span class="tag-badge tag-frozen">FROZEN</span>';
+                if (a.isSuspended) badges += '<span class="tag-badge tag-suspended">SUSPENDED</span>';
+                if (a.isUninstalled) badges += '<span class="tag-badge tag-bloat">UNINSTALLED</span>';
+                badges += a.isSystem ? '<span class="tag-badge tag-system">SYSTEM</span>' : '<span class="tag-badge tag-user">USER</span>';
+                if (a.mods && a.mods.length) a.mods.forEach(m => badges += `<span class="tag-badge tag-mod">${escapeHtml(m)}</span>`);
+                state = (a.isSuspended ? ' suspended' : '') + (a.isFrozen && !a.isUninstalled ? ' frozen' : '') + (a.isRunning && !a.isUninstalled ? ' running' : '') + (a.isUninstalled ? ' uninstalled' : '');
+            }
+            const icon = a ? `<img class="app-icon" alt="" draggable="false" data-icon="${pk}"${appIconCache[r.pkg] ? ` src="${appIconCache[r.pkg]}"` : ''}>`
+                : `<span class="cd-icon" translate="no" aria-hidden="true">${escapeHtml(r.pkg.charAt(0).toUpperCase())}</span>`;
+            return `<div class="app-card le-row${state}${on ? ' selected' : ''}" data-pkg="${pk}">
+                    <button type="button" class="app-left app-sel" role="checkbox" aria-checked="${on}" aria-label="${escapeHtml('Select ' + r.name)}" onclick="leToggle(this.parentElement.dataset.pkg)">${icon}<span class="app-checkbox" aria-hidden="true">${on ? '✓' : ''}</span></button>
+                    <div class="app-meta" onclick="leToggle(this.parentElement.dataset.pkg)">
+                        <div class="app-name">${escapeHtml(r.name)}</div>
+                        ${a ? `<div class="app-pkg">${pk}</div>` : ''}
+                        <div class="badge-row">${badges}</div>
+                    </div>
+                </div>`;
+        }
+        // draws the rows (from the top of the list, unless Show more added a page under the ones already seen)
+        function leRender(keepScroll) {
+            clearTimeout(leTimer);
+            const box = document.getElementById('listEditorList');
+            if (!box) return;
+            document.querySelectorAll('#listEditorFilters .filter-chip').forEach(c => { const on = c.dataset.f === leFilter; c.classList.toggle('active', on); c.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+            const rows = leRows(), sel = new Set(leSel), q = (document.getElementById('listEditorSearch').value || '').trim();
+            const shown = rows.slice(0, leShown), left = rows.length - shown.length;
+            const known = typeof allApps !== 'undefined' && allApps.length > 0;
+            // no app was read: the Apps tab's empty state (with its Reload Packages) over the rows the list's own packages still have
+            box.innerHTML = (!known ? emptyStateHtml({ key: 'le-none', icon: 'apps', title: 'No Applications Loaded', hint: 'No apps were read from this phone yet.', compact: true,
+                    actions: [{ label: 'Reload Packages', onclick: 'leReload()', primary: true }] }) : '')
+                + shown.map(r => leRowHtml(r, sel.has(r.pkg), known)).join('')
+                + (left > 0 ? `<div class="le-more"><button type="button" class="batch-tool-link" onclick="leMore()">Show ${Math.min(LE_PAGE, left)} more · ${left} left</button></div>` : '')
+                + (!rows.length && known ? emptyStateHtml({ key: 'le-nomatch', icon: q ? 'search' : 'filter', title: 'No app matches.', compact: true,
+                    actions: [q && { label: 'Clear search', onclick: 'leClearSearch()' }, leFilter !== 'all' && { label: 'Show all', onclick: 'leShowAll()' }] }) : '');
+            if (!keepScroll) box.scrollTop = 0;
+            leCount();
+            if (typeof appsLoadIcons === 'function') appsLoadIcons();
+        }
+        function leReload() {
+            try { loadPackageData(); } catch (e) {}
+            leRender();
+        }
+        // the line over the rows: how many apps the list has, and (an existing list) how many were added and removed since the sheet opened, each
+        // part its own text so that each is translated
+        function leCount() {
+            const n = leSel.length;
+            document.getElementById('listEditorCount').innerText = !n ? 'No apps in this list yet' : n + (n === 1 ? ' app in this list' : ' apps in this list');
+            const sel = new Set(leSel);
+            const added = leSel.filter(p => !leWas.has(p)).length;
+            let removed = 0;
+            leWas.forEach(p => { if (!sel.has(p)) removed++; });
+            const id = document.getElementById('listEditorId').value;
+            const was = !!id && customLists.some(l => l.id === id);
+            const diff = document.getElementById('listEditorDiff');
+            diff.textContent = '';
+            if (!was) return;
+            [added && added + ' added', removed && removed + ' removed'].filter(Boolean).forEach((t, i) => {
+                if (i) diff.appendChild(document.createTextNode(' · '));
+                const sp = document.createElement('span');
+                sp.innerText = t;
+                diff.appendChild(sp);
+            });
+        }
+        function leToggle(pkg) {
+            if (isSelectingText()) return;
+            const i = leSel.indexOf(pkg);
+            if (i >= 0) leSel.splice(i, 1); else leSel.push(pkg);
+            haptic();
+            document.getElementById('listEditorPackages').value = leSel.join(String.fromCharCode(10));
+            const row = Array.from(document.getElementById('listEditorList').children).find(el => el.dataset && el.dataset.pkg === pkg);
+            markCardSelected(row, i < 0);           // the row stays where it is (also under "In this list"), so a second tap brings it back
+            if (row && i < 0) selShine(row);
+            leCount();
+        }
+        // typing in the package box: the rows follow it (at once while the ticked set is unchanged or the list is short, after a pause in typing otherwise)
+        function leFromText() {
+            const next = parsePackageLines(document.getElementById('listEditorPackages').value);
+            const same = next.length === leSel.length && next.every((p, i) => p === leSel[i]);
+            leSel = next;
+            if (same) return;
+            clearTimeout(leTimer);
+            if ((typeof allApps !== 'undefined' ? allApps.length : 0) <= 250) { leRender(true); return; }
+            leTimer = setTimeout(() => leRender(true), 130);
         }
 
         // The Stop apps notification was tapped (QuickStopNotice): Saved Applications, with the sheet of the quick list (the list marked for the tile) up.
@@ -20652,7 +20850,8 @@ Type any command above (e.g. pm list packages -d)</div>
                     timer = null;
                     fired = true;
                     haptic();
-                    if (card.closest('#cdAppList')) cdAppMenu(card.dataset.pkg);          // a row of the Connected Devices list opens that device app's menu
+                    if (card.classList.contains('le-row')) leToggle(card.dataset.pkg);          // a row of the list editor's apps has no menu: a hold ticks or unticks it, as a tap does
+                    else if (card.closest('#cdAppList')) cdAppMenu(card.dataset.pkg);          // a row of the Connected Devices list opens that device app's menu
                     else openInspector(card.dataset.pkg);
                 }, 550);
             });

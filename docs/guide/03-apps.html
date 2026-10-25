@@ -651,8 +651,8 @@
   <p>There are three ways.</p>
   <ol class="hg-steps">
     <li><b>From apps you selected.</b> In the Application Manager, select the apps, tap the round button, then <b>Save to List</b>. A box "Save Selected Apps" shows how many apps are selected. Type a <b>List name</b>, an optional description, and tap <b>Save Selected Apps</b>. A message says "Saved selected apps to (name)". The same idea works in the <a href="#tab-debloater">UAD-NG Debloater</a>, with its own <b>Save to List</b> button.</li>
-    <li><b>By typing.</b> In this tab tap <b>New List</b>. The box "Create Saved List" opens. Fill in the name and an optional description, then type the package names in the big box, one per line. Tap <b>Save List</b>. Double entries are removed by themselves. Names separated by commas also work.</li>
-    <li><b>By pasting.</b> Copy a list of package names from anywhere, open <b>New List</b> and paste it into the big box. This is how you bring in a list from another phone, a chat message or a note. A whole set of lists comes back from a backup file instead: see <a href="#tab-saved-lists">Back up and restore</a> further down this page.</li>
+    <li><b>By ticking apps.</b> In this tab tap <b>New List</b>. The box "Create Saved List" opens with every app of this phone in it, by name. Fill in the name and an optional description, then tap each app the list should hold: its icon gets a check mark and the row is outlined. Tap <b>Save List</b>. How to find an app quickly is under <a href="#tab-saved-lists">Edit a list</a> below.</li>
+    <li><b>By typing or pasting.</b> Open <b>New List</b>, tap <b>Edit as text</b> under the apps, and type or paste package names into the big box, one per line (names separated by commas also work; double entries are removed by themselves). Each name you type ticks its app above. This is how you bring in a list from another phone, a chat message or a note. A whole set of lists comes back from a backup file instead: see <a href="#tab-saved-lists">Back up and restore</a> further down this page.</li>
   </ol>
   <p>A name is required: without one the message says "Please enter a list name". The new list appears at the top.</p>
 
@@ -667,12 +667,26 @@
     <tbody>
       <tr><td><b>Recall</b></td><td>Selects the list's apps in the Application Manager (replacing any earlier selection) and takes you there. A message says "Recalled (number) apps from (name)". Open the round button to run any batch action on them. See <a href="#apps-batch">batch actions</a>. This is how you apply an action to a whole list.</td></tr>
       <tr><td><b>Quick list</b></td><td>Makes this the list that the Kill Apps tile and widget force-stop. The button then shows "Quick list" with a tick. Tap it again to clear it.</td></tr>
-      <tr><td><b>Edit</b></td><td>Opens "Edit Saved List" with the name, description and package names. Change them, then tap <b>Save List</b>.</td></tr>
+      <tr><td><b>Edit</b></td><td>Opens "Edit Saved List" with the name, the description and every app of this phone, the list's apps ticked and at the top. Tap an app to add it, tap a ticked one to take it out, then tap <b>Save List</b>. See <a href="#tab-saved-lists">Edit a list</a> below.</td></tr>
       <tr><td><b>Copy</b></td><td>Copies the package names, one per line, to the clipboard. A message says "Copied (name)". This is how you pass on one list as plain text, to paste into a note or a message. To keep all your lists in a file, use <b>Back up and restore</b>.</td></tr>
       <tr><td><b>Delete</b></td><td>Opens "Delete Saved List" with "Are you sure you want to delete this saved list?" and the name. Tap <b>Delete List</b> to go on, or <b>Cancel</b>. A deleted list cannot be recovered.</td></tr>
     </tbody>
   </table>
   <p>You can also run a command on a list without selecting it first: in the batch sheet's <b>Command</b> box, the menu <b>Run it on</b> offers each saved list.</p>
+
+  <h4>Edit a list</h4>
+  <p><b>Edit</b> on a list's card (and <b>New List</b>, for a new one) opens a box with the list's name and description at the top and the apps of this phone below, drawn like the rows of the <a href="#tab-apps">Application Manager</a>: the icon, the name, the package name and tags such as SYSTEM, USER, FROZEN or UNINSTALLED. The apps already in the list come first, ticked (a check mark on the icon and an outline round the row), then every other app, each part in alphabetical order. Pull the box up by its handle to give the apps the whole screen.</p>
+  <ul>
+    <li><b>Add or remove an app:</b> tap its row or its icon. A tap on an app that is not ticked adds it; a tap on a ticked one takes it out. The rows do not move when you tap, so a second tap puts back what the first one changed. Pressing and holding a row ticks it too (here it does not open the app's menu); pressing and holding the icon saves the icon as a picture, as in the Application Manager.</li>
+    <li><b>The line above the search box</b> says how many apps the list holds ("5 apps in this list"). While you edit an existing list it also says what you changed since the box opened, for example "2 added · 1 removed".</li>
+    <li><b>Search apps</b> finds an app by its name or its package name.</li>
+    <li><b>All</b>, <b>In this list</b>, <b>System</b> and <b>User</b> choose which rows are shown. <b>In this list</b> shows only the ticked apps, which is the quickest way to check the list; an app you untick there stays on screen (not ticked) until you change the choice or the search, so you can tick it again.</li>
+    <li>A package of the list that is <b>not installed on this phone</b> (a list made on another phone, or an app you uninstalled for good) keeps a row of its own with the tag NOT INSTALLED and the first letter of its package name instead of an icon. It stays in the list unless you untick it.</li>
+    <li>A phone with many apps shows 150 rows at a time: the button at the end of the rows (<b>Show 150 more</b>, with how many are left) adds the next ones, and the search finds any app at once.</li>
+    <li><b>Edit as text</b> (under the apps) opens the list as package names, one per line. A name you type or paste there is ticked above, and an app you tick above is added there.</li>
+    <li>If no app was read from this phone, the box says "No Applications Loaded" with a <b>Reload Packages</b> button, as the Application Manager does. The list's own packages still have their rows (without a tag, since the app cannot tell whether they are installed), and <b>Edit as text</b> still works.</li>
+  </ul>
+  <p>Nothing is saved until you tap <b>Save List</b>; <b>Cancel</b> or the close button leave the list as it was. Saving keeps the list's place, and if it is the quick list, the widget's number is refreshed.</p>
 
   <h4>Back up and restore</h4>
   <p>The card <b>Back up and restore</b> sits under the <b>New List</b> button. It keeps your lists in a small file (JSON) in a place you choose, and brings them back from such a file. Lists are only kept inside the app otherwise, so a backup is what saves them when you uninstall the app, clear its storage or change phone.</p>
