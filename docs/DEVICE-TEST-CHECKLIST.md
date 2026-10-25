@@ -610,6 +610,30 @@ same process, and on some phones the app closed and stayed closed. None of this 
       now? The app restarts afterwards." appears; OK: the same restart, and the app comes back.
 - [ ] **A single Allow.** Allow one permission by its own button: the sheet behaves as before (the page reloads, no process restart).
 
+## 37. Connection Check card (Working Modes)
+
+None of this has been run on a phone yet. Open the working-mode badge at the top of the app; the **Connection Check** card is the first card of the sheet.
+
+- [ ] **Everything connected.** With Wireless Debugging connected, Shizuku authorized and the secure-settings permission granted: five rows (Wi-Fi, Wireless Debugging switch, ADB connection, Shizuku, Secure settings access), each OK, and the tag at the top reads ALL GOOD. The Wi-Fi row shows the phone's address; the ADB row shows the address and port you are connected to.
+- [ ] **Wireless Debugging off.** In Developer options switch Wireless debugging off, then tap **Check again**: the switch row says CHECK, "Switched off", with **Open Developer Options**; it opens Android's Developer options. Switch it on again and tap **Check again**: OK.
+- [ ] **A stale port (the reason for this card).** Connect through Wireless Debugging, then switch Wireless debugging off and on in Developer options (Android picks a new port). Tap **Check again**: the ADB connection row says CHECK, "The saved port is not answering", names the old port and offers **Auto-Detect Ports**. Tap it and then **Connect**: the connection returns and the row turns OK. Write down whether Android showed a new port.
+- [ ] **No Wi-Fi.** Turn Wi-Fi off (mobile data on): the Wi-Fi row says CHECK, "Not on Wi-Fi". With ADB over TCP connected through 127.0.0.1 the rest keeps working; this row is only a warning for Wireless Debugging.
+- [ ] **Shizuku in each state.** Not installed: INFO. Installed, stopped: CHECK with **Open Shizuku**. Running but this app not yet allowed: CHECK with **Authorize & Use Shizuku**; tap it and approve the prompt, then **Check again**: OK. Note the Shizuku version.
+- [ ] **Secure settings access.** With a working mode connected and the permission not granted (revoke it first with `pm revoke`, or on a fresh install): CHECK with **Grant now**. Tap it: the toast reads "Secure settings access granted." and the row turns OK. In Read-Only mode the row is INFO and says to connect a mode first.
+- [ ] **Android below 11, or a phone that hides the switch.** If you have such a phone: the Wireless Debugging switch row is INFO, not a false CHECK.
+- [ ] **Another language** (Settings > Language): the card, its rows and its buttons are translated, the addresses and ports are not, no text is cut off, in light and in dark.
+
+## 38. Turn on Wireless Debugging (Connection Check)
+
+None of this has been run on a phone yet. Needs Android 11 or newer, on Wi-Fi, with a working mode connected (ADB TCP or Shizuku) or the secure-settings permission granted.
+
+- [ ] **The button.** In Developer options switch Wireless debugging off, open Working Modes and tap **Check again**: the switch row says CHECK, "Switched off. The button turns it on...", with **Turn on Wireless Debugging**. Tap it: the toast says it is on and to use Auto-Detect Ports, the row turns OK, and Developer options shows Wireless debugging switched on. Write down whether Android asked anything.
+- [ ] **A new port.** Tap **Auto-Detect Ports**, then connect: the connection works on the port Android chose this time.
+- [ ] **No Wi-Fi.** Turn Wi-Fi off, switch Wireless debugging off again and try the button: the toast says to connect to Wi-Fi first and the switch stays off.
+- [ ] **No way to write.** In Read-Only mode with no secure-settings permission the row still offers **Open Developer Options**, not the new button.
+- [ ] **Leaving the Wi-Fi.** With it on, leave the Wi-Fi network: Android switches Wireless debugging off again, and **Check again** shows CHECK.
+- [ ] **Another language:** the row, the button and the toasts are translated and nothing is cut off.
+
 ## 39. Wireless Debugging: the port changed
 
 Needs Android 11 or newer, this app paired with Wireless Debugging, and the Wi-Fi it uses switched on. None of this has been run on a phone yet.

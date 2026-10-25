@@ -1,0 +1,38 @@
+ok   1. five rows, in the order Wi-Fi, Wireless Debugging switch, ADB connection, Shizuku, Secure settings access
+ok      all of them OK and the card says ALL GOOD
+ok      the Wi-Fi row shows the address and the ADB row the connected target
+ok      no row offers a button
+ok      the card opened with the window (one quiet getWorkingMode, no fresh probe)
+ok      no page errors
+ok   2. no Wi-Fi: CHECK, in words
+ok      the switch is off: CHECK with an Open Developer Options button
+ok      the saved port 41234 is named as not answering, with Auto-Detect Ports
+ok      Shizuku installed but not running: CHECK with Open Shizuku
+ok      the permission without a working mode is INFO (nothing to grant with), no button
+ok      the card says NEEDS ATTENTION
+ok      the three buttons reach Developer Options, the mDNS scan and the Shizuku app
+ok      no page errors
+ok   3. Developer options off: the switch row says to turn them on first, with no button
+ok      Android 10: INFO "Needs Android 11 or newer."
+ok      a phone that does not say: INFO, not a false CHECK
+ok   4. Shizuku running and authorized: OK
+ok   4. Shizuku running, not yet allowed: CHECK with Authorize & Use Shizuku
+ok   4. Shizuku too old: CHECK with Open Shizuku
+ok   4. Shizuku installed, not running: CHECK with Open Shizuku
+ok   4. Shizuku not installed: INFO
+ok      port 5555 open but not connected: CHECK that names the port and the prompt on the phone
+ok      nothing saved and nothing open: INFO that says how to start
+ok   5. with a working mode and no permission: CHECK with Grant now
+ok      Grant now asks the phone once, the row turns OK and a toast says so
+ok      Check again probes for real (getWorkingModeFresh) and reads the facts again
+ok      no page errors
+ok   6. without getConnectionFacts the card stays hidden
+ok      and the rest of Working Modes still draws (the Automatic card is there)
+ok      no page errors
+ok   7. at 320 px no part of the card sticks out of the sheet and the page does not scroll sideways
+ok   8. [de] the rows' titles, tags, header tag and buttons are in de
+ok      [de] the address and the port stay as they are
+ok   8. [ja] the rows' titles, tags, header tag and buttons are in ja
+ok      [ja] the address and the port stay as they are
+ok      no page errors
+all passed
