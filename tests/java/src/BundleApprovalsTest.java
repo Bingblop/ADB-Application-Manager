@@ -59,8 +59,12 @@ public class BundleApprovalsTest {
     int reads;
     Counting(File f) { super(f.getPath()); }
     @Override public String getPath() {
-      for (StackTraceElement e : new Throwable().getStackTrace()) { String cn = e.getClassName(); if (cn.equals("java.io.FileInputStream") || cn.equals("java.nio.channels.FileChannel") || cn.equals("sun.nio.ch.FileChannelImpl")) { reads++; break; } }
+      for (StackTraceElement e : new Throwable().getStackTrace()) { String cn = e.getClassName(); if (cn.equals("java.io.FileInputStream") || cn.equals("sun.nio.fs.UnixChannelFactory") || cn.equals("sun.nio.fs.UnixFileSystemProvider") || cn.equals("java.nio.file.Files")) { reads++; break; } }
       return super.getPath();
+    }
+    @Override public java.nio.file.Path toPath() {
+      for (StackTraceElement e : new Throwable().getStackTrace()) { String cn = e.getClassName(); if (cn.equals("com.bloatware.bingblop.BundleApprovals")) { reads++; break; } }
+      return super.toPath();
     }
   }
 
