@@ -1,0 +1,12 @@
+ok   1. the tab is open with the Secure table unread
+ok      Revert tries to read the Secure table again
+ok      and, as it still cannot be read, changes nothing and says so
+ok      no question claims the setting "is now not set"
+ok   2. the tab is open with the Secure table unread (its first read failed)
+ok      Revert reads the table, asks nothing about "not set" and puts 500 back
+ok      the history says 400 → 500, not (not set) → 500
+ok      reverting that Revert puts 400 back; it does not delete the setting
+ok   3. Revert is tapped while the Secure table is still being read
+ok      it waits for that read (no second one), then puts 500 back with no "not set" question
+ok      the history says 400 → 500
+ok   no page errors

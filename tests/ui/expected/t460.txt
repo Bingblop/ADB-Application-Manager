@@ -1,0 +1,56 @@
+1. [360x800] all 10 tabs have a 44px round expand button named after the tab, at the right end of their chip row: true []
+2. [360x800] the button opens Permissions at full screen: true
+   it covers the whole screen (the bottom bar steps aside as for every sheet): true [0,800,800,true]
+   the app header and the menu buttons are not shown: true [false,false,false]
+   a slim bar names the tab and the app: true Permissions / Samsung Internet
+   the ✕ is a 44px button in the top right corner, named, with the focus: true ["Close",44,351,360,11.5,true]
+   the tab strip stays, the search and the chips are there: true
+   the list fills the rest of the screen and scrolls on its own: true [101,791]
+   the expand button itself is hidden there: true
+   the search typed in the menu is kept: true 8 rows
+3. [360x800] search and chips work at full screen: true [45,45,1,30]
+4. [360x800] the ✕ goes back to the menu (sheet still open, menu buttons back, slim bar gone): true {"sheet":120,"list":160,"grid":true,"head":false,"chip":"granted","maxH":"744px"}
+   on the same tab, with its chip, the menu and the list scrolled where they were: true ["granted",120,120,160,160]
+   the sheet has its usual height again: true 744px
+5. [360x800] a tap on Activities at full screen shows Activities at full screen: true {"title":"Activities","acts":true,"perms":false,"grid":false,"bottom":791,"vh":800}
+   its rows change with its search and its chips: true [18,9,0]
+   a small pull down by the handle does not leave the full screen: true
+6. [360x800] a pull down from the top middle goes back to the menu, which stays open: true modal-sheet
+   on Activities, with its search text: true
+   the sheet has no leftover offset: true
+7. [360x800] Back leaves the full screen first, the menu stays: true
+   a second Back closes the menu: true
+8. [360x800] closing the menu at full screen leaves no full screen behind: true
+   the next app opens on the menu: true
+   every sheet closed at once: no full screen left either: true
+9. [360x800] a menu pulled up is pulled up again after the full screen: true
+1. [412x915] all 10 tabs have a 44px round expand button named after the tab, at the right end of their chip row: true []
+2. [412x915] the button opens Permissions at full screen: true
+   it covers the whole screen (the bottom bar steps aside as for every sheet): true [0,915,915,true]
+   the app header and the menu buttons are not shown: true [false,false,false]
+   a slim bar names the tab and the app: true Permissions / Samsung Internet
+   the ✕ is a 44px button in the top right corner, named, with the focus: true ["Close",44,403,412,11.5,true]
+   the tab strip stays, the search and the chips are there: true
+   the list fills the rest of the screen and scrolls on its own: true [101,906]
+   the expand button itself is hidden there: true
+   the search typed in the menu is kept: true 8 rows
+3. [412x915] search and chips work at full screen: true [45,45,1,30]
+4. [412x915] the ✕ goes back to the menu (sheet still open, menu buttons back, slim bar gone): true {"sheet":120,"list":160,"grid":true,"head":false,"chip":"granted","maxH":"850.95px"}
+   on the same tab, with its chip, the menu and the list scrolled where they were: true ["granted",120,120,160,160]
+   the sheet has its usual height again: true 850.95px
+5. [412x915] a tap on Activities at full screen shows Activities at full screen: true {"title":"Activities","acts":true,"perms":false,"grid":false,"bottom":906,"vh":915}
+   its rows change with its search and its chips: true [18,9,0]
+   a small pull down by the handle does not leave the full screen: true
+6. [412x915] a pull down from the top middle goes back to the menu, which stays open: true modal-sheet
+   on Activities, with its search text: true
+   the sheet has no leftover offset: true
+7. [412x915] Back leaves the full screen first, the menu stays: true
+   a second Back closes the menu: true
+8. [412x915] closing the menu at full screen leaves no full screen behind: true
+   the next app opens on the menu: true
+   every sheet closed at once: no full screen left either: true
+9. [412x915] a menu pulled up is pulled up again after the full screen: true
+10. with reduced motion the full screen opens and closes without an animation: true ["none","none"]
+    without it, it slides in: true tabFullIn
+errors: []
+ALL OK

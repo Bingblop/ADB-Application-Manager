@@ -30,7 +30,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { localStorage.clear(); switchView('prefs'); applyPalettePreset('amoled'); setAppearance('dark'); renderMyThemes('dark'); }); await wait(200);
 
   // ---- the card, empty ----
-  check('Settings has a My Themes card right after Palette Style', await ev(() => { const a = document.getElementById('paletteStyleCard'), c = document.getElementById('myThemesCard'); return !!c && !!(a.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING) && c.nextElementSibling.querySelector('.color-card-title').innerText === 'Curated Theme Palettes'; }));
+  check('Settings has My Themes in the Palette Style card, at its end, and the Curated Theme Palettes card next', await ev(() => { const a = document.getElementById('paletteStyleCard'), c = document.getElementById('myThemesCard'); return !!c && a.contains(c) && a.querySelector('.color-card-title').textContent === 'Palette Style & My Themes' && a.nextElementSibling.querySelector('.color-card-title').textContent === 'Curated Theme Palettes'; }));
   check('empty: no themes, and the note says how to make one', (await names()).length === 0 && /None yet/.test(await ev(() => document.getElementById('mtNote').innerText)));
   check('the card says what a theme holds and that Appearance is not part of it', await ev(() => { const t = document.getElementById('myThemesCard').innerText; return /palette or palette style/.test(t) && /source color/.test(t) && /color tweaks/.test(t) && /Pure black/.test(t) && /Appearance/.test(t); }));
 

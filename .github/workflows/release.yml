@@ -9,7 +9,11 @@ name: Build, sign and publish release
 #   KEYSTORE_PASSWORD  keystore + key password      (build.sh default: password)
 #   KEY_ALIAS          optional, defaults to adbmanager
 # Without KEYSTORE_BASE64 the run fails: an APK signed with a throwaway key will not install over an existing
-# install. For a test run only, start it by hand with "allow_throwaway_key" ticked.
+# install. For a test run only, start it by hand with "allow_throwaway_key" ticked: such a run is published as a draft
+# prerelease (no tag, not public until someone publishes it), so the throwaway-key APKs are never offered as an update.
+# The version (the tag without its "v", or the one typed for a manual run) must be the version in AndroidManifest.xml and the newest
+# CHANGELOG.md heading of the commit being built, with a versionCode above the release before's (tools/check-release-version.sh), or the
+# run stops before it builds; a throwaway-key test run only warns.
 on:
   push:
     tags: ['v*']
@@ -70,6 +74,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Prepare signing key
+        id: key
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -82,11 +87,25 @@ jobs:
             echo "KS_PASS=${KEYSTORE_PASSWORD:-password}" >> "$GITHUB_ENV"
             echo "KS_ALIAS=${KEY_ALIAS:-adbmanager}" >> "$GITHUB_ENV"
           elif [ "$ALLOW_THROWAWAY" = "true" ]; then
-            echo "::warning::KEYSTORE_BASE64 secret not set - this test run is signed with a throwaway key and will not install over an existing install."
+            echo "::warning::KEYSTORE_BASE64 secret not set - this test run is signed with a throwaway key and will not install over an existing install. It is published as a draft prerelease."
+            echo "throwaway=true" >> "$GITHUB_OUTPUT"
           else
             echo "::error::KEYSTORE_BASE64 secret not set. Refusing to publish APKs signed with a throwaway key (they would not install over an existing install). Set the secret, or for a test run tick allow_throwaway_key."
             exit 1
           fi
+
+      - name: Check the version against the manifest and the changelog
+        env:
+          V: ${{ steps.v.outputs.version }}
+          THROWAWAY: ${{ steps.key.outputs.throwaway }}
+        run: |
+          if bash tools/check-release-version.sh "$V"; then exit 0; fi
+          if [ "$THROWAWAY" = "true" ]; then
+            echo "::warning::Version $V is not the version in AndroidManifest.xml and CHANGELOG.md (see above). A throwaway-key test run goes on anyway."
+            exit 0
+          fi
+          echo "::error::Version $V is not the version in AndroidManifest.xml and CHANGELOG.md (see above), so the APKs would not carry it. Tag the merged release pull request's commit, or fix the version first."
+          exit 1
 
       - name: Build and sign (64-bit, 32-bit and universal)
         env:
@@ -129,6 +148,9 @@ jobs:
           name: ADB Application Manager Pro v${{ steps.v.outputs.version }}
           body_path: notes.md
           target_commitish: ${{ github.sha }}
+          # a throwaway-key test run stays a draft prerelease: no tag is created and nothing is public
+          draft: ${{ steps.key.outputs.throwaway == 'true' }}
+          prerelease: ${{ steps.key.outputs.throwaway == 'true' }}
           # the 64-bit file is listed first: an older copy of the app that updates itself takes the first .apk of a release
           files: |
             out/ADB_Application_Manager_Pro-v${{ steps.v.outputs.version }}-arm64-v8a.apk

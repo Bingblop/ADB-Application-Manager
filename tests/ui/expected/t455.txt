@@ -1,0 +1,21 @@
+ok   1. the stub was started on connect: stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      a renewal runs once a minute while it runs: 60000
+ok      a renewal is sent to the watch: stub renew 192.168.1.30:5555
+ok      another view is opened (the device list is not polled there): the renewal keeps running: 60000
+ok      ... and still renews: stub renew 192.168.1.30:5555
+ok   2. a renewal finds the stub stopped: the row offers Start: {"text":"ADB Stub Installed, not running. Start","btn":"Start"}
+ok      and the renewals stop:
+ok      nothing is renewed while it is not running:
+ok      Start: the renewals run again: 60000
+ok   3. a watch without the stub: no renewal: stub status 192.168.1.30:5555
+ok   4. Disconnect: a quick stop of the stub, then adb disconnects: stub stop quick 192.168.1.30:5555 | adb disconnect 192.168.1.30:5555
+ok      and says so: Disconnected
+ok   5. an older stub on the watch: Update: {"text":"ADB Stub A newer version comes with this app. Update","btn":"Update"}
+ok      Update fails, signed with another key: the toast says to uninstall it first: The ADB Stub on the watch was signed with another key. Uninstall it from the watch, then tap Install.
+ok      the Failure [...] line, not "Performing Streamed Install": ["Failure [INSTALL_FAILED_INSUFFICIENT_STORAGE]","Failure [INSTALL_FAILED_VERSION_DOWNGRADE]"]
+ok      adb's own error; a line that says error; else the last line; nothing: no answer: ["device offline","adb: connect error for write: closed","something else","No answer from the watch"]
+ok   6. the status could not be read: nothing started: stub status 192.168.1.30:5555
+ok      the next load of the details asks again and starts it: stub status 192.168.1.30:5555 | stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok   7. German: "keeps the screen on": {"text":"ADB Stub Hält den Bildschirm der Uhr eingeschaltet und ihr WLAN verbunden, solange dieses Telefon verbunden ist. Installieren","btn":"Installieren"}
+errors: []
+ALL OK

@@ -1,0 +1,8 @@
+ok   1. Saved Applications on (the default): the Apps tab shows no Profiles / CSV / Backups row
+ok   2. Saved Applications is off and cannot be opened
+ok      the Apps tab has Profiles, CSV and Backups in one row under Sort and Button (CSV still named for what it does)
+ok      the Sort and Button row itself is unchanged
+ok      they open App Profiles, share the CSV and open Backups
+ok   3. Saved Applications switched back on: the row goes away
+ok      switched off again: it is back
+ok   no page errors

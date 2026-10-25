@@ -49,7 +49,9 @@ ok   the copy that is kept cannot be ticked and says so
 ok   Delete on a card asks the question of that tool
 ok   and sends the delete of that tool with nothing taken out
 ok   Delete all results asks once, listing the tools with data
+ok   a tool with something taken out is listed with what is left of it, the others with their result, and it says what was taken out is kept
 ok   it deletes in every tool that has data
+ok   and what was taken out stays out
 ok   the card says the service is off and consent is not given
 ok   consent explains what the service does and that it stops with the screen
 ok   I agree sends the consent and the card shows it

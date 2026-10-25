@@ -1,4 +1,3 @@
 # Data files, not code: one Arabic UI string holds U+202C (POP DIRECTIONAL FORMATTING) as a normal right-to-left text mark.
 # Semgrep's bidi rule looks for Trojan Source in code; a JSON label table is not that.
 assets/sdm/acs_labels.json
-app/src/main/assets/sdm/acs_labels.json

@@ -606,6 +606,44 @@ public class SdmAcsLadderTest {
         is("similarity of pages", Math.abs(SdmAcsDiag.similarity(a, b) - 0.6) < 1e-9 && SdmAcsDiag.similarity(a, a) == 1.0 && SdmAcsDiag.similarity(a, new HashSet<String>()) == 0.0, true);
     }
 
+    /** The body of the first method whose declaration holds {@code decl}, braces matched (comments and strings in these bodies hold no braces). */
+    static String body(String src, String decl) {
+        int i = src.indexOf(decl);
+        if (i < 0) return null;
+        int open = src.indexOf('{', i), depth = 0;
+        for (int j = open; j < src.length(); j++) {
+            char c = src.charAt(j);
+            if (c == '{') depth++;
+            else if (c == '}' && --depth == 0) return src.substring(open, j + 1);
+        }
+        return null;
+    }
+
+    /**
+     * SDM-2, a source scan of SdmAutomation (it needs Android classes, so it is not run here): {@code input tap} lands on the topmost window like a finger,
+     * so the cover is made touch-through around it exactly as around the gesture tap; else the injected tap hits the cover and may press its Cancel.
+     */
+    static void testInjectTapPassthrough() throws Exception {
+        java.io.File d = new java.io.File(System.getProperty("user.dir")).getAbsoluteFile(), f = null;
+        for (int i = 0; d != null && i < 8 && f == null; i++, d = d.getParentFile()) {
+            java.io.File c = new java.io.File(d, "src/com/bloatware/bingblop/SdmAutomation.java");
+            if (c.isFile()) f = c;
+        }
+        if (f == null) { System.out.println("SKIP testInjectTapPassthrough: src/com/bloatware/bingblop/SdmAutomation.java not found"); return; }
+        String src = new String(java.nio.file.Files.readAllBytes(f.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        for (String decl : new String[] { "public boolean tap(int x, int y)", "public boolean injectTap(int x, int y)" }) {
+            String b = body(src, decl);
+            is(decl + ": found", b != null, true);
+            if (b == null) continue;
+            String compact = b.replaceAll("\\s+", " ");
+            int on = compact.indexOf("cover.passthrough(true);"), tr = compact.indexOf("try {"), fin = compact.indexOf("} finally { cover.passthrough(false); }");
+            is(decl + ": the cover is made touch-through before the tap", on >= 0 && tr > on, true);
+            is(decl + ": and takes touches again in a finally", tr >= 0 && fin > tr, true);
+        }
+        String inj = body(src, "public boolean injectTap(int x, int y)");
+        is("injectTap runs input tap inside the try", inj != null && inj.indexOf("\"input tap \"") > inj.indexOf("try {") && inj.indexOf("try {") >= 0, true);
+    }
+
     public static void main(String[] argv) throws Exception {
         try {
             testGeometry();
@@ -625,6 +663,7 @@ public class SdmAcsLadderTest {
             testClasses();
             testHeadline();
             testDump();
+            testInjectTapPassthrough();
         } catch (Throwable t) {
             fails++;
             System.out.println("FAIL uncaught " + t);

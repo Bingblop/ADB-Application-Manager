@@ -32,7 +32,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const lit = () => page.evaluate(() => [Array.from(document.querySelectorAll('#filterScroll .filter-pill.active')).map(p => p.getAttribute('data-filter')), Array.from(document.querySelectorAll('.stat-card.active')).map(c => c.getAttribute('data-filter'))]);
   // several at once
   await tap('all'); await tap('running'); await tap('user');
-  console.log('Running + 3rd Party (your running user apps):', JSON.stringify([await names(), await lit(), await page.evaluate(() => document.getElementById('filterSummary').innerText)]));
+  console.log('Running + User (your running user apps):', JSON.stringify([await names(), await lit(), await page.evaluate(() => document.getElementById('filterSummary').innerText)]));
   await tap('all'); await tap('enabled'); await tap('system');
   console.log('Enabled + System (your enabled system apps):', JSON.stringify([await names(), await lit()]));
   await tap('frozen');
@@ -40,7 +40,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await tap('frozen');
   console.log('tapping Frozen again leaves none of the pair on:', JSON.stringify([await names(), await lit()]));
   await tap('user');
-  console.log('3rd Party replaces System the same way:', JSON.stringify(await lit()));
+  console.log('User replaces System the same way:', JSON.stringify(await lit()));
   await tap('all'); await tap('system'); await tap('running'); await tap('uninstalled');
   console.log('v7.10.9 turning Uninstalled on clears every other filter (System and Running are off now):', JSON.stringify([await names(), await lit()]));
   await tap('system');
@@ -58,17 +58,18 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('a box and a pill together:', JSON.stringify([await names(), await lit()]));
   await tap('all');
   console.log('the All Apps pill clears them all:', JSON.stringify([(await names()).length, await lit()]));
-  // v7.12.5: the Installed box counts and shows the installed apps only; Installed + Uninstalled together are every app on the phone
+  // v7.12.5: the Installed box counts and shows the installed apps only. Since the owner's request after v7.14.0 Installed / Uninstalled are a pair like
+  // System / User (one on or none; they used to stack and showed every app together); the pair itself is checked in t543
   console.log('the Installed box counts installed apps only (4 of the 6):', JSON.stringify(await page.evaluate(() => [document.getElementById('statTotal').innerText, document.querySelector('.stat-card[data-filter="installed"]').firstChild.textContent.replace('(', '').trim(), document.getElementById('countAll').innerText])));
   await page.locator('.stat-card[data-filter="installed"]').click(); await page.waitForTimeout(200);
   console.log('Installed alone leaves the uninstalled apps out:', JSON.stringify([await names(), await lit()]));
   await page.locator('.stat-card[data-filter="uninstalled"]').click(); await page.waitForTimeout(200);
-  console.log('Installed + Uninstalled together show every app on the phone:', JSON.stringify([await names(), await lit()]));
+  console.log('Uninstalled takes the place of Installed (a pair: one on or none):', JSON.stringify([await names(), await lit()]));
   await page.locator('.stat-card[data-filter="installed"]').click(); await page.waitForTimeout(200);
-  console.log('turning Installed off leaves Uninstalled alone:', JSON.stringify([await names(), await lit()]));
-  await page.locator('.stat-card[data-filter="installed"]').click(); await page.waitForTimeout(200);
+  console.log('and Installed takes the place of Uninstalled:', JSON.stringify([await names(), await lit()]));
+  await page.locator('.stat-card[data-filter="uninstalled"]').click(); await page.waitForTimeout(200);
   await tap('running');
-  console.log('Running with Installed + Uninstalled drops Uninstalled (a running app is installed):', JSON.stringify([await names(), await lit()]));
+  console.log('Running with Uninstalled on drops Uninstalled (a running app is installed):', JSON.stringify([await names(), await lit()]));
   await tap('all');
   // v7.9.21: the split boxes and the Clear filters chip (the boxes are pills in the filter row since the Apps tab was made less crowded)
   console.log('top boxes:', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('#filterScroll .stat-card')).map(c => [c.getAttribute('data-filter'), c.firstChild.textContent.replace('(', '').trim(), c.querySelector('.stat-num').innerText, c.parentElement.classList.contains('stat-split')]))));
@@ -76,7 +77,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const chip = () => page.evaluate(() => { const r = document.getElementById('filterSummary'); const c = document.getElementById('filterClearChip'); return [getComputedStyle(r).display !== 'none', getComputedStyle(c).display !== 'none', c.innerText]; });
   console.log('no chip with no filter:', JSON.stringify(await chip()));
   await page.locator('.stat-card[data-filter="enabled"]').click(); await page.waitForTimeout(150);
-  console.log('no chip with one filter:', JSON.stringify([await chip(), await names()]));
+  console.log('one filter (v7.15: the row under the filters shows Select shown and Clear filters):', JSON.stringify([await chip(), await names()]));
   await page.locator('.stat-card[data-filter="system"]').click(); await page.waitForTimeout(150);
   console.log('Enabled box + System box (enabled system apps), chip shows:', JSON.stringify([await chip(), await names(), await lit()]));
   await page.locator('#filterClearChip').click(); await page.waitForTimeout(200);

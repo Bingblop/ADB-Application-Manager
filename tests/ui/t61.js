@@ -70,7 +70,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const ed = await ev(() => Array.from(document.querySelectorAll('.sdb-row')).map(r => ({ k: r.dataset.k, dot: !!r.querySelector('.sdb-dot') })));
   check('   the Edited filter lists exactly those, each with a dot', ed.length === 2 && ed.every(r => r.dot) && ed.map(r => r.k).sort().join() === 'device_name,stay_on_while_plugged_in', JSON.stringify(ed));
   await page.locator('#sdbFilters .filter-chip[data-f="all"]').click(); await sleep(150);
-  await page.locator('#view-settings .sdb-iconbtn:not(.accent)').click(); await sleep(150);
+  await page.locator('#view-settings .sdb-iconbtn[aria-label="More"]').click(); await sleep(150);
   await page.locator('#sdbMenuModal .batch-grid-btn', { hasText: 'Changes' }).click(); await sleep(150);
   const jr = await ev(() => Array.from(document.querySelectorAll('#sdbJournalList .sdb-jrow')).map(r => r.innerText.replace(/\s+/g, ' ')));
   check('   the Changes sheet shows them with "old → new" and a time', jr.length === 2 && /device_name/.test(jr[0]) && /Sam's phone → Renamed/.test(jr[0]) && /just now/.test(jr[0]), JSON.stringify(jr));
@@ -141,15 +141,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => sdbResetView()); await sleep(100);
   await page.locator('#sdbFilters .filter-chip[data-f="known"]').click(); await sleep(150);
   const nShown = await ev(() => sdbFiltered('global').length);
-  await page.locator('#view-settings .sdb-iconbtn:not(.accent)').click(); await sleep(120);
+  await page.locator('#view-settings .sdb-iconbtn[aria-label="More"]').click(); await sleep(120);
   check('6. the tools sheet names the table and how many are shown', new RegExp('Global · ' + nShown + ' shown').test(await ev(() => document.getElementById('sdbMenuSub').innerText)));
   await page.locator('#sdbMenuModal .batch-grid-btn', { hasText: 'Copy shown' }).click(); await sleep(100);
   const copied = await ev(() => window.__copied);
   check('   Copy shown copies name=value lines of what is on screen', copied.split('\n').length >= nShown && /^adb_enabled=1$/m.test(copied) && !/sample_global/.test(copied), copied.split('\n').length + ' lines');
-  await page.locator('#view-settings .sdb-iconbtn:not(.accent)').click(); await sleep(120);
+  await page.locator('#view-settings .sdb-iconbtn[aria-label="More"]').click(); await sleep(120);
   await page.locator('#sdbMenuModal .batch-grid-btn', { hasText: 'Share shown' }).click(); await sleep(100);
   check('   Share shown hands the same text to the share sheet', (await ev(() => window.__shared.subject)) === 'Android global settings' && (await ev(() => window.__shared.text)) === copied);
-  await page.locator('#view-settings .sdb-iconbtn:not(.accent)').click(); await sleep(120);
+  await page.locator('#view-settings .sdb-iconbtn[aria-label="More"]').click(); await sleep(120);
   await page.locator('#sdbSortSeg button', { hasText: 'Name Z–A' }).click(); await sleep(150);
   check('   the sort is chosen there', (await ev(() => sdbSort)) === 'za' && (await ev(() => document.querySelector('#sdbSortSeg button.active').innerText)) === 'Name Z–A');
   await ev(() => sdbSetSort('az')); await closeAll();

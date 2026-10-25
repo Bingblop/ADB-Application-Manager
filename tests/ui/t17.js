@@ -1,4 +1,4 @@
-// Apps list: sort by name/updated/installed/size/updates, Recent filter, CSV share, menu sizes, saved sort
+// Apps list: sort by name/updated/installed/size/updates (there is no Updated 7d filter since v7.14.1: Last updated covers it), CSV share, menu sizes, saved sort
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -42,12 +42,9 @@ const { chromium, PAGE } = require('./lib/pw');
     console.log((s + ':').padEnd(10), await names(), '|', await metas());
   }
   await page.selectOption('#appSort', 'name');
-  console.log('recent pill:', await page.locator('#filterScroll .filter-pill[data-filter="recent"]').innerText());
-  await page.click('#filterScroll .filter-pill[data-filter="recent"]');
-  console.log('recent apps:', await names());
-  await page.click('#filterScroll .filter-pill[data-filter="all"]');
+  console.log('no Updated 7d pill:', (await page.locator('#filterScroll .filter-pill[data-filter="recent"]').count()) === 0, '| no "Updated 7d" in the row:', !/Updated 7d/.test(await page.locator('#filterScroll').innerText()));
   // Share CSV (the Export button is gone)
-  await page.click('#view-apps >> text=Share CSV');
+  await page.evaluate(() => switchView('saved-lists')); await page.click('#savedCsvBtn'); await page.evaluate(() => switchView('apps'));   // v7.14: CSV lives in Saved Applications
   const saved = await page.evaluate(() => window.__st.saved);
   console.log('shared file:', saved.name, '| Export button gone:', (await page.locator('#view-apps button', { hasText: /^Export$/ }).count()) === 0);
   console.log(saved.text.split('\n').filter(l => l.startsWith('"Whats')).join(''));

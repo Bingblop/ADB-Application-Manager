@@ -7,7 +7,7 @@
 3. denied -> shows error text: true
 4. apk size parsed: 24117248 (expect 24117248)
    symlink target parsed: /storage/self/primary
-5. opening the tab already starts playing (a fetch happened, Pause shown): true
+5. opening the tab already starts playing (a fetch happened, Stop shown): true
 6. polling continues on its own (expect >=2): true 4
 7. pausing stops polling (counts equal): true ( 4 == 4 )
    play btn back to Play: Play
@@ -28,4 +28,9 @@
 19. lone-symlink listing entries: ["..","sdcard"]
 20. default storage path: /storage/emulated/0 | input: /storage/emulated/0
     uses /storage/emulated/0: true
+21. names as ls printed them: ["a  b.txt","a b.txt","x -> y.txt"," lead.txt","trail.txt ","tab\there.txt","Camera  Roll","lnk","bb  two.txt"]
+    all kept exactly, sizes read: true
+    "x -> y.txt" is a file with no link target; the real link keeps its target "a  b.txt": true
+    Files tab: the paths View, Rename and Delete use are the exact names, none twice: true
+    Connected Devices > Files: the same exact names in its paths: true
 errors: []

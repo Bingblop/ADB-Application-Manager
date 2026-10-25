@@ -1,0 +1,13 @@
+working mode, switched on but not connected, consent: {"clears":true,"stays":false,"reason":"","title":"Clear the rest with accessibility?","onlyInaccessible":true}
+ok   1. switched on but not connected, with consent and a working mode: Delete says the caches are cleared with the service
+ok      "Clear the rest" asks to start and then deletes only the caches the files cannot reach
+working mode, switched off, consent: {"clears":true,"stays":false,"reason":"","title":"Clear the rest with accessibility?","onlyInaccessible":true}
+ok      switched off, with consent and a working mode: the same (the phone switches it on)
+working mode, switched on but not connected, no consent: {"clears":false,"stays":true,"reason":"no consent given","title":"The accessibility service is not ready","onlyInaccessible":false}
+ok      without consent it is not ready, whatever the mode: the caches stay and "Clear the rest" deletes nothing
+ok      connected with consent: ready as before
+no working mode, switched on but not connected, consent: {"clears":false,"stays":true,"reason":"it is not connected","title":"The accessibility service is not ready","onlyInaccessible":false}
+ok   2. without a working mode, switched on but not connected: the caches stay, "Clear the rest" offers the settings
+ok      switched off: not ready (it is off)
+ok      connected with consent: ready without a working mode too
+ok   no page errors

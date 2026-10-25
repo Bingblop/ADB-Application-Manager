@@ -67,7 +67,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const geo = await ev(() => [...document.querySelectorAll('#storeList > div[data-slug]')].map(r => {
     const bt = r.querySelectorAll('.store-inst-btn'), b0 = bt[0], rr = r.getBoundingClientRect(), br = b0 ? b0.getBoundingClientRect() : null;
     const col = r.querySelector('.sr-status').parentElement.getBoundingClientRect();
-    return { slug: r.dataset.slug, n: bt.length, cls: b0 && b0.className, right: br && Math.round(rr.right - br.right), leftOfBtn: br && Math.round(br.left - col.right), vmid: br && Math.abs((br.top + br.height / 2) - (rr.top + rr.height / 2)) < 4, name: r.querySelector('div[style*="font-weight:700"]').innerText, aria: b0 && b0.getAttribute('aria-label') };
+    return { slug: r.dataset.slug, n: bt.length, cls: b0 && b0.className, right: br && Math.round(rr.right - br.right), leftOfBtn: br && Math.round(br.left - col.right), vmid: br && Math.abs((br.top + br.height / 2) - (rr.top + rr.height / 2)) < 4, name: r.querySelector('div[style*="font-weight:var(--fw-bold)"]').innerText, aria: b0 && b0.getAttribute('aria-label') };
   }));
   check('8 rows, each with exactly one Install button of the class the other stores use', geo.length === 8 && geo.every(g => g.n === 1 && g.cls === 'store-inst-btn'), JSON.stringify(geo.map(g => [g.slug, g.n, g.cls])));
   check('the button is on the right of the row: inside its padding (about 12 px from the edge), right of the text column, centred vertically', geo.every(g => g.right >= 8 && g.right <= 16 && g.leftOfBtn >= 0 && g.vmid), JSON.stringify(geo.map(g => [g.right, g.leftOfBtn, g.vmid])));

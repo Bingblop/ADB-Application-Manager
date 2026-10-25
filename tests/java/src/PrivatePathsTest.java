@@ -285,12 +285,16 @@ public class PrivatePathsTest {
       routeHas(m, "private void runVirusTotalScan(", "copyFileChecked(f, sout)", null);
       String vt = bodyOf(m, "private void runVirusTotalScan(");
       is("VirusTotal hashes and uploads the checked copy, not the name the page gave", vt != null && vt.indexOf("f = staged;") > 0 && vt.indexOf("VirusTotal.sha256(f)") > vt.indexOf("f = staged;"));
+      // the page shows a verdict only for the file it asked about: each answer (progress, result, error) names that file, not the staged copy
+      is("every VirusTotal answer names the file it is for", vt != null && vt.split("notifyUpdates\\(\"onVtResult\"", -1).length == 4 && vt.split("put\\(\"path\", path\\)", -1).length == 4);
       routeHas(m, "private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password, ArchiveIo.Progress cb, long requested)", "fmPrivate(p)", null);
       routeHas(m, "private String archiveOpenAny(", "fmPrivate(p)", null);
       routeHas(m, "public String archiveExtract2(", "fmPrivate(dest)", null);
       routeHas(m, "public String archiveCreate(", "fmPrivate(dir.getPath())", null);
       routeHas(m, "public String archiveCreate(", "isPrivateData(f)", null);
       routeHas(m, "public String fmSearch(", "searchSkip()", null);
+      // INS-1: the Installer, backup info and restore read a path the page names through openRef: never the app's own data (it would be copied into cache/installer, which may be shared)
+      routeHas(m, "private InputStream openRef(", "openUnlessPrivate(new File(ref))", "new java.io.FileInputStream(");
       String ou = bodyOf(m, "private InputStream openUnlessPrivate(");
       is("openUnlessPrivate opens first and judges the descriptor (fstat link count, /proc/self/fd target), closing it when refused", ou != null && ou.indexOf("ParcelFileDescriptor.open(") < ou.indexOf("checkOpenedNotPrivate(pfd)") && ou.contains("pfd.close()"));
       String co = bodyOf(m, "private void checkOpenedNotPrivate(");

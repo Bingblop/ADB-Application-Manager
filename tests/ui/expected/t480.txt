@@ -1,0 +1,8 @@
+ok   1. a clock button "History of changes" sits on the search line, 40 px tall (v7.15: a 44 px tap), without widening the page
+ok      a tap opens the Changes sheet, which says it keeps the last 100 between launches
+ok   2. an entry shows the setting, the table, how long ago, the date and time, and old → new
+ok   3. after 105 changes the newest 100 are kept (probe_104 … probe_5); the oldest are dropped, also from what is saved
+ok      and the sheet lists all 100
+ok   4. after a new launch the 100 entries are there, newest first
+ok   5. a 150-entry history saved by an older version comes back as its newest 100
+ok   no page errors

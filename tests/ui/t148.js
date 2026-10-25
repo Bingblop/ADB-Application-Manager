@@ -16,23 +16,28 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { txBuPollMs = 40; const st = document.createElement('style'); st.textContent = '*{transition:none!important}'; document.head.appendChild(st); });
 
   // ---- 1. Row tints ----
-  const rgb = k => ev(k => { const c = getComputedStyle(document.getElementById('card_com.t.' + k)).backgroundColor; const n = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number); return /^color\(/.test(c) ? n.map(v => v * 255) : n; }, k);
+  // (v7.14: the tint is the row's ::before layer, a glow in the state's colour; its strength is that layer's opacity, a plain row has none)
+  const layer = k => ev(k => { const a = getComputedStyle(document.getElementById('card_com.t.' + k), '::before'); return a.content === 'none' ? 0 : +a.opacity; }, k);
   await ev(() => { switchView('apps'); allApps.length = 0; allApps.push({ name: 'Run', pkg: 'com.t.run', isRunning: true }, { name: 'Plain', pkg: 'com.t.plain' }); renderApps(); });
-  const dist = async () => { const a = await rgb('run'), p = await rgb('plain'); return Math.max(Math.abs(a[0] - p[0]), Math.abs(a[1] - p[1]), Math.abs(a[2] - p[2])); };
+  const dist = async () => Math.round(((await layer('run')) - (await layer('plain'))) * 1000) / 1000;
   const subtle = await dist();
   const def = await ev(() => ({ attr: document.documentElement.getAttribute('data-row-tint'), range: document.getElementById('rowTintRange').value, card: !!document.getElementById('rowTintCard') }));
-  check('1. Settings has a Row tints slider; it starts on Subtle', def.card && def.attr === 'subtle' && def.range === '1' && subtle > 1 && subtle <= 14, JSON.stringify({ def, subtle }));
-  await ev(() => setRowTint(2)); const normal = await dist();
+  check('1. Settings has a Row tints slider; it starts on Subtle (the middle of five steps)', def.card && def.attr === 'subtle' && def.range === '2' && subtle > 0.05 && subtle <= 0.15, JSON.stringify({ def, subtle }));
+  await ev(() => setRowTint(3)); const normal = await dist();
+  await ev(() => setRowTint(4)); const vivid = await dist();
+  await ev(() => setRowTint(1)); const faint = await dist();
   await ev(() => setRowTint(0)); const off = await dist();
-  check('   Normal tints the row more than Subtle, and Off not at all', normal > subtle * 1.8 && off < 0.6, JSON.stringify({ off, subtle, normal }));
-  check('   the choice is kept', await ev(() => kvGet('row_tint', -1) === 0 && document.documentElement.getAttribute('data-row-tint') === 'off'));
-  await ev(() => setRowTint(1));
+  check('   each step tints more than the one before: Off none, then Faint, Subtle, Normal, Vivid', off === 0 && faint > 0 && subtle > faint && normal > subtle * 1.5 && vivid > normal, JSON.stringify({ off, faint, subtle, normal, vivid }));
+  check('   the choice is kept', await ev(() => kvGet('row_tint_lv', -1) === 0 && document.documentElement.getAttribute('data-row-tint') === 'off'));
+  await ev(() => setRowTint(2));
+  const mig = await ev(() => { const out = []; for (const old of [0, 1, 2]) { kvSet('row_tint', old); localStorage.removeItem('row_tint_lv'); if (window.AndroidBridge && window.AndroidBridge.saveSetting) window.AndroidBridge.saveSetting('row_tint_lv', ''); rowTintApply(); out.push(document.documentElement.getAttribute('data-row-tint') + '/' + kvGet('row_tint_lv', -1)); } setRowTint(2); return out; });
+  check('   a choice saved by an older version (three steps) is kept as the same step: Off, Subtle, Normal', JSON.stringify(mig) === JSON.stringify(['off/0', 'subtle/2', 'normal/3']), JSON.stringify(mig));
   await ev(() => switchView('prefs')); await sleep(200);
-  check('   the slider has the three labels', await ev(() => /Off\s+Subtle\s+Normal/.test(document.querySelector('#rowTintCard .row-tint-ticks').innerText.replace(/\n/g, ' '))));
+  check('   the slider has the five labels', await ev(() => /Off\s+Faint\s+Subtle\s+Normal\s+Vivid/.test(document.querySelector('#rowTintCard .row-tint-ticks').innerText.replace(/\n/g, ' '))));
 
   // ---- 2. green buttons ----
   const gb = await ev(() => { const f = (id) => { const e = document.getElementById(id); return { cls: e.className, col: getComputedStyle(e).color }; }; return { en: f('sheetBtnUnfreeze'), re: f('sheetBtnReinstall'), fr: f('sheetBtnFreeze'), un: f('sheetBtnUninstall') }; });
-  check('2. Enable and Reinstall are tinted green like Freeze is blue and Uninstall red', /sheet-btn-green/.test(gb.en.cls) && /sheet-btn-green/.test(gb.re.cls) && /sheet-btn-blue/.test(gb.fr.cls) && /sheet-btn-red/.test(gb.un.cls), JSON.stringify(gb));
+  check('2. Reinstall is green like Freeze is blue and Uninstall red; Enable is the accent (v7.14: the owner\'s colours)', /sheet-btn-accent/.test(gb.en.cls) && /sheet-btn-green/.test(gb.re.cls) && /sheet-btn-blue/.test(gb.fr.cls) && /sheet-btn-red/.test(gb.un.cls), JSON.stringify(gb));
 
   // ---- 3. progress and Stop (Browser Use) ----
   await ev(() => { window.__ai.keyAnswer = () => ({ ok: true, status: 200, body: '{}' }); switchView('terminal'); });

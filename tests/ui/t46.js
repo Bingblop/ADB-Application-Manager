@@ -67,7 +67,7 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
   await page.evaluate(() => { switchView('files'); switchView('logcat'); switchView('terminal'); }); await sleep(150);
   const trail = [];
   for (let i = 0; i < 3; i++) { const r = await back(); await sleep(60); trail.push(r + ':' + await view()); }
-  console.log('4. Back retraces terminal -> console (Live Logcat) -> files -> apps:', JSON.stringify(trail) === JSON.stringify(['true:console', 'true:files', 'true:apps']), JSON.stringify(trail));
+  console.log('4. Back retraces console (Terminal) -> Live Logcat -> files -> apps:', JSON.stringify(trail) === JSON.stringify(['true:logcat', 'true:files', 'true:apps']), JSON.stringify(trail));
   const atHome = await back();
   console.log('   at the first tab it asks before exiting:', atHome === true && (await view()) === 'apps');
   await page.evaluate(() => { backExitArmedAt = 0; viewStack = []; });

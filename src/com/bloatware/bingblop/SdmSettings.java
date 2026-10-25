@@ -37,7 +37,7 @@ public final class SdmSettings {
     private static final long DAY_MS = 86400000L;
     private static final long TB = 1L << 40;
 
-    private enum Type { BOOL, NUM, STR, LIST, OBJ }
+    private enum Type { BOOL, NUM, STR, LIST }
 
     private static final class Def {
         final String key; final Type type; final Object def; final long min, max; final String[] allowed;
@@ -56,7 +56,6 @@ public final class SdmSettings {
     private static void num(Map<String, Def> m, String key, long def, long min, long max) { m.put(key, new Def(key, Type.NUM, def, min, max, null)); }
     private static void str(Map<String, Def> m, String key, String def, String... allowed) { m.put(key, new Def(key, Type.STR, def, 0, 0, allowed.length == 0 ? null : allowed)); }
     private static void list(Map<String, Def> m, String key, Object def, String... allowedItems) { m.put(key, new Def(key, Type.LIST, def, 0, 0, allowedItems.length == 0 ? null : allowedItems)); }
-    private static void obj(Map<String, Def> m, String key, Object def) { m.put(key, new Def(key, Type.OBJ, def, 0, 0, null)); }
 
     static {
         Map<String, Def> sc = group("systemcleaner");
@@ -317,9 +316,6 @@ public final class SdmSettings {
                 if (out.length() > 10000) throw new IllegalArgumentException(d.key + ": too many entries");
                 return out;
             }
-            case OBJ:
-                if (!(v instanceof JSONObject)) throw new IllegalArgumentException(d.key + ": must be an object");
-                return copy(v);
             default:
                 throw new IllegalArgumentException(d.key);
         }
@@ -396,7 +392,7 @@ public final class SdmSettings {
         try {
             for (Def d : defs(tool).values()) {
                 JSONObject o = new JSONObject();
-                o.put("type", d.type == Type.BOOL ? "bool" : d.type == Type.NUM ? "number" : d.type == Type.STR ? "string" : d.type == Type.LIST ? "list" : "object");
+                o.put("type", d.type == Type.BOOL ? "bool" : d.type == Type.NUM ? "number" : d.type == Type.STR ? "string" : "list");
                 o.put("default", copy(d.def));
                 if (d.type == Type.NUM) { o.put("min", d.min); o.put("max", d.max); }
                 if (d.allowed != null) { JSONArray a = new JSONArray(); for (String s : d.allowed) a.put(s); o.put("allowed", a); }

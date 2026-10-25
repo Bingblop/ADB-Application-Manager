@@ -208,7 +208,7 @@ public final class TermuxLink {
             String token = randomHex(16);
             final byte[] want = (HELLO + token).getBytes(StandardCharsets.US_ASCII);
             String script = maker.make(server.getLocalPort(), token);
-            proc.launchId = launcher.launch(script, "ADB App Manager terminal", new Callback() {
+            proc.launchId = launcher.launch(script, "ADB/Root Full System Toolbox terminal", new Callback() {
                 @Override
                 public void onResult(Result r) {
                     proc.ended(r);
@@ -255,7 +255,7 @@ public final class TermuxLink {
     /** A one-off command whose output (stdout then stderr) is readable once it ended. */
     public static Process runCommand(Launcher launcher, String script) throws IOException {
         final CommandProcess p = new CommandProcess(launcher);
-        p.id = launcher.launch(script, "ADB App Manager helper", new Callback() {
+        p.id = launcher.launch(script, "ADB/Root Full System Toolbox helper", new Callback() {
             @Override
             public void onResult(Result r) {
                 p.finish(r);

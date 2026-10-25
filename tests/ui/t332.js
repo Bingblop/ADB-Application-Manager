@@ -1,4 +1,4 @@
-// The long intro paragraphs at the top of SD Maid (and its credit), Saved lists (Quick actions), Hidden Settings, the four App Stores, the Default Ask Agent
+// The long intro paragraphs at the top of SD Maid (and its credit), Hidden Settings (Saved lists' Quick actions is a folded card since v7.15), the four App Stores, the Default Ask Agent
 // and the Morphe credit show two lines ending in "…". The text itself opens and closes them: a button with aria-expanded (Enter and Space too), so no new
 // words are needed. A paragraph with links in it is not made a button (a link inside a button): a tap outside its links opens it, a tap on a link only
 // follows the link, and moving into a link with the keyboard opens it. A paragraph that fits in two lines is left as it is. The whole text stays in the page.
@@ -20,13 +20,12 @@ const initMock = () => {
 const PLACES = [
   ['SD Maid intro', 'sdm', '#sdTop > .color-card-subtitle'],
   ['SD Maid credit', 'sdm', '#sdTop .sd-credit'],
-  ['Saved lists: Quick actions', 'saved-lists', '#quickActionsHelp .color-card-subtitle'],
   ['Hidden Settings intro', 'settings', '#view-settings .color-card-subtitle.clamp-2'],
   ['ShizuStore intro', 'store', '#substore-shizu .color-card-subtitle', 'shizu'],
   ['GitHub store intro', 'store', '#substore-github .color-card-subtitle', 'github'],
   ['F-Droid store intro', 'store', '#substore-fdroid .color-card-subtitle', 'fdroid'],
   ['Orion store intro', 'store', '#substore-orion .color-card-subtitle', 'orion'],
-  ['Default Ask Agent', 'prefs', '#agentCard .color-card-subtitle'],
+  ['Default Ask Agent', 'prefs', '#agentCard > .color-card-subtitle'],
   ['Morphe credit', 'morphe', '#view-morphe .mp-credit'],
 ];
 (async () => {
@@ -116,7 +115,7 @@ const PLACES = [
       const s = await state(p, sel);
       if (!(s.clamped && s.lines === 2 && s.full > s.h + 4)) out.push(name + ' ' + JSON.stringify(s));
     }
-    const de = lang ? await p.evaluate(() => document.querySelector('#agentCard .color-card-subtitle').textContent.slice(0, 30)) : '';
+    const de = lang ? await p.evaluate(() => document.querySelector('#agentCard > .color-card-subtitle').textContent.slice(0, 30)) : '';
     check('6. ' + w + ' px' + (lang ? ' in German' : '') + ': every one is two lines with more to read', out.length === 0, out.join(' | ') + (lang ? ' ' + de : ''));
     if (w === 360) { await show(p, 'sdm'); await p.screenshot({ path: 'sdm_' + w + (lang ? '_' + lang : '') + '.png', clip: { x: 0, y: 0, width: w, height: 420 } }); }
     await p.close();

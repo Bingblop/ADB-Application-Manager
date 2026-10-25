@@ -63,9 +63,14 @@ jobs:
 
       - name: Locate Android SDK tools
         run: |
+          # The platform and build-tools release.yml builds with (not the newest on the runner), so a change that needs a newer API fails here
           SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
-          PLATFORM=$(ls -d "$SDK"/platforms/android-* | sort -V | tail -1)
-          BUILD_TOOLS=$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)
+          PLATFORM="$SDK/platforms/android-34"
+          BUILD_TOOLS="$SDK/build-tools/35.0.0"
+          if [ ! -f "$PLATFORM/android.jar" ] || [ ! -x "$BUILD_TOOLS/apksigner" ]; then
+            yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;35.0.0" >/dev/null
+          fi
+          [ -f "$PLATFORM/android.jar" ] && [ -x "$BUILD_TOOLS/apksigner" ] || { echo "::error::Could not install platforms;android-34 and build-tools;35.0.0."; exit 1; }
           echo "Using $PLATFORM and $BUILD_TOOLS"
           echo "ANDROID_JAR=$PLATFORM/android.jar" >> "$GITHUB_ENV"
           echo "APKSIGNER=$BUILD_TOOLS/apksigner" >> "$GITHUB_ENV"

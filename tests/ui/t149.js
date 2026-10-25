@@ -45,13 +45,13 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   // ---- 2. Connected Devices buttons (their colours are the app menu's own: --apps-enabled, --apps-frozen, --apps-uninstalled, which applyTheme() inks for the scheme) ----
   const cd = await ev(() => {
     const row = (o) => cdAppCardHtml(Object.assign({ pkg: 'com.t.a', name: 'A', system: false, disabled: false, uninstalled: false }, o));
-    const g = h => /cd-row-act green" onclick="cdAppAct/.test(h), bl = h => /cd-row-act blue" onclick="cdAppAct/.test(h);
+    const g = h => /class="btn-mini ab-btn" data-ab="(enable|install)"/.test(h), bl = h => /class="btn-mini ab-btn" data-ab="disable"/.test(h);          // (v7.14: the row's button is the Apps tab's Action Button)
     const batch = [...document.querySelectorAll('#cdBatch .cd-row-act')].map(e => [e.getAttribute('onclick'), e.className]);
     return { disabled: g(row({ disabled: true })), gone: g(row({ uninstalled: true })), plain: g(row({})), plainBlue: bl(row({})), col: ['enable', 'disable', 'uninstall', 'reinstall'].map(n => { const e = document.querySelector('#cdBatch .cd-row-act[onclick*="' + n + '"]'); return getComputedStyle(e).color; }), batch,
       tok: ['--apps-enabled', '--apps-frozen', '--apps-uninstalled'].map(v => { const s = document.createElement('span'); s.style.color = 'var(' + v + ')'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); return c; }) };
   });
   const bg = n => cd.batch.find(x => x[0].indexOf(n) >= 0)[1];
-  check('2. Connected Devices: Enable and Reinstall are green, Disable is blue and Uninstall red, like the app menu', cd.disabled && cd.gone && !cd.plain && cd.plainBlue && /green/.test(bg("'enable'")) && /green/.test(bg("'reinstall'")) && /blue/.test(bg("'disable'")) && /danger/.test(bg("'uninstall'")) && cd.col[0] === cd.tok[0] && cd.col[1] === cd.tok[1] && cd.col[2] === cd.tok[2] && cd.col[3] === cd.tok[0] && new Set(cd.tok).size === 3, JSON.stringify(cd.col) + ' tokens ' + JSON.stringify(cd.tok));
+  check('2. Connected Devices: Enable is the accent, Reinstall green, Disable blue and Uninstall red, like the app menu (v7.14: filled, so their text is the fill\'s, checked in t470)', cd.disabled && cd.gone && !cd.plain && cd.plainBlue && /accent/.test(bg("'enable'")) && /green/.test(bg("'reinstall'")) && /blue/.test(bg("'disable'")) && /danger/.test(bg("'uninstall'")) && new Set(cd.tok).size === 3, JSON.stringify(cd.batch) + ' tokens ' + JSON.stringify(cd.tok));
 
   // ---- 3. history ----
   await ev(() => { askAgentId = 'ownserver'; askAgentBuild(); kvSet('ask_history', []); window.__ai.queue.length = 0; });

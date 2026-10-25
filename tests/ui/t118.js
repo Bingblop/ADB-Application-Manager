@@ -34,8 +34,8 @@ const { chromium, PAGE } = require('./lib/pw');
   const wait = ms => page.waitForTimeout(ms);
 
   // the button row
-  const row = await ev(() => Array.from(document.querySelectorAll('.apps-sort-row > *')).map(e => (e.tagName === 'SELECT' ? 'select#' + e.id : e.id === 'appsActionBtnPick' ? 'pick#' + e.id : e.innerText.trim())));
-  check('the row: the Sort menu first (no "Sort" text beside it), Share CSV, Profiles, Backups and the Action Button menu (no Export)', row.join('|') === 'select#appSort|Share CSV|Profiles|Backups|pick#appsActionBtnPick', row.join('|'));
+  const row = await ev(() => Array.from(document.querySelectorAll('#view-apps .apps-sort-row > *')).map(e => (e.tagName === 'SELECT' ? 'select#' + e.id : e.id === 'appsActionBtnPick' ? 'pick#' + e.id : e.innerText.trim().replace(/\n/g, ' '))));
+  check('the row (v7.14, the owner\'s choice): "Sort" and its menu, "Button" and the Action Button menu; CSV, Backups and Profiles moved to Saved Applications (no Export)', row.join('|') === 'Sort|select#appSort|Button|pick#appsActionBtnPick', row.join('|'));
   check('the menu shows the current choice by name', (await ev(() => document.getElementById('appsActionBtnPickLabel').innerText)) === 'App Settings');
   check('there is no Export CSV button', (await ev(() => Array.from(document.querySelectorAll('#view-apps button')).filter(b => b.innerText.trim() === 'Export').length)) === 0);
   await page.click('#appsActionBtnPick'); await wait(400);

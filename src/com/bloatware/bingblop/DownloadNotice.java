@@ -27,7 +27,7 @@ public final class DownloadNotice {
 
     private final Map<String, Long> lastDone = new HashMap<String, Long>();
     private final Set<String> seenActive = new HashSet<String>();
-    private final Set<String> counted = new HashSet<String>();
+    private final Map<String, BrowserDownload.State> counted = new HashMap<String, BrowserDownload.State>();   // the result each job was counted with (DONE or FAILED)
     private long accum, windowStart;
     private double speed;
     private int finished, failed;
@@ -48,16 +48,20 @@ public final class DownloadNotice {
                 if (prev != null && j.done > prev) accum += j.done - prev;
                 lastDone.put(j.id, j.done);
                 seenActive.add(j.id);
+                uncount(j.id);
                 if (firstName.isEmpty()) firstName = j.name;
             } else if (st == BrowserDownload.State.QUEUED) {
                 s.queued++;
                 seenActive.add(j.id);
+                uncount(j.id);
                 if (firstName.isEmpty()) firstName = j.name;
             } else {
                 lastDone.remove(j.id);
-                if (seenActive.contains(j.id) && counted.add(j.id)) {
+                // only how a job ended is counted: a paused one that is resumed later is still counted when it finishes
+                if (seenActive.contains(j.id) && (st == BrowserDownload.State.DONE || st == BrowserDownload.State.FAILED) && !counted.containsKey(j.id)) {
+                    counted.put(j.id, st);
                     if (st == BrowserDownload.State.DONE) { finished++; if (!j.name.isEmpty()) lastName = j.name; }
-                    else if (st == BrowserDownload.State.FAILED) failed++;
+                    else failed++;
                 }
             }
         }
@@ -85,6 +89,13 @@ public final class DownloadNotice {
         if (s.queued > 0 && s.running > 0) t.append(" · ").append(s.queued).append(" waiting");
         s.text = t.toString();
         return s;
+    }
+
+    /** A job that runs again (Retry after it failed, the same job and id) has no result yet: the one it was counted with is taken back. */
+    private void uncount(String id) {
+        BrowserDownload.State was = counted.remove(id);
+        if (was == BrowserDownload.State.FAILED) failed--;
+        else if (was == BrowserDownload.State.DONE) finished--;
     }
 
     /** What to say once nothing is going on any more, or null when nothing was started and finished. */

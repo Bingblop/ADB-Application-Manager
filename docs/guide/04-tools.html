@@ -18,6 +18,7 @@
   </ul>
 
   <h4>The top card and the list file</h4>
+  <p>Once the list has loaded, the top card starts folded, showing only its name and the status line: tap its title to open it. <b>Update List</b> (the round arrow) and <b>History</b> (the clock) sit beside the search box, so they are one tap away while the card is folded.</p>
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th></tr></thead>
     <tbody>
@@ -40,7 +41,7 @@
       <tr><td>List</td><td><b>All vendors</b>, <b>OEM</b>, <b>Google</b>, <b>AOSP</b>, <b>Carrier</b>, <b>Misc</b></td><td>One at a time. OEM is the phone maker, Google is Google's own apps, AOSP is the plain Android system, Carrier is added by your mobile network, Misc is the rest. Anything the project files under another name shows only under All vendors.</td></tr>
       <tr><td>Brand</td><td><b>All brands (n)</b>, then one chip per brand</td><td>One at a time. Your phone's brand comes first and is marked, then the others, biggest first. Tap your own brand to see only your maker's apps; nothing is filtered by brand until you tap a chip, and the chip you pick is remembered. The project has no brand field, so the app guesses the brand from the package name, and can be wrong now and then.</td></tr>
       <tr><td>State</td><td><b>On device</b>, <b>Enabled</b>, <b>Disabled</b>, <b>Uninstalled</b>, <b>All</b></td><td>One at a time. On device (the start choice) means everything that is not uninstalled. Disabled means switched off. Uninstalled means removed for you.</td></tr>
-      <tr><td>Also show only</td><td><b>All</b>, <b>Updated 7d</b>, <b>Running</b>, <b>3rd Party</b>, <b>System</b>, <b>Suspended</b>, <b>Patched</b></td><td>Combine as many as you like. 3rd Party and System exclude each other. When two or more are on, a line "Showing apps that are ..." appears with a <b>Clear filters</b> chip.</td></tr>
+      <tr><td>Also show only</td><td><b>All</b>, <b>System</b>, <b>User</b>, <b>Running</b>, <b>Suspended</b>, <b>Patched</b></td><td>Combine as many as you like. System and User exclude each other. When two or more are on, a line "Showing apps that are ..." appears with a <b>Clear filters</b> chip.</td></tr>
     </tbody>
   </table>
   <p>The search box ("Search package, name or description...") looks in the package name, the app name, the description and the brand. The line above the list says how many rows are shown and how many are ticked.</p>
@@ -217,7 +218,7 @@
     </tbody>
   </table>
   <p>The card does not list the permissions the app asks for. After installing, you can check them in the <a href="#tab-apps">Application Manager</a>. The switches <b>Display SDK information</b>, <b>Display package size</b> and <b>Display package version</b> hide or show the chips.</p>
-  <p><b>VirusTotal scan (optional).</b> The card has no key box: the key is entered once for the whole app in <b>Settings &rarr; VirusTotal API key</b> (a free key from virustotal.com). Until it is entered and approved, the card says so and has a button that takes you to Settings. Then press <b>Scan this package</b>. Only the file's SHA-256 fingerprint (a short code for its exact contents) is sent. The result says "Clean - no engine flagged this file", or how many engines flagged it as malicious or suspicious, with counts and a link to the full report. If VirusTotal has not seen the file, a button <b>Upload it for analysis</b> appears: that sends the whole file, so do not use it for anything private. The key is stored on this device only. For a bundle, only the base APK is checked.</p>
+  <p><b>VirusTotal scan (optional).</b> The card has no key box: the key is entered once for the whole app in <b>Settings &rarr; Default Ask Agent &rarr; VirusTotal API key</b> (a free key from virustotal.com). Until it is entered and approved, the card says so and has a button that takes you to Settings. Then press <b>Scan this package</b>. Only the file's SHA-256 fingerprint (a short code for its exact contents) is sent. The result says "Clean - no engine flagged this file", or how many engines flagged it as malicious or suspicious, with counts and a link to the full report. If VirusTotal has not seen the file, a button <b>Upload it for analysis</b> appears: that sends the whole file, so do not use it for anything private. The key is stored on this device only. For a bundle, only the base APK is checked.</p>
 
   <h4>Install options</h4>
   <p>The app always replaces an installed copy of the same app and keeps its data (the <code>-r</code> flag); there is no switch for that. The lines marked * are greyed out and cleared when the Authorizer is No privilege.</p>
@@ -248,7 +249,7 @@
   <ul>
     <li>Each row shows a badge (APK, APKS, APKM or XAPK), the file name, size, age, the folder, and for plain APKs the package and version. <b>Duplicate</b> means the same content as another found file; <b>Older version</b> means a newer one of the same app is also there.</li>
     <li>Use the box <b>Filter found files...</b> and the type drop-down (All types, APK, APKS, APKM, XAPK). Tap a row to load that file into the installer.</li>
-    <li><b>Delete one file:</b> press and hold the row. A sheet <b>Delete ...?</b> shows the path; press <b>Delete from this device</b>. The file moves to a hidden folder and an Undo bar stays for a few seconds. After the bar goes, the file is gone for good.</li>
+    <li><b>Delete one file:</b> press and hold the row. A sheet <b>Delete ...?</b> shows the path; press <b>Delete from this device</b>. The file moves to a hidden folder and an Undo bar stays for 3 seconds, just above the bottom bar. After the bar goes, the file is gone for good.</li>
     <li><b>Delete many:</b> press <b>Select</b>, tick rows, or use <b>Select duplicates and older versions</b> or <b>All</b>. Then <b>Delete selected</b> asks once and gives one Undo for the whole batch. <b>Done</b> leaves selection.</li>
   </ul>
 

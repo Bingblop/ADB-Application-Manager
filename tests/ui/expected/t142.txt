@@ -1,4 +1,4 @@
-ok   1. a Trackers pill is after Patched, with a question mark before the first scan: Trackers (?)
+ok   1. a Trackers pill is just before Patched (v7.14 order), with a question mark before the first scan: Trackers (?)
 ok      nothing is scanned before it is needed
 ok   2. the first tap starts one scan of the installed apps only (the uninstalled one is left out) and says so
 ok      while it runs the pill counts the apps done: n/3

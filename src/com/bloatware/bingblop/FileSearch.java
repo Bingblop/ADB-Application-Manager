@@ -1,6 +1,5 @@
 package com.bloatware.bingblop;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -555,17 +554,19 @@ public final class FileSearch {
                     if (ok && !q.content.isEmpty()) {
                         if (dir || es < 0 || es > r.lim.entryContentMaxBytes || es == 0) ok = false;
                         else {
-                            InputStream in = z.open(e);
+                            // an entry that can't be read (a password, a method such as bzip2 or LZMA, damage) is no match: the entries after it are still read
+                            Object[] m;
                             try {
-                                Object[] m = findInText(in, q.content, r.lim.entryContentMaxBytes);
-                                if (m == null) ok = false;
-                                else {
-                                    Hit h = new Hit();
-                                    h.path = f.getPath(); h.entry = full; h.dir = dir; h.size = es; h.mtime = et < 0 ? mtime : et; h.lineNo = (Integer) m[0]; h.line = (String) m[1]; h.why = "content";
-                                    r.hits.add(h);
-                                    ok = false;
-                                }
-                            } finally { in.close(); }
+                                InputStream in = z.open(e);
+                                try { m = findInText(in, q.content, r.lim.entryContentMaxBytes); } finally { in.close(); }
+                            } catch (IOException | RuntimeException x) { m = null; }
+                            if (m == null) ok = false;
+                            else {
+                                Hit h = new Hit();
+                                h.path = f.getPath(); h.entry = full; h.dir = dir; h.size = es; h.mtime = et < 0 ? mtime : et; h.lineNo = (Integer) m[0]; h.line = (String) m[1]; h.why = "content";
+                                r.hits.add(h);
+                                ok = false;
+                            }
                         }
                     }
                 }

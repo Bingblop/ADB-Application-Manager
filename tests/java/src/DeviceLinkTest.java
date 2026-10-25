@@ -70,6 +70,21 @@ public class DeviceLinkTest {
     check("a CPU nobody has a split for keeps every CPU split; unknown density keeps every density", SplitPick.pick(names, Arrays.asList("x86_64"), 0, "").containsAll(Arrays.asList("split_config.arm64_v8a.apk", "split_config.armeabi_v7a.apk", "split_config.hdpi.apk", "split_config.xxhdpi.apk")));
     check("the density tie goes to the larger one (xhdpi 320 and hdpi 240, device 280)", SplitPick.pick(Arrays.asList("base.apk", "config.hdpi.apk", "config.xhdpi.apk"), null, 280, "").contains("config.xhdpi.apk"));
     check("a package with no config splits is returned as it is", SplitPick.pick(Arrays.asList("app.apk"), null, 0, "").equals(Arrays.asList("app.apk")));
+    // a feature module with native code and its own drawables has CPU and density splits of its own: one of each per module, in any order
+    List<String> base = Arrays.asList("base.apk", "split_config.arm64_v8a.apk", "split_config.armeabi_v7a.apk", "split_config.hdpi.apk", "split_config.xxhdpi.apk", "split_config.en.apk");
+    List<String> feature = Arrays.asList("split_feature_camera.apk", "split_feature_camera.config.arm64_v8a.apk", "split_feature_camera.config.armeabi_v7a.apk", "split_feature_camera.config.hdpi.apk", "split_feature_camera.config.xxhdpi.apk", "split_feature_camera.config.en.apk");
+    List<String> want = Arrays.asList("base.apk", "split_feature_camera.apk", "split_config.arm64_v8a.apk", "split_feature_camera.config.arm64_v8a.apk", "split_config.xxhdpi.apk", "split_feature_camera.config.xxhdpi.apk", "split_config.en.apk", "split_feature_camera.config.en.apk");
+    for (boolean featureFirst : new boolean[] {false, true}) {
+      List<String> all = new ArrayList<>(featureFirst ? feature : base);
+      all.addAll(featureFirst ? base : feature);
+      List<String> got = SplitPick.pick(all, Arrays.asList("arm64-v8a", "armeabi-v7a"), 480, "en");
+      check("a feature's own CPU and density splits are kept with the base's (" + (featureFirst ? "feature" : "base") + " listed first): " + got,
+          got.size() == want.size() && got.containsAll(want) && got.get(0).equals("base.apk"));
+    }
+    List<String> xapkNames = SplitPick.pick(Arrays.asList("com.example.apk", "config.arm64_v8a.apk", "config.armeabi_v7a.apk", "config.xxhdpi.apk", "config.mdpi.apk", "dynamic_ar.apk", "dynamic_ar.config.arm64_v8a.apk", "dynamic_ar.config.armeabi_v7a.apk", "dynamic_ar.config.xxhdpi.apk", "dynamic_ar.config.mdpi.apk"), Arrays.asList("arm64-v8a", "armeabi-v7a"), 480, "en");
+    check("XAPK names: the feature's CPU and density splits are kept too: " + xapkNames, xapkNames.containsAll(Arrays.asList("config.arm64_v8a.apk", "config.xxhdpi.apk", "dynamic_ar.config.arm64_v8a.apk", "dynamic_ar.config.xxhdpi.apk")) && xapkNames.size() == 6);
+    List<String> mixed = SplitPick.pick(Arrays.asList("base.apk", "split_config.arm64_v8a.apk", "config.armeabi_v7a.apk", "base.config.x86_64.apk"), Arrays.asList("arm64-v8a", "armeabi-v7a"), 480, "en");
+    check("split_config.*, config.* and base.config.* all configure the base: one CPU split for it: " + mixed, mixed.equals(Arrays.asList("base.apk", "split_config.arm64_v8a.apk")));
 
     JSONObject profile = new JSONObject().put("abis", new JSONArray(Arrays.asList("armeabi-v7a", "armeabi"))).put("dpi", 280).put("lang", "de");
 

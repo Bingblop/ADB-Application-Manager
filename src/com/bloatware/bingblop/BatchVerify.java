@@ -105,8 +105,10 @@ final class BatchVerify {
         if ("reinstall".equals(action)) return st.installed.contains(pkg);
         if ("freeze".equals(action)) return st.installed.contains(pkg) && st.disabled.contains(pkg);
         if ("force_stop".equals(action)) return !st.running.contains(pkg);
-        if ("suspend".equals(action)) return st.installed.contains(pkg) && st.suspended.contains(pkg);
-        if ("unsuspend".equals(action)) return st.installed.contains(pkg) && !st.suspended.contains(pkg);
+        // Suspend and Unsuspend are read from the app's own flag, which an app uninstalled for the user (Uninstall, keep data) still has. An app
+        // whose flag could not be read is in st.unknown and never gets here, so being in the installed list is not asked for.
+        if ("suspend".equals(action)) return st.suspended.contains(pkg);
+        if ("unsuspend".equals(action)) return !st.suspended.contains(pkg);
         return st.installed.contains(pkg) && !st.disabled.contains(pkg);
     }
 

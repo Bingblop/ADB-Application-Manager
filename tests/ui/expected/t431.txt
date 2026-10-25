@@ -1,0 +1,18 @@
+ok   1. Shizuku: the dropdown lists ANGLE (OpenGL ES on Vulkan) after the HWUI renderers
+ok      it is marked as needing Root, with a lock (a drawing, no emoji) next to the dropdown
+ok   2. choosing it without Root runs no settings put and goes back to the renderer in use
+ok      and says it needs Root mode
+ok      a tap on the lock explains the same
+ok   3. opening the tab with the setting at 1 shows ANGLE (read in any working mode)
+ok      leaving it without Root is refused before any command: turning ANGLE off needs Root
+ok   4. Root: no lock, the entry reads plainly; a setting never written ("null") counts as off
+ok   5. choosing ANGLE runs settings put ... 1, then reads it back with settings get
+ok      no HWUI renderer change and no System UI restart for ANGLE
+ok      the phone now says 1: the dropdown and the card show ANGLE, the note says apps pick it up when they restart
+ok   6. ANGLE -> Vulkan: ANGLE off (0), read back, THEN setprop skiavk and the System UI restart, in that order
+ok      the dropdown then shows Vulkan, ANGLE is off on the phone
+ok   7. when the read-back does not say 1, it is not shown as ANGLE and the toast says it could not
+ok   8. when turning ANGLE off does not read back 0, the other renderer is NOT applied (no setprop, no restart)
+ok   9. ANGLE -> Default turns ANGLE off (0, read back) and changes nothing else
+ok   10. OpenGL with ANGLE off: setprop and the restart as before, no ANGLE command
+ok   no page errors

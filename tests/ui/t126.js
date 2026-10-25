@@ -103,7 +103,7 @@ const HELPER = path.resolve(__dirname, '..', '..', 'native', 'pty', 'x86_64', 'p
   await page.click('#txRealBtn'); await wait(400);
   check('opening it again shows the same session (the earlier output is still there)', /hello from vim|42/.test(await screen()) && log.starts.length === 1);
   await ev(() => { backNavigate(); }); await wait(200);
-  check('Back closes the terminal screen first', !(await ev(() => document.getElementById('rtOverlay').classList.contains('show'))) && await ev(() => currentViewName() === 'terminal'));
+  check('Back closes the terminal screen first', !(await ev(() => document.getElementById('rtOverlay').classList.contains('show'))) && await ev(() => currentViewName() === 'console'));
   await page.click('#txRealBtn'); await wait(300);
 
   // exit and start again

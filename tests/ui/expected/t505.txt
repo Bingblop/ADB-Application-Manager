@@ -1,0 +1,14 @@
+printed: 467019 bytes, 4002 lines, the longest 179550 bytes
+tests/run.js, a UI script printing on stdout: exits with 0: true
+tests/run.js, a UI script printing on stdout: has no U+FFFD: true
+tests/run.js, a UI script printing on stdout: is exactly what was printed: true
+tests/java/run.js, a Java suite printing on stdout: exits with 0: true
+tests/java/run.js, a Java suite printing on stdout: has no U+FFFD: true
+tests/java/run.js, a Java suite printing on stdout: is exactly what was printed: true
+tests/run.js, a UI script printing on stderr: exits with 0: true
+tests/run.js, a UI script printing on stderr: has no U+FFFD: true
+tests/run.js, a UI script printing on stderr: is exactly what was printed: true
+tests/java/run.js, a Java suite printing on stderr: exits with 0: true
+tests/java/run.js, a Java suite printing on stderr: has no U+FFFD: true
+tests/java/run.js, a Java suite printing on stderr: is exactly what was printed: true
+ALL OK

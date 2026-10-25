@@ -5,6 +5,7 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -112,7 +113,14 @@ public final class XapkInfo {
                     ByteArrayOutputStream bo = new ByteArrayOutputStream();
                     byte[] buf = new byte[8192];
                     int n;
-                    while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+                    long total = 0;
+                    // the size checked above is the archive's own (spoofable) claim: a manifest.json declared as 1 KB that inflates to
+                    // gigabytes ran the app out of memory, and the Installer never answered; the bytes actually read are what count
+                    while ((n = in.read(buf)) > 0) {
+                        total += n;
+                        if (total > MAX_MANIFEST_BYTES) throw new IOException("manifest.json is larger than it says");
+                        bo.write(buf, 0, n);
+                    }
                     info.manifest = new JSONObject(bo.toString("UTF-8"));
                 } catch (Exception ignored) {
                     info.manifest = null;

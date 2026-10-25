@@ -861,6 +861,40 @@ public class UpdateCheckerTest {
     boolean allUnreachable = fr.length() == 120;
     for (int i = 0; i < fr.length(); i++) if (!"host".equals(fr.optJSONObject(i).optString("code")) || fr.optJSONObject(i).optString("host").isEmpty()) allUnreachable = false;
     is("offline: ...and every app that needed a dead host is 'unreachable' with the host named, none 'no internet' (" + fr.length() + " failed)", allUnreachable);
+
+    // an app checked in both lanes (a Galaxy Store app a person set a source for): IzzyOnDroid answers, then the run ends while the app's Galaxy Store
+    // request is still in the air. What IzzyOnDroid found is listed, told and saved, and only the Galaxy Store lane is timed out (review NET-1, UPD-3).
+    final World wb = new World(5000);
+    final String both = "org.example.both";
+    wb.apps.clear();
+    wb.apps.add(new UpdateChecker.App(both, "Both lanes", "1.0", 10, UpdateManager.GALAXY_STORE_PKG, false, true, true));
+    wb.net.pages.put(IZZY + both, fdroidJson(both, 20, "2.0"));
+    wb.net.hang.add("vas.samsungapps.com");
+    final UpdateChecker.Options ob = wb.options();
+    ob.self = null;
+    final AtomicInteger gxAsked = new AtomicInteger();
+    wb.net.onRequest = new Runnable() { public void run() {
+      int g = wb.net.count("vas.samsungapps.com");
+      if (g > gxAsked.getAndSet(g)) wb.clock.advance(ob.deadlineMs + 1000);        // the Galaxy Store request is in the air when the deadline passes
+    } };
+    UpdateCache cb = new UpdateCache(tempDir(), wb.clock);
+    Events evb = new Events();
+    JSONObject sb = run(wb, cb, ob, evb);
+    JSONArray fb = sb.optJSONArray("failed");
+    is("both lanes: IzzyOnDroid answered and the Galaxy Store request was still in the air at the deadline", wb.net.count(IZZY + both) == 1 && gxAsked.get() == 1);
+    is("both lanes: the update IzzyOnDroid found before the deadline is listed and the listener was told (" + sb.optJSONArray("updates") + ")",
+        pkgsOf(sb.optJSONArray("updates")).contains(both) && "izzy".equals(sb.optJSONArray("updates").optJSONObject(0).optString("source")) && pkgsOf(new JSONArray(new ArrayList<JSONObject>(evb.rows))).contains(both));
+    is("both lanes: only the Galaxy Store lane is timed out (" + fb + ")", fb.length() == 1 && "deadline".equals(fb.optJSONObject(0).optString("code")) && "gx".equals(fb.optJSONObject(0).optString("lane")) && sb.optInt("timedOut") == 1);
+    is("both lanes: the open-source lane counts as checked, not as an error", sb.optInt("openSourceChecked") == 1 && sb.optInt("openSourceErrors") == 0 && sb.optInt("errors") == 1);
+    is("both lanes: the open-source answer is saved for the next check", cb.lookup(both, 10, "os", "|" + UpdateManager.GALAXY_STORE_PKG) != null);
+    // the next check reads the open-source answer from the saved results and asks only the Galaxy Store, which still hangs: the saved update is listed too
+    Events evb2 = new Events();
+    JSONObject sb2 = run(wb, cb, ob, evb2);
+    JSONArray fb2 = sb2.optJSONArray("failed");
+    is("both lanes, saved answer: IzzyOnDroid is not asked again, the Galaxy Store is", wb.net.count(IZZY + both) == 1 && gxAsked.get() == 2);
+    is("both lanes, saved answer: the saved update is listed and told, and only the Galaxy Store lane is timed out (" + fb2 + ")",
+        pkgsOf(sb2.optJSONArray("updates")).contains(both) && pkgsOf(new JSONArray(new ArrayList<JSONObject>(evb2.rows))).contains(both) && fb2.length() == 1 && "gx".equals(fb2.optJSONObject(0).optString("lane")) && sb2.optInt("openSourceErrors") == 0);
+    wb.net.release.countDown();
   }
 
   static void githubLimitTests() throws Exception {
@@ -930,6 +964,16 @@ public class UpdateCheckerTest {
     JSONObject f2 = run(w2, c2, r2, new Events());
     JSONObject m2 = UpdateChecker.merge(f1, f2, r2.only);
     is("retry: a host that is still down leaves the apps failed (and hostsDown says so)", m2.optJSONArray("failed").length() == f1.optJSONArray("failed").length() && m2.optJSONArray("hostsDown").length() == 1);
+    // a retry cancelled before it reaches the apps keeps them failed (they would otherwise be in no list at all and Retry would be gone)
+    UpdateChecker.Options r3 = w2.options();
+    r3.only = pkgsOf(f1.optJSONArray("failed"));
+    r3.force = true;
+    UpdateChecker c3 = new UpdateChecker(w2.net, w2.clock, c2);
+    c3.cancel();
+    JSONObject f3 = c3.check(w2.apps, r3, new Events()).summary;
+    JSONObject m3 = UpdateChecker.merge(f1, f3, r3.only);
+    is("retry: cancelled before any app, the merged result still lists every app as failed (" + m3.optJSONArray("failed").length() + " of " + f1.optJSONArray("failed").length() + ")",
+        f3.optBoolean("cancelled") && f3.optInt("notChecked") > 0 && m3.optJSONArray("failed").length() == f1.optJSONArray("failed").length() && m3.optInt("openSourceErrors") == f1.optInt("openSourceErrors"));
   }
 
   static void requestCountTests() throws Exception {
@@ -1195,6 +1239,9 @@ public class UpdateCheckerTest {
         stamp.contains("!summary.has(\"error\")") && stamp.contains("summary.optBoolean(\"offline\") && before != null") && run.contains("updateLastError = msg") && run.contains("updateLastError = \"\"")
         && methodBody(src, "public String getUpdateState(").contains("o.put(\"error\", updateLastError)"));
     is("wiring: the activity's onDestroy cancels a running check", methodBody(src, "protected void onDestroy(").contains("cancelUpdateCheckRun()"));
+    is("wiring: a Cancel pressed while the apps are still being listed (no checker yet) is kept and applied to the checker once it exists",
+        methodBody(src, "private void cancelUpdateCheckRun(").contains("updateCancelRequested = true") && run.contains("if (updateCancelRequested) checker.cancel();")
+        && run.indexOf("updateCheckRun = checker;") < run.indexOf("if (updateCancelRequested) checker.cancel();") && run.indexOf("if (updateCancelRequested) checker.cancel();") < run.indexOf("checker.check("));
     is("wiring: a kept or restored row is checked against the installed version before it is shown (both places), and the runs are numbered", src.contains("private boolean updateRowStillValid(") && methodBody(src, "private boolean updateRowStillValid(").contains("UpdateChecker.stillNewer(")
         && count(src, "updateRowStillValid(") >= 3 && src.contains("o.generation = updateRunGeneration"));
     is("wiring: the old per-app loops are gone from the activity (no thread pool of its own for the check)", !src.contains("private void checkOpenSourceApps(") && !src.contains("private JSONObject checkOpenSourceApp("));

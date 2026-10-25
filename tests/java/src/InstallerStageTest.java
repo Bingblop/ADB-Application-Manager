@@ -105,6 +105,13 @@ public class InstallerStageTest {
       InstallerStage.Snapshot<String> sc = st.beginInstall(c);
       check("loaded() for an older read is ignored", sc != null && sc.extras.isEmpty());
       st.endInstall(sc, false);
+      // MA1-3: the snapshot carries the file its package was read from; a later read does not change an install's file
+      List<File> dl = new ArrayList<File>();
+      File e = st.beginRead("E.apk", "/storage/emulated/0/Download/E.apk", dl);
+      InstallerStage.Snapshot<String> se = st.beginInstall(e);
+      st.beginRead("F.apk", "content://x/F", dl);
+      check("an install's snapshot keeps the file it was read from, whatever is read next", se != null && "/storage/emulated/0/Download/E.apk".equals(se.sourceRef));
+      st.endInstall(se, false);
     } finally {
       del(root);
     }
@@ -120,7 +127,14 @@ public class InstallerStageTest {
     check("the install hands its snapshot to the end (and to the no-privilege install)", run.contains("finishInstall(res, opts, mode, snap)") && run.contains("installNoPrivilege(files, opts, snap)"));
     check("the end copies the snapshot's data files, not the package loaded now", finish.contains("copyInstallExtras(mode, snap)") && copy.contains("snap.extras") && copy.contains("snap.zip")
         && !m.contains("installExtras") && !m.contains("installSourceZip"));
-    check("the end removes only the install's own folder", finish.contains("endInstallStage(snap, true)"));
+    check("the end removes only the install's own folder, and only a successful install uses it up (a failed or cancelled one keeps its files for another try)",
+        finish.contains("endInstallStage(snap, res.optBoolean(\"ok\", false))") && !finish.contains("endInstallStage(snap, true)"));
+    String np = body(m, "private void installNoPrivilege(");
+    String fin = body(m, "private void finishInstall(");
+    check("INS-3: the no-privilege install's result receiver lives on the application (a re-created window keeps the result), and its end runs even after the window's executor stopped",
+        np.contains("appCtx.registerReceiver(rcv, filter") && !np.matches("(?s).*[^.]registerReceiver\\(rcv.*") && fin.contains("RejectedExecutionException"));
+    check("delete after install removes only the snapshot's own source file, never a page-named path or the app's private data",
+        inspect.contains("beginRead(sourceNameOf(ref), ref, stale)") && finish.contains("snap.sourceRef") && !finish.contains("optString(\"sourceRef\")") && finish.contains("!isPrivateData(new File(ref))"));
 
     System.out.println(fails == 0 ? "PASS InstallerStageTest: " + n + " checks" : "FAILED InstallerStageTest: " + fails + " of " + n);
     if (fails != 0) System.exit(1);

@@ -1,0 +1,7 @@
+ok   1. offline, the earlier result kept (no failed apps): no "Couldn’t check (0)" and no "These apps were not checked"
+ok      the no-internet line is shown
+ok   2. offline with apps that could not be checked: the count, the line and the apps
+ok   3. online with apps that could not be checked: the count and the line as before, no no-internet line
+ok   4. online, nothing failed: no such section
+ok   no page errors
+all passed
