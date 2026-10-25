@@ -38,8 +38,8 @@
 9a. New List: "Create Saved List", nothing ticked, by name: true {"shown":true,"title":"Create Saved List","count":"No apps in this list yet","diff":"","rows":["com.amazon.mShop.android.shopping","com.samsung.android.bixby.agent","com.android.chrome","com.facebook.katana","org.mozilla.firefox","com.microsoft.skydrive","com.whatsapp"],"checked":0,"text":[],"chips":["All*","In this list","System","User"],"empty":"","more":""}
 9b. two ticks: 2 apps, and a new list counts no "added": true 2 apps in this list |
 9c. the new list is at the top with its two apps: true Social:com.whatsapp+com.facebook.katana | Morning:com.whatsapp+com.gone.app+com.facebook.katana+org.mozilla.firefox+com.amazon.mShop.android.shopping
-10. the rows fit the sheet, scroll inside it, and Save stays on screen: true {"wide":0,"overflowX":false,"scrolls":true,"listH":true,"saveOnScreen":true,"sheetInView":true,"searchH":34,"rowsH":332}
-10b. the search box is one line high and the rows take the room that is left: true 34px search, 332px rows
+10. the rows fit the sheet, scroll inside it, and Save stays on screen: true {"wide":0,"overflowX":false,"scrolls":true,"listH":true,"saveOnScreen":true,"sheetInView":true}
+10b. the search box is one line high and the rows take the room that is left: true
 11a. 150 rows drawn, and Show more says what is left: true 150 | Show 150 more · 178 left
 11b. Show more: 300 rows: true 300 | Show 28 more · 28 left
 11c. search finds a row past the first page (after a pause in typing, on a long list): true 300 | com.bulk.app319

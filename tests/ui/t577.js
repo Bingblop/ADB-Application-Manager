@@ -174,8 +174,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
       listH: list.clientHeight >= 160, saveOnScreen: save.bottom <= innerHeight + 0.5, sheetInView: sheet.top >= 0,
       searchH: document.getElementById('listEditorSearch').offsetHeight, rowsH: list.clientHeight };
   });
-  check('10. the rows fit the sheet, scroll inside it, and Save stays on screen', !fit.wide && !fit.overflowX && fit.scrolls && fit.listH && fit.saveOnScreen && fit.sheetInView, JSON.stringify(fit));
-  check('10b. the search box is one line high and the rows take the room that is left', fit.searchH < 60 && fit.rowsH > 300, fit.searchH + 'px search, ' + fit.rowsH + 'px rows');
+  const { searchH, rowsH, ...fits } = fit;          // the heights follow the fonts: printed only when the check fails, so the expected output is the same everywhere
+  check('10. the rows fit the sheet, scroll inside it, and Save stays on screen', !fit.wide && !fit.overflowX && fit.scrolls && fit.listH && fit.saveOnScreen && fit.sheetInView, JSON.stringify(fits));
+  const roomy = searchH < 60 && rowsH > 300;
+  check('10b. the search box is one line high and the rows take the room that is left', roomy, roomy ? '' : searchH + 'px search, ' + rowsH + 'px rows');
   await page.screenshot({ path: 'edit-dark.png' });
   await ev(() => setAppearance('light'));
   await page.waitForTimeout(200);
