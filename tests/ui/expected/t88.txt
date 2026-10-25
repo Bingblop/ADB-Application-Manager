@@ -34,7 +34,7 @@
 11. clear empties the screen: ""
 12. program output keeps its colours and drops other escape codes:
     text: "red plain bold green\nsplit: blue end\n256 true inv\nDownloading 100%\nline one\nline two\naX\nafter title\nbar 3/3\n"
-    styled: ["red=color: var(--ansi-1);","bold green=color: var(--ansi-2); font-weight: 700;","blue=color: var(--ansi-4);","256=color: rgb(255, 135, 0);","true=color: rgb(10, 20, 30);","inv=color: var(--bg-card); background: var(--text-main);"]
+    styled: ["red=color: var(--ansi-1);","bold green=color: var(--ansi-2); font-weight: var(--fw-bold);","blue=color: var(--ansi-4);","256=color: rgb(255, 135, 0);","true=color: rgb(10, 20, 30);","inv=color: var(--bg-card); background: var(--text-main);"]
 13. the app shell has its own screen, the other one is kept: true
     it runs in its own folder: true
     switching back shows the first screen as it was: true the choice is kept: priv
