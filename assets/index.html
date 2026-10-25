@@ -265,6 +265,7 @@
         #cdLcOut .lc-row.lvl-I .lc-badge { color: var(--on-accent); }
         /* the text as in Live Logcat: the tag in the level's colour (inked darker on a light page), the message muted, so it reads on the tint */
         #cdLcOut .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); }
+        html[data-appearance="light"] #cdLcOut .lc-tag { color: color-mix(in srgb, var(--lc) 45%, var(--text-main)); }
         #cdLcOut .lc-msg { color: var(--text-muted); }
         .find-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0; }
         .find-bar .list-search { flex: 1 1 100px; min-width: 100px; margin: 0; }          /* the buttons go on the next line when the box would get narrower than its hint */
@@ -2872,12 +2873,9 @@
             align-items: flex-start;
         }
 
-/* each row tinted in the colour of its level's dot, as strong as "Row tints" in Settings says */
-        #logcatOutput .lc-row { position: relative; isolation: isolate; border-left-color: var(--lc-dot, var(--lc)); --lc-dir: 90deg; }
-        [dir="rtl"] #logcatOutput .lc-row { --lc-dir: 270deg; }
-        #logcatOutput .lc-row::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-            background: linear-gradient(var(--lc-dir), var(--lc-dot, var(--lc)), transparent 85%); opacity: calc(var(--rt-o) * 0.8); }
-        html[data-row-grad="off"] #logcatOutput .lc-row::before { background: var(--lc-dot, var(--lc)); opacity: calc(var(--rt-o) * 0.4); }
+        .lc-row.lvl-W { background: color-mix(in srgb, var(--lc-w) 7%, transparent); }
+        .lc-row.lvl-E { background: color-mix(in srgb, var(--lc-e) 9%, transparent); }
+        .lc-row.lvl-F { background: color-mix(in srgb, var(--lc-f) 13%, transparent); }
 
         .lc-badge {
             flex: 0 0 20px;
@@ -8137,7 +8135,7 @@
                    as the app rows): every text keeps 4.5:1 at Vivid in every palette, dark and light (t549; at 0.8 the dim Debug line fell to 3.5) */
                 html[data-row-grad="off"] #cnSegLog .lc-row::before { background: var(--lc-dot, var(--lc)); opacity: calc(var(--rt-o) * 0.4); }
                 /* on a light page the level-coloured badge and tag are inked darker, so they keep 4.5:1 on the tint (they were under it even untinted) */
-                html[data-appearance="light"] .lc-badge, html[data-appearance="light"] .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 45%, var(--text-main)); }
+                html[data-appearance="light"] #cnSegLog .lc-badge, html[data-appearance="light"] #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 45%, var(--text-main)); }
                 #cnSegLog .lc-badge { flex: 0 0 auto; width: auto; height: auto; margin: 0; background: none; color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font: 700 11px/1.45 ui-monospace, monospace; }
                 #cnSegLog .lc-badge::after { content: '/'; }
                 #cnSegLog .lc-head .lc-tag { color: color-mix(in srgb, var(--lc) 74%, var(--text-main)); font-weight: var(--fw-bold); font-family: ui-monospace, monospace; font-size: var(--fs-pill); }
