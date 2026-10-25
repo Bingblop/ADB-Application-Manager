@@ -24,6 +24,24 @@ public class RootGateTest {
     check("null mode: locked, no exception", !RootGate.active(null, true) && !RootGate.active(null, false));
     check("a blank or odd spelling of root is not root", !RootGate.active("", true) && !RootGate.active("Root", true) && !RootGate.active(" root", true));
 
+    // ---- the privileged tiers above the ADB shell (RootGate.unlocked): Root with su, or Shizuku as the system user (uid 1000) or root (uid 0)
+    check("Shizuku authorized as the system user (uid 1000): unlocked", RootGate.unlocked("shizuku", false, true, 1000));
+    check("Shizuku authorized as root (uid 0): unlocked", RootGate.unlocked("shizuku", false, true, 0));
+    check("Shizuku as the ADB shell user (uid 2000): locked", !RootGate.unlocked("shizuku", false, true, 2000));
+    check("Shizuku with an unknown uid (-1): locked", !RootGate.unlocked("shizuku", false, true, -1));
+    check("Shizuku not authorized is locked even at uid 1000", !RootGate.unlocked("shizuku", false, false, 1000));
+    check("a uid of 1000 outside Shizuku (ADB TCP) does not unlock", !RootGate.unlocked("adb_tcp", false, true, 1000));
+    check("Root with su granted: unlocked, the uid ignored", RootGate.unlocked("root", true, false, -1));
+    check("null mode with uid 0: locked, no exception", !RootGate.unlocked(null, false, false, 0));
+
+    // ---- the stricter uid-0 tier (RootGate.uid0): Root with su, or Shizuku as root (uid 0); the system user (uid 1000) stays locked
+    check("uid0: Shizuku as root (uid 0): unlocked", RootGate.uid0("shizuku", false, true, 0));
+    check("uid0: Shizuku as the system user (uid 1000): locked (Android refuses these to anyone but uid 0)", !RootGate.uid0("shizuku", false, true, 1000));
+    check("uid0: Shizuku as the ADB shell user (uid 2000): locked", !RootGate.uid0("shizuku", false, true, 2000));
+    check("uid0: Shizuku with an unknown uid (-1): locked", !RootGate.uid0("shizuku", false, true, -1));
+    check("uid0: Root with su granted: unlocked, the uid ignored", RootGate.uid0("root", true, false, -1));
+    check("uid0: null mode with uid 0: locked, no exception", !RootGate.uid0(null, false, false, 0));
+
     sourceScan();
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);

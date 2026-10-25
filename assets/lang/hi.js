@@ -5231,12 +5231,13 @@ x: {
 "Request Super User": "सुपरयूज़र का अनुरोध करें",
 "Root Features": "Root सुविधाएँ",
 "Root Features need the Root working mode with su granted to this app.": "Root सुविधाओं के लिए Root वर्किंग मोड चाहिए, जिसमें su इस ऐप को दिया गया हो।",
-"Super User (root) features. They unlock when the working mode is Root and su has granted this app access.": "सुपरयूज़र (root) सुविधाएँ। ये तब अनलॉक होती हैं जब वर्किंग मोड Root हो और su ने इस ऐप को एक्सेस दिया हो।",
+"Features that need root or the system user (UID 1000). They unlock in Root mode with su granted, or with Shizuku running as UID 1000 or root (UID 0).": "ऐसी सुविधाएँ जिनके लिए Root या सिस्टम उपयोगकर्ता (UID 1000) चाहिए। ये Root मोड में su मिलने पर, या Shizuku के UID 1000 या Root (UID 0) के रूप में चलने पर अनलॉक होती हैं।",
 "Super User access": "सुपरयूज़र एक्सेस",
 "Your device has su. Choose Root in Working Modes and allow this app when su asks.": "आपके डिवाइस में su है। वर्किंग मोड में Root चुनें और su पूछे तो इस ऐप को अनुमति दें।",
 "Your root manager did not grant this app su. Allow it there, then choose Root again.": "आपके root मैनेजर ने इस ऐप को su नहीं दिया। वहाँ अनुमति दें, फिर Root दोबारा चुनें।"
 },
 p: [
+["Shizuku (UID {0})", "Shizuku (UID {0})"],
   ["Opening {0} — manage which apps get Super User there.", "{0} खोल रहे हैं — वहाँ तय करें कि किन ऐप्स को Super User मिले।"],
   ["Allow this app in {0}, then come back.", "{0} में इस ऐप को अनुमति दें, फिर वापस आएं।"],
   ["A list named \"{0}\" already exists.", "\"{0}\" नाम की एक सूची पहले से मौजूद है।"],

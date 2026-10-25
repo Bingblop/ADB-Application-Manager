@@ -7852,7 +7852,7 @@
                     <div class="color-card-title">Root Features</div>
                     <span class="mode-status-tag inactive" id="rfStatusTag">Checking...</span>
                 </div>
-                <div class="color-card-subtitle">Super User (root) features. They unlock when the working mode is Root and su has granted this app access.</div>
+                <div class="color-card-subtitle">Features that need root or the system user (UID 1000). They unlock in Root mode with su granted, or with Shizuku running as UID 1000 or root (UID 0).</div>
 
                 <div class="mode-alert-card" id="rootGate" style="display:none;">
                     <div class="mode-alert-body">
@@ -13630,7 +13630,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 } else if (currentWorkingMode === 'adb_wireless') {
                     label = `Wireless ADB (${d.adbWireless ? d.adbWireless.port : ''})`;
                 } else if (currentWorkingMode === 'shizuku') {
-                    label = 'Shizuku ADB (UID 2000)';
+                    // name the actual server UID (0 root, 1000 system, 2000 ADB shell) so the badge does not claim 2000 when it is not; an unknown UID keeps the common ADB label
+                    const szUid = d.shizuku && typeof d.shizuku.uid === 'number' ? d.shizuku.uid : -1;
+                    label = szUid >= 0 ? txF('Shizuku (UID {0})', szUid) : 'Shizuku ADB (UID 2000)';
                 } else if (currentWorkingMode === 'root') {
                     label = 'Root (Superuser)';
                 } else {
@@ -28573,12 +28575,25 @@ Type any command above (e.g. pm list packages -d)</div>
         // Java side, which getWorkingMode reports as rootWorkingModeActive; the page's own reading (a privileged mode that is root) is the same rule, and the
         // Java verdict can only veto it (an older app that does not send the field changes nothing).
         function isRootActive() {
-            const own = !!isPrivilegedActive && currentWorkingMode === 'root';
             const d = lastModesData;
+            // The Java gate (RootGate.unlocked, reported as sysPrivActive): a privileged working mode above the ADB shell -
+            // Root with su, or Shizuku running as the system user (UID 1000) or as root (UID 0). The shell user (UID 2000) does not unlock.
+            if (d && typeof d.sysPrivActive === 'boolean') return d.sysPrivActive;
+            // Older app that does not send the field: the previous rule, Root is the working mode and su granted it.
+            const own = !!isPrivilegedActive && currentWorkingMode === 'root';
             return own && !(d && d.rootWorkingModeActive === false);
         }
-        // Enabling or disabling a component is Super User (Root) only (v7.15.1), for every app, user and system alike: the ADB/Shizuku shell uid
-        // cannot change components of apps it does not own, and Kyle scoped the control to Root. LAUNCH and STOP keep the ordinary working-mode lock.
+        // Writing a fabricated color overlay is the stricter UID-0 tier (RootGate.uid0, reported as rootUidActive): Root with su, or Shizuku
+        // started as root (UID 0). Android refuses `cmd overlay fabricate` to the system user (UID 1000) and the shell, so UID 1000 stays locked here.
+        function ovlCanWriteOverlays() {
+            const d = lastModesData;
+            if (d && typeof d.rootUidActive === 'boolean') return d.rootUidActive;
+            const own = !!isPrivilegedActive && currentWorkingMode === 'root';
+            return own && !(d && d.rootWorkingModeActive === false);
+        }
+        // Enabling or disabling a component unlocks wherever Android allows a single component's state change: Root with su, or Shizuku as the
+        // system user (UID 1000) or root (UID 0) - the same sysPrivActive gate as the Root Features surface (v7.16.1, widened from Root-only in
+        // v7.15.1). The ADB shell user (UID 2000) cannot change components of apps it does not own, so it stays locked. LAUNCH and STOP keep the ordinary working-mode lock.
         function compToggleLocked() { return !isRootActive(); }
         function rootOnModeChange() { if (currentViewName && currentViewName() === 'rootfeatures') renderRootFeatures(); }
         // ACTIVE is su's last answer, kept in memory (isRootGranted): a grant taken back in the root manager since then would still read ACTIVE here and
@@ -28587,12 +28602,15 @@ Type any command above (e.g. pm list packages -d)</div>
         // Only then: a locked tab asks nothing (no second su prompt right after a refusal), and coming back to the app does not ask either (a manager's
         // prompt takes the app off screen, so asking on every return could ask again and again).
         function onRootFeaturesShown() { if (isRootActive()) checkAllWorkingModes(false, true); renderRootFeatures(); }
-        // the root features themselves, each a row that is unlocked while Super User is active and a locked row with the reason otherwise, so every
-        // feature stays named (and visible) while it waits on root - the only state a phone that cannot be rooted ever shows.
-        // - "Super User for apps": once this app has root, open the installed manager so the user manages which OTHER apps get Super User there.
+        // the root features themselves, each a row unlocked while its privilege is active and a locked row with the reason otherwise, so every
+        // feature stays named (and visible) while it waits - the only state a phone that cannot be rooted ever shows. The two rows sit on
+        // different tiers: App components unlocks wherever the component toggle works (sysPrivActive: Root with su, or Shizuku as UID 1000 or 0);
+        // Super User for apps needs a device that is actually rooted (a root manager to open), so it stays locked under a privileged-but-not-rooted
+        // Shizuku (UID 1000 with no su).
+        // - "Super User for apps": with a root manager present, open it so the user manages which OTHER apps get Super User there.
         // - "App components": a signpost to the Application Manager, where an app's components are enabled/disabled (toggleComponent ->
-        //   setComponentEnabled -> ShellArgs.componentCommand). That toggle is Root-only (compToggleLocked on the page, setComponentEnabled
-        //   refuses any other mode); this row only surfaces it on the Root tab, it builds nothing new.
+        //   setComponentEnabled -> ShellArgs.componentCommand). That toggle unlocks under the same sysPrivActive gate (compToggleLocked on the
+        //   page, setComponentEnabled enforces it); this row only surfaces it on the Root tab, it builds nothing new.
         function rootFeatureName(title, sub) { return '<div class="rf-name">' + txT(title) + '<span>' + txT(sub) + '</span></div>'; }
         // a feature that waits on root: the name, a disabled Locked button and the reason (Needs Super User, unless the caller names another one,
         // as the Overlays tab's root controls do when the app itself is too old to write them)
@@ -28601,14 +28619,21 @@ Type any command above (e.g. pm list packages -d)</div>
                 + '<button type="button" class="op-mode-btn locked" disabled aria-disabled="true">' + txT('Locked') + '</button>'
                 + '<div class="pm-lock">' + XQ_LOCK_SVG + '<span>' + txT(reason || 'Needs Super User') + '</span></div></div>';
         }
-        function rootFeatureRow(title, sub, btnLabel, btnId, onClick) {
-            if (!isRootActive()) return rootLockedRow(title, sub);
+        function rootFeatureRow(title, sub, btnLabel, btnId, onClick, unlocked, lockReason) {
+            const open = (unlocked === undefined) ? isRootActive() : !!unlocked;
+            if (!open) return rootLockedRow(title, sub, lockReason);
             return '<div class="rf-row">' + rootFeatureName(title, sub)
                 + '<button type="button" class="op-mode-btn" id="' + btnId + '" onclick="' + onClick + '">' + txT(btnLabel) + '</button></div>';
         }
         function rootFeatureRows() {
-            return rootFeatureRow('Super User for apps', 'Manage which apps get root in your manager.', 'Open manager', 'rfSuAppsBtn', 'rootManageSuperuser()')
-                + rootFeatureRow('App components', 'Enable or disable activities, services, receivers and providers for any app.', 'Open apps', 'rfComponentsBtn', 'rootManageComponents()');
+            // App components works wherever Android allows a single component's state change (sysPrivActive: Root with su, or Shizuku as the
+            // system user UID 1000 or root UID 0). Super User for apps opens the installed root manager, which exists only on a device that is
+            // actually rooted (su present), so it stays locked - with the plain "Needs Super User" reason, since it genuinely needs su - under a
+            // privileged Shizuku that is not root (UID 1000 with no su), rather than opening nothing and claiming the manager is hidden.
+            const d = lastModesData || {};
+            const managerHere = isRootActive() && !!d.rootAvailable;
+            return rootFeatureRow('Super User for apps', 'Manage which apps get root in your manager.', 'Open manager', 'rfSuAppsBtn', 'rootManageSuperuser()', managerHere)
+                + rootFeatureRow('App components', 'Enable or disable activities, services, receivers and providers for any app.', 'Open apps', 'rfComponentsBtn', 'rootManageComponents()', isRootActive());
         }
         function renderRootFeatures() {
             const gate = document.getElementById('rootGate');
@@ -28690,9 +28715,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 showToast(res.name ? txF('Opening {0} — manage which apps get Super User there.', res.name) : txT('Opening your root manager — manage which apps get Super User there.'));
             } else if (res && res.reason === 'launch') {
                 showToast(res.name ? txF('{0} could not be opened from here. Open it from your home screen.', res.name) : txT('Your root manager could not be opened from here. Open it from your home screen.'));
-            } else if (isRootActive()) {
-                // su already answers as root, so the phone has a manager the app cannot find by one of the four known package names (a Magisk
-                // hidden with "Hide the Magisk app", a renamed build): asking the user to install one would be wrong.
+            } else if ((lastModesData || {}).rootAvailable) {
+                // su is present, so the phone is rooted and has a manager the app cannot find by one of its known package names (a renamed
+                // build, a manager hidden under a random package name): asking the user to install one would be wrong.
                 showToast(txT('Your root manager was not found by its usual name (it may be hidden or renamed). Open it from your home screen and manage apps in its Super User list.'));
             } else {
                 showToast(txT('No root manager was found. Root features need a phone that is already rooted; this app does not root phones.'));
@@ -38289,7 +38314,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!ovlGuardWrite()) return;
             // what Revert switches off besides: this app's overlay, named by what it carries (the root style's colours, or pure black alone)
             // an overlay of this app's that Default cannot switch off without Super User (T-078) is named, so the question promises no more than it does
-            const kept = !!ovlRootApplied() && ovlRootBridgeOk() && !isRootActive();
+            const kept = !!ovlRootApplied() && ovlRootBridgeOk() && !ovlCanWriteOverlays();
             if (!confirm('Go back to the system default?\n\nAndroid will use your wallpaper’s colors with the Tonal Spot style again.' + (ovlRootFollowUp('reset') !== 'disable' ? (kept ? '\n\nThe overlay stays on: switching it off needs Super User.' : '') : ovlRootAppliedStyle() ? '\n\nThe theme overlay is switched off too.' : '\n\nThe pure black overlay is switched off too.'))) return;
             const before = ovlRaw;
             ovlBusy = true;
@@ -38522,7 +38547,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function ovlRootBridgeOk() { const b = window.AndroidBridge; return !!(b && typeof b.overlayFabricate === 'function'); }
         // the controls are live when the app can write overlays, Super User is active and the phone has Material You at all (also all that Undo,
         // Revert and Apply need to switch off an overlay this app wrote, whatever the profile: a locked phone can still get rid of it)
-        function ovlRootLive() { return ovlRootBridgeOk() && isRootActive() && ovlThemeSupported(); }
+        function ovlRootLive() { return ovlRootBridgeOk() && ovlCanWriteOverlays() && ovlThemeSupported(); }
         function ovlBlackOn() { return kvGet('ovl_black', false) === true; }
         function ovlMonetOk() { return typeof MonetPlan === 'object' && !!MonetPlan && typeof MonetPlan.entries === 'function'; }
         // The Android build family the root colours are computed for, from getSystemPalette (MonetProfile.java: profile, and profileReason ok,
@@ -39158,7 +39183,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!ovlThemeSupported()) { card.style.display = 'none'; box.innerHTML = ''; drawSpec(''); draw(''); drawAdj(''); drawAcc(''); drawAccu(''); say(''); ovlRenderRootStale(); ovlRenderRootOneUi(); return; }      // hidden with the rest of Material You
             card.style.display = '';
             const bridge = ovlRootBridgeOk(), lock = bridge ? ovlRootLock() : '';
-            if (!bridge || lock || !isRootActive()) {
+            if (!bridge || lock || !ovlCanWriteOverlays()) {
                 // locked: the same rows as a Root Feature that waits on root; an app too old to write overlays says so instead; so does a phone whose
                 // colours this app cannot compute (ovlProfileState: an Android build not supported yet, an older APK on Android 15 and newer),
                 // with Super User or without (root would not unlock them), and the note then says only whether an overlay written before is still
