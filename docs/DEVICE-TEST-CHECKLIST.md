@@ -634,6 +634,14 @@ None of this has been run on a phone yet. Needs Android 11 or newer, on Wi-Fi, w
 - [ ] **Leaving the Wi-Fi.** With it on, leave the Wi-Fi network: Android switches Wireless debugging off again, and **Check again** shows CHECK.
 - [ ] **Another language:** the row, the button and the toasts are translated and nothing is cut off.
 
+## 39. Wireless Debugging: the port changed
+
+Needs Android 11 or newer, this app paired with Wireless Debugging, and the Wi-Fi it uses switched on. None of this has been run on a phone yet.
+
+- [ ] **The saved port goes stale, the app finds the new one.** In Working Modes connect **Wireless Debugging** until the card says connected. Open Android's Developer options, switch **Wireless debugging** off and on again (the port changes every time). Back in the app, in Working Modes tap **Wireless Debugging** to select it again, or open a tab that needs a privileged mode (for example Installer). Expected: within a few seconds the mode is ready again with no new pairing, the card shows the new port, and the connect message reads "Wireless Debugging moved from port ... to ...; connected to ... and saved the new port." Force-stop the app and open it again: it still uses the new port.
+- [ ] **Nothing else changes.** Type a wrong port by hand in the Wireless Debugging card and tap **Connect**: it fails as before and does not jump to another port (a typed port is never replaced). Turn Wireless debugging off completely and select the mode: it says it is not connected; no error loop, no crash.
+- [ ] **A second phone is never picked.** If another phone with Wireless debugging on is on the same Wi-Fi, the app still only reconnects to the address it was saved with (or this phone's own Wi-Fi address when it was saved as 127.0.0.1).
+
 ## 40. Screenshot and Record screen (Console tab)
 
 None of this has been run on a phone yet. Open the Console tab, ADB Shell part, with a working mode connected (ADB TCP, Wireless Debugging, Shizuku or Root). Repeat the first two items in a second mode if you can, and write down which.

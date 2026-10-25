@@ -651,7 +651,7 @@ that expect it there, never into the file itself. Already-added servers are list
 |---|---|---|
 | **Automatic** (default) | — | Uses the first ready backend: ADB TCP → Wireless Debugging → Shizuku |
 | **ADB over TCP** | `adb tcpip 5555` once | Connects to `127.0.0.1:5555` or any `IP:port` |
-| **Wireless Debugging** | Android 11+ | Pair with code, then connect. Fields accept `IP:port` or just the port; **Auto-Detect Ports** uses mDNS |
+| **Wireless Debugging** | Android 11+ | Pair with code, then connect. Fields accept `IP:port` or just the port; **Auto-Detect Ports** uses mDNS. Android picks a new port each time Wireless debugging is switched on; when the saved port no longer connects, the app looks up the current one over mDNS (on the saved address only), connects and saves it, so you do not pair or type again |
 | **Shizuku** | Shizuku running | Tap **Authorize &amp; Use Shizuku** and approve the prompt. Shizuku not running while ADB TCP or Wireless Debugging is connected: **Start Shizuku (ADB)** runs the start script the Shizuku app wrote into its own data folder (`/sdcard/Android/data/<Shizuku package>/start.sh`, the same command Shizuku shows for a computer) through that connection, then checks that Shizuku answers; if it does not, the script's own output is shown. Open the Shizuku app once first, or the script does not exist yet |
 | **Root** | su on a phone that is already rooted | Requested on demand. This app never roots a phone or installs a root manager |
 | **Read-Only** | — | Inspect only |
