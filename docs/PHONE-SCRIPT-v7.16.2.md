@@ -1,6 +1,6 @@
 # Phone script for v7.16.2
 
-About 25 minutes, one pass or fail per step. v7.16.2 brings three changes (`CHANGELOG.md`, `## v7.16.2-Pro`): **Live Logcat** wears one colour per level and keeps up with a busy log, **saved lists** are edited by ticking apps, and an app's **trackers can be switched off and back on** in Root mode with su granted or with Shizuku running as the system user (UID 1000) or root (UID 0). Nothing in this script has been run on a phone by the author. Sections A to D work on any phone, including one that cannot be rooted; section E needs a rooted phone (Root with su, or a Shizuku started as root or the system user). The longer checks are `docs/DEVICE-TEST-CHECKLIST.md` sections 34 to 36.
+About 35 minutes, one pass or fail per step. v7.16.2 brings these changes (`CHANGELOG.md`, `## v7.16.2-Pro`): **Live Logcat** wears one colour per level and keeps up with a busy log, **saved lists** are edited by ticking apps, an app's **trackers can be switched off and back on** in Root mode with su granted or with Shizuku running as the system user (UID 1000) or root (UID 0), Working Modes has a **Connection Check** card with **Turn on Wireless Debugging**, a Wireless Debugging port that changed is found again by itself, and the Console has **Screenshot** and **Record screen**. Nothing in this script has been run on a phone by the author. Sections A to D and F work on any phone, including one that cannot be rooted; section E needs a rooted phone (Root with su, or a Shizuku started as root or the system user). The longer checks are `docs/DEVICE-TEST-CHECKLIST.md` sections 34 to 40.
 
 **Before you start:** install the `arm64-v8a` file of v7.16.2 over v7.16.1 (an update, not a fresh install), and have a working mode on (ADB TCP, Wireless Debugging or Shizuku).
 
@@ -38,8 +38,16 @@ About 25 minutes, one pass or fail per step. v7.16.2 brings three changes (`CHAN
 16. Open History (the clock button in the UAD-NG Debloater). **Pass:** a step "Disabled trackers in (app)". Tap its **Undo**: the parts that step switched off come back on, and the box shows them running again.
 17. Select two apps, batch sheet, **Disable Trackers**: a "Confirm Disable Trackers" box first, then the progress and Batch Results "DISABLE TRACKERS • 2 of 2 apps". Then **Enable Trackers** (no confirmation). **Pass:** both run to the end and every part is back on.
 
-## F. Help Guide (1 minute)
+## F. Connection Check, Wireless Debugging and screen capture (10 minutes; any phone with Android 11 or newer, on Wi-Fi)
 
-18. About > Help Guide, open "Switching trackers off in apps", "Live Logcat" and "Saved Applications" (its part "Edit a list"). **Pass:** the guide says it was written for version 7.16.2, and each page describes what you just saw.
+18. Open Working Modes (the working-mode badge at the top). **Pass:** the first card is **Connection Check**, with rows for Wi-Fi, the Wireless Debugging switch, the ADB connection, Shizuku and secure settings access, each OK, CHECK or INFO with a reason in words; with everything connected the tag reads ALL GOOD.
+19. With Shizuku or ADB TCP connected (or the secure settings permission granted), switch **Wireless debugging** off in Developer options, come back and tap **Check again**. **Pass:** the switch row says CHECK and offers **Turn on Wireless Debugging**. Tap it: a message says it is on, the row turns OK, and Developer options shows Wireless debugging on.
+20. With **Wireless Debugging** as the working mode and connected, switch Wireless debugging off and on in Developer options (Android picks a new port), come back and select **Wireless Debugging** in Working Modes again. **Pass:** within a few seconds it is ready again with no new pairing, and the message says Wireless Debugging moved from the old port to the new one.
+21. Console, ADB Shell part: tap **Screenshot** and open another screen within 3 seconds. **Pass:** a message names `Pictures/ADB App Manager/screenshot-....png` with its size, and the picture shows the screen you opened.
+22. Tap **Record screen** (the button reads **Stop recording**), use another app for about 10 seconds, come back and tap **Stop recording**. **Pass:** a message names `Movies/ADB App Manager/screenrecord-....mp4` with its size, and the video plays to the end.
+
+## G. Help Guide (1 minute)
+
+23. About > Help Guide, open "Switching trackers off in apps", "Live Logcat", "Saved Applications" (its part "Edit a list") and "Connection Check: why a connection works or does not". **Pass:** the guide says it was written for version 7.16.2, and each page describes what you just saw.
 
 Report any step that fails with the step number, the working mode (and the Shizuku UID shown on the badge), the Android version, and a screenshot if it is about how something looks.
