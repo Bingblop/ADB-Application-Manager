@@ -8363,7 +8363,11 @@ public class MainActivity extends Activity {
                 root.mkdirs();
                 long old = System.currentTimeMillis() - 24L * 60 * 60 * 1000;
                 File[] dirs = root.listFiles();
-                if (dirs != null) for (File d : dirs) if (d.lastModified() < old) { File[] fs = d.listFiles(); if (fs != null) for (File f : fs) f.delete(); d.delete(); }
+                if (dirs != null) {
+                    java.util.List<File> toDelete = new java.util.ArrayList<File>();
+                    for (File d : dirs) if (d.lastModified() < old) toDelete.add(d);
+                    if (!toDelete.isEmpty()) FileOps.delete(toDelete, null);
+                }
                 for (Uri u : uris) {
                     try {
                         String nm = cdSafeName(cdDisplayName(u));
