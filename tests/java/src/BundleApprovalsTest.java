@@ -59,7 +59,7 @@ public class BundleApprovalsTest {
     int reads;
     Counting(File f) { super(f.getPath()); }
     @Override public String getPath() {
-      for (StackTraceElement e : new Throwable().getStackTrace()) { String cn = e.getClassName(); if (cn.equals("java.io.FileInputStream") || cn.equals("sun.nio.fs.UnixChannelFactory") || cn.equals("sun.nio.fs.UnixFileSystemProvider") || cn.equals("java.nio.file.Files")) { reads++; break; } }
+      for (StackTraceElement e : new Throwable().getStackTrace()) { String cn = e.getClassName(); if (cn.equals("java.io.FileInputStream") || cn.contains("FileChannel") || cn.equals("sun.nio.fs.UnixChannelFactory") || cn.equals("sun.nio.fs.UnixFileSystemProvider") || cn.equals("java.nio.file.Files")) { reads++; break; } }
       return super.getPath();
     }
     @Override public java.nio.file.Path toPath() {
@@ -669,8 +669,8 @@ public class BundleApprovalsTest {
     String ac = body(ba, "File approvedCopy(Source s, File destDir, String[] shaOut)");
     is("the hash that is compared with the approval is the one of the bytes copied, never of the live file read again", ac != null && ac.contains("String got = copyAndHash(s.file, copy);") && ac.contains("isApproved(s.id, got)") && !ac.contains("sha256(s.file)") && ac.contains("copy.delete()"));
     String cah = body(ba, "static String copyAndHash(");
-    is("copy and hash are one pass over the same bytes", cah != null && cah.contains("md.update(buf, 0, n); out.write(buf, 0, n);"));
-    is("both streams of the copy are closed by try-with-resources, whichever fails to open", cah != null && cah.contains("try (InputStream in = new FileInputStream(from);") && cah.contains("java.io.OutputStream out = Files.newOutputStream(to.toPath()") && !cah.contains("finally"));
+    is("copy and hash are one pass over the same bytes", cah != null && cah.contains("md.update(buf.duplicate());") && cah.contains("outChannel.write(buf);"));
+    is("both streams of the copy are closed by try-with-resources, whichever fails to open", cah != null && cah.contains("try (java.nio.channels.FileChannel inChannel = java.nio.channels.FileChannel.open(from.toPath()") && cah.contains("java.nio.channels.FileChannel outChannel = java.nio.channels.FileChannel.open(to.toPath()") && !cah.contains("finally"));
     String rq = body(ba, "private String require(Source s, Asker asker, boolean[] unanswered)");
     is("the call's timeout flag is checked before the next file is hashed", rq != null && rq.indexOf("unanswered[0] && approvedHash(s.id) == null") >= 0 && rq.indexOf("unanswered[0] && approvedHash(s.id) == null") < rq.indexOf("sha256(s.file)"));
     String go = body(ba, "synchronized boolean grandfatherOnce(");
