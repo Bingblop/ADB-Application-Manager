@@ -7619,6 +7619,15 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** A Settings.Global number any app may read; -1 when the phone has no such setting or refuses the read. */
+    private int readGlobalInt(String name) {
+        try {
+            return android.provider.Settings.Global.getInt(getContentResolver(), name, -1);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
     private boolean hasWriteSecureSettingsAccess() {
         try {
             return checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED;
@@ -8677,6 +8686,59 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void showWirelessPairingNotification() {
             postPairingNotification();
+        }
+
+        /**
+         * What the "Connection check" card of Working Modes needs beyond the mode probe: the Wi-Fi address, the three Developer options switches
+         * (-1 when this phone does not say), whether this app holds WRITE_SECURE_SETTINGS, and the Android version. Reads only; connects and
+         * changes nothing.
+         */
+        @JavascriptInterface
+        public String getConnectionFacts() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("sdk", Build.VERSION.SDK_INT);
+                o.put("wifiIp", deviceWifiIp());
+                o.put("developerOptions", readGlobalInt("development_settings_enabled"));
+                o.put("usbDebugging", readGlobalInt("adb_enabled"));
+                o.put("wirelessDebugging", readGlobalInt("adb_wifi_enabled"));
+                o.put("secureSettings", hasWriteSecureSettingsAccess());
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /**
+         * Turns the Wireless debugging switch on or off (Settings.Global adb_wifi_enabled, Android 11 or newer). Only ever called from a button the user
+         * pressed: nothing in the app switches it by itself. Uses WRITE_SECURE_SETTINGS when this app holds it, else a privileged shell
+         * (ADB, Shizuku or root). The answer comes from reading the setting back, not from the command's text:
+         * "on" / "off" (the state now), "unsupported" (Android 10 or older, or the phone does not say), "no_wifi" (turning on without Wi-Fi:
+         * Android switches it straight off again), "no_access" (nothing to write with) or "failed" (the setting did not change).
+         */
+        @JavascriptInterface
+        public String setWirelessDebugging(boolean enable) {
+            if (Build.VERSION.SDK_INT < 30 || readGlobalInt("adb_wifi_enabled") < 0) return "unsupported";
+            int want = enable ? 1 : 0;
+            if (readGlobalInt("adb_wifi_enabled") == want) return enable ? "on" : "off";
+            if (enable && deviceWifiIp().isEmpty()) return "no_wifi";
+            boolean wrote = false;
+            if (hasWriteSecureSettingsAccess()) {
+                try {
+                    wrote = android.provider.Settings.Global.putInt(getContentResolver(), "adb_wifi_enabled", want);
+                } catch (Exception ignored) {}
+            }
+            if (!wrote && !"standard".equals(resolveExecMode())) {
+                executeShell("settings put global adb_wifi_enabled " + want);
+                wrote = true;
+            }
+            if (!wrote) return "no_access";
+            int now = readGlobalInt("adb_wifi_enabled");
+            for (int i = 0; i < 6 && now != want; i++) { // give the phone a moment to apply it
+                try { Thread.sleep(250); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+                now = readGlobalInt("adb_wifi_enabled");
+            }
+            if (now != want) return "failed";
+            invalidateModeCache();
+            return now == 1 ? "on" : "off";
         }
 
         /** Read-only status report. Never connects, reconnects or changes the configured mode. */
