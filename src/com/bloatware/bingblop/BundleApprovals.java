@@ -300,12 +300,18 @@ final class BundleApprovals {
         File dir = to.getAbsoluteFile().getParentFile();
         if (dir != null) dir.mkdirs();
         Files.deleteIfExists(to.toPath());
-        try (InputStream in = new FileInputStream(from);
-             java.io.OutputStream out = Files.newOutputStream(to.toPath(), java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE)) {
+        try (java.nio.channels.FileChannel inChannel = java.nio.channels.FileChannel.open(from.toPath(), java.nio.file.StandardOpenOption.READ);
+             java.nio.channels.FileChannel outChannel = java.nio.channels.FileChannel.open(to.toPath(), java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE)) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] buf = new byte[65536];
-            int n;
-            while ((n = in.read(buf)) > 0) { md.update(buf, 0, n); out.write(buf, 0, n); }
+            java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(524288);
+            while (inChannel.read(buf) > 0) {
+                buf.flip();
+                md.update(buf.duplicate());
+                while (buf.hasRemaining()) {
+                    outChannel.write(buf);
+                }
+                buf.clear();
+            }
             return hex(md.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IOException(e);
@@ -364,17 +370,17 @@ final class BundleApprovals {
     }
 
     static String sha256(File f) throws IOException {
-        InputStream in = new FileInputStream(f);
-        try {
+        try (java.nio.channels.FileChannel inChannel = java.nio.channels.FileChannel.open(f.toPath(), java.nio.file.StandardOpenOption.READ)) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] buf = new byte[65536];
-            int n;
-            while ((n = in.read(buf)) > 0) md.update(buf, 0, n);
+            java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(524288);
+            while (inChannel.read(buf) > 0) {
+                buf.flip();
+                md.update(buf);
+                buf.clear();
+            }
             return hex(md.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IOException(e);
-        } finally {
-            try { in.close(); } catch (IOException ignored) {}
         }
     }
 
