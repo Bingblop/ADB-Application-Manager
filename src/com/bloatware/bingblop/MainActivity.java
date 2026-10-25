@@ -4224,11 +4224,6 @@ public class MainActivity extends Activity {
         } catch (Exception e) { return ""; }
     }
 
-    private static String fmSizeText(long b) {
-        if (b >= 1048576L) return String.format(java.util.Locale.US, "%.1f MB", b / 1048576.0);
-        return Math.max(1, b / 1024) + " KB";
-    }
-
     private static boolean fmProtectedPath(String p) {
         return FileRules.isProtected(p);
     }
