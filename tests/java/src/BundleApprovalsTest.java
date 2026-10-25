@@ -59,7 +59,7 @@ public class BundleApprovalsTest {
     int reads;
     Counting(File f) { super(f.getPath()); }
     @Override public String getPath() {
-      for (StackTraceElement e : new Throwable().getStackTrace()) if (e.getClassName().equals("java.io.FileInputStream")) { reads++; break; }
+      for (StackTraceElement e : new Throwable().getStackTrace()) { String cn = e.getClassName(); if (cn.equals("java.io.FileInputStream") || cn.equals("java.nio.channels.FileChannel") || cn.equals("sun.nio.ch.FileChannelImpl")) { reads++; break; } }
       return super.getPath();
     }
   }
