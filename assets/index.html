@@ -2873,9 +2873,9 @@
             align-items: flex-start;
         }
 
-        .lc-row.lvl-W { background: color-mix(in srgb, var(--lc-w) 7%, transparent); }
-        .lc-row.lvl-E { background: color-mix(in srgb, var(--lc-e) 9%, transparent); }
-        .lc-row.lvl-F { background: color-mix(in srgb, var(--lc-f) 13%, transparent); }
+        .lc-row.lvl-W { background: rgba(255, 160, 0, 0.07); }
+        .lc-row.lvl-E { background: rgba(255, 82, 82, 0.09); }
+        .lc-row.lvl-F { background: rgba(224, 64, 251, 0.13); }
 
         .lc-badge {
             flex: 0 0 20px;
@@ -27981,49 +27981,13 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if (!live) showToast(notice);
                 return;
             }
-            const oldLength = lcStore.length;
             const added = lcMerge(t);
             if (!added && logcatEntries.length) {                      // nothing new since the last draw
                 if (toBottom) { const box = document.getElementById('logcatOutput'); if (box) box.scrollTop = box.scrollHeight; }
                 return;
             }
             lcLastText = t;
-
-            if (oldLength === 0 || lcStore.length < oldLength + added) {
-                logcatEntries = (lcNote ? [{ kind: 'meta', text: lcNote, raws: [lcNote] }] : []).concat(logcatParse(lcStore.join('\n')));
-            } else {
-                const newLines = lcStore.slice(oldLength);
-                let cur = null;
-                let lastEntryIndex = logcatEntries.length - 1;
-                while (lastEntryIndex >= 0 && logcatEntries[lastEntryIndex].kind !== 'entry') {
-                    lastEntryIndex--;
-                }
-                if (lastEntryIndex >= 0) {
-                    cur = logcatEntries[lastEntryIndex];
-                }
-                const newEntries = [];
-                newLines.forEach(raw => {
-                    const m = lcMatch(raw);
-                    if (m) {
-                        const date = m[1], time = m[2], pid = m[3], tid = m[4], lvl = m[5], tag = m[6], msg = m[7];
-                        if (cur && cur.time === time && cur.pid === pid && cur.tid === tid && cur.lvl === lvl && cur.tag === tag) {
-                            cur.lines.push(msg); cur.raws.push(raw);
-                        } else {
-                            cur = { kind: 'entry', date: date, time: time, pid: pid, tid: tid, lvl: lvl, tag: tag, lines: [msg], raws: [raw] };
-                            newEntries.push(cur);
-                        }
-                    } else if (/^-{3,}\s*beginning of/i.test(raw)) {
-                        cur = null;
-                        newEntries.push({ kind: 'meta', text: raw.replace(/^-+\s*/, ''), raws: [raw] });
-                    } else if (cur) {
-                        cur.lines.push(raw); cur.raws.push(raw);
-                    } else {
-                        newEntries.push({ kind: 'meta', text: raw, raws: [raw] });
-                    }
-                });
-                logcatEntries = logcatEntries.concat(newEntries);
-            }
-
+            logcatEntries = (lcNote ? [{ kind: 'meta', text: lcNote, raws: [lcNote] }] : []).concat(logcatParse(lcStore.join('\n')));
             logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
             logcatEntries.forEach(e => { if (e.kind === 'entry') logcatCounts[e.lvl] += e.lines.length; });
             logcatRenderKey();
