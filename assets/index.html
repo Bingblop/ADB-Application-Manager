@@ -20782,7 +20782,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             document.getElementById('batchCountText').innerText = `${count} Selected`;
             document.getElementById('batchFabBadge').innerText = count;
-            bar.classList.toggle('show', batchPanelExpanded);
+            bar.classList.toggle('show', batchPanelExpanded); if (!batchPanelExpanded) bar.classList.remove('sheet-expanded');
             fab.classList.toggle('show', !batchPanelExpanded);
         }
 
