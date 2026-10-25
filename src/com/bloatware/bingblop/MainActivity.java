@@ -2096,14 +2096,6 @@ public class MainActivity extends Activity {
         return resolved;
     }
 
-    private static int parsePort(String value, int fallback) {
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (Exception e) {
-            return fallback;
-        }
-    }
-
     private static String deviceWifiIp() {
         String fallback = "";
         try {
