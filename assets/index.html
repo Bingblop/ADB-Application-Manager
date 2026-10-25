@@ -2874,11 +2874,10 @@
             border-bottom: 1px solid var(--border-glass);
             border-left: 4px solid var(--lc);
             align-items: flex-start;
-            /* v7.16.2: a row off screen is neither laid out nor painted until it scrolls near (a live log of thousands of rows scrolls smoothly);
-               the placeholder height is one short row, the real height is kept once a row has been drawn */
-            content-visibility: auto;
-            contain-intrinsic-size: auto 40px;
         }
+        /* v7.16.2: in a long live log (over 200 rows, .lc-many) a row off screen is neither laid out nor painted until it scrolls near, so thousands of rows
+           scroll smoothly; the placeholder height is one short row, the real height is kept once a row has been drawn. A short log is drawn in full. */
+        #logcatOutput.lc-many .lc-row { content-visibility: auto; contain-intrinsic-size: auto 40px; }
 
         .lc-row.lvl-W { background: rgba(255, 160, 0, 0.07); }
         .lc-row.lvl-E { background: rgba(255, 82, 82, 0.09); }
@@ -27924,7 +27923,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function logcatNotice(msg) {
             lcLastText = msg;
             logcatEntries = [];
-            lcRowMap = {}; lcWin = 0; lcNoteDrawn = '';
+            lcWin = 0; lcNoteDrawn = '';                                        // lcRowMap stays: an entry window opened from a row can still find its entry
             logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
             logcatRenderKey();
             const el = document.getElementById('logcatOutput');
@@ -28011,6 +28010,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     if (earlier) earlier.textContent = `${n} earlier entr${n === 1 ? 'y' : 'ies'} not shown · tap to show them`;
                     else el.insertAdjacentHTML('afterbegin', lcEarlierHtml(n));
                 } else if (earlier) earlier.remove();
+                el.classList.toggle('lc-many', lcWin > 200);
                 if (toBottom || wasAtBottom) lcScrollBottom(el);
                 return;
             }
@@ -28024,6 +28024,7 @@ Type any command above (e.g. pm list packages -d)</div>
             el.innerHTML = anyVisible ? html : (html || '') + (entries.some(e => e.kind === 'entry')
                 ? emptyStateHtml({ key: 'logcat-hidden', icon: 'filter', title: 'Every level is hidden - tap the color key above to show some.', compact: true })
                 : emptyStateHtml({ key: 'logcat-none', icon: 'log', title: 'No log lines.', compact: true }));
+            el.classList.toggle('lc-many', lcWin > 200);
             if (toBottom || wasAtBottom) lcScrollBottom(el);
         }
 
@@ -28069,11 +28070,12 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if (!live) showToast(notice);
                 return;
             }
-            const added = lcMerge(t);
+            let added = lcMerge(t);
             if (!added.length && logcatEntries.length) {                      // nothing new since the last draw
                 if (toBottom) { const box = document.getElementById('logcatOutput'); if (box) lcScrollBottom(box); }
                 return;
             }
+            if (!logcatEntries.length) added = lcStore.slice();              // a notice replaced the rows: every line kept comes back
             lcLastText = t;
             // only the new lines are parsed; they may go on with the newest entry kept (the rest of its stack trace)
             const last = logcatEntries.length ? logcatEntries[logcatEntries.length - 1] : null;
@@ -28209,7 +28211,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function lcEntryOpen(i, src) {
             const sel = window.getSelection && window.getSelection();
             if (sel && String(sel).trim()) return;                          // the person is selecting text: not a tap
-            const e = (src === 'v' ? lcv.map : lcRowMap)[i];
+            // the live view's rows name their entry by id (lcRowMap); a plain row number (a caller from before v7.16.2) is the i-th entry drawn
+            const e = src === 'v' ? lcv.map[i] : lcRowMap[i] || Object.values(lcRowMap)[i];
             if (!e || e.kind !== 'entry') return;
             haptic();
             lcEnt = e; lcEntAiText = ''; lcEntAiBusy = false;
