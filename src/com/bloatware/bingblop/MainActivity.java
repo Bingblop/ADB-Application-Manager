@@ -6130,7 +6130,8 @@ public class MainActivity extends Activity {
         try {
             File f = new File(path);
             if (hasStorageAccess()) {
-                if (folder && f.isDirectory()) { // ⚡ Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+                if (folder && f.isDirectory()) { // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
         String[] kids = f.list(); if (kids != null) for (String k : kids) new File(f, k).delete(); }
                 f.delete();
                 if (!f.exists()) return;
@@ -7217,7 +7218,8 @@ public class MainActivity extends Activity {
     }
 
     private static void deleteRecursively(File f) {
-        // ⚡ Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
         String[] kids = f.list();
         if (kids != null) for (String k : kids) deleteRecursively(new File(f, k));
         f.delete();
@@ -16198,7 +16200,8 @@ public class MainActivity extends Activity {
                 }
                 if (f.isDirectory()) {
                     out.add(new ArchiveIo.Source(name + "/", f));
-                    // ⚡ Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+                    // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
         String[] kids = f.list();
                     long total = 0;
                     if (kids != null) {
