@@ -1,5 +1,5 @@
 1. a name that looks like an <img onerror> is shown as text, nothing runs: true {"imgs":0,"pwned":0,"rows":1}
-   a value with <script> and <b> is text too: true <div class="sdb-main"><div class="sdb-key"><mark class="find-hit">xss_value</mark></div><div class="sdb-hint">No description yet</div><div class="sdb-val">&lt;script&gt;window.__pwned=2&lt;/script&gt;
+   a value with <script> and <b> is text too: true <div class="sdb-main"><div class="sdb-key"><mark class="find-hit">xss_value</mark></div><div class="sdb-hint">No description yet</div><div class="sdb-valrow"><div class="sdb-val">&lt;script&gt;window.
    quotes in a name survive the round trip to the editor: true {"n":1,"pwned":0,"key":"quote\"key's"}
    and it opens: true
    Copy command escapes both kinds of quote: true settings put global 'quote"key'\''s' '"><svg onload=window.__pwned=3>'
@@ -7,7 +7,7 @@
 2. every change is recorded, newest first, with the old and new value: true [["global","device_name","Sam's phone","Renamed"],["global","stay_on_while_plugged_in","7","3"]]
    and kept in the app's settings store: true
    the Edited filter lists exactly those, each with a dot: true [{"k":"device_name","dot":true},{"k":"stay_on_while_plugged_in","dot":true}]
-   the Changes sheet shows them with "old → new" and a time: true ["device_name Global · just now Sam's phone → Renamed Revert","stay_on_while_plugged_in Global · just now 7 → 3 Revert"]
+   the Changes sheet shows them with "old → new" and a time: true ["device_name Global · just now · Oct 3, 04:00 AM Sam's phone → Renamed Revert","stay_on_while_plugged_in Global · just now · Oct 3, 04:00 AM 7 → 3 Revert"]
    Revert puts the old value back: true
    and the revert is itself recorded: true
    reverting something that has changed since asks first: true ["stay_on_while_plugged_in has changed since: it is now “5” (this change left it “3”).\n\nPut the old value back anyway?"]

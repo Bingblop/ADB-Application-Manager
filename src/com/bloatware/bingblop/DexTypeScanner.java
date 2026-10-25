@@ -69,7 +69,21 @@ final class DexTypeScanner {
 
     // ---------------------------------------------------------------------------------------------------
 
-    static void scanDex(ZipFile zf, ZipEntry e, TrackerMatcher m, TrackerMatcher.Result r, Stats st) throws IOException {
+    /** Receives every type descriptor of a dex ("Lcom/foo/Bar;", MUTF-8, up to 4096 bytes) and whether a class_def there defines it. */
+    interface DescriptorSink {
+        void feed(byte[] d, int len, boolean defined);
+    }
+
+    static void scanDex(ZipFile zf, ZipEntry e, final TrackerMatcher m, final TrackerMatcher.Result r, Stats st) throws IOException {
+        scanDex(zf, e, new DescriptorSink() {
+            @Override
+            public void feed(byte[] d, int len, boolean defined) {
+                m.feedDescriptor(d, len, defined, r);
+            }
+        }, st);
+    }
+
+    static void scanDex(ZipFile zf, ZipEntry e, DescriptorSink sink, Stats st) throws IOException {
         final long size = e.getSize();
         Cursor c = new Cursor(zf, e);
         try {
@@ -141,7 +155,7 @@ final class DexTypeScanner {
                 if (defined[t]) st.definedTypes++;
                 if (len > 0 && len <= buf.length) {
                     if (buf[0] == 'L' || buf[0] == '[') st.classTypes++;
-                    m.feedDescriptor(buf, len, defined[t], r);
+                    sink.feed(buf, len, defined[t]);
                 }
             }
             st.dexFiles++;                                    // counted once it was read to the end: a damaged file is not 'a dex that holds no trackers'

@@ -100,17 +100,22 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
         return c.getPackageName() + "/" + SdmAccessService.class.getName();
     }
 
+
+    static boolean isEnabledInSettings(String v, String packageName) {
+        if (v == null) return false;
+        String me = packageName + "/" + SdmAccessService.class.getName();
+        String short1 = packageName + "/." + SdmAccessService.class.getSimpleName();
+        for (String s : v.split(":")) if (s.equalsIgnoreCase(me) || s.equalsIgnoreCase(short1)) return true;
+        return false;
+    }
     /** True when Android lists the service as switched on (it may still be starting). */
     public static boolean isEnabledInSettings(Context c) {
         try {
             String v = Settings.Secure.getString(c.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-            if (v == null) return false;
-            String me = componentName(c), short1 = c.getPackageName() + "/." + SdmAccessService.class.getSimpleName();
-            for (String s : v.split(":")) if (s.equalsIgnoreCase(me) || s.equalsIgnoreCase(short1)) return true;
+            return isEnabledInSettings(v, c.getPackageName());
         } catch (RuntimeException ignored) {}
         return false;
     }
-
     public static boolean isConnected() { return SdmAccessService.instance != null; }
 
     @Override
@@ -538,7 +543,15 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
 
         @Override public boolean canInject() { return shell != null && shell.privileged(); }
         @Override public boolean injectKey(int keyCode) { return runInput("input keyevent " + keyCode); }
-        @Override public boolean injectTap(int x, int y) { return runInput("input tap " + x + " " + y); }
+        /** {@code input tap} lands on the topmost window like a finger: the cover is made touch-through for it as for {@link #tap} (else it may press the cover's Cancel). */
+        @Override public boolean injectTap(int x, int y) {
+            cover.passthrough(true);
+            try {
+                return runInput("input tap " + x + " " + y);
+            } finally {
+                cover.passthrough(false);
+            }
+        }
 
         /** One fixed {@code input} command (numbers only: nothing from the screen is put into it) in the working mode; false when it was not run or printed an error. */
         private boolean runInput(String cmd) {

@@ -10,8 +10,8 @@ ok   4. an answer for a level that was changed since is dropped
 ok      a new level starts a new view: only the new answer is shown
 ok   5. Clear empties the view and the kept lines
 ok   6. the Logcat tab has Record to file and Recordings
-ok      pressing it starts a recording with the level of the view, and the button becomes Stop with the line count: {"rec":"E","btn":"■ Stop recording · 5 lines"}
-ok   7. stopping saves the file and opens it as a still picture: {"open":true,"title":"logcat_20261008_120001.log","sub":"1200 entries · 10/8/2026, <clock>","rows":500,"pager":"Entries 1–500 of 1200 « Start ‹ Earlier Later › End »","btn":"● Record to file"}
+ok      pressing it starts a recording with the level of the view, and the button becomes Stop with the line count: {"rec":"E","btn":"Stop recording · 5 lines"}
+ok   7. stopping saves the file and opens it as a still picture: {"open":true,"title":"logcat_20261008_120001.log","sub":"1200 entries · 10/8/2026, <clock>","rows":500,"pager":"Entries 1–500 of 1200 « Start ‹ Earlier Later › End »","btn":"Record to file"}
 ok      the pages go on to the end (the last one holds the rest)
 ok   8. the search narrows the recording to the matching entries and marks the match
 ok      the level key hides levels in the recording: {"n":172,"all":true,"pager":"Entries 1–172 of 172 « Start ‹ Earlier Later › End »"}

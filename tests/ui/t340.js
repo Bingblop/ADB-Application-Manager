@@ -11,7 +11,7 @@ const ovl = require('./lib/ovl_mock.js');
 const appsMock = require('./lib/apps_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (extra === undefined || ok ? '' : ': ' + extra)); }
-const VIEWS = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'console', 'terminal', 'settings', 'extrasettings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm', 'about', 'prefs'];
+const VIEWS = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'console', 'terminal', 'settings', 'extrasettings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm', 'rootfeatures', 'about', 'prefs'];
 
 (async () => {
   const b = await chromium.launch();

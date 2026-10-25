@@ -82,9 +82,9 @@ const VIEWS = ['apps', 'saved-lists', 'debloater', 'files', 'console', 'settings
     }
     // the Apps tab's sort row: one row, every control the same height and centred on one line
     await ev(() => switchView('apps')); await page.waitForTimeout(400);
-    const row = await ev(() => [...document.querySelectorAll('#view-apps .apps-sort-row > *')].filter(e => e.getClientRects().length && getComputedStyle(e).position !== 'absolute')
+    const row = await ev(() => [...document.querySelectorAll('#view-apps .apps-sort-row > :not(.apps-row-label)')].filter(e => e.getClientRects().length && getComputedStyle(e).position !== 'absolute')
       .map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.height), Math.round(r.top + r.height / 2)]; }));
-    check('apps ' + width + ': the sort row is one line of 36px controls', row.length >= 3 && row.every(([h, c]) => h === 36 && Math.abs(c - row[0][1]) <= 1), JSON.stringify(row));
+    check('apps ' + width + ': the sort row is one line of 36px controls (its two labels aside)', row.length >= 2 && row.every(([h, c]) => h === 36 && Math.abs(c - row[0][1]) <= 1), JSON.stringify(row));
     // a tap just beside an app row's icon (the row's checkbox: 40px, answering over 44px) selects the app; the ⋯ button keeps its taps
     const pick = await ev(() => {
       const card = document.querySelector('#view-apps .app-card');
@@ -117,6 +117,7 @@ const VIEWS = ['apps', 'saved-lists', 'debloater', 'files', 'console', 'settings
     // the two switches are whole rows: the label row is the target, at least 44px tall, and the track hands its tap to the row (Pure black flips)
     for (const [view, id] of [['saved-lists', 'lbAuto'], ['prefs', 'pureBlackToggle']]) {
       await ev(v => switchView(v), view); await page.waitForTimeout(400);
+      await ev(id => ccReveal(document.getElementById(id)), id); await page.waitForTimeout(400);          // v7.15: the Saved lists backup card starts folded
       const s = await ev(id => {
         const i = document.getElementById(id), row = i.closest('.switch-row');
         row.scrollIntoView({ block: 'center' });

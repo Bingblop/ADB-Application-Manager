@@ -87,7 +87,9 @@ rm -rf "$STAGE"; mkdir -p "$STAGE"
 cp -R "$WORK_DIR/assets/." "$STAGE/"
 rm -f "$STAGE/libadb.so"
 if [ "$ABI" != "armeabi-v7a" ]; then
-    [ -f "$WORK_DIR/assets/libadb.so" ] && cp "$WORK_DIR/assets/libadb.so" "$STAGE/libadb.so"
+    # Stop like the 32-bit branch below: without it the APK builds and signs with no adb for 64-bit phones
+    [ -f "$WORK_DIR/assets/libadb.so" ] || fail "assets/libadb.so is missing"
+    cp "$WORK_DIR/assets/libadb.so" "$STAGE/libadb.so"
 fi
 if [ "$ABI" != "arm64-v8a" ]; then
     [ -f "$WORK_DIR/native/armeabi-v7a/libadb.so" ] || fail "native/armeabi-v7a/libadb.so is missing"
@@ -145,6 +147,56 @@ RUNNER_CLASSES=$(find "$WORK_DIR/obj/classes" -name "SystemlessUninstallRunner*.
 "${D8[@]}" --release --min-api "$MIN_SDK" --lib "$BOOTCLASSPATH" --output "$RUNNER_DIR" $RUNNER_CLASSES || fail "d8 failed (uninstall helper)"
 [ -f "$RUNNER_DIR/classes.dex" ] || fail "the uninstall helper has no classes.dex"
 
+# ---- Step 4b: Keystore (the ADB Stub below is signed with it too) -----------------------------
+if [ ! -f "$KEYSTORE" ]; then
+    step "No keystore at $KEYSTORE - generating a new one (uninstall the old app before installing)..."
+    keytool -genkeypair -keystore "$KEYSTORE" -keyalg RSA -keysize 2048 -validity 10000 \
+        -alias "$KS_ALIAS" -storepass "$KS_PASS" -keypass "$KS_PASS" \
+        -dname "CN=bingblop, OU=adb, O=appmanager, L=local, ST=android, C=US" >/dev/null 2>&1 \
+        || fail "Keystore generation failed"
+fi
+
+# Aligns and signs $1 into $2 with the keystore above
+sign_apk() {
+    if [ -n "${UBER_SIGNER_JAR:-}" ]; then
+        rm -rf "$2.d"
+        java -jar "$UBER_SIGNER_JAR" -a "$1" -o "$2.d" \
+            --ks "$KEYSTORE" --ksAlias "$KS_ALIAS" --ksPass "$KS_PASS" --ksKeyPass "$KS_PASS" >/dev/null \
+            || fail "Signing failed"
+        mv "$2.d"/*.apk "$2"
+        rm -rf "$2.d"
+    else
+        zipalign -p -f 4 "$1" "$1.aligned" || fail "zipalign failed"
+        apksigner sign --ks "$KEYSTORE" --ks-key-alias "$KS_ALIAS" --ks-pass "pass:$KS_PASS" --key-pass "pass:$KS_PASS" \
+            --out "$2" "$1.aligned" || fail "apksigner failed"
+        rm -f "$1.aligned"
+    fi
+}
+
+# ---- Step 4c: ADB Stub for Wear OS watches ----------------------------------------------------
+# A small app of its own (wearstub/): Connected Devices installs it on a Wear OS watch, where it keeps the screen on and Wi-Fi connected while the
+# phone is connected. It ships inside this APK as assets/adb_stub.apk.
+step "Building the ADB Stub for Wear OS watches..."
+STUB="$WORK_DIR/obj/stub"
+rm -rf "$STUB"; mkdir -p "$STUB/gen" "$STUB/classes" "$STUB/dex"
+"$AAPT2" compile --dir "$WORK_DIR/wearstub/res" -o "$STUB/res.zip" || fail "aapt2 compile failed (ADB Stub)"
+"$AAPT2" link --manifest "$WORK_DIR/wearstub/AndroidManifest.xml" -I "$ANDROID_JAR" --java "$STUB/gen" \
+    -o "$STUB/unsigned.apk" "$STUB/res.zip" || fail "aapt2 link failed (ADB Stub)"
+STUB_SOURCES=$(find "$WORK_DIR/wearstub/src" "$STUB/gen" -name "*.java")
+if command -v javac >/dev/null 2>&1; then
+    STUB_STATUS=0
+    javac -nowarn -encoding UTF-8 "${JAVAC_CP[@]}" -d "$STUB/classes" $STUB_SOURCES > "$STUB/javac.log" 2>&1 || STUB_STATUS=$?
+    grep -v "^warning: \[options\]" "$STUB/javac.log" || true
+    [ "$STUB_STATUS" -eq 0 ] || fail "Java compilation failed (ADB Stub, javac exit status $STUB_STATUS)"
+else
+    ecj -nowarn -source 1.8 -target 1.8 -encoding UTF-8 -bootclasspath "$BOOTCLASSPATH" \
+        -d "$STUB/classes" $STUB_SOURCES || fail "Java compilation failed (ADB Stub)"
+fi
+"${D8[@]}" --release --min-api 25 --lib "$BOOTCLASSPATH" --output "$STUB/dex" $(find "$STUB/classes" -name "*.class") || fail "d8 failed (ADB Stub)"
+python3 -c "import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], 'a', zipfile.ZIP_DEFLATED); z.write(sys.argv[2], 'classes.dex'); z.close()" \
+    "$STUB/unsigned.apk" "$STUB/dex/classes.dex" || fail "packaging failed (ADB Stub)"
+sign_apk "$STUB/unsigned.apk" "$STUB/adb_stub.apk"
+
 # ---- Step 5: Package dex + native adb ---------------------------------------------------------
 step "Packaging classes.dex and native libraries..."
 python3 - "$WORK_DIR" "$ABI" <<'EOF'
@@ -177,10 +229,12 @@ with zipfile.ZipFile(apk, 'a', zipfile.ZIP_DEFLATED) as z:
             sys.exit('the Morphe engine zip has no kotlin/kotlin.kotlin_builtins: run engine/build-engine.sh')
         print('    + Morphe engine (%d extra dex files, %d resources)' % (n - len(dex), sum(1 for x in ez.namelist() if not x.endswith('/') and not x.endswith('.dex'))))
     z.write(runner_jar, 'assets/uninstall_runner.jar')
+    z.write(os.path.join(work, 'obj', 'stub', 'adb_stub.apk'), 'assets/adb_stub.apk')     # the ADB Stub for Wear OS watches (Step 4c)
     if abi in ('arm64-v8a', 'universal'):
         libadb = os.path.join(work, 'assets', 'libadb.so')
-        if os.path.exists(libadb):
-            z.write(libadb, 'lib/arm64-v8a/libadb.so')
+        if not os.path.exists(libadb):
+            sys.exit('assets/libadb.so is missing')
+        z.write(libadb, 'lib/arm64-v8a/libadb.so')
     if abi in ('armeabi-v7a', 'universal'):
         z.write(os.path.join(work, 'native', 'armeabi-v7a', 'libadb.so'), 'lib/armeabi-v7a/libadb.so')
     # the pty helper of the full-screen Terminal (native/pty/ptyexec.c, built by native/pty/build.sh and kept in the repository): run from the library folder like libadb.so
@@ -192,29 +246,10 @@ with zipfile.ZipFile(apk, 'a', zipfile.ZIP_DEFLATED) as z:
             z.write(pty, 'lib/%s/libptyexec.so' % a)
 EOF
 
-# ---- Step 6: Keystore -------------------------------------------------------------------------
-if [ ! -f "$KEYSTORE" ]; then
-    step "No keystore at $KEYSTORE - generating a new one (uninstall the old app before installing)..."
-    keytool -genkeypair -keystore "$KEYSTORE" -keyalg RSA -keysize 2048 -validity 10000 \
-        -alias "$KS_ALIAS" -storepass "$KS_PASS" -keypass "$KS_PASS" \
-        -dname "CN=bingblop, OU=adb, O=appmanager, L=local, ST=android, C=US" >/dev/null 2>&1 \
-        || fail "Keystore generation failed"
-fi
-
-# ---- Step 7: Align + sign ---------------------------------------------------------------------
+# ---- Step 6: Align + sign ---------------------------------------------------------------------
 step "Aligning and signing APK..."
 OUT_APK="$WORK_DIR/bin/$APP_NAME$SUFFIX.apk"
-if [ -n "${UBER_SIGNER_JAR:-}" ]; then
-    java -jar "$UBER_SIGNER_JAR" -a "$WORK_DIR/bin/unsigned.apk" -o "$WORK_DIR/bin/signed" \
-        --ks "$KEYSTORE" --ksAlias "$KS_ALIAS" --ksPass "$KS_PASS" --ksKeyPass "$KS_PASS" >/dev/null \
-        || fail "Signing failed"
-    mv "$WORK_DIR"/bin/signed/*.apk "$OUT_APK"
-    rm -rf "$WORK_DIR/bin/signed"
-else
-    zipalign -p -f 4 "$WORK_DIR/bin/unsigned.apk" "$WORK_DIR/bin/aligned.apk" || fail "zipalign failed"
-    apksigner sign --ks "$KEYSTORE" --ks-key-alias "$KS_ALIAS" --ks-pass "pass:$KS_PASS" --key-pass "pass:$KS_PASS" \
-        --out "$OUT_APK" "$WORK_DIR/bin/aligned.apk" || fail "apksigner failed"
-fi
+sign_apk "$WORK_DIR/bin/unsigned.apk" "$OUT_APK"
 
 echo
 echo -e "${BOLD}${GREEN}✔ Built and signed: $OUT_APK${RESET}"

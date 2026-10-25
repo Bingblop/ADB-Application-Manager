@@ -84,8 +84,8 @@ final class SettingsDb {
 
     /**
      * The listing, then a marker line: a table is only complete when the marker is the last line (see {@link #readList}). Every command
-     * names the user: {@code --user current} is the user this app runs as, whose tables are shown and changed (without it the shell acts on
-     * user 0, so in a work profile or a secondary user the tab would read and write another user's settings).
+     * names the user as {@code --user current}. That is the foreground user (the settings service treats no flag the same way), not
+     * necessarily the user this app runs as: in a work profile the tab still reads and writes the personal profile's tables.
      */
     static String listCommand(String ns) {
         requireNamespace(ns);

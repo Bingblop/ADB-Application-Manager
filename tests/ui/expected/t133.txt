@@ -1,8 +1,8 @@
-ok   1. every box has its own colour (the one its number has): Enabled vivid green, Frozen blue, 3rd Party orange, System purple: ["enabled:ok","frozen:ok","user:ok","system:ok","running:ok","uninstalled:ok"]
+ok   1. every box has its own colour (the one its number has): Enabled vivid green, Frozen blue, User orange, System purple: ["enabled:ok","frozen:ok","user:ok","system:ok","running:ok","uninstalled:ok"]
 ok      the one in use is a clearly stronger shade than when it is off, with a ring in its colour: {"off":"color(srgb 1 0.801887 0.542138 / 0.124706)","on":"color(srgb 0.390588 0.279216 0.159608)","border":"rgb(255, 165, 47)","tone":"ok"}
 ok      the four colours differ from each other
 ok      a pair keeps its frame in the colour of the side that is on
-ok      a frozen app's whole row has a blue tint (a selected one keeps the selection colours), an enabled one has none
+ok      a frozen app's row is tinted blue (a selected one has the selection colours instead), an enabled one has no tint
 ok      a running app's row is tinted green and an uninstalled app's row red (a frozen one stays blue, a plain one has no tint)
 ok   2. there is a "Saved devices" line once a device has been connected, closed at first
 ok      opened, it lists the devices that are up now and are saved, each with Delete: ["Pixel Tablet Wi-Fi · connected now Delete","SM R930 Wi-Fi · connected now Delete"]

@@ -1,0 +1,7 @@
+ok   1. Uninstall, Freeze, Reinstall and Enable carry the red, blue, green and accent classes in the app menu, the batch bar and Connected Devices
+ok   2. dark theme: every one is filled (no outline-only button), Uninstall a red gradient, Freeze ice blue, Reinstall green, black text on each, contrast at least 4.5:1 on every colour stop
+ok      every filled button is a gradient, Enable's from a lighter (or, under white text, darker) accent to the accent
+ok      Frozen (the filter, its count and the FROZEN tags) is a clear blue, not the old lavender: blue well above red (#94BCFF, the lavender, is 107 apart)
+ok   3. light theme: the same fills and black text (fixed colours, not the darker light-theme status colours)
+ok   4. the accent buttons' text is black where black has 4.5:1 or more (or beats white), white otherwise; the gradient's other end only adds contrast
+errors: []

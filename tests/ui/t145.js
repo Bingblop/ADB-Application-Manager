@@ -61,16 +61,16 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('5. Clear empties the view and the kept lines', await ev(() => /\(cleared\)/.test(document.getElementById('logcatOutput').innerText) && lcStore.length === 0));
 
   // ---- 2. recording ----
-  check('6. the Logcat tab has Record to file and Recordings', await ev(() => document.getElementById('logcatRecBtn').innerText.trim() === '● Record to file' && document.getElementById('logcatRecListBtn').innerText.trim() === 'Recordings'));
+  check('6. the Logcat tab has Record to file and Recordings', await ev(() => document.getElementById('logcatRecBtn').innerText.trim() === 'Record to file' && document.getElementById('logcatRecListBtn').innerText.trim() === 'Recordings'));
   await ev(() => logcatRecToggle()); await sleep(100);
   const started = await ev(() => ({ rec: window.__rec && window.__rec.level, btn: document.getElementById('logcatRecBtn').innerText }));
-  check('   pressing it starts a recording with the level of the view, and the button becomes Stop with the line count', started.rec === 'E' && /^■ Stop recording · 5 lines$/.test(started.btn), JSON.stringify(started));
+  check('   pressing it starts a recording with the level of the view, and the button becomes Stop with the line count', started.rec === 'E' && /^Stop recording · 5 lines$/.test(started.btn), JSON.stringify(started));
   const REC = ['# ADB Application Manager - log recording', '# Level: E and above']
     .concat(Array.from({ length: 1200 }, (_, i) => `10-08 12:${String(Math.floor(i / 60) % 60).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}.000  1000  1001 ${i % 7 === 0 ? 'E' : i % 5 === 0 ? 'W' : 'I'} Tag${i % 3}: message number ${i}`)).join('\n');
   await ev(t => { window.__recText = t; window.__rec.lines = 1200; }, REC);
   await ev(() => logcatRecToggle()); await sleep(250);
   const vw = await ev(() => ({ open: document.getElementById('lcvModal').classList.contains('show'), title: document.getElementById('lcvTitle').innerText, sub: document.getElementById('lcvSub').innerText, rows: document.querySelectorAll('#lcvOut .lc-row').length, pager: document.getElementById('lcvPager').innerText.replace(/\s+/g, ' '), btn: document.getElementById('logcatRecBtn').innerText }));
-  check('7. stopping saves the file and opens it as a still picture', vw.open && /^logcat_2026/.test(vw.title) && /1200 entries/.test(vw.sub) && vw.rows === 500 && /Entries 1.500 of 1200/.test(vw.pager.replace('–', '.')) && vw.btn === '● Record to file', JSON.stringify(vw));
+  check('7. stopping saves the file and opens it as a still picture', vw.open && /^logcat_2026/.test(vw.title) && /1200 entries/.test(vw.sub) && vw.rows === 500 && /Entries 1.500 of 1200/.test(vw.pager.replace('–', '.')) && vw.btn === 'Record to file', JSON.stringify(vw));
   await ev(() => lcvDraw(-1)); await sleep(60);
   check('   the pages go on to the end (the last one holds the rest)', await ev(() => document.querySelectorAll('#lcvOut .lc-row').length === 200 && /Entries 1001.1200 of 1200/.test(document.getElementById('lcvPager').innerText.replace('–', '.').replace(/\s+/g, ' '))));
   await ev(() => lcvDraw(0));

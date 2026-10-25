@@ -1,6 +1,6 @@
-1. the settings button is a good tap target (at least 44 x 36, it was 40 x 25): true {"w":44,"h":38}
+1. the settings button is a good tap target (at least 44 x 36, it was 40 x 25): true {"w":44,"h":40}
    its emoji is bigger (22px, it was 11px): true 22px
-   it fits in the header (no taller than the header) and the tab bar still starts where the header ends: true header 90px, tab bar at 90, header ends 90
+   it fits in the header (no taller than the header) and the tab bar still starts where the header ends: true header 82px, tab bar at 82, header ends 82
    it still opens Settings: true
 2. on opening, no box is lit and the All Apps pill is (the list shows every app): true none
    a lit card looks different (its own border colour and a glow), the others do not: true {"lit":true,"borderDiffers":true,"shadow":true}
@@ -8,7 +8,6 @@
    the list below shows what the lit card counts: true
    choosing the System pill lights System: true system:true
    a filter with no card (Suspended) lights none: true none
-   same for Updated 7d: true none
    tapping All Apps is back to the start: true none
    frozen card lights frozen and the pill follows: true frozen:true
    user card lights user and the pill follows: true user:true
@@ -19,11 +18,11 @@
    the highlight does not change the size of a card or move the others: true
 3. a remembered filter is ignored: the app opens on All Apps: true none
    a remembered filter with no card is ignored too: true none
-3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped): true running:true,user:true
+3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped): true user:true,running:true
    the setting shows as on, and the Debloater and Saved rows come back too: true
    it saves the change (tapping All Apps saves an empty set): true
    with the setting off (the default), a saved filter set is ignored: true none
-4. a tip arrow sits under the Share CSV / Profiles buttons, held at the right end of the filter row: true {"shown":true,"text":"Scroll the filters below sideways for more filters","title":"Scroll the filters below sideways for more filters","arrow":"›","belowButtons":true,"inRow":true,"width":48,"height":36,"sticky":"sticky"}
+4. a tip arrow sits under the Sort and Action Button menus, held at the right end of the filter row: true {"shown":true,"text":"Scroll the filters below sideways for more filters","title":"Scroll the filters below sideways for more filters","arrow":"›","belowButtons":true,"inRow":true,"width":48,"height":36,"sticky":"sticky"}
    its name and tooltip tell to scroll the filters sideways for more: true Scroll the filters below sideways for more filters
    the filters really do scroll sideways (more pills than fit): true
    scrolling the filters sideways makes it go: true

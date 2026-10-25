@@ -103,7 +103,7 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
   await page.locator('#view-about button', { hasText: 'Copy debug info' }).click(); await sleep(40);
   const dbg = await ev(() => window.__copied[window.__copied.length - 1] || '');
   console.log('6. Copy debug info copies version, package, Android, device, WebView, mode and the key verdict:',
-    /ADB Application Manager Pro 5\.8-Pro \(build 580\)/.test(dbg) && /Package: com\.bloatware\.bingblop/.test(dbg) && /Android: 15 \(API 35\)/.test(dbg) && /arm64-v8a/.test(dbg) && /WebView: com\.google\.android\.webview/.test(dbg) && /Working mode: .*Shizuku/.test(dbg) && /official release key/.test(dbg) && !/not the official/.test(dbg), JSON.stringify(dbg));
+    /ADB\/Root Full System Toolbox 5\.8-Pro \(build 580\)/.test(dbg) && /Package: com\.bloatware\.bingblop/.test(dbg) && /Android: 15 \(API 35\)/.test(dbg) && /arm64-v8a/.test(dbg) && /WebView: com\.google\.android\.webview/.test(dbg) && /Working mode: .*Shizuku/.test(dbg) && /official release key/.test(dbg) && !/not the official/.test(dbg), JSON.stringify(dbg));
   await page.locator('#view-about button', { hasText: 'Share it' }).click(); await sleep(40);
   console.log('   Share it hands the same text to the share sheet:', (await ev(() => window.__shared.length)) === 1 && (await ev(() => window.__shared[0][1])) === dbg);
   await page.locator('#view-about button', { hasText: 'Copy fingerprint' }).click(); await sleep(40);

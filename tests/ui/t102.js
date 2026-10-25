@@ -15,7 +15,7 @@ const { chromium, PAGE } = require('./lib/pw');
     window.__acts = []; window.__perm = []; window.__ops = []; window.__comp = [];
     window.AndroidBridge = {
       vibrate() {}, loadPreferences() { return '{}'; }, savePreferences() {}, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; },
-      isSystemDarkMode() { return true; }, setSystemBarColor() {}, loadPackages() { return JSON.stringify(a); }, getWorkingMode() { return JSON.stringify({ mode: 'adb_tcp', isPrivileged: true, status: 'connected' }); },
+      isSystemDarkMode() { return true; }, setSystemBarColor() {}, loadPackages() { return JSON.stringify(a); }, getWorkingMode() { return JSON.stringify({ mode: 'root', activeMode: 'root', configuredMode: 'root', isPrivileged: true, modeAvailable: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true, status: 'connected' }); },
       getIconPacks() { return '[]'; }, loadAppIcons() { return 'started'; },
       executeAppAction(act, pkg) { window.__acts.push([act, pkg]); return '\u00011ok'; },
       getAppDetails(pkg) {

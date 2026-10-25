@@ -7,6 +7,23 @@ public class ShellOutcomeTest {
   static int fails = 0, n = 0;
   static void check(String what, boolean ok) { n++; if (!ok) { fails++; System.out.println("FAIL " + what); } }
   static final String M = "__RC123__";
+  static String sh(String cmd) {
+    try {
+      Process p = new ProcessBuilder("/bin/sh", "-c", cmd).redirectErrorStream(true).start();
+      byte[] b = readAll(p.getInputStream());
+      p.waitFor();
+      return new String(b, "UTF-8");
+    } catch (Exception e) {
+      return "";
+    }
+  }
+  static byte[] readAll(java.io.InputStream in) throws java.io.IOException {
+    java.io.ByteArrayOutputStream o = new java.io.ByteArrayOutputStream();
+    byte[] buf = new byte[4096];
+    int n;
+    while ((n = in.read(buf)) > 0) o.write(buf, 0, n);
+    return o.toByteArray();
+  }
   public static void main(String[] args) {
     ShellOutcome o = ShellOutcome.parse("Success\n" + M + ":0\n", M);
     check("status 0 is ok and the text before the marker is kept without the trailing newline", o.ok && o.text.equals("Success"));
@@ -34,6 +51,14 @@ public class ShellOutcomeTest {
     o = ShellOutcome.parse("x\n" + M + ":12345678901\n", M);
     check("a number too long to be a status is not one", !o.ok);
     // no marker at all: the command never reached its end
+    // MA2-4: the command as it is really sent, run by a real sh: a trailing "# comment" or a lone "&" must not lose the status line
+    if (new java.io.File("/bin/sh").canExecute()) {
+      for (String[] c : new String[][]{{"echo done # wipe cache", "0"}, {"echo done", "0"}, {"false # note", "1"}, {"true &", "0"}}) {
+        String out = sh(ShellOutcome.withStatus(c[0], M));
+        ShellOutcome r = ShellOutcome.parse(out, M);
+        check("run by sh: '" + c[0] + "' gives its status (" + out.replace("\n", "|") + ")", out.contains(M + ":" + c[1]) && r.ok == c[1].equals("0"));
+      }
+    }
     o = ShellOutcome.parse("Error: " + "Shizuku is not authorized for this app", M);
     check("Shizuku not authorized (no marker) is a failure, text kept", !o.ok && o.text.startsWith("Error: Shizuku"));
     o = ShellOutcome.parse("  Error: Wireless Debugging is not configured. Connect it in Working Modes.", M);

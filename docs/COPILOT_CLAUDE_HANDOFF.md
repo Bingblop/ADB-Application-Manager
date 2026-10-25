@@ -194,6 +194,111 @@ Things the next person should know:
 - **Known flaky CI scripts** (each passes alone; none caused by these fixes): t137 and t261 under two parallel jobs, and t104 under CPU load (its first click on the Enabled pill used to race the layout shift of the filters hint being dismissed; the script now waits for the hint, so a failure of it again is news), plus the list in the v7.13.0 section. Java `extractspace` and `sdmengine` fail under disk load and pass alone; seven Java suites skip here for a missing prerequisite (`storedetail`, `fdroid`, `morpheengine`, `signer`, `signwritefail`, `signmismatch`, `axml`).
 - **The native pty helper was rebuilt** (SIGPIPE ignored) for arm64-v8a, armeabi-v7a and x86_64 with clang 18 and lld; `native/pty/test.sh` runs its nine qemu checks. Rebuild it the same way if `ptyexec.c` changes again; the binaries are committed.
 
+## v7.16.1 (cut from `main`; written 2026-10-25)
+
+One change the owner asked for after v7.16.0: the Root Features tab and the per-app component Enable / Disable now unlock when the Shizuku server runs as the system user (UID 1000) or as root (UID 0), not only in Root mode with su granted. His words were to ship v7.16.1 as soon as the UID 1000 change was in, so the arm64 APK phone-test gate of v7.15.0/v7.16.0 is waived here (`docs/RELEASE-CHECKLIST-v7.16.1.md` step 5b). The release pull request is this change plus the version bump.
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| this | `RootGate.unlocked` (UID 0/1000) and `RootGate.uid0` (UID 0 only); `MainActivity` reads the Shizuku server UID (`shizukuServerUid`, `Shizuku.getUid`) and reports `sysPrivActive`/`rootUidActive` from `probeWorkingMode`; the component toggle and the overlay fabricate gate key off them; the page reads the two flags (`isRootActive`, `ovlCanWriteOverlays`), the badge names the real UID | `rootgate` (+14), `componentgate`, `overlayrules`, `modetilelight`, t575, t563, t559; i18n --strict; guide build --check --strict | PHONE-SCRIPT-v7.16.1 B, C |
+| bump | Version 7.16.1 (863), changelog, README, guides, `docs/LAUNCH.md`, `docs/RELEASE-CHECKLIST-v7.16.1.md`, `docs/PHONE-SCRIPT-v7.16.1.md` | the full Java and UI suites, i18n --strict, guide build --check --strict, docs shell blocks | none |
+
+Things the next person should know:
+
+- **Two tiers, because Android draws the line at the component versus the overlay.** A single component's state change (`pm enable/disable`) is refused to the ADB shell user (UID 2000) but allowed to the system user (UID 1000) and root (UID 0), so the Root Features tab and the component toggle unlock at UID 1000. Writing a fabricated colour overlay (`cmd overlay fabricate`) is allowed only to UID 0, so the root theme card stays locked under UID 1000. `RootGate.unlocked` is the broad tier, `RootGate.uid0` the strict one; the page mirrors them as `sysPrivActive` and `rootUidActive`, with the old root-only rule as the fallback when an older app omits the fields.
+- **UID 1000 is the system user, not root.** Nothing in the app, the strings or the guide calls it root; the guide's UID glossary entry spells out 0 / 1000 / 2000.
+- **Not run on a device.** The unlock only shows on a phone whose Shizuku runs with system or root rights (a rooted phone started Shizuku with root). On an ordinary phone Shizuku is UID 2000 and the features stay locked, unchanged — which is the testable part on an unrootable phone.
+- **No manifest permission changed.**
+
+## v7.16.0 (cut from `main`; written 2026-10-21)
+
+The root features, the root theme card (the ColorBlendr items) and the first-launch privilege flow the owner asked for after v7.15.0, with the fixes of two test passes over them (T-002 to T-079). The release pull request is the version bump on top of #283 (Android 14 QPR1-QPR3), which was in CI when the bump was written. The owner tests the `arm64-v8a` APK before anything is published (`docs/RELEASE-CHECKLIST-v7.16.0.md` step 5b).
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| #253 | Saved lists: Overwrite / Create new list for a name in use; the Stop apps tile renamed Kill Apps, long-press on a tile opens the app; the full-screen terminal monospaced again | t557, t558, `quickstop`; t69, t321 counts | PHONE-SCRIPT-v7.16.0 steps 6, 8, 9 |
+| #254, #257, #258, #259 | Root Features tab and gate (`RootGate`), Request Super User, Open root manager (`RootManagers`), Super User for apps, App components | t559, `rootgate`, `rootmanagers`; tab-count goldens for the added tab | steps 10, 11 |
+| #265 | Component enable/disable is Root only, for user and system apps; read back by `getComponentEnabledSetting` | t563, `componentgate`; t29, t102, t107 | step 11 |
+| #255, #256 | Start Shizuku (ADB) (`ShizukuStart`) and the launch offer | t560, t561, `shizukustart` | steps 3, 4; device checklist 30, 31 |
+| #260 | Working mode tile lit only while a privileged mode is ready (`ModeTileLight`) | `modetilelight` | step 5; device checklist 32 |
+| #262 | Allow all restarts the app from a shell watcher (`AppRestart`) | t562, `apprestart` | step 7; device checklist 33 |
+| #263 | Help Guide: the Root Features chapter, checked against the managers' sources and AOSP | t111, t553 | step 17 |
+| #264 | CMF, the tenth Settings palette style | t129 | step 2 |
+| #266, #271, #272, #274, #275, #279 | Root theme card: Pure black (`OverlayRules` fabricate plan), More styles and `assets/monet.js`, Color spec and CMF, Intensity, accents, Accurate shades | t564 to t566, t568 to t570, `overlayrules` | steps 12 to 16 |
+| #273, #280, #281, #282, #283 | Per-release profiles (`MonetProfile`): 14.0, 15 QPR1/QPR2, 16.0, then 16 QPR1/QPR2, 17, 15.0, 14 QPR1-QPR3; other versions locked; One UI served by its Android version since #286 | t567, t571 to t574, `monetprofile` | step 12 |
+| #267 to #270, #276 to #278 | Test-pass fixes (T-002 to T-079): tiles, Shizuku offer, Root Features hand-off and su checks, Allow all order and user, CMF in dark mode, the root theme card's Apply, Undo and notes, translations | the scripts and suites above, each case failing before its fix | the device checklist items each PR names |
+| bump | Version 7.16.0 (862), changelog, README, guides, `docs/LAUNCH.md`, `docs/RELEASE-CHECKLIST-v7.16.0.md`, `docs/PHONE-SCRIPT-v7.16.0.md` | Java suites, the UI scripts that read the version and the root and theme scripts, i18n --strict, guide build --strict --check, docs shell blocks | none |
+
+Things the next person should know:
+
+- **Not run on a device.** Nothing in #253 to #283 has run on a phone. The root theme colours were compared on a computer with each Android release's own colour code (libmonet and SystemUI compiled and run, or ported and read beside the sources; the commit messages and the `assets/monet.js` header give the numbers), not on a phone; a maker can change Android's colour engine, which no oracle covers.
+- **Fail closed:** `MonetProfile` names the build family from the SDK level, framework colour names and (on SDK 34) the boolean `config_repairModeSupported`; anything it cannot place, and an Android newer than 17 are locked. A One UI phone is placed by the same checks as any other (#286) and the card shows a note on which apps follow the colours there. A new Android release needs a new profile before the card unlocks on it.
+- **Passive tiles:** neither tile declares `ACTIVE_TILE`, so `requestListeningState` does nothing for them (T-003, T-036, T-060); a tile shows a new state only when the panel is opened again.
+- **No manifest permission changed** in this range; #253 added the `QS_TILE_PREFERENCES` activity-alias to MainActivity.
+
+## v7.15.0 (cut from `main`; written 2026-10-18)
+
+The top-to-bottom UI pass the owner asked for on 2026-10-18 ("make it look better to the human eye ... features easier to reach"), with the rename to ADB/Root Full System Toolbox and the one-colour header he asked for after v7.14.1. A design pass decided each screen and reviewed the build; the decisions, and where the build differs from them and why, are `/mnt/project-files/plans/ui-pass-v7.15-decisions.md` in the project. The owner tests the `arm64-v8a` APK of #252 before anything is published (`docs/RELEASE-CHECKLIST-v7.15.0.md` step 5b).
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| #251 | Rename to ADB Full System Manager (renamed again in #252 to ADB/Root Full System Toolbox, the owner's choice after his phone test); header, colour tokens, bottom bar, the Apps tab and the app menu; Running, Frozen and Uninstalled as long-press shortcuts of Apps | t11, t104, t117, t261, t263, t330, t337, t412, t422 follow the new header, badge, padding and shortcuts; goldens re-recorded | PHONE-SCRIPT-v7.15.0 steps 1 to 8 |
+| #252 part 2 | Saved Applications, Debloater (folded top card, Update List and History by the search), Installer, Settings (two-line descriptions, three swatches a row, two below 380 px) | t13, t325; goldens t76, t115, t131, t325, t332 | steps 9 to 14 |
+| #252 part 3 | Console, Live Logcat, Hidden Settings, Files (path crumbs, tonal Go and Search); History as a choosable Console shortcut; Search files, Storage and Downloads for Files | t79, t263, t441, t480 | steps 15 to 22 |
+| #252 part 4 | Morphe, Task Manager, Extra Settings, SD Maid ("What does this do?" folds), About (three cards fold), Connected Devices with no device, App Stores and Devices tab rows; the design review's fixes (Debloater row buttons, folded-card ?, the arrow on text that has more, Logcat All apps colour) | t113, t410 | steps 23 to 25 |
+| #252 review | Six findings of a code review of parts 2 to 4, each verified by a second reader: the Files path crumbs in Arabic and their 44 px taps, the Graph speed slider squeezed to 2 px in German, Live Logcat's two tool rows overlapping their tap areas, Palette Style names broken between letters below 380 px, and the Files shortcut labelled with the verb "Download" | UI t556 (fails on the code before the fixes) | steps 13, 19, 21 to 23 |
+| #252 bump | The final name, ADB/Root Full System Toolbox (the header reads "ADB/Root Full" over "System Toolbox", the widget title stays on one line); version 7.15.0 (861), changelog, README, guides, `docs/RELEASE-CHECKLIST-v7.15.0.md`, `docs/PHONE-SCRIPT-v7.15.0.md` | the full UI suite on the head of #252 | none |
+
+Things the next person should know:
+
+- **Not run on a device.** Every change is to the page (`assets/index.html`, the translations and the Help Guide) plus the name: the labels in `AndroidManifest.xml`, `res/values/strings.xml` and the widget layout, and the name strings in five Java files (clip labels, the log-recording head, Termux task names, the Updater's own row); no Java behaviour changed. The UI scripts run the page in headless Chromium with a mock bridge, so how it looks on a phone (fonts, One UI's WebView, a narrow screen in landscape) is the phone script's job.
+- **Owner choices that beat the design pass** (the scripts named guard them): the Settings order of v7.14 (t421, t76, t144), an app menu that asks before nothing (t115), the Private DNS pointer in Hidden Settings (t217), the Language card first (t81), the Console's long-press four (t441, t263: History is choosable, not one of the four), the Reconnecting devices card right under the Connected Devices top card (t421), Live Logcat's green Play and red Stop with black text, and Contact the developer as About's main button.
+- **A class-name collision fixed on the way:** Debloater rows used `.uad-actions`, the sticky action bar's class, so a row's buttons took the bar's layout; rows now use `.uad-row-actions`.
+- **Only one gear:** since #251 the Extra Settings tab icon is a switch and the row's App info Action Button an (i) in a circle, so the header button is the only gear.
+- **Left for later on purpose** (in the decisions file): hiding Back to top while scrolling, long-press to select, Logcat Start and SD Maid Scan all as bottom-bar shortcuts.
+
+## v7.14.1 (cut from `main`; written 2026-10-16)
+
+The 57 fixes of a full review of `main` (after #235) and of the v7.14.0 changes, plus seven changes the owner asked for after v7.14.0 (a Stop apps progress notification, a Speed test section, a File Manager Refresh button, Installed | Uninstalled as one choice, a Gradient switch and a Row tints shortcut, and the Updated 7d filter taken out). The full list of the review with every verdict, including the findings that were rejected or judged not worth the code, is `/mnt/project-files/reviews/code-review-full-main-2026-10-16.md` in the project. The owner asked for this release in the project thread on 2026-10-16, and asked for a debug `arm64-v8a` APK to check on his own phone before it is published (`docs/RELEASE-CHECKLIST-v7.14.1.md` step 5b).
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| #238 | 57 fixes in 56 commits (MA3-1 and MA3-2 share one), each with a Java suite or UI script except the two CI changes BLD-4 and BLD-6 (YAML parsed, workflows not run) (Replace onto added storage merges, the Shizuku full-screen terminal, SD Maid exclusions, archives, installs, Morphe Helper, the speed test's ping, CI on android-34) | new Java suites assetcopy, backupscripts, patchclasses, permrefusal, taskmgrblob; UI t490, t495, t505, t535 to t537, t540 to t542; many extended | PHONE-SCRIPT-v7.14.1 steps 2 to 17 |
+| #239 | `release.yml` stops before it builds when the version is not the manifest's and the changelog's (BLD-5, approved by the owner) | releaseversion suite | RELEASE-CHECKLIST-v7.14.1 step 7 |
+| #240, #241 | `metadata.json` and the unused `app/` Gradle tree with its root Gradle files removed (BLD-8, BLD-9, approved by the owner) | build, i18n and docs checks | none |
+| #242 | Installed \| Uninstalled is one choice in the Apps tab, Saved Applications and Connected Devices | UI t543 | PHONE-SCRIPT-v7.14.1 step 25 |
+| #243 | The Apps search bar's three-dot menu gets a last row, Row tints, that opens Settings on that card | UI t552 | step 26 |
+| #244 | Settings > Row tints > Gradient switch (off: one even colour per tinted row, in the Apps tab, Connected Devices and both Logcats) | UI t549 | step 26 |
+| #245 | Extra Settings > Speed test section after Private DNS (opens the Task Manager speed test) | UI t546 | step 23 |
+| #246 | Stop apps: a progress notification with Cancel (a Live Update on Android 16 and newer), a tap opens the quick list's Edit Saved List sheet, this app, the WebView app and Media Picker are never stopped; a Live updates row in the permissions sheet and `POST_PROMOTED_NOTIFICATIONS` in the manifest (approved by the owner in writing) | Java suite quickstop; UI t555 | steps 18 to 22 |
+| #247 | A round Refresh button in the File Manager's title row | UI t554 | step 24 |
+| #248 | The Updated 7d filter is removed from the Apps tab, Saved Applications and the Debloater (Connected Devices never had it) | UI t553 (t17, t70, t331 and their goldens changed) | step 27 |
+| bump | Version 7.14.1 (860), changelog, README, guides, `docs/RELEASE-CHECKLIST-v7.14.1.md`, `docs/PHONE-SCRIPT-v7.14.1.md` | the full UI and Java suites on the bump head | none |
+
+Things the next person should know:
+
+- **Not run on a device.** The Live Update part of the Stop apps notification is Android 16's documented API called by reflection (the app is built against Android 14's SDK); no phone with Android 16 has run it, and which phones show the chip is up to the phone. No command is known for the Live updates switch (Android's reference lists the permission's protection level as normal|appops, and no app op or shell command for it could be confirmed), so the row opens the phone's own Live updates screen. A Cancel stops after the app that is being force-stopped (a command in flight cannot be interrupted). The phone script picks the fixes only a phone can show: the Real terminal (SYS-1, SYS-2) and the Terminal's ADB reconnect (MA1-2), Replace onto an SD card (MA3-1, MA3-2), a tar holding an APK (ARC-1), SD Maid (SDM-1 to SDM-5), a retried install after a refused downgrade (MA1-1), a 32-bit app's backup (INS-1), the speed test (V1-1, V1-2), Task Manager with a stopped working mode (MA3-3) and the permission dialogs (V2-2).
+- **Left as they are on purpose:** MA3-6, ARC-3 and V1-3 (real, not worth the code) and V4-1 (intended; t196 tests it); reasons in the review file.
+
+## v7.14.0 (cut from `main`; written 2026-10-15)
+
+A feature release: the owner's v7.14 change list and follow-ups, the ADB Stub for Wear OS watches and the Self-test. The app is renamed ADB System Manager (package, folders and certificate unchanged). The manifest gains `READ_LOGS`, approved by the owner in the project thread. The owner waived the phone test before the release; `docs/PHONE-SCRIPT-v7.14.0.md` is the script to run after it.
+
+| PR | What | Tests | Checklist |
+|---|---|---|---|
+| #229, #232 | Self-test in About (27 read-only checks, redacted report); the package-record check finds the record with grep | selftest suite | PHONE-SCRIPT-v7.14.0 step 26 |
+| #233 | ADB Stub for Wear OS watches (wearstub/, carried as assets/adb_stub.apk) | wearstub suite, t350 | PHONE-SCRIPT-v7.14.0 steps 22 to 25 |
+| #235 | the 42 fixes of the v7.12 to v7.14 review (`/mnt/project-files/reviews/code-review-v7.12-v7.14.md` in the project), among them the ADB Stub's 5-minute lease | one test per finding (Java suites, t400 to t407 on main, t455, t463; main's t400 is t481 after the merge) | PHONE-SCRIPT-v7.14.0 step 25a |
+| #236 | `release.yml`: a throwaway-key test run is a draft prerelease | none | none |
+| #234 | the v7.14 change list (rename, speed test, permissions by command, page dialogs, Task Manager rates, ANGLE, filled buttons, Row tints, Live Logcat tab, Connected Devices parity, folding Settings, Undo 3 s, 100-change history) and the review fixes | speedmath, speedtest, pagedialogs suites; t400 to t480 (new ones listed in the changelog) | PHONE-SCRIPT-v7.14.0 steps 1 to 21 |
+| bump | Version 7.14.0 (859), changelog, README, guides, `docs/RELEASE-CHECKLIST-v7.14.0.md`, `docs/PHONE-SCRIPT-v7.14.0.md` | the full UI and Java suites on the bump head | none |
+
+Things the next person should know:
+
+- **Not run on a device or a watch.** The speed test's numbers, the ANGLE switch, the grant-by-command read-back and the watch's Wi-Fi after Disconnect can only be judged on hardware.
+- **Deliberate limits:** Task Manager offers nothing faster than 50 ms (graph) and 0.5 s (poll); ANGLE needs Root; a device's app list shows only the states a device can report, and its Logcat has no app picker or Record to file.
+- **Paused after this release** (owner, 2026-10-15): no privileged-features work until he asks.
+
 ## v7.13.4 (cut from `main`; written 2026-10-15)
 
 A small release: Backup moved from the single-app menu to the batch menu (owner's request, 2026-10-15). No setting or permission changes, and no Java change: the page loops over the existing `backupApp` bridge call (the phone runs one backup at a time and reports each result through `onBackupDone`).

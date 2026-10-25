@@ -14,7 +14,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.goto(PAGE); await page.waitForTimeout(500);
   const ev = (fn, a) => page.evaluate(fn, a);
   const wait = ms => page.waitForTimeout(ms);
-  await ev(() => switchView('prefs')); await wait(300);
+  await ev(() => { switchView('prefs'); ccReveal(document.getElementById('curatedCard')); }); await wait(300);   // the pickers are in the Curated Theme Palettes card, folded at first since 7.14
 
   const rows = await ev(() => Array.from(document.querySelectorAll('.picker-bubble-btn:not(#paletteStyleCard *)')).map(b => b.tagName + ':' + b.querySelector('.bubble-hex').innerText));
   check('seven pickers, buttons (no native color input any more)', rows.length === 7 && rows.every(r => r.startsWith('BUTTON:#')) && (await ev(() => document.querySelectorAll('input[type="color"]').length)) === 0, JSON.stringify(rows));

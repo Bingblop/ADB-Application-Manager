@@ -1,6 +1,7 @@
 // Console, the "UID (id)" quick button: it runs `id` and leaves the box alone. It used to write "id" over what was typed in the box and run the box,
 // so the typed command was lost, and in AI mode (the $/AI switch) the word "id" went to the coding agent as a question instead of running. Now the
 // button hands `id` to runTerminalCmd as a command of its own: a shell command in shell mode and in AI mode, a Rish command in Rish mode.
+// Also: the coding agent's proposed command, tapped while a typed command still runs, is kept for later instead of being dropped.
 const { chromium, PAGE } = require('./lib/pw');
 const mock = require('./lib/console_mock');
 (async () => {
@@ -47,6 +48,37 @@ const mock = require('./lib/console_mock');
   await page.fill('#termCmd', 'whoami'); await page.press('#termCmd', 'Enter'); await wait(250);
   s = await state();
   check('Enter runs what is typed and empties the box', s.shell.slice(-1)[0] === 'whoami' && s.box === '', JSON.stringify(s));
+
+  // the coding agent's proposed command while a typed one still runs: Run used to drop the proposal (box gone, command not run); now it says
+  // so and keeps it, and Run works once the command is done. With "Ask before running commands" off it is offered the same way, not said to run.
+  await ev(() => { window.__holdShell = true; window.__calls.shell.length = 0; window.__toasts = []; const o = showToast; window.showToast = function (m) { window.__toasts.push(m); return o(m); }; });
+  await page.fill('#termCmd', 'ping 8.8.8.8'); await page.press('#termCmd', 'Enter'); await wait(150);
+  const prop = cmd => ev(c => {
+    const id = Object.keys(termAiPending).find(k => termAiPending[k] === c);
+    return { pending: !!id, box: !!(id && document.getElementById(id)), id, shell: window.__calls.shell.map(x => x.cmd), toasts: window.__toasts.slice(), said: document.getElementById('view-console').textContent.includes('runs: ' + c + ']') };
+  }, cmd);
+  await ev(() => { termAiCard = cnCardNew('ai', '? which apps are disabled', 'which apps are disabled'); termAiProposeRun('Claude', 'pm list packages -d'); });
+  let p = await prop('pm list packages -d');
+  check('agent: a proposal while a command runs shows Run and Skip', p.box && p.pending, JSON.stringify(p));
+  const runBtn = page.locator('#' + p.id + ' button', { hasText: 'Run' });
+  await runBtn.click(); await wait(150);
+  p = await prop('pm list packages -d');
+  check('agent: Run while the command runs keeps the box and the proposal, runs nothing, and says why', p.box && p.pending && p.shell.join('|') === 'ping 8.8.8.8' && p.toasts.includes('A command is still running. Wait for it to finish.'), JSON.stringify(p));
+  await ev(() => window.__shellDone('ping 8.8.8.8', 'PING 8.8.8.8\n')); await wait(150);
+  if (await runBtn.count()) { await runBtn.click(); await wait(150); }
+  p = await prop('pm list packages -d');
+  check('agent: once the command is done, Run runs the proposed command and the box goes', !p.box && !p.pending && p.shell.slice(-1)[0] === 'pm list packages -d', JSON.stringify(p));
+  await ev(() => window.__shellDone('pm list packages -d', 'package:com.example.two\n')); await wait(150);
+
+  await page.fill('#termCmd', 'logcat'); await page.press('#termCmd', 'Enter'); await wait(150);
+  await ev(() => { txSettings.askRun = false; termAiProposeRun('Claude', 'pm list packages -e'); });
+  p = await prop('pm list packages -e');
+  check('agent, "Ask before running" off, while a command runs: offered with Run and Skip, not said to run', p.box && p.pending && !p.said && !p.shell.includes('pm list packages -e'), JSON.stringify(p));
+  await ev(() => window.__shellDone('logcat', 'log\n')); await wait(150);
+  await ev(() => termAiProposeRun('Claude', 'pm list packages -s')); await wait(150);
+  p = await prop('pm list packages -s');
+  check('agent, "Ask before running" off, nothing running: it runs at once, as before', !p.box && !p.pending && p.said && p.shell.slice(-1)[0] === 'pm list packages -s', JSON.stringify(p));
+  await ev(() => { txSettings.askRun = true; window.__shellDone('pm list packages -s', ''); });
 
   console.log('errors:', JSON.stringify(errors));
   if (failed || errors.length) { console.log((failed || errors.length) + ' FAILED'); process.exit(1); }

@@ -56,7 +56,7 @@ function bridgeInit([mock, store]) {
   await page.evaluate(() => { const rows = uadVisiblePackages().slice(0, 2); rows.forEach(r => toggleUadSelect(r.pkg)); });
   await page.click('.uad-action-grid >> text=Uninstall'); await page.click('#batchConfirmExecuteBtn'); await page.waitForTimeout(300);
   await page.evaluate(() => closeCommandResultsModal());
-  await page.click('text=/^History$/'); await page.waitForTimeout(100);
+  await page.click('#uadHistBtn'); await page.waitForTimeout(100);          // v7.15: the Debloater's History is a button by the search
   console.log('history entries:', await page.locator('.hist-entry').count(), '|', await page.locator('.hist-title').first().innerText());
   await page.screenshot({ path: 'history.png' });
   await page.click('.hist-entry >> text=Undo'); await page.waitForTimeout(300);
@@ -102,8 +102,12 @@ function bridgeInit([mock, store]) {
   console.log('RELAUNCH apps filter:', await p2.locator('#filterScroll .filter-pill.active').innerText());
   await p2.click('.tab-btn:has-text("Debloater")'); await p2.waitForTimeout(200);
   console.log('RELAUNCH uad chips:', (await p2.locator('#uadRemovalRow .active, #uadListRow .active, #uadStateRow .active, #uadBrandRow .active').allInnerTexts()).join(', '));
-  await p2.click('text=/^History$/'); await p2.waitForTimeout(100);
+  await p2.click('#uadHistBtn'); await p2.waitForTimeout(100);
   console.log('RELAUNCH history entries:', await p2.locator('.hist-entry').count());
+  // the newest entry is the Updater's (Samsung Notes failed): it is named for the Updater, not "Applications", and its line says "Updated", not the raw "update"
+  const upd = await p2.evaluate(() => { const e = document.querySelector('.hist-entry'); return { meta: e.querySelector('.hist-meta').innerText.split(' • ').slice(1).join(' • '), line: e.querySelector('.hist-pkgs').innerText.split('\n')[0] }; });
+  console.log('RELAUNCH updater entry:', upd.meta, '|', upd.line);
+  if (upd.meta !== 'Updater • 0/1 succeeded' || !/^✕ Updated Samsung Notes\b/.test(upd.line)) console.log('FAIL the Updater\'s history entry is labelled', JSON.stringify(upd));
   console.log('calls (other):', (await page.evaluate(() => window.__st.calls)).filter(c => c.startsWith('url') || c === 'check').join(', '));
   console.log('errors:', JSON.stringify(errors));
   await b.close(); })();

@@ -1,4 +1,4 @@
-// App list: patched/modified detection badge, "Patched" filter, and inspector breakdown.
+// App list: patched/modified detection badge and "Patched" filter; the app sheet itself shows no patched line or mod tags (v7.14, the owner's choice).
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -44,14 +44,18 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('   filter shows only patched:', shown === 2, '| chrome hidden:', shownHasChrome === 0);
   await page.evaluate(() => setFilter('all', document.querySelector('#filterScroll .filter-pill[data-filter="all"]'))); await page.waitForTimeout(80);
 
-  // 3) Inspector shows the modifications breakdown with the installer.
+  // 3) The app sheet carries no "Patched / modified" line and no mod tags (the owner's choice, v7.14): the row tag and the Patched filter are where it shows.
   await page.evaluate(() => openInspector('app.revanced.android.youtube')); await page.waitForTimeout(120);
-  const modsVisible = await page.evaluate(() => {
-    const el = document.getElementById('sheetMods');
-    return el && el.style.display !== 'none' ? el.innerText : '(hidden)';
-  });
-  console.log('3. inspector mods line:', JSON.stringify(modsVisible));
-  console.log('   names ReVanced + installer:', /revanced/i.test(modsVisible) && /revanced\.manager/i.test(modsVisible));
+  const sheet = await page.evaluate(() => { const sh = document.getElementById('inspectorModal'); return { text: sh ? sh.innerText : '', tags: sh ? sh.querySelectorAll('.tag-mod').length : -1, old: !!document.getElementById('sheetMods') }; });
+  console.log('3. app sheet has no Patched / modified line and no mod tags:', !/Patched \/ modified/.test(sheet.text) && sheet.tags === 0 && !sheet.old && /YouTube ReVanced/.test(sheet.text));
+
+  // the sheet's deeper check still counts: a tag only it finds goes to the row and the Patched filter
+  await page.evaluate(() => {
+    const real = window.AndroidBridge.getAppDetails;
+    window.AndroidBridge.getAppDetails = p => { const d = JSON.parse(real(p)); if (p === 'com.android.chrome') d.mods = ['Debug-signed (repackaged)']; return JSON.stringify(d); };
+    closeInspector && closeInspector(); openInspector('com.android.chrome'); closeInspector && closeInspector(); renderApps();
+  }); await page.waitForTimeout(150);
+  console.log('   a tag found only by the sheet\'s deeper check shows on the row afterwards:', await page.evaluate(() => [...document.querySelectorAll('#card_com\\.android\\.chrome .tag-mod')].map(e => e.textContent).join('|')));
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

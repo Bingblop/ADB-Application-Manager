@@ -12,10 +12,10 @@ public class StopListTileService extends TileService {
     public void onStartListening() {
         Tile t = getQsTile();
         if (t == null) return;
-        t.setLabel("Stop apps");
+        t.setLabel("Kill Apps");
         if (Build.VERSION.SDK_INT >= 29) t.setSubtitle(QuickActions.quickListSummary(this));
         t.setIcon(Icon.createWithResource(this, R.drawable.ic_stat));
-        t.setState(QuickActions.quickList(this) != null ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
+        t.setState(QuickStopRun.tileActive() ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
         t.updateTile();
     }
 

@@ -17,7 +17,7 @@ module.exports.initScript = function () {
   ];
   for (let t = 2; t < targets.length; t++) for (let i = 0; i < 40; i++) ov.push([targets[t], i % 3 === 0 ? 1 : i % 3 === 1 ? 0 : (i % 7 === 2 ? -1 : 0), 'overlay.' + targets[t].split('.').pop() + '.n' + String(i).padStart(2, '0') + (i % 9 === 0 ? '.theme.color' : '')]);
   window.__ovl = ov.map(r => ({ target: r[0], state: r[1], id: r[2] }));
-  window.__ovlCalls = { list: 0, op: [], apply: [], restore: [], restoreUndo: [], palette: 0 };
+  window.__ovlCalls = { list: 0, op: [], apply: [], restore: [], restoreUndo: [], palette: 0, fab: [] };
   window.__ovlDeny = {};          // id -> error text: the change is refused
   window.__ovlFixed = {};         // id -> true: stays on whatever is asked
   window.__ovlNoAnswer = false;
@@ -26,6 +26,29 @@ module.exports.initScript = function () {
   window.__themeWarning = null;   // text: the theme is written, but the Samsung switch would not change
   window.__sdk = 34;
   window.__paletteDelay = 600;    // how long Android takes to repaint after a theme change
+  window.__wallpaper = null;      // PR 3: the wallpaper colours getSystemPalette reports (an array of RRGGBB), none when null
+  // the root-only theme controls (overlayFabricate): __root makes the working mode Root with su granted (isRootActive() true) once
+  // checkAllWorkingModes() has read it again; the __fab* knobs shape the answer
+  window.__root = false;
+  window.__fabNeedsRoot = false;  // the Java gate says no (needsPrivilege), whatever the page thinks
+  window.__fabDeny = null;        // error text: the overlay is listed on but Android did not take the colours (the judge's refusal)
+  window.__fabUnknown = false;    // no answer from the shell: unknown
+  window.__fabNoAnswer = false;   // the bridge never answers at all (the page's own timeout)
+  window.__dark = true;           // PR 4: the phone's light or dark mode as isSystemDarkMode reports it (sdb_mock's answer, true, unless set false)
+  // T-049: what getSystemPalette reports from Android 12 on for the root colours (MonetProfile.java). __profile: undefined follows __sdk as
+  // MonetProfile.of does without the colour and boolean names (31-33 P12, 34 P14, anything else unknown; 14 QPR1 to
+  // QPR3, P14Q, is set as a string), a string is reported as it is, null leaves profile and profileReason out (an older APK);
+  // __profileReason: undefined is 'ok' for P12 P14 P14Q P15 P15Q1 P15Q2 P16 P16Q1 P16Q2 P17 (16 QPR1 and QPR2 from T-049 PR 9 on, 17 from
+  // PR 10 on, 15.0 from PR 11 on, 14 QPR1 to QPR3 from PR 12 on; an APK from before reported 15.0, 16 QPR1, QPR2 and 17 'notYet', which a
+  // script sets explicitly, and 14 QPR1 to QPR3 as P14) and 'unknown' otherwise. __build (Build.FINGERPRINT) and __contrast (UiModeManager.getContrast) are reported as they
+  // are, and left out when null.
+  window.__profile = undefined;
+  window.__profileReason = undefined;
+  window.__build = 'google/mock/mock:14/UP1A.231005.007/10754064:user/release-keys';
+  window.__contrast = 0;
+  // PR 13: the One UI value getSystemPalette reports (MonetProfile.oneUi: the version, '?' when a Samsung phone's could not be read), left
+  // out when '' or null (not One UI, or an older APK); it only shows the card's One UI note, the profile follows __sdk and __profile as above
+  window.__oneUi = '';
 
   // a believable palette for a seed colour: tones of one hue (the real Monet engine does far more, this is only to see colours move)
   function hexToHsl(hex) {
@@ -56,6 +79,8 @@ module.exports.initScript = function () {
   function wire() { return window.__ovl.map(o => [o.id, o.target, o.state]); }
 
   const b = window.AndroidBridge;
+  // PR 4: settable, so a script can switch the mode between the tap on Apply and the answer (spec 2025 and 2026 take the shades for the mode)
+  b.isSystemDarkMode = function () { return window.__dark !== false; };
   b.overlayList = function (req) {
     window.__ovlCalls.list++;
     if (window.__ovlNoAnswer) return 'started';
@@ -145,6 +170,94 @@ module.exports.initScript = function () {
   b.getSystemPalette = function () {
     window.__ovlCalls.palette++;
     if (window.__sdk < 31) return JSON.stringify({ ok: false, sdk: window.__sdk, error: 'Material You colors need Android 12 or newer (this phone runs Android ' + (window.__sdk === 28 ? 9 : 11) + ').' });
-    return JSON.stringify(window.__palette);
+    const o = Object.assign({}, window.__palette, { sdk: window.__sdk });      // the Android level follows the knob, whenever the palette was made
+    if (Array.isArray(window.__wallpaper)) o.wallpaper = window.__wallpaper.slice();        // PR 3: WallpaperColors, when the phone reports them
+    if (window.__profile !== null) {                                                        // T-049: the profile, its reason, the build, the contrast
+      const sdk = window.__sdk, p = typeof window.__profile === 'string' ? window.__profile : sdk >= 31 && sdk <= 33 ? 'P12' : sdk === 34 ? 'P14' : 'unknown';
+      o.profile = p;
+      o.profileReason = typeof window.__profileReason === 'string' ? window.__profileReason
+        : ['P12', 'P14', 'P14Q', 'P15', 'P15Q1', 'P15Q2', 'P16', 'P16Q1', 'P16Q2', 'P17'].includes(p) ? 'ok' : 'unknown';
+    }
+    if (window.__build !== null) o.build = window.__build;
+    if (window.__contrast !== null) o.contrast = window.__contrast;
+    if (typeof window.__oneUi === 'string' && window.__oneUi !== '') o.oneUi = window.__oneUi;
+    return JSON.stringify(o);
+  };
+  // Root as the working mode, su granted and not vetoed (the shape t559 uses), while __root is set; the base mock's ADB TCP otherwise
+  const baseWorkingMode = b.getWorkingMode;
+  b.getWorkingMode = function () {
+    if (!window.__root) return baseWorkingMode.call(this);
+    return JSON.stringify({ activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true, adbTcp: { connected: false, port: 5555 }, adbWireless: { connected: false, port: 0 }, shizuku: { installed: false, running: false, authorized: false } });
+  };
+  // This app's fabricated colour overlay, as MainActivity.overlayFabricate / overlayFabricateJob answer it: the plan is checked before anything
+  // is queued ("error: ..." in the words of OverlayRules.fabricatePlanProblem and disablePlanOk), the ids come from the phone's Android (one
+  // overlay from 14, one per colour on 12 and 13), the overlay joins the list, and the answer is the list plus a lookup per colour (the first
+  // four), judged from those, as window.onOverlayFab(json). T-049 PR 9: at most 320 entries (OverlayRules.MAX_FAB_ENTRIES); on the profile the
+  // mock reports, when it is P16Q1, P16Q2 or P17 (MonetProfile.suffixedPalettes: Java takes the profile itself), an unsuffixed palette shade is
+  // refused and the lookups are OverlayRules.QPR_LOOKUPS the plan has, in that order, then its first other entries up to four. PR 10: on
+  // P17 (MonetProfile.suffixedFixed) also an unsuffixed fixed colour (the 12 names exactly) is refused, and the lookups are
+  // OverlayRules.P17_LOOKUPS (the QPR five, then system_primary_fixed_dark), at most six.
+  const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_';
+  const FAB_MAX = 320;
+  const QPR_LOOKUPS = ['accent1_600_light', 'accent1_600_dark', 'primary_light', 'surface_dark', 'primary_dim_dark'].map(n => FAB_RES + n);
+  const P17_LOOKUPS = QPR_LOOKUPS.concat([FAB_RES + 'primary_fixed_dark']);
+  const suffixed = () => window.__profile === 'P16Q1' || window.__profile === 'P16Q2' || window.__profile === 'P17';
+  const suffixedFixed = () => window.__profile === 'P17';
+  function lookupEntries(es) {
+    if (!suffixed()) return es.slice(0, 4);
+    const out = [];
+    for (const want of suffixedFixed() ? P17_LOOKUPS : QPR_LOOKUPS) { const e = es.find(x => x.resource === want); if (e) out.push(e); }
+    for (const e of es) { if (out.length >= 4) break; if (!out.includes(e)) out.push(e); }
+    return out;
+  }
+  b.overlayFabricate = function (req, planJson) {
+    let plan;
+    try { plan = JSON.parse(planJson); } catch (e) { return 'error: the plan is not JSON'; }
+    window.__ovlCalls.fab.push(plan);
+    const op = plan.action || 'fabricate';
+    if (op === 'fabricate') {
+      const es = plan.entries;
+      if (!Array.isArray(es) || !es.length) return 'error: The plan has no entries';
+      if (es.length > FAB_MAX) return 'error: The plan has too many entries (' + FAB_MAX + ' at most)';
+      const seen = new Set();
+      for (let i = 0; i < es.length; i++) {
+        const e = es[i] || {};
+        if (typeof e.resource !== 'string' || !/^android:color\/system_[a-z0-9_]+$/.test(e.resource)) return 'error: Entry ' + (i + 1) + ' does not name a system colour (android:color/system_...)';
+        if (typeof e.argb !== 'string' || !/^0x[0-9A-Fa-f]{8}$/.test(e.argb)) return 'error: Entry ' + (i + 1) + ' is not a colour (0xAARRGGBB)';
+        if (seen.has(e.resource)) return 'error: Entry ' + (i + 1) + ' names a resource twice';
+        seen.add(e.resource);
+      }
+      if (suffixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_(accent[1-3]|neutral[12]|error)_[0-9]+$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a palette color without _light or _dark, which this Android version does not take';
+      if (suffixedFixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a fixed color without _light or _dark, which this Android version does not take';
+    } else if (op === 'disable') {
+      const ids = plan.ids;
+      if (!Array.isArray(ids) || !ids.length) return 'error: No overlay named';
+      if (ids.length > FAB_MAX) return 'error: Too many overlays named (' + FAB_MAX + ' at most)';
+      const seenIds = new Set();
+      for (const id of ids) {
+        if (typeof id !== 'string' || !new RegExp('^' + FAB_OWNER + FAB_NAME + '(_[a-z0-9_]+)?$').test(id)) return 'error: That overlay was not written by this app';
+        if (seenIds.has(id)) return 'error: An overlay is named twice';
+        seenIds.add(id);
+      }
+    } else return 'error: unknown action';
+    if (window.__fabNoAnswer) return 'started';
+    setTimeout(() => {
+      const r = { req, op, mode: window.__root ? 'root' : 'adb_tcp' };
+      if (window.__fabNeedsRoot || !window.__root) { r.ok = false; r.needsPrivilege = true; r.error = 'Needs Super User'; window.onOverlayFab(JSON.stringify(r)); return; }
+      const ids = op === 'disable' ? plan.ids.slice() : (window.__sdk >= 34 ? [FAB_OWNER + FAB_NAME] : plan.entries.map(e => FAB_OWNER + FAB_NAME + '_' + e.resource.slice(FAB_RES.length)));
+      r.ids = ids;
+      if (window.__fabUnknown) { r.ok = false; r.unknown = true; r.error = 'No answer from the device'; window.onOverlayFab(JSON.stringify(r)); return; }
+      ids.forEach(id => { let o = window.__ovl.find(x => x.id === id); if (!o) { o = { target: 'android', state: 0, id }; window.__ovl.push(o); } o.state = op === 'disable' ? 0 : 1; });
+      r.state = window.__ovl.find(x => x.id === ids[0]).state;
+      r.list = wire();
+      if (op === 'fabricate') {
+        r.lookups = {};
+        lookupEntries(plan.entries).forEach(e => { r.lookups[e.resource] = window.__fabDeny ? '#ff1b1b1b' : '#' + e.argb.slice(2).toLowerCase(); });
+        if (window.__fabDeny) { r.ok = false; r.error = window.__fabDeny; r.advice = 'Android kept its own colours. The overlay is listed on; tap Apply again after the next repaint.'; }
+        else r.ok = true;
+      } else r.ok = true;
+      window.onOverlayFab(JSON.stringify(r));
+    }, window.__delay);
+    return 'started';
   };
 };

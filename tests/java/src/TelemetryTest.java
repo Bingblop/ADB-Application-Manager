@@ -135,7 +135,7 @@ public class TelemetryTest {
     check("page: the number written is Developer-options style (1.0, 0.5)", h.contains("function xsFloatText(n) {") && h.contains("return /[.e]/.test(s) ? s : s + '.0';"));
     check("page: adaptive brightness is never switched on by the page (no write of screen_brightness_mode)", !h.contains("'put', 'system', BR_MODE_KEY") && !h.contains("put', 'system', 'screen_brightness_mode'"));
     check("page: the display settings are opened through the bridge method openDisplaySettings", h.contains("window.AndroidBridge.openDisplaySettings()"));
-    check("page: the telemetry poll is 5 seconds and runs only while the tab is on screen", h.contains("const TEL_MS = 5000") && h.contains("function telOnScreen() { return currentViewName() === 'extrasettings' && !document.hidden; }") && h.contains("telTimer = setInterval(() => { if (telOnScreen()) telRefresh(false); else telStop(); }, TEL_MS);"));
+    check("page: the telemetry poll is 5 seconds and runs only while the tab is on screen (and not under the full-screen speed test)", h.contains("const TEL_MS = 5000") && h.contains("function telOnScreen() { return currentViewName() === 'extrasettings' && !document.hidden && !stCovering(); }") && h.contains("telTimer = setInterval(() => { if (telOnScreen()) telRefresh(false); else telStop(); }, TEL_MS);"));
 
     // the bridge
     check("source: settingsPeek is a bridge method with the exact signature", m.contains("@JavascriptInterface\n        public String settingsPeek(String ns, String key) {"));

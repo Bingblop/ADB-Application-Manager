@@ -97,9 +97,10 @@ public final class BrowserDownload {
             String v = cd.substring(i + 10).trim();
             int semi = v.indexOf(';');
             if (semi >= 0) v = v.substring(0, semi);
-            int q = v.indexOf("''");
-            String enc = q > 0 ? v.substring(0, q) : "UTF-8";
-            String val = q >= 0 ? v.substring(q + 2) : v;
+            // charset'language'value (RFC 5987): the language is mostly empty ('') but may be set ('en'); neither part can hold a quote
+            int q1 = v.indexOf('\''), q2 = q1 >= 0 ? v.indexOf('\'', q1 + 1) : -1;
+            String enc = q1 > 0 && q2 > 0 ? v.substring(0, q1) : "UTF-8";
+            String val = q2 >= 0 ? v.substring(q2 + 1) : v;
             try {
                 return URLDecoder.decode(val.replace("+", "%2B"), enc.isEmpty() ? "UTF-8" : enc);
             } catch (Exception ignored) {

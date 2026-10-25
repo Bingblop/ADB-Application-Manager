@@ -678,9 +678,17 @@ public final class MorpheVirusTotal {
         return result(obj(attrs, "last_analysis_stats"), obj(attrs, "last_analysis_results"), sha, lng(attrs, "last_analysis_date"), true);
     }
 
-    private JSONObject lookupImpl(String sha256, MorpheNet.Progress p, long[] waited, boolean patient) throws IOException {
-        if (sha256 == null || !SHA.matcher(sha256.toLowerCase(Locale.ROOT)).matches()) throw new IOException("not a SHA-256: " + (sha256 == null ? "" : sha256.length() > 70 ? sha256.substring(0, 70) : sha256));
+    private String validateSha256(String sha256) throws IOException {
+        if (sha256 == null) throw new IOException("not a SHA-256: ");
         String sha = sha256.toLowerCase(Locale.ROOT);
+        if (!SHA.matcher(sha).matches()) {
+            throw new IOException("not a SHA-256: " + (sha256.length() > 70 ? sha256.substring(0, 70) : sha256));
+        }
+        return sha;
+    }
+
+    private JSONObject lookupImpl(String sha256, MorpheNet.Progress p, long[] waited, boolean patient) throws IOException {
+        String sha = validateSha256(sha256);
         // a 2xx that is not JSON (a proxy's page) is a blip, not a verdict: ask again a couple of times (Helper does)
         for (int attempt = 1; ; attempt++) {
             MorpheNet.Response r = api("GET", "/files/" + sha, null, true, patient, p, waited);

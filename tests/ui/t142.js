@@ -44,7 +44,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { isPrivilegedActive = true; });
 
   const pill = await ev(() => { const e = document.querySelector('.filter-pill[data-filter="trackers"]'); return e ? e.innerText.trim() : null; });
-  check('1. a Trackers pill is after Patched, with a question mark before the first scan', pill === 'Trackers (?)' && await ev(() => { const p = Array.from(document.querySelectorAll('#filterScroll .filter-pill')).map(e => e.dataset.filter); return p.indexOf('trackers') === p.indexOf('patched') + 1; }), pill);
+  check('1. a Trackers pill is just before Patched (v7.14 order), with a question mark before the first scan', pill === 'Trackers (?)' && await ev(() => { const p = Array.from(document.querySelectorAll('#filterScroll .filter-pill')).map(e => e.dataset.filter); return p.indexOf('trackers') === p.indexOf('patched') - 1; }), pill);
   check('   nothing is scanned before it is needed', (await ev(() => window.__scans.length)) === 0);
   await ev(() => document.querySelector('.filter-pill[data-filter="trackers"]').click()); await sleep(80);
   check('2. the first tap starts one scan of the installed apps only (the uninstalled one is left out) and says so', (await ev(() => JSON.stringify(window.__scans))) === '[["com.example.alpha","com.example.bravo","com.example.charlie"]]' && /Looking for trackers in 3 apps/.test(await ev(() => document.getElementById('toastMsg').innerText)));

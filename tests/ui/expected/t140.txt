@@ -13,4 +13,6 @@ ok      it opens the same sheet with the same four levels as the Debloater tab, 
 ok   4. the Connected Devices list shows the spinner on the app being checked only: {"text":"Checking…","other":false}
 ok      and keeps it when the list is drawn again; the same package on this phone's list is not marked
 ok      no extra text leaks into the list after the cards ("undefined")
+ok   5. a batch on 600 apps: the 250 rows added by "Show more" say "Working…" too: {"first":250,"cards":500,"bare":0,"sample":[],"left":0}
+ok      and lose it with the others when the batch ends: {"first":250,"cards":500,"bare":0,"sample":[],"left":0}
 ok   no page errors:

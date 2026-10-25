@@ -1,0 +1,13 @@
+ok   1. a run whose network stays Wi-Fi is not stopped: it finishes and its result is saved
+ok   2. the network is not asked at every progress event (five in a row: one read at most)
+ok      a second later the move to mobile data stops the test (the app is told to stop it)
+ok      it says Failed and why, offers Run again, and the chip shows the new network
+ok      what the stopped test still sends is ignored: nothing is saved under Wi-Fi
+ok      Run again now asks first, as on mobile data
+ok   3. a new phase reads the network at once: the upload does not start on mobile data
+ok      so does the end: a result measured after a move is not saved
+ok   4. the same Wi-Fi turning metered stops it too
+ok      a network that stops being metered does not stop it
+ok   5. German: the reason is translated
+ok   no page errors
+all passed

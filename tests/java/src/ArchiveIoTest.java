@@ -13,6 +13,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -438,9 +439,11 @@ public class ArchiveIoTest {
         codecVariants();
         sevenEdges();
         hardLinks();
+        hardLinkTargetLeftOut();
         rewriteCases(exp);
         cancelAndAtomic(exp);
         damaged();
+        zipMemberIsNotTheArchive();
     }
 
     // ------------------------------------------------------------------------------------------------------------------ cases
@@ -1292,6 +1295,87 @@ public class ArchiveIoTest {
         check("and our own extraction of the renamed tar writes the link as a copy (" + pb + ")", ex[0] == 2 && pb.isEmpty() && new File(x3, "moved/f2").isFile());
     }
 
+    /** ADB-1: deleting the file a tar hard link shares (or its folder) keeps the content: the first link that stays carries the data. */
+    static void hardLinkTargetLeftOut() throws Exception {
+        File d = new File(tmp, "hlout"); File s = new File(d, "s");
+        write(new File(s, "f1"), "shared content\n");
+        setPerm(new File(s, "f1"), 0640);
+        new File(s, "f1").setLastModified(T0);
+        Files.createLink(new File(s, "f2").toPath(), new File(s, "f1").toPath());
+        Files.createLink(new File(s, "f3").toPath(), new File(s, "f1").toPath());
+        write(new File(s, "dir/c.txt"), "in a folder\n");
+        Files.createLink(new File(s, "d.txt").toPath(), new File(s, "dir/c.txt").toPath());
+        File one = new File(d, "one.tar"), two = new File(d, "two.tar"), tree = new File(d, "tree.tar");
+        if (run(d, "tar", "-cf", one.getPath(), "-C", s.getPath(), "f1", "f2").code != 0
+            || run(d, "tar", "-cf", two.getPath(), "-C", s.getPath(), "f1", "f2", "f3").code != 0
+            || run(d, "tar", "-cf", tree.getPath(), "-C", s.getPath(), "dir", "d.txt").code != 0) { skip("tar with hard links to a deleted file"); return; }
+        ArchiveIo.Info pre = ArchiveIo.list(two, null);
+        check("fixture: f2 and f3 are hard links to f1", pre.items.size() == 3 && "f1".equals(pre.items.get(1).hardLink) && "f1".equals(pre.items.get(2).hardLink));
+        long mt = pre.items.get(0).mtime;
+
+        // one link: deleting f1 leaves f2 as a regular file with f1's data, mode and time
+        File o1 = new File(d, "one-out.tar");
+        ArchiveIo.rewrite(one, o1, null, Collections.singletonList(ArchiveIo.Edit.delete("f1")), null);
+        ArchiveIo.Info i1 = ArchiveIo.list(o1, null);
+        ArchiveIo.Item f2 = i1.items.size() == 1 ? i1.items.get(0) : null;
+        check("delete f1: f2 is left, a file of its own with f1's data, mode and time (" + i1.items + ")",
+            f2 != null && f2.name.equals("f2") && f2.hardLink == null && f2.size == 15 && f2.mode == 0640 && f2.mtime == mt);
+        File x1 = new File(d, "x1"); x1.mkdirs();
+        R x = run(d, "tar", "-xf", o1.getPath(), "-C", x1.getPath());
+        check("delete f1: tar -x writes f2 with the content " + x.out, x.code == 0 && new File(x1, "f2").isFile()
+            && new String(Files.readAllBytes(new File(x1, "f2").toPath()), StandardCharsets.UTF_8).equals("shared content\n") && !new File(x1, "f1").exists());
+
+        // two links: f2 carries the data, f3 points to f2
+        File o2 = new File(d, "two-out.tar");
+        ArchiveIo.rewrite(two, o2, null, Collections.singletonList(ArchiveIo.Edit.delete("f1")), null);
+        ArchiveIo.Info i2 = ArchiveIo.list(o2, null);
+        check("delete f1 with two links: f2 has the data, f3 is a link to f2 (" + i2.items + " " + (i2.items.size() == 2 ? i2.items.get(1).hardLink : "?") + ")",
+            i2.items.size() == 2 && i2.items.get(0).name.equals("f2") && i2.items.get(0).hardLink == null && i2.items.get(0).size == 15
+            && i2.items.get(1).name.equals("f3") && "f2".equals(i2.items.get(1).hardLink));
+        File x2 = new File(d, "x2"); x2.mkdirs();
+        x = run(d, "tar", "-xf", o2.getPath(), "-C", x2.getPath());
+        check("delete f1 with two links: tar -x gives f2 and f3 the content and one inode " + x.out, x.code == 0 && new File(x2, "f3").isFile()
+            && new String(Files.readAllBytes(new File(x2, "f3").toPath()), StandardCharsets.UTF_8).equals("shared content\n")
+            && Files.getAttribute(new File(x2, "f2").toPath(), "unix:ino").equals(Files.getAttribute(new File(x2, "f3").toPath(), "unix:ino")));
+
+        // the same with a rename of the carrier: f1 deleted, f2 renamed to g2; f3 points to g2
+        File o3 = new File(d, "two-ren.tar");
+        List<ArchiveIo.Edit> ed = new ArrayList<ArchiveIo.Edit>();
+        ed.add(ArchiveIo.Edit.delete("f1")); ed.add(ArchiveIo.Edit.rename("f2", "g2"));
+        ArchiveIo.rewrite(two, o3, null, ed, null);
+        ArchiveIo.Info i3 = ArchiveIo.list(o3, null);
+        check("delete f1 and rename f2 to g2: g2 has the data, f3 is a link to g2 (" + i3.items + ")",
+            i3.items.size() == 2 && i3.items.get(0).name.equals("g2") && i3.items.get(0).size == 15 && "g2".equals(i3.items.get(1).hardLink));
+
+        // deleteTree of the folder that holds the shared file
+        File o4 = new File(d, "tree-out.tar");
+        ArchiveIo.rewrite(tree, o4, null, Collections.singletonList(ArchiveIo.Edit.deleteTree("dir/")), null);
+        ArchiveIo.Info i4 = ArchiveIo.list(o4, null);
+        check("deleteTree dir/: d.txt is left with the data of dir/c.txt (" + i4.items + ")",
+            i4.items.size() == 1 && i4.items.get(0).name.equals("d.txt") && i4.items.get(0).hardLink == null && i4.items.get(0).size == 12);
+        File x4 = new File(d, "x4"); x4.mkdirs();
+        x = run(d, "tar", "-xf", o4.getPath(), "-C", x4.getPath());
+        check("deleteTree dir/: tar -x writes d.txt with the content " + x.out, x.code == 0 && new File(x4, "d.txt").isFile()
+            && new String(Files.readAllBytes(new File(x4, "d.txt").toPath()), StandardCharsets.UTF_8).equals("in a folder\n") && !new File(x4, "dir").exists());
+        File x5 = new File(d, "x5"); x5.mkdirs();
+        List<String> pb = new ArrayList<String>();
+        long[] ex = ZipTool.extractTree(ArchiveIoSource.open(o4, "tar", null), "", x5, null, pb, null, FileOps.REPLACE);
+        check("deleteTree dir/: our own extraction writes d.txt (" + pb + ")", ex[0] == 1 && pb.isEmpty() && new File(x5, "d.txt").length() == 12);
+
+        // a link that is deleted with its file is simply gone; a file that stays keeps its links as they were
+        File o6 = new File(d, "two-both.tar");
+        ed = new ArrayList<ArchiveIo.Edit>();
+        ed.add(ArchiveIo.Edit.delete("f1")); ed.add(ArchiveIo.Edit.delete("f2"));
+        ArchiveIo.rewrite(two, o6, null, ed, null);
+        ArchiveIo.Info i6 = ArchiveIo.list(o6, null);
+        check("delete f1 and f2: f3 carries the data (" + i6.items + ")", i6.items.size() == 1 && i6.items.get(0).name.equals("f3") && i6.items.get(0).hardLink == null && i6.items.get(0).size == 15);
+        File o7 = new File(d, "two-f2.tar");
+        ArchiveIo.rewrite(two, o7, null, Collections.singletonList(ArchiveIo.Edit.delete("f2")), null);
+        ArchiveIo.Info i7 = ArchiveIo.list(o7, null);
+        check("delete only the link f2: f1 keeps its data, f3 still points to f1 (" + i7.items + ")",
+            i7.items.size() == 2 && i7.items.get(0).name.equals("f1") && i7.items.get(0).size == 15 && "f1".equals(i7.items.get(1).hardLink));
+    }
+
     // ------------------------------------------------------------------------------------------------------------------ damaged files
 
     static void damaged() throws Exception {
@@ -1330,5 +1414,75 @@ public class ArchiveIoTest {
         List<String> names = new ArrayList<String>();
         for (ArchiveIo.Item it : ArchiveIo.list(evil, null).items) names.add(it.name);
         check("odd names are listed as stored " + names, names.equals(Arrays.asList("../escape.txt", "/abs/path.txt", "ok/../x.txt")));
+    }
+
+    // ------------------------------------------------------------------------------------------------------------------ a member is not the archive
+
+    /**
+     * A plain tar or a stored 7z keeps a zip member (an APK) byte for byte, so that member's end record sits near the end of the file. Opened
+     * as a zip first, such a file was listed and extracted as the one member's contents, and "Delete the archive afterwards" then deleted the
+     * whole file. ZipTool.openAny (the file manager's open) goes by the first bytes: a tar stays a tar, a 7z a 7z.
+     */
+    static void zipMemberIsNotTheArchive() throws Exception {
+        File d = new File(tmp, "member"); d.mkdirs();
+        File apk = new File(d, "z_app.apk");
+        java.util.zip.ZipOutputStream zo = new java.util.zip.ZipOutputStream(new FileOutputStream(apk));
+        try {
+            for (String nm : new String[] { "AndroidManifest.xml", "classes.dex", "res/x.txt" }) {
+                zo.putNextEntry(new java.util.zip.ZipEntry(nm));
+                zo.write(("the content of " + nm).getBytes(StandardCharsets.UTF_8));
+                zo.closeEntry();
+            }
+        } finally { zo.close(); }
+        File notes = new File(d, "a_notes.txt"); write(notes, "notes\n");
+        byte[] noise = new byte[40000]; new Random(11).nextBytes(noise);
+        File photo = new File(d, "b_photo.bin"); write(photo, noise);
+        check("member: the APK is a zip of 3 files", ZipTool.open(apk).entries.size() == 3);
+        List<ArchiveIo.Source> zipLast = Arrays.asList(new ArchiveIo.Source("a_notes.txt", notes), new ArchiveIo.Source("b_photo.bin", photo), new ArchiveIo.Source("z_app.apk", apk));
+        List<ArchiveIo.Source> zipFirst = Arrays.asList(new ArchiveIo.Source("z_app.apk", apk), new ArchiveIo.Source("a_notes.txt", notes));
+        Object[][] cases = { { "apks.tar", "tar", 1, zipLast }, { "first.tar", "tar", 1, zipFirst }, { "stored.7z", "7z", 0, zipLast } };
+        for (Object[] c : cases) {
+            String label = (String) c[0], fmt = (String) c[1];
+            @SuppressWarnings("unchecked") List<ArchiveIo.Source> in = (List<ArchiveIo.Source>) c[3];
+            File f = new File(d, label);
+            ArchiveIo.create(f, fmt, in, null, (Integer) c[2], null);
+            ZipTool.Archive a = ZipTool.openAny(f, null, null);
+            List<String> names = new ArrayList<String>();
+            for (ZipTool.Entry e : a.entries) names.add(e.name);
+            check("member " + label + ": opens as " + fmt + ", not as the zip inside (" + a.format + ", prefix " + a.prefix + ")", fmt.equals(a.format) && !a.isZip());
+            check("member " + label + ": every file is listed " + names, names.size() == in.size() && names.contains("z_app.apk") && names.contains("a_notes.txt"));
+            check("member " + label + ": the count the delete-afterwards rule compares is the archive's own", ZipTool.countFiles(a, "") == in.size());
+            File out = new File(d, label + ".out");
+            List<String> problems = new ArrayList<String>();
+            long[] r = ZipTool.extractTree(a, "", out, null, problems);
+            check("member " + label + ": extracting writes every file, the APK as it was " + problems, r[0] == in.size() && problems.isEmpty()
+                && new File(out, "z_app.apk").isFile() && sha(new File(out, "z_app.apk")).equals(sha(apk)) && new File(out, "a_notes.txt").isFile());
+        }
+        // a tar holding a RAR is a tar as well (the RAR test looks for a signature up to 1 MB in, for a self-extractor)
+        File rar = null;
+        for (File p = new File(System.getProperty("user.dir")); p != null && rar == null; p = p.getParentFile()) {
+            File c = new File(p, "tests/java/fixtures/rar/libarchive-rar5-stored.rar");
+            if (c.isFile()) rar = c;
+        }
+        if (rar == null) skip("member: no RAR fixture (tests/java/fixtures/rar): a tar holding a RAR");
+        else {
+            File rt = new File(d, "rar.tar");
+            ArchiveIo.create(rt, "tar", Arrays.asList(new ArchiveIo.Source("x.rar", rar), new ArchiveIo.Source("a_notes.txt", notes)), null, 1, null);
+            ZipTool.Archive a = ZipTool.openAny(rt, null, null);
+            check("member rar.tar: opens as tar, not as the RAR inside (" + a.format + ")", "tar".equals(a.format) && a.entries.size() == 2);
+            check("member: a RAR still opens as a RAR", ZipTool.openAny(rar, null, null).format.startsWith("rar"));
+        }
+        // what must not change: a zip, a zip behind a self-extractor stub, a zip under another name
+        ZipTool.Archive z = ZipTool.openAny(apk, null, null);
+        check("member: an APK still opens as a zip", z.isZip() && z.prefix == 0 && z.entries.size() == 3);
+        byte[] stub = new byte[3000]; stub[0] = 'M'; stub[1] = 'Z';
+        byte[] apkBytes = Files.readAllBytes(apk.toPath());
+        byte[] sfx = Arrays.copyOf(stub, stub.length + apkBytes.length);
+        System.arraycopy(apkBytes, 0, sfx, stub.length, apkBytes.length);
+        File exe = new File(d, "setup.exe"); write(exe, sfx);
+        ZipTool.Archive s = ZipTool.openAny(exe, null, null);
+        check("member: a zip behind a self-extractor stub still opens, with the stub as its prefix (" + s.prefix + ")", s.isZip() && s.prefix == 3000 && s.entries.size() == 3);
+        File renamed = new File(d, "renamed.tar"); write(renamed, apkBytes);
+        check("member: a zip named .tar is still a zip", ZipTool.openAny(renamed, null, null).isZip());
     }
 }

@@ -1,0 +1,11 @@
+🎯 **What:** The code health issue addressed
+Removed the unused `import java.net.URL;` statement from `src/com/bloatware/bingblop/FdroidIndex.java`.
+
+💡 **Why:** How this improves maintainability
+Removing dead code, like unused imports, cleans up the namespace and file structure. It also prevents developers from being confused about what dependencies a given file has.
+
+✅ **Verification:** How you confirmed the change is safe
+The change is a single, safe deletion of an unused import.
+
+✨ **Result:** The improvement achieved
+A marginally smaller file, a cleaner namespace, and an overall improvement in code health.

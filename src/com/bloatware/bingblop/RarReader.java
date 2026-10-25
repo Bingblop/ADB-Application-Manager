@@ -64,7 +64,8 @@ import javax.crypto.spec.SecretKeySpec;
  * accepts it). Real archives dropped into tests/java/fixtures/rar are run by the same suite (see the README there).
  *
  * Errors are {@link IOException}s whose message is one of: {@code checksum}, {@code truncated}, {@code corrupt}, {@code header-crc}, {@code multi-volume},
- * {@code dictionary-too-large}, {@code out-of-memory}, {@code unsupported-filter}, {@code unsupported-version}, {@code not-rar}
+ * {@code dictionary-too-large}, {@code out-of-memory}, {@code unsupported-filter}, {@code unsupported-version}, {@code not-rar}, {@code unknown-size} (a RAR4
+ * entry whose header leaves its unpacked size open; it is listed with size -1, the other entries are read)
  * or {@link PasswordException}.
  */
 public final class RarReader {
@@ -331,6 +332,12 @@ public final class RarReader {
         @Override public int read(byte[] b, int off, int len) { return len == 0 ? 0 : -1; }
     };
 
+    /** The data of an entry whose unpacked size the archive does not give (RAR4, see {@code Rar4.unknownSize}): reading it fails. */
+    private static final InputStream UNKNOWN_SIZE = new InputStream() {
+        @Override public int read() throws IOException { throw new IOException("unknown-size"); }
+        @Override public int read(byte[] b, int off, int len) throws IOException { throw new IOException("unknown-size"); }
+    };
+
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
     private static IOException bad() { return new IOException("corrupt"); }
@@ -389,6 +396,8 @@ public final class RarReader {
         final char[] pw;
         final List<FileHeader> hdrs = new ArrayList<FileHeader>();
         final boolean[] hasData;
+        /** The entry's header says its unpacked size is not known (rar -si): listed with size -1, its data is not read. */
+        final boolean[] unknownSize;
 
         static Rar4 open(File f, long base, char[] pw, boolean headerEnc) throws IOException {
             if (headerEnc && pw == null) throw new PasswordException(false);
@@ -432,6 +441,7 @@ public final class RarReader {
             info.multiVolume = mh.isMultiVolume();
             List<FileHeader> all = a.getFileHeaders();
             hasData = new boolean[Math.min(all.size(), MAX_ITEMS)];
+            unknownSize = new boolean[hasData.length];
             for (FileHeader h : all) {
                 if (hdrs.size() >= MAX_ITEMS) { info.truncated = true; break; }
                 Item it = new Item();
@@ -444,7 +454,9 @@ public final class RarReader {
                 if (it.dir && !nm.endsWith("/")) nm += "/";
                 it.name = nm;
                 it.size = it.dir ? 0 : h.getFullUnpackSize();
-                if (it.size < 0) throw new IOException("Corrupted archive: entry has negative unpacked size (" + it.size + ")");
+                // unrar's "unknown unpacked size" (LHD_LARGE with both size words 0xFFFFFFFF, as rar -si may write): only this entry cannot be read
+                if (it.size == -1 && h.isLargeBlock() && h.getUnpSize() == 0xFFFFFFFFL && h.getHighUnpackSize() == -1) unknownSize[hdrs.size()] = true;
+                else if (it.size < 0) throw new IOException("Corrupted archive: entry has negative unpacked size (" + it.size + ")");
                 it.csize = h.getFullPackSize();
                 Date d = h.getMTime();
                 it.mtime = d == null ? 0 : d.getTime();
@@ -533,6 +545,7 @@ public final class RarReader {
         private void checkEntry(int i) throws IOException {
             FileHeader h = hdrs.get(i);
             if (h.isSplitAfter() || h.isSplitBefore()) throw new IOException("multi-volume");
+            if (unknownSize[i]) throw new IOException("unknown-size");
             if (info.items.get(i).encrypted && pw == null) throw new PasswordException(false);
         }
 
@@ -562,6 +575,8 @@ public final class RarReader {
                 if (isLink(i)) {
                     if (hasData[i]) readTarget(i);
                     cont = v.entry(it, EMPTY);
+                } else if (unknownSize[i]) {
+                    cont = v.entry(it, UNKNOWN_SIZE);      // fails when read, not an empty file; the other entries are still read
                 } else if (!hasData[i]) {
                     cont = v.entry(it, EMPTY);
                 } else {
@@ -581,6 +596,7 @@ public final class RarReader {
         }
 
         @Override InputStream open(int index) throws IOException {
+            if (unknownSize[index]) { close(); throw new IOException("unknown-size"); }
             if (!hasData[index] || isLink(index)) { close(); return EMPTY; }
             checkEntry(index);
             startChain(index);

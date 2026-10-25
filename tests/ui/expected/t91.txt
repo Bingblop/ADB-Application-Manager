@@ -37,12 +37,14 @@
    the steps: ["✓ Termux","2 Install Claude Code","3 Sign in","4 Chat here"]
    Install: Debian in Termux, then Anthropic's installer inside it: ["pkg install -y proot-distro","proot-distro login debian -- true 2>/dev/null || proot-distro install debian","proot-distro login debian -- bash -c \"apt-get update && apt-get install -y curl ca-certificates git\"","proot-distro login debian -- bash -lc 'export PATH=\"$HOME/.local/bin:$PATH\"; curl -fsSL https://claude.ai/install.sh | bash'"]
    then: sign in, or use it now: "Sign in\nUse it now"
-   Sign in opens Claude Code in a Termux window: "proot-distro login debian -- bash -lc 'export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$PATH\"; echo \"Signing in to Claude Code. Follow the link it shows; come back to ADB App Manager when it says you are signed in.\"; claude'"
+   Sign in opens Claude Code in a Termux window: "proot-distro login debian -- bash -lc 'export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$PATH\"; echo \"Signing in to Claude Code. Follow the link it shows; come back to ADB/Root Full System Toolbox when it says you are signed in.\"; claude'"
    in use: cli claude
    a message goes to claude -p in the Debian container, with the saved key handed to it as ANTHROPIC_API_KEY (by the app):
     "proot-distro login debian --shared-tmp --env \"ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY\" -- bash -lc 'export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$HOME/bin:$PATH\"; cd '\\''<tmp>/termux'\\'' 2>/dev/null; claude -p '\\''fix the build, please'\\'' --model '\\''claude-opus-5-5'\\'''" {"ANTHROPIC_API_KEY":"claude"}
    its answer: ["[Claude Code in Termux, with your saved key]","Claude Code says: done."]
    the next one continues the same Claude Code conversation: true with the model chosen: true
+   an answer that says "not installed" goes into the chat, without the install note: {"role":"assistant","text":"Docker is not installed on this device: the shell said \"docker: command not found\".\n"} 0
+   a failed run that says the Debian container is not installed still offers the install: "Install Claude Code\nConnect sheet"
 9. Gemini CLI runs in Termux itself (no container), its own sign-in (no key saved): "export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$HOME/bin:$PATH\"; gemini -p 'hello gemini'" null
    not installed: said, with the install button: "[Gemini CLI does not seem to be installed yet]" "Install Gemini CLI\nConnect sheet"
 10. Copilot: its sheet: "Copilot needs a Copilot plan. GitHub retired GitHub Models in July 2026, so the Terminal uses GitHub's official Copilot CLI in Termux. Sign in there with GitHub, or save a fine-grained token with the \"Copilot Requests\" permission here and the CLI uses it."

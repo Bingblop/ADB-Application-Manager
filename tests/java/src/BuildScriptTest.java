@@ -17,6 +17,9 @@ import java.util.zip.ZipOutputStream;
  * generates class by class and stops generating at the first error). build.sh lists src/ before the generated gen/, so the broken
  * class is put where the stand-in aapt2 writes R.java: then MainActivity.class is always written, as it is on a phone build whose
  * broken file happens to come late.
+ *
+ * build.sh also stops when the 64-bit adb (assets/libadb.so) is missing for an arm64 or universal APK (finding BLD-2): it used to
+ * skip the file in silence and sign an APK on which no adb mode can start, while the 32-bit branch already stopped.
  */
 public class BuildScriptTest {
   static int fails = 0, n = 0;
@@ -56,13 +59,17 @@ public class BuildScriptTest {
   static int status;
 
   /** Runs a copy of build.sh in a fresh folder: src/ holds MainActivity, the generated folder a class with the given body; the output. */
-  static String build(File repo, File dir, String generated) throws Exception {
+  static String build(File repo, File dir, String generated) throws Exception { return build(repo, dir, generated, true, null); }
+
+  /** The same, with or without a stand-in assets/libadb.so, for the given ABI (null: build.sh's default). */
+  static String build(File repo, File dir, String generated, boolean withAdb, String abi) throws Exception {
     deleteTree(dir);
     dir.mkdirs();
     Files.copy(new File(repo, "build.sh").toPath(), new File(dir, "build.sh").toPath());
     write(new File(dir, "AndroidManifest.xml"), "<manifest/>\n");
     new File(dir, "res").mkdirs();
     new File(dir, "assets").mkdirs();
+    if (withAdb) write(new File(dir, "assets/libadb.so"), "stand-in adb\n");
     jar(new File(dir, "libs/empty.jar"));
     jar(new File(dir, "android.jar"));       // no java.lang inside: build.sh then compiles with --release 8
     write(new File(dir, "src/com/bloatware/bingblop/MainActivity.java"), "package com.bloatware.bingblop;\npublic class MainActivity { int f() { return 1; } }\n");
@@ -78,6 +85,7 @@ public class BuildScriptTest {
     pb.environment().remove("BOOTCLASSPATH");
     pb.environment().remove("D8_JAR");
     pb.environment().put("KEYSTORE", new File(dir, "throwaway.keystore").getPath());
+    if (abi == null) pb.environment().remove("ABI"); else pb.environment().put("ABI", abi);
     Process p = pb.start();
     byte[] out = p.getInputStream().readAllBytes();
     if (!p.waitFor(120, TimeUnit.SECONDS)) { p.destroyForcibly(); status = -1; }
@@ -110,6 +118,14 @@ public class BuildScriptTest {
       String good = build(repo, new File(work, "good"), "static int g() { return 1; }");
       check("sources that compile go on to the dex step", good.contains("Converting to Dalvik") && good.contains("stand-in d8 ran") && !good.contains("Java compilation failed"), "exit " + status + "\n" + good);
       check("javac's [options] warnings are not shown", !good.contains("warning: [options]") && !bad.contains("warning: [options]"), good);
+
+      for (String abi : new String[] {null, "universal"}) {
+        String what = "without assets/libadb.so the " + (abi == null ? "default (arm64-v8a)" : abi) + " build";
+        String noAdb = build(repo, new File(work, "noadb-" + abi), "static int g() { return 1; }", false, abi);
+        check(what + " stops (non-zero exit)", status != 0 && status != -1, "exit " + status + "\n" + noAdb);
+        check(what + " names the missing file", noAdb.contains("assets/libadb.so is missing"), noAdb);
+        check(what + " stops before anything is compiled or signed", !noAdb.contains("Compiling Java sources") && !noAdb.contains("Built and signed"), noAdb);
+      }
     } finally {
       deleteTree(work);
     }

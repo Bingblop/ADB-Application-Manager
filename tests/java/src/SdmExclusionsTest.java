@@ -270,7 +270,7 @@ public class SdmExclusionsTest {
         is("…the same case below /data still matches", dl.excludesPath(SC, "/data/local/Keep/x"), true);
         SdmExclusions u10 = new SdmExclusions(tmp(), 10);
         u10.save(SdmExclusions.Exclusion.path("/sdcard/Download/keep", Arrays.asList("systemcleaner")));
-        is("a second user: /sdcard is that user's storage", u10.excludesPath(SC, "/storage/emulated/10/Download/keep/a"), true);
+        is("the storage of a second user: /sdcard is that user's storage", u10.excludesPath(SC, "/storage/emulated/10/Download/keep/a"), true);
         is("…not user 0's", u10.excludesPath(SC, "/storage/emulated/0/Download/keep/a"), false);
         threw = false;
         try { SdmExclusions.Exclusion.path("/../etc", Arrays.asList("systemcleaner")); } catch (IllegalArgumentException e) { threw = true; }
