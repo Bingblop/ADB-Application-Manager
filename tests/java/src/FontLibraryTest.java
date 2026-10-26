@@ -989,7 +989,16 @@ public class FontLibraryTest {
                 && exResult.indexOf("if (uri != null) fmkDropDocument(uri)") < exResult.indexOf("fontExec.submit("), true);
         is("a save holds the font while it copies", exResult.contains("fmkJobs.startFor(this, \"make:\" + id, \"export\"") && exResult.contains("\"id:\" + id)"), true);
         String exTo = body(ma, "private JSONObject fmkExportTo(");
-        is("a save that is not whole is deleted", exTo.contains("whole = true;") && exTo.contains("if (!whole) fmkDeleteDocument(uri)"), true);
+        int opened = exTo.indexOf("opened = true;");
+        is("a save that is not whole is deleted once it was opened for writing", opened > exTo.indexOf("openOutputStream(uri, \"w\")") && opened < exTo.indexOf("new java.io.FileInputStream(apk)")
+                && exTo.contains("whole = true;") && exTo.contains("if (opened && !whole) fmkDeleteDocument(uri);") && exTo.contains("else if (!whole) fmkDeleteIfEmpty(uri);"), true);
+        // Overwrite in the save screen hands over the user's own file: a refusal before anything is written there deletes only an empty document
+        String ifEmpty = body(ma, "private void fmkDeleteIfEmpty(");
+        is("…a document nothing was written into only when the provider says it is empty", ifEmpty.contains("android.provider.OpenableColumns.SIZE")
+                && ifEmpty.contains("c.isNull(0) || c.getLong(0) != 0) return;") && ifEmpty.indexOf("fmkDeleteDocument(uri)") > ifEmpty.indexOf("finally"), true);
+        String drop = body(ma, "private void fmkDropDocument(");
+        is("…the refusals of the save screen's answer go through that check", !exResult.contains("fmkDeleteDocument(") && exResult.contains("fmkDeleteIfEmpty(uri)")
+                && !drop.contains("fmkDeleteDocument(") && drop.contains("fmkDeleteIfEmpty(uri)"), true);
 
         // Cancel reaches a download that is still connecting or waiting; what failed is said (DL-1, DL-2)
         is("each hop of a download can be disconnected", dl.contains("new HttpSafe.Hops()") && dl.contains("fmkConns.put(job.id, hop)"), true);

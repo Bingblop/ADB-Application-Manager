@@ -7252,8 +7252,9 @@ public class MainActivity extends Activity {
 
     /**
      * The "save as" answered: the entry's font.apk is copied there, as a job that holds the entry ("id:"), so it is not made again or deleted
-     * while it is copied. {ok, name} or {ok:false, code, error}. The document the save screen made is deleted when nothing is copied into it:
-     * an answer with no export waiting (a second save screen), a font being made again, the app closing.
+     * while it is copied. {ok, name} or {ok:false, code, error}. A document nothing is copied into (an answer with no export waiting, a font
+     * being made again, the app closing) is deleted only when it is empty (fmkDeleteIfEmpty): Overwrite in the save screen hands over the
+     * user's own file.
      */
     private void fmkExportResult(final String id, final Uri uri) {
         if (id == null) {
@@ -7280,13 +7281,16 @@ public class MainActivity extends Activity {
             });
         } catch (RejectedExecutionException closing) {
             fmkJobs.finish(job);
-            fmkDeleteDocument(uri);
+            fmkDeleteIfEmpty(uri);
         }
     }
 
-    /** Copies the entry's package into the document; one that is not whole at the end (nothing to copy, a write that failed) is deleted. */
+    /**
+     * Copies the entry's package into the document. Once it is open for writing (emptied), a copy that does not finish deletes it; a refusal
+     * before that (the font gone or changed, a document that cannot be written) deletes it only when it is empty.
+     */
     private JSONObject fmkExportTo(String id, Uri uri) {
-        boolean whole = false;
+        boolean opened = false, whole = false;
         try {
             FontLibrary.Dirs d = fmkDirs();
             FontLibrary.Entry e = FontLibrary.read(d, id);
@@ -7300,6 +7304,7 @@ public class MainActivity extends Activity {
                 out = getContentResolver().openOutputStream(uri, "w");
             }
             if (out == null) throw new IOException("The app could not write there.");
+            opened = true;
             InputStream in = new java.io.FileInputStream(apk);
             try {
                 byte[] buf = new byte[65536];
@@ -7314,29 +7319,47 @@ public class MainActivity extends Activity {
         } catch (Throwable t) {
             return FontLibrary.error("failed", "The font package could not be saved: " + errMsg(t));
         } finally {
-            // a package cut short (or an empty file the save screen made) must not stay behind looking like one that installs
-            if (!whole) fmkDeleteDocument(uri);
+            // a package cut short must not stay behind looking like one that installs; a file nothing was written into may be the user's own
+            if (opened && !whole) fmkDeleteDocument(uri);
+            else if (!whole) fmkDeleteIfEmpty(uri);
         }
     }
 
-    /** Deletes a document the system's "save as" made, best effort. */
+    /** Deletes a document the system's "save as" handed over, best effort. */
     private void fmkDeleteDocument(Uri uri) {
         try {
             android.provider.DocumentsContract.deleteDocument(getContentResolver(), uri);
         } catch (Throwable ignored) {}
     }
 
-    /** {@link #fmkDeleteDocument} off the UI thread (a provider can be slow to answer); in the window's last moments, at once. */
+    /**
+     * Deletes a document nothing was written into only when it is empty: the save screen makes a new, empty one, but Overwrite hands over the
+     * file the user tapped as it is, and that stays. A provider that does not give the size keeps the document.
+     */
+    private void fmkDeleteIfEmpty(Uri uri) {
+        android.database.Cursor c = null;
+        try {
+            c = getContentResolver().query(uri, new String[]{android.provider.OpenableColumns.SIZE}, null, null, null);
+            if (c == null || !c.moveToFirst() || c.isNull(0) || c.getLong(0) != 0) return;
+        } catch (Throwable unknown) {
+            return;
+        } finally {
+            if (c != null) try { c.close(); } catch (Exception ignored) {}
+        }
+        fmkDeleteDocument(uri);
+    }
+
+    /** {@link #fmkDeleteIfEmpty} off the UI thread (a provider can be slow to answer); in the window's last moments, at once. */
     private void fmkDropDocument(final Uri uri) {
         try {
             fontExec.submit(new Runnable() {
                 @Override
                 public void run() {
-                    fmkDeleteDocument(uri);
+                    fmkDeleteIfEmpty(uri);
                 }
             });
         } catch (RejectedExecutionException closing) {
-            fmkDeleteDocument(uri);
+            fmkDeleteIfEmpty(uri);
         }
     }
 
