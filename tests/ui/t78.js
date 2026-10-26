@@ -11,6 +11,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
 const EMOJI = /\p{Extended_Pictographic}|️|⃣/gu;
 const GEAR = /⚙️?/gu;
 const LOCK = /\u{1F512}/gu;           // v7.9.22 (asked for): the lock on the button of a permission that cannot be toggled
+// v7.18.0 (asked for, 2026-10-26: "show an emoji display of the top 5 emoji fonts"): the sixteen emoji the Emoji fonts card draws in each emoji
+// font, written once in the page (FNT_EMO_SAMPLE) and once in the Java (EmojiSpecimen.SAMPLE); the strip is the emoji fonts' own art, not decoration
+const EMO_SAMPLE = '😀😂🥰😎🥳😭👍👋❤️🔥🎉🐶🦄🍕🚀🌈';
 
 function walk(dir, out) {
   for (const f of fs.readdirSync(dir)) {
@@ -31,15 +34,18 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
   // 1) the sources
   check('0. the scan reads symbols written as escapes too (\\u26a1, a surrogate pair, \\u{1F4A5}, &#x26A1;, &#9889;)', found('a \\u26a1 b').length === 1 && found('\\uD83D\\uDE00').length === 1 && found('\\u{1F4A5}').length === 1 && found('&#x26A1;').length === 1 && found('&#9889;').length === 1 && found('plain \\u00a0 text &#233; &#8364;').length === 0);
   const page_src = fs.readFileSync(fileURLToPath(PAGE), 'utf8');                       // the page under test (assets/index.html unless PAGE_URL says otherwise)
-  const withoutGears = decode(page_src).replace(GEAR, '').replace(LOCK, '');
+  const withoutGears = decode(page_src).replace(GEAR, '').replace(LOCK, '').split(EMO_SAMPLE).join('');
   check('1. the page has no emoji but the gears (© is not an emoji and is left)', found(withoutGears.replace(/©/g, '')).length === 0, JSON.stringify(found(withoutGears.replace(/©/g, ''))));
   check('   exactly one gear is written in it: the Terminal settings button (the header button and the app row button are SVG icons now)', (decode(page_src).match(GEAR) || []).length === 1);
   check('   exactly one lock is written in it (LOCK_ICON, used by every button that cannot change anything in the current state: permissions, app ops, activities, services, receivers, providers)', (decode(page_src).match(LOCK) || []).length === 1 && /const LOCK_ICON = '\u{1F512}';/u.test(page_src));
+  check('   the emoji fonts\' sample is written once in it, as FNT_EMO_SAMPLE', decode(page_src).split(EMO_SAMPLE).length === 2 && page_src.includes("const FNT_EMO_SAMPLE = '" + EMO_SAMPLE + "';"));
   check('   it is the Terminal\'s; the header button holds an SVG gear', /id="prefsHeaderBtn"[^>]*><svg class="hdr-gear"/u.test(page_src) && /id="txSettingsBtn"[^>]*>⚙️<\/button>/u.test(page_src));
   check('   the changelog the What\'s new screen shows has none', found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8')).length === 0, JSON.stringify(found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8'))));
   const res = walk(path.join(REPO, 'res'), []).filter(f => /\.(xml|txt)$/.test(f)).filter(f => found(fs.readFileSync(f, 'utf8')).length);
   check('   the layouts and resources (home-screen widget, tiles) have none', res.length === 0, res.join(' '));
-  const java = walk(path.join(REPO, 'src'), []).filter(f => f.endsWith('.java')).filter(f => found(fs.readFileSync(f, 'utf8')).length);
+  // the one sample of EmojiSpecimen (SAMPLE) is left out of that file, once; any other emoji in it, or in any other file, counts
+  const javaText = (f) => { const t = fs.readFileSync(f, 'utf8'); return path.basename(f) === 'EmojiSpecimen.java' ? t.replace('public static final String SAMPLE = "' + EMO_SAMPLE + '";', '') : t; };
+  const java = walk(path.join(REPO, 'src'), []).filter(f => f.endsWith('.java')).filter(f => found(javaText(f)).length);
   check('   the Java sources have none (they put text on the page and in notifications)', java.length === 0, java.join(' '));
 
   // 2) the page as it is drawn
