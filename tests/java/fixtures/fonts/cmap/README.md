@@ -28,12 +28,15 @@ No real OFL font with a Windows symbol (3, 0) map was found (Font Awesome 4.7, T
 
 `EmojiData`'s Emoji_Presentation table was written by `make_fixtures.py emojidata` from Unicode 18.0.0's
 `https://www.unicode.org/Public/18.0.0/ucd/emoji/emoji-data.txt` (dated 2026-01-30, SHA-256
-`80d00f8e616a0ef27fd6b8de3b758c06383b5d917e2977709578e68baf733bf1`, Unicode License v3); `expected.txt` keeps the version, count (1,228
-code points) and the hash of the list, and the suite compares the table with them.
+`80d00f8e616a0ef27fd6b8de3b758c06383b5d917e2977709578e68baf733bf1`, Unicode License v3), and its table of the characters with an emoji
+variation sequence (c, U+FE0F) from `https://www.unicode.org/Public/18.0.0/ucd/emoji/emoji-variation-sequences.txt` (dated 2026-01-09,
+SHA-256 `ff1707564aa1f1b2fcf4ec92d609d4cb26940bc0d4dcf07f5328ad6879e84da3`); `expected.txt` keeps the version, count (1,228 and 371 code
+points) and the hash of each list, and the suite compares the tables with them.
 
 ## expected.txt
 
 * `emoji VERSION COUNT SHA`: the Emoji_Presentation list above.
+* `variation VERSION COUNT SHA`: the characters with an emoji variation sequence above.
 * `font REL FILESHA PID EID FORMAT COUNT MAPSHA UVSCOUNT UVSSHA`, for every `.ttf` / `.otf` under `tests/java/fixtures/fonts` (this folder
   and every other suite's, keyed by the file's SHA-256): the subtable fontTools reads (`getBestCmap`'s order (3,10), (0,6), (0,4), (3,1),
   (0,3), (0,2), (0,1), (0,0), then the Windows symbol (3,0), then Mac (1,0) with Mac Roman codes made Unicode as in Apple's ROMAN.TXT;
@@ -63,10 +66,11 @@ curl -L -o "$D/noto/Noto-COLRv1.ttf" 'https://raw.githubusercontent.com/googlefo
 curl -L -o "$D/twemoji/twemoji-font-1.0.4.zip" 'https://github.com/SableClient/twemoji-font/releases/download/v1.0.4/twemoji-font-1.0.4.zip'
 (cd "$D/twemoji" && unzip -o twemoji-font-1.0.4.zip fonts/twemoji.ttf)
 curl -L -o "$D/ucd/emoji-data.txt" 'https://www.unicode.org/Public/18.0.0/ucd/emoji/emoji-data.txt'
-sha256sum "$D"/*/*.ttf "$D"/*/fonts/*.ttf "$D/ucd/emoji-data.txt"
+curl -L -o "$D/ucd/emoji-variation-sequences.txt" 'https://www.unicode.org/Public/18.0.0/ucd/emoji/emoji-variation-sequences.txt'
+sha256sum "$D"/*/*.ttf "$D"/*/fonts/*.ttf "$D"/ucd/*.txt
 python3 -I tests/java/fixtures/fonts/cmap/make_fixtures.py fonts --lato "$D/lato/Lato-Regular.ttf" --inter "$D/inter/Inter.ttf" \
   --twemoji "$D/twemoji/fonts/twemoji.ttf" --notoemoji "$D/noto/Noto-COLRv1.ttf"
-python3 -I tests/java/fixtures/fonts/cmap/make_fixtures.py emojidata "$D/ucd/emoji-data.txt"   # prints EmojiData's table
+python3 -I tests/java/fixtures/fonts/cmap/make_fixtures.py emojidata "$D/ucd/emoji-data.txt" "$D/ucd/emoji-variation-sequences.txt"   # prints EmojiData's tables
 python3 -I tests/java/fixtures/fonts/cmap/make_fixtures.py expect
 mkdir -p /tmp/cmap-cls && javac -encoding UTF-8 -nowarn -source 8 -target 8 -sourcepath src -d /tmp/cmap-cls tests/java/src/CmapTest.java
 java -cp /tmp/cmap-cls -Dfixtures=tests/java/fixtures com.bloatware.bingblop.CmapTest --dump /tmp/cmap-dump

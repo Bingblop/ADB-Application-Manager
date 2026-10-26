@@ -5,15 +5,16 @@ package com.bloatware.bingblop;
  *
  * <p>When the Custom Fonts tab puts an emoji font inside a text font ({@code EmojiMerge}), a character both fonts have keeps the text font's
  * glyph unless {@link #emojiWins} says the emoji form is the one people expect: characters shown as emoji by default (Emoji_Presentation),
- * skin tone modifiers, flag letters, the joiner and the selectors emoji sequences are built from, and the emoji blocks from U+1F000.
+ * skin tone modifiers, flag letters, the selector and the keycap mark emoji sequences are built from, and the emoji blocks from U+1F000.
  * {@link #textAlwaysWins} keeps space, digits, # * and every other Latin-1 character with the text font even where an emoji font has a glyph
- * for it (keycaps and the (c) (R) emoji then come from the U+FE0F sequences). Pure Java, no Android classes.
+ * for it (keycaps and the (c) (R) emoji then come from the U+FE0F sequences). {@link #hasEmojiVariation} names the characters that
+ * keyboards send with U+FE0F to ask for the emoji form. Pure Java, no Android classes.
  */
 public final class EmojiData {
 
     private EmojiData() {}
 
-    /** The Unicode version of the Emoji_Presentation table below. */
+    /** The Unicode version of the two tables below. */
     public static final String UNICODE_VERSION = "18.0.0";
     /** Variation selectors: U+FE0E asks for the text form of a character, U+FE0F for the emoji form. */
     public static final int TEXT_SELECTOR = 0xFE0E, EMOJI_SELECTOR = 0xFE0F;
@@ -39,13 +40,59 @@ public final class EmojiData {
             0x1FADF, 0x1FAEB, 0x1FAEF, 0x1FAFA,
     };
 
+    // The characters c for which (c, U+FE0F) is an emoji variation sequence, from Unicode 18.0.0 emoji-variation-sequences.txt
+    // (https://www.unicode.org/Public/18.0.0/ucd/emoji/emoji-variation-sequences.txt, dated 2026-01-09, sha256
+    // ff1707564aa1f1b2fcf4ec92d609d4cb26940bc0d4dcf07f5328ad6879e84da3): 371 code points in 183 ranges, first and last of each in order.
+    // Written by the same make_fixtures.py emojidata; the cmap suite checks it against that file's list too.
+    private static final int[] VARIATION = {
+            0x0023, 0x0023, 0x002A, 0x002A, 0x0030, 0x0039, 0x00A9, 0x00A9, 0x00AE, 0x00AE, 0x203C, 0x203C,
+            0x2049, 0x2049, 0x2122, 0x2122, 0x2139, 0x2139, 0x2194, 0x2199, 0x21A9, 0x21AA, 0x231A, 0x231B,
+            0x2328, 0x2328, 0x23CF, 0x23CF, 0x23E9, 0x23F3, 0x23F8, 0x23FA, 0x24C2, 0x24C2, 0x25AA, 0x25AB,
+            0x25B6, 0x25B6, 0x25C0, 0x25C0, 0x25FB, 0x25FE, 0x2600, 0x2604, 0x260E, 0x260E, 0x2611, 0x2611,
+            0x2614, 0x2615, 0x2618, 0x2618, 0x261D, 0x261D, 0x2620, 0x2620, 0x2622, 0x2623, 0x2626, 0x2626,
+            0x262A, 0x262A, 0x262E, 0x262F, 0x2638, 0x263A, 0x2640, 0x2640, 0x2642, 0x2642, 0x2648, 0x2653,
+            0x265F, 0x2660, 0x2663, 0x2663, 0x2665, 0x2666, 0x2668, 0x2668, 0x267B, 0x267B, 0x267E, 0x267F,
+            0x2692, 0x2697, 0x2699, 0x2699, 0x269B, 0x269C, 0x26A0, 0x26A1, 0x26A7, 0x26A7, 0x26AA, 0x26AB,
+            0x26B0, 0x26B1, 0x26BD, 0x26BE, 0x26C4, 0x26C5, 0x26C8, 0x26C8, 0x26CE, 0x26CF, 0x26D1, 0x26D1,
+            0x26D3, 0x26D4, 0x26E9, 0x26EA, 0x26F0, 0x26F5, 0x26F7, 0x26FA, 0x26FD, 0x26FD, 0x2702, 0x2702,
+            0x2705, 0x2705, 0x2708, 0x270D, 0x270F, 0x270F, 0x2712, 0x2712, 0x2714, 0x2714, 0x2716, 0x2716,
+            0x271D, 0x271D, 0x2721, 0x2721, 0x2728, 0x2728, 0x2733, 0x2734, 0x2744, 0x2744, 0x2747, 0x2747,
+            0x274C, 0x274C, 0x274E, 0x274E, 0x2753, 0x2755, 0x2757, 0x2757, 0x2763, 0x2764, 0x2795, 0x2797,
+            0x27A1, 0x27A1, 0x27B0, 0x27B0, 0x27BF, 0x27BF, 0x2934, 0x2935, 0x2B05, 0x2B07, 0x2B1B, 0x2B1C,
+            0x2B50, 0x2B50, 0x2B55, 0x2B55, 0x3030, 0x3030, 0x303D, 0x303D, 0x3297, 0x3297, 0x3299, 0x3299,
+            0x1F004, 0x1F004, 0x1F170, 0x1F171, 0x1F17E, 0x1F17F, 0x1F202, 0x1F202, 0x1F21A, 0x1F21A, 0x1F22F, 0x1F22F,
+            0x1F237, 0x1F237, 0x1F30D, 0x1F30F, 0x1F315, 0x1F315, 0x1F31C, 0x1F31C, 0x1F321, 0x1F321, 0x1F324, 0x1F32C,
+            0x1F336, 0x1F336, 0x1F378, 0x1F378, 0x1F37D, 0x1F37D, 0x1F393, 0x1F393, 0x1F396, 0x1F397, 0x1F399, 0x1F39B,
+            0x1F39E, 0x1F39F, 0x1F3A7, 0x1F3A7, 0x1F3AC, 0x1F3AE, 0x1F3C2, 0x1F3C2, 0x1F3C4, 0x1F3C4, 0x1F3C6, 0x1F3C6,
+            0x1F3CA, 0x1F3CE, 0x1F3D4, 0x1F3E0, 0x1F3ED, 0x1F3ED, 0x1F3F3, 0x1F3F3, 0x1F3F5, 0x1F3F5, 0x1F3F7, 0x1F3F7,
+            0x1F408, 0x1F408, 0x1F415, 0x1F415, 0x1F41F, 0x1F41F, 0x1F426, 0x1F426, 0x1F43F, 0x1F43F, 0x1F441, 0x1F442,
+            0x1F446, 0x1F449, 0x1F44D, 0x1F44E, 0x1F453, 0x1F453, 0x1F46A, 0x1F46A, 0x1F47D, 0x1F47D, 0x1F4A3, 0x1F4A3,
+            0x1F4B0, 0x1F4B0, 0x1F4B3, 0x1F4B3, 0x1F4BB, 0x1F4BB, 0x1F4BF, 0x1F4BF, 0x1F4CB, 0x1F4CB, 0x1F4DA, 0x1F4DA,
+            0x1F4DF, 0x1F4DF, 0x1F4E4, 0x1F4E6, 0x1F4EA, 0x1F4ED, 0x1F4F7, 0x1F4F7, 0x1F4F9, 0x1F4FB, 0x1F4FD, 0x1F4FD,
+            0x1F508, 0x1F508, 0x1F50D, 0x1F50D, 0x1F512, 0x1F513, 0x1F549, 0x1F54A, 0x1F550, 0x1F567, 0x1F56F, 0x1F570,
+            0x1F573, 0x1F579, 0x1F587, 0x1F587, 0x1F58A, 0x1F58D, 0x1F590, 0x1F590, 0x1F5A5, 0x1F5A5, 0x1F5A8, 0x1F5A8,
+            0x1F5B1, 0x1F5B2, 0x1F5BC, 0x1F5BC, 0x1F5C2, 0x1F5C4, 0x1F5D1, 0x1F5D3, 0x1F5DC, 0x1F5DE, 0x1F5E1, 0x1F5E1,
+            0x1F5E3, 0x1F5E3, 0x1F5E8, 0x1F5E8, 0x1F5EF, 0x1F5EF, 0x1F5F3, 0x1F5F3, 0x1F5FA, 0x1F5FA, 0x1F610, 0x1F610,
+            0x1F687, 0x1F687, 0x1F68D, 0x1F68D, 0x1F691, 0x1F691, 0x1F694, 0x1F694, 0x1F698, 0x1F698, 0x1F6AD, 0x1F6AD,
+            0x1F6B2, 0x1F6B2, 0x1F6B9, 0x1F6BA, 0x1F6BC, 0x1F6BC, 0x1F6CB, 0x1F6CB, 0x1F6CD, 0x1F6CF, 0x1F6E0, 0x1F6E5,
+            0x1F6E9, 0x1F6E9, 0x1F6F0, 0x1F6F0, 0x1F6F3, 0x1F6F3,
+    };
+
     /** True when Unicode shows the character as an emoji by default (Emoji_Presentation=Yes), with no U+FE0F needed. */
-    public static boolean isEmojiPresentation(int cp) {
-        int lo = 0, hi = PRESENTATION.length / 2 - 1;
+    public static boolean isEmojiPresentation(int cp) { return in(PRESENTATION, cp); }
+
+    /**
+     * True when (cp, U+FE0F) is one of Unicode's emoji variation sequences: the characters keyboards send with U+FE0F to ask for the emoji
+     * form (the heart, the smiley, # * 0-9, (c) (R) and the like), and a few that are emoji by default anyway.
+     */
+    public static boolean hasEmojiVariation(int cp) { return in(VARIATION, cp); }
+
+    private static boolean in(int[] ranges, int cp) {
+        int lo = 0, hi = ranges.length / 2 - 1;
         while (lo <= hi) {
             int mid = (lo + hi) >>> 1;
-            if (cp < PRESENTATION[2 * mid]) hi = mid - 1;
-            else if (cp > PRESENTATION[2 * mid + 1]) lo = mid + 1;
+            if (cp < ranges[2 * mid]) hi = mid - 1;
+            else if (cp > ranges[2 * mid + 1]) lo = mid + 1;
             else return true;
         }
         return false;
@@ -56,15 +103,16 @@ public final class EmojiData {
 
     /**
      * True when the emoji font's glyph replaces the text font's for a character both have: Emoji_Presentation, the skin tone modifiers
-     * U+1F3FB..1F3FF, the regional indicators U+1F1E6..1F1FF, ZWJ U+200D, VS16 U+FE0F, the keycap U+20E3, the tags U+E0020..E007F, and the
-     * plane 1 symbol and emoji blocks U+1F000..1FFFF. Never for {@link #textAlwaysWins} characters; planes 2 and up (CJK, private use) stay
-     * with the text font.
+     * U+1F3FB..1F3FF, the regional indicators U+1F1E6..1F1FF, VS16 U+FE0F, the keycap U+20E3, the tags U+E0020..E007F, and the plane 1
+     * symbol and emoji blocks U+1F000..1FFFF. Never for {@link #textAlwaysWins} characters; planes 2 and up (CJK, private use) stay with the
+     * text font. Not for ZWJ U+200D either: the text font's own rules name its joiner (Indic conjuncts), so EmojiMerge keeps it and points
+     * the emoji sequences at it.
      */
     public static boolean emojiWins(int cp) {
         if (textAlwaysWins(cp)) return false;
         return isEmojiPresentation(cp)
                 || cp >= 0x1F000 && cp <= 0x1FFFF                     // includes the modifiers and the regional indicators
-                || cp == ZWJ || cp == EMOJI_SELECTOR || cp == KEYCAP
+                || cp == EMOJI_SELECTOR || cp == KEYCAP
                 || cp >= 0xE0020 && cp <= 0xE007F;
     }
 }

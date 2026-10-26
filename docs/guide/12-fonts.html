@@ -158,7 +158,7 @@
   <ul>
     <li>The whole emoji font is added to each face of your font, the Regular and the Bold, so each grows by about the emoji font's size: Noto Color Emoji adds about 5 MB to each.</li>
     <li>Your font keeps its own letters, digits, space, punctuation, <code>#</code> and <code>*</code>, and the (c) and (R) signs, even where the emoji font has a picture for them. The emoji font gives every character that is shown as an emoji by default (Unicode's list), the skin tones, the flags, the combined emoji such as families, and the emoji form of digits, <code>#</code>, <code>*</code>, (c) and (R) when an app asks for it.</li>
-    <li>Android takes each character from the first font that has it, so in apps that draw text with the phone's font, these emoji are used instead of the phone's own. An app that draws emoji with its own pictures keeps them.</li>
+    <li>Android takes each character from the first font that has it. Keyboards send many emoji, the red heart among them, as a character followed by an invisible emoji selector; Android takes such a pair from the first font that lists the pair, and your font lists it for the emoji inside it. So in apps that draw text with the phone's font, these emoji are used instead of the phone's own. An app that draws emoji with its own pictures keeps them.</li>
     <li>One font can hold at most 65,535 glyphs. Your font's and the emoji font's together must fit, or the build stops with "The font and the emoji together have more glyphs than one font can hold (65,535)."</li>
     <li>The emoji are sized to sit with your letters as they sat with the emoji font's own.</li>
   </ul>

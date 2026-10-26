@@ -7,9 +7,11 @@ into a TrueType text font. CI has only a JDK, so what fontTools, HarfBuzz and Fr
 The suite merges nine pairs (each text font with Noto and Twemoji, plus Inter and Noto Sans with the synthetic COLR v1 font and Lato with
 the synthetic COLR v0 one) and checks each merged font table by table against its two sources: glyph counts, the text glyphs byte for
 byte, every emoji glyph scaled by s = round(text upem / emoji upem * 65536) / 65536 with its hints dropped and its components moved past
-the text glyphs, hmtx, head bounds, cmap and the format 14 variation sequences, GSUB (the text font's lookups, the U+FE0F restore and
-text-to-emoji swap lookups, the emoji lookups, all turned on in `rlig` in every script and language system), GDEF, GPOS and kern, COLR
-(v0 records; v1 wrappers, paint graphs, clip boxes rounded outwards), CPAL, post v3, OS/2, the dropped tables and the warnings. Then it
+the text glyphs (and the copies some (c, U+FE0F) sequences point at, drawn as their glyph), hmtx, head bounds, cmap and the format 14
+variation sequences ((c, U+FE0F) for every character with an emoji variation sequence whose emoji glyph the merged font has; U+200D the
+text font's joiner), GSUB (the text font's lookups, the U+FE0F restore and text-to-emoji swap lookups, the emoji lookups, all turned on in
+`rlig` in every script and language system), GDEF, GPOS and kern, COLR (v0 records; v1 wrappers, paint graphs, clip boxes rounded
+outwards; the copies' records), CPAL, post v3, OS/2, the dropped tables and the warnings. Then it
 shapes each merged font with a small GSUB applier written for the suite (below): every sequence must give the emoji font's glyphs plus
 the text font's glyph count, or the text font's glyphs where the text form wins, and every text character and text run the text font's
 glyphs. After that: the COLR v1 and v0 details on the synthetic fonts, glyph classes, the options, refusals with their codes, damaged
@@ -108,14 +110,17 @@ Run `expect`, `--dump` and `verify` again whenever a fixture or what `EmojiMerge
 its two sources: fontTools reads every table and glyph; HarfBuzz shapes every sequence as the emoji font alone (glyph ids plus the text
 font's glyph count, each glyph advancing by the emoji font's own advance times s), every emoji character alone, with U+FE0F and with
 U+FE0E as the text font or the emoji font alone (whichever form wins), every text character and text run as the text font alone (also with
-liga / kern off, smcp, frac, tnum + case, and in Latin, Vietnamese, Cyrillic and Common), and the sequences in 12 scripts (right to left in
-Arabic and Hebrew); FreeType walks the COLR v0 layers and renders them, or the COLR v1 paint graph (the merge's scale and inverse-scale
-wrappers taken out) and clip boxes; HarfBuzz rasterizes the colour glyphs of both fonts at 128 px and compares the pixels. All nine
-passed with no difference in any of these. `EmojiMergeTest --fuzz SEED COUNT` runs only the fuzz, with another seed or for longer
-(seed 777, 20,000 cases: 12,543 merged, 7,457 refused with a FontException, nothing else, in 19 s; the suite's own 2,500 take about 3 s).
+liga / kern off, smcp, frac, tnum + case, and in Latin, Vietnamese, Cyrillic and Common), Indic conjuncts made with U+200D (eyelash ra,
+half ka, Malayalam chillu n and l, Sinhala yansaya, rakaransaya and touching letters, Bengali ya-phala) as the text font alone where it
+has their characters, and the sequences in 12 scripts (right to left in Arabic and Hebrew); the merged cmap has (c, U+FE0F), with an emoji
+glyph, for each character with a standardized emoji variation sequence that the emoji font maps and that comes before U+FE0F in a
+sequence; FreeType walks the COLR v0 layers and renders them, or the COLR v1 paint graph (the merge's scale and inverse-scale wrappers
+taken out) and clip boxes; HarfBuzz rasterizes the colour glyphs of both fonts at 128 px and compares the pixels. All nine passed with no
+difference in any of these. `EmojiMergeTest --fuzz SEED COUNT` runs only the fuzz, with another seed or for longer (seed 777, 20,000
+cases: 12,543 merged, 7,457 refused with a FontException, nothing else, in 19 s; the suite's own 2,500 take about 3 s).
 
 `make_fixtures.py check TEXT EMOJI MERGED --emoji-test FILE` runs the same checks on full fonts merged at dev time, with every sequence of
-Unicode's emoji-test.txt.
+Unicode's emoji-test.txt, and base U+FE0F skin tone for each base + skin tone in it (not in the file, but keyboards send it).
 
 ## Checks made on full fonts while EmojiMerge was written
 
@@ -140,5 +145,45 @@ Twemoji 17 (Sable 1.0.4, COLRv0), OpenMoji 17.0.0 COLRv1 (`https://raw.githubuse
   scaled outlines moves edges by up to one unit: 25 and 45 pixels with a channel difference of 36 and 40).
 * Merging took 56 to 398 ms per pair on a desktop JVM (including writing the font; the slowest is Lato + Noto, 42,330 emoji glyphs, 5.7
   MB). Lato + Noto and Noto Sans + Blobmoji2 merge in a 40 MB heap and not in 32 MB.
+
+## Checks made on full fonts after the v7.17.0 review
+
+A review found what the checks above could not see, because HarfBuzz shaped every sequence right:
+
+* Android takes a character followed by U+FE0F from the first font whose cmap has that variation sequence, and else from the system emoji
+  font (read in AOSP Minikin's `FontCollection::calcCoverageScore` and `itemize`, not seen on a phone). Twemoji and OpenMoji list almost
+  no (c, U+FE0F), so the red heart and about 190 other emoji, and ZWJ sequences with U+FE0F before the joiner, would have come from the
+  phone's emoji font. The merge now gives each character with an emoji variation sequence whose emoji glyph it shows a (c, U+FE0F): a
+  default one, or, where a ligature of the emoji font names the glyph and U+FE0F, a key (the glyph, or a copy of it) that the first emoji
+  lookup turns back into the two glyphs the ligature names.
+* The merged cmap gave U+200D the emoji font's joiner, so the text font's own rules that name its joiner (Devanagari eyelash ra, old-style
+  Malayalam chillu, Sinhala yansaya) stopped matching. U+200D now keeps the text font's joiner, and the emoji lookups name it in their
+  sequences (when the emoji font names its joiner only in sequences; else the emoji font's joiner wins, as before).
+* A restored U+FE0F stopped base U+FE0F skin tone, and a symbol the text font draws stopped the U+FE0F after it in a ZWJ sequence from being
+  restored (26F9 + skin tone + ZWJ + gender sign + U+FE0F): the restore rules now let a skin tone (anything a ligature names after the glyph)
+  through, and also match the text glyph of a symbol the swap lookup turns into the emoji one.
+* A text GDEF of 64 KB or more without mark glyph sets would have had its class definitions' offsets cut to 16 bits: the merge keeps the
+  text font's GDEF then and warns (`W_GLYPH_CLASSES`), as for the other offsets.
+
+`check` (with the (c, U+FE0F), conjunct and base U+FE0F skin tone checks above) ran on 14 merged fonts: Lato 2.015 and Noto Sans 2.015
+(static Regular with Devanagari, 4,515 glyphs, `53814c84d7713d72017e07772899088582e4339210bd9a245d2f2ee01fbec495`) each with Twemoji,
+OpenMoji COLRv1, Noto Color Emoji and Blobmoji2 (the files above); DejaVu Sans 2.37
+(`ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280`) and FreeSans 0412.4271
+(`350badd6ab6a58e7fd7a0ea2ae0c10174941a08e1cd06b3c6010e10b3d5ae319`) with Twemoji; Noto Sans Sinhala 2.006
+(`8c1c8fbb73152272ccdf0fd8f44ccb4488a88a6fcd6c7c20a961a86b6cd9c31c`) with Noto Color Emoji and Twemoji; and Lato with a text glyph added
+for every emoji character of the BMP (made at dev time, so that the text glyph wins U+26F9, U+2640 and the like) with OpenMoji COLRv1 and
+Twemoji. Unicode 18.0's emoji-test.txt as above.
+
+* All 14: 5,919 sequences (the file's 5,244 and 675 base U+FE0F skin tone) shaped as the emoji font alone, or as the text font alone
+  where its glyph wins (3 to 110), with no difference; (c, U+FE0F) with an emoji glyph for all 227 characters Twemoji maps and all 231
+  the others map; the conjuncts as the text font alone (2 in Noto Sans, 5 in FreeSans, 3 in Noto Sans Sinhala); every other check as
+  before, with no difference.
+* The same checks on fonts merged by the engine before these changes: Lato + Twemoji had no (c, U+FE0F) for 205 of 227 characters;
+  DejaVu Sans + Twemoji differed in 15 sequences (U+261D, U+270C and U+270D, U+FE0F, skin tone) and missed 134; Lato with the added
+  glyphs + OpenMoji COLRv1 differed in 10 (U+26F9, skin tone, ZWJ, gender sign, U+FE0F) and missed 109; FreeSans + Twemoji lost eyelash
+  ra and both chillus.
+
+The fixture fonts were not made again: the one sequence added to the suite's (U+261D U+FE0F U+1F3FD) uses characters they already have,
+so `expect` added only its `seq` lines, and `verify` passed the nine merged fonts the suite makes now and recorded their hashes.
 
 Not run: on a device. The suite and the checks above ran on the JDK and on a desktop with the tools named here only.
