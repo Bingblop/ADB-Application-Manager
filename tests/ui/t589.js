@@ -49,7 +49,7 @@ const opts = (page, id) => page.evaluate(id => [...document.getElementById(id).o
     await page.click('#fntEmo_noto .fnt-links a:nth-of-type(1)');
     await page.click('#fntEmo_noto .fnt-links a:nth-of-type(2)');
     const urls = await page.evaluate(() => window.__fmk.calls.filter(c => /^openUrl:/.test(c)));
-    check('2. License and Source open through the app (openUrl)', urls.join(' ') === 'openUrl:https://github.com/googlefonts/noto-emoji/blob/main/fonts/LICENSE openUrl:https://github.com/googlefonts/noto-emoji', urls.join(' '));
+    check('2. License and Source open through the app (openUrl)', urls.join(' ') === 'openUrl:https://github.com/googlefonts/noto-emoji/blob/v2026-09-24-unicode18_0/2D/fonts/LICENSE openUrl:https://github.com/googlefonts/noto-emoji', urls.join(' '));
     // ---- a download ----
     await page.click('#fntEmo_noto .op-mode-btn');
     await page.waitForTimeout(100);

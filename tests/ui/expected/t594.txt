@@ -1,0 +1,23 @@
+ok   1. Root: ROOT, the status being asked ("Checking…")
+ok      switched to the system user: the tag follows at once (SYSTEM USER), System emoji locks
+ok      the answer asked under Root is dropped and the status asked again
+ok      the new answer: the font in use, still SYSTEM USER
+ok      the same mode checked again: the status is kept, not asked again
+ok      back to Root: ROOT, the status asked again
+ok      no page errors
+ok   2. no answer: Unknown, the reason, Try again, Reset to Default on
+ok      Try again: asked once more, the error and the button go
+ok      no page errors
+ok   3. no /data/app_fonts: SAMSUNG ONLY, the card says why
+ok      My fonts says its packages are not used here
+ok      Install and Apply off, Export on
+ok      no page errors
+ok   4. Reset fails: the page's sentence, sans.loc as the phone reads it
+ok      the error stays after the status asked again answers
+ok      no page errors
+ok   5. a swap that half worked: the error, "Some files did not change.", ✓ and ✕ per file
+ok      the status asked after it: the swap is on, Undo is there
+ok      no page errors
+ok   6. Undo fails: the lead in the page's words, the shell's detail kept, the file read back
+ok      no page errors
+all passed

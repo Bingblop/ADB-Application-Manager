@@ -8,12 +8,21 @@
 // opts.mode: 'root' (Root with su) | 'system' (Shizuku as UID 1000) | 'uid0' (Shizuku as UID 0) | 'shell' (Shizuku as UID 2000) | 'none' (no working mode)
 // opts.samsung (true), opts.oneUi ('8.5'), opts.appliesSelfSigned (false), opts.sdk (36), opts.dark (true), opts.userId (0)
 // opts.b64: { vf, regular, bold }: base64 of the fixture fonts the previews load (the script reads them from tests/ui/fixtures)
-// opts.picks: { regular, bold, emoji }: what the file chooser hands back for a slot: 'vf' | 'static' | 'cff' | 'colr' | 'cbdt' | an error code ('cancelled', 'woff' ...)
+// opts.picks: { regular, bold, emoji }: what the file chooser hands back for a slot: 'vf' | 'vfWidth' (variable, no Weight axis) | 'static' | 'cff' | 'colr' |
+//   'colr1' (COLRv1) | 'colrCff' (COLR with PostScript outlines: refused in the emoji slot, emoji_outlines) | 'cbdt' | an error code ('cancelled', 'woff' ...);
+//   a font without Latin letters carries the bridge's no-Latin warning in the Regular and Bold slots, never in the emoji slot (as fmkCopyPick drops it)
 // opts.entries: the library at the start (default: two entries); opts.downloaded: catalog ids on the phone at the start (default ['twemoji'])
 // opts.hold: build, download and privileged jobs move one event further each time the script calls window.__fmk.step() (and step(n), stepAll())
-// opts.buildError: { code, error } the build ends with; opts.downloadError: { id: { code, error } }; opts.current: the changer's current entry id (default: the applied one)
+// opts.buildError: { code, error } the build ends with, opts.buildWarnings: its warnings (both also window.__fmk.buildError / buildWarnings, which a script may change);
+// opts.downloadError: { id: { code, error, status } } (also window.__fmk.downloadError); opts.current: the changer's current entry id (default: the applied one)
 // opts.sysActive: the catalog id in use as the phone's emoji at the start; opts.missing: method names left out (an older build)
-// window.__fmk: { calls, requests, picks, step(), stepAll(), pending(), lib, cat, setMode(m) }
+// opts.statusFails: how many changer statuses answer no_answer before one answers; opts.noAppFonts: a Samsung without /data/app_fonts (available:false)
+// opts.applyError / opts.resetError / opts.sysApplyError / opts.sysUndoError: { code, error, readBack } the job ends with; opts.sysBlocked: { code, error } (the status's blocked)
+// opts.refuse: { method: { code, error } } answered at once instead of the job (the bridge's busy answers and the like)
+// opts.holdSave: the save screen stays open until the script calls window.__fmk.save()
+// While a file chooser or a save screen is open (until its answer) a second one is refused with busy, as the bridge does. A build with rebuildId keeps the
+// entry's id and package and takes the next versionCode (not_found for an id that is not in the library).
+// window.__fmk: { calls, requests, picks, step(), stepAll(), pending(), lib, cat, setMode(m), save() }
 exports.initScript = function (opts) {
   opts = opts || {};
   const J = JSON.stringify;
@@ -49,6 +58,11 @@ exports.initScript = function (opts) {
   const unlocked = () => !!(WM[st.mode] || {}).sysPrivActive;
   const uid0 = () => !!(WM[st.mode] || {}).rootUidActive;
   const lockReason = 'Needs Root, or Shizuku running as the system user (UID 1000) or root (UID 0).';
+  const lockSys = 'Needs Root, or Shizuku running as root (UID 0).';
+  // the engine's warnings as Java writes them (FontInspect.W_NO_LATIN, W_RESTRICTED; EmojiMerge.W_EMOJI_GPOS)
+  const W_NO_LATIN = "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.";
+  const W_RESTRICTED = 'This font\'s maker does not allow it to be embedded or changed ("restricted license" in the font). Use it only if its license lets you.';
+  const W_EMOJI_GPOS = "The emoji font's positioning table (GPOS) was left out; its emoji do not need it to show.";
 
   // ---- what a picked file is ----
   const instances = [['Thin', 100], ['ExtraLight', 200], ['Light', 300], ['Regular', 400], ['Medium', 500], ['SemiBold', 600], ['Bold', 700], ['ExtraBold', 800], ['Black', 900]]
@@ -64,9 +78,18 @@ exports.initScript = function (opts) {
       outlines: 'TrueType', glyphs: 2164, upem: 2000, codepoints: 1981, latin: true, color: 'none', variable: false, axes: [], instances: [], guessRegular: {}, guessBold: {}, warnings: [] } },
     cff: { fileName: 'SourceSans3-Regular.otf', size: 312 * 1024, preview: 'regular', info: { family: 'Source Sans 3', subfamily: 'Regular', fullName: 'Source Sans 3 Regular', version: 'Version 3.052', weight: 400, width: 5, italic: false,
       outlines: 'CFF', glyphs: 1937, upem: 1000, codepoints: 1452, latin: true, color: 'none', variable: false, axes: [], instances: [], guessRegular: {}, guessBold: {},
-      warnings: ['This font has PostScript (CFF) outlines; they are converted to TrueType outlines when the font is built.'] } },
+      warnings: [W_RESTRICTED] } },
     colr: { fileName: 'TwemojiMozilla.ttf', size: 1450 * 1024, preview: '', info: { family: 'Twemoji Mozilla', subfamily: 'Regular', fullName: 'Twemoji Mozilla', version: 'Version 0.7.0', weight: 400, width: 5, italic: false,
-      outlines: 'TrueType', glyphs: 3913, upem: 2048, codepoints: 3431, latin: false, color: 'COLRv0', variable: false, axes: [], instances: [], guessRegular: {}, guessBold: {}, warnings: [] } },
+      outlines: 'TrueType', glyphs: 3913, upem: 2048, codepoints: 3431, latin: false, color: 'COLRv0', variable: false, axes: [], instances: [], guessRegular: {}, guessBold: {}, warnings: [W_NO_LATIN] } },
+    colr1: { fileName: 'Noto-COLRv1.ttf', size: 4920 * 1024, preview: '', info: { family: 'Noto Color Emoji', subfamily: 'Regular', fullName: 'Noto Color Emoji', version: 'Version 2.051', weight: 400, width: 5, italic: false,
+      outlines: 'TrueType', glyphs: 5847, upem: 1024, codepoints: 1452, latin: false, color: 'COLRv1', variable: false, axes: [], instances: [], guessRegular: {}, guessBold: {}, warnings: [W_NO_LATIN] } },
+    colrCff: { fileName: 'EmojiOne-CFF.otf', size: 2100 * 1024, preview: '', info: { family: 'EmojiOne Color', subfamily: 'Regular', fullName: 'EmojiOne Color', version: 'Version 1.4', weight: 400, width: 5, italic: false,
+      outlines: 'CFF', glyphs: 2780, upem: 2048, codepoints: 2412, latin: false, color: 'COLRv0', variable: false, axes: [], instances: [], guessRegular: {}, guessBold: {}, warnings: [W_NO_LATIN] } },
+    // a variable font whose only axis is Width: FontInspect guesses no Bold (guessBold null), its Regular is the default
+    vfWidth: { fileName: 'NotoSans-Width.ttf', size: 720 * 1024, preview: 'vf', info: { family: 'Noto Sans Width', subfamily: 'Regular', fullName: 'Noto Sans Width Regular', version: 'Version 2.013', weight: 400, width: 5, italic: false,
+      outlines: 'TrueType', glyphs: 4515, upem: 1000, codepoints: 3741, latin: true, color: 'none', variable: true,
+      axes: [{ tag: 'wdth', name: 'Width', min: 62.5, def: 100, max: 100, hidden: false }], instances: [{ name: 'Condensed', coords: { wdth: 62.5 } }, { name: 'Regular', coords: { wdth: 100 } }],
+      guessRegular: { wdth: 100 }, guessBold: null, warnings: [] } },
   };
   const PICK_ERRORS = {
     cbdt: { code: 'bitmap_emoji', error: 'This emoji font is made of pictures (CBDT), which cannot be put inside a font. Choose a COLR emoji font.' },
@@ -91,7 +114,7 @@ exports.initScript = function (opts) {
   const downloaded = new Set(opts.downloaded || ['twemoji']);
   const CAT = [
     { id: 'noto', name: 'Noto Color Emoji', version: 'Unicode 18', format: 'COLRv1', mergeable: true, minApi: 33, size: 5038236, sha256: 'b8e25ea68db82f9e4d0aee921f4420be2be39887bd5c893a2ad98710531f9d0c',
-      license: 'OFL-1.1', licenseUrl: 'https://github.com/googlefonts/noto-emoji/blob/main/fonts/LICENSE', sourceUrl: 'https://github.com/googlefonts/noto-emoji', attribution: 'Noto Color Emoji, Copyright 2022 Google Inc.', note: '' },
+      license: 'OFL-1.1', licenseUrl: 'https://github.com/googlefonts/noto-emoji/blob/v2026-09-24-unicode18_0/2D/fonts/LICENSE', sourceUrl: 'https://github.com/googlefonts/noto-emoji', attribution: 'Noto Color Emoji, Copyright 2022 Google Inc.', note: '' },
     { id: 'twemoji', name: 'Twemoji', version: '17', format: 'COLRv0', mergeable: true, minApi: 26, size: 2003200, sha256: 'd2d721abc0ab04c0f40673e4b521e8b580a6b31d1018b7f2dcb438fdae4c265e',
       license: 'CC-BY-4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/', sourceUrl: 'https://github.com/SableClient/twemoji-font', attribution: 'Graphics (c) Twitter, Inc. and contributors (jdecked/twemoji); COLR build by SableClient (Apache-2.0)', note: '' },
     { id: 'blobmoji', name: 'Blobmoji', version: 'Emoji 17', format: 'COLRv1', mergeable: true, minApi: 33, size: 4444184, sha256: 'be12a85b4ac069ef07541e861f96e99710ad4f5264600aff2dd396a640dbfb7f',
@@ -124,13 +147,21 @@ exports.initScript = function (opts) {
     // ---- picking and building ----
     fontMakerPick(slot) {
       st.calls.push('fontMakerPick:' + slot);
+      if (st.pickOpen) return J({ ok: false, code: 'busy', error: 'The file chooser is already open.' });
       const what = picks[slot];
+      st.pickOpen = true;
       setTimeout(() => {
-        const err = PICK_ERRORS[what] || (FILES[what] ? null : { code: String(what), error: 'The app could not read that file.' });
+        st.pickOpen = false;
+        const f0 = FILES[what];
+        let err = PICK_ERRORS[what] || (f0 ? null : { code: String(what), error: 'The app could not read that file.' });
+        // the emoji slot (fmkCopyPick): COLR only, with TrueType outlines
+        if (!err && slot === 'emoji' && !/^COLR/.test(f0.info.color)) err = { code: 'not_emoji', error: 'This font has no colour emoji (COLR). Choose a COLR emoji font.' };
+        if (!err && slot === 'emoji' && f0.info.outlines !== 'TrueType') err = { code: 'emoji_outlines', error: "This emoji font's outlines are PostScript ones (" + f0.info.outlines + '); only an emoji font with TrueType outlines (glyf) can be added. Choose another emoji font.' };
         if (err) { window.onFontMakerPicked(slot, J(Object.assign({ ok: false }, err))); return; }
-        const f = FILES[what], token = 'tok-' + slot + '-' + (++seq);
+        const f = f0, token = 'tok-' + slot + '-' + (++seq);
         tokens[token] = f;
-        window.onFontMakerPicked(slot, J({ ok: true, token, fileName: f.fileName, size: f.size, info: f.info }));
+        const info = Object.assign({}, f.info, { warnings: slot === 'emoji' ? f.info.warnings.filter(w => w !== W_NO_LATIN) : f.info.warnings.slice() });
+        window.onFontMakerPicked(slot, J({ ok: true, token, fileName: f.fileName, size: f.size, info }));
       }, delay);
       return J({ ok: true });
     },
@@ -139,8 +170,14 @@ exports.initScript = function (opts) {
       st.calls.push('fontMakerBuild');
       let r; try { r = JSON.parse(json); } catch (e) { return J({ ok: false, code: 'bad_request', error: 'The request could not be read.' }); }
       st.requests.push(r);
-      if (!r.regular || !tokens[r.regular.token]) return J({ ok: false, code: 'no_regular', error: 'Choose the Regular font first.' });
+      if (!r.regular || !tokens[r.regular.token]) return J({ ok: false, code: 'no_regular', error: 'Choose the Regular font again.' });
+      if (st.building) return J({ ok: false, code: 'busy', error: 'A font is being made. Wait for it to finish, or cancel it.' });
+      // FontPackage.visible: a name with a letter, digit, punctuation or symbol that is not a blank filler
+      if (!/[\p{L}\p{N}\p{P}\p{S}]/u.test(String(r.name || '').replace(/[\u115F\u1160\u3164\uFFA0\u2800]/g, ''))) return J({ ok: false, code: 'bad_name', error: 'Give the font a name.' });
+      const old = r.rebuildId ? lib.find(e => e.id === r.rebuildId) : null;
+      if (r.rebuildId && !old) return J({ ok: false, code: 'not_found', error: 'That font is not in My fonts any more.' });
       const id = job(), reg = tokens[r.regular.token];
+      st.building = true;
       st.buildJob = id; st.cancelled = false;
       const stages = [['read', 1, 2], ['read', 2, 2]];
       if (reg.info.variable) stages.push(['instance', 1, r.bold && r.bold.coords ? 2 : 1]);
@@ -150,14 +187,17 @@ exports.initScript = function (opts) {
       stages.push(['package', 0, 0], ['sign', 0, 0], ['save', 0, 0]);
       const events = stages.map(s => () => { if (!st.cancelled) window.onFontMakerProgress(id, s[0], s[1], s[2]); });
       events.push(() => {
+        st.building = false;
         if (st.cancelled) { window.onFontMakerBuilt(id, J({ ok: false, code: 'cancelled', error: 'The build was cancelled.' })); return; }
-        if (opts.buildError) { window.onFontMakerBuilt(id, J(Object.assign({ ok: false }, opts.buildError))); return; }
+        if (st.buildError) { window.onFontMakerBuilt(id, J(Object.assign({ ok: false }, st.buildError))); return; }
         const emo = r.emoji ? (r.emoji.catalogId ? { id: r.emoji.catalogId, name: (CAT.find(c => c.id === r.emoji.catalogId) || {}).name || r.emoji.catalogId } : { id: 'own', name: 'Twemoji Mozilla' }) : null;
         const suffix = String(r.name).replace(/[^A-Za-z0-9]/g, '') || 'Font';
-        const entry = { id: 'n' + seq + 'e', name: r.name, pkg: 'com.monotype.android.font.' + suffix + '_a1b2c3', versionCode: 1, created: Date.now(), hasBold: !!r.bold, emoji: emo,
-          sizes: { apk: 2 * MB + (emo ? 2 * MB : 0), regular: MB, bold: r.bold ? MB : 0 }, installed: false, installedVersion: 0, applied: false };
-        lib.unshift(entry);
-        const warnings = emo ? ['The emoji font covers 3,431 characters; 12 that the text font already has keep their letters (space, #, *, 0-9, (c), (R)).'] : [];
+        const fresh = { name: r.name, hasBold: !!r.bold, emoji: emo, sizes: { apk: 2 * MB + (emo ? 2 * MB : 0), regular: MB, bold: r.bold ? MB : 0 } };
+        let entry;
+        // a rebuild keeps the id, the package and the created date, takes the new name and the next versionCode (FontLibrary.entryFor)
+        if (old) { Object.assign(old, fresh, { versionCode: Math.max(old.versionCode, old.installedVersion || 0) + 1, updated: Date.now() }); entry = old; }
+        else { entry = Object.assign({ id: 'n' + seq + 'e', pkg: 'com.monotype.android.font.' + suffix + '_a1b2c3', versionCode: 1, created: Date.now(), installed: false, installedVersion: 0, applied: false }, fresh); lib.unshift(entry); }
+        const warnings = st.buildWarnings || (emo ? [W_EMOJI_GPOS] : []);
         window.onFontMakerBuilt(id, J({ ok: true, entry, warnings }));
       });
       run(events);
@@ -176,7 +216,14 @@ exports.initScript = function (opts) {
       lib.splice(i, 1);
       return J({ ok: true });
     },
-    fontMakerExport(id) { st.calls.push('fontMakerExport:' + id); setTimeout(() => window.onFontMakerExported(id, J({ ok: true, name: ((lib.find(e => e.id === id) || {}).name || 'Font') + '.apk' })), delay); return J({ ok: true }); },
+    fontMakerExport(id) {
+      st.calls.push('fontMakerExport:' + id);
+      if (st.saveOpen) return J({ ok: false, code: 'busy', error: 'The save screen is already open.' });
+      st.saveOpen = true;
+      const done = () => { st.saveOpen = false; window.onFontMakerExported(id, J({ ok: true, name: ((lib.find(e => e.id === id) || {}).name || 'Font') + '.apk' })); };
+      if (opts.holdSave) st.save = done; else setTimeout(done, delay);
+      return J({ ok: true });
+    },
     fontMakerInstall(id) {
       st.calls.push('fontMakerInstall:' + id);
       if (!samsung) return J({ ok: false, code: 'not_samsung', error: 'Font packages work only on Samsung phones.' });
@@ -196,10 +243,13 @@ exports.initScript = function (opts) {
     fontMakerChangerStatus() {
       st.calls.push('fontMakerChangerStatus');
       const j = job();
+      const asked = st.mode;                                         // the mode the status is asked in, as fmkGate reads it when the job starts
       run([() => {
-        const e = lib.find(x => x.id === current);
-        window.onFontMakerChangerStatus(J({ ok: true, available: samsung, unlocked: samsung && unlocked(), lockReason: unlocked() ? '' : lockReason,
-          mode: !unlocked() ? 'none' : st.mode === 'system' ? 'system' : 'root', current: e ? { suffix: e.pkg.split('.').pop(), id: e.id, name: e.name } : null }));
+        if (st.statusFails > 0) { st.statusFails--; window.onFontMakerChangerStatus(J({ ok: false, code: 'no_answer', error: 'The phone did not answer. Try again.' })); return; }
+        const e = lib.find(x => x.id === current), on = !!(WM[asked] || {}).sysPrivActive;
+        if (on && opts.noAppFonts) { window.onFontMakerChangerStatus(J({ ok: true, available: false, unlocked: true, lockReason: '', mode: asked === 'system' ? 'system' : 'root', current: null })); return; }
+        window.onFontMakerChangerStatus(J({ ok: true, available: samsung, unlocked: samsung && on, lockReason: on ? '' : lockReason,
+          mode: !on ? 'none' : asked === 'system' ? 'system' : 'root', current: e ? { suffix: e.pkg.split('.').pop(), id: e.id, name: e.name } : null }));
       }]);
       return J({ ok: true, job: j });
     },
@@ -208,6 +258,7 @@ exports.initScript = function (opts) {
       if (!unlocked()) return J({ ok: false, code: 'locked', error: lockReason });
       const e = lib.find(x => x.id === id), j = job();
       run([() => {
+        if (opts.applyError) { window.onFontMakerApplied(J(Object.assign({ ok: false }, opts.applyError))); return; }
         current = id;
         const dir = '/data/app_fonts/0/' + e.pkg.split('.').pop();
         const files = [{ name: 'DroidSans.ttf', size: e.sizes.regular, sha256: '3f1c9a7e5b2d4c8f0a6e1b9d7c3f5a2e8b4d6c0f9a1e3b5d7c9f2a4e6b8d0c1f', label: 'u:object_r:app_fonts_data_file:s0' }];
@@ -220,7 +271,7 @@ exports.initScript = function (opts) {
       st.calls.push('fontMakerReset');
       if (!unlocked()) return J({ ok: false, code: 'locked', error: lockReason });
       const j = job();
-      run([() => { current = null; window.onFontMakerReset(J({ ok: true, readBack: { sansLoc: 'default#default', files: [] }, refreshed: true })); }]);
+      run([() => { if (opts.resetError) { window.onFontMakerReset(J(Object.assign({ ok: false }, opts.resetError))); return; } current = null; window.onFontMakerReset(J({ ok: true, readBack: { sansLoc: 'default#default', files: [] }, refreshed: true })); }]);
       return J({ ok: true, job: j });
     },
 
@@ -236,7 +287,7 @@ exports.initScript = function (opts) {
       steps.push(() => {
         const d = dls[id]; delete dls[id];
         if (!d || d.cancelled) { window.onEmojiDone(id, J({ ok: false, code: 'cancelled', error: 'The download was cancelled.' })); return; }
-        const err = (opts.downloadError || {})[id];
+        const err = (st.downloadError || {})[id];
         if (err) { window.onEmojiDone(id, J(Object.assign({ ok: false }, err))); return; }
         downloaded.add(id);
         window.onEmojiDone(id, J({ ok: true, size: it.size, sha256: it.sha256 }));
@@ -251,27 +302,36 @@ exports.initScript = function (opts) {
     sysEmojiStatus() {
       st.calls.push('sysEmojiStatus');
       const j = job();
-      run([() => window.onSysEmojiStatus(J({ ok: true, unlocked: uid0(), lockReason: uid0() ? '' : 'Needs Root, or Shizuku running as root (UID 0).',
-        targets: ['/system/fonts/NotoColorEmoji.ttf', '/system/fonts/NotoColorEmojiFlags.ttf'], active: sysActive ? { id: sysActive, name: (CAT.find(c => c.id === sysActive) || {}).name } : null }))]);
+      run([() => window.onSysEmojiStatus(J({ ok: true, unlocked: uid0(), lockReason: uid0() ? '' : lockSys,
+        targets: ['/system/fonts/NotoColorEmoji.ttf', '/system/fonts/NotoColorEmojiFlags.ttf'], active: sysActive ? { id: sysActive, name: (CAT.find(c => c.id === sysActive) || {}).name } : null,
+        blocked: uid0() && opts.sysBlocked ? opts.sysBlocked : null }))]);
       return J({ ok: true, job: j });
     },
     sysEmojiApply(id) {
       st.calls.push('sysEmojiApply:' + id);
-      if (!uid0()) return J({ ok: false, code: 'locked', error: 'Needs Root, or Shizuku running as root (UID 0).' });
+      if (!uid0()) return J({ ok: false, code: 'locked', error: lockSys });
       const j = job();
-      run([() => { sysActive = id; const it = CAT.find(c => c.id === id); window.onSysEmojiApplied(J({ ok: true, readBack: [
+      run([() => {
+        if (opts.sysApplyError) { if (opts.sysApplyError.readBack && opts.sysApplyError.readBack.some(x => x.ok)) sysActive = id; window.onSysEmojiApplied(J(Object.assign({ ok: false }, opts.sysApplyError))); return; }
+        sysActive = id; const it = CAT.find(c => c.id === id); window.onSysEmojiApplied(J({ ok: true, readBack: [
         { target: '/system/fonts/NotoColorEmoji.ttf', sha256: it.sha256, ok: true }, { target: '/system/fonts/NotoColorEmojiFlags.ttf', sha256: it.sha256, ok: true }] })); }]);
       return J({ ok: true, job: j });
     },
     sysEmojiUndo() {
       st.calls.push('sysEmojiUndo');
       const j = job();
-      run([() => { sysActive = null; window.onSysEmojiUndone(J({ ok: true, readBack: [{ target: '/system/fonts/NotoColorEmoji.ttf', sha256: 'c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00', ok: true }] })); }]);
+      run([() => {
+        if (opts.sysUndoError) { window.onSysEmojiUndone(J(Object.assign({ ok: false }, opts.sysUndoError))); return; }
+        sysActive = null; window.onSysEmojiUndone(J({ ok: true, readBack: [{ target: '/system/fonts/NotoColorEmoji.ttf', sha256: 'c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00', ok: true }], copyRemoved: true }));
+      }]);
       return J({ ok: true, job: j });
     },
     softRestart() { st.calls.push('softRestart'); return uid0() ? J({ ok: true }) : J({ ok: false, code: 'locked', error: 'Needs Root.' }); },
   };
   st.kv = Object.assign({}, opts.kv || {});
+  st.statusFails = opts.statusFails || 0;
+  st.buildError = opts.buildError || null; st.buildWarnings = opts.buildWarnings || null; st.downloadError = opts.downloadError || {};
+  Object.keys(opts.refuse || {}).forEach(m => { b[m] = function () { st.calls.push(m + ':' + [].join.call(arguments, ',')); return J(Object.assign({ ok: false }, opts.refuse[m])); }; });
   missing.forEach(m => { delete b[m]; });
   st.setMode = (m) => { st.mode = m; };
 };

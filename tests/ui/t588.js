@@ -69,7 +69,7 @@ const state = (page) => page.evaluate(() => {
     await page.waitForTimeout(400);
     const s2 = await state(page);
     check('4. done: the progress goes, Build is back, Cancel hidden', !s2.on && !s2.build && !s2.cancel && !s2.pick, JSON.stringify(s2));
-    check('   the result names the font and lists the app\'s warning', /^Inter Plus is ready in My fonts\./.test(s2.result) && /12 that the text font already has keep their letters/.test(s2.result) && !s2.err, s2.result);
+    check('   the result names the font and lists the app\'s warning', /^Inter Plus is ready in My fonts\./.test(s2.result) && /positioning table \(GPOS\) was left out; its emoji do not need it to show\./.test(s2.result) && !s2.err, s2.result);
     const first = await page.evaluate(() => { const r = document.querySelector('#fntLibList .fnt-lib'); return r ? r.textContent.replace(/\s+/g, ' ') : ''; });
     check('   the new font is first in My fonts, not installed, with its emoji', /Inter Plus/.test(first) && /InterPlus_a1b2c3/.test(first) && /Not installed/.test(first) && /Emoji: Twemoji/.test(first) && /Regular and Bold/.test(first), first);
     await page.screenshot({ path: 'built.png', fullPage: false });

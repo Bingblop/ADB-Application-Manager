@@ -1,0 +1,13 @@
+ok   1. emoji updated: the reason as a warning before anything is tried
+ok      Use is off, no Undo (no swap on), Soft reboot on
+ok      nothing is sent
+ok      no page errors
+ok   2. no list of mounts: the reason, Use off, Undo on for the swap that is on
+ok      Undo refused: the reason in the page's words, under the buttons
+ok   3. Soft reboot while a swap is on: apps start again with the new emoji
+ok      Cancel sends nothing
+ok      no page errors
+ok   4. a status that did not start: Unknown, the reason, Try again
+ok      Soft reboot says nothing about the emoji it does not know
+ok      no page errors
+all passed

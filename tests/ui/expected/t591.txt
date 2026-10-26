@@ -11,7 +11,7 @@ ok   6. Use as the phone's emoji: sysEmojiApply, the read-back of each file, Und
 ok      the toast: until the next restart
 ok      the emoji in use cannot be deleted: "Undo the system emoji first."
 ok      Undo: sysEmojiUndo, Default again, the toast
-ok   7. Soft reboot asks first: every app closes, a normal restart undoes the swap
+ok   7. Soft reboot asks first: every app closes; after the Undo, apps start again with the phone's own emoji
 ok      Cancel: softRestart is not called
 ok      Soft reboot: softRestart is called once
 ok      no page errors

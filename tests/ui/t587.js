@@ -4,7 +4,7 @@
 // widen with wght). Bold switches to "same variable font, another weight" at the Bold guess; a slider off every named style reads Custom; Bold = None
 // draws the bold line as Android would (bold made from the Regular); a Bold file loads its own face. The name is filled from the family until typed.
 // A file that cannot be used (WOFF) says why and keeps the file chosen before; a closed chooser says nothing. A static CFF font has no panel, keeps
-// its warning and drops the "same variable font" choice. An own emoji file made of pictures (CBDT) is refused with the reason; a COLR one is taken.
+// its warning (the engine's restricted-license one, in the page's words) and drops the "same variable font" choice. An own emoji file made of pictures (CBDT) is refused with the reason; a COLR one is taken.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -108,7 +108,7 @@ const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Reg
   await page.waitForTimeout(400);
   const cff = await page.evaluate(() => ({ row: document.getElementById('fntRegRow').textContent, panel: document.getElementById('fntRegVar').innerHTML, msg: document.getElementById('fntRegMsg').textContent,
     opts: [...document.getElementById('fntBoldSel').options].map(o => o.value), name: document.getElementById('fntName').value }));
-  check('9. a static CFF font: CFF outlines, no axes, its warning listed, the error gone', /SourceSans3-Regular\.otf/.test(cff.row) && /CFF outlines/.test(cff.row) && !/Variable/.test(cff.row) && cff.panel === '' && /PostScript \(CFF\)/.test(cff.msg) && !/WOFF/.test(cff.msg), JSON.stringify(cff));
+  check('9. a static CFF font: CFF outlines, no axes, its warning listed, the error gone', /SourceSans3-Regular\.otf/.test(cff.row) && /CFF outlines/.test(cff.row) && !/Variable/.test(cff.row) && cff.panel === '' && /"restricted license" in the font/.test(cff.msg) && !/WOFF/.test(cff.msg), JSON.stringify(cff));
   check('   no "same variable font" Bold; the name typed by hand stays', cff.opts.join(',') === 'none,file' && cff.name === 'My Inter', JSON.stringify([cff.opts, cff.name]));
 
   // ---- 6. an own emoji file ----

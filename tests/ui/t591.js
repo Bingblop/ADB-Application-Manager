@@ -1,7 +1,7 @@
 // v7.17.0 Custom Fonts: the question sheets and the actions of My fonts. Delete asks first on the shared question sheet ("Delete Lato?", what happens,
 // a red Delete and Cancel): Cancel and a tap beside the sheet keep the font; Delete removes it (fontMakerDelete) with a toast. The font in use is
-// refused by the app, said in the page's words ("Reset the font changer first."). Soft reboot asks first (only Android restarts and every app closes; a
-// normal restart puts the phone's own emoji back): Cancel sends nothing, Soft reboot calls softRestart. Install (Installing…, then Installed),
+// refused by the app, said in the page's words ("Reset the font changer first."). Soft reboot asks first (only Android restarts and every app closes; after
+// the Undo the apps come back with the phone's own emoji, no word of new ones): Cancel sends nothing, Soft reboot calls softRestart. Install (Installing…, then Installed),
 // Uninstall and Export (the toast names the saved .apk) go through the app; each row previews its own font (fontMakerFontData). The system emoji swap
 // (Use as the phone's emoji, the read-back, Undo). An app build without the font maker: each card says "Needs the app build" and a tap says so too.
 const fs = require('fs');
@@ -95,7 +95,7 @@ const btn = (page, row, label) => page.evaluate(([row, label]) => { const x = [.
     await page.click('#fntSoftBtn');
     await page.waitForTimeout(200);
     const s2 = await sheet(page);
-    check('7. Soft reboot asks first: every app closes, a normal restart undoes the swap', s2.open && s2.title === 'Soft reboot?' && /every app closes/.test(s2.text) && /A normal restart puts the phone's own emoji back\./.test(s2.text) && s2.ok === 'Soft reboot' && s2.danger, JSON.stringify(s2));
+    check('7. Soft reboot asks first: every app closes; after the Undo, apps start again with the phone\'s own emoji', s2.open && s2.title === 'Soft reboot?' && /every app closes/.test(s2.text) && /Apps start again with the phone's own emoji\.$/.test(s2.text) && !/new emoji/.test(s2.text) && s2.ok === 'Soft reboot' && s2.danger, JSON.stringify(s2));
     await page.evaluate(() => document.getElementById('fntSysCard').scrollIntoView());
     await page.screenshot({ path: 'soft-reboot-sheet.png' });
     await page.click('#mpAskNo');
