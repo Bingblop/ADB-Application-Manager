@@ -880,6 +880,23 @@ public class FontLibraryTest {
                 }
             }
             is("the page's fntNameShows is FontPackage.visible's rule for every code point" + (differs == null ? "" : " (" + differs + ")"), differs == null, true);
+            // every busy sentence the bridge sends is shown as itself, translated: the first FNT_SAID row of busy that matches it has the same words
+            int r1 = js.indexOf("const FNT_SAID = ["), r2 = r1 < 0 ? -1 : js.indexOf("\n        ];", r1);
+            Matcher row = Pattern.compile("\\['busy', /((?:[^/\\\\\\n]|\\\\.)*)/, '((?:[^'\\\\]|\\\\.)*)'\\]").matcher(r1 >= 0 && r2 > r1 ? js.substring(r1, r2) : "");
+            List<String[]> busyRows = new ArrayList<String[]>();
+            while (row.find()) busyRows.add(new String[] { row.group(1), row.group(2) });
+            Matcher busy = Pattern.compile("(?:fmkErr|FontLibrary\\.error)\\(\"busy\", \"((?:[^\"\\\\]|\\\\.)*)\"\\)").matcher(engine);
+            int nBusy = 0;
+            while (busy.find()) {
+                nBusy++;
+                String shown = null;
+                for (String[] r : busyRows) if (Pattern.compile(r[0]).matcher(busy.group(1)).find()) { shown = r[1]; break; }
+                is("the page shows the busy sentence \"" + busy.group(1) + "\" as itself", busy.group(1).equals(shown), true);
+            }
+            Matcher anyBusy = Pattern.compile("(?:fmkErr|FontLibrary\\.error)\\(\"busy\",").matcher(engine);
+            int sends = 0;
+            while (anyBusy.find()) sends++;
+            is("every busy refusal of the font code is one sentence (" + nBusy + " of " + sends + ")", nBusy == sends && nBusy >= 10, true);
         }
 
         // the gates: the changer needs Root or Shizuku as the system user / root; the system emoji the root user
@@ -1024,10 +1041,16 @@ public class FontLibraryTest {
         is("own COLRv1 emoji below 13 is not_usable", start.contains("FontLibrary.minApiForEmoji(emo.color) > Build.VERSION.SDK_INT") && start.contains("return fmkErr(\"not_usable\""), true);
 
         // a font made again: same id, suffix and package, a higher versionCode, and never while it is installed, applied or saved ((b), (c))
-        is("a font made again is refused while it is installed, applied or saved", start.contains("fmkJobs.startFor(this, rebuild == null ? null : \"id:\" + rebuild.id, \"build\", \"only\"")
+        is("a font made again is refused while it is installed, uninstalled, applied or saved", start.contains("fmkJobs.startFor(this, rebuild == null ? null : \"id:\" + rebuild.id, \"build\", \"only\"")
                 && start.contains("rebuild == null ? null : \"make:\" + rebuild.id"), true);
         is("…and they are refused while it is made again", body(ma, "private String fmkLibraryJob(").contains("\"install\".equals(kind) ? \"make:\" + id : null")
                 && body(ma, "private String fmkPrivJob(").contains("\"apply\".equals(kind) && id != null ? \"make:\" + id : null"), true);
+        // the refusal names no one job, since every job that holds "id:" can be the one (an uninstall too); a delete says so for a font made again (R-JOBS-3)
+        is("a font made again while another job has it is refused as a busy font", start.contains("return fmkErr(\"busy\", \"This font is busy. Wait for it to finish.\");"), true);
+        String del = body(ma, "private String fmkDelete(");
+        is("a delete of a font another job has: made again, or busy", del.contains("if (fmkJobs.inUse(\"make:\" + id)) return fmkErr(\"busy\", \"This font is being made again. Wait for it to finish.\");")
+                && del.indexOf("return fmkErr(\"busy\", \"This font is busy. Wait for it to finish.\");") > del.indexOf("fmkJobs.inUse(\"make:\" + id)"), true);
+        is("no busy sentence lists the jobs that hold a font (one is always left out)", tab.contains("installed, applied or saved. Wait"), false);
         String build = body(ma, "private void fmkBuildJob(");
         is("the build takes who the font is from FontLibrary", build.contains("FontLibrary.entryFor(req.name, rebuild, rebuild != null ? null : fmkNewId(d), now)")
                 && build.contains("FontLibrary.versionCodeFor(rebuild, installed)"), true);

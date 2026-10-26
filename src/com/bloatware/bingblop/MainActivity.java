@@ -7056,13 +7056,14 @@ public class MainActivity extends Activity {
             if (rebuild == null) return fmkErr("not_found", FMK_NOT_FOUND);
         }
         // one build at a time (a variable font made static twice and an emoji merge can take a few hundred MB). A font made again is not
-        // started while it is installed, applied or saved ("id:"), and holds "make:" so none of those starts while its files are replaced.
+        // started while it is installed, uninstalled, applied or saved ("id:"), and holds "make:" so an install, an apply or a save does not
+        // start while its files are replaced.
         final FontLibrary.Jobs.Job job = fmkJobs.startFor(this, rebuild == null ? null : "id:" + rebuild.id, "build", "only",
                 "tok:" + reg.token, bold == null ? null : "tok:" + bold.token, emo == null ? null : "tok:" + emo.token, item == null ? null : "cat:" + item.id,
                 rebuild == null ? null : "id:" + rebuild.id, rebuild == null ? null : "make:" + rebuild.id);
         if (job == null) {
             if (fmkJobs.running("build", "only") != null) return fmkErr("busy", "A font is being made. Wait for it to finish, or cancel it.");
-            return fmkErr("busy", "This font is being installed, applied or saved. Wait for it to finish.");
+            return fmkErr("busy", "This font is busy. Wait for it to finish.");     // any of the jobs that hold "id:"
         }
         picks.hold(reg);
         picks.hold(bold);
@@ -7224,7 +7225,10 @@ public class MainActivity extends Activity {
             String applied = FontLibrary.readApplied(d);
             if (applied != null && applied.equals(e.suffix)) return fmkErr("applied", "Reset the font changer first.");
         }
-        if (fmkJobs.inUse("id:" + id)) return fmkErr("busy", "This font is being made again, installed, applied or saved. Wait for it to finish.");
+        if (fmkJobs.inUse("id:" + id)) {
+            if (fmkJobs.inUse("make:" + id)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
+            return fmkErr("busy", "This font is busy. Wait for it to finish.");     // an install, an uninstall, an apply or a save
+        }
         if (!FontLibrary.delete(d, id)) return fmkErr("not_found", FMK_NOT_FOUND);
         if (e != null) {
             // the copy a font changer left in /data/app_fonts/<user>/<suffix>/ (applied once, then reset): removed when the changer is open, and
