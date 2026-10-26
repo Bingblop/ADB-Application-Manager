@@ -47,6 +47,7 @@ public class GoogleFontsTest {
             meta();
             sweep();
             previewCache();
+            bridgeParts();
             fuzz(20261026L, 1500);
         } finally {
             FontLibrary.deleteTree(tmp);
@@ -750,6 +751,225 @@ public class GoogleFontsTest {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // What the bridge reads and writes: catalog.json, the addresses, the details answer, the downloads, the zip, a download put in place
+    // ---------------------------------------------------------------------------------------------
+
+    static void bridgeParts() throws Exception {
+        Map<String, JSONObject> by = families();
+        // the longest css2 address the app can ask for (32 axes, 300 code points of 4 UTF-8 bytes) is still one allowed() takes
+        JSONArray axes = new JSONArray();
+        for (int i = 0; i < 32; i++) axes.put(new JSONArray().put("a" + (char) ('a' + i / 26) + (char) ('a' + i % 26) + "x").put(-1000.5).put(1000.25).put(0));
+        StringBuilder emoji = new StringBuilder();
+        for (int i = 0; i < 400; i++) emoji.appendCodePoint(0x1F300 + i);
+        String longest = GoogleFonts.css2Url(new JSONObject().put("f", repeat("W", 64)).put("w", new JSONArray().put("400")).put("x", axes), "axes", emoji.toString());
+        check("the longest css2 address is allowed (" + longest.length() + " characters)", GoogleFonts.allowed(longest) && longest.length() < 6000);
+        check("…and a longer one is not", !GoogleFonts.allowed("https://fonts.gstatic.com/" + repeat("a", 8192)));
+
+        eq("list address", GoogleFonts.listUrl("Open Sans"), "https://fonts.google.com/download/list?family=Open+Sans");
+        eq("details address", GoogleFonts.detailUrl("Source Sans 3"), "https://fonts.google.com/metadata/fonts/Source%20Sans%203");
+        for (String bad : new String[] { "../x", "a&b", "", null, "A?family=B" }) {
+            boolean threw = false;
+            try { GoogleFonts.listUrl(bad); } catch (IllegalArgumentException x) { threw = true; }
+            boolean threw2 = false;
+            try { GoogleFonts.detailUrl(bad); } catch (IllegalArgumentException x) { threw2 = true; }
+            check("no address for the name " + bad, threw && threw2);
+        }
+
+        long now = 1793052000000L, day = 24L * 3600 * 1000;
+        check("no list is stale", GoogleFonts.isStale(0, now));
+        check("an hour old is not", !GoogleFonts.isStale(now - 3600000, now));
+        check("7 days is not", !GoogleFonts.isStale(now - 7 * day, now));
+        check("7 days and a second is", GoogleFonts.isStale(now - 7 * day - 1000, now));
+        check("a list from ahead of the clock is", GoogleFonts.isStale(now + 3600000, now));
+
+        // catalog.json both ways
+        File cf = new File(tmp, "gfonts/catalog.json");
+        JSONObject cat = GoogleFonts.compact(read("catalog.json"), now);
+        GoogleFonts.writeWhole(cf, cat.toString().getBytes(StandardCharsets.UTF_8));
+        check("no .part left", !new File(cf.getParentFile(), "catalog.json.part").exists());
+        eq("catalog.json round trip", canon(GoogleFonts.readCatalog(cf)), canon(cat));
+        Map<String, JSONObject> idx = GoogleFonts.index(GoogleFonts.readCatalog(cf));
+        eq("index", idx.size(), by.size());
+        eq("index entry", canon(idx.get("Roboto Flex")), canon(by.get("Roboto Flex")));
+        String[][] broken = { { "not JSON", "{" }, { "another version", "v=2" }, { "no time", "at=0" }, { "no axes", "axes=null" }, { "families not a list", "families={}" },
+                { "a family not a name", "families.0.f=../x" }, { "a family's name not text", "families.0.f=5" }, { "an entry not an object", "families.0=5" } };
+        for (String[] b : broken) {
+            JSONObject o = new JSONObject(cat.toString());
+            String s;
+            if (b[1].startsWith("{")) s = b[1];
+            else {
+                String path = b[1].substring(0, b[1].indexOf('=')), value = b[1].substring(b[1].indexOf('=') + 1);
+                Object v = "null".equals(value) ? JSONObject.NULL : value.equals("{}") ? new JSONObject() : value.matches("-?\\d+") ? (Object) Long.parseLong(value) : value;
+                String[] parts = path.split("\\.");
+                Object at = o;
+                for (int i = 0; i < parts.length - 1; i++) at = at instanceof JSONObject ? ((JSONObject) at).get(parts[i]) : ((JSONArray) at).get(Integer.parseInt(parts[i]));
+                String last = parts[parts.length - 1];
+                if (at instanceof JSONObject) ((JSONObject) at).put(last, v); else ((JSONArray) at).put(Integer.parseInt(last), v);
+                s = o.toString();
+            }
+            Files.write(cf.toPath(), s.getBytes(StandardCharsets.UTF_8));
+            check("a damaged catalog.json is no list: " + b[0], GoogleFonts.readCatalog(cf) == null);
+        }
+        RandomAccessFile big = new RandomAccessFile(cf, "rw");
+        big.setLength((16L << 20) + 1);
+        big.close();
+        check("a catalog.json over 16 MB is no list", GoogleFonts.readCatalog(cf) == null);
+        check("no catalog.json", GoogleFonts.readCatalog(new File(tmp, "gfonts/none.json")) == null && GoogleFonts.readCatalog(null) == null);
+        JSONObject dup = new JSONObject().put("families", new JSONArray().put(new JSONObject().put("f", "Lato").put("p", 1)).put(new JSONObject().put("f", "Lato").put("p", 2))
+                .put(new JSONObject().put("f", "../x")).put(5));
+        Map<String, JSONObject> di = GoogleFonts.index(dup);
+        eq("index: the first of a name, plain names only", di.size() + " " + di.get("Lato").getInt("p"), "1 1");
+        check("index of nothing", GoogleFonts.index(null).isEmpty() && GoogleFonts.index(new JSONObject()).isEmpty());
+
+        // the details answer (onGfInfo)
+        GoogleFonts.Plan lato = GoogleFonts.plan(read("list/lato.json"));
+        JSONObject info = GoogleFonts.infoJson("Lato", lato, GoogleFonts.info(read("detail/lato.json")), by.get("Lato"));
+        eq("info keys", canon(new JSONArray(sortedKeys(info))), "[\"description\",\"designers\",\"family\",\"files\",\"license\",\"licenseName\",\"licenseText\",\"ok\",\"reserved\"]");
+        eq("info", info.getBoolean("ok") + " " + info.getString("family") + " " + info.getString("license") + " | " + info.getString("licenseName") + " | "
+                + info.getJSONArray("reserved") + " " + info.getJSONArray("designers") + " " + info.getJSONArray("files").length(),
+                "true Lato ofl | SIL Open Font License 1.1 | [\"Lato\"] [\"Łukasz Dziedzic\"] 10");
+        eq("info file", canon(info.getJSONArray("files").getJSONObject(1)), canon(new JSONObject().put("name", "Lato-ThinItalic.ttf").put("variable", false).put("italic", true)));
+        check("info texts", info.getString("description").startsWith("Lato means") && info.getString("licenseText").equals(lato.licenseText));
+        GoogleFonts.Plan ms = GoogleFonts.plan(read("list/material-symbols-outlined.json"));
+        JSONObject msEntry = new JSONObject().put("f", "Material Symbols Outlined").put("d", new JSONArray().put("Google"));
+        JSONObject msInfo = GoogleFonts.infoJson("Material Symbols Outlined", ms, null, msEntry);
+        eq("info without a details page", msInfo.getString("description") + "|" + msInfo.getString("license") + "|" + msInfo.getJSONArray("designers"), "|apache2|[\"Google\"]");
+        eq("…and without a list entry", GoogleFonts.infoJson("Material Symbols Outlined", ms, null, null).getJSONArray("designers").length(), 0);
+        JSONObject noLic = new JSONObject(GoogleFonts.stripXssi(read("list/lato.json")));
+        noLic.getJSONObject("manifest").put("files", new JSONArray());
+        GoogleFonts.Plan bare = GoogleFonts.plan(noLic.toString());
+        eq("no licence file: the details' licence", GoogleFonts.infoJson("Lato", bare, GoogleFonts.info(read("detail/permanent-marker.json")), null).getString("licenseName"), "Apache License 2.0");
+        eq("no licence anywhere", GoogleFonts.infoJson("Lato", bare, null, null).getString("license") + "|" + GoogleFonts.infoJson("Lato", bare, null, null).getString("licenseText"), "|");
+
+        // the downloads, newest first; only a whole family of the name asked for
+        File fam = new File(tmp, "fam-rows");
+        String[] names = { "Lato-Regular.ttf", "Lato-Italic.ttf" };
+        int[] sizes = { 10, 20 };
+        family(fam, "Lato", goodMeta("Lato"), names, sizes, "OFL.txt");
+        JSONObject older = new JSONObject(goodMeta("Molle"));
+        older.put("at", 1L);
+        family(fam, "Molle", older.toString(), names, sizes, "OFL.txt");
+        JSONObject same = new JSONObject(goodMeta("Andika"));
+        family(fam, "Andika", same.toString(), names, sizes, "OFL.txt");
+        family(fam, "Inter", null, names, sizes, "OFL.txt");                              // no meta.json: not whole
+        File hidden = new File(fam, ".roboto.part");
+        hidden.mkdirs();
+        Files.write(new File(hidden, GoogleFonts.META).toPath(), goodMeta("Roboto").getBytes(StandardCharsets.UTF_8));
+        JSONArray rows = GoogleFonts.downloads(fam);
+        StringBuilder order = new StringBuilder();
+        for (int i = 0; i < rows.length(); i++) order.append(i > 0 ? " " : "").append(rows.getJSONObject(i).getString("family"));
+        eq("downloads, newest first, then by name", order.toString(), "Andika Lato Molle");
+        eq("a row", canon(rows.getJSONObject(1)), canon(GoogleFonts.downloadsRow(GoogleFonts.readMeta(new File(fam, "lato")), GoogleFonts.folderSize(new File(fam, "lato")))));
+        eq("no folder, no rows", GoogleFonts.downloads(new File(tmp, "none")).length() + GoogleFonts.downloads(null).length(), 0);
+        check("downloaded", GoogleFonts.downloaded(fam, "Lato") != null);
+        check("…by its own name only (\"lato\" is Lato's folder)", GoogleFonts.downloaded(fam, "lato") == null);
+        check("…not a name, not downloaded", GoogleFonts.downloaded(fam, "../lato") == null && GoogleFonts.downloaded(fam, null) == null && GoogleFonts.downloaded(fam, "Roboto") == null);
+
+        // the zip Save writes: each font checked against meta.json, then the licence, flat
+        File zd = new File(tmp, "fam-zip");
+        File dir = GoogleFonts.familyDir(zd, "Zip Family");
+        dir.mkdirs();
+        byte[] a = "font file A".getBytes(StandardCharsets.UTF_8), b = new byte[200000];
+        new Random(7).nextBytes(b);
+        Files.write(new File(dir, "Zip-Regular.ttf").toPath(), a);
+        Files.write(new File(dir, "Zip-Bold.ttf").toPath(), b);
+        Files.write(new File(dir, "OFL.txt").toPath(), "licence text".getBytes(StandardCharsets.UTF_8));
+        List<GoogleFonts.MetaFile> zfs = new ArrayList<GoogleFonts.MetaFile>();
+        zfs.add(new GoogleFonts.MetaFile("Zip-Regular.ttf", a.length, FontLibrary.sha256(a), false, false, 400, null));
+        zfs.add(new GoogleFonts.MetaFile("Zip-Bold.ttf", b.length, FontLibrary.sha256(b), false, false, 700, null));
+        JSONObject zm = GoogleFonts.metaJson("Zip Family", 5, "ofl", "OFL.txt", Arrays.asList("Zip"), zfs);
+        Files.write(new File(dir, GoogleFonts.META).toPath(), zm.toString().getBytes(StandardCharsets.UTF_8));
+        check("the zip family is whole", GoogleFonts.readMeta(dir) != null);
+        Closing out = new Closing();
+        GoogleFonts.writeZip(dir, zm, out);
+        check("the zip closes the document", out.closed);
+        Map<String, byte[]> got = unzip(out.toByteArray());
+        eq("zip entries, in order", got.keySet().toString(), "[Zip-Regular.ttf, Zip-Bold.ttf, OFL.txt]");
+        check("zip contents", Arrays.equals(got.get("Zip-Regular.ttf"), a) && Arrays.equals(got.get("Zip-Bold.ttf"), b)
+                && new String(got.get("OFL.txt"), StandardCharsets.UTF_8).equals("licence text"));
+        JSONObject noLicMeta = new JSONObject(zm.toString());
+        noLicMeta.getJSONObject("license").put("file", "");
+        Closing out2 = new Closing();
+        GoogleFonts.writeZip(dir, noLicMeta, out2);
+        eq("no licence file, no licence entry", unzip(out2.toByteArray()).keySet().toString(), "[Zip-Regular.ttf, Zip-Bold.ttf]");
+        Files.write(new File(dir, "Zip-Bold.ttf").toPath(), flip(b, 1000));
+        Closing out3 = new Closing();
+        eq("a font changed on the phone", code(() -> GoogleFonts.writeZip(dir, zm, out3)), "gf_changed");
+        check("…the document is closed", out3.closed);
+        Files.write(new File(dir, "Zip-Bold.ttf").toPath(), Arrays.copyOf(b, b.length + 1));
+        eq("a font grown", code(() -> GoogleFonts.writeZip(dir, zm, new Closing())), "gf_changed");
+        Files.write(new File(dir, "Zip-Bold.ttf").toPath(), Arrays.copyOf(b, b.length - 1));
+        eq("a font cut short", code(() -> GoogleFonts.writeZip(dir, zm, new Closing())), "gf_changed");
+        JSONObject badName = new JSONObject(zm.toString());
+        badName.getJSONArray("files").getJSONObject(0).put("name", "../x.ttf");
+        eq("a name that is not a file name", code(() -> GoogleFonts.writeZip(dir, badName, new Closing())), "gf_changed");
+        new File(dir, "Zip-Bold.ttf").delete();
+        check("a font gone is the write's failure", code(() -> GoogleFonts.writeZip(dir, zm, new Closing())).startsWith("threw java.io.FileNotFoundException"));
+        Closing failing = new Closing();
+        failing.failAt = 10;
+        Files.write(new File(dir, "Zip-Bold.ttf").toPath(), b);
+        check("a document that cannot be written is the write's failure", code(() -> GoogleFonts.writeZip(dir, zm, failing)).startsWith("threw java.io.IOException"));
+
+        // a download put in place: new, again (the old folder replaced), and a rename that fails
+        File cd = new File(tmp, "fam-commit");
+        File part = GoogleFonts.partDir(cd, "Open Sans");
+        part.mkdirs();
+        Files.write(new File(part, "new.ttf").toPath(), new byte[3]);
+        File dest = GoogleFonts.commitDownload(cd, "Open Sans");
+        check("in place", dest.equals(new File(cd, "open-sans")) && new File(dest, "new.ttf").isFile() && !part.exists());
+        part.mkdirs();
+        Files.write(new File(part, "newer.ttf").toPath(), new byte[4]);
+        GoogleFonts.commitDownload(cd, "Open Sans");
+        check("again: the old folder replaced", new File(dest, "newer.ttf").isFile() && !new File(dest, "new.ttf").exists());
+        eq("…and nothing left aside", Arrays.toString(cd.list()), "[open-sans]");
+        eq("no .part folder", code(() -> GoogleFonts.commitDownload(cd, "Open Sans")), "threw java.io.IOException: The download could not be put in place.");
+        check("…the family's folder back in place", new File(dest, "newer.ttf").isFile() && Arrays.toString(cd.list()).equals("[open-sans]"));
+        FontLibrary.deleteTree(fam);
+        FontLibrary.deleteTree(zd);
+        FontLibrary.deleteTree(cd);
+    }
+
+    static List<String> sortedKeys(JSONObject o) {
+        List<String> ks = keys(o);
+        java.util.Collections.sort(ks);
+        return ks;
+    }
+
+    static byte[] flip(byte[] b, int at) {
+        byte[] c = b.clone();
+        c[at] ^= 1;
+        return c;
+    }
+
+    static Map<String, byte[]> unzip(byte[] zip) throws Exception {
+        Map<String, byte[]> out = new java.util.LinkedHashMap<String, byte[]>();
+        java.util.zip.ZipInputStream z = new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(zip));
+        java.util.zip.ZipEntry e;
+        while ((e = z.getNextEntry()) != null) {
+            java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = z.read(buf)) > 0) b.write(buf, 0, n);
+            out.put(e.getName(), b.toByteArray());
+        }
+        return out;
+    }
+
+    /** A document: remembers that it was closed, and can fail after some bytes (a provider that stops taking them). */
+    static final class Closing extends java.io.OutputStream {
+        final java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+        boolean closed;
+        int failAt = -1;
+        @Override public void write(int x) throws java.io.IOException { write(new byte[] { (byte) x }, 0, 1); }
+        @Override public void write(byte[] x, int off, int len) throws java.io.IOException {
+            if (failAt >= 0 && b.size() + len > failAt) throw new java.io.IOException("no room");
+            b.write(x, off, len);
+        }
+        @Override public void close() { closed = true; }
+        byte[] toByteArray() { return b.toByteArray(); }
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // Fuzz: every parser, broken answers
     // ---------------------------------------------------------------------------------------------
 
@@ -779,7 +999,7 @@ public class GoogleFontsTest {
 
     static void fuzz(long seed, int rounds) throws Exception {
         Random r = new Random(seed);
-        String catalog = read("catalog.json");
+        String catalog = read("catalog.json"), compacted = GoogleFonts.compact(catalog, 1).toString();
         String[] lists = { read("list/roboto.json"), read("list/lato.json"), read("list/andika.json"), read("list/unifrakturcook.json") };
         String[] details = { read("detail/lato.json"), read("detail/ubuntu.json"), read("detail/nonexistent-family-x.json") };
         String[] css = { read("css2/lato_styles.css"), read("css2/robotoflex_axes.css"), read("css2/molle_card.css") };
@@ -800,6 +1020,10 @@ public class GoogleFontsTest {
                 if (!c.equals("none") && !CODES.contains(c)) { bad++; if (bad < 5) System.out.println("FAIL fuzz round " + i + ": " + c); }
             }
             if (i % 50 == 0) {
+                // a damaged catalog.json is no list, never a throw
+                File cf = new File(tmp, "fz/catalog.json");
+                GoogleFonts.writeWhole(cf, mutate(r, compacted).getBytes(StandardCharsets.UTF_8));
+                try { JSONObject o = GoogleFonts.readCatalog(cf); if (o != null) GoogleFonts.index(o); } catch (Throwable t) { bad++; System.out.println("FAIL fuzz readCatalog threw " + t); }
                 // a damaged meta.json is null, never a throw
                 File d = family(new File(tmp, "fz"), "Lato", mutate(r, goodMeta("Lato")), new String[] { "Lato-Regular.ttf", "Lato-Italic.ttf" }, new int[] { 10, 20 }, "OFL.txt");
                 try { GoogleFonts.readMeta(d); } catch (Throwable t) { bad++; System.out.println("FAIL fuzz readMeta threw " + t); }

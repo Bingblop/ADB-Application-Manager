@@ -144,7 +144,7 @@ public final class GoogleFonts {
 
     /** An address the app may open for Google Fonts: https on fonts.google.com, fonts.googleapis.com or fonts.gstatic.com, nothing else in it. */
     public static boolean allowed(String url) {
-        if (url == null || url.length() > 4096) return false;
+        if (url == null || url.length() > 8192) return false;             // the longest css2 address (32 axes, 300 4-byte characters) is under 5,000
         for (int i = 0; i < url.length(); i++) {
             char c = url.charAt(i);
             if (c <= 0x20 || c >= 0x7f || c == '\\' || c == '"' || c == '\'' || c == '<' || c == '>') return false;

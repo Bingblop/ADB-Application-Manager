@@ -8178,7 +8178,7 @@ public class MainActivity extends Activity {
             for (GoogleFonts.Face f : GoogleFonts.parseCss(css.text())) {
                 GfAnswer w;
                 try {
-                    w = gfGet(f.url, true, GoogleFonts.MAX_FACE, "gf_too_big", null);
+                    w = gfGet(f.url, false, GoogleFonts.MAX_FACE, "gf_too_big", null);
                 } catch (GoogleFonts.GfException tooBig) {
                     continue;
                 }
