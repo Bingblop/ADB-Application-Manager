@@ -228,7 +228,7 @@
 
   <h4>Exactly what Apply writes</h4>
   <ol>
-    <li><b>The font files:</b> <code>/data/app_fonts/&lt;user&gt;/&lt;folder&gt;/DroidSans.ttf</code> and, for a font with a Bold, <code>DroidSans-Bold.ttf</code> in the same folder. For a font without one, a <code>DroidSans-Bold.ttf</code> that an earlier version of the same font left there is removed (only that file), so bold text is made from your Regular. <code>&lt;user&gt;</code> is your Android user number (0 for the phone's owner); <code>&lt;folder&gt;</code> is the end of the font's package name, for example <code>Lato_8b21d0</code>. Each file is written as a <code>.part</code> first and checked for its exact size and SHA-256. Only a file that matches is moved into place; one that does not is deleted, and the app stops with your current font untouched.</li>
+    <li><b>The font files:</b> <code>/data/app_fonts/&lt;user&gt;/&lt;folder&gt;/DroidSans.ttf</code> and, for a font with a Bold, <code>DroidSans-Bold.ttf</code> in the same folder. For a font without one, a <code>DroidSans-Bold.ttf</code> that an earlier version of the same font left there is removed (only that file), so bold text is made from your Regular. <code>&lt;user&gt;</code> is your Android user number (0 for the phone's owner); <code>&lt;folder&gt;</code> is the end of the font's package name, for example <code>Lato_8b21d0</code>. Each file is written as a <code>.part</code> first and checked for its exact size and SHA-256; one that matches waits beside the font in use as a <code>.new</code> file, and one that does not is deleted. Only when every file of the font has arrived whole does one last step check them again and move them into place together (and take the old Bold away). If any step fails, the app deletes what it had sent and stops with your current font untouched.</li>
     <li><b>The pointer:</b> <code>/data/app_fonts/&lt;user&gt;/sans.loc</code>, the file Samsung's font system reads to know which font to draw. It holds the folder, a <code>#</code> and the folder's name, for example <code>/data/app_fonts/0/Lato_8b21d0#Lato_8b21d0</code>. It is written to a temporary file and then renamed, so it is never half written.</li>
     <li><b>Owner and label:</b> the files belong to the system user (<code>system:system</code>) and everyone may read them, as Samsung's own font files; they get the SELinux label <code>app_fonts_data_file</code> (SELinux is Android's lock on which part of the system may touch which file).</li>
     <li><b>Samsung's Font style setting:</b> two of Android's global settings, <code>flip_font_style</code> and <code>font_style_index</code>, are set to another value for a moment and then to your font, which makes apps load the fonts again.</li>
@@ -245,13 +245,15 @@
 </section>
 
 <section id="fonts-system-emoji" data-title="Custom Fonts: System emoji until the next restart" data-group="The tabs">
-  <p class="hg-lead">The <b>System emoji</b> card makes a downloaded emoji font the phone's own emoji, in every app that uses the phone's emoji, until the next restart. It is the only way the iOS emoji can be used. Nothing on the system partition changes, and a normal restart always puts the phone's own emoji back.</p>
+  <p class="hg-lead">The <b>System emoji</b> card makes a downloaded emoji font the phone's own emoji, in every app that uses the phone's emoji, until the next restart. It is the only way the iOS emoji can be used. Nothing on the system partition changes, and a normal restart always puts the phone's own emoji back. It does not run on a phone whose emoji Google Play services has updated (common on Android 12 and newer with Google's emoji): see below.</p>
 
   <h4>Before you start</h4>
   <ul>
     <li><b>Root</b> with <code>su</code> granted, or <b>Shizuku running as root (UID 0)</b>. The tag then reads <b>ROOT</b>. The system user (UID 1000) is not enough: laying a file over a system file needs root. Otherwise the tag reads <b>LOCKED</b> and the card shows the row "Use as the phone's emoji", "A downloaded emoji font, until the next restart", with a <b>Locked</b> button and "Needs Super User".</li>
     <li>It does not need a Samsung phone.</li>
     <li>A downloaded emoji font (<a href="#fonts-emoji">Emoji fonts</a>); without one the card says "Download an emoji font above first." A COLRv1 font is offered here only on Android 13 and newer.</li>
+    <li>The phone's own emoji font, not an update of it. Google Play services can update the emoji font; Android then keeps the update under <code>/data/fonts/files</code> and draws its emoji from there. On such a phone the app refuses the swap, changes nothing, and says that this phone's emoji were updated by Google Play services.</li>
+    <li>The app must be able to read the phone's list of mounts (<code>/proc/1/mountinfo</code>), which tells its own swap apart from another tool's. If it cannot, it changes nothing and says so.</li>
   </ul>
 
   <h4>Step by step</h4>
@@ -265,19 +267,21 @@
   <h4>What it does</h4>
   <ul>
     <li>It copies the emoji font to <code>/data/adb/adbmgr_fonts/</code>, a folder of this app's own in root's part of the phone, and checks the copy's size and SHA-256. That is the only file it writes.</li>
-    <li>It finds the phone's emoji font files: every font Android lists as its emoji font (the <code>und-Zsye</code> families of <code>/system/etc/fonts.xml</code> and, on Android 15 and newer, <code>/system/etc/font_fallback.xml</code>), in <code>/system/fonts</code> or <code>/product/fonts</code>, and the emoji fonts updated since then under <code>/data/fonts/files</code>.</li>
-    <li>It lays the copy over each of those files with a <b>bind mount</b>: the phone then reads the copy wherever it reads the original, while the original files stay exactly as they were. A bind mount lives in memory only, so a restart removes it.</li>
-    <li>It reads back the checksum of each file the phone now sees, which is what the box shows.</li>
+    <li>It finds the phone's emoji font files: every font Android lists as its emoji font (the <code>und-Zsye</code> families of <code>/system/etc/fonts.xml</code> and, on Android 15 and newer, <code>/system/etc/font_fallback.xml</code>), in <code>/system/fonts</code> or <code>/product/fonts</code>.</li>
+    <li>It never covers an emoji font Google Play services updated under <code>/data/fonts/files</code>. Android checks those files' signature (fs-verity): an app that loaded a covered one would close at once, and Android starting again would delete every updated font. A copy over the original in <code>/system/fonts</code> would not show on such a phone either, which is why the swap is refused there.</li>
+    <li>It notes which files it is about to cover, then lays the copy over each of them with a <b>bind mount</b>: the phone then reads the copy wherever it reads the original, while the original files stay exactly as they were. A bind mount lives in memory only, so a restart removes it. A file that already carries a copy of this app's is left as it is, so two swaps never pile up.</li>
+    <li>It reads back the checksum of each file before and after, and the box shows the one after.</li>
   </ul>
 
   <h4>Soft reboot</h4>
-  <p><b>Soft reboot</b> asks first: "Soft reboot?", "Only Android restarts, not the phone: the screen goes black for a few seconds and every app closes, without the boot screen. Unsaved work in open apps is lost. Faster than a full reboot; it does not clear everything a full one does." and "Apps start again with the new emoji. A normal restart puts the phone's own emoji back." The red <b>Soft reboot</b> goes ahead. Every app closes, this one too: open it again afterwards and check the working-mode badge. A soft reboot keeps the swap.</p>
+  <p><b>Soft reboot</b> asks first: "Soft reboot?", "Only Android restarts, not the phone: the screen goes black for a few seconds and every app closes, without the boot screen. Unsaved work in open apps is lost. Faster than a full reboot; it does not clear everything a full one does." and "Apps start again with the new emoji. A normal restart puts the phone's own emoji back." The red <b>Soft reboot</b> goes ahead. Every app closes, this one too: open it again afterwards and check the working-mode badge. A soft reboot keeps the swap. That is safe: Android checks its updated fonts again when it starts, and the swap never covers one of them.</p>
 
   <h4>Undo</h4>
   <ul>
-    <li><b>Undo</b> (shown while a swap is in use) takes the copy off every file and says "The phone's own emoji are back." Apps that are open keep the swapped emoji until they start again.</li>
-    <li>A <b>normal restart</b> of the phone always undoes it, so an emoji font that does not suit the phone cannot trap it.</li>
-    <li>Neither removes the copy in <code>/data/adb/adbmgr_fonts/</code>; it stays there, unused, and clearing this app's storage does not reach it. With root you can delete that folder, for example with <code>rm -r /data/adb/adbmgr_fonts</code> in the Terminal's working-mode shell, once the swap is undone.</li>
+    <li><b>Undo</b> (shown while a swap is in use) takes off only the copies this app laid; another tool's emoji on the same file, such as a root module's, stay. It checks that each file reads as it did before the swap, deletes the copy in <code>/data/adb/adbmgr_fonts/</code> and reads back that it is gone, then says "The phone's own emoji are back." If a file did not come back, it says so: restart the phone to undo the swap. Apps that are open keep the swapped emoji until they start again.</li>
+    <li>Undo finds a swap from the phone's list of mounts, so it is offered even when the app lost its note of the swap (its storage was cleared, or it was closed in the middle of an Apply).</li>
+    <li>A <b>normal restart</b> of the phone always undoes it, so an emoji font that does not suit the phone cannot trap it. The copy is then unused: the next time you open the Custom Fonts tab with root on, the app deletes it.</li>
+    <li>Deleting a downloaded emoji font in Emoji fonts with root on deletes its copy too. A copy that is still laid over a file is never deleted.</li>
   </ul>
   <div class="hg-warn"><b>Careful.</b> The swap reaches every app at once. An emoji the chosen font does not have shows as an empty box or not at all, and an app may draw emoji at a different size. If something looks wrong, tap <b>Undo</b> or restart the phone. Soft reboot closes every app without asking them: save your work first.</div>
 </section>
@@ -290,10 +294,10 @@
       <tr><td><b>Apply</b> (the Font changer)</td><td><b>Font changer</b>, <b>Reset to Default</b>. Or Samsung's Settings, <b>Display</b>, <b>Font size and style</b>, <b>Font style</b>, <b>Default</b>.</td><td>A restart does not undo it. Reset it before you delete the font: My fonts refuses Delete while it is <b>In use</b>.</td></tr>
       <tr><td>Chose your font in Samsung's <b>Font style</b> (older One UI)</td><td><b>Font style</b>, <b>Default</b> (or another font). Or uninstall the font package.</td><td>Needs no working mode.</td></tr>
       <tr><td><b>Install</b></td><td><b>Uninstall</b> on the row, or Android's Settings, Apps, your font's Name, Uninstall.</td><td>The font stays in My fonts.</td></tr>
-      <tr><td><b>Use as the phone's emoji</b></td><td><b>Undo</b> on the System emoji card, or restart the phone.</td><td>A soft reboot does not undo it.</td></tr>
+      <tr><td><b>Use as the phone's emoji</b></td><td><b>Undo</b> on the System emoji card, or restart the phone.</td><td>A soft reboot does not undo it. Undo and a restart also remove the copy in <code>/data/adb/adbmgr_fonts/</code> (after a restart, the next time the tab is opened with root on).</td></tr>
       <tr><td>A font in <b>My fonts</b></td><td><b>Delete</b> on its row.</td><td>An installed package stays until you uninstall it.</td></tr>
       <tr><td>A downloaded emoji font</td><td><b>Delete</b> on its row in Emoji fonts.</td><td>Refused while it is the phone's emoji. Fonts you made keep their copy.</td></tr>
-      <tr><td>Everything the tab keeps</td><td>Clear the app's storage, or uninstall the app (<a href="#privacy">Privacy</a>).</td><td>Android keeps installed font packages and an applied font: undo those first. The System emoji copy in <code>/data/adb/adbmgr_fonts/</code> is outside the app (<a href="#fonts-system-emoji">System emoji</a>).</td></tr>
+      <tr><td>Everything the tab keeps</td><td>Clear the app's storage, or uninstall the app (<a href="#privacy">Privacy</a>).</td><td>Android keeps installed font packages and an applied font: undo those first. The System emoji copy in <code>/data/adb/adbmgr_fonts/</code> is outside the app: Undo deletes it (<a href="#fonts-system-emoji">System emoji</a>).</td></tr>
     </tbody>
   </table>
   <p>If the phone's text has become hard to read after <b>Apply</b>, do it from memory: open this app, the <b>Custom Fonts</b> tab, the <b>Font changer</b> card near the bottom, and tap <b>Reset to Default</b>; or open Samsung's Settings, <b>Display</b>, <b>Font size and style</b>, <b>Font style</b>, and choose <b>Default</b>. For the emoji swap, a restart is always enough. More on what can go wrong in <a href="#safety">Staying safe</a>.</p>
