@@ -421,6 +421,13 @@ def merged_font(text, emoji, gsub):
     return out.getvalue(), N, m
 
 
+def caret_formats(font):
+    """The CaretValue format of every ligature caret of GDEF, in order (a format 3 also needs a Device: 4 when it has none)."""
+    lcl = getattr(font["GDEF"].table, "LigCaretList", None) if "GDEF" in font else None
+    if lcl is None: return []
+    return [4 if cv.Format == 3 and cv.DeviceTable is None else cv.Format for lg in lcl.LigGlyph for cv in lg.CaretValue]
+
+
 def verify(args):
     d = args.dir
     shas = []
@@ -467,6 +474,10 @@ def verify(args):
             raw = inject(data, {t: f.reader[t] for t in ("GSUB", "GPOS", "GDEF") if t in f.reader})
             n3, bad3, _ = same_shaping(data, raw, texts, [None], (None,), tol=1)
             print("     (the unchanged variable tables differ in %d of those %d runs)" % (bad3, n3))
+            want, got = caret_formats(inst), caret_formats(TTFont(io.BytesIO(mine)))
+            if want or got:
+                report(want == got, "%s at %s: the %d ligature carets have fontTools' formats (%s; format 3 with no Device is invalid)"
+                       % (name, loc, len(got), ", ".join(sorted("%d x%d" % (k, got.count(k)) for k in set(got)))))
     for text, emoji in MERGES:
         gsub = rec(text, "merge.%s.GSUB" % emoji)
         merged, N, m = merged_font(text, emoji, gsub)

@@ -7291,10 +7291,10 @@ sha Inter-sub.ttf inst.wght=900,opsz=32.GPOS 32891afd820b3a25967fac0346484595c08
 sha Inter-sub.ttf inst.wght=900,opsz=32.GDEF fbcfb304094d3d849fdc11d97836ba783f0cd60ceed27d212db28d7dce4404fc
 sha NotoSans-sub.ttf inst.wght=700.GSUB 481a0c7efb1c8dd234dec40f05d51dc0f16934abd4a9991430cddb671b15b19f
 sha NotoSans-sub.ttf inst.wght=700.GPOS 8ee562bb116f68b42f9371f70c0a5bbdc459075f834c630c9b2b6abbb2de4d0c
-sha NotoSans-sub.ttf inst.wght=700.GDEF 52ac5951da943c224b8712817bd15b80fdc121cb29786a85ef084d2df2a4aff9
+sha NotoSans-sub.ttf inst.wght=700.GDEF 581c780099bca3e781873c9cf2cb49f62e80e4e7b237070239d0a3a11d10522d
 sha NotoSans-sub.ttf inst.wght=900,wdth=62.5.GSUB 481a0c7efb1c8dd234dec40f05d51dc0f16934abd4a9991430cddb671b15b19f
 sha NotoSans-sub.ttf inst.wght=900,wdth=62.5.GPOS e26f60268cfed6e07aba55aedb54c9b1fa556a02108402538b71221acd1a5669
-sha NotoSans-sub.ttf inst.wght=900,wdth=62.5.GDEF 1af599a258473765eb9d607e4bc793cb04ab9f9fab0cc0f50c8632e1afb173c4
+sha NotoSans-sub.ttf inst.wght=900,wdth=62.5.GDEF 545b976719a2bab535972643c4fdb6edf29cae314b31ecff4ca9f1ed96405921
 sha RobotoFlex-sub.ttf inst.wght=700.GSUB b378471408f7040f5b143f732633af924b385876dab98a452fca431f0a3278ed
 sha RobotoFlex-sub.ttf inst.wght=700.GPOS 1d9c236ba92830f7868692f582db632fe58e60cb0c4cf8be5e59b869e1164f17
 sha RobotoFlex-sub.ttf inst.wght=700.GDEF b7a6963b02a3f314a80ad1d48a9b4a0db189af2d7a0321156faa5fb812fd23a0

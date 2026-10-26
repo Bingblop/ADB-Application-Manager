@@ -41,7 +41,8 @@ it writes anything. `verify` records a hash only when every check on the tables 
   scripts; the emoji fonts' sequences and every ligature they define);
 * shifted tables are, in fontTools' view, the originals with every glyph id + delta (lookup index + delta);
 * instanced GSUB / GPOS / GDEF shape like fontTools' instance within 1 unit (letter pairs, base + one or two marks, random text, 11 feature
-  settings), where the uninstanced tables differ in hundreds to thousands of the same runs;
+  settings), where the uninstanced tables differ in hundreds to thousands of the same runs; the instanced ligature carets have the
+  formats fontTools writes (format 1, never a format 3 without a Device table, which OTS refuses);
 * merged GSUB tables shape emoji sequences like the emoji font with its glyph ids + the text font's glyph count, in 4 scripts, and text
   like the text font.
 
