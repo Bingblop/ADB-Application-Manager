@@ -8005,11 +8005,13 @@
                 .gf-open svg { flex: 0 0 auto; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
                 .gf-open-lab { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
                 .gf-open-n { flex: 0 0 auto; font-size: var(--fs-pkg); font-weight: var(--fw-bold); }
-                .gf-sheet { max-width: 760px; height: 94vh; max-height: 94vh; padding: 0 var(--space-5) var(--space-6); }
+                .gf-sheet { max-width: 760px; height: 85vh; padding: 0 var(--space-5) var(--space-6); }      /* as tall as a sheet may be (85%, the Help Guide alone takes more), whatever the list holds */
                 .gf-bar { position: sticky; top: 0; z-index: 5; background: var(--bg-sheet); margin: 0 calc(-1 * var(--space-5)) var(--space-2); padding: var(--space-4) var(--space-5) var(--space-3); border-bottom: 1px solid var(--border-glass); }
                 .gf-bar-row { display: flex; align-items: center; gap: var(--space-3h); }
                 .gf-title { flex: 1 1 auto; min-width: 0; font-size: 18px; font-weight: var(--fw-black); letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-                .sheet-close.gf-back { margin-inline: calc(-1 * var(--space-3h)) 0; color: var(--text-main); }
+                .gf-back { flex: 0 0 auto; width: var(--tap); height: var(--tap); margin-block: calc(-1 * var(--space-3h)); margin-inline: calc(-1 * var(--space-3h)) 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: transparent; color: var(--text-main); cursor: pointer; -webkit-tap-highlight-color: transparent; }      /* the Settings back button (.st-back), with the close button's focus ring */
+                .gf-back:active { background: var(--fill-3); }
+                .gf-back:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
                 .gf-back svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
                 [dir="rtl"] .gf-back svg { transform: scaleX(-1); }
                 #gfSearch { display: block; width: 100%; margin-top: var(--space-3); }
@@ -8146,7 +8148,7 @@
             <div class="modal-sheet gf-sheet" id="gfScroll" role="dialog" aria-labelledby="gfTitle">
                 <div class="gf-bar">
                     <div class="gf-bar-row">
-                        <button type="button" class="sheet-close gf-back" id="gfBack" aria-label="Back" onclick="gfBackToList()" style="display:none;"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></button>
+                        <button type="button" class="gf-back" id="gfBack" aria-label="Back" onclick="gfBackToList()" style="display:none;"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></button>
                         <div class="gf-title" id="gfTitle">Google Fonts</div>
                         <button type="button" class="sheet-close" aria-label="Close" onclick="gfClose()">&#10005;</button>
                     </div>
