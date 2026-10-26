@@ -45645,7 +45645,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // the iOS emoji: their pictures read from Apple's file on request (emojiSpecimenFetch), kept by the app (emojiSpecimenCached). The strip stays blank
         // until its font is loaded: never the phone's own emoji in its place
         const FNT_EMO_SAMPLE = '😀😂🥰😎🥳😭👍👋❤️🔥🎉🐶🦄🍕🚀🌈';
-        const FNT_EMO_CHARS = FNT_EMO_SAMPLE.match(/\p{Extended_Pictographic}️?/gu) || [];
+        const FNT_EMO_CHARS = FNT_EMO_SAMPLE.match(/\p{Extended_Pictographic}\uFE0F?/gu) || [];
         const FNT_EMO_IDS = ['noto', 'twemoji', 'blobmoji', 'openmoji'];
         const FNT_EMO_V1 = { noto: true, blobmoji: true };                  // COLRv1: Chrome (WebView) 98 or newer draws them
         function fntChromeMajor() { const m = /Chrome\/(\d+)/.exec(navigator.userAgent || ''); return m ? +m[1] : 0; }
