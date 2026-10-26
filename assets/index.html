@@ -45709,6 +45709,9 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---- System emoji (RootGate.uid0), until the next restart ----
         function fntSysChoices() { const sdk = fntSdk(); return ((fnt.cat && fnt.cat.items) || []).filter(it => it.downloaded && (it.format !== 'COLRv1' || !sdk || sdk >= 33)); }
+        // the app cannot read the phone's list of mounts (mounts_unreadable): it cannot tell its own swap from another tool's, so Java refuses Apply and Undo
+        // alike and changes nothing; it knows a swap only from its note of this boot's (no note: it cannot tell), and only a normal restart takes one off
+        function fntNoMounts() { const st = fnt.sys; return !!(st && st.blocked && st.blocked.code === 'mounts_unreadable'); }
         function fntRenderSys() {
             const body = document.getElementById('fntSysBody');
             if (!body) return;
@@ -45719,22 +45722,22 @@ Type any command above (e.g. pm list packages -d)</div>
                 return;
             }
             setTag('fntSysTag', 'active', txT('ROOT'));
-            const st = fnt.sys, busy = fnt.sysBusy, act = st && st.active, ch = fntSysChoices();
-            const now = !st ? '<b>' + escapeHtml(txT(busy === 'status' ? 'Checking…' : 'Unknown')) + '</b>' : act ? '<b translate="no">' + escapeHtml(act.name || act.id || '') + '</b>' : '<b>Default</b>';
+            const st = fnt.sys, busy = fnt.sysBusy, act = st && st.active, ch = fntSysChoices(), blind = fntNoMounts();
+            const now = !st || (!act && blind) ? '<b>' + escapeHtml(txT(busy === 'status' ? 'Checking…' : 'Unknown')) + '</b>' : act ? '<b translate="no">' + escapeHtml(act.name || act.id || '') + '</b>' : '<b>Default</b>';
             const sel = document.getElementById('fntSysSel'), keep = sel ? sel.value : ((act && act.id) || '');
             const pick = ch.length ? '<div class="fnt-field"><label for="fntSysSel">Emoji font</label><select class="op-select" id="fntSysSel"' + (busy ? ' disabled' : '') + '>'
                 + ch.map(it => '<option value="' + escapeHtml(it.id) + '" translate="no"' + (it.id === keep ? ' selected' : '') + '>' + escapeHtml(it.name) + '</option>').join('') + '</select></div>'
                 : '<div class="list-empty">Download an emoji font above first.</div>';
             const btn = (id, label, fn, on) => '<button type="button" class="mode-action-btn" id="' + id + '" onclick="' + fn + '"' + (on ? '' : ' disabled') + '>' + label + '</button>';
             // a phone the swap cannot run on (its emoji updated by Google Play services, or no list of mounts to read) is told before anything is tried;
-            // Undo stays for a swap that is on
+            // Undo stays for a swap that is on, greyed out without the list of mounts (the app would refuse it: the reason says a restart is the way back)
             const blocked = st && st.blocked ? fntErrText(st.blocked) : '';
             body.innerHTML = '<div class="fnt-now"><span>Phone emoji</span>' + now + '</div>'
                 + pick
                 + (blocked ? '<div class="fnt-note is-warn" id="fntSysBlocked">' + escapeHtml(blocked) + '</div>' : '')
                 + '<div class="mode-btn-row fnt-sys-btns">'
                 + btn('fntSysUse', busy === 'apply' ? 'Applying…' : "Use as the phone's emoji", 'fntSysApply()', ch.length && !busy && !blocked)
-                + (act || busy === 'undo' ? btn('fntSysUndo', busy === 'undo' ? 'Undoing…' : 'Undo', 'fntSysUndo()', !busy) : '')
+                + (act || busy === 'undo' ? btn('fntSysUndo', busy === 'undo' ? 'Undoing…' : 'Undo', 'fntSysUndo()', !busy && !blind) : '')
                 + btn('fntSoftBtn', 'Soft reboot', 'fntSoftRestartAsk()', !busy)
                 + (!st && !busy ? btn('fntSysAgain', 'Try again', "fntStatusAgain('sys')", true) : '')
                 + '</div>'
@@ -45755,7 +45758,7 @@ Type any command above (e.g. pm list packages -d)</div>
             fntRenderSys();
         }
         function fntSysUndo() {
-            if (!ovlCanWriteOverlays() || fnt.sysBusy) return;
+            if (!ovlCanWriteOverlays() || fnt.sysBusy || fntNoMounts()) return;
             const r = fntCall('sysEmojiUndo', []);
             if (!r) return;
             if (!r.ok) { fnt.sysErr = fntErrText(r, 'Could not start'); fntRenderSys(); return; }
@@ -45767,7 +45770,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!ovlCanWriteOverlays() || fnt.sysBusy) return;
             if (!fntHas('softRestart')) { showToast('Needs the app build'); return; }
             // what the apps come back with: the swapped emoji while a swap is on, the phone's own when none is (after an Undo), nothing said when it is not known
-            const st = fnt.sys, then = !st ? '' : st.active ? txT("Apps start again with the new emoji. A normal restart puts the phone's own emoji back.") : txT("Apps start again with the phone's own emoji.");
+            // (no status, or no list of mounts and no note of a swap)
+            const st = fnt.sys, then = !st ? '' : st.active ? txT("Apps start again with the new emoji. A normal restart puts the phone's own emoji back.") : fntNoMounts() ? '' : txT("Apps start again with the phone's own emoji.");
             if (!await mpAsk({ title: txT('Soft reboot?'), text: txT('Only Android restarts, not the phone: the screen goes black for a few seconds and every app closes, without the boot screen. Unsaved work in open apps is lost. Faster than a full reboot; it does not clear everything a full one does.')
                 + (then ? '\n\n' + then : ''), ok: txT('Soft reboot'), danger: true })) return;
             const r = fntCall('softRestart', []);

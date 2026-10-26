@@ -1,8 +1,9 @@
 // v7.17.0 Custom Fonts, System emoji on a phone the swap cannot run on, and what Soft reboot says. The status names a block before anything is tried:
 // emoji updated by Google Play services (emoji_updated), or no list of mounts to read (mounts_unreadable): the reason shows in the page's words as a
-// warning, "Use as the phone's emoji" is off and nothing is sent, while Undo stays on for a swap that is on. An Undo the app refuses for the same
-// reason shows it in the page's words. Soft reboot's question says what the apps come back with: the new emoji while a swap is on, nothing about the
-// emoji while the status is not known (a status that did not answer), with Try again on the card.
+// warning, "Use as the phone's emoji" is off and nothing is sent. With emoji_updated, Undo stays on for a swap that is on; without the list of mounts
+// the app refuses Undo too (it changes nothing it cannot tell apart), so Undo is greyed out and sends nothing, and with no note of a swap the card
+// says Unknown, not Default. Soft reboot's question says what the apps come back with: the new emoji while a swap is on, nothing about the emoji
+// while the status is not known (a status that did not answer, with Try again on the card) or cannot tell. The Help Guide says the same.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -49,14 +50,22 @@ const sheet = (page) => page.evaluate(() => ({ open: document.getElementById('mp
     await ctx.close();
   }
   {
-    // ---- 2. no list of mounts, a swap on: Undo stays; the app refuses it for the same reason ----
+    // ---- 1b. emoji updated, a swap on (laid before the update): Undo stays on, the app can still take its own binds off ----
+    const { ctx, page, errors } = await open(b, { mode: 'root', sysActive: 'twemoji', sysBlocked: { code: 'emoji_updated', error: UPDATED } });
+    const s = await sys(page);
+    check('1b. emoji updated with a swap on: Use off, Undo on', s.blocked === UPDATED && s.use === false && s.undo === true && /Phone emoji Twemoji/.test(s.body), JSON.stringify(s));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    // ---- 2. no list of mounts, the app's note of a swap of this boot: the swap is named, and Undo is greyed out, since the app refuses it for the same
+    // reason (it changes nothing it cannot tell apart); the reason on the card says a restart puts the emoji back ----
     const { ctx, page, errors } = await open(b, { mode: 'uid0', sysActive: 'twemoji', sysBlocked: { code: 'mounts_unreadable', error: NO_MOUNTS }, sysUndoError: { code: 'mounts_unreadable', error: NO_MOUNTS } });
     const s = await sys(page);
-    check('2. no list of mounts: the reason, Use off, Undo on for the swap that is on', s.blocked === NO_MOUNTS && s.use === false && s.undo === true && /Phone emoji Twemoji/.test(s.body), JSON.stringify(s));
-    await page.click('#fntSysUndo');
-    await page.waitForTimeout(300);
-    const s2 = await sys(page);
-    check('   Undo refused: the reason in the page\'s words, under the buttons', /A restart of the phone always puts its own emoji back\.\s*$/.test(s2.body) && (await page.evaluate(() => document.querySelectorAll('#fntSysBody .fnt-err .is-err').length)) === 1, s2.body);
+    check('2. no list of mounts: the reason, Use off, the swap named, Undo there but off', s.blocked === NO_MOUNTS && s.use === false && s.undo === false && s.soft === true && /Phone emoji Twemoji/.test(s.body), JSON.stringify(s));
+    await page.evaluate(() => fntSysUndo());
+    await page.waitForTimeout(150);
+    check('   Undo sends nothing', !(await page.evaluate(() => window.__fmk.calls.some(c => /^sysEmojiUndo/.test(c)))), await page.evaluate(() => window.__fmk.calls.join()));
     // ---- 3. Soft reboot with a swap on ----
     await page.click('#fntSoftBtn');
     await page.waitForTimeout(250);
@@ -69,17 +78,42 @@ const sheet = (page) => page.evaluate(() => ({ open: document.getElementById('mp
     await ctx.close();
   }
   {
-    // ---- 4. Soft reboot while the status is not known ----
+    // ---- 4. no list of mounts and no note of a swap (the app's storage was cleared): the app cannot tell, so the card does not say Default ----
+    const { ctx, page, errors } = await open(b, { mode: 'root', sysBlocked: { code: 'mounts_unreadable', error: NO_MOUNTS } });
+    const s = await sys(page);
+    check('4. no list of mounts, no note: Phone emoji Unknown (not Default), no Undo, Use off', /Phone emoji Unknown/.test(s.body) && !/Default/.test(s.body) && s.undo === null && s.use === false && s.blocked === NO_MOUNTS, JSON.stringify(s));
+    await page.click('#fntSoftBtn');
+    await page.waitForTimeout(250);
+    const q = await sheet(page);
+    check('   Soft reboot says nothing about the emoji it cannot tell', q.open && /every app closes/.test(q.text) && !/emoji/.test(q.text), JSON.stringify(q));
+    await page.click('#mpAskNo');
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    // ---- 5. Soft reboot while the status is not known ----
     const { ctx, page, errors } = await open(b, { mode: 'root' });
     await page.evaluate(() => { window.AndroidBridge.sysEmojiStatus = () => JSON.stringify({ ok: false, code: 'no_answer', error: 'The phone did not answer. Try again.' }); fntStatusAgain('sys'); });
     await page.waitForTimeout(100);
     const s = await sys(page);
-    check('4. a status that did not start: Unknown, the reason, Try again', /Phone emoji Unknown/.test(s.body) && /The phone did not answer\. Try again\./.test(s.body) && s.again === true, JSON.stringify(s));
+    check('5. a status that did not start: Unknown, the reason, Try again', /Phone emoji Unknown/.test(s.body) && /The phone did not answer\. Try again\./.test(s.body) && s.again === true, JSON.stringify(s));
     await page.click('#fntSoftBtn');
     await page.waitForTimeout(250);
     const q = await sheet(page);
     check('   Soft reboot says nothing about the emoji it does not know', q.open && /every app closes/.test(q.text) && !/emoji/.test(q.text), JSON.stringify(q));
     await page.click('#mpAskNo');
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    // ---- 6. the Help Guide says what the card and the app do without the list of mounts ----
+    const { ctx, page, errors } = await open(b, { mode: 'root' });
+    await page.evaluate(() => openHelpGuide('fonts-system-emoji'));
+    await page.waitForFunction(() => hg.cur === 'fonts-system-emoji', null, { timeout: 5000 });
+    const li = await page.evaluate(() => { const t = [...document.querySelectorAll('#hgTopic li')].find(x => /list of mounts/.test(x.textContent)); return t ? t.textContent.replace(/\s+/g, ' ').trim() : ''; });
+    check('6. the guide: Use and Undo greyed out without the list of mounts, a soft reboot keeps the swap, a normal restart takes it off', /Use as the phone's emoji/.test(li) && /Undo/.test(li) && /greyed out/.test(li)
+      && /soft reboot keeps it/i.test(li) && /normal restart/.test(li) && !/can always be taken off/.test(li), li);
+    check('   it names the swap from the app\'s note of this boot, and Unknown without one', /Unknown/.test(li), li);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
