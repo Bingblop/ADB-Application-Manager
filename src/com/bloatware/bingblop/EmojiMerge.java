@@ -25,9 +25,10 @@ import java.util.TreeSet;
  * v1 emoji is scaled as a whole by a PaintTransform around its paint, so the glyphs only its paints draw keep the emoji font's units. The
  * text font keeps its glyphs, hinting, GPOS, kern and GDEF. Its characters keep their glyphs except where Unicode shows the emoji form
  * ({@link EmojiData#emojiWins}); variation sequences then give either form (U+FE0F the emoji glyph, U+FE0E the text glyph). U+200D keeps
- * the text font's joiner, which the emoji sequences then name instead of their own ({@link #joiner}). The emoji font's GSUB lookups (ZWJ sequences, flags, keycaps, skin tones) follow the text font's and are turned on in {@link #FEATURE} for every
- * script ({@link OtLayout#merge}), behind a few lookups that give them the glyphs they expect (see {@link Front}). The input is untrusted:
- * every read is bounds-checked and a bad font ends in a {@link Sfnt.FontException}.
+ * the text font's joiner, which the emoji sequences then name instead of their own ({@link #joiner}). The emoji font's GSUB lookups (ZWJ
+ * sequences, flags, keycaps, skin tones) follow the text font's and are turned on in {@link #FEATURE} for every script
+ * ({@link OtLayout#merge}), behind a few lookups that give them the glyphs they expect (see {@link Front}). The input is untrusted: every
+ * read is bounds-checked and a bad font ends in a {@link Sfnt.FontException}.
  * Pure Java, no Android classes.
  */
 public final class EmojiMerge {

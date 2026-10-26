@@ -833,25 +833,29 @@ public class OtLayoutTest {
 
     // onlyInSequences and the shift that names another glyph in sequences (EmojiMerge: the emoji ZWJ sequences name the text font's joiner)
     String all = "sub0 sub0+2 c1g c1g+2 c2g c3r c3r+2 c4g rsub rg c6g c5g lgg lgc lgc+2";
+    String wrong = sequenceOnly(t, new int[] { 21, 22, 8, 99 }, new int[] { 20, 30, 5, 6, 10, 11, 12, 3, 4, 7, 9 });
     check("hand GSUB: onlyInSequences: the ligature components past the first, the context rule's input past the first, a glyph not there; "
-        + "not the coverages', the ranges', the substitutes' or the ligature's glyphs", sequenceOnly(t, new int[] { 21, 22, 8, 99 },
-        new int[] { 20, 30, 5, 6, 10, 11, 12, 3, 4, 7, 9 }).isEmpty(), sequenceOnly(t, new int[] { 21, 22, 8, 99 }, new int[] { 20, 30, 5, 6, 10, 11, 12, 3, 4, 7, 9 }));
+        + "not the coverages', the ranges', the substitutes' or the ligature's glyphs", wrong.isEmpty(), wrong);
     check("hand GSUB: shiftGlyphs(+100, 21 -> 2) names glyph 2 as the ligature's component and moves every other glyph",
         Arrays.equals(renamed(t, 100, 21, 2), with(plus(b, t, 100, except(all, "lgc")), b.pos("lgc"), 2)));
     check("hand GSUB: shiftGlyphs(+100, 8 -> 1) names glyph 1 in the context rule's input and moves every other glyph",
         Arrays.equals(renamed(t, 100, 8, 1), with(plus(b, t, 100, except(all, "rg")), b.pos("rg"), 1)));
-    check("hand GSUB: shiftGlyphs(+100, 5 -> 1) moves glyph 5, which only coverages list, like the others", Arrays.equals(renamed(t, 100, 5, 1), plus(b, t, 100, all.split(" "))));
+    check("hand GSUB: shiftGlyphs(+100, 5 -> 1) moves glyph 5, which only coverages list, like the others",
+        Arrays.equals(renamed(t, 100, 5, 1), plus(b, t, 100, all.split(" "))));
 
     Bld q = handSequenceTable();
     byte[] u = q.bytes(), before = u.clone();
-    int[] yes = { 41, 71, 72, 73, 99 }, no = { 40, 42, 50, 45, 63, 60, 70, 80, 81, 82 };
+    wrong = sequenceOnly(u, new int[] { 41, 71, 72, 73, 99 }, new int[] { 40, 42, 50, 45, 63, 60, 70, 80, 81, 82 });
     check("hand GSUB: onlyInSequences: a chained rule's backtrack, input and lookahead glyphs and a ligature component; not a component that a "
-        + "coverage lists too, single format 1's targets, a multiple substitution's glyphs; the table is not changed", sequenceOnly(u, yes, no).isEmpty()
-        && Arrays.equals(u, before), sequenceOnly(u, yes, no));
+        + "coverage lists too, single format 1's targets, a multiple substitution's glyphs; the table is not changed",
+        wrong.isEmpty() && Arrays.equals(u, before), wrong);
     String seqAll = "clg ligg ligc ligc+2 csg csg+2 ccg bk inp la cmg mul mul+2";
     boolean ok = true;
-    for (Object[] c : new Object[][] { { "ligc", 41, 7 }, { "bk", 71, 1 }, { "inp", 72, 2 }, { "la", 73, 5 } })
-      ok &= Arrays.equals(renamed(u, 100, (Integer) c[1], (Integer) c[2]), with(plus(q, u, 100, except(seqAll, (String) c[0])), q.pos((String) c[0]), (Integer) c[2]));
+    for (Object[] c : new Object[][] { { "ligc", 41, 7 }, { "bk", 71, 1 }, { "inp", 72, 2 }, { "la", 73, 5 } }) {
+      String l = (String) c[0];
+      int from = (Integer) c[1], to = (Integer) c[2];
+      ok &= Arrays.equals(renamed(u, 100, from, to), with(plus(q, u, 100, except(seqAll, l)), q.pos(l), to));
+    }
     check("hand GSUB: shiftGlyphs(+100, g -> h) names h for g in a ligature's components and a chained rule's backtrack, input and lookahead", ok);
     check("hand GSUB: shiftGlyphs(+100, 42 -> 9) names 9 in the ligature and moves the 42 of the coverage (ask onlyInSequences first)",
         Arrays.equals(renamed(u, 100, 42, 9), with(plus(q, u, 100, except(seqAll, "ligc+2")), q.pos("ligc") + 2, 9)));
