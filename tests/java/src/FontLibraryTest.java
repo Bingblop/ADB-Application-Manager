@@ -51,6 +51,8 @@ public class FontLibraryTest {
         commitAndList();
         records();
         jobs();
+        rebuilds();
+        downloads();
         pageJson();
         files();
         bridgeScan();
@@ -88,7 +90,10 @@ public class FontLibraryTest {
         is("an entry folder from a non-id is refused", threw, true);
         eq("emoji file", dirs.emojiFile("noto"), new File(dirs.emoji, "noto.ttf"));
         eq("no emoji file for a path", dirs.emojiFile("../../x"), null);
-        eq("pick file", dirs.pickFile("bold", TOK1), new File(dirs.in, "bold-" + TOK1 + ".font"));
+        eq("a window's pick folder", dirs.pickFolder("0123456789ab"), new File(dirs.in, "0123456789ab"));
+        threw = false;
+        try { dirs.pickFolder("../x"); } catch (IllegalArgumentException e) { threw = true; }
+        is("a pick folder from a non-id is refused", threw, true);
 
         eq("user 0", FontLibrary.userIdOf(10234), 0);
         eq("user 10", FontLibrary.userIdOf(1010234), 10);
@@ -107,9 +112,11 @@ public class FontLibraryTest {
     }
 
     static void picks() throws Exception {
-        write(new File(dirs.in, "regular-" + TOK3 + ".font"), 10);
-        FontLibrary.Picks ps = new FontLibrary.Picks(dirs);
-        is("copies a closed window left behind are removed", new File(dirs.in, "regular-" + TOK3 + ".font").exists(), false);
+        File w1 = dirs.pickFolder("0000000000a1"), w2 = dirs.pickFolder("0000000000a2");
+        write(new File(w1, "regular-" + TOK3 + ".font"), 10);
+        FontLibrary.Picks ps = new FontLibrary.Picks(w1);
+        is("copies left in the window's folder are removed", new File(w1, "regular-" + TOK3 + ".font").exists(), false);
+        eq("a pick's copy is in the window's folder", ps.fileFor("bold", TOK1), new File(w1, "bold-" + TOK1 + ".font"));
         FontLibrary.Pick a = pick(ps, "regular", TOK1);
         eq("colour defaults to none", a.color, "none");
         is("the pick is known", ps.get(TOK1) == a, true);
@@ -137,8 +144,36 @@ public class FontLibraryTest {
         ps.release(d);
         ps.release(null);
         is("an extra release does nothing", d.file.exists(), true);
+
+        // a second window (PKG-5): its own folder; starting and closing it leaves the first window's copies alone
+        FontLibrary.Picks other = new FontLibrary.Picks(w2);
+        is("a second window's picks leave the first one's copies", c.file.exists() && d.file.exists() && ps.get(TOK3) == d, true);
+        FontLibrary.Pick o = pick(other, "regular", TOK2);
+        other.clear();
+        is("…and so does closing it", c.file.exists() && d.file.exists() && !o.file.exists(), true);
+
+        // two choices of one slot copied side by side (DL-4): the copy of the earlier one ends last and is not kept
+        int first = ps.ask("emoji"), second = ps.ask("emoji");
+        is("choices are numbered in order", second > first, true);
+        String t4 = repeat("9", 32), t5 = repeat("7", 32);
+        File fb = ps.fileFor("emoji", TOK2), fa = ps.fileFor("emoji", t4);
+        write(fb, 50);
+        write(fa, 50);
+        FontLibrary.Pick later = new FontLibrary.Pick("emoji", TOK2, "local.ttf", fb, 50, "COLRv0", "TrueType", false);
+        FontLibrary.Pick earlier = new FontLibrary.Pick("emoji", t4, "cloud.ttf", fa, 50, "COLRv0", "TrueType", false);
+        is("the later choice, copied first, is kept", ps.put(later, second), true);
+        is("the earlier choice, copied last, is refused", ps.put(earlier, first), false);
+        is("…its copy is deleted", fa.exists(), false);
+        is("…and the later one stays the slot's", ps.get(TOK2) == later && fb.exists(), true);
+        eq("…the earlier one is unknown", ps.get(t4), null);
+        int third = ps.ask("emoji");
+        File fc = ps.fileFor("emoji", t5);
+        write(fc, 50);
+        is("a newer choice still replaces it", ps.put(new FontLibrary.Pick("emoji", t5, "new.ttf", fc, 50, "COLRv0", "TrueType", false), third)
+                && ps.get(TOK2) == null && !fb.exists(), true);
+
         ps.clear();
-        is("clear deletes every copy", c.file.exists() || d.file.exists(), false);
+        is("clear deletes every copy", c.file.exists() || d.file.exists() || fc.exists(), false);
         eq("…and forgets them", ps.get(TOK3), null);
     }
 
@@ -348,6 +383,40 @@ public class FontLibraryTest {
         is("the entry itself stays", FontLibrary.read(dirs, id3) != null, true);
         eq("a folder that is not an id is not listed", FontLibrary.list(dirs).size(), 3);
 
+        // a power cut right after a build (PKG-4): an entry whose files did not reach the disk is never listed and has no id the page could
+        // delete it by, so the sweep deletes it; one made again whose new files did not get there is the old one again
+        String id5 = "aaaaaaaaaaa5", id6 = "aaaaaaaaaaa6";
+        FontLibrary.commit(dirs, stageWith(id5, r, 300, 100, 0), entry(id5, "Fifth", false));
+        write(new File(dirs.entryDir(id5), FontLibrary.APK), 0);
+        FontLibrary.commit(dirs, stageWith(id6, r, 300, 100, 0), entry(id6, "Sixth", false));
+        File old6 = new File(dirs.library, ".old-" + id6 + "-789");
+        is("the old folder moved aside", dirs.entryDir(id6).renameTo(old6), true);
+        FontLibrary.Entry e6b = entry(id6, "Sixth", false);
+        e6b.versionCode = 2;
+        FontLibrary.commit(dirs, stageWith(id6, r, 300, 100, 0), e6b);
+        write(new File(dirs.entryDir(id6), FontLibrary.REGULAR), 0);
+        write(new File(dirs.entryDir("aaaaaaaaaaa7"), FontLibrary.APK), 10);    // no meta.json at all
+        FontLibrary.sweep(dirs);
+        is("an entry whose files are short is deleted", dirs.entryDir(id5).exists(), false);
+        is("a folder named as an entry with no meta.json is deleted", dirs.entryDir("aaaaaaaaaaa7").exists(), false);
+        FontLibrary.Entry back6 = FontLibrary.read(dirs, id6);
+        is("a broken entry made again is the old one again", back6 != null && back6.versionCode == 1 && !old6.exists(), true);
+        is("whole entries stay", FontLibrary.read(dirs, id1) != null && FontLibrary.read(dirs, id2) != null && FontLibrary.read(dirs, id3) != null, true);
+        is("a folder that is not an id is left alone", new File(dirs.library, "not-an-id").isDirectory(), true);
+        FontLibrary.delete(dirs, id6);
+
+        // commit flushes every file it puts in place and the library folder's rename, not only meta.json (PKG-4)
+        String commitBody = body(String.valueOf(src("src/com/bloatware/bingblop/FontLibrary.java")), "public static void commit(");
+        is("commit syncs the staged files", commitBody.contains("syncFile(f)"), true);
+        is("…before meta.json is written", commitBody.indexOf("syncFile(f)") < commitBody.indexOf("writeAtomic("), true);
+        is("…and the rename", commitBody.contains("syncDir(d.library)"), true);
+        File synced = new File(tmp, "synced.bin");
+        write(synced, 10);
+        FontLibrary.syncFile(synced);
+        FontLibrary.syncDir(tmp);
+        FontLibrary.syncDir(new File(tmp, "no-such-folder"));
+        eq("a synced file is unchanged", synced.length(), 10L);
+
         // a commit that cannot rename leaves nothing staged
         File s4 = stageWith("aaaaaaaaaaa4", r, 1, 1, 0);
         FontLibrary.Entry bad = entry("aaaaaaaaaaa4", "Bad", false);
@@ -460,6 +529,36 @@ public class FontLibraryTest {
         is("all cancelled", a.cancelled() && d2.cancelled(), true);
         eq("size", j.size(), 3);
 
+        // one set of jobs for the process (PKG-5, DL-5): a window that closes stops only the jobs it started
+        FontLibrary.Jobs w = new FontLibrary.Jobs();
+        Object win1 = new Object(), win2 = new Object();
+        FontLibrary.Jobs.Job b1 = w.startFor(win1, null, "build", "only", "tok:" + TOK1);
+        eq("busy: a build from another window", w.startFor(win2, null, "build", "only"), null);
+        FontLibrary.Jobs.Job dl2 = w.startFor(win2, null, "emoji", "noto");
+        eq("busy: the same download from another window", w.startFor(win1, null, "emoji", "noto"), null);
+        FontLibrary.Jobs.Job any = w.start("emoji", "twemoji");
+        List<FontLibrary.Jobs.Job> stopped = w.cancelAll(win2);
+        is("closing a window cancels its jobs", dl2.cancelled() && stopped.size() == 1 && stopped.get(0) == dl2, true);
+        is("…and not the other window's, or one with no window", b1.cancelled() || any.cancelled(), false);
+        eq("no window: nothing", w.cancelAll(null).size(), 0);
+
+        // a font made again and its install, apply or save exclude each other, in one step ((b), (c))
+        String id = "aaaaaaaaaaa1";
+        FontLibrary.Jobs x = new FontLibrary.Jobs();
+        FontLibrary.Jobs.Job inst = x.startFor(win1, "make:" + id, "install", id, "id:" + id);
+        is("an install starts", inst != null, true);
+        eq("refused: made again while it installs", x.startFor(win1, "id:" + id, "build", "only", "id:" + id, "make:" + id), null);
+        is("…another font may be made", x.startFor(win1, "id:bbbbbbbbbbb1", "build", "only", "id:bbbbbbbbbbb1", "make:bbbbbbbbbbb1") != null, true);
+        x.finish(x.running("build", "only"));
+        x.finish(inst);
+        FontLibrary.Jobs.Job make = x.startFor(win1, "id:" + id, "build", "only", "tok:" + TOK1, "id:" + id, "make:" + id);
+        is("made again once nothing else uses it", make != null, true);
+        eq("refused: an install while it is made again", x.startFor(win1, "make:" + id, "install", id, "id:" + id), null);
+        eq("refused: an apply", x.startFor(win1, "make:" + id, "apply", "only", "id:" + id), null);
+        eq("refused: a save", x.startFor(win1, "make:" + id, "export", "1", "id:" + id), null);
+        is("an uninstall is not refused by busyIf null", x.startFor(win1, null, "uninstall", id, "id:" + id) != null, true);
+        is("a new font being made does not hold make:", x.inUse("make:"), false);
+
         FontLibrary.Throttle t = new FontLibrary.Throttle(125);
         is("first", t.due("read", 0, 10, 1000), true);
         is("too soon", t.due("read", 1, 10, 1050), false);
@@ -467,6 +566,79 @@ public class FontLibraryTest {
         is("the end of a stage", t.due("instance", 10, 10, 1070), true);
         is("after the gap", t.due("instance", 5, 10, 1300), true);
         is("unknown total, too soon", t.due("instance", 5, 0, 1310), false);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+
+    /** Who a font being made is: a new one, or one made again (rebuildId) that keeps its id, suffix and package and goes up a version. */
+    static void rebuilds() throws Exception {
+        long now = 5000;
+        FontLibrary.Entry fresh = FontLibrary.entryFor("My Font", null, "bbbbbbbbbbb1", now);
+        eq("a new font: the fresh id", fresh.id, "bbbbbbbbbbb1");
+        eq("…a suffix from its name and id", fresh.suffix, FontPackage.suffixFor("My Font", "bbbbbbbbbbb1"));
+        eq("…its package", fresh.pkg, FontPackage.packageName(fresh.suffix));
+        is("…made now", fresh.created == now && fresh.updated == now, true);
+        eq("…version 1 with nothing installed", FontLibrary.versionCodeFor(null, 0), 1);
+        eq("…above a package of that name on the phone", FontLibrary.versionCodeFor(null, 4), 5);
+        boolean threw = false;
+        try { FontLibrary.entryFor("My Font", null, "../x", now); } catch (IllegalArgumentException e) { threw = true; }
+        is("a new font needs an id", threw, true);
+
+        FontLibrary.Entry old = entry("bbbbbbbbbbb2", "Old Name", false);
+        old.versionCode = 3;
+        FontLibrary.Entry again = FontLibrary.entryFor("New Name", old, null, now);
+        eq("made again: the same id", again.id, old.id);
+        eq("…the same suffix, though the name changed", again.suffix, old.suffix);
+        eq("…the same package", again.pkg, old.pkg);
+        eq("…the new name", again.name, "New Name");
+        is("…made then, updated now", again.created == old.created && again.updated == now, true);
+        eq("…the next versionCode", FontLibrary.versionCodeFor(old, 0), 4);
+        eq("…above the one installed", FontLibrary.versionCodeFor(old, 9), 10);
+        eq("…an installed one below the entry's", FontLibrary.versionCodeFor(old, 2), 4);
+        String code = "none";
+        try { FontLibrary.versionCodeFor(old, Long.MAX_VALUE); } catch (Sfnt.FontException e) { code = e.code; }
+        eq("…no version past the top", code, "bad_version");
+
+        // in the library: the same folder, replaced whole
+        Random r = new Random(11);
+        FontLibrary.Entry first = entry("bbbbbbbbbbb2", "Old Name", true);
+        FontLibrary.commit(dirs, stageWith(first.id, r, 300, 100, 200), first);
+        FontLibrary.Entry second = FontLibrary.entryFor("New Name", FontLibrary.read(dirs, first.id), null, 9000);
+        second.versionCode = FontLibrary.versionCodeFor(FontLibrary.read(dirs, first.id), 0);
+        second.hasBold = false;
+        second.apkSize = 310; second.regularSize = 100;
+        second.apkSha = SHA_B; second.regularSha = SHA_C;
+        second.sources = new JSONObject();
+        FontLibrary.commit(dirs, stageWith(second.id, r, 310, 100, 0), second);
+        FontLibrary.Entry back = FontLibrary.read(dirs, first.id);
+        is("made again in place", back != null && back.versionCode == 2 && back.suffix.equals(first.suffix) && back.pkg.equals(first.pkg) && back.name.equals("New Name"), true);
+        is("…the old files are gone", new File(dirs.entryDir(first.id), FontLibrary.BOLD).exists(), false);
+        int extra = 0;
+        for (File k : dirs.library.listFiles()) if (k.getName().startsWith(".")) extra++;
+        eq("…nothing left beside it", extra, 0);
+        FontLibrary.delete(dirs, first.id);
+    }
+
+    /** What a download that failed says (DL-2), and the Android a merged emoji font needs (PAGE-4). */
+    static void downloads() throws Exception {
+        JSONObject gone = FontLibrary.downloadError(404, "the server answered HTTP 404");
+        is("404: not ok", gone.optBoolean("ok", true), false);
+        eq("404: code http", gone.optString("code"), "http");
+        eq("…with the status", gone.optInt("status"), 404);
+        eq("…the file moved away", gone.optString("error"), "The file is no longer at its address (HTTP 404). Update the app.");
+        eq("410 too", FontLibrary.downloadError(410, "").optString("error"), "The file is no longer at its address (HTTP 410). Update the app.");
+        JSONObject later = FontLibrary.downloadError(429, "the server answered HTTP 429");
+        is("429: try again later", later.optString("code").equals("http") && later.optInt("status") == 429
+                && later.optString("error").equals("The server answered HTTP 429. Try again later."), true);
+        JSONObject full = FontLibrary.downloadError(0, "write failed: ENOSPC (No space left on device)");
+        is("a full disk is no_space", full.optString("code").equals("no_space") && full.optString("error").equals("There is not enough free space on this phone."), true);
+        JSONObject net = FontLibrary.downloadError(0, "Read timed out");
+        is("a timeout is the network", net.optString("code").equals("network") && net.optString("error").equals("The download failed: Read timed out") && !net.has("status"), true);
+        eq("no detail", FontLibrary.downloadError(0, null).optString("error"), "The download failed: no answer");
+
+        eq("COLRv1 inside a font needs Android 13", FontLibrary.minApiForEmoji("COLRv1"), 33);
+        eq("COLRv0 from Android 8", FontLibrary.minApiForEmoji("COLRv0"), 26);
+        eq("no colour: no limit of its own", FontLibrary.minApiForEmoji(null), 26);
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -733,7 +905,7 @@ public class FontLibraryTest {
         is("the build catches OutOfMemoryError as no_memory", body(ma, "private void fmkBuildJob(").contains("catch (OutOfMemoryError oom)") && body(ma, "private void fmkBuildJob(").contains("\"no_memory\""), true);
         is("the base64 answers are capped", body(ma, "private String fmkBase64(").contains("FontLibrary.MAX_PREVIEW_BYTES"), true);
         is("a delete waits for an install, an uninstall or an apply of the font, and for a swap of the emoji font",
-                body(ma, "private String fmkLibraryJob(").contains("fmkJobs.start(kind, id, \"id:\" + id)") && body(ma, "private String fmkPrivJob(").contains("\"sys:\" : \"id:\"")
+                body(ma, "private String fmkLibraryJob(").contains("kind, id, \"id:\" + id)") && body(ma, "private String fmkPrivJob(").contains("\"sys:\" : \"id:\"")
                         && body(ma, "private String fmkDelete(").contains("fmkJobs.inUse(\"id:\" + id)") && body(ma, "public String emojiDelete(").contains("fmkJobs.inUse(\"sys:\" + id)"), true);
         is("the request codes reach the tab", ma.contains("requestCode == REQ_FONTMAKER_PICK") && ma.contains("requestCode == REQ_FONTMAKER_EXPORT"), true);
         String pick = body(ma, "private JSONObject fmkCopyPick(");
@@ -748,8 +920,67 @@ public class FontLibraryTest {
         String destroy = body(ma, "protected void onDestroy()");
         is("onDestroy stops the font executor", destroy.contains("fontExec.shutdownNow()"), true);
         is("onDestroy stops the privileged font executor", destroy.contains("fontPrivExec.shutdown()"), true);
-        is("onDestroy cancels the font jobs", destroy.contains("fmkJobs.cancelAll()"), true);
+        is("onDestroy cancels this window's font jobs and drops their downloads", destroy.contains("fmkDisconnect(fmkJobs.cancelAll(this))"), true);
         is("onDestroy deletes the picked copies", destroy.contains("fmkPicks.clear()"), true);
-        is("onDestroy drops the downloads", destroy.contains("fmkDisconnectAll()"), true);
+        is("…not another window's jobs", destroy.contains("fmkJobs.cancelAll()"), false);
+
+        // one set of jobs, downloads and folders for the process; a window's picks in a folder of its own (PKG-5, DL-5, PKG-7, DL-3)
+        is("the jobs belong to the process", ma.contains("private static final FontLibrary.Jobs fmkJobs = new FontLibrary.Jobs();"), true);
+        is("…and the open downloads", ma.contains("private static final java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection> fmkConns"), true);
+        String dirsBody = body(ma, "private FontLibrary.Dirs fmkDirs()");
+        is("the folders are tidied once per process", dirsBody.contains("synchronized (fmkSharedLock)") && dirsBody.contains("if (fmkSharedDirs == null)"), true);
+        is("…the library swept", dirsBody.contains("FontLibrary.sweep(d)"), true);
+        is("…a download's leftovers swept", dirsBody.contains("EmojiCatalog.sweep(d.emoji)"), true);
+        is("…the picked copies of a process that ended removed", dirsBody.contains("FontLibrary.deleteTree(d.in)"), true);
+        is("a window's picks are in its own folder", body(ma, "private FontLibrary.Picks fmkPicks()").contains("new FontLibrary.Picks(d.pickFolder("), true);
+
+        // a choice copied after a later one of the slot does not replace it (DL-4)
+        is("the choices are numbered as they come in", body(ma, "private void fmkPickResult(").contains("fmkPicks().ask(slot)"), true);
+        is("…and a copy of an older one is not kept", body(ma, "private JSONObject fmkCopyPick(").contains("info.variable), ask))"), true);
+
+        // one file chooser and one save screen at a time; a save that does not finish leaves no file (PKG-6, DL-6)
+        String pick = body(ma, "public String fontMakerPick(");
+        is("a second chooser is refused", pick.contains("if (fmkPickSlot != null) return fmkErr(\"busy\""), true);
+        String export = body(ma, "public String fontMakerExport(");
+        is("a second save screen is refused", export.contains("if (fmkExportId != null) return fmkErr(\"busy\""), true);
+        is("…and a save of a font being made again", export.contains("fmkJobs.inUse(\"make:\" + id)"), true);
+        is("the open save screen's font is kept when Android ends the process", body(ma, "protected void onSaveInstanceState(").contains("outState.putString(STATE_FMK_EXPORT, fmkExportId)")
+                && body(ma, "protected void onCreate(").contains("savedInstanceState.getString(STATE_FMK_EXPORT)"), true);
+        String exResult = body(ma, "private void fmkExportResult(");
+        is("a save with no font waiting deletes the empty file", exResult.indexOf("if (uri != null) fmkDropDocument(uri)") > 0
+                && exResult.indexOf("if (uri != null) fmkDropDocument(uri)") < exResult.indexOf("fontExec.submit("), true);
+        is("a save holds the font while it copies", exResult.contains("fmkJobs.startFor(this, \"make:\" + id, \"export\"") && exResult.contains("\"id:\" + id)"), true);
+        String exTo = body(ma, "private JSONObject fmkExportTo(");
+        is("a save that is not whole is deleted", exTo.contains("whole = true;") && exTo.contains("if (!whole) fmkDeleteDocument(uri)"), true);
+
+        // Cancel reaches a download that is still connecting or waiting; what failed is said (DL-1, DL-2)
+        is("each hop of a download can be disconnected", dl.contains("new HttpSafe.Hops()") && dl.contains("fmkConns.put(job.id, hop)"), true);
+        is("…and a Cancel that came before it is honoured", dl.indexOf("fmkConns.put(job.id, hop)") < dl.indexOf("if (p.cancelled()) throw new EmojiCatalog.VerifyException(\"cancelled\""), true);
+        is("an HTTP answer and a full disk are told apart from the network", dl.contains("FontLibrary.downloadError(status, errMsg(t))") && dl.contains("status = code;"), true);
+
+        // an own COLRv1 emoji file is refused below Android 13 (PAGE-4)
+        String start = body(ma, "private String fmkStartBuild(");
+        is("own COLRv1 emoji below 13 is not_usable", start.contains("FontLibrary.minApiForEmoji(emo.color) > Build.VERSION.SDK_INT") && start.contains("return fmkErr(\"not_usable\""), true);
+
+        // a font made again: same id, suffix and package, a higher versionCode, and never while it is installed, applied or saved ((b), (c))
+        is("a font made again is refused while it is installed, applied or saved", start.contains("fmkJobs.startFor(this, rebuild == null ? null : \"id:\" + rebuild.id, \"build\", \"only\"")
+                && start.contains("rebuild == null ? null : \"make:\" + rebuild.id"), true);
+        is("…and they are refused while it is made again", body(ma, "private String fmkLibraryJob(").contains("\"install\".equals(kind) ? \"make:\" + id : null")
+                && body(ma, "private String fmkPrivJob(").contains("\"apply\".equals(kind) && id != null ? \"make:\" + id : null"), true);
+        String build = body(ma, "private void fmkBuildJob(");
+        is("the build takes who the font is from FontLibrary", build.contains("FontLibrary.entryFor(req.name, rebuild, rebuild != null ? null : fmkNewId(d), now)")
+                && build.contains("FontLibrary.versionCodeFor(rebuild, installed)"), true);
+
+        // the install question says the file was checked against the recorded SHA-256, and the file pm gets is the one checked ((a))
+        is("the install question is the font package's", install.contains("InstallConfirm.messageFontPackage(") && !install.contains("InstallConfirm.messageLocalFile("), true);
+        is("…after the copy pm installs is checked", install.indexOf("FontLibrary.sha256(copy)") > 0 && install.indexOf("FontLibrary.sha256(copy)") < install.indexOf("confirmInMode("), true);
+
+        // the update check leaves the app's own font packages out (PKG-3)
+        String upd = body(ma, "private void runUpdateCheck(");
+        is("the update check skips the font packages made here", upd.contains("Set<String> ownFonts = fmkMadeHere();") && upd.indexOf("if (ownFonts.contains(ai.packageName)) continue;") > 0
+                && upd.indexOf("if (ownFonts.contains(ai.packageName)) continue;") < upd.indexOf("isGalaxyStoreCandidate(ai, inst)"), true);
+        String made = body(ma, "private Set<String> fmkMadeHere()");
+        is("…told by My fonts and the app's key", made.contains("FontLibrary.list(fmkDirs())") && made.contains("SigningKey.existing()") && made.contains("signerDigests(pi, true)")
+                && made.contains("FontPackage.madeHere(pkg, system, suffixes, signerDigests(pi, true), key)"), true);
     }
 }

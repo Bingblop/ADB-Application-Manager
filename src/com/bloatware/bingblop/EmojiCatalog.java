@@ -105,12 +105,13 @@ public final class EmojiCatalog {
 
     private static List<Item> buildItems() {
         List<Item> l = new ArrayList<Item>();
+        // Noto's licence is the one next to the font, at the tag the font comes from (the repository moved its fonts to 2D/fonts)
         l.add(new Item(
                 "noto", "Noto Color Emoji", "Unicode 18", "COLRv1", true, 33,
                 "https://raw.githubusercontent.com/googlefonts/noto-emoji/v2026-09-24-unicode18_0/2D/fonts/Noto-COLRv1.ttf",
                 5038236L, "b8e25ea68db82f9e4d0aee921f4420be2be39887bd5c893a2ad98710531f9d0c",
                 null, 0, null, null,
-                "OFL-1.1", "https://github.com/googlefonts/noto-emoji/blob/main/fonts/LICENSE", "https://github.com/googlefonts/noto-emoji",
+                "OFL-1.1", "https://github.com/googlefonts/noto-emoji/blob/v2026-09-24-unicode18_0/2D/fonts/LICENSE", "https://github.com/googlefonts/noto-emoji",
                 "Noto Color Emoji, Copyright 2022 Google Inc.", ""));
         l.add(new Item(
                 "twemoji", "Twemoji", "17", "COLRv0", true, 26,
@@ -220,6 +221,7 @@ public final class EmojiCatalog {
             } finally {
                 out.close();
             }
+            if (p.cancelled()) throw new VerifyException("cancelled", "The download was cancelled.");     // a Cancel that came with the last bytes
             if (total != expectedSize) throw new VerifyException("size_mismatch", "This file is the wrong size (" + total + " bytes, expected " + expectedSize + ").");
             String got = hex(md.digest());
             if (!got.equals(want)) throw new VerifyException("sha_mismatch", "This file did not match its checksum; it was not kept.");
@@ -256,6 +258,23 @@ public final class EmojiCatalog {
         } finally {
             if (in != null) try { in.close(); } catch (IOException ignored) {}
         }
+    }
+
+    /**
+     * Deletes what downloads that never ended left in the emoji folder: the hidden {@code .part} files of {@link #download} and Twemoji's
+     * hidden zip ({@code .twemoji.zip}). A process that is killed (swiped away, or by the low-memory killer) never reaches the code that
+     * deletes them, and the folder is not a cache Android clears. Only for a time when no download runs: the app calls it once, when the
+     * process first uses the tab. Returns how many files went.
+     */
+    public static int sweep(File dir) {
+        File[] kids = dir == null ? null : dir.listFiles();
+        if (kids == null) return 0;
+        int n = 0;
+        for (File k : kids) {
+            String name = k.getName();
+            if (k.isFile() && name.startsWith(".") && (name.endsWith(".part") || name.endsWith(".zip")) && k.delete()) n++;
+        }
+        return n;
     }
 
     private static void moveInto(File part, File dest) throws IOException {

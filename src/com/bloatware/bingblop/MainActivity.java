@@ -380,6 +380,13 @@ public class MainActivity extends Activity {
         if (savedInstanceState != null) {
             String kept = savedInstanceState.getString(STATE_PENDING_INSTALL);
             if (kept != null) pendingInstallRef = kept;                // arrived, but the page was not ready to take it yet
+            // a font package's "save as" that was open when Android ended the process: its answer comes to this window
+            String export = savedInstanceState.getString(STATE_FMK_EXPORT);
+            if (FontLibrary.isId(export)) {
+                synchronized (fmkLock) {
+                    fmkExportId = export;
+                }
+            }
         }
         Intent launch = getIntent();
         if (launch != null && IncomingInstall.handOverAtCreate(launch.getAction(), launch.getFlags(), savedInstanceState != null)) handleIncomingIntent(launch);
@@ -467,6 +474,9 @@ public class MainActivity extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (pendingInstallRef != null) outState.putString(STATE_PENDING_INSTALL, pendingInstallRef);
+        synchronized (fmkLock) {
+            if (fmkExportId != null) outState.putString(STATE_FMK_EXPORT, fmkExportId);
+        }
     }
 
     @Override
@@ -2644,7 +2654,9 @@ public class MainActivity extends Activity {
                             PackageManager pm = getPackageManager();
                             JSONObject sources = updateSources();
                             List<UpdateChecker.App> apps = new ArrayList<UpdateChecker.App>();
+                            Set<String> ownFonts = fmkMadeHere();          // font packages made in Custom Fonts: no store has them
                             for (ApplicationInfo ai : pm.getInstalledApplications(0)) {
+                                if (ownFonts.contains(ai.packageName)) continue;
                                 String inst = installerOf(ai.packageName);
                                 boolean os = isOpenSourceCandidate(ai, inst, sources);
                                 boolean gx = isGalaxyStoreCandidate(ai, inst);
@@ -6720,31 +6732,40 @@ public class MainActivity extends Activity {
     private final ExecutorService fontExec = Executors.newCachedThreadPool();
     private final ExecutorService fontPrivExec = Executors.newSingleThreadExecutor();
     private final java.security.SecureRandom fmkRandom = new java.security.SecureRandom();
-    private final FontLibrary.Jobs fmkJobs = new FontLibrary.Jobs();
-    // the open downloads by job id: Cancel (and the window closing) disconnects them, so a stalled read ends at once
-    private final java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection> fmkConns = new java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection>();
+    // The library, the jobs and the open downloads belong to the process, not to one window: a second window (an APK opened with this app from
+    // a file manager, a Quick Settings tile's long press) sees what the first one runs, and the folders are tidied once, before anything uses
+    // them. A window's picked files are in a folder of its own, and a window that closes stops only the jobs it started.
+    private static final FontLibrary.Jobs fmkJobs = new FontLibrary.Jobs();
+    // the open downloads by job id: Cancel (and the window closing) disconnects them, so a stalled connect or read ends at once
+    private static final java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection> fmkConns = new java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection>();
+    private static final Object fmkSharedLock = new Object();
+    private static FontLibrary.Dirs fmkSharedDirs;      // made on first use in the process: the files folder is not there before onCreate
+    private static final String STATE_FMK_EXPORT = "fontmaker_export_id";
     private final Object fmkLock = new Object();
-    private FontLibrary.Dirs fmkDirs;            // made on first use: the files folder is not there before onCreate
     private FontLibrary.Picks fmkPicks;
-    private String fmkPickSlot, fmkExportId;     // what the open file chooser / "save as" is for (UI thread)
+    private String fmkPickSlot, fmkExportId;     // what the open file chooser / "save as" is for, one at a time (guarded by fmkLock)
     private volatile int fmkOneUiRaw = -1;       // ro.build.version.oneui (80500 = 8.5), read once
     private volatile String fmkOneUiText;
 
     private FontLibrary.Dirs fmkDirs() {
-        synchronized (fmkLock) {
-            if (fmkDirs == null) {
-                fmkDirs = new FontLibrary.Dirs(getFilesDir(), getCacheDir());
-                FontLibrary.sweep(fmkDirs);                 // a build cut short by a crash leaves a staged folder; a rebuild, the old one moved aside
-                FontLibrary.deleteTree(fmkDirs.work);
+        synchronized (fmkSharedLock) {
+            if (fmkSharedDirs == null) {
+                FontLibrary.Dirs d = new FontLibrary.Dirs(getFilesDir(), getCacheDir());
+                // once per process, before any job: what a crash, a power cut or a killed process left
+                FontLibrary.sweep(d);                       // staged folders, a folder a rebuild moved aside, an entry whose files did not reach the disk
+                EmojiCatalog.sweep(d.emoji);                // a download's .part file and Twemoji's zip
+                FontLibrary.deleteTree(d.work);
+                FontLibrary.deleteTree(d.in);               // picked copies: the pages that knew their tokens are gone
+                fmkSharedDirs = d;
             }
-            return fmkDirs;
+            return fmkSharedDirs;
         }
     }
 
     private FontLibrary.Picks fmkPicks() {
         FontLibrary.Dirs d = fmkDirs();
         synchronized (fmkLock) {
-            if (fmkPicks == null) fmkPicks = new FontLibrary.Picks(d);     // starts by deleting the copies a closed window left behind
+            if (fmkPicks == null) fmkPicks = new FontLibrary.Picks(d.pickFolder(FontLibrary.newId(fmkRandom)));     // this window's own folder
             return fmkPicks;
         }
     }
@@ -6845,6 +6866,33 @@ public class MainActivity extends Activity {
         return out;
     }
 
+    /**
+     * The installed font packages this app made (FontPackage.madeHere: in My fonts, or signed with the app's key), which the update check
+     * leaves out. Install names Samsung's store as their installer, so the check would otherwise ask the Galaxy Store about each one, sending
+     * the font's name along with the phone's model and region, for a package no store has.
+     */
+    private Set<String> fmkMadeHere() {
+        Set<String> out = new HashSet<String>();
+        try {
+            Set<String> suffixes = new HashSet<String>();
+            for (FontLibrary.Entry e : FontLibrary.list(fmkDirs())) suffixes.add(e.suffix);
+            String key = null;
+            try {
+                SigningKey k = SigningKey.existing();
+                if (k != null) key = k.sha256();
+            } catch (Throwable noKey) {}
+            int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+            for (String pkg : fmkFontPackages()) {
+                try {
+                    PackageInfo pi = getPackageManager().getPackageInfo(pkg, sigFlags);
+                    boolean system = pi.applicationInfo != null && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+                    if (FontPackage.madeHere(pkg, system, suffixes, signerDigests(pi, true), key)) out.add(pkg);
+                } catch (Throwable gone) {}
+            }
+        } catch (Throwable ignored) {}
+        return out;
+    }
+
     /** One UI as major*100 + minor*10 (8.5 is 850; 0 off Samsung or unreadable), from ro.build.version.oneui, else Build.VERSION.SEM_PLATFORM_INT. */
     private int fmkOneUi100() {
         if (!isSamsung()) return 0;
@@ -6901,23 +6949,27 @@ public class MainActivity extends Activity {
     private void fmkPickResult(final String slot, final Uri uri) {
         if (slot == null) return;
         if (uri == null) { fmkPicked(slot, FontLibrary.error("cancelled", "No file was chosen.")); return; }
+        // the choices are numbered as they come in (fontMakerPick made the picks already, so nothing is read here, on the UI thread): a copy
+        // from a slow provider that ends after a later choice of the slot does not replace it
+        final int ask = fmkPicks().ask(slot);
         try {
             fontExec.submit(new Runnable() {
                 @Override
                 public void run() {
-                    fmkPicked(slot, fmkCopyPick(slot, uri));
+                    fmkPicked(slot, fmkCopyPick(slot, uri, ask));
                 }
             });
         } catch (RejectedExecutionException closing) {}
     }
 
     /**
-     * Copies the chosen file to cache/fontmaker/in/ (at most 96 MB: one byte more and the copy stops and is deleted), reads what it is with
-     * FontInspect and keeps it under a new random token, the only name the page gets for it. The emoji slot takes only a colour (COLR) font
-     * with TrueType outlines, and is not warned that it has no letters.
-     * {ok, token, fileName, size, info} or {ok:false, code, error}.
+     * Copies the chosen file to this window's folder in cache/fontmaker/in/ (at most 96 MB: one byte more and the copy stops and is deleted),
+     * reads what it is with FontInspect and keeps it under a new random token, the only name the page gets for it, unless a later choice of
+     * the slot ({@code ask}) came in meanwhile. The emoji slot takes only a colour (COLR) font with TrueType outlines, and is not warned that
+     * it has no letters.
+     * {ok, token, fileName, size, info} or {ok:false, code, error} ("cancelled" for a choice a later one replaced).
      */
-    private JSONObject fmkCopyPick(String slot, Uri uri) {
+    private JSONObject fmkCopyPick(String slot, Uri uri, int ask) {
         FontLibrary.Picks picks = fmkPicks();
         String token = FontLibrary.newToken(fmkRandom);
         File f = picks.fileFor(slot, token);
@@ -6951,7 +7003,8 @@ public class MainActivity extends Activity {
                             + "); only an emoji font with TrueType outlines (glyf) can be added. Choose another emoji font.");
                 info.warnings.remove(FontInspect.W_NO_LATIN);                 // an emoji font needs no letters
             }
-            picks.put(new FontLibrary.Pick(slot, token, name, f, size, info.color, info.outlines, info.variable));
+            if (!picks.put(new FontLibrary.Pick(slot, token, name, f, size, info.color, info.outlines, info.variable), ask))
+                return FontLibrary.error("cancelled", "A later choice replaced this file.");
             kept = true;
             return new JSONObject().put("ok", true).put("token", token).put("fileName", name).put("size", size).put("info", FontLibrary.infoJson(info));
         } catch (Sfnt.FontException fe) {
@@ -6993,16 +7046,24 @@ public class MainActivity extends Activity {
         } else if (req.emojiToken != null) {
             emo = picks.get(req.emojiToken);
             if (emo == null || !"emoji".equals(emo.slot)) return fmkErr("bad_request", "Choose the emoji font file again.");
+            // Android draws COLRv1 from 13 on: inside a font on an older phone, every emoji would be blank (the font's own emoji hide the phone's)
+            if (FontLibrary.minApiForEmoji(emo.color) > Build.VERSION.SDK_INT)
+                return fmkErr("not_usable", "Emoji font: this COLRv1 emoji font needs Android 13 or newer to show inside a font.");
         }
         FontLibrary.Entry rebuild = null;
         if (req.rebuildId != null) {
             rebuild = FontLibrary.read(d, req.rebuildId);
             if (rebuild == null) return fmkErr("not_found", FMK_NOT_FOUND);
         }
-        // one build at a time (a variable font made static twice and an emoji merge can take a few hundred MB)
-        final FontLibrary.Jobs.Job job = fmkJobs.start("build", "only", "tok:" + reg.token, bold == null ? null : "tok:" + bold.token,
-                emo == null ? null : "tok:" + emo.token, item == null ? null : "cat:" + item.id, rebuild == null ? null : "id:" + rebuild.id);
-        if (job == null) return fmkErr("busy", "A font is being made. Wait for it to finish, or cancel it.");
+        // one build at a time (a variable font made static twice and an emoji merge can take a few hundred MB). A font made again is not
+        // started while it is installed, applied or saved ("id:"), and holds "make:" so none of those starts while its files are replaced.
+        final FontLibrary.Jobs.Job job = fmkJobs.startFor(this, rebuild == null ? null : "id:" + rebuild.id, "build", "only",
+                "tok:" + reg.token, bold == null ? null : "tok:" + bold.token, emo == null ? null : "tok:" + emo.token, item == null ? null : "cat:" + item.id,
+                rebuild == null ? null : "id:" + rebuild.id, rebuild == null ? null : "make:" + rebuild.id);
+        if (job == null) {
+            if (fmkJobs.running("build", "only") != null) return fmkErr("busy", "A font is being made. Wait for it to finish, or cancel it.");
+            return fmkErr("busy", "This font is being installed, applied or saved. Wait for it to finish.");
+        }
         picks.hold(reg);
         picks.hold(bold);
         picks.hold(emo);
@@ -7088,16 +7149,9 @@ public class MainActivity extends Activity {
             br = null;                                                   // the sources can go before the package is written
             regData = null;
 
-            FontLibrary.Entry e = new FontLibrary.Entry();
-            e.id = rebuild != null ? rebuild.id : fmkNewId(d);
-            e.name = req.name;
-            e.suffix = rebuild != null ? rebuild.suffix : FontPackage.suffixFor(req.name, e.id);
-            e.pkg = FontPackage.packageName(e.suffix);
+            FontLibrary.Entry e = FontLibrary.entryFor(req.name, rebuild, rebuild != null ? null : fmkNewId(d), now);
             long installed = fmkInstalledVersion(e.pkg);
-            int onPhone = (int) Math.min(Integer.MAX_VALUE, installed);
-            e.versionCode = rebuild != null ? FontPackage.nextVersionCode(rebuild.versionCode, onPhone) : installed > 0 ? FontPackage.nextVersionCode(1, onPhone) : 1;
-            e.created = rebuild != null ? rebuild.created : now;
-            e.updated = now;
+            e.versionCode = FontLibrary.versionCodeFor(rebuild, installed);
             e.hasBold = out.bold != null;
             if (emojiItem != null) { e.emojiId = emojiItem.id; e.emojiName = emojiItem.name; }
             else if (emojiPick != null) { e.emojiId = "own"; e.emojiName = emojiPick.fileName; }
@@ -7170,7 +7224,7 @@ public class MainActivity extends Activity {
             String applied = FontLibrary.readApplied(d);
             if (applied != null && applied.equals(e.suffix)) return fmkErr("applied", "Reset the font changer first.");
         }
-        if (fmkJobs.inUse("id:" + id)) return fmkErr("busy", "This font is being made again, installed or applied. Wait for it to finish.");
+        if (fmkJobs.inUse("id:" + id)) return fmkErr("busy", "This font is being made again, installed, applied or saved. Wait for it to finish.");
         if (!FontLibrary.delete(d, id)) return fmkErr("not_found", FMK_NOT_FOUND);
         if (e != null) {
             // the copy a font changer left in /data/app_fonts/<user>/<suffix>/ (applied once, then reset): removed when the changer is open, and
@@ -7196,21 +7250,43 @@ public class MainActivity extends Activity {
         return fmkOk(null, null);
     }
 
-    /** The "save as" answered: the entry's font.apk is copied there. {ok, name} or {ok:false, code, error}. */
+    /**
+     * The "save as" answered: the entry's font.apk is copied there, as a job that holds the entry ("id:"), so it is not made again or deleted
+     * while it is copied. {ok, name} or {ok:false, code, error}. The document the save screen made is deleted when nothing is copied into it:
+     * an answer with no export waiting (a second save screen), a font being made again, the app closing.
+     */
     private void fmkExportResult(final String id, final Uri uri) {
-        if (id == null) return;
+        if (id == null) {
+            if (uri != null) fmkDropDocument(uri);
+            return;
+        }
         if (uri == null) { fmkExported(id, FontLibrary.error("cancelled", "Nothing was saved.")); return; }
+        final FontLibrary.Jobs.Job job = fmkJobs.startFor(this, "make:" + id, "export", String.valueOf(System.nanoTime()), "id:" + id);
+        if (job == null) {
+            fmkDropDocument(uri);
+            fmkExported(id, FontLibrary.error("busy", "This font is being made again. Wait for it to finish, then save it."));
+            return;
+        }
         try {
             fontExec.submit(new Runnable() {
                 @Override
                 public void run() {
-                    fmkExported(id, fmkExportTo(id, uri));
+                    try {
+                        fmkExported(id, fmkExportTo(id, uri));
+                    } finally {
+                        fmkJobs.finish(job);
+                    }
                 }
             });
-        } catch (RejectedExecutionException closing) {}
+        } catch (RejectedExecutionException closing) {
+            fmkJobs.finish(job);
+            fmkDeleteDocument(uri);
+        }
     }
 
+    /** Copies the entry's package into the document; one that is not whole at the end (nothing to copy, a write that failed) is deleted. */
     private JSONObject fmkExportTo(String id, Uri uri) {
+        boolean whole = false;
         try {
             FontLibrary.Dirs d = fmkDirs();
             FontLibrary.Entry e = FontLibrary.read(d, id);
@@ -7233,9 +7309,34 @@ public class MainActivity extends Activity {
                 in.close();
                 out.close();
             }
+            whole = true;
             return new JSONObject().put("ok", true).put("name", cdSafeName(contentName(uri)));
         } catch (Throwable t) {
             return FontLibrary.error("failed", "The font package could not be saved: " + errMsg(t));
+        } finally {
+            // a package cut short (or an empty file the save screen made) must not stay behind looking like one that installs
+            if (!whole) fmkDeleteDocument(uri);
+        }
+    }
+
+    /** Deletes a document the system's "save as" made, best effort. */
+    private void fmkDeleteDocument(Uri uri) {
+        try {
+            android.provider.DocumentsContract.deleteDocument(getContentResolver(), uri);
+        } catch (Throwable ignored) {}
+    }
+
+    /** {@link #fmkDeleteDocument} off the UI thread (a provider can be slow to answer); in the window's last moments, at once. */
+    private void fmkDropDocument(final Uri uri) {
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    fmkDeleteDocument(uri);
+                }
+            });
+        } catch (RejectedExecutionException closing) {
+            fmkDeleteDocument(uri);
         }
     }
 
@@ -7260,17 +7361,19 @@ public class MainActivity extends Activity {
         try {
             FontLibrary.Dirs d = fmkDirs();
             File apk = new File(d.entryDir(e.id), FontLibrary.APK);
-            if (!e.apkSha.equals(FontLibrary.sha256(apk))) return FontLibrary.error("changed", FMK_CHANGED);
             String mode = resolveExecMode();
             if (!InstallGuards.isPrivilegedMode(mode)) {
+                if (!e.apkSha.equals(FontLibrary.sha256(apk))) return FontLibrary.error("changed", FMK_CHANGED);
                 launchSystemInstaller(apk);
                 return new JSONObject().put("ok", true).put("how", "installer").put("note", "");
             }
             if (!d.work.isDirectory() && !d.work.mkdirs()) throw new IOException("There is no room in the app's cache for the package.");
             copy = new File(d.work, e.suffix + "-" + System.nanoTime() + ".apk");     // a copy: the root install makes its file readable to pm
             java.nio.file.Files.copy(apk.toPath(), copy.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            if (!confirmInMode(mode, null, InstallConfirm.messageLocalFile(FontLibrary.exportName(e.name), e.pkg, FontPackage.versionName(e.versionCode),
-                    installedVersionOrNull(e.pkg), 1, mode, FMK_INSTALL_FLAGS, null))) {
+            // the file pm gets is the one checked against the SHA-256 recorded when the package was made (the question says so)
+            if (!e.apkSha.equals(FontLibrary.sha256(copy))) return FontLibrary.error("changed", FMK_CHANGED);
+            if (!confirmInMode(mode, null, InstallConfirm.messageFontPackage(e.name, e.pkg, FontPackage.versionName(e.versionCode),
+                    installedVersionOrNull(e.pkg), mode, FMK_INSTALL_FLAGS))) {
                 throw new InstallCancelled();
             }
             String out = installApksOptions(Collections.singletonList(copy), FMK_INSTALL_FLAGS, mode);
@@ -7472,9 +7575,13 @@ public class MainActivity extends Activity {
 
     // ---- emoji downloads ----
 
-    private void fmkDisconnectAll() {
-        final List<java.net.HttpURLConnection> open = new ArrayList<java.net.HttpURLConnection>(fmkConns.values());
-        fmkConns.clear();
+    /** Disconnects the downloads of these jobs (a window that closes: the ones it started, which it has just cancelled). */
+    private static void fmkDisconnect(List<FontLibrary.Jobs.Job> jobs) {
+        final List<java.net.HttpURLConnection> open = new ArrayList<java.net.HttpURLConnection>();
+        for (FontLibrary.Jobs.Job j : jobs) {
+            java.net.HttpURLConnection c = fmkConns.remove(j.id);
+            if (c != null) open.add(c);
+        }
         if (open.isEmpty()) return;
         Thread t = new Thread(new Runnable() {                          // closing a TLS connection writes to the network: never on the UI thread
             @Override
@@ -7496,7 +7603,7 @@ public class MainActivity extends Activity {
         final FontLibrary.Dirs d = fmkDirs();
         final FontLibrary.Throttle throttle = new FontLibrary.Throttle(250);
         EmojiCatalog.Item b = item.forSdk(Build.VERSION.SDK_INT);
-        EmojiCatalog.Progress p = new EmojiCatalog.Progress() {
+        final EmojiCatalog.Progress p = new EmojiCatalog.Progress() {
             @Override
             public void onProgress(long done, long total) {
                 if (throttle.due("download", done, total, android.os.SystemClock.elapsedRealtime()))
@@ -7511,14 +7618,25 @@ public class MainActivity extends Activity {
         JSONObject res;
         java.net.HttpURLConnection c = null;
         File zip = null;
+        int status = 0;
         try {
             java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
             hdr.put("User-Agent", "ADB-Application-Manager");
-            c = HttpSafe.open(b.url, 15000, 30000, hdr);
+            c = HttpSafe.open(b.url, 15000, 30000, hdr, new HttpSafe.Hops() {
+                @Override
+                public void opened(java.net.HttpURLConnection hop) throws IOException {
+                    // each hop (the release address, then the one it redirects to) can be disconnected by Cancel while it connects or waits
+                    fmkConns.put(job.id, hop);
+                    if (p.cancelled()) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                }
+            });
             fmkConns.put(job.id, c);
             if (p.cancelled()) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
             int code = c.getResponseCode();
-            if (code != 200) throw new IOException("the server answered HTTP " + code);
+            if (code != 200) {
+                status = code;
+                throw new IOException("the server answered HTTP " + code);
+            }
             InputStream in = c.getInputStream();
             try {
                 File dest = d.emojiFile(item.id);
@@ -7536,7 +7654,7 @@ public class MainActivity extends Activity {
         } catch (EmojiCatalog.VerifyException ve) {
             res = FontLibrary.error(ve.code, ve.getMessage());
         } catch (Throwable t) {
-            res = p.cancelled() ? FontLibrary.error("cancelled", "The download was cancelled.") : FontLibrary.error("network", "The download failed: " + errMsg(t));
+            res = p.cancelled() ? FontLibrary.error("cancelled", "The download was cancelled.") : FontLibrary.downloadError(status, errMsg(t));
         } finally {
             if (zip != null) zip.delete();
             fmkConns.remove(job.id);
@@ -8648,14 +8766,20 @@ public class MainActivity extends Activity {
             return;
         }
         if (requestCode == REQ_FONTMAKER_PICK) {
-            final String slot = fmkPickSlot;
-            fmkPickSlot = null;
+            final String slot;
+            synchronized (fmkLock) {
+                slot = fmkPickSlot;
+                fmkPickSlot = null;
+            }
             fmkPickResult(slot, (resultCode == RESULT_OK && data != null) ? data.getData() : null);
             return;
         }
         if (requestCode == REQ_FONTMAKER_EXPORT) {
-            final String id = fmkExportId;
-            fmkExportId = null;
+            final String id;
+            synchronized (fmkLock) {
+                id = fmkExportId;
+                fmkExportId = null;
+            }
             fmkExportResult(id, (resultCode == RESULT_OK && data != null) ? data.getData() : null);
             return;
         }
@@ -13718,19 +13842,28 @@ public class MainActivity extends Activity {
         // (base64, "" when missing or over 24 MB). Ids, tokens and catalog ids are checked against FontLibrary's patterns and only looked up, so
         // nothing the page sends names a path. The work itself is the activity's fmk* methods. ----
 
-        /** Opens Android's file chooser for one slot (regular, bold, emoji). Answer {ok}; then window.onFontMakerPicked(slot, {ok, token, fileName, size, info}). */
+        /**
+         * Opens Android's file chooser for one slot (regular, bold, emoji). Answer {ok}, or {ok:false, code:"busy"} while a chooser is already
+         * open (a second one's answer would have nothing to go to); then window.onFontMakerPicked(slot, {ok, token, fileName, size, info}).
+         */
         @JavascriptInterface
         public String fontMakerPick(final String slot) {
             if (!FontLibrary.isSlot(slot)) return fmkErr("bad_request", "Choose Regular, Bold or Emoji.");
+            fmkPicks();                                                 // here, off the UI thread, where the answer only numbers the choice
+            synchronized (fmkLock) {
+                if (fmkPickSlot != null) return fmkErr("busy", "The file chooser is already open.");
+                fmkPickSlot = slot;
+            }
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    fmkPickSlot = slot;
                     Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("*/*");
                     if (!startPicker(i, REQ_FONTMAKER_PICK)) {
-                        fmkPickSlot = null;
+                        synchronized (fmkLock) {
+                            fmkPickSlot = null;
+                        }
                         fmkPicked(slot, FontLibrary.error("no_picker", "No file picker available"));
                     }
                 }
@@ -13795,21 +13928,30 @@ public class MainActivity extends Activity {
             }
         }
 
-        /** Saves an entry's package where the user chooses (Android's "save as"). Answer {ok}; then window.onFontMakerExported(id, {ok, name}). */
+        /**
+         * Saves an entry's package where the user chooses (Android's "save as"). Answer {ok}, or {ok:false, code:"busy"} while a save screen is
+         * already open or the font is being made again; then window.onFontMakerExported(id, {ok, name}).
+         */
         @JavascriptInterface
         public String fontMakerExport(final String id) {
             final FontLibrary.Entry e = FontLibrary.isId(id) ? FontLibrary.read(fmkDirs(), id) : null;
             if (e == null) return fmkErr("not_found", FMK_NOT_FOUND);
+            if (fmkJobs.inUse("make:" + id)) return fmkErr("busy", "This font is being made again. Wait for it to finish, then save it.");
+            synchronized (fmkLock) {
+                if (fmkExportId != null) return fmkErr("busy", "The save screen is already open.");
+                fmkExportId = id;
+            }
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    fmkExportId = id;
                     Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("application/vnd.android.package-archive");
                     i.putExtra(Intent.EXTRA_TITLE, FontLibrary.exportName(e.name));
                     if (!startPicker(i, REQ_FONTMAKER_EXPORT)) {
-                        fmkExportId = null;
+                        synchronized (fmkLock) {
+                            fmkExportId = null;
+                        }
                         fmkExported(id, FontLibrary.error("no_picker", "No file picker available"));
                     }
                 }
@@ -13833,8 +13975,12 @@ public class MainActivity extends Activity {
             if ("install".equals(kind) && !isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
             final FontLibrary.Entry e = FontLibrary.isId(id) ? FontLibrary.read(fmkDirs(), id) : null;
             if (e == null) return fmkErr("not_found", FMK_NOT_FOUND);
-            final FontLibrary.Jobs.Job job = fmkJobs.start(kind, id, "id:" + id);           // a delete waits for it
-            if (job == null) return fmkErr("busy", "This font is busy. Wait for it to finish.");
+            // a delete (and a build of it again) waits for it; an install does not start while the font's files are made again
+            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, "install".equals(kind) ? "make:" + id : null, kind, id, "id:" + id);
+            if (job == null) {
+                if (fmkJobs.inUse("make:" + id)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
+                return fmkErr("busy", "This font is busy. Wait for it to finish.");
+            }
             try {
                 fontExec.submit(new Runnable() {
                     @Override
@@ -13898,7 +14044,7 @@ public class MainActivity extends Activity {
         public String emojiDownload(String id) {
             final EmojiCatalog.Item item = FontLibrary.isCatalogId(id) ? EmojiCatalog.byId(id) : null;
             if (item == null) return fmkErr("unknown", "There is no such emoji font.");
-            final FontLibrary.Jobs.Job job = fmkJobs.start("emoji", item.id);
+            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, null, "emoji", item.id);
             if (job == null) return fmkErr("busy", "This emoji font is already downloading.");
             try {
                 fontExec.submit(new Runnable() {
@@ -13995,8 +14141,13 @@ public class MainActivity extends Activity {
             boolean single = "apply".equals(kind) || "reset".equals(kind) || "sysapply".equals(kind) || "sysundo".equals(kind);
             // what the step reads, so a delete waits for it: the entry an apply writes, the emoji file a swap streams
             String uses = id == null ? null : ("sysapply".equals(kind) ? "sys:" : "id:") + id;
-            final FontLibrary.Jobs.Job job = fmkJobs.start(kind, single ? "only" : String.valueOf(System.nanoTime()), uses);
-            if (job == null) return fmkErr("busy", "The phone is still busy with the last change. Wait for it to finish.");
+            // an apply does not start while the font's files are made again
+            String busyIf = "apply".equals(kind) && id != null ? "make:" + id : null;
+            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, busyIf, kind, single ? "only" : String.valueOf(System.nanoTime()), uses);
+            if (job == null) {
+                if (busyIf != null && fmkJobs.inUse(busyIf)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
+                return fmkErr("busy", "The phone is still busy with the last change. Wait for it to finish.");
+            }
             try {
                 fontPrivExec.submit(new Runnable() {
                     @Override
@@ -19174,12 +19325,12 @@ public class MainActivity extends Activity {
             for (AiHttp c : aiCalls.values()) c.cancel();
             aiExecutor.shutdown();
         } catch (Throwable ignored) {}
-        // Custom Fonts: no new work; the builds and downloads stop at their next check (their connections are closed now), a privileged step
-        // that runs ends (its files are written whole or not at all) and the ones queued behind it see the window gone; the picked copies go
+        // Custom Fonts: no new work; this window's builds and downloads stop at their next check (their connections are closed now), a
+        // privileged step that runs ends (its files are written whole or not at all) and the ones queued behind it see the window gone; its
+        // picked copies go. Another window's jobs and files are its own.
         try { fontExec.shutdownNow(); } catch (Throwable ignored) {}
         try { fontPrivExec.shutdown(); } catch (Throwable ignored) {}
-        fmkJobs.cancelAll();
-        fmkDisconnectAll();
+        fmkDisconnect(fmkJobs.cancelAll(this));
         try {
             synchronized (fmkLock) {
                 if (fmkPicks != null) fmkPicks.clear();
