@@ -34,15 +34,15 @@ import java.util.regex.Pattern;
  * tests/java/src/FontLibraryTest.java).
  *
  * <ul>
- * <li>{@link Dirs}: where the tab keeps its files. A picked file is copied to {@code cache/fontmaker/in/}, a font made here lives in
+ * <li>{@link Dirs}: where the tab keeps its files. A picked file is copied to {@code cache/fontmaker/in/<window>/}, a font made here lives in
  * {@code files/fontmaker/library/<id>/} (font.apk, Regular.ttf, Bold.ttf when it has one, meta.json), a downloaded emoji font in
  * {@code files/fontmaker/emoji/<catalog id>.ttf}.</li>
  * <li>Ids, tokens and {@link Picks}: the page names a picked file by a random token and a library entry by a random id. Both are checked
  * against a strict pattern and only ever looked up, so nothing the page sends can name a path.</li>
  * <li>{@link #parseRequest}: the page's build request, checked field by field before anything is read.</li>
  * <li>{@link Entry}, {@link #toMeta} / {@link #fromMeta}, {@link #commit}, {@link #list}: an entry's meta.json, and an entry written so that
- * a crash or a full disk never leaves half of one (a staged folder renamed into place; a rebuild swaps the old folder out only after the
- * new one is complete).</li>
+ * a crash, a power cut or a full disk never leaves half of one (a staged folder flushed to the disk and renamed into place; a rebuild swaps
+ * the old folder out only after the new one is complete).</li>
  * <li>{@link Jobs}: the running builds and downloads, one per key, with their Cancel; {@link Throttle}: how often progress reaches the
  * page.</li>
  * <li>The JSON the page gets: {@link #infoJson}, {@link #entryJson}, {@link #catalogItemJson}, {@link #error} (design section 6).</li>
@@ -668,7 +668,10 @@ public final class FontLibrary {
      * The app keeps one for the whole process, so a second window sees what the first one runs.
      */
     public static final class Jobs {
-        /** One job. {@link #uses} holds what it reads ("cat:noto", "tok:<token>", "id:<entry id>"), so a delete can refuse while it runs. */
+        /**
+         * One job. {@link #uses} holds what it reads ("cat:noto", "tok:<token>", "id:<entry id>"), so a delete can refuse while it runs, and
+         * what it writes ("make:<entry id>", a font made again).
+         */
         public static final class Job {
             public final String id, kind, key;
             final Set<String> uses = new HashSet<String>();
