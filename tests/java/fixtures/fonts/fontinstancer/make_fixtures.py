@@ -281,7 +281,8 @@ def synth_gvar():
         recs.append(r)
     mvar.table.ValueRecord, mvar.table.ValueRecordCount = recs, len(recs)
     fb.font["MVAR"] = mvar
-    # HVAR with an advance map (fontTools ignores HVAR in a glyf font with gvar, so only the suite's no-gvar case uses it)
+    # HVAR with an advance map. Its rows do not follow gvar's phantom points, and .notdef, A.rvrn and B.rvrn have no gvar data at all:
+    # the app takes every advance from HVAR, as HarfBuzz does (fontTools takes them from the phantom points)
     hrows = [[(i * 17) % 31 - 15, (i * 11) % 19 - 9] for i in range(len(order))]
     hstore = var_store(tags, [([W, N], hrows)])
     hvar = newTable("HVAR")
@@ -408,8 +409,13 @@ def ft_normalized(font, loc):
 
 
 def ft_instance(name, loc, norm=None):
-    """fontTools' full instance, read back from its bytes; at the normalized coordinates `norm` when given (instead of its own)."""
+    """fontTools' full instance, read back from its bytes; at the normalized coordinates `norm` when given (instead of its own). A glyf
+    font with HVAR gets HarfBuzz's advances at the same coordinates (and the average width that follows from them): fontTools takes a glyf
+    font's advances from gvar's phantom points, where HarfBuzz, FreeType and the app take them from HVAR, and some fonts move an advance
+    in HVAR only (Fraunces' gcircumflex, Literata's ldot)."""
     vf = TTFont(path(name))
+    hvar = "HVAR" in vf and "glyf" in vf
+    coords = norm if norm is not None else ft_normalized(vf, loc)
     saved = instancer.AxisLimits.normalize
     if norm is not None:
         tags = [a.axisTag for a in vf["fvar"].axes]
@@ -419,6 +425,12 @@ def ft_instance(name, loc, norm=None):
         inst = instantiateVariableFont(vf, loc)
     finally:
         instancer.AxisLimits.normalize = saved
+    if hvar:
+        hf = hb.Font(hb.Face(open(path(name), "rb").read()))
+        hf.set_var_coords_normalized([v / 16384 for v in coords])
+        for g, gname in enumerate(inst.getGlyphOrder()):
+            inst["hmtx"][gname] = (hf.get_glyph_h_advance(g), inst["hmtx"][gname][1])
+        inst["OS/2"].recalcAvgCharWidth(inst)
     b = io.BytesIO()
     inst.save(b)
     return TTFont(io.BytesIO(b.getvalue())), b.getvalue()
@@ -842,23 +854,26 @@ def pixel_diff(p, q):
     return int(numpy.count_nonzero((c1 > 0) | (c2 > 0))), int(d.max()) if d.size else 0, int(numpy.count_nonzero(d > 16))
 
 
-def against_freetype(vf_data, mine_data, loc, tags, upem, cff2, hinted):
+def against_freetype(vf_data, mine_data, loc, tags, upem, cff2, hinted, adv_data=None):
     """FreeType, variable font at loc against the instance: unhinted outlines at 1 unit = 1 pixel (glyphs built otherwise, the largest
-    point difference of simple glyphs and of composites, in units; the largest advance difference) and 48-pixel renderings (largest
-    pixel difference of 255, pixels more than 16 apart); for a hinted font also the largest hinted 16-pixel point difference."""
+    point difference of simple glyphs and of composites, in units; the largest advance difference, read from adv_data when given) and
+    48-pixel renderings (largest pixel difference of 255, pixels more than 16 apart); for a hinted font also the largest hinted 16-pixel
+    point difference."""
     import freetype
     nh = freetype.FT_LOAD_NO_HINTING | freetype.FT_LOAD_NO_BITMAP
     vf, mine = ft_face(vf_data, loc, tags), ft_face(mine_data)
+    adv = ft_face(adv_data, loc, tags) if adv_data is not None and adv_data != vf_data else vf
     composite = set()
     if not cff2:
         t = TTFont(io.BytesIO(mine_data))
         composite = {i for i, n in enumerate(t.getGlyphOrder()) if t["glyf"][n].isComposite()}
     r = {"glyphs": mine.num_glyphs, "structure": 0, "simple": 0.0, "composite": 0.0, "amax": 0.0, "pxmax": 0, "pxover": 0, "pixels": 0,
          "hinted": 0.0}
-    for f in (vf, mine): f.set_pixel_sizes(0, upem)
+    for f in (vf, mine, adv): f.set_pixel_sizes(0, upem)
     for g in range(mine.num_glyphs):
         p1, c1, t1, a1 = ft_outline(vf, g, nh)
         p2, c2, t2, a2 = ft_outline(mine, g, nh)
+        if adv is not vf: a1 = ft_outline(adv, g, nh)[3]
         r["amax"] = max(r["amax"], abs(a1 - a2))
         if cff2: continue                                  # cubic against quadratic: compared as pixels only
         if c1 != c2 or t1 != t2:
@@ -886,22 +901,24 @@ def against_freetype(vf_data, mine_data, loc, tags, upem, cff2, hinted):
 
 
 def engine_font(name):
-    """The variable font as HarfBuzz and FreeType are given it. synth-gvar.ttf without its HVAR: its rows are made up for the suite's
-    no-gvar case and do not follow gvar's phantom points, and both engines take advances (FreeType also the bearing) from HVAR when there
-    is one, where fontTools and the app take them from gvar."""
-    if name != "synth-gvar.ttf": return open(path(name), "rb").read()
+    """The variable font as HarfBuzz and FreeType are given it, and the one FreeType draws its outlines from: the font as it is, but
+    synth-gvar.ttf is drawn by FreeType without its HVAR. Its glyph H moves gvar's left phantom point, which HarfBuzz, fontTools and the
+    app move the outline by, and which FreeType leaves where it is when the font has HVAR (the real fixtures do not move it)."""
+    data = open(path(name), "rb").read()
+    if name != "synth-gvar.ttf": return data, data
     f = TTFont(path(name))
     del f["HVAR"]
     b = io.BytesIO()
     f.save(b)
-    return b.getvalue()
+    return data, b.getvalue()
 
 
 def verify(args):
     bad, tot = [], {"locations": 0, "glyphs": 0, "hb": 0, "ftpoints": 0, "ownpoints": 0, "simple": 0.0, "composite": 0.0, "hbadv": 0,
                     "hboff": 0, "pxmax": 0, "pxover": 0, "pixels": 0, "hinted": 0.0}
     for name, specs in LOCATIONS.items():
-        data, edata = open(path(name), "rb").read(), engine_font(name)
+        data = open(path(name), "rb").read()
+        edata, ftdata = engine_font(name)
         vf = TTFont(path(name))
         tags = [a.axisTag for a in vf["fvar"].axes]
         upem, cff2 = vf["head"].unitsPerEm, "CFF2" in vf
@@ -914,7 +931,7 @@ def verify(args):
             at_hb = against_fonttools(mine, ft_instance(name, loc, norm)[0])
             own = against_fonttools(mine, ft_instance(name, loc)[0]) if ftnorm != norm else at_hb
             sh = against_harfbuzz(edata, mine_data, loc, runs)
-            fr = against_freetype(edata, mine_data, loc, tags, upem, cff2, "fpgm" in vf)
+            fr = against_freetype(ftdata, mine_data, loc, tags, upem, cff2, "fpgm" in vf, edata)
             tot["locations"] += 1
             tot["glyphs"] += at_hb["glyphs"]
             tot["hb"] += sh[0]
