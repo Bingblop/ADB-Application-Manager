@@ -310,7 +310,7 @@ os2 400 0x0040
 head 0 3863116800
 post 3
 cmap 119 4477934c
-hmtx 6747769a
+hmtx bf67cfba
 glyf 8dd2133f
 end
 face cff2 Bold
@@ -394,7 +394,7 @@ os2 700 0x0020
 head 1 3863116800
 post 3
 cmap 119 4477934c
-hmtx 4dd61442
+hmtx 3a9df83f
 glyf a2117faf
 end
 face static Regular
@@ -434,7 +434,7 @@ os2 400 0x00c0
 head 0 3863116800
 post 3
 cmap 119 f789192d
-hmtx 12fefff9
+hmtx 0dd6d4e1
 glyf 4ef3eb08
 end
 face italic Regular

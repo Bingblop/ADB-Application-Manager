@@ -28,7 +28,8 @@ import java.util.TreeSet;
  * the text font's joiner, which the emoji sequences then name instead of their own ({@link #joiner}). The emoji font's GSUB lookups (ZWJ
  * sequences, flags, keycaps, skin tones) follow the text font's and are turned on in {@link #FEATURE} for every script
  * ({@link OtLayout#merge}), behind a few lookups that give them the glyphs they expect (see {@link Front}). The input is untrusted: every
- * read is bounds-checked and a bad font ends in a {@link Sfnt.FontException}.
+ * read is bounds-checked and a bad font ends in a {@link Sfnt.FontException}, whose code tells a fault of the emoji font alone from one of
+ * the text font or of both ({@link #aboutEmoji}).
  * Pure Java, no Android classes.
  */
 public final class EmojiMerge {
@@ -43,6 +44,7 @@ public final class EmojiMerge {
     public static final String W_EMOJI_GPOS = "The emoji font's positioning table (GPOS) was left out; its emoji do not need it to show.";
     public static final String W_GLYPH_CLASSES = "A few of the emoji font's sequences rely on glyph classes the merged font cannot keep, so they may show as separate emoji.";
     public static final String W_MORX = "The text font's Apple layout table (morx) was left out so that the emoji sequences work; its OpenType features are kept.";
+    public static final String W_FE0F_SEQUENCES = "The text font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.";
 
     /** Lookup flag bits that read GDEF's glyph classes or mark sets (IgnoreBase, IgnoreLigatures, IgnoreMarks, UseMarkFilteringSet, MarkAttachmentType). */
     static final int CLASS_FLAGS = 0xFF1E;
@@ -96,17 +98,25 @@ public final class EmojiMerge {
         step(p, 0);
         Maps maps = new Maps(text, emoji, p);
         int[] zwj = joiner(maps, emoji, sub(p, 20, 30));
-        byte[][] tg = Glyf.readAll(text), eg = Glyf.readAll(emoji);
+        byte[][] tg = Glyf.readAll(text), eg;
+        Glyf.Metrics em;
         Colr scan = new Colr(emoji.table("COLR"), m, p);
-        scan.walk();
-        Layers ly = new Layers(eg, scan, maps, n, m, p);
+        Layers ly;
+        try {                                                           // what is read of the emoji font alone
+            eg = Glyf.readAll(emoji);
+            em = Glyf.Metrics.read(emoji);
+            scan.walk();
+            ly = new Layers(eg, scan, maps, n, m, p);
+        } catch (Sfnt.FontException e) {
+            throw ofEmoji(e);
+        }
+        if ((long) n + m + ly.copies.size() > 0xFFFF) throw tooMany(n, m + ly.copies.size());
         Sfnt out = text.copy();
         out.sfntVersion = Sfnt.TRUETYPE;
         Result r = new Result(out, n, m, s);
         TreeMap<Integer, Integer> map = new TreeMap<Integer, Integer>();
         Front front = characters(maps, emoji, n, n + m + ly.copies.size(), zwj, out, map, r.warnings, p);
-        int total = front.dupBase + front.dups.size();
-        if (total > 0xFFFF) throw tooMany(n, total - n);
+        int total = front.dupBase + front.dups.size();                  // characters() makes only the copies that fit
         step(p, 60);
 
         // Outlines: the text glyphs as they are; the emoji glyphs without hints, their components moved past the text glyphs, scaled
@@ -124,7 +134,7 @@ public final class EmojiMerge {
         headBounds(out, all, n, m, ly);
         step(p, 560);
 
-        Glyf.Metrics tm = Glyf.Metrics.read(text), em = Glyf.Metrics.read(emoji), mm = new Glyf.Metrics(total);
+        Glyf.Metrics tm = Glyf.Metrics.read(text), mm = new Glyf.Metrics(total);
         System.arraycopy(tm.advance, 0, mm.advance, 0, n);
         System.arraycopy(tm.lsb, 0, mm.lsb, 0, n);
         for (int i = n; i < total; i++) {
@@ -140,6 +150,10 @@ public final class EmojiMerge {
             if (lsb < -32768 || lsb > 32767) throw tooBig();
             mm.lsb[i] = (int) lsb;
         }
+        // U+FE0F's glyph takes no room. Renderers hide U+FE0F itself, but not the U+FE0F glyph the restore lookup puts back after a key
+        // where a ZWNJ or one joiner too many then stops the ligature that would take it (it keeps the key's character)
+        Integer fe0f = maps.emoji.get(EmojiData.EMOJI_SELECTOR);
+        if (fe0f != null && onlyFor(map, fe0f + n, EmojiData.EMOJI_SELECTOR)) mm.advance[fe0f + n] = 0;
         mm.write(out, all);
         step(p, 600);
 
@@ -157,9 +171,39 @@ public final class EmojiMerge {
         return r;
     }
 
+    /** Whether no character but {@code cp} (perhaps not even it) has glyph {@code g} in {@code map}. */
+    static boolean onlyFor(Map<Integer, Integer> map, int g, int cp) {
+        for (Map.Entry<Integer, Integer> e : map.entrySet()) if (e.getValue() == g && e.getKey() != cp) return false;
+        return true;
+    }
+
     static Sfnt.FontException tooMany(int n, int m) {
         return new Sfnt.FontException("too_many_glyphs", String.format(Locale.ROOT, "The text font has %,d glyphs and the emoji font %,d: "
                 + "together they pass the 65,535 glyphs a font can hold.", n, m));
+    }
+
+    /** The codes of a refusal about the emoji font alone: {@link #checkEmoji}'s, and those a merge gives a fault it meets in that font. */
+    private static final Set<String> EMOJI_CODES = new HashSet<String>(Arrays.asList("bitmap_emoji", "not_emoji", "no_palette", "emoji_outlines",
+            "palette_damaged", "emoji_symbol", "emoji_damaged", "emoji_too_complex", "emoji_too_big"));
+
+    /**
+     * True when {@code e} is about the emoji font alone, whatever text font it went into, so FontBuilder names the emoji font in front of
+     * it: {@link #checkEmoji}'s codes, "emoji_damaged" (a table or glyph of it is damaged, or uses something this code does not read),
+     * "emoji_too_complex" (its GSUB or COLR is past what the merge takes on) and "emoji_too_big" (its emoji do not fit the text font's
+     * units at this size). A fault of the text font, or of both together (too_many_glyphs, a table too big to write), keeps its own code.
+     */
+    public static boolean aboutEmoji(Sfnt.FontException e) {
+        return EMOJI_CODES.contains(e.code);
+    }
+
+    /** {@code e}, met reading the emoji font, as a refusal about that font alone: "bad_font" becomes "emoji_damaged", "too_complex" "emoji_too_complex". */
+    static Sfnt.FontException ofEmoji(Sfnt.FontException e) {
+        String code = "bad_font".equals(e.code) ? "emoji_damaged" : "too_complex".equals(e.code) ? "emoji_too_complex" : null;
+        if (code == null) return e;
+        Sfnt.FontException w = new Sfnt.FontException(code, e.getMessage());
+        w.setStackTrace(e.getStackTrace());
+        if (e.getCause() != null) w.initCause(e.getCause());
+        return w;
     }
 
     /** head's bounds from the glyphs drawn at the text font's size: the emoji-units glyphs (inside COLR v1 paints) would make them too big. */
@@ -177,15 +221,16 @@ public final class EmojiMerge {
         out.put("head", head);
     }
 
-    /** What Sfnt.parse checks, again: the caller may have replaced a table since. */
+    /** What Sfnt.parse checks, again: the caller may have replaced a table since. Code "bad_font" for the text font, "emoji_damaged" for the emoji font. */
     private static void checkBasics(Sfnt f, String which) throws Sfnt.FontException {
+        String code = which.equals("emoji") ? "emoji_damaged" : "bad_font";
         for (String t : new String[] { "head", "maxp", "hhea", "hmtx", "cmap" })
-            if (!f.has(t)) throw new Sfnt.FontException("The " + which + " font has no " + t + " table.");
+            if (!f.has(t)) throw new Sfnt.FontException(code, "The " + which + " font has no " + t + " table.");
         if (f.table("head").length < 54 || f.table("maxp").length < 6 || f.table("hhea").length < 36)
-            throw new Sfnt.FontException("The " + which + " font's head, maxp or hhea table is too short.");
+            throw new Sfnt.FontException(code, "The " + which + " font's head, maxp or hhea table is too short.");
         if (f.unitsPerEm() < 16 || f.unitsPerEm() > 16384)
-            throw new Sfnt.FontException("The " + which + " font's units per em (" + f.unitsPerEm() + ") is out of range.");
-        if (f.numGlyphs() < 1) throw new Sfnt.FontException("The " + which + " font has no glyphs.");
+            throw new Sfnt.FontException(code, "The " + which + " font's units per em (" + f.unitsPerEm() + ") is out of range.");
+        if (f.numGlyphs() < 1) throw new Sfnt.FontException(code, "The " + which + " font has no glyphs.");
     }
 
     /**
@@ -229,10 +274,15 @@ public final class EmojiMerge {
      */
     static byte[] scaleGlyph(byte[] raw, int n, int m, double s, int[] copy) throws Sfnt.FontException {
         if (raw.length == 0) return raw;
-        Glyf.Glyph g = Glyf.decode(raw);
+        Glyf.Glyph g;
+        try {
+            g = Glyf.decode(raw);
+        } catch (Sfnt.FontException e) {
+            throw ofEmoji(e);
+        }
         if (g.isComposite()) {
             for (Glyf.Component k : g.components) {
-                if (k.glyph >= m) throw new Sfnt.FontException("A composite glyph of the emoji font names glyph " + k.glyph + ", which the font does not have.");
+                if (k.glyph >= m) throw new Sfnt.FontException("emoji_damaged", "A composite glyph of the emoji font names glyph " + k.glyph + ", which the font does not have.");
                 k.glyph = copy != null && copy[k.glyph] >= 0 ? copy[k.glyph] : k.glyph + n;
                 if (k.xy) { k.dx = Glyf.round(k.dx * s); k.dy = Glyf.round(k.dy * s); }
             }
@@ -250,7 +300,7 @@ public final class EmojiMerge {
     }
 
     static Sfnt.FontException tooBig() {
-        return new Sfnt.FontException("The emoji would be too big for this font at this size.");
+        return new Sfnt.FontException("emoji_too_big", "The emoji would be too big for this font at this size.");
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -264,9 +314,13 @@ public final class EmojiMerge {
 
         Maps(Sfnt t, Sfnt e, FontProgress p) throws Sfnt.FontException {
             text = Cmap.read(t, sub(p, 0, 10));
-            emoji = Cmap.read(e, sub(p, 10, 20));
             textUvs = Cmap.readUvs(t);
-            emojiUvs = Cmap.readUvs(e);
+            try {
+                emoji = Cmap.read(e, sub(p, 10, 20));
+                emojiUvs = Cmap.readUvs(e);
+            } catch (Sfnt.FontException x) {
+                throw ofEmoji(x);
+            }
         }
     }
 
@@ -285,7 +339,11 @@ public final class EmojiMerge {
         for (int g : maps.emoji.values()) { if ((++work & 1023) == 0) FontProgress.Check.cancel(p); if (g == e) same++; }
         if (same != 2) return null;
         byte[] gsub = emoji.table("GSUB");
-        if (gsub != null && !OtLayout.onlyInSequences(gsub, true, e, p)) return null;
+        try {
+            if (gsub != null && !OtLayout.onlyInSequences(gsub, true, e, p)) return null;
+        } catch (Sfnt.FontException x) {
+            throw ofEmoji(x);
+        }
         return new int[] { e, t };
     }
 
@@ -333,7 +391,8 @@ public final class EmojiMerge {
      * where the emoji glyph won (and to the default where the text glyph won); (c, U+FE0F) to the emoji glyph where the text glyph won, and
      * to the default for each character with an emoji variation sequence ({@link EmojiData#hasEmojiVariation}) that shows the emoji glyph:
      * Android takes (c, U+FE0F) from the first font whose cmap has the pair and else from the system emoji font. Where a ligature of the
-     * emoji font names the character's glyph and U+FE0F, (c, U+FE0F) maps to a key instead (see {@link Front}).
+     * emoji font names the character's glyph and U+FE0F, (c, U+FE0F) maps to a key instead (see {@link Front}); a key that has to be a copy
+     * gets one only while the merged font has glyph ids left, and past that the pair gives the glyph ({@link #W_FE0F_SEQUENCES}).
      */
     private static Front characters(Maps maps, Sfnt emoji, int n, int dupBase, int[] joiner, Sfnt out, TreeMap<Integer, Integer> map,
             List<String> warnings, FontProgress p) throws Sfnt.FontException {
@@ -405,7 +464,11 @@ public final class EmojiMerge {
         if (f != null && gsub != null && !asked.isEmpty()) {
             BitSet of = new BitSet();
             for (int g : asked.values()) of.set(g);
-            ligs = ligatures(gsub, of, budget, p);
+            try {
+                ligs = ligatures(gsub, of, budget, p);
+            } catch (Sfnt.FontException x) {
+                throw ofEmoji(x);
+            }
             for (int[] l : ligs)
                 for (int c = 1; c + 1 < l.length; c++) if (l[c + 1] == f && of.get(l[c])) named.set(l[c]);
         }
@@ -419,6 +482,11 @@ public final class EmojiMerge {
             Integer key = fr.keys.get(g);
             if (key == null) {
                 if (nominal.contains(g + n)) {                                // a character shows g alone: U+FE0F gets a copy to tell
+                    if (dupBase + fr.dups.size() >= 0xFFFF) {                 // no glyph id left for one: (c, U+FE0F) gives g, as above
+                        if (map.get(cp) == g + n) uvs.addDefault(fe, cp);
+                        if (!warnings.contains(W_FE0F_SEQUENCES)) warnings.add(W_FE0F_SEQUENCES);
+                        continue;
+                    }
                     key = dupBase + fr.dups.size();
                     fr.dups.add(g);
                 } else {
@@ -616,7 +684,7 @@ public final class EmojiMerge {
     }
 
     static Sfnt.FontException tooComplex() {
-        return new Sfnt.FontException("The emoji font's substitution table (GSUB) is too complex to merge.");
+        return new Sfnt.FontException("emoji_too_complex", "The emoji font's substitution table (GSUB) is too complex to merge.");
     }
 
     /** The glyphs of the Coverage table at {@code off} in coverage index order (a format 2 range counts against {@code budget}). */
@@ -672,10 +740,15 @@ public final class EmojiMerge {
         int restoreStep = withFe.isEmpty() ? -1 : next++, copyStep = copyBack.isEmpty() ? -1 : next++, swapStep = swap ? next++ : -1;
         int extra = next - tl;
         byte[] e = egsub.clone();
-        if (fr.zwjFrom >= 0) OtLayout.shiftGlyphs(e, true, n, fr.zwjFrom, fr.zwjTo, sub(p, 700, 740));
-        else OtLayout.shiftGlyphs(e, true, n, sub(p, 700, 740));
-        OtLayout.shiftLookupIndexes(e, true, tl + extra, sub(p, 740, 760));
-        OtLayout.Table added = OtLayout.parse(e, true);
+        OtLayout.Table added;
+        try {                                                           // a glyph id past 65,535 stays too_many_glyphs: both fonts' doing
+            if (fr.zwjFrom >= 0) OtLayout.shiftGlyphs(e, true, n, fr.zwjFrom, fr.zwjTo, sub(p, 700, 740));
+            else OtLayout.shiftGlyphs(e, true, n, sub(p, 700, 740));
+            OtLayout.shiftLookupIndexes(e, true, tl + extra, sub(p, 740, 760));
+            added = OtLayout.parse(e, true);
+        } catch (Sfnt.FontException x) {
+            throw ofEmoji(x);
+        }
         for (OtLayout.Feature f : added.features)
             for (int i = 0; i < f.lookups.size(); i++) f.lookups.set(i, f.lookups.get(i) + extra);
         if (extra > 0) {
@@ -857,11 +930,23 @@ public final class EmojiMerge {
         if (tg == null && eg == null) return true;                     // HarfBuzz guesses the classes of both from Unicode, as for each alone
         if (tg == null || eg == null) return false;
         int m = emoji.numGlyphs();
-        Gdef a = new Gdef(tg), b = new Gdef(eg);
+        Gdef a = new Gdef(tg), b;
+        try {
+            b = new Gdef(eg);
+        } catch (Sfnt.FontException x) {
+            throw ofEmoji(x);
+        }
         if (!a.ok || !b.ok || (a.glyphClass == 0) != (b.glyphClass == 0)) return false;
         int[] cls = new int[total], mark = new int[total];
-        int[] ac = a.classes(a.glyphClass, n), bc = b.classes(b.glyphClass, m);
-        int[] am = a.classes(a.markClass, n), bm = b.classes(b.markClass, m);
+        int[] ac = a.classes(a.glyphClass, n), am = a.classes(a.markClass, n), bc, bm;
+        List<int[]> sets = a.sets(n, 0), emojiSets;
+        try {
+            bc = b.classes(b.glyphClass, m);
+            bm = b.classes(b.markClass, m);
+            emojiSets = b.sets(m, n);
+        } catch (Sfnt.FontException x) {
+            throw ofEmoji(x);
+        }
         int maxMark = 0;
         for (int v : am) maxMark = Math.max(maxMark, v);
         System.arraycopy(ac, 0, cls, 0, n);
@@ -873,9 +958,8 @@ public final class EmojiMerge {
                 mark[n + i] = bm[i] + maxMark;
             }
         }
-        List<int[]> sets = a.sets(n, 0);
         int textSets = sets.size();
-        sets.addAll(b.sets(m, n));
+        sets.addAll(emojiSets);
         if (sets.size() > 0xFFFF) return false;
         // A copy (see Front) has its glyph's classes and mark sets
         for (int j = 0; j < fr.dups.size(); j++) {
@@ -997,7 +1081,8 @@ public final class EmojiMerge {
             return out;
         }
 
-        static Sfnt.FontException damaged() { return new Sfnt.FontException("The emoji font's glyph definitions (GDEF) are damaged."); }
+        /** Either font's: mergeGdef gives the emoji font's code "emoji_damaged". */
+        static Sfnt.FontException damaged() { return new Sfnt.FontException("This font's glyph definitions (GDEF) are damaged."); }
     }
 
     /** The glyphs (below {@code glyphs}) a Coverage table lists. */
@@ -1087,7 +1172,7 @@ public final class EmojiMerge {
                 byte[] raw = eg[work.remove(work.size() - 1)];
                 if (raw.length < 10 || Sfnt.s16(raw, 0) >= 0) continue;
                 for (Glyf.Component k : Glyf.decode(raw).components) {
-                    if (k.glyph >= m) throw new Sfnt.FontException("A composite glyph of the emoji font names glyph " + k.glyph + ", which the font does not have.");
+                    if (k.glyph >= m) throw new Sfnt.FontException("emoji_damaged", "A composite glyph of the emoji font names glyph " + k.glyph + ", which the font does not have.");
                     if (!set.get(k.glyph)) { set.set(k.glyph); work.add(k.glyph); }
                 }
             }
@@ -1131,23 +1216,33 @@ public final class EmojiMerge {
 
         Colr(byte[] t, int limit, FontProgress p) { this.t = t; this.limit = limit; this.p = p; }
 
-        static Sfnt.FontException damaged() { return new Sfnt.FontException("The emoji font's colour table (COLR) is damaged."); }
+        static Sfnt.FontException damaged() { return new Sfnt.FontException("emoji_damaged", "The emoji font's colour table (COLR) is damaged."); }
+
+        static Sfnt.FontException tooBigToMerge() { return new Sfnt.FontException("emoji_too_complex", "The emoji font's colour table (COLR) is too big to merge."); }
 
         /** Reads and checks the table, collecting its glyphs. */
         void walk() throws Sfnt.FontException {
             patch = false;
-            run();
+            try {
+                run();
+            } catch (Sfnt.FontException e) {
+                throw ofEmoji(e);
+            }
         }
 
         /** The table for the merged font (a new array); see the class comment. Call {@link #walk} first. */
         byte[] merged(int shift, double s, int[] copy, List<Integer> dups, int dupBase) throws Sfnt.FontException {
             this.shift = shift; this.s = s; this.copy = copy; this.dups = dups; this.dupBase = dupBase; patch = true;
             byte[] orig = t;
-            if (version == 1 && baseList != 0 && !roots.isEmpty()) t = wrapped(orig);
-            else t = orig.clone();
-            if (!dups.isEmpty()) t = v0Copies(t);
-            run();
-            if (!colrGlyphs.isEmpty()) t = inverses();
+            try {
+                if (version == 1 && baseList != 0 && !roots.isEmpty()) t = wrapped(orig);
+                else t = orig.clone();
+                if (!dups.isEmpty()) t = v0Copies(t);
+                run();
+                if (!colrGlyphs.isEmpty()) t = inverses();
+            } catch (Sfnt.FontException e) {
+                throw ofEmoji(e);
+            }
             byte[] out = t;
             t = orig;
             return out;
@@ -1161,7 +1256,7 @@ public final class EmojiMerge {
             edges.clear();
             boolean first = !patch;
             version = Sfnt.u16(t, 0);
-            if (version > 1) throw new Sfnt.FontException("The emoji font's colour table (COLR) is a newer version (" + version + ") than this app can read.");
+            if (version > 1) throw new Sfnt.FontException("emoji_damaged", "The emoji font's colour table (COLR) is a newer version (" + version + ") than this app can read.");
             int numBase = Sfnt.u16(t, 2), numLayers = Sfnt.u16(t, 12);
             long base = Sfnt.u32(t, 4), layer = Sfnt.u32(t, 8);
             if (numBase > 0) Sfnt.need(t, base, 6L * numBase);
@@ -1220,7 +1315,7 @@ public final class EmojiMerge {
                 Sfnt.w16(t, at, dupBase + g - limit);
                 return;
             }
-            if (g >= limit) throw new Sfnt.FontException("The emoji font's colour table (COLR) names glyph " + g + ", which the font does not have.");
+            if (g >= limit) throw new Sfnt.FontException("emoji_damaged", "The emoji font's colour table (COLR) names glyph " + g + ", which the font does not have.");
             if (!patch) { if (into != null) into.set(g); return; }
             mark(at, 2);
             Sfnt.w16(t, at, into == targets && copy != null && copy[g] >= 0 ? copy[g] : g + shift);
@@ -1278,7 +1373,7 @@ public final class EmojiMerge {
                     child(stack, at, 5);
                     return;
                 default:
-                    throw new Sfnt.FontException("The emoji font's colour table (COLR) uses a kind of paint (" + fmt + ") this app does not know.");
+                    throw new Sfnt.FontException("emoji_damaged", "The emoji font's colour table (COLR) uses a kind of paint (" + fmt + ") this app does not know.");
             }
         }
 
@@ -1361,7 +1456,7 @@ public final class EmojiMerge {
             long list = 34, wraps = list + 4 + 6L * records, affine = wraps + 7L * count, clipAt = affine + 24;
             long body = (clipAt + (clipCount == 0 ? 0 : 5 + 7L * clipCount) + 3) & ~3L;
             long size = body + orig.length - 34;
-            if (size > Integer.MAX_VALUE - 8 || size > 0xFFFFFF) throw new Sfnt.FontException("The emoji font's colour table (COLR) is too big to merge.");
+            if (size > Integer.MAX_VALUE - 8 || size > 0xFFFFFF) throw tooBigToMerge();
             long delta = body - 34;
             byte[] n = new byte[(int) size];
             System.arraycopy(orig, 0, n, 0, 34);
@@ -1432,7 +1527,7 @@ public final class EmojiMerge {
             if (more.isEmpty()) return t;
             long at = (t.length + 3) & ~3L, size = at + 6L * (numBase + more.size());
             if (numBase + more.size() > 0xFFFF || size > Integer.MAX_VALUE - 8)
-                throw new Sfnt.FontException("The emoji font's colour table (COLR) is too big to merge.");
+                throw tooBigToMerge();
             byte[] n = Arrays.copyOf(t, (int) size);
             System.arraycopy(t, (int) base, n, (int) at, 6 * numBase);
             int w = (int) at + 6 * numBase;
@@ -1451,7 +1546,7 @@ public final class EmojiMerge {
         private byte[] inverses() throws Sfnt.FontException {
             int k = colrGlyphs.size();
             long size = t.length + 10L * k + 24;
-            if (size > 0xFFFFFF) throw new Sfnt.FontException("The emoji font's colour table (COLR) is too big to merge.");
+            if (size > 0xFFFFFF) throw tooBigToMerge();
             byte[] n = java.util.Arrays.copyOf(t, (int) size);
             int affine = t.length + 10 * k;
             java.util.HashMap<Integer, Integer> wrapperOf = new java.util.HashMap<Integer, Integer>();
@@ -1470,7 +1565,7 @@ public final class EmojiMerge {
                 Integer w = wrapperOf.get(e[3]);
                 if (w == null) continue;
                 long v = w - (long) e[1];
-                if (v <= 0 || (e[2] == 3 && v > 0xFFFFFF)) throw new Sfnt.FontException("The emoji font's colour table (COLR) is too big to merge.");
+                if (v <= 0 || (e[2] == 3 && v > 0xFFFFFF)) throw tooBigToMerge();
                 if (e[2] == 3) w24(n, e[0], v); else Sfnt.w32(n, e[0], (int) v);
             }
             return n;

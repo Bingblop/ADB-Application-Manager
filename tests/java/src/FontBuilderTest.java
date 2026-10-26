@@ -819,6 +819,42 @@ public class FontBuilderTest {
       r.emoji = noPalette;
       FontBuilder.build(r, null);
     });
+    // what the merge meets in the emoji font while a face is made (the pick reads only COLR's header) names the emoji font, not the face
+    Sfnt v2 = Sfnt.parse(font(NOTO_EMOJI));
+    byte[] colr2 = v2.table("COLR").clone();
+    Sfnt.w16(colr2, 0, 2);
+    v2.put("COLR", colr2);
+    byte[] colrV2 = v2.toBytes();
+    throwsFont("an emoji font with a COLR version 2: emoji_damaged, says Emoji font", "emoji_damaged",
+        "Emoji font: The emoji font's colour table (COLR) is a newer version (2)", () -> {
+      FontBuilder.Request r = simple(font(NOTO), "X");
+      r.emoji = colrV2;
+      FontBuilder.build(r, null);
+    });
+    Sfnt bl = Sfnt.parse(font(TWEMOJI));
+    byte[] colr0 = bl.table("COLR").clone();
+    Sfnt.w16(colr0, (int) Sfnt.u32(colr0, 8), 65000);                    // the first layer's glyph
+    bl.put("COLR", colr0);
+    byte[] badLayer = bl.toBytes();
+    throwsFont("an emoji font whose COLR names glyph 65,000: emoji_damaged, says Emoji font", "emoji_damaged",
+        "Emoji font: The emoji font's colour table (COLR) names glyph 65000", () -> {
+      FontBuilder.Request r = simple(font(NOTO), "X");
+      r.bold = new FontBuilder.Face(font(NOTO_ITALIC), null);
+      r.emoji = badLayer;
+      FontBuilder.build(r, null);
+    });
+    // Twemoji's glyphs (up to 512 units) in a font that says 16 units per em: at 125 % of Noto's 1000 units they are scaled 78 times, past 32,767
+    Sfnt tb = Sfnt.parse(font(TWEMOJI));
+    byte[] tbHead = tb.table("head").clone();
+    Sfnt.w16(tbHead, 18, 16);
+    tb.put("head", tbHead);
+    byte[] tooBigEmoji = tb.toBytes();
+    throwsFont("emoji too big for the text font at this size: emoji_too_big, says Emoji font", "emoji_too_big", "Emoji font: ", () -> {
+      FontBuilder.Request r = simple(font(NOTO), "X");
+      r.emoji = tooBigEmoji;
+      r.emojiScale = 1.25;
+      FontBuilder.build(r, null);
+    });
 
     // 65,500 glyphs and Twemoji's 147 pass 65,535
     Sfnt many = Sfnt.parse(font(NOTO));
@@ -830,12 +866,30 @@ public class FontBuilderTest {
     Glyf.write(many, gl);
     mm.write(many, gl);
     byte[] manyBytes = many.toBytes();
-    throwsFont("65,500 glyphs and an emoji font of 147: too_many_glyphs", "too_many_glyphs", null, () -> {
+    throwsFont("65,500 glyphs and an emoji font of 147: too_many_glyphs, says Regular font (both fonts' doing, the face it was made for)", "too_many_glyphs",
+        "Regular font: The text font has 65,500 glyphs and the emoji font 147", () -> {
       FontBuilder.Request r = simple(manyBytes, "X");
       r.emoji = font(TWEMOJI);
       FontBuilder.build(r, null);
     });
     check("65,500 glyphs without emoji: built", FontBuilder.build(simple(manyBytes, "X"), null).regular != null);
+    // 65,387 + 147 leave one glyph id for the 3 U+FE0F copies Twemoji needs: built, the other two characters warned about
+    Sfnt near = Sfnt.parse(font(NOTO));
+    byte[][] ng = Arrays.copyOf(Glyf.readAll(near), 65387);
+    for (int i = 0; i < ng.length; i++) if (ng[i] == null) ng[i] = new byte[0];
+    Glyf.Metrics nm = new Glyf.Metrics(ng.length);
+    System.arraycopy(m.advance, 0, nm.advance, 0, m.advance.length);
+    System.arraycopy(m.lsb, 0, nm.lsb, 0, m.lsb.length);
+    Glyf.write(near, ng);
+    nm.write(near, ng);
+    FontBuilder.Request nr = simple(near.toBytes(), "X");
+    nr.emoji = font(TWEMOJI);
+    String nearFails;
+    FontBuilder.Result built = null;
+    try { built = FontBuilder.build(nr, null); nearFails = null; } catch (Sfnt.FontException x) { nearFails = x.code + ": " + x.getMessage() + " cause " + x.getCause(); }
+    check("65,387 glyphs and Twemoji with 3 U+FE0F copies, room for 1: built with " + EmojiMerge.W_FE0F_SEQUENCES,
+        built != null && Sfnt.parse(built.regular).numGlyphs() == 65535 && built.warnings.contains(EmojiMerge.W_FE0F_SEQUENCES),
+        nearFails != null ? nearFails : built.warnings.toString());
 
     // An engine's RuntimeException is still a FontException, with the cause kept
     final RuntimeException boom = new IllegalStateException("boom");

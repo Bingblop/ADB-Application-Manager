@@ -867,6 +867,22 @@ public class FontInstancerTest {
     got = eAt(hv, 900);
     check("hand gvar: with HVAR the advance is HVAR's, not the phantom points' (HarfBuzz's and FreeType's choice); the bearing is the phantom points'",
         Arrays.equals(got, new int[] { 61, 62, 423, 424, -10, 650, 650, -10, 491, 61 }), Arrays.toString(got));
+    // An HVAR they cannot read (its variation store of format 2, its advance map of format 7) HarfBuzz and FreeType leave out: the phantom
+    // points give the advance again (+ 6), and the font is made
+    byte[] h0 = synth.table("HVAR");
+    int storeAt = (int) Sfnt.u32(h0, 4), mapAt = (int) Sfnt.u32(h0, 8);
+    byte[] storeFmt = h0.clone(), mapFmt = h0.clone();
+    Sfnt.w16(storeFmt, storeAt, 2);
+    mapFmt[mapAt] = 7;
+    for (byte[] bad : new byte[][] { storeFmt, mapFmt }) {
+      Sfnt dh = withE(synth, new int[][] { { 16384, 0, 0, 0 }, { 0, -16384, 0, 0 } }, e3);
+      dh.put("HVAR", bad);
+      String fails = null;
+      try { got = eAt(dh, 900); } catch (Sfnt.FontException x) { got = null; fails = x.code + ": " + x.getMessage(); }
+      check("hand gvar: an HVAR with " + (bad == storeFmt ? "a variation store of format 2" : "an advance map of format 7") + " is left out, the advance is "
+          + "the phantom points' (as HarfBuzz and FreeType take it)", got != null && Arrays.equals(got, new int[] { 61, 62, 423, 424, -10, 650, 650, -10, 486, 61 }),
+          fails != null ? fails : Arrays.toString(got));
+    }
 
     // A point listed twice (the last delta counts) and one the glyph does not have (ignored); one listed point moves its whole contour
     int[] p4 = { 0x03, 0x02, 0, 0, 100 }, x4 = { 0x02, 5, 9, 77 }, y4 = { 0x82 };
