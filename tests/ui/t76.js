@@ -6,7 +6,7 @@ const inst = require('./lib/inst_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'console', 'logcat', 'settings', 'extrasettings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm', 'rootfeatures', 'about'];
+const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'console', 'logcat', 'settings', 'extrasettings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm', 'rootfeatures', 'fonts', 'about'];
 const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];          // the tabs on the bottom bar until the user pins others (saved with the order; Extra Settings takes the third place, Console the fourth)
 
 (async () => {
@@ -29,8 +29,8 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   // 1) the bar: names, two lines, order
   let page = await open();
   let t = await bar(page);
-  check('1. seventeen tabs in the new order', JSON.stringify(t.map(x => x.key)) === JSON.stringify(DEFAULT_ORDER), JSON.stringify(t.map(x => x.key)));
-  check('   named as asked, two lines where it reads better', JSON.stringify(t.map(x => x.text)) === JSON.stringify(['Application\nManager', 'Saved\nApplications', 'UAD-NG\nDebloater', 'Installer/\nUpdater', 'File\nManager', 'Console', 'Live\nLogcat', 'Hidden\nSettings', 'Extra\nSettings', 'RRO/Monet\nCustomization', 'App\nStores', 'Task\nManager', 'Connected\nDevices', 'Morphe\nPatcher', 'SD Maid', 'Root\nFeatures', 'About']), JSON.stringify(t.map(x => x.text)));
+  check('1. eighteen tabs in the new order', JSON.stringify(t.map(x => x.key)) === JSON.stringify(DEFAULT_ORDER), JSON.stringify(t.map(x => x.key)));
+  check('   named as asked, two lines where it reads better', JSON.stringify(t.map(x => x.text)) === JSON.stringify(['Application\nManager', 'Saved\nApplications', 'UAD-NG\nDebloater', 'Installer/\nUpdater', 'File\nManager', 'Console', 'Live\nLogcat', 'Hidden\nSettings', 'Extra\nSettings', 'RRO/Monet\nCustomization', 'App\nStores', 'Task\nManager', 'Connected\nDevices', 'Morphe\nPatcher', 'SD Maid', 'Root\nFeatures', 'Custom\nFonts', 'About']), JSON.stringify(t.map(x => x.text)));
   check('   Application Manager is active at the start', t[0].active && t.filter(x => x.active).length === 1);
   const geo = await ev(page, () => Array.from(document.querySelectorAll('.tab-btn')).map(b => ({ h: Math.round(b.getBoundingClientRect().height), clipped: b.scrollWidth > b.clientWidth + 1, font: getComputedStyle(b).fontSize, lines: b.innerText.split('\n').length })));
   check('   every tab is at least 44 px tall and no label is cut off', geo.every(g => g.h >= 44 && !g.clipped), JSON.stringify(geo.map(g => g.h + (g.clipped ? '!' : ''))));
@@ -56,9 +56,9 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   const order3 = await ev(page, () => Array.from(document.querySelectorAll('#view-prefs > .color-card')).map(c => c.querySelector('.color-card-title').innerText.trim()));
   check('3. Settings: the language at the very top, then Appearance and the colour cards, the Default Ask Agent after the Curated Theme Palettes (7.14), the Feature List after them, then the Press and hold guide at the very bottom (Trim Caches moved to the SD Maid tab in v7.10.10)', order3[0] === 'Language' && /Appearance/.test(order3[1]) && order3.indexOf('Default Ask Agent') === order3.indexOf('Curated Theme Palettes') + 1 && order3.indexOf('Feature List') >= 0 && order3[order3.length - 2] === 'Feature List' && order3[order3.length - 1] === 'Press and hold guide' && order3.indexOf('Trim Caches') < 0, JSON.stringify(order3));
   let r = await rows(page);
-  check('   fifteen rows, every tab except Application Manager and About, in the tab bar order, all on', r.length === 15 && r.map(x => x.key).join() === DEFAULT_ORDER.slice(1, 16).join() && r.every(x => x.on), JSON.stringify(r.map(x => x.name)));
-  check('   the first row cannot move up and the last cannot move down', r[0].up === false && r[0].down === true && r[14].up === true && r[14].down === false);
-  check('   the names are the full names', r.map(x => x.name).join('|') === 'Saved Applications|UAD-NG Debloater|APK Installer/Updater|File Manager|Console|Live Logcat|Hidden Settings|Extra Settings|RRO/Monet Customization|App Stores|Task Manager|Connected Devices|Morphe Patcher|SD Maid|Root Features');
+  check('   sixteen rows, every tab except Application Manager and About, in the tab bar order, all on', r.length === 16 && r.map(x => x.key).join() === DEFAULT_ORDER.slice(1, 17).join() && r.every(x => x.on), JSON.stringify(r.map(x => x.name)));
+  check('   the first row cannot move up and the last cannot move down', r[0].up === false && r[0].down === true && r[15].up === true && r[15].down === false);
+  check('   the names are the full names', r.map(x => x.name).join('|') === 'Saved Applications|UAD-NG Debloater|APK Installer/Updater|File Manager|Console|Live Logcat|Hidden Settings|Extra Settings|RRO/Monet Customization|App Stores|Task Manager|Connected Devices|Morphe Patcher|SD Maid|Root Features|Custom Fonts');
   const a11y = await ev(page, () => ({ switches: Array.from(document.querySelectorAll('#featureList .switch-input')).every(i => i.getAttribute('aria-label')), moves: Array.from(document.querySelectorAll('#featureList .fl-move')).every(b => /^Move .+ (up|down)$/.test(b.getAttribute('aria-label'))) }));
   check('   every switch and arrow has a name for a screen reader', a11y.switches && a11y.moves, JSON.stringify(a11y));
   check('   there is a Reset to Default button', (await ev(page, () => document.getElementById('featureResetBtn').innerText)) === 'Reset to Default');
@@ -67,13 +67,13 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   // 4) turning a tab off takes it from the bar; on puts it back where it was
   await page.locator('#featureList .fl-row[data-tab="files"] .fl-switch').click();
   r = await rows(page);
-  check('4. turning File Manager off: it leaves the bar, the row stays (dimmed) so it can be turned on again', !(await keys(page)).includes('files') && r.find(x => x.key === 'files').on === false && (await keys(page)).length === 16);
+  check('4. turning File Manager off: it leaves the bar, the row stays (dimmed) so it can be turned on again', !(await keys(page)).includes('files') && r.find(x => x.key === 'files').on === false && (await keys(page)).length === 17);
   check('   Application Manager and About are still first and last', (await keys(page))[0] === 'apps' && (await keys(page)).slice(-1)[0] === 'about');
-  check('   the choice is saved', JSON.stringify(await saved(page)) === JSON.stringify({ order: DEFAULT_ORDER.slice(1, 16), off: ['files'], pinned: DEFAULT_PINNED, shortcuts: {} }), JSON.stringify(await saved(page)));
+  check('   the choice is saved', JSON.stringify(await saved(page)) === JSON.stringify({ order: DEFAULT_ORDER.slice(1, 17), off: ['files'], pinned: DEFAULT_PINNED, shortcuts: {} }), JSON.stringify(await saved(page)));
   await page.locator('#featureList .fl-row[data-tab="debloater"] .fl-switch').click();
-  check('   two off at once', (await keys(page)).join() === 'apps,saved-lists,installer,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,about');
+  check('   two off at once', (await keys(page)).join() === 'apps,saved-lists,installer,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,fonts,about');
   await page.locator('#featureList .fl-row[data-tab="files"] .fl-switch').click();
-  check('   File Manager back on: it returns to its place in the bar', (await keys(page)).join() === 'apps,saved-lists,installer,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,about');
+  check('   File Manager back on: it returns to its place in the bar', (await keys(page)).join() === 'apps,saved-lists,installer,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,fonts,about');
   await page.locator('#featureList .fl-row[data-tab="debloater"] .fl-switch').click();
 
   // 5) a tab that is off cannot be opened by the app's own links either
@@ -117,9 +117,9 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   await p2.close();
   await page.click('#featureResetBtn');
   r = await rows(page);
-  check('   Reset to Default: every tab on and in the first order again', r.map(x => x.key).join() === DEFAULT_ORDER.slice(1, 16).join() && r.every(x => x.on) && (await keys(page)).join() === DEFAULT_ORDER.join(), (await keys(page)).join());
+  check('   Reset to Default: every tab on and in the first order again', r.map(x => x.key).join() === DEFAULT_ORDER.slice(1, 17).join() && r.every(x => x.on) && (await keys(page)).join() === DEFAULT_ORDER.join(), (await keys(page)).join());
   check('   and says so', /default order/.test(await ev(page, () => document.getElementById('toastMsg').innerText)));
-  check('   the saved choice is the default one', JSON.stringify(await saved(page)) === JSON.stringify({ order: DEFAULT_ORDER.slice(1, 16), off: [], pinned: DEFAULT_PINNED, shortcuts: {} }));
+  check('   the saved choice is the default one', JSON.stringify(await saved(page)) === JSON.stringify({ order: DEFAULT_ORDER.slice(1, 17), off: [], pinned: DEFAULT_PINNED, shortcuts: {} }));
   await page.close();
 
   // 8) a saved choice from an older version is made to fit this version's tabs
@@ -127,7 +127,7 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   page = await open({ tab_config: JSON.stringify(odd) });
   const k8 = await keys(page);
   check('8. unknown tabs, repeats and the two fixed tabs in a saved choice are ignored', !k8.includes('bogus') && k8[0] === 'apps' && k8.slice(-1)[0] === 'about' && new Set(k8).size === k8.length, k8.join());
-  check('   the tabs it does not know are placed after their default neighbour, the saved ones keep their order', k8.join() === 'apps,saved-lists,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,debloater,about', k8.join());
+  check('   the tabs it does not know are placed after their default neighbour, the saved ones keep their order', k8.join() === 'apps,saved-lists,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,fonts,debloater,about', k8.join());
   check('   the one it turned off stays off, once', !k8.includes('installer') && JSON.stringify(await ev(page, () => tabConfig.off)) === '["installer"]', JSON.stringify(await ev(page, () => tabConfig.off)));
   await page.close();
   // 8b) the Extra Settings tab (v7.12.12): a fresh phone has it right after Hidden Settings; so does a phone whose saved order is from before it existed
@@ -138,10 +138,10 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   const OLD = ['saved-lists', 'debloater', 'installer', 'files', 'terminal', 'settings', 'overlays', 'store', 'logcat', 'taskmgr', 'devices', 'morphe', 'sdm'];
   page = await open({ tab_config: JSON.stringify({ order: OLD, off: ['store'] }) });
   const o8 = await keys(page);
-  check('   a saved order from before the tab existed (the thirteen old tabs, App Stores off): it is placed right after Hidden Settings, Console takes the place of the Command-Line Interface and the Logcat Viewer is gone, the rest keeps its order and App Stores stays off', o8.join() === 'apps,saved-lists,debloater,installer,files,console,logcat,settings,extrasettings,overlays,taskmgr,devices,morphe,sdm,rootfeatures,about', o8.join());
+  check('   a saved order from before the tab existed (the thirteen old tabs, App Stores off): it is placed right after Hidden Settings, Console takes the place of the Command-Line Interface and the Logcat Viewer is gone, the rest keeps its order and App Stores stays off', o8.join() === 'apps,saved-lists,debloater,installer,files,console,logcat,settings,extrasettings,overlays,taskmgr,devices,morphe,sdm,rootfeatures,fonts,about', o8.join());
   await ev(page, () => switchView('prefs')); await page.waitForTimeout(200);
   const r8 = await rows(page);
-  check('   the Feature List (Settings) shows it in that place, with its switch on, named "Extra Settings"', r8.map(x => x.key).join() === 'saved-lists,debloater,installer,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures' && r8.find(x => x.key === 'extrasettings').on === true && r8.find(x => x.key === 'extrasettings').name === 'Extra Settings' && r8.find(x => x.key === 'store').on === false, JSON.stringify(r8.map(x => x.key + (x.on ? '' : ' (off)'))));
+  check('   the Feature List (Settings) shows it in that place, with its switch on, named "Extra Settings"', r8.map(x => x.key).join() === 'saved-lists,debloater,installer,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,fonts' && r8.find(x => x.key === 'extrasettings').on === true && r8.find(x => x.key === 'extrasettings').name === 'Extra Settings' && r8.find(x => x.key === 'store').on === false, JSON.stringify(r8.map(x => x.key + (x.on ? '' : ' (off)'))));
   await page.close();
   page = await open({ tab_config: JSON.stringify({ order: ['settings', 'saved-lists', 'debloater', 'installer', 'files', 'terminal', 'overlays', 'store', 'logcat', 'taskmgr', 'devices', 'morphe', 'sdm'], off: [] }) });
   const m8 = await keys(page);
@@ -179,7 +179,7 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   }
 
   // 11) a link inside the app to a tab that is switched off does nothing else either: no sheet closes, nothing starts in the background
-  const OFF = off => JSON.stringify({ order: DEFAULT_ORDER.slice(1, 16), off });
+  const OFF = off => JSON.stringify({ order: DEFAULT_ORDER.slice(1, 17), off });
   const open11 = async (off, extraKv) => {
     const p = await open(Object.assign({ tab_config: OFF(off) }, extraKv || {}), undefined, [{ pkg: 'com.example.one', name: 'One', isSystem: false, version: '1.0' }, { pkg: 'com.example.two', name: 'Two', isSystem: false, version: '1.0' }]);
     await ev(p, () => {

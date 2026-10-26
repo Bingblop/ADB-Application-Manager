@@ -1,0 +1,39 @@
+ok   1. text_has_color: "Regular font: This font already has color glyphs, so emoji cannot be added to it. Set Emoji to None."
+ok   1. symbol_font: "Bold font: This is a symbol font, so emoji cannot be added to it. Set Emoji to None."
+ok   1. emoji_outlines: "Emoji font: Only an emoji font with TrueType outlines can go inside a font; this one has PostScript (CFF) outlines. Choose another emoji font."
+ok   1. no_palette: "Emoji font: This font has color layers (COLR) but no color palette (CPAL). Choose another emoji font."
+ok   1. palette_damaged: "Emoji font: This font's color palette (CPAL) is damaged. Choose another emoji font."
+ok   1. emoji_symbol: "Emoji font: This font's characters are not at their Unicode places, so its emoji cannot be found. Choose another emoji font."
+ok   1. bitmap_emoji: "Emoji font: This font's emoji are made of pictures (CBDT or sbix), which cannot go inside a font. Choose a COLR emoji font."
+ok   1. emoji_damaged: "Emoji font: This font file is damaged, or uses something the app cannot read. Choose another emoji font."
+ok   1. emoji_too_complex: "Emoji font: This font is too complex for the app to put its emoji inside a font. Choose another emoji font."
+ok   1. emoji_too_big: "Emoji font: The emoji would be too large for this font. Choose another emoji font, or set Emoji to None."
+ok   2. a GSUB table too large to write is the emoji's doing: it says so and what to change
+ok      a font over 96 MB: the font package's limit
+ok      too_many_glyphs keeps both counts
+ok      GPOS too large, emoji chosen: only the instancer writes GPOS, so the weight is named, not the emoji
+ok      GSUB too large, a variable face with emoji: either could be the cause, and the sentence says so
+ok      GSUB too large with Emoji None: the variable font at its weight, not the emoji
+ok   3. failed: the page's lead, Java's detail kept
+ok      failed with a bare detail: "Something went wrong: …"
+ok      a code the page does not know: Java's sentence as it is
+ok      not_usable at the start: the page's sentence after "Emoji font: "
+ok   4. an emoji font with PostScript outlines is refused at the pick, in the page's words
+ok      a TrueType COLR emoji font is taken, with no word about Latin letters
+ok   5. an emoji font chosen as the Regular: the no-Latin warning, in the page's words
+ok      it has color glyphs: with an emoji chosen, the refusal shows before the build and Build waits
+ok      Emoji None: the line goes, Build is on
+ok   6. the warnings in the page's words: color, not colour; the bitmap kind kept
+ok      the character map line keeps its counts, in the page's number format
+ok      a known sentence is the page's; one the page does not know stays as it is
+ok      the emoji sequences a font with very many glyphs cannot keep: "The font has so many glyphs…", their count kept
+ok      each line takes its own direction (dir="auto")
+ok      each line is indented at its start, here the left (margin-inline-start)
+ok   7. no page errors
+ok   8. de on a en-US phone: the glyph count "2.164 Glyphen", the progress "1.200 von 3.913"
+ok      too_many_glyphs: both counts grouped as the sentence groups 65,535
+ok      no page errors
+ok   8. en on a de-DE phone: the glyph count "2,164 glyphs", the progress "1,200 of 3,913"
+ok      too_many_glyphs: both counts grouped as the sentence groups 65,535
+ok      no page errors
+all passed

@@ -1,0 +1,33 @@
+ok   1. Root: the changer is open (ROOT), the font in use, Reset on
+ok      System emoji open (ROOT): Default, the downloaded font, Use, Soft reboot
+ok      Apply: off on the font in use, on for the other
+ok      One UI 8.5: the note above My fonts, once
+ok      no page errors
+ok   2. the system user: the changer asks the app ("Checking…") and is open as SYSTEM USER
+ok      System emoji: the standard locked row, "Needs Super User", disabled
+ok      the system user is never called root
+ok      only the changer status was asked (no system emoji status off its gate)
+ok   3. Apply: fontMakerApply(id), "Applying…" on the row, Reset off while it runs
+ok      the read-back: sans.loc and the file with its size, hash and label
+ok      Lato is the phone font now, In use in My fonts
+ok      a toast says it is applied
+ok   4. Reset to Default: fontMakerReset, "Resetting…"
+ok      back to Default: sans.loc default#default, Reset off, the toast
+ok      no page errors
+ok   5. Shizuku as UID 0: both cards open, both ROOT
+ok      no page errors
+ok   6. the ADB shell: the changer is the standard locked row, "Needs Root or the system user"
+ok      System emoji locked too, "Needs Super User"
+ok      every Apply in My fonts carries the lock
+ok      nothing privileged was asked
+ok      a tap on a locked Apply goes the Root way (asks), sends nothing
+ok      no page errors
+ok   7. not a Samsung: the changer says it needs a Samsung phone (SAMSUNG ONLY)
+ok      My fonts says font packages work only on Samsung phones, export still works
+ok      Install and Apply are off
+ok      System emoji works on any phone with root
+ok      the changer status was not asked
+ok      no page errors
+ok   8. a One UI that applies these fonts: no note above My fonts
+ok      no page errors
+all passed

@@ -140,12 +140,27 @@ final class HttpSafe {
      * reads the body and disconnects. Headers named Authorization, x-apikey and Cookie are dropped when a redirect changes the host.
      */
     static HttpURLConnection open(String url, int connectMs, int readMs, Map<String, String> headers) throws IOException {
+        return open(url, connectMs, readMs, headers, null);
+    }
+
+    /** Told of each hop's connection before it connects. */
+    interface Hops {
+        /**
+         * Called with the connection of one hop before it connects, so another thread (a Cancel) can disconnect it while it connects, while
+         * TLS is set up or while it waits for the answer, instead of waiting out the timeouts. Throwing stops before the hop connects.
+         */
+        void opened(HttpURLConnection c) throws IOException;
+    }
+
+    /** {@link #open(String, int, int, Map)}, telling {@code hops} (may be null) of each hop's connection before it connects. */
+    static HttpURLConnection open(String url, int connectMs, int readMs, Map<String, String> headers, Hops hops) throws IOException {
         String cur = url;
         Map<String, String> hdr = headers == null ? new LinkedHashMap<String, String>() : headers;
         for (int hop = 0; hop <= MAX_HOPS; hop++) {
             HttpURLConnection c = connection(cur, connectMs, readMs, hdr);
             boolean keep = false;
             try {
+                if (hops != null) hops.opened(c);
                 int code = c.getResponseCode();
                 if (code == 301 || code == 302 || code == 303 || code == 307 || code == 308) {
                     String loc = c.getHeaderField("Location");

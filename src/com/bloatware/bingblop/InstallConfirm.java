@@ -137,6 +137,36 @@ final class InstallConfirm {
     }
 
     /**
+     * The question before a font package made in the Custom Fonts tab is installed with a privileged mode. The app made the package and signed it with
+     * its own key, recorded its SHA-256 then, and has just checked the file that goes to the install against that record. The font's name is the
+     * user's own text and the options are the shell's: they come after it, quoted.
+     *
+     * @param fontName         the name the font was given (may be empty)
+     * @param packageName      the package name the app gave the font
+     * @param versionName      the package's version name
+     * @param installedVersion the version installed now, or null when the package is not installed
+     * @param mode             the privileged mode the install runs through
+     * @param options          the install options that will be used, as the shell would get them (may be empty)
+     */
+    static String messageFontPackage(String fontName, String packageName, String versionName, String installedVersion, String mode, String options) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Source: a font package this app made (Custom Fonts, My fonts)\n");
+        viaLine(sb, mode);
+        newOrReplaces(sb, installedVersion);
+        sb.append("The file matches the SHA-256 checksum the app recorded when it made the package.\n");
+        sb.append("\nIn the package:\n");
+        String fn = quoted(fontName, 80);
+        if (!fn.isEmpty()) sb.append("Font: ").append(fn).append("\n");
+        sb.append("Package: ").append(packageText(packageName)).append("\n");
+        String v = quoted(versionName, 40);
+        if (!v.isEmpty()) sb.append("Version: ").append(v).append("\n");
+        String o = quoted(options, 160);
+        if (!o.isEmpty()) sb.append("Options: ").append(o).append("\n");
+        sb.append("\n").append(NO_SYSTEM_QUESTION);
+        return sb.toString();
+    }
+
+    /**
      * The question before one update downloaded in the Updater is installed with a privileged mode. The app has checked that the file is the package it
      * asked for, that its version is newer and that it is signed with the key of the installed app (it would not have got this far otherwise).
      *

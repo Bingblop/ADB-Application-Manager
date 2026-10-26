@@ -1,0 +1,559 @@
+# fontbuilder expectations: written by make_fixtures.py expect from FontBuilderTest --dump; see README.md
+source FixtureSans3-Bold.otf 3769201c6a1bd561c09c741b34a3357c64ce3d99a791189f481956c66ae95ab9
+source FixtureSans3-Regular.otf cfae6763a81b08b72b06d99dfd54f70ce4702d811e5e620f4176ae69bc22b055
+source FixtureSans3VF.otf 21cd3e966f4453645d69639ed73ec97b7275a34da1bad92680fa845804d71431
+source Inter-var.ttf 39cb443814421c6e9a8eeeced82e49d9e635d3f9e8aa8066cb97a201a71dabaf
+source Noto-COLRv1-sub.ttf c107b274aca304d3ff8d41fe78d289afd9dd1bee7985098f2591a4c7aa8e1e56
+source NotoSans-Italic.ttf dd5b642841cbad8100a5fb9b24e6695e1862a8e7e3399b43ba5406b8385a4005
+source NotoSans-Regular.ttf 06e9572054345199eee1a42f1aeeab6e6413fb6f388e161311a42abbeb6a18d7
+source Twemoji-sub.ttf 4eb172a8be827f6d975b0572a4778e573326502d3f5ba52868c296e1d2d343c9
+face var Regular
+tables GDEF GPOS GSUB OS/2 cmap gasp glyf head hhea hmtx loca maxp name post
+glyphs 113
+name 1 0 0 0 Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+name 1 0 0 1 Inter Test
+name 1 0 0 2 Regular
+name 1 0 0 3 Inter Test Regular; 2026-06-01
+name 1 0 0 4 Inter Test Regular
+name 1 0 0 5 Version 4.001;git-66647c0bb
+name 1 0 0 6 InterTest-Regular
+name 1 0 0 7 Inter UI and Inter is a trademark of rsms.
+name 1 0 0 8 rsms
+name 1 0 0 9 Rasmus Andersson
+name 1 0 0 11 https://rsms.me/
+name 1 0 0 12 https://rsms.me/
+name 1 0 0 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org
+name 1 0 0 14 https://openfontlicense.org
+name 1 0 0 256 Optical size
+name 1 0 0 257 Weight
+name 1 0 0 303 Thin
+name 1 0 0 304 ExtraLight
+name 1 0 0 305 Light
+name 1 0 0 306 Regular
+name 1 0 0 307 Medium
+name 1 0 0 308 SemiBold
+name 1 0 0 309 Bold
+name 1 0 0 310 ExtraBold
+name 1 0 0 311 Black
+name 1 0 0 312 Optical Size
+name 1 0 0 313 14pt
+name 1 0 0 314 16pt
+name 1 0 0 315 17pt
+name 1 0 0 316 18pt
+name 1 0 0 317 20pt
+name 1 0 0 318 24pt
+name 1 0 0 319 28pt
+name 1 0 0 320 Italic
+name 1 0 0 321 Roman
+name 3 1 1033 0 Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+name 3 1 1033 1 Inter Test
+name 3 1 1033 2 Regular
+name 3 1 1033 3 Inter Test Regular; 2026-06-01
+name 3 1 1033 4 Inter Test Regular
+name 3 1 1033 5 Version 4.001;git-66647c0bb
+name 3 1 1033 6 InterTest-Regular
+name 3 1 1033 7 Inter UI and Inter is a trademark of rsms.
+name 3 1 1033 8 rsms
+name 3 1 1033 9 Rasmus Andersson
+name 3 1 1033 11 https://rsms.me/
+name 3 1 1033 12 https://rsms.me/
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org
+name 3 1 1033 14 https://openfontlicense.org
+name 3 1 1033 256 Optical size
+name 3 1 1033 257 Weight
+name 3 1 1033 303 Thin
+name 3 1 1033 304 ExtraLight
+name 3 1 1033 305 Light
+name 3 1 1033 306 Regular
+name 3 1 1033 307 Medium
+name 3 1 1033 308 SemiBold
+name 3 1 1033 309 Bold
+name 3 1 1033 310 ExtraBold
+name 3 1 1033 311 Black
+name 3 1 1033 312 Optical Size
+name 3 1 1033 313 14pt
+name 3 1 1033 314 16pt
+name 3 1 1033 315 17pt
+name 3 1 1033 316 18pt
+name 3 1 1033 317 20pt
+name 3 1 1033 318 24pt
+name 3 1 1033 319 28pt
+name 3 1 1033 320 Italic
+name 3 1 1033 321 Roman
+os2 400 0x00c0
+head 0 3863116800
+post 3
+cmap 106 fdb21f6a
+hmtx a96a0783
+glyf ff1b3fd2
+end
+face var Bold
+tables GDEF GPOS GSUB OS/2 cmap gasp glyf head hhea hmtx loca maxp name post
+glyphs 113
+name 1 0 0 0 Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+name 1 0 0 1 Inter Test
+name 1 0 0 2 Bold
+name 1 0 0 3 Inter Test Bold; 2026-06-01
+name 1 0 0 4 Inter Test Bold
+name 1 0 0 5 Version 4.001;git-66647c0bb
+name 1 0 0 6 InterTest-Bold
+name 1 0 0 7 Inter UI and Inter is a trademark of rsms.
+name 1 0 0 8 rsms
+name 1 0 0 9 Rasmus Andersson
+name 1 0 0 11 https://rsms.me/
+name 1 0 0 12 https://rsms.me/
+name 1 0 0 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org
+name 1 0 0 14 https://openfontlicense.org
+name 1 0 0 256 Optical size
+name 1 0 0 257 Weight
+name 1 0 0 303 Thin
+name 1 0 0 304 ExtraLight
+name 1 0 0 305 Light
+name 1 0 0 306 Regular
+name 1 0 0 307 Medium
+name 1 0 0 308 SemiBold
+name 1 0 0 309 Bold
+name 1 0 0 310 ExtraBold
+name 1 0 0 311 Black
+name 1 0 0 312 Optical Size
+name 1 0 0 313 14pt
+name 1 0 0 314 16pt
+name 1 0 0 315 17pt
+name 1 0 0 316 18pt
+name 1 0 0 317 20pt
+name 1 0 0 318 24pt
+name 1 0 0 319 28pt
+name 1 0 0 320 Italic
+name 1 0 0 321 Roman
+name 3 1 1033 0 Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+name 3 1 1033 1 Inter Test
+name 3 1 1033 2 Bold
+name 3 1 1033 3 Inter Test Bold; 2026-06-01
+name 3 1 1033 4 Inter Test Bold
+name 3 1 1033 5 Version 4.001;git-66647c0bb
+name 3 1 1033 6 InterTest-Bold
+name 3 1 1033 7 Inter UI and Inter is a trademark of rsms.
+name 3 1 1033 8 rsms
+name 3 1 1033 9 Rasmus Andersson
+name 3 1 1033 11 https://rsms.me/
+name 3 1 1033 12 https://rsms.me/
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org
+name 3 1 1033 14 https://openfontlicense.org
+name 3 1 1033 256 Optical size
+name 3 1 1033 257 Weight
+name 3 1 1033 303 Thin
+name 3 1 1033 304 ExtraLight
+name 3 1 1033 305 Light
+name 3 1 1033 306 Regular
+name 3 1 1033 307 Medium
+name 3 1 1033 308 SemiBold
+name 3 1 1033 309 Bold
+name 3 1 1033 310 ExtraBold
+name 3 1 1033 311 Black
+name 3 1 1033 312 Optical Size
+name 3 1 1033 313 14pt
+name 3 1 1033 314 16pt
+name 3 1 1033 315 17pt
+name 3 1 1033 316 18pt
+name 3 1 1033 317 20pt
+name 3 1 1033 318 24pt
+name 3 1 1033 319 28pt
+name 3 1 1033 320 Italic
+name 3 1 1033 321 Roman
+os2 700 0x00a0
+head 1 3863116800
+post 3
+cmap 106 fdb21f6a
+hmtx f2cf1780
+glyf 0a840a65
+end
+face cff Regular
+tables BASE COLR CPAL GDEF GPOS GSUB OS/2 cmap glyf head hhea hmtx loca maxp name post
+glyphs 312
+name 1 0 0 2 Regular
+name 1 0 0 5 Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+name 1 0 0 6 CafeSans-Regular
+name 1 0 0 7 Source is a trademark of Adobe in the United States and/or other countries.
+name 1 0 0 8 Adobe
+name 1 0 0 9 Paul D. Hunt
+name 1 0 0 11 http://www.adobe.com/type
+name 1 0 0 14 http://scripts.sil.org/OFL
+name 3 1 1033 0 \u00a9 2023 Adobe (http://www.adobe.com/), with Reserved Font Name \u2018Source\u2019
+name 3 1 1033 1 Caf\u00e9 Sans
+name 3 1 1033 2 Regular
+name 3 1 1033 3 Caf\u00e9 Sans Regular; 2026-06-01
+name 3 1 1033 4 Caf\u00e9 Sans Regular
+name 3 1 1033 5 Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+name 3 1 1033 6 CafeSans-Regular
+name 3 1 1033 7 Source is a trademark of Adobe in the United States and/or other countries.
+name 3 1 1033 8 Adobe
+name 3 1 1033 9 Paul D. Hunt
+name 3 1 1033 11 http://www.adobe.com/type
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL. This Font Software is distributed on an \u2018AS IS\u2019 BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+name 3 1 1033 14 http://scripts.sil.org/OFL
+os2 400 0x0040
+head 0 3863116800
+post 3
+cmap 118 d35e0dfe
+hmtx d7229d72
+glyf ca75d404
+end
+face cff Bold
+tables BASE COLR CPAL GDEF GPOS GSUB OS/2 cmap glyf head hhea hmtx loca maxp name post
+glyphs 312
+name 1 0 0 2 Bold
+name 1 0 0 5 Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+name 1 0 0 6 CafeSans-Bold
+name 1 0 0 7 Source is a trademark of Adobe in the United States and/or other countries.
+name 1 0 0 8 Adobe
+name 1 0 0 9 Paul D. Hunt
+name 1 0 0 11 http://www.adobe.com/type
+name 1 0 0 14 http://scripts.sil.org/OFL
+name 3 1 1033 0 \u00a9 2023 Adobe (http://www.adobe.com/), with Reserved Font Name \u2018Source\u2019
+name 3 1 1033 1 Caf\u00e9 Sans
+name 3 1 1033 2 Bold
+name 3 1 1033 3 Caf\u00e9 Sans Bold; 2026-06-01
+name 3 1 1033 4 Caf\u00e9 Sans Bold
+name 3 1 1033 5 Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+name 3 1 1033 6 CafeSans-Bold
+name 3 1 1033 7 Source is a trademark of Adobe in the United States and/or other countries.
+name 3 1 1033 8 Adobe
+name 3 1 1033 9 Paul D. Hunt
+name 3 1 1033 11 http://www.adobe.com/type
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL. This Font Software is distributed on an \u2018AS IS\u2019 BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+name 3 1 1033 14 http://scripts.sil.org/OFL
+os2 700 0x0020
+head 1 3863116800
+post 3
+cmap 118 d35e0dfe
+hmtx c8ca8690
+glyf 702353a3
+end
+face cff2 Regular
+tables BASE COLR CPAL GDEF GPOS GSUB OS/2 cmap glyf head hhea hmtx loca maxp name post
+glyphs 260
+name 1 0 0 1 Fixture VF
+name 1 0 0 2 Regular
+name 1 0 0 3 Fixture VF Regular; 2026-06-01
+name 1 0 0 4 Fixture VF Regular
+name 1 0 0 5 Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+name 1 0 0 6 FixtureVF-Regular
+name 1 0 0 7 Source is a trademark of Adobe in the United States and/or other countries.
+name 1 0 0 8 Adobe
+name 1 0 0 9 Paul D. Hunt
+name 1 0 0 11 http://www.adobe.com/type
+name 1 0 0 14 http://scripts.sil.org/OFL
+name 1 0 0 287 Regular
+name 1 0 0 289 Italic
+name 1 0 0 290 ExtraLight
+name 1 0 0 291 Light
+name 1 0 0 292 Regular
+name 1 0 0 293 Medium
+name 1 0 0 294 Semibold
+name 1 0 0 295 Bold
+name 1 0 0 296 ExtraBold
+name 1 0 0 297 Black
+name 1 0 0 298 Regular
+name 1 0 0 299 Weight
+name 1 0 0 300 ExtraLight
+name 1 0 0 301 FixtureSans3VF-ExtraLight
+name 1 0 0 302 Light
+name 1 0 0 303 FixtureSans3VF-Light
+name 1 0 0 304 FixtureSans3VF-Regular
+name 1 0 0 305 Medium
+name 1 0 0 306 FixtureSans3VF-Medium
+name 1 0 0 307 Semibold
+name 1 0 0 308 FixtureSans3VF-Semibold
+name 1 0 0 309 Bold
+name 1 0 0 310 FixtureSans3VF-Bold
+name 1 0 0 311 Black
+name 1 0 0 312 FixtureSans3VF-Black
+name 3 1 1033 0 \u00a9 2023 Adobe (http://www.adobe.com/), with Reserved Font Name \u2018Source\u2019
+name 3 1 1033 1 Fixture VF
+name 3 1 1033 2 Regular
+name 3 1 1033 3 Fixture VF Regular; 2026-06-01
+name 3 1 1033 4 Fixture VF Regular
+name 3 1 1033 5 Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+name 3 1 1033 6 FixtureVF-Regular
+name 3 1 1033 7 Source is a trademark of Adobe in the United States and/or other countries.
+name 3 1 1033 8 Adobe
+name 3 1 1033 9 Paul D. Hunt
+name 3 1 1033 11 http://www.adobe.com/type
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL. This Font Software is distributed on an \u2018AS IS\u2019 BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+name 3 1 1033 14 http://scripts.sil.org/OFL
+name 3 1 1033 287 Regular
+name 3 1 1033 289 Italic
+name 3 1 1033 290 ExtraLight
+name 3 1 1033 291 Light
+name 3 1 1033 292 Regular
+name 3 1 1033 293 Medium
+name 3 1 1033 294 Semibold
+name 3 1 1033 295 Bold
+name 3 1 1033 296 ExtraBold
+name 3 1 1033 297 Black
+name 3 1 1033 298 Regular
+name 3 1 1033 299 Weight
+name 3 1 1033 300 ExtraLight
+name 3 1 1033 301 FixtureSans3VF-ExtraLight
+name 3 1 1033 302 Light
+name 3 1 1033 303 FixtureSans3VF-Light
+name 3 1 1033 304 FixtureSans3VF-Regular
+name 3 1 1033 305 Medium
+name 3 1 1033 306 FixtureSans3VF-Medium
+name 3 1 1033 307 Semibold
+name 3 1 1033 308 FixtureSans3VF-Semibold
+name 3 1 1033 309 Bold
+name 3 1 1033 310 FixtureSans3VF-Bold
+name 3 1 1033 311 Black
+name 3 1 1033 312 FixtureSans3VF-Black
+os2 400 0x0040
+head 0 3863116800
+post 3
+cmap 119 4477934c
+hmtx bf67cfba
+glyf 8dd2133f
+end
+face cff2 Bold
+tables BASE COLR CPAL GDEF GPOS GSUB OS/2 cmap glyf head hhea hmtx loca maxp name post
+glyphs 260
+name 1 0 0 1 Fixture VF
+name 1 0 0 2 Bold
+name 1 0 0 3 Fixture VF Bold; 2026-06-01
+name 1 0 0 4 Fixture VF Bold
+name 1 0 0 5 Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+name 1 0 0 6 FixtureVF-Bold
+name 1 0 0 7 Source is a trademark of Adobe in the United States and/or other countries.
+name 1 0 0 8 Adobe
+name 1 0 0 9 Paul D. Hunt
+name 1 0 0 11 http://www.adobe.com/type
+name 1 0 0 14 http://scripts.sil.org/OFL
+name 1 0 0 287 Regular
+name 1 0 0 289 Italic
+name 1 0 0 290 ExtraLight
+name 1 0 0 291 Light
+name 1 0 0 292 Regular
+name 1 0 0 293 Medium
+name 1 0 0 294 Semibold
+name 1 0 0 295 Bold
+name 1 0 0 296 ExtraBold
+name 1 0 0 297 Black
+name 1 0 0 298 Regular
+name 1 0 0 299 Weight
+name 1 0 0 300 ExtraLight
+name 1 0 0 301 FixtureSans3VF-ExtraLight
+name 1 0 0 302 Light
+name 1 0 0 303 FixtureSans3VF-Light
+name 1 0 0 304 FixtureSans3VF-Regular
+name 1 0 0 305 Medium
+name 1 0 0 306 FixtureSans3VF-Medium
+name 1 0 0 307 Semibold
+name 1 0 0 308 FixtureSans3VF-Semibold
+name 1 0 0 309 Bold
+name 1 0 0 310 FixtureSans3VF-Bold
+name 1 0 0 311 Black
+name 1 0 0 312 FixtureSans3VF-Black
+name 3 1 1033 0 \u00a9 2023 Adobe (http://www.adobe.com/), with Reserved Font Name \u2018Source\u2019
+name 3 1 1033 1 Fixture VF
+name 3 1 1033 2 Bold
+name 3 1 1033 3 Fixture VF Bold; 2026-06-01
+name 3 1 1033 4 Fixture VF Bold
+name 3 1 1033 5 Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+name 3 1 1033 6 FixtureVF-Bold
+name 3 1 1033 7 Source is a trademark of Adobe in the United States and/or other countries.
+name 3 1 1033 8 Adobe
+name 3 1 1033 9 Paul D. Hunt
+name 3 1 1033 11 http://www.adobe.com/type
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL. This Font Software is distributed on an \u2018AS IS\u2019 BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+name 3 1 1033 14 http://scripts.sil.org/OFL
+name 3 1 1033 287 Regular
+name 3 1 1033 289 Italic
+name 3 1 1033 290 ExtraLight
+name 3 1 1033 291 Light
+name 3 1 1033 292 Regular
+name 3 1 1033 293 Medium
+name 3 1 1033 294 Semibold
+name 3 1 1033 295 Bold
+name 3 1 1033 296 ExtraBold
+name 3 1 1033 297 Black
+name 3 1 1033 298 Regular
+name 3 1 1033 299 Weight
+name 3 1 1033 300 ExtraLight
+name 3 1 1033 301 FixtureSans3VF-ExtraLight
+name 3 1 1033 302 Light
+name 3 1 1033 303 FixtureSans3VF-Light
+name 3 1 1033 304 FixtureSans3VF-Regular
+name 3 1 1033 305 Medium
+name 3 1 1033 306 FixtureSans3VF-Medium
+name 3 1 1033 307 Semibold
+name 3 1 1033 308 FixtureSans3VF-Semibold
+name 3 1 1033 309 Bold
+name 3 1 1033 310 FixtureSans3VF-Bold
+name 3 1 1033 311 Black
+name 3 1 1033 312 FixtureSans3VF-Black
+os2 700 0x0020
+head 1 3863116800
+post 3
+cmap 119 4477934c
+hmtx 3a9df83f
+glyf a2117faf
+end
+face static Regular
+tables COLR CPAL GDEF GPOS GSUB OS/2 cmap cvt  fpgm gasp glyf head hhea hmtx loca maxp name post prep
+glyphs 264
+name 1 0 0 0 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+name 1 0 0 1 Noto Emoji Test
+name 1 0 0 2 Regular
+name 1 0 0 3 Noto Emoji Test Regular; 2026-06-01
+name 1 0 0 4 Noto Emoji Test Regular
+name 1 0 0 5 Version 2.015; ttfautohint (v1.8.4.7-5d5b)
+name 1 0 0 6 NotoEmojiTest-Regular
+name 1 0 0 7 Noto is a trademark of Google LLC.
+name 1 0 0 8 Monotype Imaging Inc.
+name 1 0 0 9 Monotype Design Team
+name 1 0 0 10 Designed by Monotype design team, Irene Vlachou.
+name 1 0 0 11 http://www.google.com/get/noto/
+name 1 0 0 12 http://www.monotype.com/studio
+name 1 0 0 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL
+name 1 0 0 14 https://scripts.sil.org/OFL
+name 3 1 1033 0 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+name 3 1 1033 1 Noto Emoji Test
+name 3 1 1033 2 Regular
+name 3 1 1033 3 Noto Emoji Test Regular; 2026-06-01
+name 3 1 1033 4 Noto Emoji Test Regular
+name 3 1 1033 5 Version 2.015; ttfautohint (v1.8.4.7-5d5b)
+name 3 1 1033 6 NotoEmojiTest-Regular
+name 3 1 1033 7 Noto is a trademark of Google LLC.
+name 3 1 1033 8 Monotype Imaging Inc.
+name 3 1 1033 9 Monotype Design Team
+name 3 1 1033 10 Designed by Monotype design team, Irene Vlachou.
+name 3 1 1033 11 http://www.google.com/get/noto/
+name 3 1 1033 12 http://www.monotype.com/studio
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL
+name 3 1 1033 14 https://scripts.sil.org/OFL
+os2 400 0x00c0
+head 0 3863116800
+post 3
+cmap 119 f789192d
+hmtx 0dd6d4e1
+glyf 4ef3eb08
+end
+face italic Regular
+tables GDEF GPOS GSUB OS/2 cmap cvt  fpgm gasp glyf head hhea hmtx loca maxp name post prep
+glyphs 120
+name 1 0 0 0 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+name 1 0 0 1 Slanted
+name 1 0 0 2 Italic
+name 1 0 0 3 Slanted Italic; 2026-06-01
+name 1 0 0 4 Slanted Italic
+name 1 0 0 5 Version 2.015; ttfautohint (v1.8.4.7-5d5b)
+name 1 0 0 6 Slanted-Italic
+name 1 0 0 7 Noto is a trademark of Google LLC.
+name 1 0 0 8 Monotype Imaging Inc.
+name 1 0 0 9 Monotype Design Team
+name 1 0 0 10 Designed by Monotype design team.
+name 1 0 0 11 http://www.google.com/get/noto/
+name 1 0 0 12 http://www.monotype.com/studio
+name 1 0 0 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL
+name 1 0 0 14 https://scripts.sil.org/OFL
+name 3 1 1033 0 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+name 3 1 1033 1 Slanted
+name 3 1 1033 2 Italic
+name 3 1 1033 3 Slanted Italic; 2026-06-01
+name 3 1 1033 4 Slanted Italic
+name 3 1 1033 5 Version 2.015; ttfautohint (v1.8.4.7-5d5b)
+name 3 1 1033 6 Slanted-Italic
+name 3 1 1033 7 Noto is a trademark of Google LLC.
+name 3 1 1033 8 Monotype Imaging Inc.
+name 3 1 1033 9 Monotype Design Team
+name 3 1 1033 10 Designed by Monotype design team.
+name 3 1 1033 11 http://www.google.com/get/noto/
+name 3 1 1033 12 http://www.monotype.com/studio
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL
+name 3 1 1033 14 https://scripts.sil.org/OFL
+os2 400 0x0181
+head 2 3863116800
+post 3
+cmap 106 76c95b1d
+hmtx 3ffe8c4f
+glyf 8e70fc9f
+end
+face same Regular
+tables GDEF GPOS GSUB OS/2 cmap cvt  fpgm gasp glyf head hhea hmtx loca maxp name post prep
+glyphs 114
+name 1 0 0 0 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+name 1 0 0 1 Same Twice
+name 1 0 0 2 Regular
+name 1 0 0 3 Same Twice Regular; 2026-06-01
+name 1 0 0 4 Same Twice Regular
+name 1 0 0 5 Version 2.015; ttfautohint (v1.8.4.7-5d5b)
+name 1 0 0 6 SameTwice-Regular
+name 1 0 0 7 Noto is a trademark of Google LLC.
+name 1 0 0 8 Monotype Imaging Inc.
+name 1 0 0 9 Monotype Design Team
+name 1 0 0 10 Designed by Monotype design team, Irene Vlachou.
+name 1 0 0 11 http://www.google.com/get/noto/
+name 1 0 0 12 http://www.monotype.com/studio
+name 1 0 0 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL
+name 1 0 0 14 https://scripts.sil.org/OFL
+name 3 1 1033 0 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+name 3 1 1033 1 Same Twice
+name 3 1 1033 2 Regular
+name 3 1 1033 3 Same Twice Regular; 2026-06-01
+name 3 1 1033 4 Same Twice Regular
+name 3 1 1033 5 Version 2.015; ttfautohint (v1.8.4.7-5d5b)
+name 3 1 1033 6 SameTwice-Regular
+name 3 1 1033 7 Noto is a trademark of Google LLC.
+name 3 1 1033 8 Monotype Imaging Inc.
+name 3 1 1033 9 Monotype Design Team
+name 3 1 1033 10 Designed by Monotype design team, Irene Vlachou.
+name 3 1 1033 11 http://www.google.com/get/noto/
+name 3 1 1033 12 http://www.monotype.com/studio
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL
+name 3 1 1033 14 https://scripts.sil.org/OFL
+os2 400 0x00c0
+head 0 3863116800
+post 3
+cmap 106 76c95b1d
+hmtx 5516158a
+glyf 694f7015
+end
+face same Bold
+tables GDEF GPOS GSUB OS/2 cmap cvt  fpgm gasp glyf head hhea hmtx loca maxp name post prep
+glyphs 114
+name 1 0 0 0 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+name 1 0 0 1 Same Twice
+name 1 0 0 2 Bold
+name 1 0 0 3 Same Twice Bold; 2026-06-01
+name 1 0 0 4 Same Twice Bold
+name 1 0 0 5 Version 2.015; ttfautohint (v1.8.4.7-5d5b)
+name 1 0 0 6 SameTwice-Bold
+name 1 0 0 7 Noto is a trademark of Google LLC.
+name 1 0 0 8 Monotype Imaging Inc.
+name 1 0 0 9 Monotype Design Team
+name 1 0 0 10 Designed by Monotype design team, Irene Vlachou.
+name 1 0 0 11 http://www.google.com/get/noto/
+name 1 0 0 12 http://www.monotype.com/studio
+name 1 0 0 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL
+name 1 0 0 14 https://scripts.sil.org/OFL
+name 3 1 1033 0 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+name 3 1 1033 1 Same Twice
+name 3 1 1033 2 Bold
+name 3 1 1033 3 Same Twice Bold; 2026-06-01
+name 3 1 1033 4 Same Twice Bold
+name 3 1 1033 5 Version 2.015; ttfautohint (v1.8.4.7-5d5b)
+name 3 1 1033 6 SameTwice-Bold
+name 3 1 1033 7 Noto is a trademark of Google LLC.
+name 3 1 1033 8 Monotype Imaging Inc.
+name 3 1 1033 9 Monotype Design Team
+name 3 1 1033 10 Designed by Monotype design team, Irene Vlachou.
+name 3 1 1033 11 http://www.google.com/get/noto/
+name 3 1 1033 12 http://www.monotype.com/studio
+name 3 1 1033 13 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL
+name 3 1 1033 14 https://scripts.sil.org/OFL
+os2 700 0x00a0
+head 1 3863116800
+post 3
+cmap 106 76c95b1d
+hmtx 5516158a
+glyf 694f7015
+end

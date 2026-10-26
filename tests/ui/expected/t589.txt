@@ -1,0 +1,22 @@
+ok   1. Noto: version, COLRv1, size, OFL-1.1, License and Source links, Download
+ok      Twemoji is on the phone: Downloaded, Delete
+ok      iOS: Apple's art from a third-party build, system emoji with root until restart, never inside a font
+ok      on Android 16 no row says it needs Android 13
+ok   2. License and Source open through the app (openUrl)
+ok   3. Download: Cancel, an open-ended bar and "Downloading…" until the size is known
+ok      progress: 45% of the bar, "2.2 MB of 4.8 MB"
+ok   4. done: Downloaded, Delete, no bar; a toast names it
+ok      Make a font offers it (Twemoji and Noto; never iOS)
+ok      System emoji offers it too
+ok   5. Cancel: emojiCancel, "Cancelling…"
+ok      the app's "cancelled": Download again, no error, not downloaded
+ok   6. Delete: emojiDelete, Download again, gone from both choices
+ok      no page errors
+ok   7. a checksum that differs: said in the page's words, the file not kept, Download again
+ok      no page errors
+ok   8. Android 12: the three COLRv1 rows need Android 13 to show inside a font
+ok      Twemoji (COLRv0) has no such line; iOS keeps its own
+ok      Make a font offers only Twemoji (Noto is on the phone but would not show)
+ok      System emoji offers Twemoji and iOS (not Noto COLRv1)
+ok      no page errors
+all passed

@@ -1,0 +1,39 @@
+ok   1. every row has Make again
+ok      the Make card is on that font: "Making Inter Display again", New font
+ok      its name is filled in, its Make again is off
+ok      a Regular chosen keeps the name
+ok   2. Build sends rebuildId
+ok      the row waits: "Making…", its other buttons off
+ok      the other row: Make again off while a font is being made, the rest on
+ok      New font is off while it is being made
+ok   3. made again: "Inter Display is made again in My fonts."
+ok      the same row, the same package, version 3; the phone has version 2 (in use): Update
+ok      still two fonts in My fonts; the Make card is a new font again
+ok   4. Make again on Lato
+ok      New font: the link goes, Lato's Make again is on again
+ok      Lato deleted: the Make card is a new font again
+ok      the next build is a new font (rebuildId null)
+ok      no page errors
+ok   5. while the chooser is open: Choose is off
+ok      a second pick sends nothing
+ok      the file is read: Change is on
+ok      a Regular is chosen: Build is on
+ok      Change, the new file not read yet: Build is off
+ok      a build asked for now sends nothing
+ok      the new file is read: Build is on, for the new file
+ok      no page errors
+ok   6. while the save screen is open: Export is off on every row
+ok      saved: a toast, Export on again
+ok      no page errors
+ok   7. making Lato again, a Regular chosen: Build is on
+ok      while Lato installs: Build is off
+ok      a build asked for now sends nothing
+ok      installed: Build is on again
+ok      while the Font changer applies Lato: Build is off
+ok      applied: Build is on again
+ok      while Lato is saved: Build is off
+ok      saved: Build is on again
+ok      a job of another row (Inter Display saved) leaves Build on
+ok      Build sends rebuildId for Lato
+ok      no page errors
+all passed

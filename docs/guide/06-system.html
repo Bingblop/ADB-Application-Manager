@@ -1332,7 +1332,7 @@
 
   <h4>Font</h4>
   <p><b>The list of fonts found is for one visit.</b> What <b>Find fonts on this phone</b> finds is shown under the button, with a <b>Clear this list</b> link. The list is emptied when you leave Settings (and a search that finishes after you left is thrown away), so it does not sit in memory; search again when you need it. The font you chose stays.</p>
-  <p>The font of the text in this app only. A line shows what is in use: <i>In use: the system font</i>, or <i>In use: Name (file name, size)</i>.</p>
+  <p>The font of the text in this app only. To change the font of the whole phone (on a Samsung phone), use the <a href="#tab-fonts">Custom Fonts</a> tab instead. A line shows what is in use: <i>In use: the system font</i>, or <i>In use: Name (file name, size)</i>.</p>
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
     <tbody>
@@ -1425,7 +1425,7 @@
   </ul>
 </section>
 <section id="feature-list" data-title="Turning tabs on and off and moving them" data-group="Settings and looks">
-  <p class="hg-lead">The app has fourteen tabs you can move, and you may not use them all. The Feature List lets you switch tabs off, put the rest in the order you like, and pin the four that go on the bottom bar.</p>
+  <p class="hg-lead">The app has sixteen tabs you can move, and you may not use them all. The Feature List lets you switch tabs off, put the rest in the order you like, and pin the four that go on the bottom bar.</p>
   <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>, then scroll to the card named <b>Feature List</b> (after the Action Button and Navigation cards). The card folds: if you see only its title, tap the title to open it. <b>Customize tabs</b> in the <b>More tabs</b> sheet of the bottom bar opens it too.</p>
 
   <h4>Before you start</h4>
@@ -1439,7 +1439,7 @@
   <p><b>Application Manager</b> is always the first tab and <b>About</b> is always the last. They have no switch or arrows in the list because they cannot be turned off or moved. Everything between them can be switched off and moved.</p>
 
   <h4>The list and the default order</h4>
-  <p>The card says: <i>Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</i> and <i>Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.</i> Each of the fourteen movable tabs has a row with its name, a pin, an up arrow, a down arrow and a switch. The first row's up arrow and the last row's down arrow are greyed out because they have nowhere to go. A row whose switch is off has a dimmed name. This is the default order, which is also what <b>Reset to Default</b> gives you:</p>
+  <p>The card says: <i>Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</i> and <i>Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.</i> Each of the sixteen movable tabs has a row with its name, a pin, an up arrow, a down arrow and a switch. The first row's up arrow and the last row's down arrow are greyed out because they have nowhere to go. A row whose switch is off has a dimmed name. This is the default order, which is also what <b>Reset to Default</b> gives you:</p>
   <table class="hg-table">
     <thead><tr><th>#</th><th>Name in the list</th><th>What it is</th></tr></thead>
     <tbody>
@@ -1458,6 +1458,8 @@
       <tr><td>12</td><td><b>Connected Devices</b></td><td><a href="#tab-devices">Connected Devices</a></td></tr>
       <tr><td>13</td><td><b>Morphe Patcher</b></td><td><a href="#tab-morphe">Morphe Patcher</a></td></tr>
       <tr><td>14</td><td><b>SD Maid</b></td><td><a href="#tab-sdm">SD Maid</a></td></tr>
+      <tr><td>15</td><td><b>Root Features</b></td><td><a href="#tab-rootfeatures">Root Features</a> (the features that need Super User)</td></tr>
+      <tr><td>16</td><td><b>Custom Fonts</b></td><td><a href="#tab-fonts">Custom Fonts</a> (fonts and emoji for Samsung phones)</td></tr>
       <tr><td></td><td><b>About</b> (fixed, always last)</td><td><a href="#tab-about">About</a></td></tr>
     </tbody>
   </table>
@@ -1481,7 +1483,7 @@
     <li>It leaves the bars and More at once (a pinned tab gives up its place on the bottom bar), and Back no longer goes to it.</li>
     <li>Anything inside the app that points at it does not open it. A message says, for example, <i>APK Installer/Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens: no sheet closes and no download starts. Examples are <b>Check for update</b> in About (the Application Updater box of the APK Installer/Updater tab), the update button in an app's menu (the same box) and <b>Logs</b> in an app's menu (the Live Logcat tab).</li>
     <li>One exception: if you open an APK file from outside the app (for example from your file manager or a download, choosing this app to install it), the app switches <b>APK Installer/Updater</b> back on by itself, because you asked for it. A message says <i>APK Installer was turned off. It is on again to open this file.</i></li>
-    <li>You can switch off every one of the fourteen if you like. Only Application Manager and About are then left.</li>
+    <li>You can switch off every one of the sixteen if you like. Only Application Manager and About are then left.</li>
   </ul>
 
   <h4>Get a tab back</h4>
@@ -1500,7 +1502,7 @@
   <p>A tab that is switched off still keeps its place in the list. If you switch it on again later, it returns to that place. Moving a tab never changes the position of Application Manager or About.</p>
 
   <h4>Reset to Default</h4>
-  <p>The <b>Reset to Default</b> button under the list switches all fourteen tabs on, puts them back in the default order shown above and pins the four default tabs again (the shortcut menus stay as you set them). A message says <i>Tabs are back in their default order, all turned on</i>. There is no question first, and it does not touch anything else in Settings.</p>
+  <p>The <b>Reset to Default</b> button under the list switches all sixteen tabs on, puts them back in the default order shown above and pins the four default tabs again (the shortcut menus stay as you set them). A message says <i>Tabs are back in their default order, all turned on</i>. There is no question first, and it does not touch anything else in Settings.</p>
 
   <h4>When the app is updated</h4>
   <p>Your choice is checked against the tabs the new version has. A tab that no longer exists is dropped from your choice. A tab the update adds is placed after the tab that comes before it in the default order, so your saved order keeps working. Changes of this kind: the Command-Line Interface tab became <b>Console</b> and a <b>Terminal</b> tab, with the log inside Console. Since v7.14 the <b>Console</b> holds the <b>ADB Shell</b> and the <b>Terminal</b> as its two parts, and <b>Live Logcat</b> is a tab of its own again, in the place the Terminal tab had. A saved choice keeps its place: Console takes the place the Command-Line Interface had, and is switched off if the Command-Line Interface was switched off.</p>
@@ -1634,7 +1636,7 @@
 
 <section id="tab-rootfeatures" data-title="Root Features" data-group="The tabs">
   <p class="hg-lead">The home of everything in this app that needs <b>Super User</b> (root). It shows in one place whether this app has root right now, offers the two ways to get it on a phone that is already rooted, and lists the root features themselves. A Shizuku server running as the Android system user (UID 1000) or as root (UID 0) unlocks the root features Android allows it, not only the Root working mode; which rows that covers, and which still need a phone that is already rooted, is spelled out below. Nothing on this tab roots a phone.</p>
-  <p><b>Where to find it:</b> the tab named <b>Root Features</b> (two lines on the tab bar, <b>Root</b> on the bottom bar), right before <b>About</b>. It is on out of the box but not pinned to the bottom bar. If it is missing from the tab bar, it was switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+  <p><b>Where to find it:</b> the tab named <b>Root Features</b> (two lines on the tab bar, <b>Root</b> on the bottom bar), right before <b>Custom Fonts</b> (<b>About</b> comes after it). It is on out of the box but not pinned to the bottom bar. If it is missing from the tab bar, it was switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
 
   <h4>What "Super User" means here</h4>
   <p>Super User is this app's name for the <a href="#mode-root">Root</a> working mode once it really works: Root is your chosen mode <i>and</i> your root manager (such as KernelSU, KernelSU Next or APatch) has granted this app <code>su</code>. From then on every command the app sends runs as the root user instead of the shell user that ADB, Wireless Debugging and Shizuku use: freezing, uninstalling, permissions, app ops, hidden settings, overlays, the Debloater, what you type in the Console's ADB Shell and in the Terminal's Working mode shell, all of it (the Terminal's sandbox and Termux shells run as this app and as Termux whatever the working mode). Root is one step above shell, and it is the step that Android's own protections do not cover, so read <a href="#rootfeatures-grant">Getting Super User</a> before you grant it. Of the three rows on this tab, <b>App components</b> and <b>Trackers in apps</b> also unlock when your Shizuku server runs as the Android system user (UID 1000) or as root (UID 0) — Android lets those two change an app's components, as it does the root user. <b>Super User for apps</b> opens your installed root manager, which exists only on a phone that is already rooted, so it needs real root (<code>su</code> granted, or a Shizuku server that is itself running as root) and stays locked under a Shizuku server that is the system user (UID 1000) on a phone with no <code>su</code>. UID 1000 is the system user, more privileged than the shell user but not root.</p>
