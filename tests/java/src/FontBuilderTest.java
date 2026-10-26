@@ -819,6 +819,42 @@ public class FontBuilderTest {
       r.emoji = noPalette;
       FontBuilder.build(r, null);
     });
+    // what the merge meets in the emoji font while a face is made (the pick reads only COLR's header) names the emoji font, not the face
+    Sfnt v2 = Sfnt.parse(font(NOTO_EMOJI));
+    byte[] colr2 = v2.table("COLR").clone();
+    Sfnt.w16(colr2, 0, 2);
+    v2.put("COLR", colr2);
+    byte[] colrV2 = v2.toBytes();
+    throwsFont("an emoji font with a COLR version 2: emoji_damaged, says Emoji font", "emoji_damaged",
+        "Emoji font: The emoji font's colour table (COLR) is a newer version (2)", () -> {
+      FontBuilder.Request r = simple(font(NOTO), "X");
+      r.emoji = colrV2;
+      FontBuilder.build(r, null);
+    });
+    Sfnt bl = Sfnt.parse(font(TWEMOJI));
+    byte[] colr0 = bl.table("COLR").clone();
+    Sfnt.w16(colr0, (int) Sfnt.u32(colr0, 8), 65000);                    // the first layer's glyph
+    bl.put("COLR", colr0);
+    byte[] badLayer = bl.toBytes();
+    throwsFont("an emoji font whose COLR names glyph 65,000: emoji_damaged, says Emoji font", "emoji_damaged",
+        "Emoji font: The emoji font's colour table (COLR) names glyph 65000", () -> {
+      FontBuilder.Request r = simple(font(NOTO), "X");
+      r.bold = new FontBuilder.Face(font(NOTO_ITALIC), null);
+      r.emoji = badLayer;
+      FontBuilder.build(r, null);
+    });
+    // Twemoji's glyphs (up to 512 units) in a font that says 16 units per em: at 125 % of Noto's 1000 units they are scaled 78 times, past 32,767
+    Sfnt tb = Sfnt.parse(font(TWEMOJI));
+    byte[] tbHead = tb.table("head").clone();
+    Sfnt.w16(tbHead, 18, 16);
+    tb.put("head", tbHead);
+    byte[] tooBigEmoji = tb.toBytes();
+    throwsFont("emoji too big for the text font at this size: emoji_too_big, says Emoji font", "emoji_too_big", "Emoji font: ", () -> {
+      FontBuilder.Request r = simple(font(NOTO), "X");
+      r.emoji = tooBigEmoji;
+      r.emojiScale = 1.25;
+      FontBuilder.build(r, null);
+    });
 
     // 65,500 glyphs and Twemoji's 147 pass 65,535
     Sfnt many = Sfnt.parse(font(NOTO));
@@ -830,7 +866,8 @@ public class FontBuilderTest {
     Glyf.write(many, gl);
     mm.write(many, gl);
     byte[] manyBytes = many.toBytes();
-    throwsFont("65,500 glyphs and an emoji font of 147: too_many_glyphs", "too_many_glyphs", null, () -> {
+    throwsFont("65,500 glyphs and an emoji font of 147: too_many_glyphs, says Regular font (both fonts' doing, the face it was made for)", "too_many_glyphs",
+        "Regular font: The text font has 65,500 glyphs and the emoji font 147", () -> {
       FontBuilder.Request r = simple(manyBytes, "X");
       r.emoji = font(TWEMOJI);
       FontBuilder.build(r, null);

@@ -202,7 +202,12 @@ public final class FontBuilder {
                 EmojiMerge.Options o = new EmojiMerge.Options();
                 o.scale = j.r.emojiScale;
                 o.progress = j.steps(EMOJI);
-                EmojiMerge.Result m = EmojiMerge.merge(f, emoji, o);
+                EmojiMerge.Result m;
+                try {
+                    m = EmojiMerge.merge(f, emoji, o);
+                } catch (Sfnt.FontException e) {
+                    throw EmojiMerge.aboutEmoji(e) ? about("Emoji font", e) : e;  // the emoji font's own fault names it, whichever face it went into
+                }
                 j.warnings.addAll(m.warnings);
                 f = m.font;
                 j.took(EMOJI, t);
@@ -260,12 +265,12 @@ public final class FontBuilder {
 
     /**
      * The exception with the font named in front of its sentence ("Bold font: ..."): the page shows its own sentence for the code and keeps
-     * that name in front. Cancel stays as it is, and so does a sentence that names the emoji font itself while a face is made (EmojiMerge's,
-     * about both fonts).
+     * that name in front. Cancel stays as it is, and so does a sentence that names its font already (the emoji font's, met while a face is
+     * made). A refusal about both fonts (too_many_glyphs, a GSUB too big to write) names the face being made.
      */
     private static Sfnt.FontException about(String label, Sfnt.FontException e) {
         String m = e.getMessage();
-        if ("cancelled".equals(e.code) || m.startsWith(label + ": ") || !label.equals("Emoji font") && m.contains("emoji font")) return e;
+        if ("cancelled".equals(e.code) || m.startsWith("Regular font: ") || m.startsWith("Bold font: ") || m.startsWith("Emoji font: ")) return e;
         Sfnt.FontException w = new Sfnt.FontException(e.code, label + ": " + m);
         if (e.getCause() != null) w.initCause(e.getCause());
         return w;
