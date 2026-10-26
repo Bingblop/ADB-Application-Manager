@@ -5427,7 +5427,19 @@ x: {
 "Weight": "ウェイト",
 "Width": "幅",
 "Without a Bold font, Android makes bold text from the Regular one.": "太字のフォントがない場合、Android は標準のフォントから太字を作ります。",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "あなたのフォントを端末のフォントファイルに直接書き込みます。Root、またはシステムユーザー (UID 1000) か Root (UID 0) として動作する Shizuku で解除されます。"
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "あなたのフォントを端末のフォントファイルに直接書き込みます。Root、またはシステムユーザー (UID 1000) か Root (UID 0) として動作する Shizuku で解除されます。",
+"Cancelled.": "キャンセルしました。",
+"Choose the Regular font first.": "先に標準のフォントを選んでください。",
+"Tap Uninstall on the font's App info.": "フォントのアプリ情報で「アンインストール」をタップしてください。",
+"That font is not in My fonts any more.": "そのフォントはもう「マイフォント」にありません。",
+"The choices could not be read. Choose the fonts again.": "選択内容を読み取れませんでした。フォントを選び直してください。",
+"The finished font would be too large for a font package (over 96 MB).": "完成したフォントが大きすぎて、フォントパッケージに収まりません（96 MB 超）。",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "このフォントの処理中に端末のメモリが不足しました。他のアプリを閉じてもう一度試すか、より小さいフォントを選んでください。",
+"This font is too complex for the app to convert.": "このフォントは複雑すぎて、アプリで変換できません。",
+"This font's files changed since it was made. Make it again.": "このフォントのファイルが作成後に変更されました。作り直してください。",
+"Wait for the current task to finish.": "現在の処理が終わるまでお待ちください。",
+"Wait for the font being made to finish.": "作成中のフォントが完成するまでお待ちください。",
+"The downloaded file changed on the phone. Delete it and download it again.": "ダウンロードしたファイルが端末上で変更されました。削除してもう一度ダウンロードしてください。"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "{0} グリフ"],
 ["{0} is ready in My fonts.", "{0} が「マイフォント」に用意できました。"],
 ["{0} outlines", "{0} アウトライン"],
+["Bold font: {0}", "太字のフォント：{0}"],
+["Emoji font: {0}", "絵文字フォント：{0}"],
+["Regular font: {0}", "標準のフォント：{0}"],
 ]
 };

@@ -5427,7 +5427,19 @@ x: {
 "Weight": "Stärke",
 "Width": "Breite",
 "Without a Bold font, Android makes bold text from the Regular one.": "Ohne Fett-Schriftart erzeugt Android fetten Text aus der normalen.",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Schreibt eine Ihrer Schriftarten direkt in die Schriftdateien des Telefons. Wird freigeschaltet mit Root oder mit Shizuku als Systembenutzer (UID 1000) oder als Root (UID 0)."
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Schreibt eine Ihrer Schriftarten direkt in die Schriftdateien des Telefons. Wird freigeschaltet mit Root oder mit Shizuku als Systembenutzer (UID 1000) oder als Root (UID 0).",
+"Cancelled.": "Abgebrochen.",
+"Choose the Regular font first.": "Wählen Sie zuerst die normale Schriftart.",
+"Tap Uninstall on the font's App info.": "Tippen Sie in der App-Info der Schriftart auf „Deinstallieren“.",
+"That font is not in My fonts any more.": "Diese Schriftart ist nicht mehr in „Meine Schriftarten“.",
+"The choices could not be read. Choose the fonts again.": "Die Auswahl konnte nicht gelesen werden. Wählen Sie die Schriftarten erneut.",
+"The finished font would be too large for a font package (over 96 MB).": "Die fertige Schriftart wäre zu groß für ein Schriftpaket (über 96 MB).",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "Dem Telefon ist für diese Schriftart der Speicher ausgegangen. Schließen Sie andere Apps und versuchen Sie es erneut, oder wählen Sie kleinere Schriftarten.",
+"This font is too complex for the app to convert.": "Diese Schriftart ist zu komplex, als dass die App sie umwandeln könnte.",
+"This font's files changed since it was made. Make it again.": "Die Dateien dieser Schriftart haben sich seit dem Erstellen geändert. Erstellen Sie sie erneut.",
+"Wait for the current task to finish.": "Warten Sie, bis die aktuelle Aufgabe fertig ist.",
+"Wait for the font being made to finish.": "Warten Sie, bis die Schriftart fertig erstellt ist.",
+"The downloaded file changed on the phone. Delete it and download it again.": "Die heruntergeladene Datei hat sich auf dem Telefon geändert. Löschen Sie sie und laden Sie sie erneut herunter."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "{0} Glyphen"],
 ["{0} is ready in My fonts.", "{0} ist bereit in „Meine Schriftarten“."],
 ["{0} outlines", "{0}-Konturen"],
+["Bold font: {0}", "Fett-Schriftart: {0}"],
+["Emoji font: {0}", "Emoji-Schriftart: {0}"],
+["Regular font: {0}", "Normale Schriftart: {0}"],
 ]
 };

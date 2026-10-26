@@ -26377,7 +26377,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
         const HELP_LINKS = {
             apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', logcat: 'tab-logcat', devices: 'tab-devices',
-            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', console: 'tab-console', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', extrasettings: 'tab-extrasettings', prefs: 'prefs'
+            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', console: 'tab-console', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', extrasettings: 'tab-extrasettings', fonts: 'tab-fonts', prefs: 'prefs'
         };
         function injectHelpLinks() {
             Object.keys(HELP_LINKS).forEach(view => {
@@ -44796,7 +44796,18 @@ Type any command above (e.g. pm list packages -d)</div>
             network: 'The download failed. Check the connection and try again.',
             no_space: 'There is not enough free space on this phone.',
             not_samsung: 'Font packages work only on Samsung phones.',
-            in_use: 'Undo the system emoji first.'
+            in_use: 'Undo the system emoji first.',
+            not_emoji: 'This font has no color emoji (COLR). Choose a COLR emoji font.',
+            too_complex: 'This font is too complex for the app to convert.',
+            no_regular: 'Choose the Regular font first.',
+            bad_request: 'The choices could not be read. Choose the fonts again.',
+            no_memory: 'The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.',
+            cancelled: 'Cancelled.',
+            busy: 'Wait for the current task to finish.',
+            building: 'Wait for the font being made to finish.',
+            not_found: 'That font is not in My fonts any more.',
+            changed: "This font's files changed since it was made. Make it again.",
+            emoji_changed: 'The downloaded file changed on the phone. Delete it and download it again.'
         };
         const FNT_ANDROID = { 26: '8', 27: '8.1', 28: '9', 29: '10', 30: '11', 31: '12', 32: '12L', 33: '13', 34: '14', 35: '15', 36: '16' };
 
@@ -44818,9 +44829,14 @@ Type any command above (e.g. pm list packages -d)</div>
             v = typeof v === 'string' ? v.trim() : '';
             return v && v.charAt(0) !== '{' ? v : '';
         }
-        function fntErrText(r, fallback) {
+        function fntErrText(r, fallback, text) {
             r = r || {};
-            if (r.code && FNT_ERR[r.code]) return txT(FNT_ERR[r.code]);
+            text = text || (r.code && FNT_ERR[r.code]);
+            if (text) {
+                // the face the engine names in front of its sentence ("Bold font: ...") stays in front of the page's own sentence
+                const face = (/^(Regular|Bold|Emoji) font: /.exec(String(r.error || '')) || [])[1], t = txT(text);
+                return face === 'Regular' ? txF('Regular font: {0}', t) : face === 'Bold' ? txF('Bold font: {0}', t) : face === 'Emoji' ? txF('Emoji font: {0}', t) : t;
+            }
             return r.error ? String(r.error) : txT(fallback || 'Something went wrong.');
         }
         function fntSafe(id) { return String(id == null ? '' : id).replace(/[^A-Za-z0-9_-]/g, '_'); }
@@ -45144,7 +45160,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 fntLoadLib();
                 fntRenderLib();
             } else if (r.code === 'cancelled') res.textContent = 'The build was cancelled.';
-            else errNote(res, fntErrText(r));
+            else errNote(res, fntErrText(r, '', r.code === 'too_big' ? 'The finished font would be too large for a font package (over 96 MB).' : ''));
             fntRenderMake();
         };
 
@@ -45323,13 +45339,15 @@ Type any command above (e.g. pm list packages -d)</div>
             delete fnt.libBusy[id];
             fntLoadLib();
             if (r.ok) { if (r.how === 'installer') fntLibSay(id, r.note || txT("Sent to Android's installer.")); else { fntLibSay(id, r.note || ''); showToast(txT('Installed')); } }
+            else if (r.code === 'cancelled') fntLibSay(id, '');
             else fntLibSay(id, fntErrText(r, 'Install failed'), true);
         };
+        // how 'settings': no working mode, so the app opened the font's App info for its Uninstall button
         window.onFontMakerUninstalled = function (id, json) {
             const r = fntJson(json);
             delete fnt.libBusy[id];
             fntLoadLib();
-            if (r.ok) { fntLibSay(id, r.note || ''); showToast(txT('Uninstalled')); }
+            if (r.ok) { if (r.how === 'settings') fntLibSay(id, r.note || txT("Tap Uninstall on the font's App info.")); else { fntLibSay(id, r.note || ''); showToast(txT('Uninstalled')); } }
             else fntLibSay(id, fntErrText(r), true);
         };
         function fntExport(id) {

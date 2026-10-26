@@ -5427,7 +5427,19 @@ x: {
 "Weight": "Graisse",
 "Width": "Largeur",
 "Without a Bold font, Android makes bold text from the Regular one.": "Sans police grasse, Android crée le texte gras à partir de la police normale.",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Écrit une de vos polices directement dans les fichiers de police du téléphone. Se déverrouille avec Root, ou avec Shizuku exécuté en tant qu’utilisateur système (UID 1000) ou en tant que Root (UID 0)."
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Écrit une de vos polices directement dans les fichiers de police du téléphone. Se déverrouille avec Root, ou avec Shizuku exécuté en tant qu’utilisateur système (UID 1000) ou en tant que Root (UID 0).",
+"Cancelled.": "Annulé.",
+"Choose the Regular font first.": "Choisissez d’abord la police normale.",
+"Tap Uninstall on the font's App info.": "Appuyez sur Désinstaller dans les infos appli de la police.",
+"That font is not in My fonts any more.": "Cette police n’est plus dans « Mes polices ».",
+"The choices could not be read. Choose the fonts again.": "Les choix n’ont pas pu être lus. Choisissez à nouveau les polices.",
+"The finished font would be too large for a font package (over 96 MB).": "La police finale serait trop grande pour un paquet de police (plus de 96 MB).",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "Le téléphone manque de mémoire pour cette police. Fermez d’autres applications et réessayez, ou choisissez des polices plus petites.",
+"This font is too complex for the app to convert.": "Cette police est trop complexe pour que l’application la convertisse.",
+"This font's files changed since it was made. Make it again.": "Les fichiers de cette police ont changé depuis sa création. Créez-la à nouveau.",
+"Wait for the current task to finish.": "Attendez la fin de la tâche en cours.",
+"Wait for the font being made to finish.": "Attendez la fin de la police en cours de création.",
+"The downloaded file changed on the phone. Delete it and download it again.": "Le fichier téléchargé a changé sur le téléphone. Supprimez-le et téléchargez-le à nouveau."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "{0} glyphes"],
 ["{0} is ready in My fonts.", "{0} est prête dans « Mes polices »."],
 ["{0} outlines", "Contours {0}"],
+["Bold font: {0}", "Police grasse : {0}"],
+["Emoji font: {0}", "Police d’emoji : {0}"],
+["Regular font: {0}", "Police normale : {0}"],
 ]
 };

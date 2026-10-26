@@ -5427,7 +5427,19 @@ x: {
 "Weight": "Peso",
 "Width": "Largura",
 "Without a Bold font, Android makes bold text from the Regular one.": "Sem uma fonte em negrito, o Android cria o texto em negrito a partir da normal.",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Grava uma das suas fontes direto nos arquivos de fonte do telefone. É desbloqueado com Root, ou com o Shizuku em execução como usuário do sistema (UID 1000) ou como Root (UID 0)."
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Grava uma das suas fontes direto nos arquivos de fonte do telefone. É desbloqueado com Root, ou com o Shizuku em execução como usuário do sistema (UID 1000) ou como Root (UID 0).",
+"Cancelled.": "Cancelado.",
+"Choose the Regular font first.": "Escolha primeiro a fonte normal.",
+"Tap Uninstall on the font's App info.": "Toque em Desinstalar nas Informações do app da fonte.",
+"That font is not in My fonts any more.": "Essa fonte não está mais em “Minhas fontes”.",
+"The choices could not be read. Choose the fonts again.": "Não foi possível ler as escolhas. Escolha as fontes de novo.",
+"The finished font would be too large for a font package (over 96 MB).": "A fonte final ficaria grande demais para um pacote de fonte (mais de 96 MB).",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "O telefone ficou sem memória para esta fonte. Feche outros apps e tente de novo, ou escolha fontes menores.",
+"This font is too complex for the app to convert.": "Esta fonte é complexa demais para o app converter.",
+"This font's files changed since it was made. Make it again.": "Os arquivos desta fonte mudaram desde que ela foi criada. Crie-a de novo.",
+"Wait for the current task to finish.": "Aguarde a tarefa atual terminar.",
+"Wait for the font being made to finish.": "Aguarde a fonte em criação terminar.",
+"The downloaded file changed on the phone. Delete it and download it again.": "O arquivo baixado mudou no telefone. Exclua-o e baixe-o de novo."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "{0} glifos"],
 ["{0} is ready in My fonts.", "{0} está pronta em “Minhas fontes”."],
 ["{0} outlines", "Contornos {0}"],
+["Bold font: {0}", "Fonte em negrito: {0}"],
+["Emoji font: {0}", "Fonte de emojis: {0}"],
+["Regular font: {0}", "Fonte normal: {0}"],
 ]
 };

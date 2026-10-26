@@ -5427,7 +5427,19 @@ x: {
 "Weight": "굵기",
 "Width": "너비",
 "Without a Bold font, Android makes bold text from the Regular one.": "굵은 글꼴이 없으면 Android가 보통 글꼴로 굵은 텍스트를 만듭니다.",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "내 글꼴 중 하나를 휴대전화의 글꼴 파일에 직접 씁니다. Root 또는 시스템 사용자(UID 1000)나 Root(UID 0)로 실행 중인 Shizuku로 잠금이 해제됩니다."
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "내 글꼴 중 하나를 휴대전화의 글꼴 파일에 직접 씁니다. Root 또는 시스템 사용자(UID 1000)나 Root(UID 0)로 실행 중인 Shizuku로 잠금이 해제됩니다.",
+"Cancelled.": "취소되었습니다.",
+"Choose the Regular font first.": "먼저 보통 글꼴을 선택하세요.",
+"Tap Uninstall on the font's App info.": "글꼴의 앱 정보에서 ‘삭제’를 누르세요.",
+"That font is not in My fonts any more.": "이 글꼴은 더 이상 ‘내 글꼴’에 없습니다.",
+"The choices could not be read. Choose the fonts again.": "선택 내용을 읽을 수 없습니다. 글꼴을 다시 선택하세요.",
+"The finished font would be too large for a font package (over 96 MB).": "완성된 글꼴이 글꼴 패키지에 담기에는 너무 큽니다(96 MB 초과).",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "이 글꼴을 처리하는 동안 휴대전화 메모리가 부족했습니다. 다른 앱을 닫고 다시 시도하거나 더 작은 글꼴을 선택하세요.",
+"This font is too complex for the app to convert.": "이 글꼴은 너무 복잡해서 앱이 변환할 수 없습니다.",
+"This font's files changed since it was made. Make it again.": "이 글꼴을 만든 뒤 파일이 바뀌었습니다. 다시 만드세요.",
+"Wait for the current task to finish.": "현재 작업이 끝날 때까지 기다리세요.",
+"Wait for the font being made to finish.": "만들고 있는 글꼴이 완성될 때까지 기다리세요.",
+"The downloaded file changed on the phone. Delete it and download it again.": "다운로드한 파일이 휴대전화에서 바뀌었습니다. 삭제하고 다시 다운로드하세요."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "글리프 {0}개"],
 ["{0} is ready in My fonts.", "{0}이(가) ‘내 글꼴’에 준비되었습니다."],
 ["{0} outlines", "{0} 윤곽선"],
+["Bold font: {0}", "굵은 글꼴: {0}"],
+["Emoji font: {0}", "이모지 글꼴: {0}"],
+["Regular font: {0}", "보통 글꼴: {0}"],
 ]
 };

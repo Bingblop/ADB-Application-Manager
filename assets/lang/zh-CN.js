@@ -5427,7 +5427,19 @@ x: {
 "Weight": "字重",
 "Width": "宽度",
 "Without a Bold font, Android makes bold text from the Regular one.": "没有粗体字体时，Android 会用常规字体生成粗体文字。",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "将你的某个字体直接写入手机的字体文件。使用 Root，或以系统用户 (UID 1000) 或 Root (UID 0) 运行的 Shizuku 解锁。"
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "将你的某个字体直接写入手机的字体文件。使用 Root，或以系统用户 (UID 1000) 或 Root (UID 0) 运行的 Shizuku 解锁。",
+"Cancelled.": "已取消。",
+"Choose the Regular font first.": "请先选择常规字体。",
+"Tap Uninstall on the font's App info.": "请在该字体的应用信息中点按“卸载”。",
+"That font is not in My fonts any more.": "该字体已不在“我的字体”中。",
+"The choices could not be read. Choose the fonts again.": "无法读取所做的选择。请重新选择字体。",
+"The finished font would be too large for a font package (over 96 MB).": "制作完成的字体会超出字体包的容量（超过 96 MB）。",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "手机内存不足，无法处理此字体。请关闭其他应用后重试，或选择更小的字体。",
+"This font is too complex for the app to convert.": "此字体过于复杂，本应用无法转换。",
+"This font's files changed since it was made. Make it again.": "此字体的文件在制作后已更改。请重新制作。",
+"Wait for the current task to finish.": "请等待当前任务完成。",
+"Wait for the font being made to finish.": "请等待正在制作的字体完成。",
+"The downloaded file changed on the phone. Delete it and download it again.": "已下载的文件在手机上被更改。请删除后重新下载。"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "{0} 个字形"],
 ["{0} is ready in My fonts.", "{0} 已在“我的字体”中就绪。"],
 ["{0} outlines", "{0} 轮廓"],
+["Bold font: {0}", "粗体字体：{0}"],
+["Emoji font: {0}", "表情符号字体：{0}"],
+["Regular font: {0}", "常规字体：{0}"],
 ]
 };

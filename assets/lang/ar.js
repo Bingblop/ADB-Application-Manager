@@ -5427,7 +5427,19 @@ x: {
 "Weight": "السُمك",
 "Width": "العرض",
 "Without a Bold font, Android makes bold text from the Regular one.": "بدون خط عريض، يصنع Android النص العريض من الخط العادي.",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "يكتب أحد خطوطك مباشرةً في ملفات الخطوط في الهاتف. يُفتح مع Root، أو مع Shizuku يعمل بصفة مستخدم النظام (UID 1000) أو بصفة Root ‏(UID 0)."
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "يكتب أحد خطوطك مباشرةً في ملفات الخطوط في الهاتف. يُفتح مع Root، أو مع Shizuku يعمل بصفة مستخدم النظام (UID 1000) أو بصفة Root ‏(UID 0).",
+"Cancelled.": "أُلغي.",
+"Choose the Regular font first.": "اختر الخط العادي أولًا.",
+"Tap Uninstall on the font's App info.": "انقر على «إلغاء التثبيت» في معلومات التطبيق الخاصة بالخط.",
+"That font is not in My fonts any more.": "لم يعد هذا الخط في «خطوطي».",
+"The choices could not be read. Choose the fonts again.": "تعذّرت قراءة الاختيارات. اختر الخطوط مرة أخرى.",
+"The finished font would be too large for a font package (over 96 MB).": "سيكون الخط النهائي أكبر من أن تتسع له حزمة خط (أكثر من 96 MB).",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "نفدت ذاكرة الهاتف أثناء معالجة هذا الخط. أغلق التطبيقات الأخرى وأعد المحاولة، أو اختر خطوطًا أصغر.",
+"This font is too complex for the app to convert.": "هذا الخط معقّد جدًا ولا يستطيع التطبيق تحويله.",
+"This font's files changed since it was made. Make it again.": "تغيّرت ملفات هذا الخط منذ إنشائه. أنشئه مرة أخرى.",
+"Wait for the current task to finish.": "انتظر حتى تنتهي المهمة الحالية.",
+"Wait for the font being made to finish.": "انتظر حتى ينتهي إنشاء الخط.",
+"The downloaded file changed on the phone. Delete it and download it again.": "تغيّر الملف الذي نُزّل على الهاتف. احذفه ونزّله مرة أخرى."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "الحروف الرسومية: {0}"],
 ["{0} is ready in My fonts.", "{0} جاهز في «خطوطي»."],
 ["{0} outlines", "الحدود الخارجية: {0}"],
+["Bold font: {0}", "الخط العريض: {0}"],
+["Emoji font: {0}", "خط الرموز التعبيرية: {0}"],
+["Regular font: {0}", "الخط العادي: {0}"],
 ]
 };

@@ -6695,6 +6695,977 @@ public class MainActivity extends Activity {
         }, FontScan.READ_TIMEOUT_MS);
     }
 
+    // FONTMAKER:BEGIN
+    // ---------------------------------------------------------------------------------------------
+    // Custom Fonts (v7.17.0): fonts made on the phone from the user's own files, the library of them (My fonts), the five emoji downloads,
+    // the Samsung font changer and the system emoji swap; the bridge is design section 6 (fontMaker*, emoji*, sysEmoji*, softRestart). What
+    // needs no Android classes is FontLibrary's (ids, tokens, the request, meta.json, jobs), the fonts are FontBuilder's and FontPackage's,
+    // the privileged scripts SamsungFonts', the downloads EmojiCatalog's: all tested on the JDK.
+    // ---------------------------------------------------------------------------------------------
+
+    private static final int REQ_FONTMAKER_PICK = 4294;     // a font file for the font maker (Regular, Bold or emoji)
+    private static final int REQ_FONTMAKER_EXPORT = 4295;   // where an exported font package is saved
+    /** The options of every font package install: an update replaces, and Samsung's store is named as the installer (One UI lists fonts by it). */
+    private static final String FMK_INSTALL_FLAGS = "-r -i com.sec.android.app.samsungapps";
+    private static final String FMK_LOCK_CHANGER = "Needs Root, or Shizuku running as the system user (UID 1000) or root (UID 0).";
+    private static final String FMK_LOCK_SYS = "Needs Root, or Shizuku running as root (UID 0).";
+    private static final String FMK_NOT_SAMSUNG = "Font packages work only on Samsung phones.";
+    private static final String FMK_NOT_FOUND = "That font is not in My fonts any more.";
+    private static final String FMK_CHANGED = "This font's files changed since it was made. Make it again.";
+    private static final String FMK_NO_MEMORY = "The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.";
+    // copies of picked files, builds, downloads, exports, installs (side by side); the font changer, the system emoji and Soft reboot one after
+    // the other, in the order they were asked for. Both are stopped in onDestroy.
+    private final ExecutorService fontExec = Executors.newCachedThreadPool();
+    private final ExecutorService fontPrivExec = Executors.newSingleThreadExecutor();
+    private final java.security.SecureRandom fmkRandom = new java.security.SecureRandom();
+    private final FontLibrary.Jobs fmkJobs = new FontLibrary.Jobs();
+    // the open downloads by job id: Cancel (and the window closing) disconnects them, so a stalled read ends at once
+    private final java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection> fmkConns = new java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection>();
+    private final Object fmkLock = new Object();
+    private FontLibrary.Dirs fmkDirs;            // made on first use: the files folder is not there before onCreate
+    private FontLibrary.Picks fmkPicks;
+    private String fmkPickSlot, fmkExportId;     // what the open file chooser / "save as" is for (UI thread)
+    private volatile int fmkOneUiRaw = -1;       // ro.build.version.oneui (80500 = 8.5), read once
+    private volatile String fmkOneUiText;
+
+    private FontLibrary.Dirs fmkDirs() {
+        synchronized (fmkLock) {
+            if (fmkDirs == null) {
+                fmkDirs = new FontLibrary.Dirs(getFilesDir(), getCacheDir());
+                FontLibrary.sweep(fmkDirs);                 // a build cut short by a crash leaves a staged folder; a rebuild, the old one moved aside
+                FontLibrary.deleteTree(fmkDirs.work);
+            }
+            return fmkDirs;
+        }
+    }
+
+    private FontLibrary.Picks fmkPicks() {
+        FontLibrary.Dirs d = fmkDirs();
+        synchronized (fmkLock) {
+            if (fmkPicks == null) fmkPicks = new FontLibrary.Picks(d);     // starts by deleting the copies a closed window left behind
+            return fmkPicks;
+        }
+    }
+
+    private static String fmkErr(String code, String message) {
+        return FontLibrary.error(code, message).toString();
+    }
+
+    private static String fmkOk(String key, String value) {
+        try {
+            JSONObject o = new JSONObject().put("ok", true);
+            if (key != null) o.put(key, value);
+            return o.toString();
+        } catch (Exception e) {
+            return "{\"ok\":true}";
+        }
+    }
+
+    /**
+     * Who may run the font scripts now, or null: the font changer needs the root user or the system user (RootGate.unlocked: Root with su
+     * granted, or Shizuku as uid 0 or 1000), the system emoji swap and Soft reboot the root user (RootGate.uid0), the same gates as the tracker
+     * switches and the overlay fabricate. The answer is the backend: "root" (su), "system" (Shizuku as uid 1000) or "uid0" (Shizuku as uid 0).
+     */
+    private String fmkGate(boolean rootUserOnly) {
+        String mode = resolveExecMode();
+        boolean suGranted = "root".equals(mode) && isRootGranted();
+        boolean sz = "shizuku".equals(mode) && isShizukuAuthorized();
+        int szUid = sz ? shizukuServerUid() : -1;
+        boolean open = rootUserOnly ? RootGate.uid0(mode, suGranted, sz, szUid) : RootGate.unlocked(mode, suGranted, sz, szUid);
+        if (!open) return null;
+        return "root".equals(mode) ? "root" : szUid == 1000 ? "system" : "uid0";
+    }
+
+    /**
+     * Runs one script through the backend fmkGate chose and returns what it printed (the script's own read-back decides what happened, never
+     * an exit text). A font for the script's stdin is streamed from this app's file: through the Shizuku API (the system user cannot read this
+     * app's files), or with su from the file itself.
+     */
+    private String fmkRun(String backend, String script, File stdin, int timeoutMs) throws Exception {
+        if ("root".equals(backend)) {
+            if (stdin == null) return runRootScript(script, timeoutMs);
+            File f = new File(getCacheDir(), "root_" + System.nanoTime() + ".sh");
+            try {
+                FileOutputStream out = new FileOutputStream(f);
+                try {
+                    out.write(script.getBytes("UTF-8"));
+                } finally {
+                    out.close();
+                }
+                f.setReadable(true, false);
+                ProcessBuilder pb = new ProcessBuilder("su", "-c", "sh " + BackupScripts.quote(f.getAbsolutePath()) + " < " + BackupScripts.quote(stdin.getAbsolutePath()));
+                pb.redirectErrorStream(true);
+                String r = runProcessWithTimeout(pb, timeoutMs);
+                return r == null ? "" : r;
+            } finally {
+                f.delete();
+            }
+        }
+        if (!"system".equals(backend) && !"uid0".equals(backend)) throw new IllegalStateException(FMK_LOCK_CHANGER);
+        InputStream in = stdin == null ? null : new java.io.FileInputStream(stdin);
+        try {
+            return shizukuPipe(script, in, timeoutMs);
+        } finally {
+            if (in != null) try { in.close(); } catch (IOException ignored) {}
+        }
+    }
+
+    private void fmkProgress(String job, String stage, long done, long total) {
+        notifyJs("window.onFontMakerProgress && window.onFontMakerProgress(" + JSONObject.quote(job) + ", " + JSONObject.quote(stage) + ", " + done + ", " + total + ")");
+    }
+
+    private void fmkPicked(String slot, JSONObject res) {
+        notifyJs("window.onFontMakerPicked && window.onFontMakerPicked(" + JSONObject.quote(slot) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    private void fmkExported(String id, JSONObject res) {
+        notifyJs("window.onFontMakerExported && window.onFontMakerExported(" + JSONObject.quote(id) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /** The versionCode of an installed package, 0 when it is not installed. */
+    private long fmkInstalledVersion(String pkg) {
+        try {
+            PackageInfo pi = getPackageManager().getPackageInfo(pkg, 0);
+            return Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
+        } catch (Throwable notInstalled) {
+            return 0;
+        }
+    }
+
+    /** The installed FlipFont packages (com.monotype.android.font.*), for the row Settings > Font style highlights. */
+    private List<String> fmkFontPackages() {
+        List<String> out = new ArrayList<String>();
+        try {
+            for (PackageInfo pi : getPackageManager().getInstalledPackages(0)) {
+                if (pi.packageName != null && pi.packageName.startsWith(FontPackage.PACKAGE_PREFIX)) out.add(pi.packageName);
+            }
+        } catch (Throwable ignored) {}
+        return out;
+    }
+
+    /** One UI as major*100 + minor*10 (8.5 is 850; 0 off Samsung or unreadable), from ro.build.version.oneui, else Build.VERSION.SEM_PLATFORM_INT. */
+    private int fmkOneUi100() {
+        if (!isSamsung()) return 0;
+        int raw = fmkOneUiRaw;
+        if (raw < 0) {
+            raw = 0;
+            try {
+                String line = runProcessWithTimeout(new ProcessBuilder("getprop", "ro.build.version.oneui"), 2000).trim();
+                if (line.matches("\\d{4,7}")) raw = Integer.parseInt(line);
+            } catch (Throwable ignored) {}
+            if (raw <= 0) {
+                try {
+                    int sem = Build.VERSION.class.getField("SEM_PLATFORM_INT").getInt(null);
+                    if (sem >= 100000) raw = sem - 90000;
+                } catch (Throwable ignored) {}
+            }
+            fmkOneUiRaw = raw;
+        }
+        return SamsungFonts.oneUiTimes100(raw);
+    }
+
+    /** {samsung, oneUi, appliesSelfSigned, sdk, userId}: what My fonts says about installing on this phone. */
+    private JSONObject fmkDevice() throws Exception {
+        String text = fmkOneUiText;
+        if (text == null) fmkOneUiText = text = oneUiVersion();
+        boolean samsung = isSamsung();
+        return new JSONObject().put("samsung", samsung).put("oneUi", text)
+                .put("appliesSelfSigned", samsung && SamsungFonts.appliesSelfSigned(fmkOneUi100(), Build.VERSION.SECURITY_PATCH))
+                .put("sdk", Build.VERSION.SDK_INT).put("userId", FontLibrary.userIdOf(android.os.Process.myUid()));
+    }
+
+    private String fmkLibraryJson() throws Exception {
+        FontLibrary.Dirs d = fmkDirs();
+        String applied = FontLibrary.readApplied(d);
+        JSONArray rows = new JSONArray();
+        for (FontLibrary.Entry e : FontLibrary.list(d)) rows.put(FontLibrary.entryJson(e, fmkInstalledVersion(e.pkg), applied != null && applied.equals(e.suffix)));
+        return new JSONObject().put("ok", true).put("entries", rows).put("device", fmkDevice()).toString();
+    }
+
+    /** A file as base64 for a FontFace preview; "" when it is missing or larger than 24 MB (the page then shows it in its own font). */
+    private String fmkBase64(File f) {
+        try {
+            long len = f.length();
+            if (!f.isFile() || len <= 0 || len > FontLibrary.MAX_PREVIEW_BYTES) return "";
+            return android.util.Base64.encodeToString(FontLibrary.readFile(f, FontLibrary.MAX_PREVIEW_BYTES), android.util.Base64.NO_WRAP);
+        } catch (Throwable e) {                                         // OutOfMemoryError on a small phone included
+            return "";
+        }
+    }
+
+    // ---- picking ----
+
+    /** The file chooser answered for a slot: the file is copied and read on fontExec. */
+    private void fmkPickResult(final String slot, final Uri uri) {
+        if (slot == null) return;
+        if (uri == null) { fmkPicked(slot, FontLibrary.error("cancelled", "No file was chosen.")); return; }
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    fmkPicked(slot, fmkCopyPick(slot, uri));
+                }
+            });
+        } catch (RejectedExecutionException closing) {}
+    }
+
+    /**
+     * Copies the chosen file to cache/fontmaker/in/ (at most 96 MB: one byte more and the copy stops and is deleted), reads what it is with
+     * FontInspect and keeps it under a new random token, the only name the page gets for it. The emoji slot takes only a colour (COLR) font.
+     * {ok, token, fileName, size, info} or {ok:false, code, error}.
+     */
+    private JSONObject fmkCopyPick(String slot, Uri uri) {
+        FontLibrary.Picks picks = fmkPicks();
+        String token = FontLibrary.newToken(fmkRandom);
+        File f = picks.fileFor(slot, token);
+        boolean kept = false;
+        try {
+            File dir = f.getParentFile();
+            if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("The app has no room for a copy of the file.");
+            String name = cdSafeName(contentName(uri));
+            InputStream in = getContentResolver().openInputStream(uri);
+            if (in == null) throw new IOException("The app could not open that file.");
+            long size;
+            try {
+                FileOutputStream out = new FileOutputStream(f);
+                try {
+                    size = FontLibrary.copyCapped(in, out, FontLibrary.MAX_PICK_BYTES);
+                } finally {
+                    out.close();
+                }
+            } finally {
+                in.close();
+            }
+            if (size <= 0) throw new Sfnt.FontException("not_a_font", "This file is empty.");
+            FontInspect.Info info = FontInspect.inspect(FontLibrary.readFile(f, FontLibrary.MAX_PICK_BYTES));
+            if ("emoji".equals(slot)) {
+                if ("CBDT".equals(info.color) || "sbix".equals(info.color))
+                    throw new Sfnt.FontException("bitmap_emoji", "This emoji font is made of pictures (" + info.color + "), which cannot be put inside a font. Choose a COLR emoji font.");
+                if (!info.color.startsWith("COLR")) throw new Sfnt.FontException("not_emoji", "This font has no colour emoji (COLR). Choose a COLR emoji font.");
+            }
+            picks.put(new FontLibrary.Pick(slot, token, name, f, size, info.color, info.outlines, info.variable));
+            kept = true;
+            return new JSONObject().put("ok", true).put("token", token).put("fileName", name).put("size", size).put("info", FontLibrary.infoJson(info));
+        } catch (Sfnt.FontException fe) {
+            return FontLibrary.error(fe.code, fe.getMessage());
+        } catch (OutOfMemoryError oom) {
+            return FontLibrary.error("no_memory", FMK_NO_MEMORY);
+        } catch (Throwable t) {
+            return FontLibrary.error("unreadable", "The app could not read that file: " + errMsg(t));
+        } finally {
+            if (!kept) f.delete();
+        }
+    }
+
+    // ---- building ----
+
+    /** fontMakerBuild: the request and every input it names are checked here, then the font is made on fontExec. {ok, job} or {ok:false, code, error}. */
+    private String fmkStartBuild(String json) {
+        final FontLibrary.Request req;
+        try {
+            req = FontLibrary.parseRequest(json);
+        } catch (FontLibrary.BadRequest bad) {
+            return fmkErr(bad.code, bad.getMessage());
+        }
+        final FontLibrary.Dirs d = fmkDirs();
+        final FontLibrary.Picks picks = fmkPicks();
+        final FontLibrary.Pick reg = picks.get(req.regular.token);
+        if (reg == null || "emoji".equals(reg.slot)) return fmkErr("no_regular", "Choose the Regular font again.");
+        final FontLibrary.Pick bold = req.bold == null ? null : picks.get(req.bold.token);
+        if (req.bold != null && (bold == null || "emoji".equals(bold.slot))) return fmkErr("bad_request", "Choose the Bold font again.");
+        EmojiCatalog.Item item = null;
+        FontLibrary.Pick emo = null;
+        if (req.emojiCatalogId != null) {
+            item = EmojiCatalog.byId(req.emojiCatalogId);
+            if (item == null) return fmkErr("bad_request", "That emoji font is not in the list.");
+            if (!item.mergeable) return fmkErr("bitmap_emoji", "Emoji font: " + item.name + " is made of pictures, which cannot be put inside a font. It can only be the phone's emoji.");
+            EmojiCatalog.Item kept = FontLibrary.keptBuild(item, d.emojiFile(item.id));
+            if (kept == null) return fmkErr("not_downloaded", "Download " + item.name + " first.");
+            if (kept.minApiForMerge > Build.VERSION.SDK_INT) return fmkErr("not_usable", item.name + " needs a newer Android to show inside a font.");
+        } else if (req.emojiToken != null) {
+            emo = picks.get(req.emojiToken);
+            if (emo == null || !"emoji".equals(emo.slot)) return fmkErr("bad_request", "Choose the emoji font file again.");
+        }
+        FontLibrary.Entry rebuild = null;
+        if (req.rebuildId != null) {
+            rebuild = FontLibrary.read(d, req.rebuildId);
+            if (rebuild == null) return fmkErr("not_found", FMK_NOT_FOUND);
+        }
+        // one build at a time (a variable font made static twice and an emoji merge can take a few hundred MB)
+        final FontLibrary.Jobs.Job job = fmkJobs.start("build", "only", "tok:" + reg.token, bold == null ? null : "tok:" + bold.token,
+                emo == null ? null : "tok:" + emo.token, item == null ? null : "cat:" + item.id, rebuild == null ? null : "id:" + rebuild.id);
+        if (job == null) return fmkErr("busy", "A font is being made. Wait for it to finish, or cancel it.");
+        picks.hold(reg);
+        picks.hold(bold);
+        picks.hold(emo);
+        final EmojiCatalog.Item emojiItem = item;
+        final FontLibrary.Pick emojiPick = emo;
+        final FontLibrary.Entry again = rebuild;
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    fmkBuildJob(job, req, reg, bold, emojiPick, emojiItem, again);
+                }
+            });
+        } catch (RejectedExecutionException closing) {
+            picks.release(reg);
+            picks.release(bold);
+            picks.release(emo);
+            fmkJobs.finish(job);
+            return fmkErr("failed", "The app is closing.");
+        }
+        return fmkOk("job", job.id);
+    }
+
+    private static JSONObject fmkSource(FontLibrary.Pick p, Map<String, Double> location) throws Exception {
+        JSONObject c = null;
+        if (location != null) {
+            c = new JSONObject();
+            for (Map.Entry<String, Double> e : location.entrySet()) c.put(e.getKey(), e.getValue());
+        }
+        return new JSONObject().put("fileName", p.fileName).put("coords", c == null ? JSONObject.NULL : c);
+    }
+
+    private String fmkNewId(FontLibrary.Dirs d) {
+        for (int i = 0; ; i++) {
+            String id = FontLibrary.newId(fmkRandom);
+            if (!d.entryDir(id).exists() || i > 20) return id;
+        }
+    }
+
+    /**
+     * Makes the font: FontBuilder makes the faces (stages read, instance, convert, emoji), FontPackage writes the package (package), it is signed
+     * with this app's key (sign) and the entry is put in the library whole (save: staged, then renamed into place). A font made again keeps its
+     * package and gets the next versionCode, so it installs over the one on the phone. Answer: window.onFontMakerBuilt(job, {ok, entry, warnings}).
+     */
+    private void fmkBuildJob(final FontLibrary.Jobs.Job job, FontLibrary.Request req, FontLibrary.Pick reg, FontLibrary.Pick bold,
+                             FontLibrary.Pick emojiPick, EmojiCatalog.Item emojiItem, FontLibrary.Entry rebuild) {
+        final FontLibrary.Dirs d = fmkDirs();
+        final FontLibrary.Throttle throttle = new FontLibrary.Throttle(125);
+        FontProgress p = new FontProgress() {
+            @Override
+            public void step(String stage, int done, int total) {
+                if (throttle.due(stage, done, total, android.os.SystemClock.elapsedRealtime())) fmkProgress(job.id, stage, done, total);
+            }
+
+            @Override
+            public boolean cancelled() {
+                return job.cancelled() || activityDestroyed;
+            }
+        };
+        JSONObject res;
+        File staged = null, unsigned = null, prepared = null;
+        try {
+            FontBuilder.Request br = new FontBuilder.Request();
+            br.name = req.name;
+            byte[] regData = FontLibrary.readFile(reg.file, FontLibrary.MAX_PICK_BYTES);
+            br.regular = new FontBuilder.Face(regData, req.regular.coords);
+            if (bold != null) br.bold = new FontBuilder.Face(bold == reg ? regData : FontLibrary.readFile(bold.file, FontLibrary.MAX_PICK_BYTES), req.bold.coords);
+            if (emojiItem != null) {
+                // checked by SHA-256 when it was downloaded; checked again, since a build puts it inside a package the phone installs
+                File ef = d.emojiFile(emojiItem.id);
+                EmojiCatalog.Item kept = FontLibrary.keptBuild(emojiItem, ef);
+                byte[] em = kept == null ? null : FontLibrary.readFile(ef, FontLibrary.MAX_EMOJI_BYTES);
+                if (em == null || !kept.sha256.equals(FontLibrary.sha256(em)))
+                    throw new Sfnt.FontException("emoji_changed", "Emoji font: the downloaded file changed on the phone. Delete it and download it again.");
+                br.emoji = em;
+            } else if (emojiPick != null) {
+                br.emoji = FontLibrary.readFile(emojiPick.file, FontLibrary.MAX_PICK_BYTES);
+            }
+            br.emojiScale = req.emojiScale;
+            long now = System.currentTimeMillis();
+            br.time = now;
+            FontBuilder.Result out = FontBuilder.build(br, p);
+            br = null;                                                   // the sources can go before the package is written
+            regData = null;
+
+            FontLibrary.Entry e = new FontLibrary.Entry();
+            e.id = rebuild != null ? rebuild.id : fmkNewId(d);
+            e.name = req.name;
+            e.suffix = rebuild != null ? rebuild.suffix : FontPackage.suffixFor(req.name, e.id);
+            e.pkg = FontPackage.packageName(e.suffix);
+            long installed = fmkInstalledVersion(e.pkg);
+            int onPhone = (int) Math.min(Integer.MAX_VALUE, installed);
+            e.versionCode = rebuild != null ? FontPackage.nextVersionCode(rebuild.versionCode, onPhone) : installed > 0 ? FontPackage.nextVersionCode(1, onPhone) : 1;
+            e.created = rebuild != null ? rebuild.created : now;
+            e.updated = now;
+            e.hasBold = out.bold != null;
+            if (emojiItem != null) { e.emojiId = emojiItem.id; e.emojiName = emojiItem.name; }
+            else if (emojiPick != null) { e.emojiId = "own"; e.emojiName = emojiPick.fileName; }
+            e.sources = new JSONObject().put("regular", fmkSource(reg, out.regularLocation)).put("bold", bold == null ? JSONObject.NULL : fmkSource(bold, out.boldLocation));
+            e.warnings.addAll(out.warnings);
+
+            staged = FontLibrary.stageDir(d, e.id, fmkRandom);
+            File regFile = new File(staged, FontLibrary.REGULAR), boldFile = new File(staged, FontLibrary.BOLD);
+            java.nio.file.Files.write(regFile.toPath(), out.regular);
+            e.regularSize = out.regular.length;
+            e.regularSha = FontLibrary.sha256(out.regular);
+            out.regular = null;
+            if (e.hasBold) {
+                java.nio.file.Files.write(boldFile.toPath(), out.bold);
+                e.boldSize = out.bold.length;
+                e.boldSha = FontLibrary.sha256(out.bold);
+                out.bold = null;
+            }
+            FontPackage.Spec spec = new FontPackage.Spec();
+            spec.displayName = e.name;
+            spec.suffix = e.suffix;
+            spec.versionCode = e.versionCode;
+            spec.regularFile = regFile;
+            spec.boldFile = e.hasBold ? boldFile : null;
+            if (!d.work.isDirectory() && !d.work.mkdirs()) throw new IOException("There is no room in the app's cache for the package.");
+            unsigned = new File(d.work, e.id + "-" + System.nanoTime() + ".apk");
+            prepared = new File(d.work, "prep_" + unsigned.getName());
+            FontPackage.writeUnsigned(unsigned, spec, p);
+            FontProgress.Check.cancel(p);
+            fmkProgress(job.id, "sign", 0, 0);
+            SigningKey k = SigningKey.getOrCreate();
+            File apk = new File(staged, FontLibrary.APK);
+            ApkSigner.prepare(unsigned, prepared);
+            ApkSigner.signV2(prepared, apk, k.key, k.cert);
+            e.apkSize = apk.length();
+            e.apkSha = FontLibrary.sha256(apk);
+            FontProgress.Check.cancel(p);
+            fmkProgress(job.id, "save", 0, 0);
+            FontLibrary.commit(d, staged, e);
+            staged = null;
+            String applied = FontLibrary.readApplied(d);
+            res = new JSONObject().put("ok", true).put("entry", FontLibrary.entryJson(e, installed, applied != null && applied.equals(e.suffix))).put("warnings", new JSONArray(e.warnings));
+        } catch (Sfnt.FontException fe) {
+            res = FontLibrary.error(fe.code, fe.getMessage());
+        } catch (OutOfMemoryError oom) {
+            res = FontLibrary.error("no_memory", FMK_NO_MEMORY);
+        } catch (Throwable t) {
+            res = FontLibrary.error("failed", "The font could not be made: " + errMsg(t));
+        } finally {
+            if (staged != null) FontLibrary.deleteTree(staged);
+            if (unsigned != null) unsigned.delete();
+            if (prepared != null) prepared.delete();
+            FontLibrary.Picks picks = fmkPicks();
+            picks.release(reg);
+            picks.release(bold);
+            picks.release(emojiPick);
+            fmkJobs.finish(job);
+        }
+        if (!res.optBoolean("ok") && p.cancelled()) res = FontLibrary.error("cancelled", "The build was cancelled.");
+        notifyJs("window.onFontMakerBuilt && window.onFontMakerBuilt(" + JSONObject.quote(job.id) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    // ---- the library: delete, export, install, uninstall ----
+
+    private String fmkDelete(String id) {
+        if (!FontLibrary.isId(id)) return fmkErr("not_found", FMK_NOT_FOUND);
+        final FontLibrary.Dirs d = fmkDirs();
+        final FontLibrary.Entry e = FontLibrary.read(d, id);
+        if (e != null) {
+            String applied = FontLibrary.readApplied(d);
+            if (applied != null && applied.equals(e.suffix)) return fmkErr("applied", "Reset the font changer first.");
+        }
+        if (fmkJobs.inUse("id:" + id)) return fmkErr("busy", "This font is being made again, installed or applied. Wait for it to finish.");
+        if (!FontLibrary.delete(d, id)) return fmkErr("not_found", FMK_NOT_FOUND);
+        if (e != null) {
+            // the copy a font changer left in /data/app_fonts/<user>/<suffix>/ (applied once, then reset): removed when the changer is open, and
+            // only while the phone's sans.loc reads another font (the app's record of what it applied can be behind the phone)
+            try {
+                fontPrivExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (activityDestroyed || !isSamsung()) return;
+                        String backend = fmkGate(false);
+                        if (backend == null) return;
+                        try {
+                            SamsungFonts.Roots r = SamsungFonts.Roots.system();
+                            int user = FontLibrary.userIdOf(android.os.Process.myUid());
+                            String st = fmkRun(backend, SamsungFonts.statusScript(r, user), null, 20000);
+                            if (!st.contains(SamsungFonts.M_END) || e.suffix.equals(SamsungFonts.parseStatus(st).currentSuffix)) return;
+                            fmkRun(backend, SamsungFonts.removeSuffixScript(r, user, e.suffix), null, 30000);
+                        } catch (Throwable ignored) {}
+                    }
+                });
+            } catch (RejectedExecutionException closing) {}
+        }
+        return fmkOk(null, null);
+    }
+
+    /** The "save as" answered: the entry's font.apk is copied there. {ok, name} or {ok:false, code, error}. */
+    private void fmkExportResult(final String id, final Uri uri) {
+        if (id == null) return;
+        if (uri == null) { fmkExported(id, FontLibrary.error("cancelled", "Nothing was saved.")); return; }
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    fmkExported(id, fmkExportTo(id, uri));
+                }
+            });
+        } catch (RejectedExecutionException closing) {}
+    }
+
+    private JSONObject fmkExportTo(String id, Uri uri) {
+        try {
+            FontLibrary.Dirs d = fmkDirs();
+            FontLibrary.Entry e = FontLibrary.read(d, id);
+            if (e == null) return FontLibrary.error("not_found", FMK_NOT_FOUND);
+            File apk = new File(d.entryDir(id), FontLibrary.APK);
+            if (!e.apkSha.equals(FontLibrary.sha256(apk))) return FontLibrary.error("changed", FMK_CHANGED);
+            OutputStream out;
+            try {
+                out = getContentResolver().openOutputStream(uri, "wt");
+            } catch (Exception noTruncate) {
+                out = getContentResolver().openOutputStream(uri, "w");
+            }
+            if (out == null) throw new IOException("The app could not write there.");
+            InputStream in = new java.io.FileInputStream(apk);
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            } finally {
+                in.close();
+                out.close();
+            }
+            return new JSONObject().put("ok", true).put("name", cdSafeName(contentName(uri)));
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font package could not be saved: " + errMsg(t));
+        }
+    }
+
+    /** The first line that says what went wrong in a pm answer (a Failure [...] line), at most 300 characters. */
+    private static String fmkFailLine(String out) {
+        String o = out == null ? "" : out.trim();
+        for (String line : o.split("\n")) {
+            String t = line.trim();
+            if (t.startsWith("Failure") || t.startsWith("Error") || t.contains("INSTALL_FAILED") || t.contains("DELETE_FAILED")) { o = t; break; }
+        }
+        if (o.isEmpty()) o = "The phone gave no answer.";
+        return o.length() > 300 ? o.substring(0, 300) + "…" : o;
+    }
+
+    /**
+     * Installs an entry's package. A privileged mode installs through the app's own install path for that mode (pm with -r and Samsung's store
+     * as the installer), after the same native question every privileged install asks (InstallConfirm), and reads the versionCode back from the
+     * package manager; without one, Android's installer opens. {ok, how:"pm"|"installer", note} or {ok:false, code, error}.
+     */
+    private JSONObject fmkInstall(FontLibrary.Entry e) {
+        File copy = null;
+        try {
+            FontLibrary.Dirs d = fmkDirs();
+            File apk = new File(d.entryDir(e.id), FontLibrary.APK);
+            if (!e.apkSha.equals(FontLibrary.sha256(apk))) return FontLibrary.error("changed", FMK_CHANGED);
+            String mode = resolveExecMode();
+            if (!InstallGuards.isPrivilegedMode(mode)) {
+                launchSystemInstaller(apk);
+                return new JSONObject().put("ok", true).put("how", "installer").put("note", "");
+            }
+            if (!d.work.isDirectory() && !d.work.mkdirs()) throw new IOException("There is no room in the app's cache for the package.");
+            copy = new File(d.work, e.suffix + "-" + System.nanoTime() + ".apk");     // a copy: the root install makes its file readable to pm
+            java.nio.file.Files.copy(apk.toPath(), copy.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            if (!confirmInMode(mode, null, InstallConfirm.messageLocalFile(FontLibrary.exportName(e.name), e.pkg, FontPackage.versionName(e.versionCode),
+                    installedVersionOrNull(e.pkg), 1, mode, FMK_INSTALL_FLAGS, null))) {
+                throw new InstallCancelled();
+            }
+            String out = installApksOptions(Collections.singletonList(copy), FMK_INSTALL_FLAGS, mode);
+            if (InstallHints.success(out) && fmkInstalledVersion(e.pkg) == e.versionCode) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            String advice = InstallHints.advice(out);
+            return FontLibrary.error("install_failed", fmkFailLine(out) + (advice.isEmpty() ? "" : " " + advice));
+        } catch (InstallCancelled c) {
+            return FontLibrary.error("cancelled", errMsg(c));
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be installed: " + errMsg(t));
+        } finally {
+            if (copy != null) copy.delete();
+        }
+    }
+
+    /**
+     * Uninstalls an entry's package: pm uninstall through the privileged mode, read back from the package manager; without one, the package's
+     * App info opens (the app holds no permission to ask Android to remove another package). {ok, how:"pm"|"settings", note}.
+     */
+    private JSONObject fmkUninstall(final FontLibrary.Entry e) {
+        try {
+            if (!BackupScripts.isPackageName(e.pkg) || FontPackage.suffixOf(e.pkg) == null) return FontLibrary.error("not_found", FMK_NOT_FOUND);
+            String mode = resolveExecMode();
+            if (!InstallGuards.isPrivilegedMode(mode)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + e.pkg));
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
+                });
+                return new JSONObject().put("ok", true).put("how", "settings").put("note", "");
+            }
+            if (fmkInstalledVersion(e.pkg) == 0) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            String out = shellVia(mode, "pm uninstall " + BackupScripts.quote(e.pkg));
+            if (fmkInstalledVersion(e.pkg) == 0) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            return FontLibrary.error("uninstall_failed", fmkFailLine(out));
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be uninstalled: " + errMsg(t));
+        }
+    }
+
+    // ---- the font changer (RootGate.unlocked) ----
+
+    /** {sansLoc, files: [{name, size, sha256, label}]}: what the phone shows after an apply or a reset. */
+    private static JSONObject fmkReadBack(SamsungFonts.ApplyResult ar) throws Exception {
+        JSONArray files = new JSONArray();
+        for (SamsungFonts.FileInfo f : ar.files) {
+            files.put(new JSONObject().put("name", f.name).put("size", Math.max(0, f.size)).put("sha256", f.sha256 == null ? "" : f.sha256)
+                    .put("label", f.label == null ? "" : f.label));
+        }
+        return new JSONObject().put("sansLoc", ar.sansLoc).put("files", files);
+    }
+
+    /** Puts one Settings.Global value and reads it back; true when the key holds it afterwards. WRITE_SECURE_SETTINGS when the app has it, else the changer's shell. */
+    private boolean fmkGlobalPut(String backend, String key, int value) {
+        String v = String.valueOf(value);
+        if (hasWriteSecureSettingsAccess()) {
+            try {
+                android.provider.Settings.Global.putString(getContentResolver(), key, v);
+                if (v.equals(android.provider.Settings.Global.getString(getContentResolver(), key))) return true;
+            } catch (Throwable notThisWay) {}                            // Android 12+ may refuse to read a hidden key back: the shell reads it below
+        }
+        try {
+            String out = fmkRun(backend, SettingsDb.writeScript("put", "global", key, v), null, 15000);
+            return SettingsDb.judge("put", v, SettingsDb.parseWrite(out, key)).ok;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * Settings > Font style takes a new font up when flip_font_style and font_style_index change (design section 1): another value first, about
+     * 600 ms, then the target (0 Default, else 1 + the package's row; cosmetic, the font itself is sans.loc). True when both read back as the target.
+     */
+    private boolean fmkRefreshFontStyle(String backend, int target) {
+        String[] keys = { "flip_font_style", "font_style_index" };
+        int other = target == 0 ? 1 : 0;
+        for (String k : keys) fmkGlobalPut(backend, k, other);
+        try {
+            Thread.sleep(600);
+        } catch (InterruptedException closing) {
+            Thread.currentThread().interrupt();
+        }
+        boolean ok = true;
+        for (String k : keys) ok &= fmkGlobalPut(backend, k, target);
+        return ok;
+    }
+
+    /** {ok, available, unlocked, lockReason, mode:"root"|"system"|"none", current:{suffix, id, name}|null}; the phone's sans.loc decides "current". */
+    private JSONObject fmkChangerStatus() {
+        try {
+            JSONObject o = new JSONObject().put("ok", true);
+            if (!isSamsung()) return o.put("available", false).put("unlocked", false).put("lockReason", FMK_NOT_SAMSUNG).put("mode", "none").put("current", JSONObject.NULL);
+            String backend = fmkGate(false);
+            if (backend == null) return o.put("available", true).put("unlocked", false).put("lockReason", FMK_LOCK_CHANGER).put("mode", "none").put("current", JSONObject.NULL);
+            FontLibrary.Dirs d = fmkDirs();
+            String out = fmkRun(backend, SamsungFonts.statusScript(SamsungFonts.Roots.system(), FontLibrary.userIdOf(android.os.Process.myUid())), null, 20000);
+            if (out == null || !out.contains(SamsungFonts.M_END)) return FontLibrary.error("no_answer", "The phone did not answer. Try again.");
+            SamsungFonts.Status st = SamsungFonts.parseStatus(out);
+            o.put("available", st.available).put("unlocked", true).put("lockReason", "").put("mode", "system".equals(backend) ? "system" : "root");
+            if (!st.available) return o.put("current", JSONObject.NULL);
+            FontLibrary.writeApplied(d, st.currentSuffix, System.currentTimeMillis());
+            if (st.currentSuffix == null) return o.put("current", JSONObject.NULL);
+            FontLibrary.Entry e = FontLibrary.bySuffix(FontLibrary.list(d), st.currentSuffix);
+            return o.put("current", new JSONObject().put("suffix", st.currentSuffix).put("id", e == null ? JSONObject.NULL : e.id).put("name", e == null ? st.currentSuffix : e.name));
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", errMsg(t));
+        }
+    }
+
+    /**
+     * Applies an entry with the font changer: each font streamed into /data/app_fonts/<user>/<suffix>/ (DroidSans.ttf, DroidSans-Bold.ttf) and
+     * checked there by size and SHA-256, then sans.loc pointed at them, the ownership and SELinux label set, and everything read back; the font is
+     * applied only when sans.loc and the hashes read back as asked. Then Settings is told (fmkRefreshFontStyle).
+     * {ok, readBack:{sansLoc, files}, refreshed, styleIndex} or {ok:false, code, error, readBack}.
+     */
+    private JSONObject fmkApply(String id) {
+        try {
+            String backend = fmkGate(false);
+            if (backend == null) return FontLibrary.error("locked", FMK_LOCK_CHANGER);
+            FontLibrary.Dirs d = fmkDirs();
+            FontLibrary.Entry e = FontLibrary.read(d, id);
+            if (e == null) return FontLibrary.error("not_found", FMK_NOT_FOUND);
+            File dir = d.entryDir(id);
+            File[] files = e.hasBold ? new File[] { new File(dir, FontLibrary.REGULAR), new File(dir, FontLibrary.BOLD) } : new File[] { new File(dir, FontLibrary.REGULAR) };
+            String[] names = e.hasBold ? new String[] { FontLibrary.DROID_REGULAR, FontLibrary.DROID_BOLD } : new String[] { FontLibrary.DROID_REGULAR };
+            String[] shas = e.hasBold ? new String[] { e.regularSha, e.boldSha } : new String[] { e.regularSha };
+            long[] sizes = e.hasBold ? new long[] { e.regularSize, e.boldSize } : new long[] { e.regularSize };
+            for (int i = 0; i < files.length; i++) if (!shas[i].equals(FontLibrary.sha256(files[i]))) return FontLibrary.error("changed", FMK_CHANGED);
+            int user = FontLibrary.userIdOf(android.os.Process.myUid());
+            SamsungFonts.Roots r = SamsungFonts.Roots.system();
+            for (int i = 0; i < files.length; i++) {
+                String out = fmkRun(backend, SamsungFonts.writeFontScript(r, user, e.suffix, names[i], sizes[i], shas[i]), files[i], 180000);
+                SamsungFonts.WriteResult w = SamsungFonts.parseWrite(out, names[i]);
+                if (!w.ok || !shas[i].equals(w.sha256)) return FontLibrary.error("failed", w.ok ? "The font did not arrive whole on the phone." : w.error);
+            }
+            // a Bold an earlier build of this font left would be drawn for bold text: only that file goes (the folder sans.loc may point at stays)
+            if (!e.hasBold && !fmkRun(backend, SamsungFonts.removeFontScript(r, user, e.suffix, FontLibrary.DROID_BOLD), null, 30000).contains(SamsungFonts.M_BIND + " gone"))
+                return FontLibrary.error("failed", "The Bold font of an earlier version of this font could not be removed from the phone.");
+            SamsungFonts.ApplyResult ar = SamsungFonts.parseApply(fmkRun(backend, SamsungFonts.installScript(r, user, e.suffix, names, shas), null, 60000));
+            JSONObject rb = fmkReadBack(ar);
+            boolean filesOk = true;
+            for (int i = 0; i < names.length; i++) {
+                boolean seen = false;
+                for (SamsungFonts.FileInfo f : ar.files) if (names[i].equals(f.name) && shas[i].equals(f.sha256)) seen = true;
+                filesOk &= seen;
+            }
+            if (!e.hasBold) for (SamsungFonts.FileInfo f : ar.files) if (FontLibrary.DROID_BOLD.equals(f.name)) filesOk = false;
+            String want = r.appFonts + "/" + user + "/" + e.suffix + "#" + e.suffix;
+            if (!ar.ok || !want.equals(ar.sansLoc) || !filesOk) {
+                String why = !ar.error.isEmpty() ? ar.error : "The phone did not take the font (sans.loc reads \"" + ar.sansLoc + "\").";
+                return FontLibrary.error("failed", why).put("readBack", rb);
+            }
+            FontLibrary.writeApplied(d, e.suffix, System.currentTimeMillis());
+            int target = SamsungFonts.styleIndex(fmkFontPackages(), e.pkg);
+            boolean refreshed = fmkRefreshFontStyle(backend, target);
+            return new JSONObject().put("ok", true).put("readBack", rb).put("refreshed", refreshed).put("styleIndex", target);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be applied: " + errMsg(t));
+        }
+    }
+
+    /** Back to the phone's own font: sans.loc is default#default again (read back), and Settings is told. {ok, readBack, refreshed}. */
+    private JSONObject fmkReset() {
+        try {
+            String backend = fmkGate(false);
+            if (backend == null) return FontLibrary.error("locked", FMK_LOCK_CHANGER);
+            SamsungFonts.ApplyResult ar = SamsungFonts.parseApply(fmkRun(backend, SamsungFonts.resetScript(SamsungFonts.Roots.system(), FontLibrary.userIdOf(android.os.Process.myUid())), null, 30000));
+            JSONObject rb = fmkReadBack(ar);
+            if (!ar.ok || !"default#default".equals(ar.sansLoc)) {
+                String why = !ar.error.isEmpty() ? ar.error : "The phone did not go back to Default (sans.loc reads \"" + ar.sansLoc + "\").";
+                return FontLibrary.error("failed", why).put("readBack", rb);
+            }
+            FontLibrary.writeApplied(fmkDirs(), null, System.currentTimeMillis());
+            boolean refreshed = fmkRefreshFontStyle(backend, 0);
+            return new JSONObject().put("ok", true).put("readBack", rb).put("refreshed", refreshed);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The default font could not be put back: " + errMsg(t));
+        }
+    }
+
+    // ---- emoji downloads ----
+
+    private void fmkDisconnectAll() {
+        final List<java.net.HttpURLConnection> open = new ArrayList<java.net.HttpURLConnection>(fmkConns.values());
+        fmkConns.clear();
+        if (open.isEmpty()) return;
+        Thread t = new Thread(new Runnable() {                          // closing a TLS connection writes to the network: never on the UI thread
+            @Override
+            public void run() {
+                for (java.net.HttpURLConnection c : open) try { c.disconnect(); } catch (Throwable ignored) {}
+            }
+        }, "fontmaker-disconnect");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /**
+     * Downloads one catalog emoji font (the build this phone gets: OpenMoji's COLRv0 one below Android 13) through HttpSafe, which follows
+     * GitHub's redirect, into files/fontmaker/emoji/<id>.ttf. The file must have the exact size and SHA-256 the catalog gives; anything else
+     * is deleted (EmojiCatalog.download fails closed). Twemoji's zip is checked whole, then its font is taken out and checked too.
+     * Answer: window.onEmojiDone(id, {ok, size, sha256} | {ok:false, code, error}).
+     */
+    private void fmkDownloadJob(final FontLibrary.Jobs.Job job, final EmojiCatalog.Item item) {
+        final FontLibrary.Dirs d = fmkDirs();
+        final FontLibrary.Throttle throttle = new FontLibrary.Throttle(250);
+        EmojiCatalog.Item b = item.forSdk(Build.VERSION.SDK_INT);
+        EmojiCatalog.Progress p = new EmojiCatalog.Progress() {
+            @Override
+            public void onProgress(long done, long total) {
+                if (throttle.due("download", done, total, android.os.SystemClock.elapsedRealtime()))
+                    notifyJs("window.onEmojiProgress && window.onEmojiProgress(" + JSONObject.quote(item.id) + ", " + done + ", " + total + ")");
+            }
+
+            @Override
+            public boolean cancelled() {
+                return job.cancelled() || activityDestroyed;
+            }
+        };
+        JSONObject res;
+        java.net.HttpURLConnection c = null;
+        File zip = null;
+        try {
+            java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+            hdr.put("User-Agent", "ADB-Application-Manager");
+            c = HttpSafe.open(b.url, 15000, 30000, hdr);
+            fmkConns.put(job.id, c);
+            if (p.cancelled()) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+            int code = c.getResponseCode();
+            if (code != 200) throw new IOException("the server answered HTTP " + code);
+            InputStream in = c.getInputStream();
+            try {
+                File dest = d.emojiFile(item.id);
+                if (b.isZip()) {
+                    zip = new File(d.emoji, "." + item.id + ".zip");
+                    EmojiCatalog.download(in, zip, b.zipSize, b.zipSha256, FontLibrary.MAX_EMOJI_BYTES, p);
+                    EmojiCatalog.extractEntry(zip, b.zipEntry, dest, b.size, b.sha256, FontLibrary.MAX_EMOJI_BYTES, p);
+                } else {
+                    EmojiCatalog.download(in, dest, b.size, b.sha256, FontLibrary.MAX_EMOJI_BYTES, p);
+                }
+            } finally {
+                try { in.close(); } catch (IOException ignored) {}
+            }
+            res = new JSONObject().put("ok", true).put("size", b.size).put("sha256", b.sha256);
+        } catch (EmojiCatalog.VerifyException ve) {
+            res = FontLibrary.error(ve.code, ve.getMessage());
+        } catch (Throwable t) {
+            res = p.cancelled() ? FontLibrary.error("cancelled", "The download was cancelled.") : FontLibrary.error("network", "The download failed: " + errMsg(t));
+        } finally {
+            if (zip != null) zip.delete();
+            fmkConns.remove(job.id);
+            if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onEmojiDone && window.onEmojiDone(" + JSONObject.quote(item.id) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    // ---- the system emoji (RootGate.uid0), until the next restart ----
+
+    /** The boot this phone is in (/proc/sys/kernel/random/boot_id): a swap recorded in another boot was undone by that restart. "" when unreadable. */
+    private static String fmkBootId() {
+        try {
+            byte[] b = java.nio.file.Files.readAllBytes(new File("/proc/sys/kernel/random/boot_id").toPath());
+            return new String(b, "UTF-8").trim();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** A small system file (fonts.xml), read by the app, else through the backend's shell; "" when neither can. */
+    private String fmkReadSystemFile(String backend, File f) {
+        try {
+            if (f.isFile() && f.length() <= 4L * 1024 * 1024) return new String(java.nio.file.Files.readAllBytes(f.toPath()), "UTF-8");
+        } catch (Throwable unreadable) {}
+        try {
+            return fmkRun(backend, "cat " + BackupScripts.quote(f.getAbsolutePath()) + " 2>/dev/null", null, 15000);
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /**
+     * The emoji files the swap binds over: every und-Zsye family's file in fonts.xml and font_fallback.xml that is on this phone (in
+     * /system/fonts or /product/fonts), and the updatable emoji fonts under /data/fonts/files (listed with the backend's shell, the app cannot).
+     */
+    private List<String> fmkEmojiTargets(String backend) {
+        SamsungFonts.Roots r = SamsungFonts.Roots.system();
+        String fontsXml = fmkReadSystemFile(backend, new File("/system/etc/fonts.xml"));
+        String fallbackXml = fmkReadSystemFile(backend, new File("/system/etc/font_fallback.xml"));
+        List<String> updatable = new ArrayList<String>();
+        try {
+            String out = fmkRun(backend, "find " + BackupScripts.quote(r.dataFonts) + " -type f 2>/dev/null", null, 20000);
+            for (String line : out.split("\n")) {
+                String t = line.trim();
+                if (t.startsWith(r.dataFonts + "/")) updatable.add(t);
+            }
+        } catch (Throwable ignored) {}
+        List<String> out = new ArrayList<String>();
+        for (String t : SamsungFonts.emojiFiles(r, fontsXml, fallbackXml, updatable)) {
+            if (t.startsWith(r.dataFonts + "/") || new File(t).exists()) out.add(t);
+        }
+        return out;
+    }
+
+    /** {ok, unlocked, lockReason, targets, active:{id, name}|null}. */
+    private JSONObject fmkSysStatus() {
+        try {
+            JSONObject o = new JSONObject().put("ok", true);
+            String backend = fmkGate(true);
+            if (backend == null) return o.put("unlocked", false).put("lockReason", FMK_LOCK_SYS).put("targets", new JSONArray()).put("active", JSONObject.NULL);
+            FontLibrary.Swap s = FontLibrary.activeSwap(fmkDirs(), fmkBootId());
+            EmojiCatalog.Item it = s == null ? null : EmojiCatalog.byId(s.id);
+            return o.put("unlocked", true).put("lockReason", "").put("targets", new JSONArray(fmkEmojiTargets(backend)))
+                    .put("active", s == null ? JSONObject.NULL : new JSONObject().put("id", s.id).put("name", it != null ? it.name : s.id));
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", errMsg(t));
+        }
+    }
+
+    /**
+     * Uses a downloaded emoji font as the phone's emoji until the next restart: the file (its SHA-256 checked again) is streamed to
+     * /data/adb/adbmgr_fonts/<id>.ttf and checked there, then bind-mounted over each target, whose hash is read back. A swap still in place is
+     * undone first. The targets bound are remembered with this boot's id, so Undo knows them and a restart makes the record stale.
+     * {ok, readBack:[{target, sha256, ok}]} or {ok:false, code, error, readBack}.
+     */
+    private JSONObject fmkSysApply(EmojiCatalog.Item item) {
+        try {
+            String backend = fmkGate(true);
+            if (backend == null) return FontLibrary.error("locked", FMK_LOCK_SYS);
+            FontLibrary.Dirs d = fmkDirs();
+            File f = d.emojiFile(item.id);
+            EmojiCatalog.Item kept = FontLibrary.keptBuild(item, f);
+            if (kept == null) return FontLibrary.error("not_downloaded", "Download " + item.name + " first.");
+            // Android draws COLRv1 from 13 on: an older phone would show every emoji blank until the restart (the page offers only what it can draw)
+            if ("COLRv1".equals(kept.format) && Build.VERSION.SDK_INT < 33) return FontLibrary.error("not_usable", item.name + " needs Android 13 or newer.");
+            String sha = FontLibrary.sha256(f);
+            if (!kept.sha256.equals(sha)) return FontLibrary.error("emoji_changed", "The downloaded file changed on the phone. Delete it and download it again.");
+            SamsungFonts.Roots r = SamsungFonts.Roots.system();
+            String boot = fmkBootId();
+            FontLibrary.Swap prev = FontLibrary.readSwap(d);
+            if (prev != null && !prev.targets.isEmpty()) {
+                // a swap on top of one still bound would stack, and Undo would take only the top one away: a target that still reads as the
+                // font swapped before stops it (the record stays for Undo); after a restart the targets read as the phone's own again
+                for (SamsungFonts.BindResult b : SamsungFonts.parseSwap(fmkRun(backend, SamsungFonts.emojiUndoScript(prev.targets), null, 60000))) {
+                    if (prev.sha256.equals(b.sha256)) return FontLibrary.error("failed", "The emoji used before could not be taken away. Restart the phone, then try again.");
+                }
+                FontLibrary.clearSwap(d);
+            }
+            List<String> targets = fmkEmojiTargets(backend);
+            if (targets.isEmpty()) return FontLibrary.error("no_targets", "This phone's emoji font file was not found.");
+            String name = item.id + ".ttf";
+            SamsungFonts.WriteResult w = SamsungFonts.parseWrite(fmkRun(backend, SamsungFonts.stageEmojiScript(r, name, f.length(), sha), f, 180000), name);
+            if (!w.ok || !sha.equals(w.sha256)) return FontLibrary.error("failed", w.ok ? "The emoji font did not arrive whole on the phone." : w.error);
+            List<SamsungFonts.BindResult> bound = SamsungFonts.parseSwap(fmkRun(backend, SamsungFonts.emojiSwapScript(r, r.adbmgrFonts() + "/" + name, targets), null, 60000));
+            JSONArray rb = new JSONArray();
+            List<String> mounted = new ArrayList<String>();
+            boolean all = true, any = false;
+            for (SamsungFonts.BindResult b : bound) {
+                if ("missing".equals(b.state)) continue;
+                boolean good = "ok".equals(b.state) && sha.equals(b.sha256);
+                if ("ok".equals(b.state)) mounted.add(b.target);
+                rb.put(new JSONObject().put("target", b.target).put("sha256", b.sha256 == null ? "" : b.sha256).put("ok", good));
+                all &= good;
+                any |= good;
+            }
+            if (!mounted.isEmpty()) FontLibrary.writeSwap(d, new FontLibrary.Swap(item.id, boot.isEmpty() ? "unknown" : boot, sha, mounted));   // even a part: Undo must know it
+            if (!any) return FontLibrary.error("failed", "No emoji file could be replaced.").put("readBack", rb);
+            if (!all) return FontLibrary.error("failed", "Some emoji files did not change.").put("readBack", rb);
+            return new JSONObject().put("ok", true).put("readBack", rb);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The emoji could not be swapped: " + errMsg(t));
+        }
+    }
+
+    /** Unmounts the swap (the targets recorded, else every emoji file) and reads each hash back: a target is back when it no longer hashes as the swapped font. */
+    private JSONObject fmkSysUndo() {
+        try {
+            String backend = fmkGate(true);
+            if (backend == null) return FontLibrary.error("locked", FMK_LOCK_SYS);
+            FontLibrary.Dirs d = fmkDirs();
+            FontLibrary.Swap s = FontLibrary.readSwap(d);
+            List<String> targets = s != null && !s.targets.isEmpty() ? s.targets : fmkEmojiTargets(backend);
+            List<SamsungFonts.BindResult> undone = SamsungFonts.parseSwap(fmkRun(backend, SamsungFonts.emojiUndoScript(targets), null, 60000));
+            JSONArray rb = new JSONArray();
+            boolean all = true;
+            for (SamsungFonts.BindResult b : undone) {
+                boolean good = b.sha256 != null && (s == null || !s.sha256.equals(b.sha256));
+                rb.put(new JSONObject().put("target", b.target).put("sha256", b.sha256 == null ? "" : b.sha256).put("ok", good));
+                all &= good;
+            }
+            if (!all) return FontLibrary.error("failed", "Some emoji files did not change.").put("readBack", rb);
+            FontLibrary.clearSwap(d);
+            return new JSONObject().put("ok", true).put("readBack", rb);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The swap could not be undone: " + errMsg(t));
+        }
+    }
+    // FONTMAKER:END
+
     // ---------------------------------------------------------------------------------------------
     // Backup and restore
     //
@@ -7545,6 +8516,18 @@ public class MainActivity extends Activity {
                     notifyJs("window.onTextFilePicked && window.onTextFilePicked(" + res.toString() + ")");
                 }
             });
+            return;
+        }
+        if (requestCode == REQ_FONTMAKER_PICK) {
+            final String slot = fmkPickSlot;
+            fmkPickSlot = null;
+            fmkPickResult(slot, (resultCode == RESULT_OK && data != null) ? data.getData() : null);
+            return;
+        }
+        if (requestCode == REQ_FONTMAKER_EXPORT) {
+            final String id = fmkExportId;
+            fmkExportId = null;
+            fmkExportResult(id, (resultCode == RESULT_OK && data != null) ? data.getData() : null);
             return;
         }
         if (requestCode == REQ_PICK_FONT) {
@@ -12600,6 +13583,318 @@ public class MainActivity extends Activity {
         public String fontClear() {
             return fontStore().clear();
         }
+
+        // FONTMAKER:BRIDGE:BEGIN
+        // ---- Custom Fonts (design section 6). Answers are JSON, {ok, ...} or {ok:false, code, error}, except fontMakerPreview and fontMakerFontData
+        // (base64, "" when missing or over 24 MB). Ids, tokens and catalog ids are checked against FontLibrary's patterns and only looked up, so
+        // nothing the page sends names a path. The work itself is the activity's fmk* methods. ----
+
+        /** Opens Android's file chooser for one slot (regular, bold, emoji). Answer {ok}; then window.onFontMakerPicked(slot, {ok, token, fileName, size, info}). */
+        @JavascriptInterface
+        public String fontMakerPick(final String slot) {
+            if (!FontLibrary.isSlot(slot)) return fmkErr("bad_request", "Choose Regular, Bold or Emoji.");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    fmkPickSlot = slot;
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    if (!startPicker(i, REQ_FONTMAKER_PICK)) {
+                        fmkPickSlot = null;
+                        fmkPicked(slot, FontLibrary.error("no_picker", "No file picker available"));
+                    }
+                }
+            });
+            return fmkOk(null, null);
+        }
+
+        /** A picked file as base64 for its preview, by token. */
+        @JavascriptInterface
+        public String fontMakerPreview(String token) {
+            FontLibrary.Pick p = fmkPicks().get(token);
+            return p == null ? "" : fmkBase64(p.file);
+        }
+
+        /** Makes a font from {name, regular:{token, coords}, bold, emoji:{catalogId}|{token}|null, emojiScale, rebuildId}. Answer {ok, job}; window.onFontMakerProgress / onFontMakerBuilt. */
+        @JavascriptInterface
+        public String fontMakerBuild(String requestJson) {
+            try {
+                return fmkStartBuild(requestJson);
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /** Cancels a build; it ends at its next check with onFontMakerBuilt(job, {ok:false, code:"cancelled"}). */
+        @JavascriptInterface
+        public String fontMakerCancel(String jobId) {
+            boolean running = fmkJobs.cancel(jobId);
+            try {
+                return new JSONObject().put("ok", true).put("running", running).toString();
+            } catch (Exception e) {
+                return "{\"ok\":true}";
+            }
+        }
+
+        /** My fonts: {ok, entries:[{id, name, pkg, versionCode, created, hasBold, emoji, sizes, installed, installedVersion, applied}], device}. */
+        @JavascriptInterface
+        public String fontMakerLibrary() {
+            try {
+                return fmkLibraryJson();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /** One face of a library entry (regular, bold) as base64 for its preview line. */
+        @JavascriptInterface
+        public String fontMakerFontData(String id, String face) {
+            if (!FontLibrary.isId(id)) return "";
+            FontLibrary.Entry e = FontLibrary.read(fmkDirs(), id);
+            if (e == null || ("bold".equals(face) && !e.hasBold)) return "";
+            return fmkBase64(new File(fmkDirs().entryDir(id), "bold".equals(face) ? FontLibrary.BOLD : FontLibrary.REGULAR));
+        }
+
+        /** Removes an entry from My fonts (an installed package stays installed). Refused while the font changer has it applied, or while it is being made again. */
+        @JavascriptInterface
+        public String fontMakerDelete(String id) {
+            try {
+                return fmkDelete(id);
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /** Saves an entry's package where the user chooses (Android's "save as"). Answer {ok}; then window.onFontMakerExported(id, {ok, name}). */
+        @JavascriptInterface
+        public String fontMakerExport(final String id) {
+            final FontLibrary.Entry e = FontLibrary.isId(id) ? FontLibrary.read(fmkDirs(), id) : null;
+            if (e == null) return fmkErr("not_found", FMK_NOT_FOUND);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    fmkExportId = id;
+                    Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("application/vnd.android.package-archive");
+                    i.putExtra(Intent.EXTRA_TITLE, FontLibrary.exportName(e.name));
+                    if (!startPicker(i, REQ_FONTMAKER_EXPORT)) {
+                        fmkExportId = null;
+                        fmkExported(id, FontLibrary.error("no_picker", "No file picker available"));
+                    }
+                }
+            });
+            return fmkOk(null, null);
+        }
+
+        /** Installs an entry's package (Samsung only). Answer {ok, job}; then window.onFontMakerInstalled(id, {ok, how, note}). */
+        @JavascriptInterface
+        public String fontMakerInstall(final String id) {
+            return fmkLibraryJob("install", id);
+        }
+
+        /** Uninstalls an entry's package. Answer {ok, job}; then window.onFontMakerUninstalled(id, {ok, how, note}). */
+        @JavascriptInterface
+        public String fontMakerUninstall(final String id) {
+            return fmkLibraryJob("uninstall", id);
+        }
+
+        private String fmkLibraryJob(final String kind, final String id) {
+            if ("install".equals(kind) && !isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
+            final FontLibrary.Entry e = FontLibrary.isId(id) ? FontLibrary.read(fmkDirs(), id) : null;
+            if (e == null) return fmkErr("not_found", FMK_NOT_FOUND);
+            final FontLibrary.Jobs.Job job = fmkJobs.start(kind, id, "id:" + id);           // a delete waits for it
+            if (job == null) return fmkErr("busy", "This font is busy. Wait for it to finish.");
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res;
+                        try {
+                            res = "install".equals(kind) ? fmkInstall(e) : fmkUninstall(e);
+                        } finally {
+                            fmkJobs.finish(job);
+                        }
+                        if ("install".equals(kind)) notifyJs("window.onFontMakerInstalled && window.onFontMakerInstalled(" + JSONObject.quote(id) + ", " + JSONObject.quote(res.toString()) + ")");
+                        else notifyJs("window.onFontMakerUninstalled && window.onFontMakerUninstalled(" + JSONObject.quote(id) + ", " + JSONObject.quote(res.toString()) + ")");
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** The font changer's state, read from the phone. Answer {ok, job}; then window.onFontMakerChangerStatus({ok, available, unlocked, lockReason, mode, current}). */
+        @JavascriptInterface
+        public String fontMakerChangerStatus() {
+            return fmkPrivJob("status", null);
+        }
+
+        /** Applies an entry with the font changer (RootGate.unlocked). Answer {ok, job}; then window.onFontMakerApplied({ok, readBack, refreshed}). */
+        @JavascriptInterface
+        public String fontMakerApply(String id) {
+            if (!isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
+            if (fmkGate(false) == null) return fmkErr("locked", FMK_LOCK_CHANGER);
+            if (!FontLibrary.isId(id) || FontLibrary.read(fmkDirs(), id) == null) return fmkErr("not_found", FMK_NOT_FOUND);
+            return fmkPrivJob("apply", id);
+        }
+
+        /** Puts the phone's own font back (RootGate.unlocked). Answer {ok, job}; then window.onFontMakerReset({ok, readBack, refreshed}). */
+        @JavascriptInterface
+        public String fontMakerReset() {
+            if (!isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
+            if (fmkGate(false) == null) return fmkErr("locked", FMK_LOCK_CHANGER);
+            return fmkPrivJob("reset", null);
+        }
+
+        /** The five emoji downloads for this phone: {ok, sdk, items:[{id, name, version, format, mergeable, minApi, usable, size, sha256, license, ..., downloaded}]}. */
+        @JavascriptInterface
+        public String emojiCatalog() {
+            try {
+                FontLibrary.Dirs d = fmkDirs();
+                int sdk = Build.VERSION.SDK_INT;
+                JSONArray items = new JSONArray();
+                for (EmojiCatalog.Item it : EmojiCatalog.ITEMS) items.put(FontLibrary.catalogItemJson(it, sdk, FontLibrary.keptBuild(it, d.emojiFile(it.id)) != null));
+                return new JSONObject().put("ok", true).put("sdk", sdk).put("items", items).toString();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /** Downloads one catalog emoji font. Answer {ok, job}; window.onEmojiProgress(id, done, total), then window.onEmojiDone(id, {ok, size, sha256}). */
+        @JavascriptInterface
+        public String emojiDownload(String id) {
+            final EmojiCatalog.Item item = FontLibrary.isCatalogId(id) ? EmojiCatalog.byId(id) : null;
+            if (item == null) return fmkErr("unknown", "There is no such emoji font.");
+            final FontLibrary.Jobs.Job job = fmkJobs.start("emoji", item.id);
+            if (job == null) return fmkErr("busy", "This emoji font is already downloading.");
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        fmkDownloadJob(job, item);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** Stops a download; it ends with onEmojiDone(id, {ok:false, code:"cancelled"}) and leaves no part file. */
+        @JavascriptInterface
+        public String emojiCancel(String id) {
+            FontLibrary.Jobs.Job job = FontLibrary.isCatalogId(id) ? fmkJobs.running("emoji", id) : null;
+            if (job != null) {
+                job.cancel();
+                final java.net.HttpURLConnection c = fmkConns.remove(job.id);
+                if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+            }
+            return fmkOk(null, null);
+        }
+
+        /** Deletes a downloaded emoji font. Refused while it is the phone's emoji (this boot), while a build reads it, or while it downloads. */
+        @JavascriptInterface
+        public String emojiDelete(String id) {
+            if (!FontLibrary.isCatalogId(id) || EmojiCatalog.byId(id) == null) return fmkErr("unknown", "There is no such emoji font.");
+            FontLibrary.Dirs d = fmkDirs();
+            String no = FontLibrary.emojiDeleteRefusal(id, FontLibrary.activeSwap(d, fmkBootId()), fmkJobs);
+            if ("in_use".equals(no)) return fmkErr("in_use", "Undo the system emoji first.");
+            if ("building".equals(no)) return fmkErr("building", "A font is being made with this emoji font. Wait for it to finish.");
+            if (fmkJobs.running("emoji", id) != null) return fmkErr("busy", "This emoji font is downloading. Cancel it first.");
+            if (fmkJobs.inUse("sys:" + id)) return fmkErr("busy", "This emoji font is being put on the phone. Wait for it to finish.");
+            File f = d.emojiFile(id);
+            if (f != null && f.exists() && !f.delete()) return fmkErr("failed", "The file could not be deleted.");
+            return fmkOk(null, null);
+        }
+
+        /** The system emoji's state. Answer {ok, job}; then window.onSysEmojiStatus({ok, unlocked, lockReason, targets, active}). */
+        @JavascriptInterface
+        public String sysEmojiStatus() {
+            return fmkPrivJob("sysstatus", null);
+        }
+
+        /** Uses a downloaded emoji font as the phone's emoji until the next restart (RootGate.uid0). Answer {ok, job}; then window.onSysEmojiApplied({ok, readBack}). */
+        @JavascriptInterface
+        public String sysEmojiApply(String id) {
+            if (fmkGate(true) == null) return fmkErr("locked", FMK_LOCK_SYS);
+            EmojiCatalog.Item item = FontLibrary.isCatalogId(id) ? EmojiCatalog.byId(id) : null;
+            if (item == null) return fmkErr("unknown", "There is no such emoji font.");
+            if (FontLibrary.keptBuild(item, fmkDirs().emojiFile(id)) == null) return fmkErr("not_downloaded", "Download " + item.name + " first.");
+            return fmkPrivJob("sysapply", id);
+        }
+
+        /** Undoes the swap (RootGate.uid0). Answer {ok, job}; then window.onSysEmojiUndone({ok, readBack}). */
+        @JavascriptInterface
+        public String sysEmojiUndo() {
+            if (fmkGate(true) == null) return fmkErr("locked", FMK_LOCK_SYS);
+            return fmkPrivJob("sysundo", null);
+        }
+
+        /** Restarts Android's framework (zygote), not the phone (RootGate.uid0): only after the page's own confirm sheet. Answer {ok}, then the restart. */
+        @JavascriptInterface
+        public String softRestart() {
+            final String backend = fmkGate(true);
+            if (backend == null) return fmkErr("locked", FMK_LOCK_SYS);
+            try {
+                fontPrivExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (activityDestroyed) return;
+                        try {
+                            Thread.sleep(400);                              // the answer reaches the page first
+                            fmkRun(backend, SamsungFonts.softRestartScript(), null, 15000);
+                        } catch (Throwable ignored) {}
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk(null, null);
+        }
+
+        /** One font changer or system emoji step on fontPrivExec (one at a time, in order); "apply", "reset" and "sysapply" are one at a time. */
+        private String fmkPrivJob(final String kind, final String id) {
+            boolean single = "apply".equals(kind) || "reset".equals(kind) || "sysapply".equals(kind) || "sysundo".equals(kind);
+            // what the step reads, so a delete waits for it: the entry an apply writes, the emoji file a swap streams
+            String uses = id == null ? null : ("sysapply".equals(kind) ? "sys:" : "id:") + id;
+            final FontLibrary.Jobs.Job job = fmkJobs.start(kind, single ? "only" : String.valueOf(System.nanoTime()), uses);
+            if (job == null) return fmkErr("busy", "The phone is still busy with the last change. Wait for it to finish.");
+            try {
+                fontPrivExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (activityDestroyed) return;                 // queued behind a step that ran while the window closed
+                            if ("status".equals(kind)) {
+                                notifyJs("window.onFontMakerChangerStatus && window.onFontMakerChangerStatus(" + JSONObject.quote(fmkChangerStatus().toString()) + ")");
+                            } else if ("apply".equals(kind)) {
+                                notifyJs("window.onFontMakerApplied && window.onFontMakerApplied(" + JSONObject.quote(fmkApply(id).toString()) + ")");
+                            } else if ("reset".equals(kind)) {
+                                notifyJs("window.onFontMakerReset && window.onFontMakerReset(" + JSONObject.quote(fmkReset().toString()) + ")");
+                            } else if ("sysstatus".equals(kind)) {
+                                notifyJs("window.onSysEmojiStatus && window.onSysEmojiStatus(" + JSONObject.quote(fmkSysStatus().toString()) + ")");
+                            } else if ("sysapply".equals(kind)) {
+                                notifyJs("window.onSysEmojiApplied && window.onSysEmojiApplied(" + JSONObject.quote(fmkSysApply(EmojiCatalog.byId(id)).toString()) + ")");
+                            } else if ("sysundo".equals(kind)) {
+                                notifyJs("window.onSysEmojiUndone && window.onSysEmojiUndone(" + JSONObject.quote(fmkSysUndo().toString()) + ")");
+                            }
+                        } finally {
+                            fmkJobs.finish(job);
+                        }
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+        // FONTMAKER:BRIDGE:END
 
         /**
          * Reads the package name and version of the found .apk files and finds identical copies (same size and SHA-256) and older versions of a package that is there
@@ -17745,6 +19040,17 @@ public class MainActivity extends Activity {
             closePtySessions();
             for (AiHttp c : aiCalls.values()) c.cancel();
             aiExecutor.shutdown();
+        } catch (Throwable ignored) {}
+        // Custom Fonts: no new work; the builds and downloads stop at their next check (their connections are closed now), a privileged step
+        // that runs ends (its files are written whole or not at all) and the ones queued behind it see the window gone; the picked copies go
+        try { fontExec.shutdownNow(); } catch (Throwable ignored) {}
+        try { fontPrivExec.shutdown(); } catch (Throwable ignored) {}
+        fmkJobs.cancelAll();
+        fmkDisconnectAll();
+        try {
+            synchronized (fmkLock) {
+                if (fmkPicks != null) fmkPicks.clear();
+            }
         } catch (Throwable ignored) {}
         try {
             executor.shutdown();

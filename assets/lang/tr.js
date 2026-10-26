@@ -5427,7 +5427,19 @@ x: {
 "Weight": "Kalınlık",
 "Width": "Genişlik",
 "Without a Bold font, Android makes bold text from the Regular one.": "Kalın bir yazı tipi olmadan Android kalın metni normal olandan üretir.",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Yazı tiplerinizden birini doğrudan telefonun yazı tipi dosyalarına yazar. Root ile ya da sistem kullanıcısı (UID 1000) veya Root (UID 0) olarak çalışan Shizuku ile açılır."
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Yazı tiplerinizden birini doğrudan telefonun yazı tipi dosyalarına yazar. Root ile ya da sistem kullanıcısı (UID 1000) veya Root (UID 0) olarak çalışan Shizuku ile açılır.",
+"Cancelled.": "İptal edildi.",
+"Choose the Regular font first.": "Önce normal yazı tipini seçin.",
+"Tap Uninstall on the font's App info.": "Yazı tipinin Uygulama bilgileri sayfasında Yüklemeyi kaldır’a dokunun.",
+"That font is not in My fonts any more.": "Bu yazı tipi artık “Yazı tiplerim” içinde yok.",
+"The choices could not be read. Choose the fonts again.": "Seçimler okunamadı. Yazı tiplerini yeniden seçin.",
+"The finished font would be too large for a font package (over 96 MB).": "Bitmiş yazı tipi, bir yazı tipi paketi için çok büyük olur (96 MB üzeri).",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "Telefonun belleği bu yazı tipi için yetmedi. Diğer uygulamaları kapatıp yeniden deneyin veya daha küçük yazı tipleri seçin.",
+"This font is too complex for the app to convert.": "Bu yazı tipi, uygulamanın dönüştüremeyeceği kadar karmaşık.",
+"This font's files changed since it was made. Make it again.": "Bu yazı tipinin dosyaları oluşturulduktan sonra değişti. Yeniden oluşturun.",
+"Wait for the current task to finish.": "Geçerli görevin bitmesini bekleyin.",
+"Wait for the font being made to finish.": "Oluşturulan yazı tipinin bitmesini bekleyin.",
+"The downloaded file changed on the phone. Delete it and download it again.": "İndirilen dosya telefonda değişti. Silip yeniden indirin."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "{0} glif"],
 ["{0} is ready in My fonts.", "{0}, “Yazı tiplerim” içinde hazır."],
 ["{0} outlines", "{0} konturları"],
+["Bold font: {0}", "Kalın yazı tipi: {0}"],
+["Emoji font: {0}", "Emoji yazı tipi: {0}"],
+["Regular font: {0}", "Normal yazı tipi: {0}"],
 ]
 };

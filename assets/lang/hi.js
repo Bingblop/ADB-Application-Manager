@@ -5427,7 +5427,19 @@ x: {
 "Weight": "मोटाई",
 "Width": "चौड़ाई",
 "Without a Bold font, Android makes bold text from the Regular one.": "बोल्ड फ़ॉन्ट के बिना Android रेगुलर फ़ॉन्ट से बोल्ड टेक्स्ट बनाता है।",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "आपका कोई फ़ॉन्ट सीधे फ़ोन की फ़ॉन्ट फ़ाइलों में लिखता है। Root से, या सिस्टम उपयोगकर्ता (UID 1000) या Root (UID 0) के रूप में चल रहे Shizuku से अनलॉक होता है।"
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "आपका कोई फ़ॉन्ट सीधे फ़ोन की फ़ॉन्ट फ़ाइलों में लिखता है। Root से, या सिस्टम उपयोगकर्ता (UID 1000) या Root (UID 0) के रूप में चल रहे Shizuku से अनलॉक होता है।",
+"Cancelled.": "रद्द किया गया।",
+"Choose the Regular font first.": "पहले रेगुलर फ़ॉन्ट चुनें।",
+"Tap Uninstall on the font's App info.": "फ़ॉन्ट की ऐप की जानकारी में अनइंस्टॉल करें पर टैप करें।",
+"That font is not in My fonts any more.": "वह फ़ॉन्ट अब “मेरे फ़ॉन्ट” में नहीं है।",
+"The choices could not be read. Choose the fonts again.": "चुनाव पढ़े नहीं जा सके। फ़ॉन्ट फिर से चुनें।",
+"The finished font would be too large for a font package (over 96 MB).": "तैयार फ़ॉन्ट फ़ॉन्ट पैकेज के लिए बहुत बड़ा होगा (96 MB से ज़्यादा)।",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "इस फ़ॉन्ट के लिए फ़ोन की मेमोरी कम पड़ गई। दूसरे ऐप बंद करके फिर से कोशिश करें, या छोटे फ़ॉन्ट चुनें।",
+"This font is too complex for the app to convert.": "यह फ़ॉन्ट इतना जटिल है कि ऐप इसे बदल नहीं सकता।",
+"This font's files changed since it was made. Make it again.": "बनाने के बाद इस फ़ॉन्ट की फ़ाइलें बदल गई हैं। इसे फिर से बनाएं।",
+"Wait for the current task to finish.": "मौजूदा काम पूरा होने तक इंतज़ार करें।",
+"Wait for the font being made to finish.": "बन रहे फ़ॉन्ट के पूरा होने तक इंतज़ार करें।",
+"The downloaded file changed on the phone. Delete it and download it again.": "डाउनलोड की गई फ़ाइल फ़ोन पर बदल गई है। इसे मिटाएं और फिर से डाउनलोड करें।"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "{0} ग्लिफ़"],
 ["{0} is ready in My fonts.", "{0} “मेरे फ़ॉन्ट” में तैयार है।"],
 ["{0} outlines", "{0} आउटलाइन"],
+["Bold font: {0}", "बोल्ड फ़ॉन्ट: {0}"],
+["Emoji font: {0}", "इमोजी फ़ॉन्ट: {0}"],
+["Regular font: {0}", "रेगुलर फ़ॉन्ट: {0}"],
 ]
 };

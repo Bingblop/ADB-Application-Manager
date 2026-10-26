@@ -5427,7 +5427,19 @@ x: {
 "Weight": "Насыщенность",
 "Width": "Ширина",
 "Without a Bold font, Android makes bold text from the Regular one.": "Без жирного шрифта Android делает жирный текст из обычного.",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Записывает один из ваших шрифтов прямо в файлы шрифтов телефона. Разблокируется с Root или с Shizuku, работающим от системного пользователя (UID 1000) или от Root (UID 0)."
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Записывает один из ваших шрифтов прямо в файлы шрифтов телефона. Разблокируется с Root или с Shizuku, работающим от системного пользователя (UID 1000) или от Root (UID 0).",
+"Cancelled.": "Отменено.",
+"Choose the Regular font first.": "Сначала выберите обычный шрифт.",
+"Tap Uninstall on the font's App info.": "Нажмите «Удалить» на странице «О приложении» этого шрифта.",
+"That font is not in My fonts any more.": "Этого шрифта больше нет в разделе «Мои шрифты».",
+"The choices could not be read. Choose the fonts again.": "Не удалось прочитать выбор. Выберите шрифты заново.",
+"The finished font would be too large for a font package (over 96 MB).": "Готовый шрифт был бы слишком большим для пакета шрифта (больше 96 MB).",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "Телефону не хватило памяти для этого шрифта. Закройте другие приложения и повторите попытку или выберите шрифты поменьше.",
+"This font is too complex for the app to convert.": "Этот шрифт слишком сложен, чтобы приложение могло его преобразовать.",
+"This font's files changed since it was made. Make it again.": "Файлы этого шрифта изменились после его создания. Создайте его заново.",
+"Wait for the current task to finish.": "Дождитесь завершения текущей задачи.",
+"Wait for the font being made to finish.": "Дождитесь, пока шрифт будет создан.",
+"The downloaded file changed on the phone. Delete it and download it again.": "Загруженный файл изменился на телефоне. Удалите его и загрузите заново."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "Глифов: {0}"],
 ["{0} is ready in My fonts.", "{0} готов в разделе «Мои шрифты»."],
 ["{0} outlines", "Контуры {0}"],
+["Bold font: {0}", "Жирный шрифт: {0}"],
+["Emoji font: {0}", "Шрифт эмодзи: {0}"],
+["Regular font: {0}", "Обычный шрифт: {0}"],
 ]
 };

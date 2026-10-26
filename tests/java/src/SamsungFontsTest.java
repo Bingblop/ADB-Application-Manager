@@ -412,6 +412,23 @@ public class SamsungFontsTest {
         // sans.loc on disk really holds that content, no trailing newline
         byte[] locBytes = Files.readAllBytes(new File(R.appFonts + "/0/sans.loc").toPath());
         eq("sans.loc bytes", new String(locBytes, StandardCharsets.UTF_8), R.appFonts + "/0/" + suffix + "#" + suffix);
+
+        // made again without a Bold: only the old Bold goes, the folder sans.loc points at stays, and the read-back lists the Regular alone
+        String o4 = sh(SamsungFonts.removeFontScript(R, 0, suffix, "DroidSans-Bold.ttf"), null);
+        check("remove the Bold reports gone", o4.contains(SamsungFonts.M_BIND + " gone") && o4.contains(SamsungFonts.M_END));
+        check("the Bold is removed", !new File(R.appFonts + "/0/" + suffix + "/DroidSans-Bold.ttf").exists());
+        check("the Regular and its folder stay", new File(R.appFonts + "/0/" + suffix + "/DroidSans.ttf").isFile());
+        SamsungFonts.ApplyResult r2 = SamsungFonts.parseApply(sh(SamsungFonts.installScript(R, 0, suffix, new String[]{"DroidSans.ttf"}, new String[]{regSha}), null));
+        boolean boldListed = false;
+        for (SamsungFonts.FileInfo fi : r2.files) if (fi.name.equals("DroidSans-Bold.ttf")) boldListed = true;
+        check("install again ok, the read-back without a Bold", r2.ok && !boldListed);
+        String path = SamsungFonts.removeFontScript(R, 0, suffix, "DroidSans-Bold.ttf");
+        for (String abs : quotedAbsPaths(path)) check("remove path confined to the suffix folder: " + abs, abs.equals(R.appFonts + "/0/" + suffix + "/DroidSans-Bold.ttf"));
+        for (String bad : new String[] { "../sans.loc", "a/b.ttf", "x.ttf;rm", ".ttf", "" }) {
+            boolean refused = false;
+            try { SamsungFonts.removeFontScript(R, 0, suffix, bad); } catch (IllegalArgumentException e) { refused = true; }
+            check("remove refuses the file name " + bad, refused);
+        }
     }
 
     static void changerMismatch() throws Exception {
@@ -506,6 +523,18 @@ public class SamsungFontsTest {
         List<SamsungFonts.BindResult> undo = SamsungFonts.parseSwap(undoOut);
         eq("undo results", undo.size(), 3);
         eq("undo state", undo.get(0).state, "undone");
+
+        // a target still in use: the plain umount fails as busy, the lazy one follows
+        File log = new File(root, "mount.log");
+        Files.write(log.toPath(), new byte[0]);
+        writeStub("umount", "#!/bin/sh\necho \"umount $*\" >> \"$FAKE_LOG\"\n[ \"$1\" = '-l' ] && exit 0\necho 'umount: Device or resource busy' >&2; exit 1\n");
+        sh(SamsungFonts.emojiUndoScript(Arrays.asList(sysEmoji.getAbsolutePath())), null);
+        String ul = new String(Files.readAllBytes(log.toPath()), StandardCharsets.UTF_8);
+        check("busy: a lazy umount follows the plain one", ul.contains("umount " + sysEmoji.getAbsolutePath()) && ul.contains("umount -l " + sysEmoji.getAbsolutePath()));
+        Files.write(log.toPath(), new byte[0]);
+        writeStub("umount", "#!/bin/sh\necho \"umount $*\" >> \"$FAKE_LOG\"\nexit 0\n");
+        sh(SamsungFonts.emojiUndoScript(Arrays.asList(sysEmoji.getAbsolutePath())), null);
+        check("not busy: no lazy umount", !new String(Files.readAllBytes(log.toPath()), StandardCharsets.UTF_8).contains("umount -l"));
 
         eq("soft restart script", SamsungFonts.softRestartScript().trim(), "setprop ctl.restart zygote");
     }

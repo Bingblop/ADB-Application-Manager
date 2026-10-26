@@ -186,8 +186,9 @@ exports.initScript = function (opts) {
     },
     fontMakerUninstall(id) {
       st.calls.push('fontMakerUninstall:' + id);
-      const e = lib.find(x => x.id === id), j = job();
-      run([() => { if (e) { e.installed = false; e.installedVersion = 0; } window.onFontMakerUninstalled(id, J({ ok: true, how: 'pm', note: '' })); }]);
+      const e = lib.find(x => x.id === id), j = job(), priv = !!(WM[st.mode] || {}).isPrivileged;
+      // without a working mode the app opens the font's App info (how 'settings') and the package stays until the user taps Uninstall there
+      run([() => { if (e && priv) { e.installed = false; e.installedVersion = 0; } window.onFontMakerUninstalled(id, J({ ok: true, how: priv ? 'pm' : 'settings', note: '' })); }]);
       return J({ ok: true, job: j });
     },
 

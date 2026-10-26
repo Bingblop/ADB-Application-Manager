@@ -5427,7 +5427,19 @@ x: {
 "Weight": "Ketebalan",
 "Width": "Lebar",
 "Without a Bold font, Android makes bold text from the Regular one.": "Tanpa font tebal, Android membuat teks tebal dari font reguler.",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Menulis salah satu font Anda langsung ke file font ponsel. Terbuka dengan Root, atau dengan Shizuku yang berjalan sebagai pengguna sistem (UID 1000) atau sebagai Root (UID 0)."
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Menulis salah satu font Anda langsung ke file font ponsel. Terbuka dengan Root, atau dengan Shizuku yang berjalan sebagai pengguna sistem (UID 1000) atau sebagai Root (UID 0).",
+"Cancelled.": "Dibatalkan.",
+"Choose the Regular font first.": "Pilih font reguler dulu.",
+"Tap Uninstall on the font's App info.": "Ketuk Uninstal di Info aplikasi font tersebut.",
+"That font is not in My fonts any more.": "Font itu sudah tidak ada di “Font saya”.",
+"The choices could not be read. Choose the fonts again.": "Pilihan tidak bisa dibaca. Pilih font lagi.",
+"The finished font would be too large for a font package (over 96 MB).": "Font jadi akan terlalu besar untuk paket font (lebih dari 96 MB).",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "Memori ponsel habis untuk font ini. Tutup aplikasi lain dan coba lagi, atau pilih font yang lebih kecil.",
+"This font is too complex for the app to convert.": "Font ini terlalu rumit untuk dikonversi aplikasi.",
+"This font's files changed since it was made. Make it again.": "File font ini berubah sejak dibuat. Buat lagi.",
+"Wait for the current task to finish.": "Tunggu tugas saat ini selesai.",
+"Wait for the font being made to finish.": "Tunggu font yang sedang dibuat selesai.",
+"The downloaded file changed on the phone. Delete it and download it again.": "File yang diunduh berubah di ponsel. Hapus lalu unduh lagi."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "{0} glif"],
 ["{0} is ready in My fonts.", "{0} siap di “Font saya”."],
 ["{0} outlines", "Kontur {0}"],
+["Bold font: {0}", "Font tebal: {0}"],
+["Emoji font: {0}", "Font emoji: {0}"],
+["Regular font: {0}", "Font reguler: {0}"],
 ]
 };

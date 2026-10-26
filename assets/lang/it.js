@@ -5427,7 +5427,19 @@ x: {
 "Weight": "Peso",
 "Width": "Larghezza",
 "Without a Bold font, Android makes bold text from the Regular one.": "Senza un carattere grassetto, Android crea il testo in grassetto da quello normale.",
-"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Scrive uno dei tuoi caratteri direttamente nei file dei caratteri del telefono. Si sblocca con Root, o con Shizuku in esecuzione come utente di sistema (UID 1000) o come Root (UID 0)."
+"Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).": "Scrive uno dei tuoi caratteri direttamente nei file dei caratteri del telefono. Si sblocca con Root, o con Shizuku in esecuzione come utente di sistema (UID 1000) o come Root (UID 0).",
+"Cancelled.": "Annullato.",
+"Choose the Regular font first.": "Scegli prima il carattere normale.",
+"Tap Uninstall on the font's App info.": "Tocca Disinstalla in Info app del carattere.",
+"That font is not in My fonts any more.": "Quel carattere non è più tra “I miei caratteri”.",
+"The choices could not be read. Choose the fonts again.": "Impossibile leggere le scelte. Scegli di nuovo i caratteri.",
+"The finished font would be too large for a font package (over 96 MB).": "Il carattere finito sarebbe troppo grande per un pacchetto di caratteri (oltre 96 MB).",
+"The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.": "Il telefono ha esaurito la memoria per questo carattere. Chiudi altre app e riprova, oppure scegli caratteri più piccoli.",
+"This font is too complex for the app to convert.": "Questo carattere è troppo complesso perché l’app lo converta.",
+"This font's files changed since it was made. Make it again.": "I file di questo carattere sono cambiati dopo la sua creazione. Crealo di nuovo.",
+"Wait for the current task to finish.": "Attendi la fine dell’attività in corso.",
+"Wait for the font being made to finish.": "Attendi che il carattere in creazione sia pronto.",
+"The downloaded file changed on the phone. Delete it and download it again.": "Il file scaricato è cambiato sul telefono. Eliminalo e scaricalo di nuovo."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6608,5 +6620,8 @@ p: [
 ["{0} glyphs", "{0} glifi"],
 ["{0} is ready in My fonts.", "{0} è pronto in “I miei caratteri”."],
 ["{0} outlines", "Contorni {0}"],
+["Bold font: {0}", "Carattere grassetto: {0}"],
+["Emoji font: {0}", "Carattere emoji: {0}"],
+["Regular font: {0}", "Carattere normale: {0}"],
 ]
 };

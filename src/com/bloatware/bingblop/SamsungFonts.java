@@ -292,6 +292,19 @@ public final class SamsungFonts {
                 + "echo '" + M_END + "'\n";
     }
 
+    /**
+     * Removes one font file from the app's own suffix directory and nothing else (a Bold left by an earlier build when the font now has
+     * none), so the directory {@code sans.loc} may point at is never gone meanwhile. Prints {@code present} / {@code gone} like
+     * {@link #removeSuffixScript}; the caller's install read-back lists the directory again.
+     */
+    public static String removeFontScript(Roots r, int userId, String suffix, String fileName) {
+        requireUser(userId); requireSuffix(suffix); requireFontFile(fileName);
+        String f = r.appFonts + "/" + userId + "/" + suffix + "/" + fileName;
+        return "rm -f " + q(f) + " 2>/dev/null\n"
+                + "if [ -e " + q(f) + " ]; then echo '" + M_BIND + " present'; else echo '" + M_BIND + " gone'; fi\n"
+                + "echo '" + M_END + "'\n";
+    }
+
     /** Reads the current state: whether {@code /data/app_fonts} exists, {@code sans.loc} and the suffix directories present. */
     public static String statusScript(Roots r, int userId) {
         requireUser(userId);
@@ -384,12 +397,16 @@ public final class SamsungFonts {
         return s.toString();
     }
 
-    /** Undoes the swap: unmounts each target through the init mount namespace and reads its hash back. */
+    /**
+     * Undoes the swap: unmounts each target through the init mount namespace and reads its hash back. A plain umount fails as busy while
+     * a process still has the swapped file open or mapped (any app that loaded it may), so a lazy one follows: the path shows the phone's
+     * own file again at once and the apps that hold the swapped one keep it until they start again, as after the swap itself.
+     */
     public static String emojiUndoScript(List<String> targets) {
         List<String> t = checkedTargets(targets);
         StringBuilder s = new StringBuilder();
         for (String target : t) {
-            s.append("nsenter -t 1 -m -- umount ").append(q(target)).append(" 2>/dev/null; ")
+            s.append("nsenter -t 1 -m -- umount ").append(q(target)).append(" 2>/dev/null || nsenter -t 1 -m -- umount -l ").append(q(target)).append(" 2>/dev/null; ")
              .append("echo '").append(M_UNDO).append("' ").append(q(target)).append("; ")
              .append("echo '").append(M_SHA).append("'; nsenter -t 1 -m -- sha256sum ").append(q(target)).append(" 2>/dev/null\n");
         }
