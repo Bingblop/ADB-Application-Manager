@@ -1,0 +1,19 @@
+The emoji samples on the rows of the Custom Fonts tab's Emoji fonts card
+
+Each .ttf file in this folder is a copy, cut down to sixteen emoji, of an emoji font the app offers to download. They were made by
+tools/make-emoji-specimens.sh from the exact files the app downloads (the addresses, sizes and SHA-256 sums in EmojiCatalog.java).
+Each keeps its font's own copyright and licence:
+
+noto.ttf      Noto Color Emoji (googlefonts/noto-emoji, tag v2026-09-24-unicode18_0)
+              Copyright 2022 Google Inc. SIL Open Font License 1.1: https://openfontlicense.org
+twemoji.ttf   Twemoji (SableClient/twemoji-font v1.0.4, the COLR build of jdecked/twemoji)
+              Graphics (c) Twitter, Inc. and other contributors. Creative Commons Attribution 4.0:
+              https://creativecommons.org/licenses/by/4.0/ (the copy is cut down to sixteen emoji)
+blobmoji.ttf  Blobmoji (DavidBerdik/blobmoji2, tag blobmoji-17r1, a fork of Noto Emoji with the blob art)
+              Copyright 2022 Google Inc. SIL Open Font License 1.1: https://openfontlicense.org
+openmoji.ttf  OpenMoji (hfg-gmuend/openmoji 17.0.0, the COLRv0 build)
+              OpenMoji (c) HfG Schwäbisch Gmünd. Creative Commons Attribution-ShareAlike 4.0:
+              https://creativecommons.org/licenses/by-sa/4.0/ (the copy is cut down to sixteen emoji and shared under the same licence)
+
+The iOS emoji are not in this folder: they are Apple's art, which this app does not ship. When asked, the app reads the sample of them
+from the file the iOS emoji download comes from.
