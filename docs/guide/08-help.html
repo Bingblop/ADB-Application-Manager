@@ -32,6 +32,9 @@
 <tr><td><b>Batch actions</b> and applying a <b>profile</b></td><td>Higher: one wrong tick reaches many apps.</td><td><b>Stop</b> ends a batch (apps not reached yet stay as they were). <b>Undo</b> in the Debloater's History covers Freeze, Enable, Suspend, Unsuspend, Uninstall and Reinstall. Clear Data, Force Stop and typed commands cannot be undone.</td><td><a href="#apps-batch">Batch actions</a>, <a href="#apps-profiles">Profiles</a></td></tr>
 <tr><td><b>Hidden Settings</b></td><td>Unlikely for ordinary ones. Real for those marked "careful": they can cut the connection this app uses or lock you out of the keyboard or screen.</td><td>The Undo bar (3 seconds), then <b>Changes</b> and <b>Revert</b>. If locked out, use the phone's own Settings, or a computer (below).</td><td><a href="#tab-settings">Hidden Settings</a>, <a href="#settings-journal">Undoing settings changes</a></td></tr>
 <tr><td><b>Overlays</b> and system colours</td><td>Unlikely to possible. The wrong overlay can make the screen harder to use.</td><td>The Undo bar, <b>Default</b>, or switch the overlay off.</td><td><a href="#tab-overlays">RRO/Monet Customization</a></td></tr>
+<tr><td><b>Apply</b> a font with the <b>Font changer</b> (Custom Fonts; Root, or Shizuku as the system user)</td><td>Possible. The whole phone draws its text with it: a font that draws badly, or very large or small, makes text hard to read everywhere, also on the screens that undo it. A restart does not undo it.</td><td><b>Reset to Default</b> on the Font changer card, or Samsung's Settings, <b>Display</b>, <b>Font size and style</b>, <b>Font style</b>, <b>Default</b>.</td><td><a href="#fonts-changer">The font changer</a>, <a href="#fonts-undo">Undoing it</a></td></tr>
+<tr><td><b>System emoji</b> and <b>Soft reboot</b> (Custom Fonts; Super User)</td><td>Unlikely. An emoji the font lacks shows as an empty box. A soft reboot closes every app at once, and unsaved work in them is lost.</td><td><b>Undo</b> on the System emoji card, or a normal restart of the phone. Nothing on the system partition changes.</td><td><a href="#fonts-system-emoji">System emoji</a></td></tr>
+<tr><td>Installing a <b>font package</b> made on the Custom Fonts tab, and choosing it in Samsung's Font style</td><td>Very unlikely. The package holds fonts and no program code.</td><td><b>Font style</b>, <b>Default</b>; <b>Uninstall</b> on its My fonts row.</td><td><a href="#fonts-library">My fonts and Samsung's Font style</a></td></tr>
 <tr><td>Screen <b>density or size</b></td><td>Unlikely on a connected device (it undoes itself after 15 seconds unless you tap Keep). Real on this phone typed in a terminal: no safety net, and it normally survives a restart.</td><td><b>Put it back</b>, <b>Reset to default</b>, or <code>wm density reset</code> and <code>wm size reset</code>.</td><td><a href="#devices-display">Screen density and size</a></td></tr>
 <tr><td><b>Commands</b> typed in a terminal or console</td><td>From none (commands that only read) to severe (<code>rm</code>, <code>pm clear</code>, <code>settings put</code>, <code>reboot</code>). No undo.</td><td>The opposite command, if there is one. Otherwise only a backup.</td><td><a href="#tab-console">Console</a>, <a href="#tab-terminal">Terminal</a></td></tr>
 <tr><td><b>Coding agents</b></td><td>Depends on what you approve. What you type goes to the provider.</td><td>File changes: <code>/undo</code>. Commands cannot be undone.</td><td><a href="#terminal-agents">Coding agents</a></td></tr>
@@ -346,6 +349,24 @@
 </tbody>
 </table>
 
+<h4>Custom Fonts: a font will not build, download, install or apply</h4>
+<p>The messages of the <b>Make a font</b> card are explained in <a href="#fonts-make">Making a font</a>; the ways back are in <a href="#fonts-undo">Undoing what it changed</a>.</p>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td><b>Build font</b> stays greyed out</td><td>No Regular is chosen, the Name is empty, or you chose <b>Another font file</b> or <b>My own emoji font file</b> without choosing the file.</td><td>Fill in what is missing, or set that choice back to <b>None</b>.</td></tr>
+<tr><td>The emoji font you want is not under <b>Emoji</b></td><td>It is not downloaded yet; or it is COLRv1 (Noto Color Emoji, Blobmoji) and the phone is older than Android 13; or it is the iOS emoji, which never go inside a font.</td><td>Download it on the <b>Emoji fonts</b> card, or choose Twemoji or OpenMoji. The iOS emoji can only be the phone's emoji with root (<a href="#fonts-system-emoji">System emoji</a>).</td></tr>
+<tr><td>"The font and the emoji together have more glyphs than one font can hold (65,535)."</td><td>Your font and the emoji font are too big together.</td><td>Choose a smaller emoji font (Twemoji is the smallest), or <b>None</b>.</td></tr>
+<tr><td>"The downloaded file is not the expected one (its checksum differs), so it was not kept." or "...has the wrong size..."</td><td>The file at the download address is not the one the app knows: it changed there, or the connection changed it. Nothing was kept.</td><td>Try again later on another network. If it keeps happening, the font was probably replaced at its source: report it with <b>Report a bug or idea</b> in the About tab (How to report a problem, below).</td></tr>
+<tr><td>Installed, but picking it in <b>Font style</b> does nothing, or it is not in the list</td><td>One UI 8.5, or One UI 8.0 to 8.4 with the March 2026 patch or newer, applies only fonts signed by Samsung or Monotype.</td><td>Use <b>Apply</b> in My fonts, with Root or Shizuku as the system user (<a href="#fonts-library">My fonts and Samsung's Font style</a>).</td></tr>
+<tr><td>Install or Update fails after this app was reinstalled</td><td>The package on the phone was signed with the key the old copy of this app had, and Android installs an update only with the same key.</td><td><b>Uninstall</b> the font package first (Android's Settings, Apps), then <b>Install</b> again.</td></tr>
+<tr><td>The <b>Font changer</b> card reads <b>LOCKED</b></td><td>The working mode is not Root with <code>su</code> granted, and not Shizuku as the system user or as root.</td><td>See <a href="#mode-root">Root</a> and <a href="#mode-shizuku">Shizuku</a>. With ADB, Wireless Debugging or Shizuku as the shell user, Android does not allow it.</td></tr>
+<tr><td>"Done. Apps show the change once they restart."</td><td>The font is in place, but the phone was not told to load it again.</td><td>Close and open your apps again, or restart the phone.</td></tr>
+<tr><td>System emoji: a cross in the read-back box, and "Some files did not change."</td><td>Some of the phone's emoji files kept their own emoji, so apps that read those still show them.</td><td>Tap <b>Undo</b> or restart the phone, then try again. If it happens again, report it with what the box says.</td></tr>
+<tr><td>The phone's text is hard to read after <b>Apply</b></td><td>The font does not suit the phone.</td><td>From memory: this app, <b>Custom Fonts</b>, <b>Font changer</b>, <b>Reset to Default</b>; or Samsung's Settings, <b>Display</b>, <b>Font size and style</b>, <b>Font style</b>, <b>Default</b>.</td></tr>
+</tbody>
+</table>
+
 <h4>The screen became too small or too large</h4>
 <p>This follows a screen density (dpi) or size change, on a connected device or on this phone.</p>
 <ol class="hg-steps">
@@ -522,6 +543,9 @@
 <h5>Can I hide tabs I do not use, or change their order?</h5>
 <p>Yes. Open Settings with the gear, find the <b>Feature List</b> card, and use its switches and arrows. Application Manager always stays first and About last. Switching a tab off deletes nothing, and <b>Reset to Default</b> puts everything back (<a href="#feature-list">Turning tabs on and off and moving them</a>).</p>
 
+<h5>Can the app change my phone's font or emoji?</h5>
+<p>On a Samsung phone, yes: the <a href="#tab-fonts">Custom Fonts</a> tab makes a Samsung font package from a font file of yours, with a Bold and colour emoji if you like. On older One UI you install it and pick it in Samsung's Font style, with no working mode. On One UI 8.5, and on 8.0 from the March 2026 patch, Samsung's Font style applies only fonts signed by Samsung or Monotype, so the app puts the font on the phone itself with <b>Apply</b>, which needs Root or Shizuku running as the system user. With root, the tab can also make a downloaded emoji font the phone's emoji until the next restart. The recipe is <a href="#recipe-custom-font">Use your own font on a Samsung phone</a>.</p>
+
 <h5>Where do I report a bug or ask for a feature?</h5>
 <p>In the <b>About</b> tab, tap <b>Report a bug or idea</b>. It opens GitHub's page for a new issue, and you need a GitHub account to post. The end of <a href="#troubleshooting">Troubleshooting</a> says what to collect first.</p>
 
@@ -529,7 +553,7 @@
 <p>It is not on Google Play. Download it only from its <a href="https://github.com/Bingblop/ADB-Application-Manager/releases/latest">releases page on GitHub</a>. In the About tab, the <b>This build</b> card should say "Signed with the official release key", and the fingerprint begins <code>94:61:87:0F</code>. Each release also has a <code>SHA256SUMS.txt</code> file (<a href="#install-and-update">Installing and updating the app</a>).</p>
 
 <h5>How do I remove the app, and what happens to my changes?</h5>
-<p>Uninstall it like any app in Android's Settings. Its saved lists, profiles and settings go with it. What it changed in Android does not: frozen apps stay frozen, hidden settings keep their values and overlays stay on until you undo them. Undo them first, and see "How to delete everything" in <a href="#privacy">Privacy</a>.</p>
+<p>Uninstall it like any app in Android's Settings. Its saved lists, profiles and settings go with it. What it changed in Android does not: frozen apps stay frozen, hidden settings keep their values, overlays stay on, and a font applied with the Font changer or an installed font package stays, until you undo them. Undo them first, and see "How to delete everything" in <a href="#privacy">Privacy</a>.</p>
 
 <h5>Is the source code open?</h5>
 <p>The project's GitHub page holds the source code, the releases and the issue tracker (the <b>GitHub</b> button in About opens it), so you can read it there. The app and the files this guide was written from state no licence for the app's own code, so this guide cannot say what you may do with it. If you need to know, ask the developer through <b>Report a bug or idea</b> in the About tab. See also <a href="#credits">Credits</a>.</p>
@@ -582,6 +606,7 @@
 <tr><td><b>backup</b></td><td>A saved copy of one app in an .adbbackup file: its APK, permissions and app ops, and with Root its data. See <a href="#apps-backup">Backups and restore</a>.</td></tr>
 <tr><td><b>badge</b></td><td>A small coloured label. The one at the top right names the working mode, and app rows have tags such as FROZEN. See <a href="#screen-tour">A tour of the screen</a>.</td></tr>
 <tr><td><b>base APK</b></td><td>The core file of an app that comes in parts. It is always installed. See <a href="#installer-splits">Split packages</a>.</td></tr>
+<tr><td><b>bind mount</b></td><td>A way to lay one file over another in memory: the phone reads the new file wherever it reads the old one, and the old file stays as it was. A restart removes it. The System emoji card of Custom Fonts uses it. See <a href="#fonts-system-emoji">System emoji</a>.</td></tr>
 <tr><td><b>bloatware</b></td><td>Apps added by the phone's maker or network that many people never use and cannot easily remove. See <a href="#basics">Words you will see</a>.</td></tr>
 <tr><td><b>Bluetooth link</b></td><td>A way to reach a Wear OS watch through its Bluetooth connection to the phone, with no Wi-Fi. See <a href="#devices-add">Adding a device</a>.</td></tr>
 <tr><td><b>boot loop</b></td><td>The phone restarts again and again, or sits on its logo, and never reaches the home screen. See <a href="#safety">Staying safe</a>.</td></tr>
@@ -597,6 +622,7 @@
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>cache</b></td><td>Temporary files kept to save time, such as downloaded thumbnails or saved web pages. Each app has its own cache folder, and apps rebuild what they need if it is removed. This app also keeps an icon cache and a thumbnail cache, and <b>Trim Caches</b> in Settings clears the cache of every app (see <b>trim caches</b> below and <a href="#prefs">Settings</a>).</td></tr>
+<tr><td><b>CBDT</b></td><td>Colour emoji stored as pictures (bitmaps), as Apple's emoji are. Pictures cannot go inside a text font, so they can only be the phone's emoji. See <a href="#fonts-emoji">Emoji fonts</a>.</td></tr>
 <tr><td><b>certificate fingerprint</b></td><td>A short code, usually the SHA-256, worked out from the certificate that an app is signed with. It identifies the key the app was signed with, and it is shown in the Signatures tab of <a href="#apps-menu">the app menu</a>. See <b>signature</b> and <b>SHA-256</b> below.</td></tr>
 <tr><td><b>checksum</b></td><td>A short code, such as a SHA-256, that identifies the exact contents of a file. Downloads are checked with it. See <a href="#tab-store">App Stores</a>.</td></tr>
 <tr><td><b>chip</b></td><td>A small rounded button that turns a filter or an option on or off, or copies a piece of text. A row of them that scrolls sideways is also called a row of pills. See <a href="#tab-apps">Application Manager</a>.</td></tr>
@@ -604,12 +630,14 @@
 <tr><td><b>cluster</b></td><td>On the Task Manager's CPU page, a group of processor cores of similar speed, with its own lowest, current and highest speed. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 <tr><td><b>Codeberg</b></td><td>A free website, like GitHub, where developers share code and app releases. The Application Updater checks it for newer versions. See <a href="#tab-updates">Application Updater</a>.</td></tr>
 <tr><td><b>coding agent</b></td><td>An AI assistant you chat with inside the Terminal. It can suggest commands, read files and propose changes, and you approve each step. See <a href="#terminal-agents">Coding agents</a>.</td></tr>
+<tr><td><b>COLR</b></td><td>Colour emoji drawn from outlines and colours, the way letters are drawn, so they can go inside a text font. COLRv0 has flat colours and works from Android 8; COLRv1 adds gradients and needs Android 13. See <a href="#fonts-emoji">Emoji fonts</a>.</td></tr>
 <tr><td><b>component</b></td><td>One working part of an app: an activity, a receiver, a service or a provider. See <a href="#apps-menu">The app menu</a>.</td></tr>
 <tr><td><b>config split</b></td><td>A part of a split app made for one processor type, one screen density or one language. See <a href="#installer-splits">Split packages</a>.</td></tr>
 <tr><td><b>content provider</b></td><td>The part of an app that shares data with other apps. The Components tab of an app's menu lists them as Providers, next to Receivers and Services. See <a href="#apps-menu">The app menu</a>.</td></tr>
 <tr><td><b>core</b></td><td>One processing unit of the phone's processor. The Task Manager shows a box for each. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 <tr><td><b>CPU</b></td><td>The phone's processor, the part that runs programs. The Task Manager shows how busy it is, and the About tab names its type. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 <tr><td><b>CSV</b></td><td>A plain table file that opens in any spreadsheet. The app list can be exported as one. See <a href="#tab-apps">Application Manager</a>.</td></tr>
+<tr><td><b>Custom Fonts</b></td><td>The tab that makes Samsung font packages from your font files, downloads emoji fonts, and with Root or the system user puts a font on the phone. See <a href="#tab-fonts">Custom Fonts</a>.</td></tr>
 </tbody>
 </table>
 
@@ -638,6 +666,7 @@
 <table class="hg-table">
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
+<tr><td><b>emoji font</b></td><td>A font that holds colour emoji. The Custom Fonts tab downloads five and can put one inside a font you make. See <a href="#fonts-emoji">Emoji fonts</a>.</td></tr>
 <tr><td><b>exported</b></td><td>A component that other apps may open. An unexported one is normally reachable only by the app itself. See <a href="#apps-menu">The app menu</a>.</td></tr>
 </tbody>
 </table>
@@ -652,6 +681,9 @@
 <tr><td><b>fingerprint</b></td><td>A short code that identifies a key, such as the ADB key or the key an app is signed with. See <a href="#tab-about">About</a>.</td></tr>
 <tr><td><b>firmware</b></td><td>The phone's own built-in system software, written by the maker. This app never changes it. See <a href="#safety">Staying safe</a>.</td></tr>
 <tr><td><b>flashing</b></td><td>Writing the maker's official software onto a phone from a computer. This guide does not cover it. See <a href="#safety">Staying safe</a>.</td></tr>
+<tr><td><b>FlipFont</b></td><td>Samsung's font system, made by Monotype: how a Samsung phone changes the font all apps draw text with. See <a href="#tab-fonts">Custom Fonts</a>.</td></tr>
+<tr><td><b>font package</b></td><td>An Android package with no program code that holds fonts for Samsung's font system. The Custom Fonts tab makes them. See <a href="#fonts-make">Making a font</a>.</td></tr>
+<tr><td><b>Font style</b></td><td>Samsung's setting for the phone's font, in Settings, Display, Font size and style. On One UI 8.5 it applies only fonts signed by Samsung or Monotype. See <a href="#fonts-library">My fonts and Samsung's Font style</a>.</td></tr>
 <tr><td><b>force stop</b></td><td>Ends an app's running processes now. Nothing is deleted. See <a href="#basics">Words you will see</a>.</td></tr>
 <tr><td><b>foreground service</b></td><td>A background job that shows a notification, as long file jobs do. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
 <tr><td><b>freeze</b></td><td>Switch an app off without removing it. Its files and settings stay, and Enable brings it back. See <a href="#basics">Words you will see</a>.</td></tr>
@@ -666,6 +698,7 @@
 <tr><td><b>gist</b></td><td>A small page on GitHub where someone shares a note or a list. The ADB Cheat Sheet can load Pulimet's gist of ADB commands. See <a href="#tab-terminal">Terminal</a>.</td></tr>
 <tr><td><b>GitHub</b></td><td>A website where developers keep their code and publish app releases. This app's own releases, the UAD-NG list and many update sources are there. See <a href="#privacy">Privacy</a>.</td></tr>
 <tr><td><b>GitHub token</b></td><td>An optional code that raises GitHub's limit for update checks from 60 to 5,000 an hour. See <a href="#tab-updates">Application Updater</a>.</td></tr>
+<tr><td><b>glyph</b></td><td>One drawn shape of a font: a letter, a digit, a sign or an emoji. One font holds at most 65,535. See <a href="#fonts-make">Making a font</a>.</td></tr>
 <tr><td><b>GPU</b></td><td>The chip that draws the picture on your screen. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 </tbody>
 </table>
@@ -744,6 +777,7 @@
 <tr><td><b>OBB</b></td><td>Extra data files of a big game or app, kept under Android/obb. An XAPK can carry them. See <a href="#installer-splits">Split packages</a>.</td></tr>
 <tr><td><b>Obtainium</b></td><td>A separate open-source app that fetches updates from developers' pages. This app uses its community catalog. See <a href="#tab-updates">Application Updater</a>.</td></tr>
 <tr><td><b>OEM</b></td><td>The phone's maker (original equipment manufacturer). It is one of the list filters of the UAD-NG Debloater, and shows the apps the maker added. See <a href="#tab-debloater">UAD-NG Debloater</a>.</td></tr>
+<tr><td><b>One UI</b></td><td>Samsung's version of Android, with its own number (One UI 8.5, for example). See <a href="#fonts-library">My fonts and Samsung's Font style</a>.</td></tr>
 <tr><td><b>OpenGL ES</b></td><td>One of the two ways apps draw graphics on the GPU (the other is Vulkan). The Task Manager's GPU page shows which versions your phone supports. An app can also say which version it needs (see <b>uses-feature</b>), and the Features and Configurations tabs of <a href="#apps-menu">the app menu</a> compare that with your phone. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 <tr><td><b>Orion Store</b></td><td>A public catalog by RookieEnough that the <b>Orion</b> button in App Stores browses. See <a href="#credits">Credits</a>.</td></tr>
 <tr><td><b>overlay</b></td><td>Also called RRO (Runtime Resource Overlay): a small package that changes the look of another app or of Android. See <a href="#tab-overlays">RRO/Monet Customization</a>.</td></tr>
@@ -816,6 +850,7 @@
 <tr><td><b>signature scheme (v1, v2, v3)</b></td><td>The way a signature is stored in the app's file: v1 is the old way (files in a META-INF folder), and v2, v3 and v3.1 are newer ones kept in a block inside the file, where v3 and later let the maker change the signing key. The Signatures tab of <a href="#apps-menu">the app menu</a> shows which ones an app has.</td></tr>
 <tr><td><b>SIM</b></td><td>The small card that identifies you to your mobile network. The app reads only its network codes (the country and operator numbers), and sends them only in a Samsung update check. See <a href="#privacy">Privacy</a>.</td></tr>
 <tr><td><b>SoC</b></td><td>System on a chip: the main chip of a phone, holding the processor, graphics and more. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+<tr><td><b>soft reboot</b></td><td>A restart of Android only, not of the whole phone: every app closes and starts again, without the boot screen. See <a href="#fonts-system-emoji">System emoji</a>.</td></tr>
 <tr><td><b>split APK</b></td><td>One part of an app that comes in several files that must be installed together. See <a href="#installer-splits">Split packages</a>.</td></tr>
 <tr><td><b>split screen</b></td><td>Two apps shown on the screen at the same time. It keeps Android's pairing code window visible while you type the code into this app. See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
 <tr><td><b>su</b></td><td>The program on a rooted phone that gives root rights to an app. The Root card looks for it. See <a href="#mode-root">Root</a>.</td></tr>
@@ -824,6 +859,7 @@
 <tr><td><b>swap</b></td><td>Extra memory made from storage or by compression. It is shown on the Task Manager's RAM page. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 <tr><td><b>system app</b></td><td>An app that came with the phone. See <a href="#basics">Words you will see</a>.</td></tr>
 <tr><td><b>System UI</b></td><td>The part of Android that draws the status bar, the notification shade, the lock screen and the navigation. Never remove it. See <a href="#safety">Staying safe</a>.</td></tr>
+<tr><td><b>system user</b></td><td>Android's own system account (UID 1000), which the system services run as. More privileged than the shell user (UID 2000), but not root. Shizuku can run as it. See <a href="#fonts-changer">The font changer</a>.</td></tr>
 </tbody>
 </table>
 
@@ -846,6 +882,7 @@
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>UAD-NG</b></td><td>Universal Android Debloater Next Generation: the community list that rates how safe each pre-installed app is to remove. See <a href="#tab-debloater">UAD-NG Debloater</a>.</td></tr>
+<tr><td><b>UID 1000</b></td><td>The system user. See <b>system user</b> above.</td></tr>
 <tr><td><b>UID 2000</b></td><td>The user number of the shell user that ADB runs as. UID 0 is root (the most privileged user); UID 1000 is the Android system user, more privileged than the shell user but not root. See <a href="#basics">Words you will see</a>.</td></tr>
 <tr><td><b>unauthorized</b></td><td>What adb calls a device that has not accepted this phone's key. See <a href="#tab-devices">Connected Devices</a>.</td></tr>
 <tr><td><b>uninstall for user</b></td><td>Removing a system app for your user only. Its file stays in the system, so it can be brought back. See <a href="#basics">Words you will see</a>.</td></tr>
@@ -860,6 +897,7 @@
 <table class="hg-table">
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
+<tr><td><b>variable font</b></td><td>A font file that holds a whole range of styles, such as every weight from thin to black. See <a href="#fonts-variable">Variable fonts</a>.</td></tr>
 <tr><td><b>VirusTotal</b></td><td>An online service that checks files against many virus scanners. The Application Installer box, and the Find and download an app card, can use it with your own key. See <a href="#tab-installer">APK Installer/Updater</a>.</td></tr>
 <tr><td><b>Vulkan</b></td><td>One of the two ways apps draw graphics on the GPU (the other is OpenGL ES). The Task Manager's GPU page says whether your phone supports it. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
 </tbody>
@@ -919,9 +957,10 @@
 <tr><td><b>APKMirror, Uptodown, Aptoide, F-Droid, IzzyOnDroid</b> (their own sites), and Aptoide's public search</td><td>You search or download in the card <b>Find and download an app</b>.</td><td>The app name or package name you typed (a name is sent to Aptoide's search only to turn it into a package name), and the version you asked for. Opening a page in the browser or in the app's own browser shows that site your internet address, as any website does.</td></tr>
 <tr><td><b>VirusTotal</b> (<code>www.virustotal.com</code>)</td><td>Only if you enter your own key in <b>Settings</b> and press <b>Scan this package</b> in the Application Installer box of the <a href="#tab-installer">APK Installer/Updater</a> tab (or scan in Morphe Helper, or tick <b>VirusTotal scan</b> in Find and download an app).</td><td>The file's SHA-256 fingerprint and your key. The whole file only if you then press <b>Upload it for analysis</b>.</td></tr>
 <tr><td><b>An AI provider</b> (<code>api.anthropic.com</code>, <code>api.openai.com</code>, <code>generativelanguage.googleapis.com</code>, <code>api.cursor.com</code>, <code>api.perplexity.ai</code>, <code>api.x.ai</code>, <code>api.llama.com</code>, <code>api.deepseek.com</code>, and <code>api.github.com</code> to test a GitHub token for Copilot), or your own server (Jan.ai, AnythingLLM, Ollama)</td><td>Only after you add a key or a server address in the Terminal, and then when you test it, chat, or load the provider's list of models (at most once a day). Your own server is contacted at the address you typed; Ollama on this phone stays on the phone.</td><td>Your key (to that provider only) and what <a href="#terminal-agents">Coding agents</a> lists: your messages, a short description of your phone, and what the agent reads or runs, with key-like text hidden.</td></tr>
+<tr><td><b>GitHub</b> (<code>raw.githubusercontent.com</code>, and <code>github.com</code> for the Twemoji and iOS emoji release files): the emoji fonts</td><td>Only when you tap <b>Download</b> on a row of the <b>Emoji fonts</b> card in the <a href="#fonts-emoji">Custom Fonts</a> tab.</td><td>A request for that one file, from the one address written into the app for it. Nothing about your phone or your fonts. The file is kept only if its size and SHA-256 are the ones written into the app with it.</td></tr>
 <tr><td><b>GitHub's gist of ADB commands</b> (<code>gist.github.com</code>)</td><td>Only if you press <b>Load the full reference from the gist</b> in the ADB Cheat Sheet.</td><td>An ordinary request to GitHub for that page. GitHub's reply is shown inside the app.</td></tr>
 <tr><td><b>Installers and downloads run by Termux</b> (<code>claude.ai</code>, <code>gh.io</code>, <code>cursor.com</code>, <code>opencode.ai</code>, <code>astral.sh</code>, <code>github.com</code>, and the package servers that Termux and the installed tools use)</td><td>Only if you tap an <b>Install</b> step of an agent, of DroidMind or of Ollama in the Terminal.</td><td>Termux runs the commands and does the downloading, not this app. They fetch the tool's installer and packages, whatever those then download, and for Ollama a model of about 1 GB.</td></tr>
-<tr><td><b>Your web browser, or this phone's store app</b></td><td>You tap <b>Buy me a coffee</b> or <b>Donate</b> (PayPal), <b>GitHub</b>, <b>Releases</b>, <b>Report a bug or idea</b>, <b>Star on GitHub</b>, <b>Bingblop on GitHub</b>, the UAD-NG Wiki, <b>Get a key</b>, <b>Make a token</b>, <b>Website</b>, <b>Page</b>, <b>Source</b>, <b>Release</b>, <b>Open in Obtainium</b> (without Obtainium installed, this opens <code>apps.obtainium.imranr.dev</code>), a <b>Store</b> button, a credit link (such as the ones under the App Stores catalogs), or the F-Droid or GitHub button in the Termux setup.</td><td>The app only opens the address. Your browser then talks to that site, which sees what the address carries, such as the PayPal address and amount. A <b>Store</b> button asks the Play Store or Aurora Store on this phone to open that app's page.</td></tr>
+<tr><td><b>Your web browser, or this phone's store app</b></td><td>You tap <b>Buy me a coffee</b> or <b>Donate</b> (PayPal), <b>GitHub</b>, <b>Releases</b>, <b>Report a bug or idea</b>, <b>Star on GitHub</b>, <b>Bingblop on GitHub</b>, the UAD-NG Wiki, <b>Get a key</b>, <b>Make a token</b>, <b>Website</b>, <b>Page</b>, <b>Source</b>, <b>License</b> (Custom Fonts), <b>Release</b>, <b>Open in Obtainium</b> (without Obtainium installed, this opens <code>apps.obtainium.imranr.dev</code>), a <b>Store</b> button, a credit link (such as the ones under the App Stores catalogs), or the F-Droid or GitHub button in the Termux setup.</td><td>The app only opens the address. Your browser then talks to that site, which sees what the address carries, such as the PayPal address and amount. A <b>Store</b> button asks the Play Store or Aurora Store on this phone to open that app's page.</td></tr>
 </tbody>
 </table>
 <p>The built-in addresses all use <code>https</code>. The app allows plain <code>http</code> only so that you can reach an AI server of your own, and a key sent that way is not encrypted on your network.</p>
@@ -936,6 +975,7 @@
 <tbody>
 <tr><td>Settings, filters, saved lists, profiles, the debloater history, the history of hidden-setting changes, the saved GitHub token and VirusTotal key</td><td>The app's private storage.</td><td>Other apps cannot read it without root. The token and key are not sealed: leave them empty if that worries you.</td></tr>
 <tr><td>The UAD-NG list, icon cache, thumbnails (up to 48 MB), installers and update downloads</td><td>The app's private storage and cache.</td><td>Installers and updates are deleted after use. Settings has <b>Clear icon cache</b>, and the File Manager <b>Clear thumbnail cache</b>.</td></tr>
+<tr><td>The fonts made on the Custom Fonts tab (each with its package), the emoji fonts you downloaded, and the copy of a font file you picked while you work with it</td><td>The app's private storage and cache.</td><td>The font files you pick are read on the phone and never uploaded; the copy goes when you choose another file or close the app. <b>Delete</b> in My fonts and in Emoji fonts removes the rest. An installed font package and an applied font are Android's: see the next list.</td></tr>
 <tr><td>The ADB key</td><td>A private folder of the app.</td><td>Made on first start.</td></tr>
 <tr><td>The key that signs edited APKs</td><td>The Android Keystore.</td><td>Generated inside it, so it cannot be copied off the phone.</td></tr>
 <tr><td>The keys of coding agents</td><td>Sealed with AES-256-GCM under a key held in the Android Keystore, kept in the app's private settings.</td><td>The page never gets a key back, only its start and last four characters. The app adds a key to a request itself, and only when it goes to that provider's own address, or the server address you saved with it.</td></tr>
@@ -954,7 +994,7 @@
 
 <h4>How to delete everything</h4>
 <ol class="hg-steps">
-<li><b>Undo what the app changed in Android first.</b> Frozen apps, removed system apps, hidden settings, overlays and themes are stored by Android, not by this app, and they stay when the app goes. Use <b>Enable</b>, <b>Restore</b>, <b>Changes</b>, <b>Revert</b> and <b>Default</b> (<a href="#safety">Staying safe</a>).</li>
+<li><b>Undo what the app changed in Android first.</b> Frozen apps, removed system apps, hidden settings, overlays and themes are stored by Android, not by this app, and they stay when the app goes. Use <b>Enable</b>, <b>Restore</b>, <b>Changes</b>, <b>Revert</b> and <b>Default</b> (<a href="#safety">Staying safe</a>). The same goes for fonts: tap <b>Reset to Default</b> on the Font changer card, <b>Undo</b> on the System emoji card, and <b>Uninstall</b> on each installed font in My fonts; a System emoji copy stays in <code>/data/adb/adbmgr_fonts/</code> until you delete it with root (<a href="#fonts-undo">Undoing what Custom Fonts changed</a>).</li>
 <li><b>Remove secrets inside the app.</b> <b>Forget the key</b> for each coding agent, <b>Clear the conversation</b>, and empty the VirusTotal key box in Settings and the GitHub token box.</li>
 <li><b>Delete the files you saved.</b> Open <code>Download/ADB App Manager</code> in the <a href="#tab-files">File Manager</a> and delete what you do not want.</li>
 <li><b>Clear the app's storage,</b> or uninstall it. In Android's Settings, Apps, ADB/Root Full System Toolbox, Storage, tap <b>Clear storage</b>: this deletes everything in the app's private storage listed above. Uninstalling also removes its Keystore keys.</li>
@@ -983,6 +1023,10 @@
 
 <h4>The SD Maid tab</h4>
 <p>The <a href="#tab-sdm">SD Maid</a> tab is a port of the four tools SystemCleaner, AppCleaner, CorpseFinder and Deduplicator of <b>SD Maid SE</b> by darken (<code>github.com/d4rken-org/sdmaid-se</code>, GPL-3.0): the filters and their defaults, the expendables databases, the CorpseFinder marker database, the Deduplicator rules and the accessibility steps for clearing caches follow the original, rewritten in Java for this app. SD Maid's icons, logo, mascot and translations are not used, and this tab is not the SD Maid app. SD Maid SE is on GitHub and on Google Play (the card in the tab has both links).</p>
+
+<h4>The Custom Fonts tab</h4>
+<p>The font engine of the <a href="#tab-fonts">Custom Fonts</a> tab was written for this app, in Java, and uses no font library. Its code notes say what it follows: making a fixed font from a variable one follows <b>fontTools</b>' instancer, with the axis maths as <b>HarfBuzz</b> does it; turning PostScript (CFF) curves into TrueType ones follows fontTools' <b>cu2qu</b>; which characters an emoji font gives a merged font comes from Unicode's <b>emoji data</b> (<code>emoji-data.txt</code>, Unicode 18.0.0). The packages it makes are for Samsung's font system, <b>FlipFont</b> by Monotype; the package name starts with <code>com.monotype.android.font.</code> because that is what Samsung's phones look for, and this app is not made by or linked to Samsung or Monotype.</p>
+<p>The app ships no font of its own for this tab. The five emoji fonts are downloaded only when you ask, each under its own licence and from its own authors: Noto Color Emoji (Google, OFL-1.1), Twemoji (Twitter, Inc. and contributors, CC-BY-4.0, in a font build by SableClient, Apache-2.0), Blobmoji2 (DavidBerdik, OFL-1.1), OpenMoji (HfG Schwäbisch Gmünd, CC-BY-SA-4.0) and the iOS emoji (Apple Inc., not licensed for sharing, in a build by samuelngs). See <a href="#fonts-emoji">Emoji fonts</a>.</p>
 
 <p>The descriptions of Android's own settings in <a href="#tab-settings">Hidden Settings</a> are taken in part from the documentation in the source code of the <b>Android Open Source Project</b> (<code>source.android.com</code>, Apache License 2.0; the file is <code>Settings.java</code>). The text of the settings people meet most often was written for this app.</p>
 
