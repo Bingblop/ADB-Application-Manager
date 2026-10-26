@@ -305,7 +305,12 @@ public class InstallConfirmTest {
           callersOfAsk.add(method);
         }
         is("confirmPrivilegedInstall is called only by confirmInMode and by the store route (whose question names no mode): " + callersOfAsk, new java.util.TreeSet<String>(callersOfAsk).equals(new java.util.TreeSet<String>(java.util.Arrays.asList("confirmInMode", "downloadAndInstall"))) && callersOfAsk.size() == 2);
-        is("every question that names a mode goes through confirmInMode", count(src, "confirmInMode(") == 8 && count(src, "InstallConfirm.messageLocalFile(") == 6 && count(src, "InstallConfirm.messageUpdate(") == 1);
+        is("every question that names a mode goes through confirmInMode", count(src, "confirmInMode(") == 8 && count(src, "InstallConfirm.messageLocalFile(") == 5 && count(src, "InstallConfirm.messageUpdate(") == 1
+            && count(src, "InstallConfirm.messageFontPackage(") == 1);
+        String font = methodBody(src, "private JSONObject fmkInstall(");
+        is("a font package made in Custom Fonts asks the font package's question, after the copy pm gets is checked against the recorded SHA-256",
+            font.contains("if (!confirmInMode(mode, null, InstallConfirm.messageFontPackage(") && font.indexOf("e.apkSha.equals(FontLibrary.sha256(copy))") > 0
+            && font.indexOf("e.apkSha.equals(FontLibrary.sha256(copy))") < font.indexOf("confirmInMode(") && font.indexOf("confirmInMode(") < font.indexOf("installApksOptions(Collections.singletonList(copy)"));
         is("Update all asks for one mode, keeps that mode with the approval, and drops the approval when the mode is not the same when the answer is in", all.contains("final String mode = resolveExecMode()") && all.contains("approvedUpdates.replace(versions, mode,") && all.contains("InstallGuards.sameMode(mode, resolveExecMode())") && all.contains("InstallConfirm.MODE_CHANGED") && take.contains("resolveExecMode(), System.currentTimeMillis()"));
         is("Morphe removes the installed copy and installs through the one mode the question named (the install does not read the working mode again), and so does restore", mor.contains("uninstallInstalledCopy(mode, insidePkg)") && mor.contains("installApksIn(files, mode)") && !mor.contains("installApks(") && res.contains("installApksIn(ordered, restoreMode)") && !res.contains("installApks("));
         is("Morphe removes the installed copy and installs only after the mode check (the question is first)", mor.indexOf("confirmInMode(") < mor.indexOf("uninstallInstalledCopy(mode, insidePkg)"));

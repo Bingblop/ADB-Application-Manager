@@ -10,8 +10,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,8 +101,11 @@ public final class FontLibrary {
             return new File(emoji, catalogId + ".ttf");
         }
 
-        /** The copy of a picked file. */
-        File pickFile(String slot, String token) { return new File(in, slot + "-" + token + ".font"); }
+        /** A window's folder for the copies of its picked files (each window has its own, so one never removes another's). */
+        public File pickFolder(String window) {
+            if (!isId(window)) throw new IllegalArgumentException("not a window id");
+            return new File(in, window);
+        }
 
         /** The system emoji swap's record and the font changer's (what the app last applied). */
         File swapRecord() { return new File(root, "sysemoji.json"); }
@@ -155,24 +160,44 @@ public final class FontLibrary {
      * the one before it unknown; its copy is deleted at once, or when the last build holding it lets go.
      */
     public static final class Picks {
-        private final Dirs dirs;
+        private final File folder;
         private final Map<String, Pick> byToken = new HashMap<String, Pick>();
         private final Map<String, String> current = new HashMap<String, String>();   // slot -> token
         private final Map<String, Integer> held = new HashMap<String, Integer>();     // token -> holders
+        private final Map<String, Integer> asked = new HashMap<String, Integer>();    // slot -> the number of the latest choice
 
-        /** Starts empty: the copies a closed window left behind are removed (the page that knew their tokens is gone). */
-        public Picks(Dirs dirs) {
-            this.dirs = dirs;
-            deleteTree(dirs.in);
+        /** Starts empty, in the window's own folder ({@link Dirs#pickFolder}): the copies of another window are not touched. */
+        public Picks(File folder) {
+            this.folder = folder;
+            deleteTree(folder);
         }
 
-        public synchronized File fileFor(String slot, String token) { return dirs.pickFile(slot, token); }
+        public synchronized File fileFor(String slot, String token) { return new File(folder, slot + "-" + token + ".font"); }
 
-        /** Makes p the slot's current pick; the one it replaces is forgotten (and its copy deleted unless a build holds it). */
-        public synchronized void put(Pick p) {
+        /**
+         * Numbers a file the user chose for a slot, in the order the choices came in. The copies run side by side, and one from a slow
+         * provider (a cloud file) can end after a later choice: {@link #put(Pick, int)} then keeps the later one.
+         */
+        public synchronized int ask(String slot) {
+            int n = (asked.containsKey(slot) ? asked.get(slot) : 0) + 1;
+            asked.put(slot, n);
+            return n;
+        }
+
+        /** Makes p the slot's current pick, as the newest choice. */
+        public synchronized void put(Pick p) { put(p, ask(p.slot)); }
+
+        /**
+         * Makes p (choice number {@code ask} of its slot) the slot's current pick; the one it replaces is forgotten (and its copy deleted
+         * unless a build holds it). False, and p's copy deleted, when a later choice of the slot came in meanwhile.
+         */
+        public synchronized boolean put(Pick p, int ask) {
+            Integer latest = asked.get(p.slot);
+            if (latest != null && ask < latest) { p.file.delete(); return false; }
             String old = current.put(p.slot, p.token);
             byToken.put(p.token, p);
             if (old != null && !old.equals(p.token)) forget(old);
+            return true;
         }
 
         /** The pick with this token, or null (unknown, replaced, or not a token at all). */
@@ -200,12 +225,12 @@ public final class FontLibrary {
             p.file.delete();
         }
 
-        /** Every copy is deleted (the window closes). */
+        /** Every copy of this window is deleted (the window closes). */
         public synchronized void clear() {
             byToken.clear();
             current.clear();
             held.clear();
-            deleteTree(dirs.in);
+            deleteTree(folder);
         }
     }
 
@@ -443,6 +468,33 @@ public final class FontLibrary {
         return null;
     }
 
+    /**
+     * Who a font being made is: a new one gets {@code freshId} and a package suffix from its name; one made again ({@code rebuild}, the
+     * request's rebuildId) keeps its id, suffix, package and created time, so it replaces the same entry and installs over the same package.
+     * The versionCode is {@link #versionCodeFor}'s, once the caller knows what is installed of that package.
+     */
+    public static Entry entryFor(String name, Entry rebuild, String freshId, long now) throws Sfnt.FontException {
+        Entry e = new Entry();
+        e.id = rebuild != null ? rebuild.id : freshId;
+        if (!isId(e.id)) throw new IllegalArgumentException("not a library id");
+        e.name = name;
+        e.suffix = rebuild != null ? rebuild.suffix : FontPackage.suffixFor(name, e.id);
+        e.pkg = FontPackage.packageName(e.suffix);
+        e.created = rebuild != null ? rebuild.created : now;
+        e.updated = now;
+        return e;
+    }
+
+    /**
+     * The versionCode of a font being made: one above the entry's own when it is made again, and above the package's on the phone
+     * ({@code installedVersion}, 0 when it is not installed), so it installs as an update; 1 for a new font with nothing installed.
+     */
+    public static int versionCodeFor(Entry rebuild, long installedVersion) throws Sfnt.FontException {
+        int onPhone = (int) Math.max(0, Math.min(Integer.MAX_VALUE, installedVersion));
+        if (rebuild != null) return FontPackage.nextVersionCode(rebuild.versionCode, onPhone);
+        return onPhone > 0 ? FontPackage.nextVersionCode(1, onPhone) : 1;
+    }
+
     /** A fresh folder to build an entry's files in, inside the library (so the final rename stays on one file system). */
     public static File stageDir(Dirs d, String id, Random r) throws IOException {
         if (!isId(id)) throw new IllegalArgumentException("not a library id");
@@ -452,14 +504,17 @@ public final class FontLibrary {
     }
 
     /**
-     * Puts a staged entry in place. meta.json is written last (through a temp file), then the folder is renamed to the id; an entry made
-     * again first moves its old folder aside and deletes it only once the new one is in place, putting it back when the rename fails. A
-     * failure leaves the old entry as it was and nothing staged behind.
+     * Puts a staged entry in place. Its files are flushed to the disk first and meta.json is written last (through a temp file), then the
+     * folder is renamed to the id; an entry made again first moves its old folder aside and deletes it only once the new one is in place,
+     * putting it back when the rename fails. A failure leaves the old entry as it was and nothing staged behind; a power cut leaves the old
+     * entry or the whole new one, never a meta.json whose files did not reach the disk.
      */
     public static void commit(Dirs d, File staged, Entry e) throws IOException {
         if (!isId(e.id)) throw new IllegalArgumentException("not a library id");
         boolean done = false;
         try {
+            File[] files = staged.listFiles();
+            if (files != null) for (File f : files) if (f.isFile()) syncFile(f);
             try {
                 writeAtomic(new File(staged, META), toMeta(e).toString(1).getBytes("UTF-8"));
             } catch (JSONException je) {
@@ -476,6 +531,7 @@ public final class FontLibrary {
                 throw new IOException("The font could not be saved.");
             }
             done = true;
+            syncDir(d.library);                                         // the rename itself reaches the disk before the old folder goes
             if (aside != null) deleteTree(aside);
         } finally {
             if (!done) deleteTree(staged);
@@ -483,8 +539,9 @@ public final class FontLibrary {
     }
 
     /**
-     * Tidies the library after a crash: staged folders are deleted; a folder moved aside during a rebuild is put back when its entry is
-     * missing, else deleted.
+     * Tidies the library after a crash or a power cut (the app runs it once, before anything else uses the library): staged folders are
+     * deleted; a folder moved aside during a rebuild is put back when its entry is missing or did not survive whole, else deleted; an entry
+     * whose files do not match its meta.json is deleted, since it is never listed and the page has no id to delete it with.
      */
     public static void sweep(Dirs d) {
         File[] kids = d.library.listFiles();
@@ -495,10 +552,14 @@ public final class FontLibrary {
             else if (n.startsWith(".old-") && n.length() >= 5 + 12) {
                 String id = n.substring(5, 17);
                 File dest = isId(id) ? d.entryDir(id) : null;
+                if (dest != null && dest.exists() && read(d, id) == null) deleteTree(dest);
                 if (dest != null && !dest.exists() && k.renameTo(dest)) continue;
                 deleteTree(k);
             }
         }
+        kids = d.library.listFiles();
+        if (kids == null) return;
+        for (File k : kids) if (k.isDirectory() && isId(k.getName()) && read(d, k.getName()) == null) deleteTree(k);
     }
 
     /** Removes an entry's folder. False when it is not there. */
@@ -602,14 +663,18 @@ public final class FontLibrary {
     // Jobs (builds, downloads) and their Cancel
     // ---------------------------------------------------------------------------------------------
 
-    /** The running long jobs: one per kind and key (one build, one download per emoji font), each with a Cancel the engine's progress reads. */
+    /**
+     * The running long jobs: one per kind and key (one build, one download per emoji font), each with a Cancel the engine's progress reads.
+     * The app keeps one for the whole process, so a second window sees what the first one runs.
+     */
     public static final class Jobs {
         /** One job. {@link #uses} holds what it reads ("cat:noto", "tok:<token>", "id:<entry id>"), so a delete can refuse while it runs. */
         public static final class Job {
             public final String id, kind, key;
             final Set<String> uses = new HashSet<String>();
+            final Object owner;
             private volatile boolean cancelled;
-            Job(String id, String kind, String key) { this.id = id; this.kind = kind; this.key = key; }
+            Job(String id, String kind, String key, Object owner) { this.id = id; this.kind = kind; this.key = key; this.owner = owner; }
             public boolean cancelled() { return cancelled; }
             public void cancel() { cancelled = true; }
         }
@@ -619,8 +684,18 @@ public final class FontLibrary {
 
         /** A new job, or null when one of this kind and key is running (the page shows "busy"). */
         public synchronized Job start(String kind, String key, String... uses) {
+            return startFor(null, null, kind, key, uses);
+        }
+
+        /**
+         * {@link #start} for a window ({@code owner}: {@link #cancelAll(Object)} stops the jobs it started). Also null while a running job
+         * uses {@code busyIf} (null: no such check), in the same step, so a font is not made again while it is installed, applied or saved,
+         * and is not installed, applied or saved while it is made again.
+         */
+        public synchronized Job startFor(Object owner, String busyIf, String kind, String key, String... uses) {
+            if (busyIf != null && inUse(busyIf)) return null;
             for (Job j : byId.values()) if (j.kind.equals(kind) && j.key.equals(key)) return null;
-            Job j = new Job(kind + (++seq), kind, key);
+            Job j = new Job(kind + (++seq), kind, key, owner);
             for (String u : uses) if (u != null) j.uses.add(u);
             byId.put(j.id, j);
             return j;
@@ -649,8 +724,15 @@ public final class FontLibrary {
 
         public synchronized void finish(Job j) { if (j != null) byId.remove(j.id); }
 
-        /** The window closes: every running job is cancelled (they end at their next check). */
+        /** Every running job is cancelled (they end at their next check). */
         public synchronized void cancelAll() { for (Job j : byId.values()) j.cancel(); }
+
+        /** A window closes: the jobs it started are cancelled (another window's go on). Returns them, so their downloads can be disconnected. */
+        public synchronized List<Job> cancelAll(Object owner) {
+            List<Job> out = new ArrayList<Job>();
+            for (Job j : byId.values()) if (owner != null && owner == j.owner) { j.cancel(); out.add(j); }
+            return out;
+        }
 
         public synchronized int size() { return byId.size(); }
     }
@@ -760,6 +842,31 @@ public final class FontLibrary {
     }
 
     /**
+     * The answer for a download that failed other than by its checks or a Cancel: "http" with the {@code status} when the server answered
+     * with one other than 200 (404 and 410: the file moved away, which no retry mends), "no_space" when the phone's storage filled up while it
+     * was written, else "network" ({@code detail}: what failed, in words).
+     */
+    public static JSONObject downloadError(int status, String detail) {
+        String d = detail == null ? "" : detail;
+        if (status > 0) {
+            JSONObject o = error("http", status == 404 || status == 410
+                    ? "The file is no longer at its address (HTTP " + status + "). Update the app."
+                    : "The server answered HTTP " + status + ". Try again later.");
+            try {
+                o.put("status", status);
+            } catch (JSONException ignored) {}
+            return o;
+        }
+        if (d.contains("ENOSPC") || d.contains("No space left")) return error("no_space", "There is not enough free space on this phone.");
+        return error("network", "The download failed: " + (d.isEmpty() ? "no answer" : d));
+    }
+
+    /** The Android API level a merged emoji font of this colour format needs to be drawn: COLRv1 from Android 13 (API 33), COLRv0 from 8. */
+    public static int minApiForEmoji(String color) {
+        return "COLRv1".equals(color) ? 33 : 26;
+    }
+
+    /**
      * Why an emoji font cannot be deleted now, as a code, or null when it can: "in_use" while it is the phone's system emoji (this boot),
      * "building" while a build reads it.
      */
@@ -796,6 +903,28 @@ public final class FontLibrary {
         } finally {
             if (!ok) tmp.delete();
         }
+    }
+
+    /** Flushes a file that was written and closed to the disk (fsync), so a power cut after this cannot leave it short or empty. */
+    static void syncFile(File f) throws IOException {
+        FileChannel ch = FileChannel.open(f.toPath(), StandardOpenOption.WRITE);
+        try {
+            ch.force(true);
+        } finally {
+            ch.close();
+        }
+    }
+
+    /** Flushes a folder's list of names (a rename in it) to the disk, where the system allows it; best effort. */
+    static void syncDir(File dir) {
+        try {
+            FileChannel ch = FileChannel.open(dir.toPath(), StandardOpenOption.READ);
+            try {
+                ch.force(true);
+            } finally {
+                ch.close();
+            }
+        } catch (Exception notHere) {}                                  // a system that cannot open a folder this way: the rename stands as it is
     }
 
     /**
