@@ -7851,6 +7851,8 @@ public class MainActivity extends Activity {
      */
     private JSONObject fmkSysApply(EmojiCatalog.Item item) {
         synchronized (fmkSysLock) {
+            // a step of a window that closed while another window's step held the lock does nothing: no page is left to report to
+            if (activityDestroyed) return FontLibrary.error("failed", "The app is closing.");
             try {
                 String backend = fmkGate(true);
                 if (backend == null) return FontLibrary.error("locked", FMK_LOCK_SYS);
@@ -7925,6 +7927,8 @@ public class MainActivity extends Activity {
      */
     private JSONObject fmkSysUndo() {
         synchronized (fmkSysLock) {
+            // a step of a window that closed while another window's step held the lock does nothing: no page is left to report to
+            if (activityDestroyed) return FontLibrary.error("failed", "The app is closing.");
             try {
                 String backend = fmkGate(true);
                 if (backend == null) return FontLibrary.error("locked", FMK_LOCK_SYS);

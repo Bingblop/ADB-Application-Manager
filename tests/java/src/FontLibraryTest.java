@@ -990,6 +990,12 @@ public class FontLibraryTest {
         for (String step : new String[] { "fmkSysStatus", "fmkSysApply", "fmkSysUndo" })
             is("the whole of " + step + " holds fmkSysLock", wholeUnder(body(ma, "private JSONObject " + step + "("), "fmkSysLock"), true);
         is("…and the whole of the staged copy's delete after an emoji font's", wholeUnder(body(body(ma, "private void fmkDropStaged("), "public void run()"), "fmkSysLock"), true);
+        for (String step : new String[] { "fmkSysApply", "fmkSysUndo" }) {
+            String b = body(ma, "private JSONObject " + step + "(");
+            int lock = b.indexOf("synchronized (fmkSysLock)"), closed = b.indexOf("if (activityDestroyed)");
+            is("…" + step + " of a window that closed while it waited for the lock does nothing (checked inside the lock, before the gate)",
+                    lock >= 0 && closed > lock && closed < b.indexOf("fmkGate(true)"), true);
+        }
         List<int[]> sysLocked = lockedRegions(ma, "fmkSysLock");
         for (String call : new String[] { "fmkRemoveStaged(backend", "fmkTakeOff(backend", "SamsungFonts.stageEmojiScript(", "SamsungFonts.emojiSwapScript(" }) {
             int seen = 0;
