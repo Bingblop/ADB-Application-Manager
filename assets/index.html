@@ -44826,6 +44826,9 @@ Type any command above (e.g. pm list packages -d)</div>
             no_palette: 'This font has color layers (COLR) but no color palette (CPAL). Choose another emoji font.',
             palette_damaged: "This font's color palette (CPAL) is damaged. Choose another emoji font.",
             emoji_symbol: "This font's characters are not at their Unicode places, so its emoji cannot be found. Choose another emoji font.",
+            emoji_damaged: 'This font file is damaged, or uses something the app cannot read. Choose another emoji font.',
+            emoji_too_complex: 'This font is too complex for the app to put its emoji inside a font. Choose another emoji font.',
+            emoji_too_big: 'The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.',
             emoji_updated: "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.",
             mounts_unreadable: "The app cannot read the phone's list of mounts, so it cannot tell its own emoji swap from another tool's and changes nothing. A restart of the phone always puts its own emoji back.",
             install_failed: 'The phone did not install the font.',
@@ -44874,8 +44877,6 @@ Type any command above (e.g. pm list packages -d)</div>
             ['busy', /^The file chooser is already open/, 'The file chooser is already open.'],
             ['busy', /^The save screen is already open/, 'The save screen is already open.'],
             ['busy', /^A font is being made\./, 'A font is being made. Wait for it to finish, or cancel it.'],
-            ['busy', /^This font is being installed, applied or saved/, 'This font is being installed, applied or saved. Wait for it to finish.'],
-            ['busy', /^This font is being made again, installed, applied or saved/, 'This font is being made again, installed, applied or saved. Wait for it to finish.'],
             ['busy', /^This font is being made again\. Wait for it to finish, then save it/, 'This font is being made again. Wait for it to finish, then save it.'],
             ['busy', /^This font is being made again\./, 'This font is being made again. Wait for it to finish.'],
             ['busy', /^This font is busy\./, 'This font is busy. Wait for it to finish.'],
@@ -44941,6 +44942,7 @@ Type any command above (e.g. pm list packages -d)</div>
             [/^The emoji font's positioning table \(GPOS\) was left out/, "The emoji font's positioning table (GPOS) was left out; its emoji do not need it to show."],
             [/^A few of the emoji font's sequences rely on glyph classes/, "A few of the emoji font's sequences rely on glyph classes the merged font cannot keep, so they may show as separate emoji."],
             [/^The text font's Apple layout table \(morx\) was left out/, "The text font's Apple layout table (morx) was left out so that the emoji sequences work; its OpenType features are kept."],
+            [/^The text font has so many glyphs that a few emoji sequences/, 'The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.'],
             [/^The font has more characters than the older part of its character map \(format 4\) can hold: it lists the first (\d+) of the (\d+)/,
                 m => txF('The font has more characters than the older part of its character map (format 4) can hold: it lists the first {0} of the {1} characters below U+FFFF. Android reads the newer part, which has them all; a few older apps may miss the rest.', fntInt(m[1]), fntInt(m[2]))]
         ];
@@ -45183,12 +45185,20 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // a name Samsung's list can show: a letter, digit, mark of punctuation or symbol that is not a blank filler, or anything in the emoji
         // blocks U+1F000-U+1FBFF, where an emoji newer than the phone's own Unicode is unknown to Java (FontPackage.visible, the same rule)
-        function fntNameShows(n) { return /[\p{L}\p{N}\p{P}\p{S}\u{1F000}-\u{1FBFF}]/u.test(String(n || '').replace(/[\u115F\u1160\u3164\uFFA0\u2800]/g, '')); }
+        function fntNameShows(n) {
+            const s = String(n || '').replace(/[\u115F\u1160\u3164\uFFA0\u2800]/g, '');
+            return /[\p{L}\p{N}\p{P}\p{S}]/u.test(s) || [...s].some(c => c.codePointAt(0) >= 0x1F000 && c.codePointAt(0) <= 0x1FBFF);
+        }
         // an own COLRv1 emoji file shows only from Android 13 (the bridge refuses it below: not_usable)
         function fntEmojiTooNew() { const p = fnt.pick.emoji, sdk = fntSdk(); return fnt.emoji === 'file' && !!(p && p.info && p.info.color === 'COLRv1') && sdk > 0 && sdk < 33; }
+        // the font being made again while a job of its row has it (an install, an uninstall, an Apply, a save): the bridge refuses that build as busy
+        function fntRemakeBusy() {
+            const id = fnt.rebuildId;
+            return !!id && (!!fnt.libBusy[id] || (fnt.changerBusy === 'apply' && fnt.applyId === id) || fnt.exporting === id);
+        }
         // not while a file chooser is open or its file is still being read: the build would take the file chosen before, and the card would then show the new one
         function fntCanBuild() {
-            if (fnt.building || fnt.picking || !fnt.pick.regular || !fntNameShows(fnt.name)) return false;
+            if (fnt.building || fnt.picking || fntRemakeBusy() || !fnt.pick.regular || !fntNameShows(fnt.name)) return false;
             if (fnt.boldMode === 'file' && !fnt.pick.bold) return false;
             if (fnt.emoji === 'file' && (!fnt.pick.emoji || fntEmojiTooNew())) return false;
             return !fntEmojiClash();
@@ -45534,6 +45544,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 + '</div>';
         }
         function fntRenderLib() {
+            fntRenderBuildBtn();                                             // Build follows the jobs of the rows too (fntRemakeBusy)
             const list = document.getElementById('fntLibList'), note = document.getElementById('fntDeviceNote');
             if (!list) return;
             const L = fnt.lib;

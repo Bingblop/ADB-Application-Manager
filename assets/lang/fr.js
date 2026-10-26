@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "Cette police n’a pas d’axe de graisse : ce gras ressemblerait donc au normal. Avec Aucun, Android crée le texte gras à partir de la police normale.",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "Cette police n’a pas les lettres latines de base ni les chiffres (A-Z, a-z, 0-9) : le texte en anglais s’afficherait dans la police du téléphone.",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "Cette police n’a pas de contours (pas de table glyf, CFF ou CFF2) : c’est peut-être une police uniquement bitmap.",
-"This font is being installed, applied or saved. Wait for it to finish.": "Cette police est en cours d’installation, d’application ou d’enregistrement. Attendez que ce soit terminé.",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "Cette police est en cours de recréation, d’installation, d’application ou d’enregistrement. Attendez que ce soit terminé.",
 "This font is being made again. Wait for it to finish, then save it.": "Cette police est en cours de recréation. Attendez que ce soit terminé, puis enregistrez-la.",
 "This font is being made again. Wait for it to finish.": "Cette police est en cours de recréation. Attendez que ce soit terminé.",
 "This font is busy. Wait for it to finish.": "Cette police est occupée. Attendez que ce soit terminé.",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "Le fichier de la police d’emoji de ce téléphone est introuvable.",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "Les emoji de ce téléphone ont été mis à jour par les services Google Play, et le remplacement ne peut pas remplacer sans risque des emoji mis à jour. Il ne fonctionne pas sur ce téléphone.",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Cette police variable construit ses glyphes à partir de composants variables (VARC), dont l’application ne peut pas faire une police fixe.",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Cette police variable fait correspondre ses axes entre eux (avar version 2). L’application applique cette correspondance comme HarfBuzz : ses graisses peuvent donc paraître un peu différentes de celles des applications qui ne le font pas."
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Cette police variable fait correspondre ses axes entre eux (avar version 2). L’application applique cette correspondance comme HarfBuzz : ses graisses peuvent donc paraître un peu différentes de celles des applications qui ne le font pas.",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Les emoji seraient trop grands pour cette police. Choisissez une autre police d’emoji, ou réglez Emoji sur Aucun.",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "La police a tant de glyphes que quelques séquences d’emoji contenant U+FE0F peuvent s’afficher comme des emoji séparés.",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "Ce fichier de police est endommagé, ou utilise quelque chose que l’application ne sait pas lire. Choisissez une autre police d’emoji.",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Cette police est trop complexe pour que l’application mette ses emoji dans une police. Choisissez une autre police d’emoji."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

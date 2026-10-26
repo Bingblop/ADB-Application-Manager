@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "Font ini tidak punya sumbu ketebalan, jadi tebal ini akan terlihat seperti reguler. Dengan Tidak ada, Android membuat teks tebal dari font reguler.",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "Font ini tidak punya huruf Latin dasar dan angka (A-Z, a-z, 0-9): teks bahasa Inggris akan tampil dengan font bawaan ponsel.",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "Font ini tidak punya outline (tidak ada tabel glyf, CFF, atau CFF2): mungkin font yang hanya bitmap.",
-"This font is being installed, applied or saved. Wait for it to finish.": "Font ini sedang dipasang, diterapkan, atau disimpan. Tunggu sampai selesai.",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "Font ini sedang dibuat ulang, dipasang, diterapkan, atau disimpan. Tunggu sampai selesai.",
 "This font is being made again. Wait for it to finish, then save it.": "Font ini sedang dibuat ulang. Tunggu sampai selesai, lalu simpan.",
 "This font is being made again. Wait for it to finish.": "Font ini sedang dibuat ulang. Tunggu sampai selesai.",
 "This font is busy. Wait for it to finish.": "Font ini sedang sibuk. Tunggu sampai selesai.",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "File font emoji ponsel ini tidak ditemukan.",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "Emoji ponsel ini diperbarui oleh layanan Google Play, dan penggantian tidak bisa mengganti emoji yang diperbarui dengan aman. Fitur ini tidak berjalan di ponsel ini.",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Font variabel ini menyusun glifnya dari komponen variabel (VARC), yang tidak bisa dijadikan font tetap oleh aplikasi.",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Font variabel ini memetakan sumbunya satu sama lain (avar versi 2). Aplikasi menerapkan pemetaan itu seperti HarfBuzz, jadi ketebalannya mungkin terlihat sedikit berbeda dari aplikasi yang tidak melakukannya."
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Font variabel ini memetakan sumbunya satu sama lain (avar versi 2). Aplikasi menerapkan pemetaan itu seperti HarfBuzz, jadi ketebalannya mungkin terlihat sedikit berbeda dari aplikasi yang tidak melakukannya.",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Emoji akan terlalu besar untuk font ini. Pilih font emoji lain, atau setel Emoji ke Tidak ada.",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "Font ini punya begitu banyak glif sehingga beberapa urutan emoji yang berisi U+FE0F mungkin tampil sebagai emoji terpisah.",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "File font ini rusak, atau memakai sesuatu yang tidak bisa dibaca aplikasi. Pilih font emoji lain.",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Font ini terlalu rumit bagi aplikasi untuk memasukkan emojinya ke dalam font. Pilih font emoji lain."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

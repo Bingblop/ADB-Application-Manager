@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "У этого шрифта нет оси насыщенности, поэтому такой жирный выглядел бы как обычный. При «Нет» Android делает жирный текст из обычного.",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "В этом шрифте нет базовых латинских букв и цифр (A–Z, a–z, 0–9): английский текст показывался бы шрифтом телефона.",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "У этого шрифта нет контуров (нет таблицы glyf, CFF или CFF2): возможно, это чисто растровый шрифт.",
-"This font is being installed, applied or saved. Wait for it to finish.": "Этот шрифт сейчас устанавливается, применяется или сохраняется. Дождитесь окончания.",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "Этот шрифт сейчас создаётся заново, устанавливается, применяется или сохраняется. Дождитесь окончания.",
 "This font is being made again. Wait for it to finish, then save it.": "Этот шрифт сейчас создаётся заново. Дождитесь окончания, затем сохраните его.",
 "This font is being made again. Wait for it to finish.": "Этот шрифт сейчас создаётся заново. Дождитесь окончания.",
 "This font is busy. Wait for it to finish.": "Этот шрифт занят. Дождитесь окончания.",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "Файл шрифта эмодзи этого телефона не найден.",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "Эмодзи этого телефона обновлены сервисами Google Play, а замена не может безопасно заменить обновлённые эмодзи. На этом телефоне она не работает.",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Этот вариативный шрифт строит глифы из вариативных компонентов (VARC), из которых приложение не может сделать фиксированный шрифт.",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Этот вариативный шрифт отображает свои оси друг на друга (avar версии 2). Приложение применяет это отображение так же, как HarfBuzz, поэтому его насыщенности могут выглядеть чуть иначе, чем в приложениях, которые этого не делают."
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Этот вариативный шрифт отображает свои оси друг на друга (avar версии 2). Приложение применяет это отображение так же, как HarfBuzz, поэтому его насыщенности могут выглядеть чуть иначе, чем в приложениях, которые этого не делают.",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Эмодзи были бы слишком большими для этого шрифта. Выберите другой шрифт эмодзи или выберите для «Эмодзи» значение «Нет».",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "В шрифте так много глифов, что несколько последовательностей эмодзи с U+FE0F могут показываться как отдельные эмодзи.",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "Этот файл шрифта повреждён или использует то, что приложение не может прочитать. Выберите другой шрифт эмодзи.",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Этот шрифт слишком сложен, чтобы приложение могло поместить его эмодзи в шрифт. Выберите другой шрифт эмодзи."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

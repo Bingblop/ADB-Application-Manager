@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "Bu yazı tipinin kalınlık ekseni yok, bu yüzden bu kalın normal gibi görünürdü. Yok ile Android kalın metni normal olandan üretir.",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "Bu yazı tipinde temel Latin harfleri ve rakamlar (A-Z, a-z, 0-9) yok: İngilizce metin telefonun kendi yazı tipiyle görünür.",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "Bu yazı tipinin konturu yok (glyf, CFF veya CFF2 tablosu yok): yalnızca bitmap bir yazı tipi olabilir.",
-"This font is being installed, applied or saved. Wait for it to finish.": "Bu yazı tipi yükleniyor, uygulanıyor veya kaydediliyor. Bitmesini bekleyin.",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "Bu yazı tipi yeniden oluşturuluyor, yükleniyor, uygulanıyor veya kaydediliyor. Bitmesini bekleyin.",
 "This font is being made again. Wait for it to finish, then save it.": "Bu yazı tipi yeniden oluşturuluyor. Bitmesini bekleyin, sonra kaydedin.",
 "This font is being made again. Wait for it to finish.": "Bu yazı tipi yeniden oluşturuluyor. Bitmesini bekleyin.",
 "This font is busy. Wait for it to finish.": "Bu yazı tipi meşgul. Bitmesini bekleyin.",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "Bu telefonun emoji yazı tipi dosyası bulunamadı.",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "Bu telefonun emojileri Google Play hizmetleri tarafından güncellendi ve değişiklik güncellenmiş emojileri güvenle değiştiremez. Bu telefonda çalışmaz.",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Bu değişken yazı tipi gliflerini değişken bileşenlerden (VARC) oluşturuyor; uygulama bundan sabit bir yazı tipi yapamaz.",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Bu değişken yazı tipi eksenlerini birbirine eşliyor (avar sürüm 2). Uygulama bu eşlemeyi HarfBuzz gibi uygular; bu yüzden kalınlıkları bunu yapmayan uygulamalardakinden biraz farklı görünebilir."
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Bu değişken yazı tipi eksenlerini birbirine eşliyor (avar sürüm 2). Uygulama bu eşlemeyi HarfBuzz gibi uygular; bu yüzden kalınlıkları bunu yapmayan uygulamalardakinden biraz farklı görünebilir.",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Emojiler bu yazı tipi için çok büyük olurdu. Başka bir emoji yazı tipi seçin veya Emoji'yi Yok olarak ayarlayın.",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "Yazı tipinde o kadar çok glif var ki U+FE0F içeren birkaç emoji dizisi ayrı emojiler olarak görünebilir.",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "Bu yazı tipi dosyası bozuk veya uygulamanın okuyamadığı bir şey kullanıyor. Başka bir emoji yazı tipi seçin.",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Bu yazı tipi, uygulamanın emojilerini bir yazı tipinin içine koyamayacağı kadar karmaşık. Başka bir emoji yazı tipi seçin."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

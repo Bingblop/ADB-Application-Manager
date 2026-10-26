@@ -172,8 +172,9 @@ exports.initScript = function (opts) {
       st.requests.push(r);
       if (!r.regular || !tokens[r.regular.token]) return J({ ok: false, code: 'no_regular', error: 'Choose the Regular font again.' });
       if (st.building) return J({ ok: false, code: 'busy', error: 'A font is being made. Wait for it to finish, or cancel it.' });
-      // FontPackage.visible: a name with a letter, digit, punctuation or symbol that is not a blank filler
-      if (!/[\p{L}\p{N}\p{P}\p{S}]/u.test(String(r.name || '').replace(/[\u115F\u1160\u3164\uFFA0\u2800]/g, ''))) return J({ ok: false, code: 'bad_name', error: 'Give the font a name.' });
+      // FontPackage.visible: a name with a letter, digit, punctuation or symbol that is not a blank filler, or anything in the emoji blocks U+1F000-U+1FBFF
+      const shown = String(r.name || '').replace(/[\u115F\u1160\u3164\uFFA0\u2800]/g, '');
+      if (!/[\p{L}\p{N}\p{P}\p{S}]/u.test(shown) && ![...shown].some(c => c.codePointAt(0) >= 0x1F000 && c.codePointAt(0) <= 0x1FBFF)) return J({ ok: false, code: 'bad_name', error: 'Give the font a name.' });
       const old = r.rebuildId ? lib.find(e => e.id === r.rebuildId) : null;
       if (r.rebuildId && !old) return J({ ok: false, code: 'not_found', error: 'That font is not in My fonts any more.' });
       const id = job(), reg = tokens[r.regular.token];

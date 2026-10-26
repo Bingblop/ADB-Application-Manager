@@ -5,6 +5,9 @@ ok   1. no_palette: "Emoji font: This font has color layers (COLR) but no color 
 ok   1. palette_damaged: "Emoji font: This font's color palette (CPAL) is damaged. Choose another emoji font."
 ok   1. emoji_symbol: "Emoji font: This font's characters are not at their Unicode places, so its emoji cannot be found. Choose another emoji font."
 ok   1. bitmap_emoji: "Emoji font: This font's emoji are made of pictures (CBDT or sbix), which cannot go inside a font. Choose a COLR emoji font."
+ok   1. emoji_damaged: "Emoji font: This font file is damaged, or uses something the app cannot read. Choose another emoji font."
+ok   1. emoji_too_complex: "Emoji font: This font is too complex for the app to put its emoji inside a font. Choose another emoji font."
+ok   1. emoji_too_big: "Emoji font: The emoji would be too large for this font. Choose another emoji font, or set Emoji to None."
 ok   2. a GSUB table too large to write is the emoji's doing: it says so and what to change
 ok      a font over 96 MB: the font package's limit
 ok      too_many_glyphs keeps both counts
@@ -23,6 +26,7 @@ ok      Emoji None: the line goes, Build is on
 ok   6. the warnings in the page's words: color, not colour; the bitmap kind kept
 ok      the character map line keeps its counts, in the page's number format
 ok      a known sentence is the page's; one the page does not know stays as it is
+ok      the emoji sequences a font with very many glyphs cannot keep: "The font has so many glyphs…"
 ok      each line takes its own direction (dir="auto")
 ok      each line is indented at its start, here the left (margin-inline-start)
 ok   7. no page errors

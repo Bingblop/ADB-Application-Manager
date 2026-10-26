@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "Diese Schriftart hat keine Stärke-Achse, dieser Fett-Schnitt sähe also wie der normale aus. Mit „Keiner“ erzeugt Android fetten Text aus der normalen.",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "Diese Schriftart hat keine lateinischen Grundbuchstaben und Ziffern (A–Z, a–z, 0–9): Englischer Text erschiene in der Schriftart des Telefons.",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "Diese Schriftart hat keine Konturen (keine glyf-, CFF- oder CFF2-Tabelle): Vielleicht ist es eine reine Bitmap-Schriftart.",
-"This font is being installed, applied or saved. Wait for it to finish.": "Diese Schriftart wird gerade installiert, angewendet oder gespeichert. Warten Sie, bis es fertig ist.",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "Diese Schriftart wird gerade neu erstellt, installiert, angewendet oder gespeichert. Warten Sie, bis es fertig ist.",
 "This font is being made again. Wait for it to finish, then save it.": "Diese Schriftart wird gerade neu erstellt. Warten Sie, bis es fertig ist, und speichern Sie sie dann.",
 "This font is being made again. Wait for it to finish.": "Diese Schriftart wird gerade neu erstellt. Warten Sie, bis es fertig ist.",
 "This font is busy. Wait for it to finish.": "Diese Schriftart ist beschäftigt. Warten Sie, bis es fertig ist.",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "Die Emoji-Schriftdatei dieses Telefons wurde nicht gefunden.",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "Die Emoji dieses Telefons wurden von den Google Play-Diensten aktualisiert, und der Tausch kann aktualisierte Emoji nicht sicher ersetzen. Er läuft auf diesem Telefon nicht.",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Diese variable Schriftart baut ihre Glyphen aus variablen Komponenten (VARC) auf, aus denen die App keine feste Schriftart machen kann.",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Diese variable Schriftart bildet ihre Achsen aufeinander ab (avar Version 2). Die App wendet diese Abbildung wie HarfBuzz an, daher können ihre Stärken etwas anders aussehen als in Apps, die das nicht tun."
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Diese variable Schriftart bildet ihre Achsen aufeinander ab (avar Version 2). Die App wendet diese Abbildung wie HarfBuzz an, daher können ihre Stärken etwas anders aussehen als in Apps, die das nicht tun.",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Die Emoji wären für diese Schriftart zu groß. Wählen Sie eine andere Emoji-Schriftart oder stellen Sie „Emoji“ auf „Keiner“.",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "Die Schriftart hat so viele Glyphen, dass einige Emoji-Sequenzen mit U+FE0F evtl. als einzelne Emoji erscheinen.",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "Diese Schriftdatei ist beschädigt oder nutzt etwas, das die App nicht lesen kann. Wählen Sie eine andere Emoji-Schriftart.",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Diese Schriftart ist zu komplex, als dass die App ihre Emoji in eine Schriftart einfügen könnte. Wählen Sie eine andere Emoji-Schriftart."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

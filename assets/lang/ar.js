@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "لا يملك هذا الخط محور سُمك، لذا سيبدو هذا العريض مثل العادي. مع لا شيء، يصنع Android النص العريض من الخط العادي.",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "لا يحتوي هذا الخط على الحروف اللاتينية الأساسية والأرقام (A-Z، a-z، 0-9): سيظهر النص الإنجليزي بخط الهاتف.",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "لا يملك هذا الخط خطوطًا خارجية (لا جدول glyf أو CFF أو CFF2): قد يكون خطًا نقطيًا فقط.",
-"This font is being installed, applied or saved. Wait for it to finish.": "يجري تثبيت هذا الخط أو تطبيقه أو حفظه. انتظر حتى ينتهي.",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "يجري إنشاء هذا الخط من جديد أو تثبيته أو تطبيقه أو حفظه. انتظر حتى ينتهي.",
 "This font is being made again. Wait for it to finish, then save it.": "يجري إنشاء هذا الخط من جديد. انتظر حتى ينتهي، ثم احفظه.",
 "This font is being made again. Wait for it to finish.": "يجري إنشاء هذا الخط من جديد. انتظر حتى ينتهي.",
 "This font is busy. Wait for it to finish.": "هذا الخط مشغول. انتظر حتى ينتهي.",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "لم يُعثر على ملف خط الرموز التعبيرية في هذا الهاتف.",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "حدّثت خدمات Google Play الرموز التعبيرية في هذا الهاتف، ولا يستطيع الاستبدال أن يستبدل الرموز المحدّثة بأمان. لا يعمل على هذا الهاتف.",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "يبني هذا الخط المتغيّر حروفه الرسومية من مكوّنات متغيّرة (VARC)، ولا يستطيع التطبيق أن يصنع منها خطًا ثابتًا.",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "يربط هذا الخط المتغيّر محاوره بعضها ببعض (avar الإصدار 2). يطبّق التطبيق هذا الربط كما يفعل HarfBuzz، لذا قد تبدو أوزانه مختلفة قليلًا عن التطبيقات التي لا تفعل ذلك."
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "يربط هذا الخط المتغيّر محاوره بعضها ببعض (avar الإصدار 2). يطبّق التطبيق هذا الربط كما يفعل HarfBuzz، لذا قد تبدو أوزانه مختلفة قليلًا عن التطبيقات التي لا تفعل ذلك.",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "ستكون الرموز التعبيرية أكبر من اللازم لهذا الخط. اختر خط رموز تعبيرية آخر، أو اضبط الرموز التعبيرية على لا شيء.",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "في الخط عدد كبير جدًا من الحروف الرسومية، لذا قد تظهر بعض تسلسلات الرموز التعبيرية التي تحتوي على U+FE0F كرموز تعبيرية منفصلة.",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "ملف الخط هذا تالف، أو يستخدم شيئًا لا يستطيع التطبيق قراءته. اختر خط رموز تعبيرية آخر.",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "هذا الخط معقّد جدًا ولا يستطيع التطبيق وضع رموزه التعبيرية داخل خط. اختر خط رموز تعبيرية آخر."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

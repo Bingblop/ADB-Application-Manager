@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "Esta fonte não tem eixo de peso, então este negrito pareceria o normal. Com Nenhum, o Android cria o texto em negrito a partir da normal.",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "Esta fonte não tem letras latinas básicas nem dígitos (A-Z, a-z, 0-9): o texto em inglês apareceria na fonte do telefone.",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "Esta fonte não tem contornos (nenhuma tabela glyf, CFF ou CFF2): pode ser uma fonte só de bitmaps.",
-"This font is being installed, applied or saved. Wait for it to finish.": "Esta fonte está sendo instalada, aplicada ou salva. Aguarde terminar.",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "Esta fonte está sendo criada de novo, instalada, aplicada ou salva. Aguarde terminar.",
 "This font is being made again. Wait for it to finish, then save it.": "Esta fonte está sendo criada de novo. Aguarde terminar e depois salve.",
 "This font is being made again. Wait for it to finish.": "Esta fonte está sendo criada de novo. Aguarde terminar.",
 "This font is busy. Wait for it to finish.": "Esta fonte está ocupada. Aguarde terminar.",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "O arquivo da fonte de emojis deste telefone não foi encontrado.",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "Os emojis deste telefone foram atualizados pelo Google Play Services, e a troca não consegue substituir emojis atualizados com segurança. Ela não funciona neste telefone.",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Esta fonte variável monta os glifos a partir de componentes variáveis (VARC), com os quais o app não consegue criar uma fonte fixa.",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Esta fonte variável mapeia os eixos uns nos outros (avar versão 2). O app aplica esse mapeamento como o HarfBuzz faz, então os pesos dela podem parecer um pouco diferentes dos apps que não fazem isso."
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Esta fonte variável mapeia os eixos uns nos outros (avar versão 2). O app aplica esse mapeamento como o HarfBuzz faz, então os pesos dela podem parecer um pouco diferentes dos apps que não fazem isso.",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Os emojis ficariam grandes demais para esta fonte. Escolha outra fonte de emojis ou defina Emojis como Nenhum.",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "A fonte tem tantos glifos que algumas sequências de emojis com U+FE0F podem aparecer como emojis separados.",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "Este arquivo de fonte está danificado ou usa algo que o app não consegue ler. Escolha outra fonte de emojis.",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Esta fonte é complexa demais para o app colocar os emojis dela dentro de uma fonte. Escolha outra fonte de emojis."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

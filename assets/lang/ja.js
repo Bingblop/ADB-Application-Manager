@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "このフォントにはウェイト軸がないため、この太字は標準と同じに見えます。「なし」にすると、Android が標準のフォントから太字を作ります。",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "このフォントには基本のラテン文字と数字 (A-Z、a-z、0-9) がありません。英語のテキストは端末のフォントで表示されます。",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "このフォントにはアウトラインがありません (glyf、CFF、CFF2 テーブルがありません)。ビットマップのみのフォントかもしれません。",
-"This font is being installed, applied or saved. Wait for it to finish.": "このフォントはインストール、適用、または保存の処理中です。完了するまでお待ちください。",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "このフォントは作り直し、インストール、適用、または保存の処理中です。完了するまでお待ちください。",
 "This font is being made again. Wait for it to finish, then save it.": "このフォントは作り直し中です。完了するまで待ってから保存してください。",
 "This font is being made again. Wait for it to finish.": "このフォントは作り直し中です。完了するまでお待ちください。",
 "This font is busy. Wait for it to finish.": "このフォントは処理中です。完了するまでお待ちください。",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "この端末の絵文字フォントファイルが見つかりませんでした。",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "この端末の絵文字は Google Play 開発者サービスで更新されており、入れ替えでは更新された絵文字を安全に置き換えられません。この端末では動作しません。",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "この可変フォントは可変コンポーネント (VARC) でグリフを組み立てるため、アプリは固定フォントにできません。",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "この可変フォントは軸どうしを対応付けています (avar バージョン 2)。アプリは HarfBuzz と同じようにこの対応付けを適用するため、対応付けを適用しないアプリとはウェイトが少し違って見えることがあります。"
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "この可変フォントは軸どうしを対応付けています (avar バージョン 2)。アプリは HarfBuzz と同じようにこの対応付けを適用するため、対応付けを適用しないアプリとはウェイトが少し違って見えることがあります。",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "このフォントでは絵文字が大きくなりすぎます。別の絵文字フォントを選ぶか、絵文字を「なし」にしてください。",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "フォントのグリフが多すぎるため、U+FE0F を含む一部の絵文字シーケンスが別々の絵文字として表示されることがあります。",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "このフォントファイルが壊れているか、アプリが読めない形式を使っています。別の絵文字フォントを選んでください。",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "このフォントは複雑すぎて、アプリがその絵文字をフォントに入れられません。別の絵文字フォントを選んでください。"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

@@ -7,6 +7,8 @@ ok      the Weight slider moved past the Regular: the line goes
 ok   3. a name of blank fillers (U+3164): named as such, Build waits
 ok      a letter after it: the line goes, Build is on
 ok      a name of only spaces: named as such too, Build waits
+ok      a name of an emoji newer than this Unicode (U+1F0F6, unknown here): no line, Build is on
+ok      the bridge takes that name: the font is made
 ok      an empty name: no line (nothing typed yet), Build waits
 ok   4. Lato's row shows its first line in Lato (a face of its own)
 ok      deleted: the face is gone from document.fonts

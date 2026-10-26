@@ -2,9 +2,10 @@
 // font without a Weight axis keeps Bold at None (Android makes bold text from the Regular); choosing "Same variable font" for it says the Bold would
 // look like the Regular. With a Weight axis, a Bold set at the Regular's weight or lighter says bold text would look like the rest; a heavier one says
 // nothing. An own COLRv1 emoji file on Android 12 says it needs Android 13 and Build waits. A name made only of blank fillers (U+3164) is named as such
-// and Build waits, and so is a name of only spaces. A font deleted from My fonts takes its preview face with it (document.fonts). Root Features has its
-// "?" (HELP_LINKS) in the top card, beside the status tag and not over it, and it opens the guide at that tab. FULL-GUIDE's table of tabs says "right
-// before …" as the tab bar has it, and gives the Font changer's gate with root (UID 0) as the app's lock does.
+// and Build waits, and so is a name of only spaces; an emoji newer than the Unicode the page knows counts, and the bridge makes the font. A font
+// deleted from My fonts takes its preview face with it (document.fonts). Root Features has its "?" (HELP_LINKS) in the top card, beside the status
+// tag and not over it, and it opens the guide at that tab. FULL-GUIDE's table of tabs says "right before …" as the tab bar has it, and gives the
+// Font changer's gate with root (UID 0) as the app's lock does.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -76,6 +77,17 @@ const make = (page) => page.evaluate(() => {
     await page.waitForTimeout(100);
     const n2 = await make(page);
     check('   a name of only spaces: named as such too, Build waits', n2.hint === 'The name needs at least one letter, digit or sign that can be seen.' && !n2.build, JSON.stringify(n2));
+    // a character of the emoji blocks this browser's Unicode does not know yet stands for an emoji newer than the phone's: it counts for the page
+    // and for the bridge alike (FontPackage.visible), so the build is not refused as bad_name
+    await page.fill('#fntName', '\u{1F0F6}');
+    await page.waitForTimeout(100);
+    const n3 = await make(page);
+    check('   a name of an emoji newer than this Unicode (U+1F0F6, unknown here): no line, Build is on', n3.hint === '' && n3.build
+      && await page.evaluate(() => !/[\p{L}\p{N}\p{P}\p{S}]/u.test('\u{1F0F6}')), JSON.stringify(n3));
+    await page.click('#fntBuildBtn');
+    await page.waitForTimeout(400);
+    const made = await page.evaluate(() => document.getElementById('fntBuildResult').textContent.trim());
+    check('   the bridge takes that name: the font is made', made.indexOf('\u{1F0F6} is ready in My fonts.') === 0, made);
     await page.fill('#fntName', '');
     await page.waitForTimeout(100);
     check('   an empty name: no line (nothing typed yet), Build waits', (await make(page)).hint === '' && !(await make(page)).build);

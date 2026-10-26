@@ -3,7 +3,8 @@
 // its other buttons off). The font made again keeps its id and package and takes the next version, so the copy on the phone (version 2, in use) is
 // older and the row offers Update. New font drops the link; deleting the font being made again drops it too. The file chooser: Choose is off while it is open
 // and a second pick sends nothing; Build is off until the file chosen is read (a Change with a Regular chosen), so it never builds the one before.
-// The save screen: Export is off on every row until it answers.
+// The save screen: Export is off on every row until it answers. While a job of its row has the font being made again (an install, the Font changer's
+// Apply, a save), Build is off, as the bridge would refuse that build as busy; a job of another row leaves it on.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -118,6 +119,50 @@ const clickBtn = (page, id, label) => page.evaluate(([id, l]) => [...document.qu
     await page.evaluate(() => window.__fmk.save());
     await page.waitForTimeout(100);
     check('   saved: a toast, Export on again', await page.evaluate(() => document.getElementById('toastMsg').textContent) === 'Saved Lato.apk' && (await row(page, 'f1a2b3')).btns.Export === true && (await row(page, 'c4d5e6')).btns.Export === true);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    // ---- 7. Build waits while a job of its row has the font being made again (the bridge would refuse that build as busy) ----
+    const { ctx, page, errors } = await open(b, { mode: 'root', hold: true, holdSave: true, picks: { regular: 'static' } });
+    await page.evaluate(() => window.__fmk.stepAll());                     // the cards' statuses
+    await page.waitForTimeout(100);
+    await clickBtn(page, 'c4d5e6', 'Make again');
+    await page.click('#fntPick_regular');
+    await page.waitForTimeout(150);
+    const buildOn = () => page.evaluate(() => !document.getElementById('fntBuildBtn').disabled);
+    check('7. making Lato again, a Regular chosen: Build is on', await buildOn());
+    await clickBtn(page, 'c4d5e6', 'Install');
+    await page.waitForTimeout(100);
+    check('   while Lato installs: Build is off', (await row(page, 'c4d5e6')).btns['Installing…'] === false && !(await buildOn()));
+    await page.evaluate(() => fntBuild());
+    check('   a build asked for now sends nothing', !(await page.evaluate(() => window.__fmk.calls.includes('fontMakerBuild'))), await page.evaluate(() => window.__fmk.calls.join()));
+    await page.evaluate(() => window.__fmk.stepAll());
+    await page.waitForTimeout(100);
+    check('   installed: Build is on again', (await row(page, 'c4d5e6')).btns.Uninstall === true && await buildOn());
+    await clickBtn(page, 'c4d5e6', 'Apply');
+    await page.waitForTimeout(100);
+    check('   while the Font changer applies Lato: Build is off', await page.evaluate(() => fnt.changerBusy === 'apply') && !(await buildOn()));
+    await page.evaluate(() => window.__fmk.stepAll());
+    await page.waitForTimeout(100);
+    check('   applied: Build is on again', /In use/.test((await row(page, 'c4d5e6')).text) && await buildOn());
+    await clickBtn(page, 'c4d5e6', 'Export');
+    await page.waitForTimeout(100);
+    check('   while Lato is saved: Build is off', !(await buildOn()));
+    await page.evaluate(() => window.__fmk.save());
+    await page.waitForTimeout(100);
+    check('   saved: Build is on again', await buildOn());
+    await clickBtn(page, 'f1a2b3', 'Export');
+    await page.waitForTimeout(100);
+    check('   a job of another row (Inter Display saved) leaves Build on', await page.evaluate(() => fnt.exporting === 'f1a2b3') && await buildOn());
+    await page.evaluate(() => window.__fmk.save());
+    await page.waitForTimeout(100);
+    await page.click('#fntBuildBtn');
+    await page.waitForTimeout(100);
+    const req = await page.evaluate(() => window.__fmk.requests[window.__fmk.requests.length - 1]);
+    check('   Build sends rebuildId for Lato', req && req.rebuildId === 'c4d5e6', JSON.stringify(req));
+    await page.evaluate(() => window.__fmk.stepAll());
+    await page.waitForTimeout(100);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

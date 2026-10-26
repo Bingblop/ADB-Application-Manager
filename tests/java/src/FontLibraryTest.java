@@ -841,7 +841,7 @@ public class FontLibraryTest {
                     "http", "bad_name", "text_has_color", "symbol_font", "emoji_outlines", "no_palette", "palette_damaged", "emoji_symbol", "emoji_updated",
                     "mounts_unreadable", "install_failed", "uninstall_failed", "no_answer", "no_targets", "not_downloaded", "not_usable", "locked", "unreadable",
                     "no_picker", "zip_entry", "bad_zip", "unknown", "missing_table", "no_outlines", "not_supported", "bad_package", "bad_version", "write_failed",
-                    "read_failed", "failed" })
+                    "read_failed", "emoji_damaged", "emoji_too_complex", "emoji_too_big", "failed" })
                 is("FNT_ERR words the code " + c, err.contains("\n            " + c + ": "), true);
             // every code the font engine and the bridge send has a sentence of the page; the three named here never leave Java (the engine catches them)
             Set<String> internal = new HashSet<String>(Arrays.asList("not_cff", "no_instance", "not_variable"));
@@ -882,17 +882,19 @@ public class FontLibraryTest {
             String et = body(js, "function fntErrText(");
             is("the engine's face prefix stays in front of the page's sentence", et.contains("(Regular|Bold|Emoji) font: ") && et.contains("txF('Bold font: {0}'")
                     && et.contains("txF('Emoji font: {0}'") && et.contains("txF('Regular font: {0}'"), true);
-            // the page's name rule is FontPackage.visible's: its two patterns, read with this JDK's Unicode, answer as visible() does for every
-            // code point (an emoji of the emoji blocks that one side's Unicode does not know yet counts on both, R-JOBS-2)
-            int s1 = js.indexOf("function fntNameShows("), s2 = s1 < 0 ? -1 : js.indexOf('\n', s1);
-            Matcher sm = Pattern.compile("return /(\\[[^/\\n]*\\])/u\\.test\\(String\\(n \\|\\| ''\\)\\.replace\\(/(\\[[^/\\n]*\\])/g, ''\\)\\)")
-                    .matcher(s1 >= 0 && s2 > s1 ? js.substring(s1, s2) : "");
-            String differs = sm.find() ? null : "the pattern is not found";
+            // the page's name rule is FontPackage.visible's: its two patterns, read with this JDK's Unicode, and its range of the emoji blocks answer
+            // as visible() does for every code point (an emoji of the emoji blocks that one side's Unicode does not know yet counts on both, R-JOBS-2)
+            Matcher sm = Pattern.compile("const s = String\\(n \\|\\| ''\\)\\.replace\\(/(\\[[^/\\n]*\\])/g, ''\\);\\s*return /(\\[[^/\\n]*\\])/u\\.test\\(s\\) \\|\\| "
+                    + "\\[\\.\\.\\.s\\]\\.some\\(c => c\\.codePointAt\\(0\\) >= 0x([0-9A-F]+) && c\\.codePointAt\\(0\\) <= 0x([0-9A-F]+)\\);").matcher(body(js, "function fntNameShows("));
+            String differs = sm.find() ? null : "the rule is not found";
             if (differs == null) {
-                Pattern counts = Pattern.compile(sm.group(1).replace("\\u{", "\\x{")), blank = Pattern.compile(sm.group(2).replace("\\u{", "\\x{"));
+                Pattern blank = Pattern.compile(sm.group(1).replace("\\u{", "\\x{")), counts = Pattern.compile(sm.group(2).replace("\\u{", "\\x{"));
+                int lo = Integer.parseInt(sm.group(3), 16), hi = Integer.parseInt(sm.group(4), 16);
                 for (int cp = 0; cp <= Character.MAX_CODE_POINT && differs == null; cp++) {
-                    String one = new String(Character.toChars(cp));
-                    if (counts.matcher(blank.matcher(one).replaceAll("")).find() != FontPackage.visible(one)) differs = "U+" + Integer.toHexString(cp).toUpperCase();
+                    String one = new String(Character.toChars(cp)), left = blank.matcher(one).replaceAll("");
+                    boolean shows = counts.matcher(left).find();
+                    for (int i = 0; i < left.length() && !shows; i += Character.charCount(left.codePointAt(i))) shows = left.codePointAt(i) >= lo && left.codePointAt(i) <= hi;
+                    if (shows != FontPackage.visible(one)) differs = "U+" + Integer.toHexString(cp).toUpperCase();
                 }
             }
             is("the page's fntNameShows is FontPackage.visible's rule for every code point" + (differs == null ? "" : " (" + differs + ")"), differs == null, true);
@@ -903,12 +905,16 @@ public class FontLibraryTest {
             while (row.find()) busyRows.add(new String[] { row.group(1), row.group(2) });
             Matcher busy = Pattern.compile("(?:fmkErr|FontLibrary\\.error)\\(\"busy\", \"((?:[^\"\\\\]|\\\\.)*)\"\\)").matcher(engine);
             int nBusy = 0;
+            Set<String> busySaid = new HashSet<String>();
             while (busy.find()) {
                 nBusy++;
+                busySaid.add(busy.group(1));
                 String shown = null;
                 for (String[] r : busyRows) if (Pattern.compile(r[0]).matcher(busy.group(1)).find()) { shown = r[1]; break; }
                 is("the page shows the busy sentence \"" + busy.group(1) + "\" as itself", busy.group(1).equals(shown), true);
             }
+            // …and has no busy row for a sentence the bridge no longer sends (R-JOBS-3)
+            for (String[] r : busyRows) is("the page's busy row \"" + r[1] + "\" is a sentence the bridge sends", busySaid.contains(r[1]), true);
             Matcher anyBusy = Pattern.compile("(?:fmkErr|FontLibrary\\.error)\\(\"busy\",").matcher(engine);
             int sends = 0;
             while (anyBusy.find()) sends++;

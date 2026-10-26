@@ -1,11 +1,13 @@
 // v7.17.0 Custom Fonts, Make a font: what the engine and the bridge refuse, in the page's words (FNT_ERR, and FNT_SAID for a code Java words in more
 // than one way), with Java's details kept and the face the engine names in front ("Regular font: ", "Bold font: ", "Emoji font: "). Build refusals:
-// text_has_color (Regular), symbol_font (Bold), emoji_outlines, no_palette, palette_damaged and emoji_symbol (Emoji); a GSUB table too large to write
+// text_has_color (Regular), symbol_font (Bold), emoji_outlines, no_palette, palette_damaged, emoji_symbol, and what the merge meets in the emoji
+// font alone: emoji_damaged, emoji_too_complex and emoji_too_big (Emoji, never the 96 MB sentence); a GSUB table too large to write
 // (the emoji's doing) told apart from a font over 96 MB; too_many_glyphs with both counts; not_usable for an own COLRv1 file; a failure the page has
 // no sentence for keeps Java's words after "Something went wrong:"; a code the page does not know shows Java's sentence. At the pick: an emoji font
 // with PostScript outlines is refused (emoji_outlines); an emoji font chosen as the Regular carries the no-Latin warning and, being in color, holds
 // Build back while an emoji is chosen; in the emoji slot it has no such warning. The engine's warnings after a build are the page's sentences ("color",
-// the counts in the page's number format), each line in its own direction (dir="auto") and indented at its start; one the page does not know stays as Java wrote it.
+// the counts in the page's number format, the emoji sequences with U+FE0F a font with very many glyphs cannot keep), each line in its own direction
+// (dir="auto") and indented at its start; one the page does not know stays as Java wrote it.
 // A GSUB or GPOS table too large to write from a variable font fixed at its point (GPOS always, GSUB with Emoji None) names the weight, not the emoji;
 // GSUB from a variable face with emoji says it may be either. The counts (glyphs, progress, the sentences) follow the app's language, not the phone's.
 const fs = require('fs');
@@ -54,6 +56,13 @@ const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Reg
       "Emoji font: This font's characters are not at their Unicode places, so its emoji cannot be found. Choose another emoji font."],
     ['bitmap_emoji', 'Emoji font: This emoji font draws its emoji as bitmaps (CBDT): they cannot be put inside a font. Choose a COLR emoji font.',
       "Emoji font: This font's emoji are made of pictures (CBDT or sbix), which cannot go inside a font. Choose a COLR emoji font."],
+    // what the merge meets in the emoji font alone (EmojiMerge.aboutEmoji): named as the emoji font's, whichever face it went into
+    ['emoji_damaged', "Emoji font: The emoji font's colour table (COLR) is a newer version (2) than this app can read.",
+      'Emoji font: This font file is damaged, or uses something the app cannot read. Choose another emoji font.'],
+    ['emoji_too_complex', "Emoji font: The emoji font's substitution table (GSUB) is too complex to merge.",
+      'Emoji font: This font is too complex for the app to put its emoji inside a font. Choose another emoji font.'],
+    ['emoji_too_big', 'Emoji font: The emoji would be too big for this font at this size.',
+      'Emoji font: The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.'],
   ];
   for (const [code, java, want] of cases) {
     const r = await buildEnds({ code, error: java });
@@ -111,16 +120,18 @@ const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Reg
     "This font's colour glyphs are bitmaps (CBDT): bitmap emoji cannot be put inside a font, so only its outlines would be used.",
     'The font has more characters than the older part of its character map (format 4) can hold: it lists the first 31000 of the 40112 characters below U+FFFF. Android reads the newer part, which has them all; a few older apps may miss the rest.',
     'The Bold font is no heavier than the Regular one, so bold text will look like the rest of the text.',
+    'The text font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.',
     'A warning the page has no words for.']; });
   await page.click('#fntBuildBtn');
   await page.waitForTimeout(400);
   const w = await page.evaluate(() => [...document.querySelectorAll('#fntBuildResult .fnt-warns li')].map(li => [li.textContent, li.getAttribute('dir')]));
   check('6. the warnings in the page\'s words: color, not colour; the bitmap kind kept', w[0] && w[0][0] === "This font's color glyphs are bitmaps (CBDT): bitmap emoji cannot be put inside a font, so only its outlines would be used.", JSON.stringify(w[0]));
   check('   the character map line keeps its counts, in the page\'s number format', w[1] && /lists the first 31,000 of the 40,112 characters below U\+FFFF/.test(w[1][0]), JSON.stringify(w[1]));
-  check('   a known sentence is the page\'s; one the page does not know stays as it is', w[2] && w[2][0] === 'The Bold font is no heavier than the Regular one, so bold text will look like the rest of the text.' && w[3] && w[3][0] === 'A warning the page has no words for.', JSON.stringify(w.slice(2)));
-  check('   each line takes its own direction (dir="auto")', w.length === 4 && w.every(x => x[1] === 'auto'), JSON.stringify(w.map(x => x[1])));
+  check('   a known sentence is the page\'s; one the page does not know stays as it is', w[2] && w[2][0] === 'The Bold font is no heavier than the Regular one, so bold text will look like the rest of the text.' && w[4] && w[4][0] === 'A warning the page has no words for.', JSON.stringify(w.slice(2)));
+  check('   the emoji sequences a font with very many glyphs cannot keep: "The font has so many glyphs…"', w[3] && w[3][0] === 'The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.', JSON.stringify(w[3]));
+  check('   each line takes its own direction (dir="auto")', w.length === 5 && w.every(x => x[1] === 'auto'), JSON.stringify(w.map(x => x[1])));
   const pad = await page.evaluate(() => [...document.querySelectorAll('#fntBuildResult .fnt-warns li')].map(li => { const c = getComputedStyle(li); return [parseFloat(c.marginLeft), parseFloat(c.marginRight)]; }));
-  check('   each line is indented at its start, here the left (margin-inline-start)', pad.length === 4 && pad.every(m => m[0] > 0 && m[1] === 0), JSON.stringify(pad));
+  check('   each line is indented at its start, here the left (margin-inline-start)', pad.length === 5 && pad.every(m => m[0] > 0 && m[1] === 0), JSON.stringify(pad));
   await page.screenshot({ path: 'warnings.png' });
   check('7. no page errors', !errors.length, errors.join(' | '));
   await ctx.close();

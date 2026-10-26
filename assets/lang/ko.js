@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "이 글꼴에는 굵기 축이 없어 이 굵은 글꼴이 보통과 같아 보입니다. 없음으로 두면 Android가 보통 글꼴로 굵은 텍스트를 만듭니다.",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "이 글꼴에는 기본 라틴 문자와 숫자(A-Z, a-z, 0-9)가 없습니다. 영어 텍스트는 휴대전화 글꼴로 표시됩니다.",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "이 글꼴에는 윤곽선이 없습니다(glyf, CFF, CFF2 테이블 없음). 비트맵 전용 글꼴일 수 있습니다.",
-"This font is being installed, applied or saved. Wait for it to finish.": "이 글꼴을 설치, 적용 또는 저장하는 중입니다. 끝날 때까지 기다리세요.",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "이 글꼴을 다시 만들거나 설치, 적용 또는 저장하는 중입니다. 끝날 때까지 기다리세요.",
 "This font is being made again. Wait for it to finish, then save it.": "이 글꼴을 다시 만드는 중입니다. 끝날 때까지 기다린 다음 저장하세요.",
 "This font is being made again. Wait for it to finish.": "이 글꼴을 다시 만드는 중입니다. 끝날 때까지 기다리세요.",
 "This font is busy. Wait for it to finish.": "이 글꼴은 처리 중입니다. 끝날 때까지 기다리세요.",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "이 휴대전화의 이모지 글꼴 파일을 찾지 못했습니다.",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "이 휴대전화의 이모지가 Google Play 서비스로 업데이트되어 교체 기능이 업데이트된 이모지를 안전하게 바꿀 수 없습니다. 이 휴대전화에서는 작동하지 않습니다.",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "이 가변 글꼴은 가변 구성요소(VARC)로 글리프를 만들기 때문에 앱이 고정 글꼴로 만들 수 없습니다.",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "이 가변 글꼴은 축끼리 서로 매핑합니다(avar 버전 2). 앱은 HarfBuzz와 같은 방식으로 이 매핑을 적용하므로, 적용하지 않는 앱과 굵기가 조금 다르게 보일 수 있습니다."
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "이 가변 글꼴은 축끼리 서로 매핑합니다(avar 버전 2). 앱은 HarfBuzz와 같은 방식으로 이 매핑을 적용하므로, 적용하지 않는 앱과 굵기가 조금 다르게 보일 수 있습니다.",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "이 글꼴에서는 이모지가 너무 커집니다. 다른 이모지 글꼴을 선택하거나 이모지를 없음으로 설정하세요.",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "글꼴의 글리프가 너무 많아서 U+FE0F가 들어간 일부 이모지 시퀀스가 따로 떨어진 이모지로 보일 수 있습니다.",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "이 글꼴 파일이 손상되었거나 앱이 읽을 수 없는 요소를 사용합니다. 다른 이모지 글꼴을 선택하세요.",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "이 글꼴은 너무 복잡해서 앱이 그 이모지를 글꼴 안에 넣을 수 없습니다. 다른 이모지 글꼴을 선택하세요."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

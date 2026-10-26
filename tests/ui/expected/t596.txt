@@ -25,4 +25,15 @@ ok      no page errors
 ok   6. while the save screen is open: Export is off on every row
 ok      saved: a toast, Export on again
 ok      no page errors
+ok   7. making Lato again, a Regular chosen: Build is on
+ok      while Lato installs: Build is off
+ok      a build asked for now sends nothing
+ok      installed: Build is on again
+ok      while the Font changer applies Lato: Build is off
+ok      applied: Build is on again
+ok      while Lato is saved: Build is off
+ok      saved: Build is on again
+ok      a job of another row (Inter Display saved) leaves Build on
+ok      Build sends rebuildId for Lato
+ok      no page errors
 all passed

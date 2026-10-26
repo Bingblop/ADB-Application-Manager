@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "这个字体没有字重轴，因此这个粗体会和常规看起来一样。选择“无”时，Android 会用常规字体生成粗体文字。",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "这个字体没有基本拉丁字母和数字 (A-Z、a-z、0-9)：英文文字会以手机自带的字体显示。",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "这个字体没有轮廓（没有 glyf、CFF 或 CFF2 表）：可能是纯位图字体。",
-"This font is being installed, applied or saved. Wait for it to finish.": "正在安装、应用或保存这个字体。请等待完成。",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "正在重新制作、安装、应用或保存这个字体。请等待完成。",
 "This font is being made again. Wait for it to finish, then save it.": "正在重新制作这个字体。请等待完成后再保存。",
 "This font is being made again. Wait for it to finish.": "正在重新制作这个字体。请等待完成。",
 "This font is busy. Wait for it to finish.": "这个字体正忙。请等待完成。",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "未找到这部手机的表情符号字体文件。",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "这部手机的表情符号已由 Google Play 服务更新，替换功能无法安全地替换已更新的表情符号。它不能在这部手机上运行。",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "这个可变字体用可变组件 (VARC) 构建字形，应用无法据此制作固定字体。",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "这个可变字体会将其轴相互映射（avar 版本 2）。应用会像 HarfBuzz 一样应用该映射，因此其字重可能与不这样做的应用略有不同。"
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "这个可变字体会将其轴相互映射（avar 版本 2）。应用会像 HarfBuzz 一样应用该映射，因此其字重可能与不这样做的应用略有不同。",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "表情符号在这个字体中会过大。请选择其他表情符号字体，或将表情符号设为无。",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "这个字体的字形太多，少数包含 U+FE0F 的表情符号序列可能显示为分开的表情符号。",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "此字体文件已损坏，或使用了本应用无法读取的内容。请选择其他表情符号字体。",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "此字体过于复杂，本应用无法将其表情符号放入字体中。请选择其他表情符号字体。"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

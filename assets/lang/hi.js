@@ -5506,8 +5506,6 @@ x: {
 "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular.": "इस फ़ॉन्ट में मोटाई का अक्ष नहीं है, इसलिए यह बोल्ड रेगुलर जैसा दिखेगा। कोई नहीं के साथ Android रेगुलर फ़ॉन्ट से बोल्ड टेक्स्ट बनाता है।",
 "This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font.": "इस फ़ॉन्ट में बुनियादी लैटिन अक्षर और अंक (A-Z, a-z, 0-9) नहीं हैं: अंग्रेज़ी टेक्स्ट फ़ोन के अपने फ़ॉन्ट में दिखेगा।",
 "This font has no outlines (no glyf, CFF or CFF2 table): it may be a bitmap-only font.": "इस फ़ॉन्ट में आउटलाइन नहीं हैं (कोई glyf, CFF या CFF2 टेबल नहीं): यह सिर्फ़ बिटमैप वाला फ़ॉन्ट हो सकता है।",
-"This font is being installed, applied or saved. Wait for it to finish.": "यह फ़ॉन्ट इंस्टॉल, लागू या सेव हो रहा है। उसके पूरा होने तक इंतज़ार करें।",
-"This font is being made again, installed, applied or saved. Wait for it to finish.": "यह फ़ॉन्ट फिर से बन रहा है, इंस्टॉल, लागू या सेव हो रहा है। उसके पूरा होने तक इंतज़ार करें।",
 "This font is being made again. Wait for it to finish, then save it.": "यह फ़ॉन्ट फिर से बन रहा है। उसके पूरा होने तक इंतज़ार करें, फिर उसे सेव करें।",
 "This font is being made again. Wait for it to finish.": "यह फ़ॉन्ट फिर से बन रहा है। उसके पूरा होने तक इंतज़ार करें।",
 "This font is busy. Wait for it to finish.": "यह फ़ॉन्ट व्यस्त है। उसके पूरा होने तक इंतज़ार करें।",
@@ -5530,7 +5528,11 @@ x: {
 "This phone's emoji font file was not found.": "इस फ़ोन की इमोजी फ़ॉन्ट फ़ाइल नहीं मिली।",
 "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.": "इस फ़ोन के इमोजी Google Play सेवाओं ने अपडेट किए हैं, और यह बदलाव अपडेट किए गए इमोजी को सुरक्षित रूप से नहीं बदल सकता। यह इस फ़ोन पर नहीं चलता।",
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "यह वेरिएबल फ़ॉन्ट अपने ग्लिफ़ वेरिएबल कंपोनेंट (VARC) से बनाता है, जिनसे ऐप फ़िक्स्ड फ़ॉन्ट नहीं बना सकता।",
-"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "यह वेरिएबल फ़ॉन्ट अपने अक्षों को एक-दूसरे पर मैप करता है (avar वर्शन 2)। ऐप यह मैपिंग HarfBuzz की तरह लागू करता है, इसलिए इसकी मोटाइयां उन ऐप्स से थोड़ी अलग दिख सकती हैं जो ऐसा नहीं करते।"
+"This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "यह वेरिएबल फ़ॉन्ट अपने अक्षों को एक-दूसरे पर मैप करता है (avar वर्शन 2)। ऐप यह मैपिंग HarfBuzz की तरह लागू करता है, इसलिए इसकी मोटाइयां उन ऐप्स से थोड़ी अलग दिख सकती हैं जो ऐसा नहीं करते।",
+"The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "इस फ़ॉन्ट के लिए इमोजी बहुत बड़े हो जाएँगे। कोई दूसरा इमोजी फ़ॉन्ट चुनें, या इमोजी को कोई नहीं पर सेट करें।",
+"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "फ़ॉन्ट में इतने ग्लिफ़ हैं कि U+FE0F वाले कुछ इमोजी सीक्वेंस अलग-अलग इमोजी के रूप में दिख सकते हैं।",
+"This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "यह फ़ॉन्ट फ़ाइल खराब है, या उसमें ऐसा कुछ है जिसे ऐप नहीं पढ़ सकता। कोई दूसरा इमोजी फ़ॉन्ट चुनें।",
+"This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "यह फ़ॉन्ट इतना जटिल है कि ऐप इसके इमोजी को फ़ॉन्ट के अंदर नहीं रख सकता। कोई दूसरा इमोजी फ़ॉन्ट चुनें।"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],

@@ -1,7 +1,7 @@
 // v7.17.0 Custom Fonts: what goes wrong outside a build, in the page's words with Java's details kept. Emoji downloads: a file no longer at its
 // address (HTTP 404, "Update the app") told apart from a server that answered 503 (try later), a network failure with its detail, and a zip without
 // the font (its name kept). My fonts: pm's Failure line after "The phone did not install the font:", pm's answer over several lines (an exception and
-// its trace, for an install and an uninstall) kept whole on one line, and the bridge's busy refusals (an Export while the font is installed, a second
+// its trace, for an install and an uninstall) kept whole on one line, and the bridge's busy refusals (an Export while the font is made again, a second
 // save screen). The font changer: the lock that names the system user (UID 1000) and root (UID 0), a SamsungFonts script's ERROR line ("cannot put
 // DroidSans.ttf in place.") as a sentence of the page, and a sans.loc read back over two lines. System emoji: the root-only lock. In German the HTTP status
 // stays in the sentence; in Arabic the build's warnings run right to left, each line in its own direction and indented at its own start.
@@ -84,11 +84,11 @@ const download = async (page, id) => { await page.click('#fntEmo_' + id + ' .op-
     await page.waitForTimeout(200);
     const fx = await txt(page, '#fntLib_c4d5e6 .fnt-err');
     check('   a failure whose message runs over two lines keeps the page\'s lead and both lines', fx === 'The font could not be installed: line one line two', fx);
-    await refuse(page, 'fontMakerExport', { code: 'busy', error: 'This font is being installed, applied or saved. Wait for it to finish.' });
+    await refuse(page, 'fontMakerExport', { code: 'busy', error: 'This font is being made again. Wait for it to finish, then save it.' });
     await page.evaluate(() => [...document.querySelectorAll('#fntLib_f1a2b3 .mode-action-btn')].find(x => x.textContent === 'Export').click());
     await page.waitForTimeout(100);
     const busy = await txt(page, '#fntLib_f1a2b3 .fnt-err');
-    check('   a busy Export: the bridge\'s reason; Export stays on (no save screen opened)', busy === 'This font is being installed, applied or saved. Wait for it to finish.'
+    check('   a busy Export: the bridge\'s reason; Export stays on (no save screen opened)', busy === 'This font is being made again. Wait for it to finish, then save it.'
       && await page.evaluate(() => [...document.querySelectorAll('#fntLib_f1a2b3 .mode-action-btn')].find(x => x.textContent === 'Export').disabled === false), busy);
     await refuse(page, 'fontMakerExport', { code: 'busy', error: 'The save screen is already open.' });
     await page.evaluate(() => [...document.querySelectorAll('#fntLib_c4d5e6 .mode-action-btn')].find(x => x.textContent === 'Export').click());
