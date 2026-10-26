@@ -141,6 +141,10 @@ public final class EmojiMerge {
             if (lsb < -32768 || lsb > 32767) throw tooBig();
             mm.lsb[i] = (int) lsb;
         }
+        // U+FE0F's glyph takes no room. Renderers hide U+FE0F itself, but not the U+FE0F glyph the restore lookup puts back after a key
+        // where a ZWNJ or one joiner too many then stops the ligature that would take it (it keeps the key's character)
+        Integer fe0f = maps.emoji.get(EmojiData.EMOJI_SELECTOR);
+        if (fe0f != null && onlyFor(map, fe0f + n, EmojiData.EMOJI_SELECTOR)) mm.advance[fe0f + n] = 0;
         mm.write(out, all);
         step(p, 600);
 
@@ -156,6 +160,12 @@ public final class EmojiMerge {
         verify(out, total, map, sub(p, 900, TOTAL));
         step(p, TOTAL);
         return r;
+    }
+
+    /** Whether no character but {@code cp} (perhaps not even it) has glyph {@code g} in {@code map}. */
+    static boolean onlyFor(Map<Integer, Integer> map, int g, int cp) {
+        for (Map.Entry<Integer, Integer> e : map.entrySet()) if (e.getValue() == g && e.getKey() != cp) return false;
+        return true;
     }
 
     static Sfnt.FontException tooMany(int n, int m) {

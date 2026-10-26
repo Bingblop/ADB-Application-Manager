@@ -375,11 +375,11 @@ run NotoSans-kern.ttf Latn 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 18 16 19 1 1
 run NotoSans-kern.ttf Zyyy 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 18 16 19 1 125 1 124 1 89 114 1 106 122
 run NotoSans-kern.ttf Zyyy AB BB 20 A1 BF 20 A7 B6 20 B0 20 B1 20 D7 20 F7 : 107 123 1 97 127 1 103 118 1 112 1 113 1 151 1 183
 verified Lato-sub+Noto-sub.ttf f1a8a2195fb5349b9739faffa02274e2838131cdbf433fdbe1fb06bc9c7a782c
-verified Lato-sub+Twemoji-sub.ttf c597c7c6b72dbab8cbbc022243ce46ab3f58ff74dc48ac4c63307daf3b06ebef
+verified Lato-sub+Twemoji-sub.ttf f66dceb2eb876930a2cd8d5cb4cfbaa3581bdf4464aa7346fabb61acbce4191e
 verified Inter-sub+Noto-sub.ttf 756bba15de9829ba0a04adaf4c5def8759ff55265aada549338e2a6f07c1cc89
-verified Inter-sub+Twemoji-sub.ttf e4e546bc90c212b788790da8365e8daf1f098d215acf5d4d0d7c651a3314d270
+verified Inter-sub+Twemoji-sub.ttf 8c28b4edc1780a045cb379e1d6b818de637ae283f2817b8590be997a2f8df740
 verified NotoSans-kern+Noto-sub.ttf 9eb642eb2d3b84bb8d13fe0e2d1582bfa78b2f261438ad1831b6ac7f224d7363
-verified NotoSans-kern+Twemoji-sub.ttf 2f323dc708cb573e46ebbecb8d49823ec5eca445e9b58a886fc6007bb7bd664d
+verified NotoSans-kern+Twemoji-sub.ttf 566ea00aaa33db70a996d4ac3c82c30dfc0b8f6bedc3e976a2898232c054580b
 verified Inter-sub+Synth-COLRv1.ttf f3b71128265e3c47b230b86d4c948b887af794a75a7e0da724fb05033d222711
 verified NotoSans-kern+Synth-COLRv1.ttf 951c05288a58e2d7f14b32b92efe945d79d641d6d4350717bc1e1b45ee372f0c
 verified Lato-sub+Synth-COLRv0.ttf 46f0284819c93ab1dab4d7c7f64613f078c0e5409561b0485a0151f9fd8fb148

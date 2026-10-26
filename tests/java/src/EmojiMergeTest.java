@@ -803,6 +803,7 @@ public class EmojiMergeTest {
       section("COLR v1", EmojiMergeTest::colrV1);
       section("COLR v0", EmojiMergeTest::colrV0);
       section("glyph classes", EmojiMergeTest::glyphClasses);
+      section("U+FE0F left after a key", EmojiMergeTest::strayFe0f);
       section("the text font's variation sequences", () -> textSequences(ex));
       section("options", () -> options(ex));
       section("refusals", EmojiMergeTest::refusals);
@@ -951,6 +952,10 @@ public class EmojiMergeTest {
         + "components moved past the text glyphs", bad == 0, bad + " differ, first " + first);
 
     Glyf.Metrics tm = Glyf.Metrics.read(T), em = Glyf.Metrics.read(E), mm = Glyf.Metrics.read(M);
+    // U+FE0F's glyph advances 0 (unless another character shows it): the restore lookup can leave it after a key, where nothing hides it
+    Integer fe0f = ecmap0.get(0xFE0F);
+    if (fe0f != null && !EmojiMerge.onlyFor(Cmap.read(M, null), fe0f + n, 0xFE0F)) fe0f = null;
+    if (fe0f != null) check(name + ": U+FE0F's glyph advances 0 (the emoji font's: " + em.advance[fe0f] + ")", mm.advance[fe0f + n] == 0, "advance " + mm.advance[fe0f + n]);
     bad = 0;
     for (int j = 0; j < dupOf.length; j++) {
       int d = base + j, g = Math.max(0, dupOf[j]);
@@ -962,13 +967,13 @@ public class EmojiMergeTest {
     for (int i = 0; i < base; i++) {
       int src = i < n ? -1 : i < n + m ? i - n : copies[i - n - m];
       boolean kept = i >= n + m || (src >= 0 && targets.get(src) && copyOf[src] < 0);
-      long adv = src < 0 ? tm.advance[i] : kept ? em.advance[src] : Math.round(em.advance[src] * s);
+      long adv = src < 0 ? tm.advance[i] : fe0f != null && i == fe0f + n ? 0 : kept ? em.advance[src] : Math.round(em.advance[src] * s);
       int[] bb = Glyf.headerBounds(mg[i]), ob = src < 0 ? null : Glyf.headerBounds(eg[src]);
       long gap = ob == null ? 0 : ob[0] - em.lsb[src];                    // xMin - lsb, which renderers move the glyph left by
       long lsb = src < 0 ? tm.lsb[i] : bb == null ? 0 : bb[0] - (kept ? gap : Math.round(gap * s));
       if ((mm.advance[i] != adv || mm.lsb[i] != lsb) && bad++ == 0) first = "glyph " + i + ": advance " + mm.advance[i] + " lsb " + mm.lsb[i] + ", want " + adv + " " + lsb;
     }
-    check(name + ": hmtx: the text advances as they were, the emoji ones times s (rounded), left side bearings from the outlines less the "
+    check(name + ": hmtx: the text advances as they were, the emoji ones times s (rounded; U+FE0F's 0), left side bearings from the outlines less the "
         + "emoji font's xMin - lsb (times s)", bad == 0,
         bad + " differ, first " + first);
 
@@ -1395,6 +1400,50 @@ public class EmojiMergeTest {
         && Arrays.equals(M.table("prep"), T.table("prep")) && Arrays.equals(M.table("cvt "), T.table("cvt ")));
     Glyf.Metrics mm = Glyf.Metrics.read(M);
     check(name + ": advances 2048 -> 2000, 2047 -> 1999, 1801 -> 1759", mm.advance[n + 5] == 2000 && mm.advance[n + 6] == 1999 && mm.advance[n + 3] == 1759);
+  }
+
+  /**
+   * Twemoji with its [U+2695 U+FE0F] ligature turned off, so that only [1F468 200D 2695 FE0F] names U+2695 before U+FE0F: the restore rule
+   * of its key then has the man and the joiner before it. HarfBuzz matches those passing over a ZWNJ, the ligature not: U+FE0F's glyph is
+   * left after U+2695, as a glyph that nothing hides. It takes no room, so the run is as wide as with the emoji font alone.
+   */
+  static void strayFe0f() throws Exception {
+    Sfnt E = font(TWEMOJI);
+    TreeMap<Integer, Integer> ecmap = Cmap.read(E, null);
+    int c = ecmap.get(0x2695), f = ecmap.get(0xFE0F), off = 0;
+    byte[] gsub = E.table("GSUB").clone();
+    for (OtLayout.Lookup l : OtLayout.parse(gsub, true).lookups) {
+      if (l.type != 4) continue;
+      for (OtLayout.Subtable st : l.subtables) {
+        int k = cov(gsub, st.offset + u16(gsub, st.offset + 2), c);
+        if (k < 0) continue;
+        int set = st.offset + u16(gsub, st.offset + 6 + 2 * k);
+        for (int i = 0; i < u16(gsub, set); i++) {
+          int lig = set + u16(gsub, set + 2 + 2 * i);
+          // the second component becomes the ligature glyph itself, which no character gives (.notdef would match a ZWNJ Twemoji lacks)
+          if (u16(gsub, lig + 2) == 2 && u16(gsub, lig + 4) == f) { Sfnt.w16(gsub, lig + 4, u16(gsub, lig)); off++; }
+        }
+      }
+    }
+    check("Twemoji's [2695 FE0F] ligature is turned off", off == 1, off + " ligatures");
+    E.put("GSUB", gsub);
+    Sfnt T = font(LATO), M = Sfnt.parse(EmojiMerge.merge(T, E, null).font.toBytes());
+    int n = T.numGlyphs();
+    Shaper sm = new Shaper(M), se = new Shaper(E);
+    Glyf.Metrics mm = Glyf.Metrics.read(M);
+    String[] seqs = { "1F468 200D 2695 FE0F", "1F468 200C 200D 2695 FE0F", "1F468 200D 200C 2695 FE0F", "2695 FE0F 200C 1F468" };
+    int[] left = { 0, 1, 1, 0 };
+    for (int k = 0; k < seqs.length; k++) {
+      int[] want = shifted(se.shape(cps(seqs[k]), "Zyyy"), n), got = sm.shape(cps(seqs[k]), "Zyyy");
+      List<Integer> rest = new ArrayList<>();
+      int strays = 0;
+      long wide = 0, wideWant = 0;
+      for (int g : got) { wide += mm.advance[g]; if (g == f + n) strays++; else rest.add(g); }
+      for (int g : want) wideWant += mm.advance[g];
+      check(seqs[k] + ": the emoji font's glyphs (+N)" + (left[k] > 0 ? " and U+FE0F's glyph, which takes no room" : ""),
+          Arrays.equals(toArray(rest), want) && strays == left[k] && wide == wideWant,
+          Arrays.toString(got) + " (" + wide + " wide), want " + Arrays.toString(want) + " (" + wideWant + ")");
+    }
   }
 
   static void glyphClasses() throws Exception {
