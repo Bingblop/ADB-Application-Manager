@@ -785,6 +785,22 @@ public class FontLibraryTest {
         return s.substring(at);
     }
 
+    /** Each synchronized (lock) block in s: where it starts and where it ends. */
+    static List<int[]> lockedRegions(String s, String lock) {
+        List<int[]> out = new ArrayList<int[]>();
+        String head = "synchronized (" + lock + ") {";
+        for (int at = s.indexOf(head); at >= 0; at = s.indexOf(head, at + 1)) out.add(new int[] { at, at + body(s.substring(at), head).length() });
+        return out;
+    }
+
+    /** True when the whole of a block (a method's body, a run()'s) is one synchronized (lock) block. */
+    static boolean wholeUnder(String block, String lock) {
+        int open = block.indexOf('{');
+        if (open < 0) return false;
+        String inner = block.substring(open + 1).trim(), head = "synchronized (" + lock + ") {";
+        return inner.startsWith(head) && inner.substring(body(inner, head).length()).trim().equals("}");
+    }
+
     static void bridgeScan() throws Exception {
         String ma = src("src/com/bloatware/bingblop/MainActivity.java");
         if (ma == null) { is("MainActivity.java is found", false, true); return; }
@@ -927,9 +943,27 @@ public class FontLibraryTest {
         is("…then the record goes, and the staged copy is deleted and read back", sysUndo.indexOf("fmkRemoveStaged(") > sysUndo.indexOf("FontLibrary.clearSwap(d)")
                 && sysUndo.contains(".put(\"copyRemoved\", removed)"), true);
         String sysStatus = body(ma, "private JSONObject fmkSysStatus(");
-        is("status finds a swap without a record, says why a swap is blocked, and deletes the copies nothing is bound from",
-                sysStatus.contains("fmkMounts(backend)") && sysStatus.contains("m.showing()") && sysStatus.contains(".put(\"blocked\"")
-                        && sysStatus.contains("if (s == null && m.readable && m.targets.isEmpty()) fmkRemoveStaged("), true);
+        is("status finds a swap without a record and says why a swap is blocked",
+                sysStatus.contains("fmkMounts(backend)") && sysStatus.contains("m.showing()") && sysStatus.contains(".put(\"blocked\""), true);
+        is("…and only reads: no copy deleted, nothing taken off, no record changed (R-PRIV-1)", sysStatus.contains("fmkRemoveStaged(") || sysStatus.contains("fmkTakeOff(")
+                || sysStatus.contains("fmkRun(") || sysStatus.contains("clearSwap(") || sysStatus.contains("writeSwap("), false);
+        // each window has a fontPrivExec of its own: the system emoji's steps are one at a time in the whole process, so a status, an Undo or a
+        // copy's delete in one window never runs while another window's Apply stages or binds (R-PRIV-1)
+        is("the system emoji's lock belongs to the process", ma.contains("private static final Object fmkSysLock = new Object();"), true);
+        for (String step : new String[] { "fmkSysStatus", "fmkSysApply", "fmkSysUndo" })
+            is("the whole of " + step + " holds fmkSysLock", wholeUnder(body(ma, "private JSONObject " + step + "("), "fmkSysLock"), true);
+        is("…and the whole of the staged copy's delete after an emoji font's", wholeUnder(body(body(ma, "private void fmkDropStaged("), "public void run()"), "fmkSysLock"), true);
+        List<int[]> sysLocked = lockedRegions(ma, "fmkSysLock");
+        for (String call : new String[] { "fmkRemoveStaged(backend", "fmkTakeOff(backend", "SamsungFonts.stageEmojiScript(", "SamsungFonts.emojiSwapScript(" }) {
+            int seen = 0;
+            for (int at = ma.indexOf(call); at >= 0; at = ma.indexOf(call, at + 1)) {
+                seen++;
+                boolean in = false;
+                for (int[] r : sysLocked) in |= at > r[0] && at < r[1];
+                is("…" + call + " #" + seen + " runs under fmkSysLock", in, true);
+            }
+            is("…" + call + " is found", seen > 0, true);
+        }
         is("deleting an emoji font deletes its staged copy, with the root user on", body(ma, "public String emojiDelete(").contains("fmkDropStaged(id)")
                 && body(ma, "private void fmkDropStaged(").contains("fmkGate(true)") && body(ma, "private void fmkDropStaged(").contains("fmkRemoveStaged(backend"), true);
         is("the staged copies are removed by the script that checks the mount table", body(ma, "private boolean fmkRemoveStaged(").contains("SamsungFonts.removeStagedScript("), true);
