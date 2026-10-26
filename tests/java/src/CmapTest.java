@@ -99,8 +99,8 @@ public class CmapTest {
 
   /** expected.txt: see make_fixtures.py. */
   static final class Expected {
-    String emojiVersion, emojiSha;
-    int emojiCount;
+    String emojiVersion, emojiSha, variationVersion, variationSha;
+    int emojiCount, variationCount;
     final Map<String, String[]> fonts = new HashMap<>();   // file SHA-256 -> the font line's words
     final Map<String, String> built = new HashMap<>();     // case -> SHA-256 of the table
 
@@ -110,6 +110,7 @@ public class CmapTest {
         if (l.isEmpty() || l.startsWith("#")) continue;
         String[] w = l.split(" ");
         if (w[0].equals("emoji")) { e.emojiVersion = w[1]; e.emojiCount = Integer.parseInt(w[2]); e.emojiSha = w[3]; }
+        else if (w[0].equals("variation")) { e.variationVersion = w[1]; e.variationCount = Integer.parseInt(w[2]); e.variationSha = w[3]; }
         else if (w[0].equals("font")) e.fonts.put(w[2], w);
         else if (w[0].equals("built")) e.built.put(w[1], w[2]);
       }
@@ -743,6 +744,12 @@ public class CmapTest {
     for (int c = 0; c <= Cmap.MAX_CP; c++) if (EmojiData.isEmojiPresentation(c)) { s.append(Integer.toHexString(c).toUpperCase()).append('\n'); n++; }
     check("EmojiData's Emoji_Presentation is Unicode " + ex.emojiVersion + "'s (" + ex.emojiCount + " code points, the list's hash)",
         n == ex.emojiCount && shaText(s.toString()).equals(ex.emojiSha) && ex.emojiVersion.equals(EmojiData.UNICODE_VERSION), n + " code points");
+    StringBuilder v = new StringBuilder();
+    int k = 0;
+    for (int c = 0; c <= Cmap.MAX_CP; c++) if (EmojiData.hasEmojiVariation(c)) { v.append(Integer.toHexString(c).toUpperCase()).append('\n'); k++; }
+    check("EmojiData's emoji variation sequences are Unicode " + ex.variationVersion + "'s (" + ex.variationCount + " characters with U+FE0F, the list's hash)",
+        ex.variationSha != null && k == ex.variationCount && shaText(v.toString()).equals(ex.variationSha) && ex.variationVersion.equals(EmojiData.UNICODE_VERSION),
+        k + " characters");
   }
 
   static void emojiRules() {
@@ -754,13 +761,21 @@ public class CmapTest {
     for (int c : new int[] { 0x20, 0x23, 0x2A, 0x30, 0x39, 0x41, 0x7A, 0xA9, 0xAE, 0xE9, 0xFF, 0x2E, 0x21 }) text &= EmojiData.textAlwaysWins(c) && !EmojiData.emojiWins(c);
     check("space, # * 0-9, (c) (R), letters, punctuation, Latin-1: the text font's glyph always", text);
     boolean emoji = true;
-    for (int c : new int[] { 0x1F600, 0x1F3FB, 0x1F3FF, 0x1F1E6, 0x1F1FF, 0x200D, 0xFE0F, 0x20E3, 0xE0020, 0xE007F, 0x1F000, 0x1FFFF, 0x231A, 0x2705, 0x1F170 })
+    for (int c : new int[] { 0x1F600, 0x1F3FB, 0x1F3FF, 0x1F1E6, 0x1F1FF, 0xFE0F, 0x20E3, 0xE0020, 0xE007F, 0x1F000, 0x1FFFF, 0x231A, 0x2705, 0x1F170 })
       emoji &= EmojiData.emojiWins(c);
-    check("emoji presentation, skin tones, flags, ZWJ, VS16, keycap, tags, U+1F000..1FFFF: the emoji font's glyph", emoji);
+    check("emoji presentation, skin tones, flags, VS16, keycap, tags, U+1F000..1FFFF: the emoji font's glyph", emoji);
     boolean neither = true;
-    for (int c : new int[] { 0x2764, 0x263A, 0x2640, 0xFE0E, 0x2122, 0x2190, 0x3030, 0xE0080, 0x20000, 0xF0000, 0x10FFFF, 0x1EFFF, 0x2014 })
+    for (int c : new int[] { 0x2764, 0x263A, 0x2640, 0x200D, 0xFE0E, 0x2122, 0x2190, 0x3030, 0xE0080, 0x20000, 0xF0000, 0x10FFFF, 0x1EFFF, 0x2014 })
       neither &= !EmojiData.emojiWins(c) && !EmojiData.textAlwaysWins(c);
-    check("text-default emoji (heart, smiley, female sign), VS15, arrows, CJK and private use planes: the text font's when it has one", neither);
+    check("text-default emoji (heart, smiley, female sign), ZWJ (the text font's own rules name it), VS15, arrows, CJK and private use "
+        + "planes: the text font's when it has one", neither);
+    boolean vs = true;
+    for (int c : new int[] { 0x23, 0x2A, 0x30, 0x39, 0xA9, 0xAE, 0x2764, 0x263A, 0x2640, 0x2642, 0x2122, 0x2194, 0x261D, 0x26F9, 0x1F3F3, 0x1F321, 0x231A, 0x1F6F3 })
+      vs &= EmojiData.hasEmojiVariation(c);
+    for (int c : new int[] { 0x20, 0x41, 0x2190, 0x200D, 0xFE0F, 0x20E3, 0x1F600, 0x1F3FB, 0x1F1E6, 0x1F7E0, 0x1F6F4, -1, 0x110000 })
+      vs &= !EmojiData.hasEmojiVariation(c);
+    check("emoji variation sequences: # * 0-9 (c) (R), heart, smiley, gender signs, (TM), arrows, white flag, watch; not letters, ZWJ, the "
+        + "selectors, the keycap mark, grinning face, skin tones, flag letters", vs);
   }
 
   // ---------- fuzz ----------

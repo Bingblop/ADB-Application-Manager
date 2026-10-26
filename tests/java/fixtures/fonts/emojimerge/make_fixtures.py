@@ -20,12 +20,14 @@ Needs fontTools (4.67), uharfbuzz (0.57, HarfBuzz 15) and freetype-py (FreeType 
       checks those fonts against their two sources (the checks of `check` below, with the SEQUENCES instead of emoji-test.txt) and records
       the SHA-256 of each one that passed in expected.txt; the suite notes a merged font whose hash is not there
   make_fixtures.py check TEXT EMOJI MERGED --emoji-test FILE
-      the same checks on full fonts merged at dev time, with every sequence of Unicode's emoji-test.txt: HarfBuzz shapes each sequence as
-      the emoji font alone (its glyph ids + the text font's glyph count; each glyph advancing by the emoji font's own hmtx advance times s,
-      as the merge leaves an emoji GPOS out), every character of the emoji font alone, with U+FE0F and with U+FE0E as the rules say, every
-      text character and text run as the text font alone, sequences in 12 scripts (right to left in Arabic and Hebrew); fontTools reads
-      every table and glyph; FreeType walks the COLR v0 layers (and renders them) or the COLR v1 paint graph and clip boxes; HarfBuzz
-      rasterizes colour glyphs of both fonts at 128 px and compares the pixels
+      the same checks on full fonts merged at dev time, with every sequence of Unicode's emoji-test.txt (and, for each base + skin tone,
+      base U+FE0F skin tone, which keyboards send too): HarfBuzz shapes each sequence as the emoji font alone (its glyph ids + the text
+      font's glyph count; each glyph advancing by the emoji font's own hmtx advance times s, as the merge leaves an emoji GPOS out), every
+      character of the emoji font alone, with U+FE0F and with U+FE0E as the rules say, every text character and text run as the text font
+      alone, Indic conjuncts made with U+200D as the text font alone (where it has their characters), sequences in 12 scripts (right to
+      left in Arabic and Hebrew); the merged cmap has (c, U+FE0F) with an emoji glyph for each character the emoji font maps that comes
+      before U+FE0F in a sequence; fontTools reads every table and glyph; FreeType walks the COLR v0 layers (and renders them) or the COLR
+      v1 paint graph and clip boxes; HarfBuzz rasterizes colour glyphs of both fonts at 128 px and compares the pixels
 """
 import argparse, ctypes, hashlib, io, os, re, sys, tempfile, time
 
@@ -47,15 +49,15 @@ REPO = os.path.abspath(os.path.join(HERE, "..", "..", "..", "..", ".."))
 EXPECTED = os.path.join(HERE, "expected.txt")
 EMOJIDATA = os.path.join(REPO, "src", "com", "bloatware", "bingblop", "EmojiData.java")
 
-# The sequences the suite shapes: plain emoji, VS16 / VS15 forms, keycaps, skin tones, ZWJ sequences (fully and minimally qualified), flags,
-# subdivision flags, text-default characters alone and with a selector
+# The sequences the suite shapes: plain emoji, VS16 / VS15 forms, keycaps, skin tones (also after U+FE0F, as keyboards send them), ZWJ
+# sequences (fully and minimally qualified), flags, subdivision flags, text-default characters alone and with a selector
 SEQUENCES = """
 1F600; 1F44D; 1F44D 1F3FD; 2764; 2764 FE0F; 2764 FE0E; 263A; 263A FE0F; A9; A9 FE0F; A9 FE0E; AE FE0F; 2122; 2122 FE0F; 2122 FE0E;
 2194; 2194 FE0F; 2194 FE0E; 23 FE0F 20E3; 31 FE0F 20E3; 31 20E3; 2A FE0F 20E3; 31; 31 FE0F; 1F468 200D 1F469 200D 1F467 200D 1F466;
 1F469 200D 1F4BB; 1F469 1F3FD 200D 2695 FE0F; 1F469 1F3FD 200D 2695; 1F3C3 200D 2640 FE0F; 1F3C3 200D 2640; 1F642 200D 2194 FE0F;
 1F642 200D 2194; 1F1FA 1F1F8; 1F1EF 1F1F5; 1F1FA; 1F3F4 E0067 E0062 E0065 E006E E0067 E007F; 1F3F4 E0067 E0062 E0073 E0063 E0074 E007F;
-1F3F4 E0067 E007F; 1F3F4; 2764 FE0F 200D 1F525; 2764 200D 1F525; 261D 1F3FD; 261D; 2640; 2640 FE0F; 2B50; 1F3F3 FE0F 200D 1F308;
-1F600 1F44D 1F3FF
+1F3F4 E0067 E007F; 1F3F4; 2764 FE0F 200D 1F525; 2764 200D 1F525; 261D 1F3FD; 261D FE0F 1F3FD; 261D; 2640; 2640 FE0F; 2B50;
+1F3F3 FE0F 200D 1F308; 1F600 1F44D 1F3FF
 """
 SYNTH_SEQUENCES = """
 1F7E0; 1F7E0 1F7E0; 1F7E0 302 1F7E0; 1F7E1; 1F7E2; 1F7E3; 1F7E3 302; 1F7E4; 1F7E4 302; 1F7E5; 1F7E6; 1F7E7; 1F7E7 FE0F; 1F7E0 200D 1F7E1
@@ -410,22 +412,27 @@ def cmd_expect(a):
 # ---------------------------------------------------------------------------------------------------------------------------------------
 # the checks on a merged font (verify, check)
 
-def presentation_ranges():
+def java_ranges(table):
     src = open(EMOJIDATA, encoding="utf-8").read()
-    body = src[src.index("PRESENTATION = {") + len("PRESENTATION = {"):]
+    body = src[src.index(table + " = {") + len(table + " = {"):]
     body = body[:body.index("};")]
     vals = [int(x, 16) for x in re.findall(r"0x([0-9A-Fa-f]+)", body)]
     return [(vals[i], vals[i + 1]) for i in range(0, len(vals), 2)]
 
 
 class Rules:
-    """EmojiData.emojiWins and EmojiMerge's emoji bases, from the Java source's table."""
+    """EmojiData.emojiWins, EmojiData.hasEmojiVariation and EmojiMerge's emoji bases, from the Java source's tables."""
     def __init__(self):
-        self.ranges = presentation_ranges()
+        self.ranges = java_ranges("PRESENTATION")
+        self.variation = java_ranges("VARIATION")
+
+    def has_variation(self, cp):
+        return any(a <= cp <= b for a, b in self.variation)
 
     def emoji_wins(self, cp):
+        # not U+200D: the merged font keeps the text font's joiner, which the text font's own rules name (see CONJUNCTS)
         if 0 <= cp <= 0xFF: return False
-        return (any(a <= cp <= b for a, b in self.ranges) or 0x1F000 <= cp <= 0x1FFFF or cp in (0x200D, 0xFE0F, 0x20E3)
+        return (any(a <= cp <= b for a, b in self.ranges) or 0x1F000 <= cp <= 0x1FFFF or cp in (0xFE0F, 0x20E3)
                 or 0xE0020 <= cp <= 0xE007F)
 
     @staticmethod
@@ -626,6 +633,12 @@ def pixel_diff(a, b):
 SCRIPTS = [(None, None), ("latn", "en"), ("arab", "ar"), ("deva", "hi"), ("beng", "bn"), ("khmr", "km"), ("mymr", "my"), ("bali", None),
            ("cyrl", "ru"), ("hani", "zh"), ("hebr", "he"), ("thai", "th"), ("hang", "ko")]
 RTL = ("arab", "hebr", "syrc")
+# Conjuncts made with U+200D that a text font's own rules name its joiner in (eyelash ra, old-style chillu, yansaya ...), and two that
+# HarfBuzz makes from the joiner's Unicode category alone (half ka, ya-phala)
+CONJUNCTS = [("deva", "mr", "eyelash ra", [0x930, 0x94D, 0x200D, 0x92F]), ("deva", "hi", "half ka", [0x915, 0x94D, 0x200D, 0x937]),
+             ("mlym", "ml", "chillu n", [0xD28, 0xD4D, 0x200D]), ("mlym", "ml", "chillu l", [0xD32, 0xD4D, 0x200D]),
+             ("sinh", "si", "yansaya", [0xD9A, 0xDCA, 0x200D, 0xDBA]), ("sinh", "si", "rakaransaya", [0xD9A, 0xDCA, 0x200D, 0xDBB]),
+             ("sinh", "si", "touching", [0xD9A, 0x200D, 0xDCA, 0xD9B]), ("beng", "bn", "ya-phala", [0x9B0, 0x200D, 0x9CD, 0x9AF])]
 
 
 def compare(text_path, emoji_path, merged_path, seqs, render=40, show=6, script_sample=25):
@@ -708,6 +721,23 @@ def compare(text_path, emoji_path, merged_path, seqs, render=40, show=6, script_
                 tg, tp = T.shape(cps, script=script, lang=lang, features=ft, keep_ignorables=True)
                 mg, mp = M.shape(cps, script=script, lang=lang, features=ft, keep_ignorables=True)
                 note("text runs", tg == mg and tp == mp, "%r %s %s" % (r, ft, script))
+    for script, lang, what, cps in CONJUNCTS:
+        if any(c not in tcmap for c in cps): continue
+        tg, tp = T.shape(cps, script=script, lang=lang, keep_ignorables=True)
+        mg, mp = M.shape(cps, script=script, lang=lang, keep_ignorables=True)
+        note("text joiner", tg == mg and tp == mp, "%s %s: text %s merged %s" % (what, fmt(cps), tg, mg))
+
+    # Android takes (c, U+FE0F) from the first font whose cmap has the pair, else from the system emoji font: each character the emoji
+    # font maps that comes before U+FE0F in a sequence (and has a standardized emoji variation sequence: emoji-test.txt names no other)
+    # needs the pair, with an emoji glyph (or the copy that stands for one)
+    mcmap, mvs = mf.getBestCmap(), {}
+    for st in mf["cmap"].tables:
+        if st.format == 14:
+            for cp, gname in st.uvsDict.get(0xFE0F, []): mvs[cp] = gname or mcmap.get(cp)
+    for cp in sorted({c[i] for c in seqs for i in range(len(c) - 1) if c[i + 1] == 0xFE0F}):
+        if cp not in ecmap or cp not in mcmap or not rules.has_variation(cp): continue
+        g = mvs.get(cp)
+        note("FE0F entries", g is not None and mf.getGlyphID(g) >= N, "%04X: %s" % (cp, "none" if g is None else mf.getGlyphID(g)))
 
     alone_differs = {}
     for cps in [c for c in seqs if len(c) > 1][::max(1, len(seqs) // script_sample if len(seqs) > 200 else 1)]:
@@ -805,6 +835,8 @@ def cmd_check(a):
         line = line.split("#", 1)[0].strip()
         if line and ";" in line:
             seqs.append([int(c, 16) for c in line.split(";", 1)[0].split()])
+    # not in the file, but keyboards send them: base U+FE0F skin tone, for each base + skin tone
+    seqs += [[c[0], 0xFE0F, c[1]] for c in seqs if len(c) == 2 and 0x1F3FB <= c[1] <= 0x1F3FF]
     lines, problems = compare(a.text, a.emoji, a.merged, seqs, render=a.render, show=a.show)
     print("\n".join(lines))
     sys.exit(1 if problems else 0)

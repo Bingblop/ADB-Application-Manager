@@ -1,9 +1,11 @@
 package com.bloatware.bingblop;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -13,7 +15,8 @@ import java.util.TreeSet;
 
 /**
  * A colour emoji font merged into a text font, so the font package the Custom Fonts tab builds shows the chosen emoji wherever its text
- * font is used (Android draws a character with the first font that has it).
+ * font is used. Android draws a character with the first font that has it, but a character followed by U+FE0F only with a font whose
+ * cmap has that variation sequence, else with the system emoji font: so every emoji the merged font shows gets its (c, U+FE0F).
  *
  * <p>FontBuilder calls {@link #merge} for the Regular and the Bold face once the text font has TrueType outlines and no variations left.
  * Only COLR emoji (vector layers, version 0 or 1) can go inside a font: bitmap emoji (CBDT, sbix) are refused with code "bitmap_emoji". The
@@ -21,8 +24,8 @@ import java.util.TreeSet;
  * patched in place by that one constant. Outlines and advances are scaled from the emoji font's units per em to the text font's; a COLR
  * v1 emoji is scaled as a whole by a PaintTransform around its paint, so the glyphs only its paints draw keep the emoji font's units. The
  * text font keeps its glyphs, hinting, GPOS, kern and GDEF. Its characters keep their glyphs except where Unicode shows the emoji form
- * ({@link EmojiData#emojiWins}); variation sequences then give either form (U+FE0F the emoji glyph, U+FE0E the text glyph). The emoji
- * font's GSUB lookups (ZWJ sequences, flags, keycaps, skin tones) follow the text font's and are turned on in {@link #FEATURE} for every
+ * ({@link EmojiData#emojiWins}); variation sequences then give either form (U+FE0F the emoji glyph, U+FE0E the text glyph). U+200D keeps
+ * the text font's joiner, which the emoji sequences then name instead of their own ({@link #joiner}). The emoji font's GSUB lookups (ZWJ sequences, flags, keycaps, skin tones) follow the text font's and are turned on in {@link #FEATURE} for every
  * script ({@link OtLayout#merge}), behind a few lookups that give them the glyphs they expect (see {@link Front}). The input is untrusted:
  * every read is bounds-checked and a bad font ends in a {@link Sfnt.FontException}.
  * Pure Java, no Android classes.
@@ -91,35 +94,40 @@ public final class EmojiMerge {
         double s = Math.round(text.unitsPerEm() / (double) emoji.unitsPerEm() * o.scale * 65536) / 65536.0;
         step(p, 0);
         Maps maps = new Maps(text, emoji, p);
+        int[] zwj = joiner(maps, emoji, sub(p, 20, 30));
         byte[][] tg = Glyf.readAll(text), eg = Glyf.readAll(emoji);
         Colr scan = new Colr(emoji.table("COLR"), m, p);
         scan.walk();
         Layers ly = new Layers(eg, scan, maps, n, m, p);
-        int total = n + m + ly.copies.size();
-        if (total > 0xFFFF) throw tooMany(n, m + ly.copies.size());
-        step(p, 40);
+        Sfnt out = text.copy();
+        out.sfntVersion = Sfnt.TRUETYPE;
+        Result r = new Result(out, n, m, s);
+        TreeMap<Integer, Integer> map = new TreeMap<Integer, Integer>();
+        Front front = characters(maps, emoji, n, n + m + ly.copies.size(), zwj, out, map, r.warnings, p);
+        int total = front.dupBase + front.dups.size();
+        if (total > 0xFFFF) throw tooMany(n, total - n);
+        step(p, 60);
 
         // Outlines: the text glyphs as they are; the emoji glyphs without hints, their components moved past the text glyphs, scaled
-        // unless only COLR v1 paints draw them (the paints are scaled as a whole), then the emoji-units copies
+        // unless only COLR v1 paints draw them (the paints are scaled as a whole); then the emoji-units copies, and the copies some
+        // (c, U+FE0F) sequences map to (see characters())
         byte[][] all = new byte[total][];
         System.arraycopy(tg, 0, all, 0, n);
         for (int i = 0; i < m; i++) {
-            if ((i & 255) == 0) { FontProgress.Check.cancel(p); step(p, 40 + 460L * i / m); }
+            if ((i & 255) == 0) { FontProgress.Check.cancel(p); step(p, 60 + 440L * i / m); }
             all[n + i] = ly.kept(i) ? scaleGlyph(eg[i], n, m, 1.0, ly.copy) : scaleGlyph(eg[i], n, m, s, null);
         }
         for (int j = 0; j < ly.copies.size(); j++) all[n + m + j] = scaleGlyph(eg[ly.copies.get(j)], n, m, 1.0, ly.copy);
-        Sfnt out = text.copy();
-        out.sfntVersion = Sfnt.TRUETYPE;
+        for (int j = 0; j < front.dups.size(); j++) all[front.dupBase + j] = all[n + front.dups.get(j)];
         Glyf.write(out, all);
-        headBounds(out, all, n, ly);
-        Result r = new Result(out, n, m, s);
+        headBounds(out, all, n, m, ly);
         step(p, 560);
 
         Glyf.Metrics tm = Glyf.Metrics.read(text), em = Glyf.Metrics.read(emoji), mm = new Glyf.Metrics(total);
         System.arraycopy(tm.advance, 0, mm.advance, 0, n);
         System.arraycopy(tm.lsb, 0, mm.lsb, 0, n);
         for (int i = n; i < total; i++) {
-            int src = i < n + m ? i - n : ly.copies.get(i - n - m);
+            int src = i < n + m ? i - n : i < front.dupBase ? ly.copies.get(i - n - m) : front.dups.get(i - front.dupBase);
             boolean unscaled = ly.unscaled(i, n, m);
             long adv = unscaled ? em.advance[src] : Math.round(em.advance[src] * s);
             if (adv > 0xFFFF) throw tooBig();
@@ -134,10 +142,8 @@ public final class EmojiMerge {
         mm.write(out, all);
         step(p, 600);
 
-        TreeMap<Integer, Integer> map = new TreeMap<Integer, Integer>();
-        Front front = characters(maps, emoji, n, out, map, r.warnings, p);
-        layout(text, emoji, n, out, front, r.warnings, p);
-        out.put("COLR", scan.merged(n, s, ly.copy));
+        layout(text, emoji, n, total, out, front, r.warnings, p);
+        out.put("COLR", scan.merged(n, s, ly.copy, front.dups, front.dupBase));
         out.put("CPAL", emoji.table("CPAL").clone());
         step(p, 880);
 
@@ -156,9 +162,8 @@ public final class EmojiMerge {
     }
 
     /** head's bounds from the glyphs drawn at the text font's size: the emoji-units glyphs (inside COLR v1 paints) would make them too big. */
-    private static void headBounds(Sfnt out, byte[][] all, int n, Layers ly) throws Sfnt.FontException {
+    private static void headBounds(Sfnt out, byte[][] all, int n, int m, Layers ly) throws Sfnt.FontException {
         if (ly.keep.isEmpty()) return;
-        int m = all.length - n - ly.copies.size();
         int x0 = Integer.MAX_VALUE, y0 = Integer.MAX_VALUE, x1 = Integer.MIN_VALUE, y1 = Integer.MIN_VALUE;
         for (int i = 0; i < all.length; i++) {
             int[] bb = Glyf.headerBounds(all[i]);
@@ -252,31 +257,72 @@ public final class EmojiMerge {
     }
 
     /**
+     * The emoji font's joiner glyph and the text font's, {@code [emoji, text]}, when the emoji sequences can name the text font's joiner
+     * instead of their own: U+200D then keeps the text font's glyph, which the text font's own rules name (Indic conjuncts such as the
+     * eyelash ra, Malayalam chillus and Sinhala yansaya). That needs both fonts to give U+200D a glyph no other character of theirs has, and
+     * the emoji GSUB to name its joiner only inside sequences ({@link OtLayout#onlyInSequences}), as every emoji font checked does. Null
+     * otherwise, and when either font has no joiner: then the emoji font's joiner takes U+200D where both have one, as its sequences need.
+     */
+    static int[] joiner(Maps maps, Sfnt emoji, FontProgress p) throws Sfnt.FontException {
+        Integer t = maps.text.get(EmojiData.ZWJ), e = maps.emoji.get(EmojiData.ZWJ);
+        if (t == null || e == null) return null;
+        int same = 0, work = 0;
+        for (int g : maps.text.values()) { if ((++work & 1023) == 0) FontProgress.Check.cancel(p); if (g == t) same++; }
+        for (int g : maps.emoji.values()) { if ((++work & 1023) == 0) FontProgress.Check.cancel(p); if (g == e) same++; }
+        if (same != 2) return null;
+        byte[] gsub = emoji.table("GSUB");
+        if (gsub != null && !OtLayout.onlyInSequences(gsub, true, e, p)) return null;
+        return new int[] { e, t };
+    }
+
+    /**
      * What the lookups put in front of the emoji font's own fix up, so its sequences see the glyphs they would see in the emoji font alone
-     * (all merged ids). U+FE0F goes back after a glyph where the cmap's variation sequence took it away and an emoji ligature names it:
-     * one rule per place, as glyphs before (in reading order) and after. A text glyph that won its character becomes the emoji glyph next
-     * to a joiner or a skin tone, or before the keycap mark, as the emoji font would show that character there.
+     * (all merged ids). Where the emoji font alone keeps U+FE0F after a character as a glyph and one of its ligatures names the two, the
+     * merged cmap gives (c, U+FE0F) a key: the character's emoji glyph g, or a copy of g when a character shows g alone (the copy draws the
+     * same). The first lookup turns a key back into [g, U+FE0F] where a ligature names the two, and into g where one names g before
+     * something else (rules as glyphs before, in reading order, and after); a copy no rule matches becomes g too. A text glyph that won its
+     * character becomes the emoji glyph next to a joiner or a skin tone, or before the keycap mark, as the emoji font would show that
+     * character there.
      */
     static final class Front {
+        final int n, dupBase, zwjFrom, zwjTo;
         int fe0f = -1;
-        /** Glyph -> its rules, each {@code [count before, before..., after...]}. */
-        final TreeMap<Integer, LinkedHashSet<List<Integer>>> restore = new TreeMap<Integer, LinkedHashSet<List<Integer>>>();
+        /** Emoji glyph -> its key (a merged id): the glyph itself, or its copy. */
+        final TreeMap<Integer, Integer> keys = new TreeMap<Integer, Integer>();
+        /** The emoji glyphs that have a copy, in copy order: copy j is merged glyph dupBase + j. */
+        final List<Integer> dups = new ArrayList<Integer>();
+        /** Key -> its rules in order, each {@code [RESTORE or PASS, count before, before..., after...]}. */
+        final TreeMap<Integer, List<List<Integer>>> restore = new TreeMap<Integer, List<List<Integer>>>();
         /** Text glyph -> emoji glyph; the keycap bases (# * 0-9) and the symbols (above U+00FF) among them. */
         final TreeMap<Integer, Integer> swap = new TreeMap<Integer, Integer>();
         final TreeSet<Integer> keycapBases = new TreeSet<Integer>(), symbols = new TreeSet<Integer>();
         /** The keycap mark's and the joiner's glyphs (-1 when the font has none), and the glyphs a symbol takes the emoji form before. */
         int keycap = -1, zwj = -1;
         final TreeSet<Integer> joiners = new TreeSet<Integer>();
+
+        /** {@code n}: the text glyph count; {@code dupBase}: the first copy's id; {@code joiner}: from {@link EmojiMerge#joiner}, or null. */
+        Front(int n, int dupBase, int[] joiner) {
+            this.n = n;
+            this.dupBase = dupBase;
+            zwjFrom = joiner == null ? -1 : joiner[0];
+            zwjTo = joiner == null ? -1 : joiner[1];
+        }
+
+        /** The merged glyph the emoji lookups name emoji glyph g by. */
+        int id(int g) { return g == zwjFrom ? zwjTo : g + n; }
     }
 
     /**
      * Builds the merged cmap into {@code out} and fills {@code map} with it: the text font's characters, the emoji font's where the text font
-     * has none or where {@link EmojiData#emojiWins}. Variation sequences: the text font's; the emoji font's (a "default" one becomes the
-     * emoji glyph where the text glyph won); (c, U+FE0F) to the emoji glyph where the text glyph won; (c, U+FE0E) to the text glyph where
-     * the emoji glyph won (and to the default where the text glyph won).
+     * has none or where {@link EmojiData#emojiWins} (U+200D stays with the text font when {@code joiner} is not null). Variation sequences:
+     * the text font's; the emoji font's (a "default" one becomes the emoji glyph where the text glyph won); (c, U+FE0E) to the text glyph
+     * where the emoji glyph won (and to the default where the text glyph won); (c, U+FE0F) to the emoji glyph where the text glyph won, and
+     * to the default for each character with an emoji variation sequence ({@link EmojiData#hasEmojiVariation}) that shows the emoji glyph:
+     * Android takes (c, U+FE0F) from the first font whose cmap has the pair and else from the system emoji font. Where a ligature of the
+     * emoji font names the character's glyph and U+FE0F, (c, U+FE0F) maps to a key instead (see {@link Front}).
      */
-    private static Front characters(Maps maps, Sfnt emoji, int n, Sfnt out, TreeMap<Integer, Integer> map, List<String> warnings,
-            FontProgress p) throws Sfnt.FontException {
+    private static Front characters(Maps maps, Sfnt emoji, int n, int dupBase, int[] joiner, Sfnt out, TreeMap<Integer, Integer> map,
+            List<String> warnings, FontProgress p) throws Sfnt.FontException {
         TreeMap<Integer, Integer> tmap = maps.text, emap = maps.emoji;
         Cmap.Uvs tuvs = maps.textUvs, euvs = maps.emojiUvs;
         map.putAll(tmap);
@@ -286,7 +332,8 @@ public final class EmojiMerge {
             if ((++work & 1023) == 0) FontProgress.Check.cancel(p);
             int cp = e.getKey();
             if (!tmap.containsKey(cp)) map.put(cp, e.getValue() + n);
-            else if (EmojiData.emojiWins(cp)) { map.put(cp, e.getValue() + n); emojiWon.add(cp); }
+            else if (cp == EmojiData.ZWJ && joiner != null) continue;             // the text font's joiner, which the emoji lookups name
+            else if (EmojiData.emojiWins(cp) || cp == EmojiData.ZWJ) { map.put(cp, e.getValue() + n); emojiWon.add(cp); }
             else textWon.add(cp);
         }
         Cmap.Uvs uvs = tuvs.copy();
@@ -313,44 +360,64 @@ public final class EmojiMerge {
                     else uvs.put(sel, cp, g);
                 }
         }
-        // U+FE0F asks for the emoji form, U+FE0E for the text form, whichever glyph the character shows alone
+        // U+FE0F asks for the emoji form, U+FE0E for the text form, whichever glyph the character shows alone. asked: character -> emoji
+        // glyph, where the emoji font alone has no (c, U+FE0F), so that its shaping sees U+FE0F as a glyph after c's
         int fe = EmojiData.EMOJI_SELECTOR, te = EmojiData.TEXT_SELECTOR;
-        List<Integer> asked = new ArrayList<Integer>();
+        TreeMap<Integer, Integer> asked = new TreeMap<Integer, Integer>();
         for (int cp : textWon) {
             if ((++work & 1023) == 0) FontProgress.Check.cancel(p);
             if (!emojiBase(cp)) continue;
             int own = euvs.glyph(fe, cp);
             uvs.put(fe, cp, (own >= 0 ? own : emap.get(cp)) + n);
-            if (!euvs.has(fe, cp)) asked.add(cp);
+            if (!euvs.has(fe, cp)) asked.put(cp, emap.get(cp));
             if (!tuvs.has(te, cp)) uvs.addDefault(te, cp);
         }
         for (int cp : emojiWon)
             if (!(tuvs.has(te, cp) && !tuvs.isDefault(te, cp))) uvs.put(te, cp, tmap.get(cp));
-        out.put("cmap", Cmap.build(map, uvs, warnings, sub(p, 660, 700)));
+        for (Map.Entry<Integer, Integer> e : emap.entrySet()) {
+            if ((++work & 1023) == 0) FontProgress.Check.cancel(p);
+            int cp = e.getKey(), g = e.getValue();
+            if (EmojiData.hasEmojiVariation(cp) && map.get(cp) == g + n && !uvs.has(fe, cp)) asked.put(cp, g);
+        }
 
-        Front fr = new Front();
+        Front fr = new Front(n, dupBase, joiner);
         swaps(tmap, emap, textWon, map, n, fr);
-        // Where the emoji font has no sequence of its own, its shaping saw U+FE0F as a glyph: put it back for the ligatures that name it
+        // The asked glyphs that a ligature names before U+FE0F get a key; the others need no U+FE0F glyph, so a default sequence will do
         Integer f = emap.get(fe);
         byte[] gsub = emoji.table("GSUB");
-        if (f == null || gsub == null || asked.isEmpty()) return fr;
-        fr.fe0f = f + n;
-        HashSet<Integer> nominal = new HashSet<Integer>(map.values());
-        BitSet back = new BitSet();
-        for (int cp : asked) {
-            int g = emap.get(cp);
-            if (!nominal.contains(g + n)) back.set(g);         // else a character shows it alone too: FE0F cannot be told from it
-        }
-        if (back.isEmpty()) return fr;
-        OtLayout.Table et = OtLayout.parse(gsub, true);
-        TreeSet<Integer> on = new TreeSet<Integer>();
-        for (OtLayout.Feature ft : et.features) on.addAll(ft.lookups);
         long[] budget = { LIGATURE_WORK };
-        for (int li : on) {
-            if (li >= et.lookups.size()) continue;
-            OtLayout.Lookup l = et.lookups.get(li);
-            if (l.type != 4) continue;
-            for (OtLayout.Subtable st : l.subtables) restoreRules(et.sources.get(st.source), st.offset, back, f, n, fr, budget, p);
+        List<int[]> ligs = new ArrayList<int[]>();
+        BitSet named = new BitSet();
+        if (f != null && gsub != null && !asked.isEmpty()) {
+            BitSet of = new BitSet();
+            for (int g : asked.values()) of.set(g);
+            ligs = ligatures(gsub, of, budget, p);
+            for (int[] l : ligs)
+                for (int c = 1; c + 1 < l.length; c++) if (l[c + 1] == f && of.get(l[c])) named.set(l[c]);
+        }
+        HashSet<Integer> nominal = new HashSet<Integer>(map.values());
+        for (Map.Entry<Integer, Integer> e : asked.entrySet()) {
+            int cp = e.getKey(), g = e.getValue();
+            if (!named.get(g)) {
+                if (map.get(cp) == g + n) uvs.addDefault(fe, cp);
+                continue;
+            }
+            Integer key = fr.keys.get(g);
+            if (key == null) {
+                if (nominal.contains(g + n)) {                                // a character shows g alone: U+FE0F gets a copy to tell
+                    key = dupBase + fr.dups.size();
+                    fr.dups.add(g);
+                } else {
+                    key = g + n;
+                }
+                fr.keys.put(g, key);
+            }
+            uvs.put(fe, cp, key);
+        }
+        out.put("cmap", Cmap.build(map, uvs, warnings, sub(p, 30, 50)));
+        if (!fr.keys.isEmpty()) {
+            fr.fe0f = f + n;
+            restoreRules(ligs, f, fr, budget, p);
         }
         return fr;
     }
@@ -397,12 +464,29 @@ public final class EmojiMerge {
     static final long LIGATURE_WORK = 1L << 23;
     /** Longest ligature the U+FE0F rules look at; emoji sequences have up to about a dozen glyphs. */
     static final int LONGEST = 32;
+    /** What a rule of {@link Front#restore} does with its key: back to [glyph, U+FE0F], or to the glyph alone. */
+    static final int RESTORE = 0, PASS = 1;
 
     /**
-     * Adds the U+FE0F rules for the ligatures of the LigatureSubst subtable at {@code off} that name (g, f) for a glyph g in {@code back}:
-     * the glyphs before g as the buffer has them by then (FE0F already back after earlier glyphs) and those after it (FE0F not back yet).
+     * The ligatures of the emoji font's LigatureSubst lookups (those a feature turns on) that name a glyph of {@code of}, in the order
+     * HarfBuzz tries them (lookup, subtable, then the font's order), each as {@code [lookup, first glyph, other glyphs...]}.
      */
-    static void restoreRules(byte[] t, int off, BitSet back, int f, int n, Front fr, long[] budget, FontProgress p) throws Sfnt.FontException {
+    static List<int[]> ligatures(byte[] gsub, BitSet of, long[] budget, FontProgress p) throws Sfnt.FontException {
+        OtLayout.Table et = OtLayout.parse(gsub, true);
+        TreeSet<Integer> on = new TreeSet<Integer>();
+        for (OtLayout.Feature ft : et.features) on.addAll(ft.lookups);
+        List<int[]> out = new ArrayList<int[]>();
+        for (int li : on) {
+            if (li >= et.lookups.size()) continue;
+            OtLayout.Lookup l = et.lookups.get(li);
+            if (l.type != 4) continue;
+            for (OtLayout.Subtable st : l.subtables) ligatures(et.sources.get(st.source), st.offset, li, of, out, budget, p);
+        }
+        return out;
+    }
+
+    /** Adds the ligatures of the LigatureSubst subtable at {@code off} (of lookup {@code lookup}) that name a glyph of {@code of}. */
+    static void ligatures(byte[] t, int off, int lookup, BitSet of, List<int[]> out, long[] budget, FontProgress p) throws Sfnt.FontException {
         if (Sfnt.u16(t, off) != 1) return;
         int[] first = coverageList(t, off + Sfnt.u16(t, off + 2), budget);
         int sets = Math.min(first.length, Sfnt.u16(t, off + 4));
@@ -419,20 +503,101 @@ public final class EmojiMerge {
                 if (comps < 2 || comps > LONGEST) continue;
                 Sfnt.need(t, lig + 4, 2L * (comps - 1));
                 if ((budget[0] -= comps) < 0) throw tooComplex();
-                int[] L = new int[comps];
-                L[0] = first[k];
-                for (int c = 1; c < comps; c++) L[c] = Sfnt.u16(t, lig + 2 + 2 * c);
-                for (int at = 0; at + 1 < comps; at++) {
-                    if (!back.get(L[at]) || L[at + 1] != f) continue;
-                    List<Integer> rule = new ArrayList<Integer>();
-                    rule.add(at);
-                    for (int c = 0; c < at; c++) rule.add(L[c] + n);
-                    for (int c = at + 2; c < comps; c++) if (!(L[c] == f && c - 1 > at + 1 && back.get(L[c - 1]))) rule.add(L[c] + n);
-                    LinkedHashSet<List<Integer>> rules = fr.restore.get(L[at] + n);
-                    if (rules == null) fr.restore.put(L[at] + n, rules = new LinkedHashSet<List<Integer>>());
-                    rules.add(rule);
+                int[] l = new int[comps + 1];
+                l[0] = lookup;
+                l[1] = first[k];
+                boolean any = of.get(l[1]);
+                for (int c = 1; c < comps; c++) {
+                    l[c + 1] = Sfnt.u16(t, lig + 2 + 2 * c);
+                    any |= of.get(l[c + 1]);
+                }
+                if (any) out.add(l);
+            }
+        }
+    }
+
+    /**
+     * Fills {@link Front#restore} from the ligatures (as {@link #ligatures} lists them, {@code f} the emoji font's U+FE0F glyph) that name a
+     * key's glyph: a RESTORE rule where U+FE0F follows the glyph, a PASS rule elsewhere, with the glyphs before it as the buffer has them by
+     * then (U+FE0F back after the keys before) and those after it (keys not turned back yet). A rule with a symbol's emoji glyph in it gets a
+     * twin with the text glyph there, since the swap lookup changes that glyph only after this one. A key's rules go in the order HarfBuzz
+     * tries the ligatures in the emoji font alone: by lookup, then the ligature that starts furthest left, then the font's order. A rule that
+     * could never apply (after one with the same context, or after one with none) is left out, and so are the PASS rules at the end; a copy
+     * ends with a PASS rule without context, so that it always becomes its glyph.
+     */
+    static void restoreRules(List<int[]> ligs, int f, Front fr, long[] budget, FontProgress p) throws Sfnt.FontException {
+        // A swap's emoji glyph -> its text glyph
+        HashMap<Integer, Integer> text = new HashMap<Integer, Integer>();
+        HashSet<Integer> shared = new HashSet<Integer>();
+        for (Map.Entry<Integer, Integer> e : fr.swap.entrySet()) if (text.put(e.getValue(), e.getKey()) != null) shared.add(e.getValue());
+        for (int x : shared) text.remove(x);
+        HashMap<Integer, List<Place>> places = new HashMap<Integer, List<Place>>();
+        int seq = 0;
+        for (int[] l : ligs) {
+            int k = l.length - 1;
+            for (int at = 0; at < k; at++) {
+                Integer key = fr.keys.get(l[1 + at]);
+                if (key == null) continue;
+                if ((budget[0] -= 4L * k) < 0) throw tooComplex();
+                if ((seq & 255) == 0) FontProgress.Check.cancel(p);
+                boolean back = at + 1 < k && l[2 + at] == f;
+                List<Integer> rule = new ArrayList<Integer>(), alt = new ArrayList<Integer>();
+                rule.add(back ? RESTORE : PASS);
+                rule.add(at);
+                alt.addAll(rule);
+                boolean swapped = false;
+                for (int c = 0; c < at; c++) {
+                    int x = fr.id(l[1 + c]);
+                    Integer t = l[2 + c] == f ? null : text.get(x);
+                    rule.add(x);
+                    alt.add(t != null ? t : x);
+                    swapped |= t != null;
+                }
+                for (int c = at + (back ? 2 : 1); c < k; c++) {
+                    boolean fe = c + 1 < k && l[2 + c] == f;
+                    Integer kx = fe ? fr.keys.get(l[1 + c]) : null;               // a later key: still one glyph, U+FE0F not back yet
+                    int x = kx != null ? kx : fr.id(l[1 + c]);
+                    Integer t = fe ? null : text.get(x);
+                    rule.add(x);
+                    alt.add(t != null ? t : x);
+                    swapped |= t != null;
+                    if (kx != null) c++;
+                }
+                List<Place> ps = places.get(key);
+                if (ps == null) places.put(key, ps = new ArrayList<Place>());
+                if (swapped) ps.add(new Place(l[0], at, seq++, alt));
+                ps.add(new Place(l[0], at, seq++, rule));
+            }
+        }
+        for (int key : new TreeSet<Integer>(fr.keys.values())) {
+            List<Place> ps = places.get(key);
+            List<List<Integer>> rules = new ArrayList<List<Integer>>();
+            if (ps != null) {
+                Collections.sort(ps);
+                HashSet<List<Integer>> contexts = new HashSet<List<Integer>>();
+                for (Place pl : ps) {
+                    if (!contexts.add(pl.rule.subList(1, pl.rule.size()))) continue;
+                    rules.add(pl.rule);
+                    if (pl.rule.size() == 2) break;
                 }
             }
+            while (!rules.isEmpty() && rules.get(rules.size() - 1).get(0) == PASS) rules.remove(rules.size() - 1);
+            if (key >= fr.dupBase && (rules.isEmpty() || rules.get(rules.size() - 1).size() > 2)) rules.add(Arrays.asList(PASS, 0));
+            if (!rules.isEmpty()) fr.restore.put(key, rules);
+        }
+    }
+
+    /** A rule of {@link #restoreRules} and where its ligature is: lookup, the key's place in it, the order the ligatures were listed in. */
+    private static final class Place implements Comparable<Place> {
+        final int lookup, at, seq;
+        final List<Integer> rule;
+
+        Place(int lookup, int at, int seq, List<Integer> rule) { this.lookup = lookup; this.at = at; this.seq = seq; this.rule = rule; }
+
+        @Override public int compareTo(Place o) {
+            if (lookup != o.lookup) return lookup < o.lookup ? -1 : 1;
+            if (at != o.at) return at > o.at ? -1 : 1;
+            return seq < o.seq ? -1 : seq > o.seq ? 1 : 0;
         }
     }
 
@@ -470,18 +635,31 @@ public final class EmojiMerge {
     // Layout: GSUB (and GDEF when the emoji lookups need glyph classes)
     // ---------------------------------------------------------------------------------------------
 
-    private static void layout(Sfnt text, Sfnt emoji, int n, Sfnt out, Front fr, List<String> warnings, FontProgress p) throws Sfnt.FontException {
+    private static void layout(Sfnt text, Sfnt emoji, int n, int total, Sfnt out, Front fr, List<String> warnings, FontProgress p)
+            throws Sfnt.FontException {
         if (emoji.has("GPOS")) warnings.add(W_EMOJI_GPOS);
         byte[] egsub = emoji.table("GSUB");
         if (egsub == null) return;
         OtLayout.Table t = text.has("GSUB") ? OtLayout.parse(text.table("GSUB"), true) : null;
         int tl = t == null ? 0 : t.lookups.size();
-        // In front of the emoji lookups: [FE0F back] [text glyph -> emoji glyph in context], then the single steps those two call
+        // In front of the emoji lookups: [keys back] [text glyph -> emoji glyph in context], then the steps those two call: [key ->
+        // glyph, FE0F] [copy -> glyph] [text glyph -> emoji glyph]
+        TreeMap<Integer, Integer> withFe = new TreeMap<Integer, Integer>(), copyBack = new TreeMap<Integer, Integer>();
+        for (Map.Entry<Integer, Integer> k : fr.keys.entrySet()) {
+            List<List<Integer>> rules = fr.restore.get(k.getValue());
+            if (rules == null) continue;
+            for (List<Integer> r : rules) {
+                if (r.get(0) == RESTORE) withFe.put(k.getValue(), k.getKey() + n);
+                else if (k.getValue() >= fr.dupBase) copyBack.put(k.getValue(), k.getKey() + n);
+            }
+        }
         boolean restore = !fr.restore.isEmpty(), swap = !fr.swap.isEmpty();
-        int extra = (restore ? 2 : 0) + (swap ? 2 : 0);
-        int restoreStep = tl + (restore ? 1 : 0) + (swap ? 1 : 0), swapStep = restoreStep + (restore ? 1 : 0);
+        int next = tl + (restore ? 1 : 0) + (swap ? 1 : 0);
+        int restoreStep = withFe.isEmpty() ? -1 : next++, copyStep = copyBack.isEmpty() ? -1 : next++, swapStep = swap ? next++ : -1;
+        int extra = next - tl;
         byte[] e = egsub.clone();
-        OtLayout.shiftGlyphs(e, true, n, sub(p, 700, 740));
+        if (fr.zwjFrom >= 0) OtLayout.shiftGlyphs(e, true, n, fr.zwjFrom, fr.zwjTo, sub(p, 700, 740));
+        else OtLayout.shiftGlyphs(e, true, n, sub(p, 700, 740));
         OtLayout.shiftLookupIndexes(e, true, tl + extra, sub(p, 740, 760));
         OtLayout.Table added = OtLayout.parse(e, true);
         for (OtLayout.Feature f : added.features)
@@ -493,16 +671,13 @@ public final class EmojiMerge {
             OtLayout.Feature f = new OtLayout.Feature(FEATURE);
             List<OtLayout.Lookup> front = new ArrayList<OtLayout.Lookup>(), steps = new ArrayList<OtLayout.Lookup>();
             if (restore) {
-                OtLayout.Lookup ctx = lookup(6), step = lookup(2);
-                for (Map.Entry<Integer, LinkedHashSet<List<Integer>>> en : fr.restore.entrySet())
-                    restoreSubtables(w, src, ctx, en.getKey(), en.getValue(), restoreStep);
-                step.subtables.add(new OtLayout.Subtable(src, w.size()));
-                multiple(w, fr.restore.keySet(), fr.fe0f);
+                OtLayout.Lookup ctx = lookup(6);
+                for (Map.Entry<Integer, List<List<Integer>>> en : fr.restore.entrySet())
+                    restoreSubtables(w, src, ctx, en.getKey(), en.getValue(), restoreStep, en.getKey() >= fr.dupBase ? copyStep : -1);
                 front.add(ctx);
-                steps.add(step);
             }
             if (swap) {
-                OtLayout.Lookup ctx = lookup(6), step = lookup(1);
+                OtLayout.Lookup ctx = lookup(6);
                 int[] none = new int[0], joiners = toArray(fr.joiners);
                 if (!fr.keycapBases.isEmpty()) {
                     ctx.subtables.add(new OtLayout.Subtable(src, w.size()));
@@ -516,9 +691,24 @@ public final class EmojiMerge {
                         chain(w, new int[] { fr.zwj }, toArray(fr.symbols), none, swapStep);
                     }
                 }
+                front.add(ctx);
+            }
+            if (restoreStep >= 0) {
+                OtLayout.Lookup step = lookup(2);
+                step.subtables.add(new OtLayout.Subtable(src, w.size()));
+                multiple(w, withFe, fr.fe0f);
+                steps.add(step);
+            }
+            if (copyStep >= 0) {
+                OtLayout.Lookup step = lookup(1);
+                step.subtables.add(new OtLayout.Subtable(src, w.size()));
+                single(w, copyBack);
+                steps.add(step);
+            }
+            if (swap) {
+                OtLayout.Lookup step = lookup(1);
                 step.subtables.add(new OtLayout.Subtable(src, w.size()));
                 single(w, fr.swap);
-                front.add(ctx);
                 steps.add(step);
             }
             for (int i = 0; i < front.size(); i++) f.lookups.add(i);
@@ -529,7 +719,7 @@ public final class EmojiMerge {
         }
         boolean classes = false;
         for (OtLayout.Lookup l : added.lookups) classes |= (l.flag & CLASS_FLAGS) != 0;
-        if (classes && !mergeGdef(text, emoji, n, out, added, extra)) warnings.add(W_GLYPH_CLASSES);
+        if (classes && !mergeGdef(text, emoji, n, total, fr, out, added, extra)) warnings.add(W_GLYPH_CLASSES);
         OtLayout.Table merged = OtLayout.merge(t, added, FEATURE, sub(p, 760, 780));
         out.put("GSUB", OtLayout.write(merged, sub(p, 780, 850)));
         if (out.has("morx") || out.has("mort")) {
@@ -546,31 +736,33 @@ public final class EmojiMerge {
     }
 
     /**
-     * ChainContextSubst format 1 subtables for glyph {@code g}: one rule per context (see {@link Front#restore}) that runs lookup
-     * {@code step} on g, split so each subtable stays within its 16-bit offsets.
+     * ChainContextSubst format 1 subtables for {@code key}: its rules (see {@link Front#restore}) in order, a RESTORE rule running lookup
+     * {@code restoreStep} on the key, a PASS rule {@code copyStep} (none when it is -1), split so each subtable stays within its 16-bit
+     * offsets. A rule with no lookup to run still applies: HarfBuzz moves past the key and tries no later rule.
      */
-    private static void restoreSubtables(Sfnt.Writer w, int src, OtLayout.Lookup ctx, int g, Set<List<Integer>> rules, int step) {
-        List<List<Integer>> all = new ArrayList<List<Integer>>(rules);
-        for (int from = 0; from < all.size(); ) {
+    private static void restoreSubtables(Sfnt.Writer w, int src, OtLayout.Lookup ctx, int key, List<List<Integer>> rules, int restoreStep,
+            int copyStep) {
+        for (int from = 0; from < rules.size(); ) {
             int to = from, bytes = 16;
-            while (to < all.size() && bytes + 14 + 2 * all.get(to).size() < 0xF000) bytes += 14 + 2 * all.get(to++).size();
+            while (to < rules.size() && bytes + 14 + 2 * rules.get(to).size() < 0xF000) bytes += 14 + 2 * rules.get(to++).size();
             int start = w.size(), k = to - from;
             ctx.subtables.add(new OtLayout.Subtable(src, start));
             // format, coverage, one rule set (at 8): its rule count and offsets, the rules, then the coverage
             w.u16(1).u16(0).u16(1).u16(8).u16(k);
             for (int i = 0; i < k; i++) w.u16(0);
             for (int i = 0; i < k; i++) {
-                List<Integer> r = all.get(from + i);
-                int before = r.get(0), after = r.size() - 1 - before;
+                List<Integer> r = rules.get(from + i);
+                int before = r.get(1), after = r.size() - 2 - before, step = r.get(0) == RESTORE ? restoreStep : copyStep;
                 w.set16(start + 10 + 2 * i, w.size() - start - 8);
                 w.u16(before);
-                for (int c = before; c >= 1; c--) w.u16(r.get(c));             // backtrack: the nearest glyph first
+                for (int c = before + 1; c >= 2; c--) w.u16(r.get(c));         // backtrack: the nearest glyph first
                 w.u16(1).u16(after);
-                for (int c = before + 1; c < r.size(); c++) w.u16(r.get(c));
-                w.u16(1).u16(0).u16(step);
+                for (int c = before + 2; c < r.size(); c++) w.u16(r.get(c));
+                if (step < 0) w.u16(0);
+                else w.u16(1).u16(0).u16(step);
             }
             w.set16(start + 2, w.size() - start);
-            w.bytes(coverage(new int[] { g }));
+            w.bytes(coverage(new int[] { key }));
             from = to;
         }
     }
@@ -590,18 +782,18 @@ public final class EmojiMerge {
         if (na > 0) { w.set16(at + 6, w.size() - start); w.bytes(coverage(ahead)); }
     }
 
-    /** MultipleSubst format 1: each glyph of {@code glyphs} becomes itself followed by {@code fe0f}. */
-    private static void multiple(Sfnt.Writer w, Set<Integer> glyphs, int fe0f) {
-        int start = w.size(), k = glyphs.size();
-        int[] gl = toArray(glyphs);
+    /** MultipleSubst format 1: each key of {@code m} becomes its glyph in {@code m} followed by {@code fe0f}. */
+    private static void multiple(Sfnt.Writer w, TreeMap<Integer, Integer> m, int fe0f) {
+        int start = w.size(), k = m.size();
         w.u16(1).u16(0).u16(k);
         for (int i = 0; i < k; i++) w.u16(0);
-        for (int i = 0; i < k; i++) {
-            w.set16(start + 6 + 2 * i, w.size() - start);
-            w.u16(2).u16(gl[i]).u16(fe0f);
+        int i = 0;
+        for (int g : m.values()) {
+            w.set16(start + 6 + 2 * i++, w.size() - start);
+            w.u16(2).u16(g).u16(fe0f);
         }
         w.set16(start + 2, w.size() - start);
-        w.bytes(coverage(gl));
+        w.bytes(coverage(toArray(m.keySet())));
     }
 
     /** SingleSubst format 2 from a glyph map. */
@@ -645,14 +837,15 @@ public final class EmojiMerge {
      * and renumbers the emoji lookups' flags to match. Only when both fonts have a GDEF: one made for the emoji alone would take the text
      * font's classes away from HarfBuzz's guess from Unicode. False when that cannot be done.
      */
-    private static boolean mergeGdef(Sfnt text, Sfnt emoji, int n, Sfnt out, OtLayout.Table added, int extra) throws Sfnt.FontException {
+    private static boolean mergeGdef(Sfnt text, Sfnt emoji, int n, int total, Front fr, Sfnt out, OtLayout.Table added, int extra)
+            throws Sfnt.FontException {
         byte[] tg = text.table("GDEF"), eg = emoji.table("GDEF");
         if (tg == null && eg == null) return true;                     // HarfBuzz guesses the classes of both from Unicode, as for each alone
         if (tg == null || eg == null) return false;
         int m = emoji.numGlyphs();
         Gdef a = new Gdef(tg), b = new Gdef(eg);
         if (!a.ok || !b.ok || (a.glyphClass == 0) != (b.glyphClass == 0)) return false;
-        int[] cls = new int[n + m], mark = new int[n + m];
+        int[] cls = new int[total], mark = new int[total];
         int[] ac = a.classes(a.glyphClass, n), bc = b.classes(b.glyphClass, m);
         int[] am = a.classes(a.markClass, n), bm = b.classes(b.markClass, m);
         int maxMark = 0;
@@ -670,6 +863,19 @@ public final class EmojiMerge {
         int textSets = sets.size();
         sets.addAll(b.sets(m, n));
         if (sets.size() > 0xFFFF) return false;
+        // A copy (see Front) has its glyph's classes and mark sets
+        for (int j = 0; j < fr.dups.size(); j++) {
+            int g = n + fr.dups.get(j), d = fr.dupBase + j;
+            cls[d] = cls[g];
+            mark[d] = mark[g];
+            for (int i = textSets; i < sets.size(); i++) {
+                int[] s = sets.get(i);
+                if (Arrays.binarySearch(s, g) < 0) continue;
+                s = Arrays.copyOf(s, s.length + 1);
+                s[s.length - 1] = d;                                       // past every emoji glyph, so the set stays in order
+                sets.set(i, s);
+            }
+        }
         for (int i = extra; i < added.lookups.size(); i++) {
             OtLayout.Lookup l = added.lookups.get(i);
             if ((l.flag >>> 8 & 0xFF) + maxMark > 255 || l.markFilteringSet + textSets > 0xFFFF) return false;
@@ -696,7 +902,9 @@ public final class EmojiMerge {
                 w.bytes(coverage(sets.get(i)));
             }
         }
-        if (msOff > 0xFFFF || (a.attach != 0 && a.attach + shift > 0xFFFF) || (a.carets != 0 && a.carets + shift > 0xFFFF)) return false;
+        // Every offset in the header is 16 bits: past 64 KB the table cannot point at its parts (gcOff and maOff too, when there are no sets)
+        if (gcOff > 0xFFFF || maOff > 0xFFFF || msOff > 0xFFFF || (a.attach != 0 && a.attach + shift > 0xFFFF)
+                || (a.carets != 0 && a.carets + shift > 0xFFFF)) return false;
         w.set16(4, gcOff);
         w.set16(6, a.attach == 0 ? 0 : a.attach + shift);
         w.set16(8, a.carets == 0 ? 0 : a.carets + shift);
@@ -874,8 +1082,8 @@ public final class EmojiMerge {
         /** True when emoji glyph g keeps the emoji font's units in its own place (it is drawn only inside paints). */
         boolean kept(int g) { return keep.get(g) && !both.get(g); }
 
-        /** True when merged glyph i is in emoji units: a kept glyph or a copy. */
-        boolean unscaled(int i, int n, int m) { return i >= n + m || (i >= n && kept(i - n)); }
+        /** True when merged glyph i is in emoji units: a kept glyph or an emoji-units copy. */
+        boolean unscaled(int i, int n, int m) { return i >= n + m ? i < n + m + copies.size() : i >= n && kept(i - n); }
     }
 
     /**
@@ -900,6 +1108,9 @@ public final class EmojiMerge {
         private int shift;
         private int[] copy;
         private double s;
+        // the copies some (c, U+FE0F) sequences map to (see Front): their emoji glyphs, and the merged id of the first
+        private List<Integer> dups = Collections.emptyList();
+        private int dupBase;
         private BitSet seen, touched;
         private final List<Integer> colrGlyphs = new ArrayList<Integer>();
         private final List<int[]> edges = new ArrayList<int[]>();      // field position, base it is relative to, width (3 or 4), node
@@ -915,11 +1126,12 @@ public final class EmojiMerge {
         }
 
         /** The table for the merged font (a new array); see the class comment. Call {@link #walk} first. */
-        byte[] merged(int shift, double s, int[] copy) throws Sfnt.FontException {
-            this.shift = shift; this.s = s; this.copy = copy; patch = true;
+        byte[] merged(int shift, double s, int[] copy, List<Integer> dups, int dupBase) throws Sfnt.FontException {
+            this.shift = shift; this.s = s; this.copy = copy; this.dups = dups; this.dupBase = dupBase; patch = true;
             byte[] orig = t;
             if (version == 1 && baseList != 0 && !roots.isEmpty()) t = wrapped(orig);
             else t = orig.clone();
+            if (!dups.isEmpty()) t = v0Copies(t);
             run();
             if (!colrGlyphs.isEmpty()) t = inverses();
             byte[] out = t;
@@ -989,6 +1201,11 @@ public final class EmojiMerge {
         /** A glyph id at {@code at}: checked and noted in {@code into}; when patching, moved past the text glyphs (or to its copy). */
         private void glyph(int at, BitSet into) throws Sfnt.FontException {
             int g = Sfnt.u16(t, at);
+            if (patch && g >= limit && g - limit < dups.size()) {           // a copy's record (wrapped, v0Copies): id past the glyph count
+                mark(at, 2);
+                Sfnt.w16(t, at, dupBase + g - limit);
+                return;
+            }
             if (g >= limit) throw new Sfnt.FontException("The emoji font's colour table (COLR) names glyph " + g + ", which the font does not have.");
             if (!patch) { if (into != null) into.set(g); return; }
             mark(at, 2);
@@ -1101,11 +1318,34 @@ public final class EmojiMerge {
         /**
          * The table with a new BaseGlyphList in front whose paints are PaintTransform wrappers (one shared scale matrix) around the old root
          * paints. Paint offsets cannot point backwards, so the wrappers go before everything else, which moves by a constant: the header's
-         * offsets get it added, the offsets inside the moved part are relative and stay. The old BaseGlyphList stays behind, unused.
+         * offsets get it added, the offsets inside the moved part are relative and stay. The old BaseGlyphList stays behind, unused. A copy
+         * of a glyph that has a paint gets a record of its own (a placeholder id past the glyph count, see {@link #glyph}) that points at
+         * the same wrapper; when a clip box covers the glyph, the ClipList moves in front too (its boxes must come after it) with a record
+         * for the copy.
          */
         private byte[] wrapped(byte[] orig) throws Sfnt.FontException {
             int count = roots.size();
-            long list = 34, wraps = list + 4 + 6L * count, affine = wraps + 7L * count, body = (affine + 24 + 3) & ~3L;
+            TreeMap<Integer, Integer> rootOf = new TreeMap<Integer, Integer>(), dupAt = new TreeMap<Integer, Integer>();
+            for (int i = 0; i < count; i++) rootOf.put(Sfnt.u16(orig, (int) roots.get(i)[0]), i);
+            for (int j = 0; j < dups.size(); j++) dupAt.put(dups.get(j), limit + j);
+            List<int[]> more = new ArrayList<int[]>();                       // placeholder id, root
+            for (int j = 0; j < dups.size(); j++) {
+                Integer i = rootOf.get(dups.get(j));
+                if (i != null) more.add(new int[] { limit + j, i });
+            }
+            long cl = Sfnt.u32(orig, 22);
+            int clips = 0;
+            TreeMap<Integer, Integer> boxOf = new TreeMap<Integer, Integer>(); // placeholder id -> its glyph's clip box (in orig)
+            if (cl != 0 && !more.isEmpty()) {
+                clips = (int) Sfnt.u32(orig, (int) cl + 1);
+                for (int i = 0; i < clips; i++) {
+                    int rec = (int) cl + 5 + 7 * i, a = Sfnt.u16(orig, rec), b = Sfnt.u16(orig, rec + 2);
+                    for (int v : dupAt.subMap(a, true, b, true).values()) if (!boxOf.containsKey(v)) boxOf.put(v, (int) cl + Sfnt.u24(orig, rec + 4));
+                }
+            }
+            int records = count + more.size(), clipCount = boxOf.isEmpty() ? 0 : clips + boxOf.size();
+            long list = 34, wraps = list + 4 + 6L * records, affine = wraps + 7L * count, clipAt = affine + 24;
+            long body = (clipAt + (clipCount == 0 ? 0 : 5 + 7L * clipCount) + 3) & ~3L;
             long size = body + orig.length - 34;
             if (size > Integer.MAX_VALUE - 8 || size > 0xFFFFFF) throw new Sfnt.FontException("The emoji font's colour table (COLR) is too big to merge.");
             long delta = body - 34;
@@ -1119,7 +1359,7 @@ public final class EmojiMerge {
                 Sfnt.w32(n, f, (int) (o + delta));
             }
             Sfnt.w32(n, 14, (int) list);
-            Sfnt.w32(n, (int) list, count);
+            Sfnt.w32(n, (int) list, records);
             for (int i = 0; i < count; i++) {
                 long[] r = roots.get(i);
                 if (r[1] < 34) throw damaged();
@@ -1130,8 +1370,66 @@ public final class EmojiMerge {
                 w24(n, w + 1, r[1] + delta - w);
                 w24(n, w + 4, affine - w);
             }
+            for (int i = 0; i < more.size(); i++) {
+                int rec = (int) list + 4 + 6 * (count + i);
+                Sfnt.w16(n, rec, more.get(i)[0]);
+                Sfnt.w32(n, rec + 2, (int) (wraps + 7L * more.get(i)[1] - list));
+            }
             Sfnt.w32(n, (int) affine, fixed(s));
             Sfnt.w32(n, (int) affine + 12, fixed(s));
+            if (clipCount > 0) {
+                int at = (int) clipAt;
+                n[at] = 1;
+                Sfnt.w32(n, at + 1, clipCount);
+                for (int i = 0; i < clips; i++) {
+                    int rec = (int) cl + 5 + 7 * i, w = at + 5 + 7 * i;
+                    Sfnt.w16(n, w, Sfnt.u16(orig, rec));
+                    Sfnt.w16(n, w + 2, Sfnt.u16(orig, rec + 2));
+                    w24(n, w + 4, cl + Sfnt.u24(orig, rec + 4) + delta - at);
+                }
+                int w = at + 5 + 7 * clips;
+                for (Map.Entry<Integer, Integer> b : boxOf.entrySet()) {
+                    Sfnt.w16(n, w, b.getKey());
+                    Sfnt.w16(n, w + 2, b.getKey());
+                    w24(n, w + 4, b.getValue() + delta - at);
+                    w += 7;
+                }
+                Sfnt.w32(n, 22, at);
+            }
+            return n;
+        }
+
+        /**
+         * The table with a BaseGlyphRecord (COLR v0 layers) for each copy whose glyph has one: all the records, the copies' (placeholder ids
+         * past every other) at the end, go in a new array after the table; the old one stays behind, unused.
+         */
+        private byte[] v0Copies(byte[] t) throws Sfnt.FontException {
+            int numBase = Sfnt.u16(t, 2);
+            if (numBase == 0) return t;
+            long base = Sfnt.u32(t, 4);
+            Sfnt.need(t, base, 6L * numBase);
+            HashMap<Integer, Integer> recOf = new HashMap<Integer, Integer>();
+            for (int i = 0; i < numBase; i++) recOf.put(Sfnt.u16(t, (int) base + 6 * i), (int) base + 6 * i);
+            List<int[]> more = new ArrayList<int[]>();                       // placeholder id, the glyph's record
+            for (int j = 0; j < dups.size(); j++) {
+                Integer r = recOf.get(dups.get(j));
+                if (r != null) more.add(new int[] { limit + j, r });
+            }
+            if (more.isEmpty()) return t;
+            long at = (t.length + 3) & ~3L, size = at + 6L * (numBase + more.size());
+            if (numBase + more.size() > 0xFFFF || size > Integer.MAX_VALUE - 8)
+                throw new Sfnt.FontException("The emoji font's colour table (COLR) is too big to merge.");
+            byte[] n = Arrays.copyOf(t, (int) size);
+            System.arraycopy(t, (int) base, n, (int) at, 6 * numBase);
+            int w = (int) at + 6 * numBase;
+            for (int[] r : more) {
+                Sfnt.w16(n, w, r[0]);
+                Sfnt.w16(n, w + 2, Sfnt.u16(t, r[1] + 2));
+                Sfnt.w16(n, w + 4, Sfnt.u16(t, r[1] + 4));
+                w += 6;
+            }
+            Sfnt.w16(n, 2, numBase + more.size());
+            Sfnt.w32(n, 4, (int) at);
             return n;
         }
 

@@ -8,8 +8,9 @@ Needs fontTools (4.67) and uharfbuzz. Run with python -I, from anywhere; the dow
       glyph count), Noto Color Emoji is subset to the glyphs its cmap reaches (all its characters and variation sequences, cmap rebuilt by
       fontTools), Symbol-cmap.ttf is a few Lato glyphs behind a Windows symbol (3, 0) map and a Mac (1, 0) one; outlines are emptied and the
       layout, colour and variation-delta tables dropped. Lato's Reserved Font Name is taken out of the names it shows (OFL 1.1 section 3).
-  make_fixtures.py emojidata FILE
-      reads Unicode's emoji-data.txt, prints EmojiData's Emoji_Presentation table (Java) and records the list's hash in expected.txt
+  make_fixtures.py emojidata FILE VARIATIONS
+      reads Unicode's emoji-data.txt and emoji-variation-sequences.txt, prints EmojiData's Emoji_Presentation table and its table of the
+      characters with an emoji variation sequence (U+FE0F) (Java), and records each list's hash in expected.txt
   make_fixtures.py expect
       writes, for every font under tests/java/fixtures/fonts (every suite's folder), what fontTools reads: the best map (getBestCmap's order,
       then (3, 0), then (1, 0) with Mac Roman codes made Unicode; glyph 0 and ids past the glyph count left out) and the format 14 sequences
@@ -151,7 +152,7 @@ def read_expected():
 def write_expected(lines):
     head = ["# Written by make_fixtures.py (expect, emojidata, verify): what fontTools and HarfBuzz say, for CmapTest. See README.md."]
     body = [l for l in lines if l and not l.startswith("#")]
-    order = {"emoji": 0, "font": 1, "built": 2}
+    order = {"emoji": 0, "variation": 1, "font": 2, "built": 3}
     body.sort(key=lambda l: (order.get(l.split(" ")[0], 9), l))
     with open(EXPECTED, "w", encoding="utf-8") as fh:
         fh.write("\n".join(head + body) + "\n")
@@ -252,14 +253,32 @@ def cmd_expect(a):
     replace_lines(lambda l: l.startswith("font "), new)
 
 
+def unicode_header(text):
+    """The "# Version:" and "# Date:" of a Unicode data file."""
+    m = re.search(r"^# Version: (\S+)", text, re.M)
+    return m.group(1) if m else "?", re.search(r"^# Date: (.+)$", text, re.M).group(1)
+
+
+def java_ranges(name, s, comment):
+    """A Java int[] of first and last of each run of consecutive code points in s (sorted), with a comment line in front."""
+    ranges = []
+    for c in s:
+        if ranges and ranges[-1][1] == c - 1:
+            ranges[-1][1] = c
+        else:
+            ranges.append([c, c])
+    print("    // %s: %d code points in %d ranges" % (comment, len(s), len(ranges)))
+    print("    private static final int[] %s = {" % name)
+    for i in range(0, len(ranges), 6):
+        print("            " + " ".join("0x%04X, 0x%04X," % (r[0], r[1]) for r in ranges[i:i + 6]))
+    print("    };")
+
+
 def cmd_emojidata(a):
-    cps = set()
-    version = None
     with open(a.file, encoding="utf-8") as fh:
         text = fh.read()
-    m = re.search(r"^# Version: (\S+)", text, re.M)
-    version = m.group(1) if m else "?"
-    date = re.search(r"^# Date: (.+)$", text, re.M).group(1)
+    version, date = unicode_header(text)
+    cps = set()
     for line in text.splitlines():
         line = line.split("#")[0].strip()
         if not line:
@@ -270,19 +289,25 @@ def cmd_emojidata(a):
         lo, _, hi = rng.partition("..")
         cps.update(range(int(lo, 16), int(hi or lo, 16) + 1))
     s = sorted(cps)
-    ranges = []
-    for c in s:
-        if ranges and ranges[-1][1] == c - 1:
-            ranges[-1][1] = c
-        else:
-            ranges.append([c, c])
-    print("    // Emoji_Presentation=Yes from Unicode %s emoji-data.txt (%s, sha256 %s): %d code points in %d ranges"
-          % (version, date, file_sha(a.file), len(s), len(ranges)))
-    print("    private static final int[] PRESENTATION = {")
-    for i in range(0, len(ranges), 6):
-        print("            " + " ".join("0x%04X, 0x%04X," % (r[0], r[1]) for r in ranges[i:i + 6]))
-    print("    };")
-    replace_lines(lambda l: l.startswith("emoji "), ["emoji %s %d %s" % (version, len(s), sha("".join("%X\n" % c for c in s)))])
+    java_ranges("PRESENTATION", s, "Emoji_Presentation=Yes from Unicode %s emoji-data.txt (%s, sha256 %s)" % (version, date, file_sha(a.file)))
+    # the characters whose (c, U+FE0F) is an emoji variation sequence
+    with open(a.variations, encoding="utf-8") as fh:
+        vtext = fh.read()
+    vversion, vdate = unicode_header(vtext)
+    bases = set()
+    for line in vtext.splitlines():
+        line = line.split("#")[0].strip()
+        if not line:
+            continue
+        seq = [int(x, 16) for x in line.split(";")[0].split()]
+        if len(seq) == 2 and seq[1] == 0xFE0F:
+            bases.add(seq[0])
+    v = sorted(bases)
+    print()
+    java_ranges("VARIATION", v, "(c, U+FE0F) from Unicode %s emoji-variation-sequences.txt (%s, sha256 %s)" % (vversion, vdate, file_sha(a.variations)))
+    replace_lines(lambda l: l.startswith("emoji ") or l.startswith("variation "),
+                  ["emoji %s %d %s" % (version, len(s), sha("".join("%X\n" % c for c in s))),
+                   "variation %s %d %s" % (vversion, len(v), sha("".join("%X\n" % c for c in v)))])
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------
@@ -458,6 +483,7 @@ def main():
         p.add_argument("--" + k, required=True)
     p = sub.add_parser("emojidata")
     p.add_argument("file")
+    p.add_argument("variations")
     sub.add_parser("expect")
     p = sub.add_parser("verify")
     p.add_argument("dir")

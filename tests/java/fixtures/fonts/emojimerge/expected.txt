@@ -48,6 +48,7 @@ seq Lato-sub.ttf 1F3F4 : 0
 seq Lato-sub.ttf 2764 FE0F 200D 1F525 : 0 0
 seq Lato-sub.ttf 2764 200D 1F525 : 0 0
 seq Lato-sub.ttf 261D 1F3FD : 0 0
+seq Lato-sub.ttf 261D FE0F 1F3FD : 0 0
 seq Lato-sub.ttf 261D : 0
 seq Lato-sub.ttf 2640 : 0
 seq Lato-sub.ttf 2640 FE0F : 0
@@ -110,6 +111,7 @@ seq Inter-sub.ttf 1F3F4 : 0
 seq Inter-sub.ttf 2764 FE0F 200D 1F525 : 516 0
 seq Inter-sub.ttf 2764 200D 1F525 : 516 0
 seq Inter-sub.ttf 261D 1F3FD : 0 0
+seq Inter-sub.ttf 261D FE0F 1F3FD : 0 0
 seq Inter-sub.ttf 261D : 0
 seq Inter-sub.ttf 2640 : 0
 seq Inter-sub.ttf 2640 FE0F : 0
@@ -172,6 +174,7 @@ seq NotoSans-kern.ttf 1F3F4 : 0
 seq NotoSans-kern.ttf 2764 FE0F 200D 1F525 : 0 0
 seq NotoSans-kern.ttf 2764 200D 1F525 : 0 0
 seq NotoSans-kern.ttf 261D 1F3FD : 0 0
+seq NotoSans-kern.ttf 261D FE0F 1F3FD : 0 0
 seq NotoSans-kern.ttf 261D : 0
 seq NotoSans-kern.ttf 2640 : 0
 seq NotoSans-kern.ttf 2640 FE0F : 0
@@ -234,6 +237,7 @@ seq Noto-sub.ttf 1F3F4 : 37
 seq Noto-sub.ttf 2764 FE0F 200D 1F525 : 218
 seq Noto-sub.ttf 2764 200D 1F525 : 218
 seq Noto-sub.ttf 261D 1F3FD : 211
+seq Noto-sub.ttf 261D FE0F 1F3FD : 211
 seq Noto-sub.ttf 261D : 208
 seq Noto-sub.ttf 2640 : 215
 seq Noto-sub.ttf 2640 FE0F : 215
@@ -282,6 +286,7 @@ seq Twemoji-sub.ttf 1F3F4 : 21
 seq Twemoji-sub.ttf 2764 FE0F 200D 1F525 : 606
 seq Twemoji-sub.ttf 2764 200D 1F525 : 604
 seq Twemoji-sub.ttf 261D 1F3FD : 582
+seq Twemoji-sub.ttf 261D FE0F 1F3FD : 582
 seq Twemoji-sub.ttf 261D : 7
 seq Twemoji-sub.ttf 2640 : 9
 seq Twemoji-sub.ttf 2640 FE0F : 593
@@ -369,12 +374,12 @@ run NotoSans-kern.ttf Zyyy A9 20 32 30 32 36 20 AE 20 2122 20 28 63 29 20 2194 2
 run NotoSans-kern.ttf Latn 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 18 16 19 1 125 1 124 1 89 114 1 106 122
 run NotoSans-kern.ttf Zyyy 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 18 16 19 1 125 1 124 1 89 114 1 106 122
 run NotoSans-kern.ttf Zyyy AB BB 20 A1 BF 20 A7 B6 20 B0 20 B1 20 D7 20 F7 : 107 123 1 97 127 1 103 118 1 112 1 113 1 151 1 183
-verified Lato-sub+Noto-sub.ttf 22a8aa5b5cb932c1aa5c13a7e0afce398df4516d733accaa8a5adb8abb794294
-verified Lato-sub+Twemoji-sub.ttf dec4bb40545007c9607b1ad7d6be4a700b9425b34875016221c54251c912cc2c
+verified Lato-sub+Noto-sub.ttf f1a8a2195fb5349b9739faffa02274e2838131cdbf433fdbe1fb06bc9c7a782c
+verified Lato-sub+Twemoji-sub.ttf c597c7c6b72dbab8cbbc022243ce46ab3f58ff74dc48ac4c63307daf3b06ebef
 verified Inter-sub+Noto-sub.ttf 756bba15de9829ba0a04adaf4c5def8759ff55265aada549338e2a6f07c1cc89
-verified Inter-sub+Twemoji-sub.ttf 8a7615012c0e62948a8d4443685ac0df16770be96a238ca5fa71a73c8506ab6b
-verified NotoSans-kern+Noto-sub.ttf e3358bedc5802eeb7b65805a5b26cefd082b309bbb2b961e8ede1ba2b3ab61d4
-verified NotoSans-kern+Twemoji-sub.ttf bf3a100c6f5cc8bdd5f8970c87f05efa8b0db1b1c5422c101bb94a61f8ee802d
+verified Inter-sub+Twemoji-sub.ttf e4e546bc90c212b788790da8365e8daf1f098d215acf5d4d0d7c651a3314d270
+verified NotoSans-kern+Noto-sub.ttf 9eb642eb2d3b84bb8d13fe0e2d1582bfa78b2f261438ad1831b6ac7f224d7363
+verified NotoSans-kern+Twemoji-sub.ttf 2f323dc708cb573e46ebbecb8d49823ec5eca445e9b58a886fc6007bb7bd664d
 verified Inter-sub+Synth-COLRv1.ttf f3b71128265e3c47b230b86d4c948b887af794a75a7e0da724fb05033d222711
 verified NotoSans-kern+Synth-COLRv1.ttf 951c05288a58e2d7f14b32b92efe945d79d641d6d4350717bc1e1b45ee372f0c
 verified Lato-sub+Synth-COLRv0.ttf 46f0284819c93ab1dab4d7c7f64613f078c0e5409561b0485a0151f9fd8fb148
