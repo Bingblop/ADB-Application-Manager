@@ -201,6 +201,21 @@ public class FontPackageTest {
     for (String[] ok : new String[][] { { "\u200bA", "\u200bA" }, { "\u3164x", "\u3164x" }, { "\ud83d\ude00", "\ud83d\ude00" }, { "-", "-" }, { "\u00a9", "\u00a9" },
         { "\u0661", "\u0661" }, { "\u2167", "\u2167" }, { "\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f", null } })
       check("kept when something shows: " + visible(ok[0]), FontPackage.cleanName(ok[0]).equals(ok[1] == null ? ok[0] : ok[1]));
+    // an emoji newer than the phone's Unicode is UNASSIGNED to Java while the keyboard offers it and the page counts it (R-JOBS-2): the emoji
+    // blocks U+1F000-U+1FBFF count, whatever this JDK knows of them; the invisible unassigned ones elsewhere (default ignorables) still do not
+    String newer = new String(Character.toChars(0x1FAE9));                                    // Unicode 16: unknown to Java 21 and Android 15
+    check("kept: an emoji of Unicode 16 (U+1FAE9), known to this JDK or not", FontPackage.cleanName(newer).equals(newer));
+    int unknown = -1;
+    for (int cp = 0x1FBFF; cp >= 0x1F000 && unknown < 0; cp--) if (Character.getType(cp) == Character.UNASSIGNED) unknown = cp;
+    if (unknown < 0) skip("this JDK knows every code point of U+1F000-U+1FBFF");
+    else {
+      String u = new String(Character.toChars(unknown));
+      check("kept: U+" + Integer.toHexString(unknown).toUpperCase() + ", unassigned to this JDK, in the emoji blocks", FontPackage.cleanName(u).equals(u));
+    }
+    for (int cp : new int[] { 0x2065, 0xFFF0, 0xFFF8, 0xE0080, 0xE0FFF, 0x0378 }) {
+      String u = new String(Character.toChars(cp));
+      throwsFont("refused: U+" + Integer.toHexString(cp).toUpperCase() + " alone, unassigned outside the emoji blocks", "bad_name", () -> FontPackage.cleanName(u));
+    }
   }
 
   // ---------- suffix and package name ----------

@@ -70,12 +70,16 @@ public final class FontPackage {
      * Whether a name shows something: at least one letter, number, punctuation mark or symbol that is not drawn blank (the Hangul fillers,
      * the blank Braille pattern). Format characters (zero-width spaces and joiners, the word joiner, tag characters, the soft hyphen) and
      * combining marks draw nothing on their own, so a name made only of them would be an empty label in Settings and in My fonts.
+     * Everything in the emoji and symbol blocks U+1F000-U+1FBFF counts: they hold only symbols and digits, and an emoji newer than the
+     * phone's Unicode (UNASSIGNED here, while the keyboard offers it and the page's WebView knows it) is one of them. The page's
+     * fntNameShows is the same rule.
      */
     static boolean visible(String s) {
         for (int i = 0; i < s.length(); ) {
             int cp = s.codePointAt(i);
             i += Character.charCount(cp);
             if (cp == 0x115F || cp == 0x1160 || cp == 0x3164 || cp == 0xFFA0 || cp == 0x2800) continue;
+            if (cp >= 0x1F000 && cp <= 0x1FBFF) return true;
             switch (Character.getType(cp)) {
                 case Character.UPPERCASE_LETTER: case Character.LOWERCASE_LETTER: case Character.TITLECASE_LETTER:
                 case Character.MODIFIER_LETTER: case Character.OTHER_LETTER:

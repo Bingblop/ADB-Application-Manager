@@ -866,6 +866,20 @@ public class FontLibraryTest {
             String et = body(js, "function fntErrText(");
             is("the engine's face prefix stays in front of the page's sentence", et.contains("(Regular|Bold|Emoji) font: ") && et.contains("txF('Bold font: {0}'")
                     && et.contains("txF('Emoji font: {0}'") && et.contains("txF('Regular font: {0}'"), true);
+            // the page's name rule is FontPackage.visible's: its two patterns, read with this JDK's Unicode, answer as visible() does for every
+            // code point (an emoji of the emoji blocks that one side's Unicode does not know yet counts on both, R-JOBS-2)
+            int s1 = js.indexOf("function fntNameShows("), s2 = s1 < 0 ? -1 : js.indexOf('\n', s1);
+            Matcher sm = Pattern.compile("return /(\\[[^/\\n]*\\])/u\\.test\\(String\\(n \\|\\| ''\\)\\.replace\\(/(\\[[^/\\n]*\\])/g, ''\\)\\)")
+                    .matcher(s1 >= 0 && s2 > s1 ? js.substring(s1, s2) : "");
+            String differs = sm.find() ? null : "the pattern is not found";
+            if (differs == null) {
+                Pattern counts = Pattern.compile(sm.group(1).replace("\\u{", "\\x{")), blank = Pattern.compile(sm.group(2).replace("\\u{", "\\x{"));
+                for (int cp = 0; cp <= Character.MAX_CODE_POINT && differs == null; cp++) {
+                    String one = new String(Character.toChars(cp));
+                    if (counts.matcher(blank.matcher(one).replaceAll("")).find() != FontPackage.visible(one)) differs = "U+" + Integer.toHexString(cp).toUpperCase();
+                }
+            }
+            is("the page's fntNameShows is FontPackage.visible's rule for every code point" + (differs == null ? "" : " (" + differs + ")"), differs == null, true);
         }
 
         // the gates: the changer needs Root or Shizuku as the system user / root; the system emoji the root user

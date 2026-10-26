@@ -45163,8 +45163,9 @@ Type any command above (e.g. pm list packages -d)</div>
             if (fnt.boldMode === 'file' && color(fnt.pick.bold)) return txF('Bold font: {0}', txT(FNT_ERR.text_has_color));
             return '';
         }
-        // a name Samsung's list can show: a letter, digit, mark of punctuation or symbol that is not a blank filler (FontPackage.visible)
-        function fntNameShows(n) { return /[\p{L}\p{N}\p{P}\p{S}]/u.test(String(n || '').replace(/[\u115F\u1160\u3164\uFFA0\u2800]/g, '')); }
+        // a name Samsung's list can show: a letter, digit, mark of punctuation or symbol that is not a blank filler, or anything in the emoji
+        // blocks U+1F000-U+1FBFF, where an emoji newer than the phone's own Unicode is unknown to Java (FontPackage.visible, the same rule)
+        function fntNameShows(n) { return /[\p{L}\p{N}\p{P}\p{S}\u{1F000}-\u{1FBFF}]/u.test(String(n || '').replace(/[\u115F\u1160\u3164\uFFA0\u2800]/g, '')); }
         // an own COLRv1 emoji file shows only from Android 13 (the bridge refuses it below: not_usable)
         function fntEmojiTooNew() { const p = fnt.pick.emoji, sdk = fntSdk(); return fnt.emoji === 'file' && !!(p && p.info && p.info.color === 'COLRv1') && sdk > 0 && sdk < 33; }
         function fntCanBuild() {
