@@ -31,6 +31,7 @@ public class EmojiCatalogTest {
         tmp = Files.createTempDirectory("ec-").toFile();
         catalogData();
         downloadVerifier();
+        sweep();
         zipExtraction();
         fuzz(987654321, 3000);
         report();
@@ -76,6 +77,11 @@ public class EmojiCatalogTest {
         eq("noto sha", noto.sha256, "b8e25ea68db82f9e4d0aee921f4420be2be39887bd5c893a2ad98710531f9d0c");
         eq("noto format", noto.format, "COLRv1");
         eq("noto minApi", noto.minApiForMerge, 33);
+        // the licence is the one next to the font, at the tag the font comes from: noto-emoji moved its fonts to 2D/fonts, and the old
+        // main/fonts/LICENSE is a 404 (DL-7)
+        eq("noto licence next to the font", noto.licenseUrl, "https://github.com/googlefonts/noto-emoji/blob/v2026-09-24-unicode18_0/2D/fonts/LICENSE");
+        String notoFolder = noto.url.substring(0, noto.url.lastIndexOf('/') + 1).replace("https://raw.githubusercontent.com/googlefonts/noto-emoji/", "https://github.com/googlefonts/noto-emoji/blob/");
+        eq("…the font's own folder and tag", noto.licenseUrl, notoFolder + "LICENSE");
         check("noto mergeable", noto.mergeable);
         check("noto not a zip", !noto.isZip());
 
@@ -238,6 +244,20 @@ public class EmojiCatalogTest {
         check("cancel: no dest", !d6.isFile());
         check("cancel: no .part", !part(d6).exists());
 
+        // a Cancel that comes with the last bytes (DL-1): nothing is kept, though the file is whole
+        File d9 = new File(tmp, "late.ttf");
+        final Prog late = new Prog(false);
+        java.io.InputStream lastBytes = new ByteArrayInputStream(data) {
+            @Override public synchronized int read(byte[] b, int off, int len) {
+                int r = super.read(b, off, len);
+                if (r < 0) late.cancel = true;                 // the user pressed Cancel as the end arrived
+                return r;
+            }
+        };
+        eq("cancelled at the end", codeOf(() -> EmojiCatalog.download(lastBytes, d9, data.length, sha, 50L << 20, late)), "cancelled");
+        check("late cancel: no dest", !d9.isFile());
+        check("late cancel: no .part", !part(d9).exists());
+
         // an invalid expected hash is refused before any write
         File d7 = new File(tmp, "x.ttf");
         eq("invalid expected sha", codeOf(() -> EmojiCatalog.download(new ByteArrayInputStream(data), d7, data.length, "zz", 50L << 20, null)), "sha_mismatch");
@@ -251,6 +271,22 @@ public class EmojiCatalogTest {
     }
 
     static File part(File dest) { return new File(dest.getAbsoluteFile().getParentFile(), "." + dest.getName() + ".part"); }
+
+    /** What a killed process left in the emoji folder (DL-3): the .part of a download and Twemoji's zip go, the fonts stay. */
+    static void sweep() throws Exception {
+        File dir = new File(tmp, "emoji-sweep");
+        dir.mkdirs();
+        String[] gone = { ".apple.ttf.part", ".twemoji.zip" }, kept = { "apple.ttf", "noto.ttf", ".hidden", "notes.part", "x.zip" };
+        for (String g : gone) Files.write(new File(dir, g).toPath(), new byte[10]);
+        for (String k : kept) Files.write(new File(dir, k).toPath(), new byte[10]);
+        new File(dir, ".folder.part").mkdirs();
+        eq("sweep: two leftovers", EmojiCatalog.sweep(dir), 2);
+        for (String g : gone) check("sweep: " + g + " gone", !new File(dir, g).exists());
+        for (String k : kept) check("sweep: " + k + " kept", new File(dir, k).isFile());
+        check("sweep: a folder is not a leftover", new File(dir, ".folder.part").isDirectory());
+        eq("sweep: no folder", EmojiCatalog.sweep(new File(tmp, "no-such-folder")), 0);
+        eq("sweep: null", EmojiCatalog.sweep(null), 0);
+    }
 
     // ---------------------------------------------------------------------------------------------
     // The Twemoji zip-entry extraction
