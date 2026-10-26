@@ -1,0 +1,8 @@
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=6NUV8FyLNQOQZAnv9awKnu4MyedJOLzNHw5shR0&skey=2eca4ab215eafb9c&v=v38) format('woff2');
+  unicode-range: U+46, U+61, U+63, U+65, U+6e, U+72-73, U+75;
+}

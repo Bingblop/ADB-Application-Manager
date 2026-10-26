@@ -1,0 +1,9 @@
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 75% 100%;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=KFOmCnqEu92Fr1Me4GZNCzcPJ-G19OwnFgvGcixoGk4&skey=a0a0114a1dcab3ac&v=v51) format('woff2');
+  unicode-range: U+20, U+47, U+61, U+64, U+69, U+6d, U+70, U+72-73, U+75, U+77, U+79-7a;
+}
