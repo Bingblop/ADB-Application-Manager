@@ -6720,7 +6720,8 @@ public class MainActivity extends Activity {
     // Custom Fonts (v7.17.0): fonts made on the phone from the user's own files, the library of them (My fonts), the five emoji downloads,
     // the Samsung font changer and the system emoji swap; the bridge is design section 6 (fontMaker*, emoji*, sysEmoji*, softRestart). What
     // needs no Android classes is FontLibrary's (ids, tokens, the request, meta.json, jobs), the fonts are FontBuilder's and FontPackage's,
-    // the privileged scripts SamsungFonts', the downloads EmojiCatalog's: all tested on the JDK.
+    // the privileged scripts SamsungFonts', the downloads EmojiCatalog's: all tested on the JDK. v7.18.0 adds the Google Fonts browser
+    // (gfonts*: GoogleFonts') and the emoji fonts card's samples (emojiSpecimen*: EmojiSpecimen's).
     // ---------------------------------------------------------------------------------------------
 
     private static final int REQ_FONTMAKER_PICK = 4294;     // a font file for the font maker (Regular, Bold or emoji)
@@ -14488,9 +14489,9 @@ public class MainActivity extends Activity {
         }
 
         // FONTMAKER:BRIDGE:BEGIN
-        // ---- Custom Fonts (design section 6). Answers are JSON, {ok, ...} or {ok:false, code, error}, except fontMakerPreview and fontMakerFontData
-        // (base64, "" when missing or over 24 MB). Ids, tokens and catalog ids are checked against FontLibrary's patterns and only looked up, so
-        // nothing the page sends names a path. The work itself is the activity's fmk* methods. ----
+        // ---- Custom Fonts (design section 6). Answers are JSON, {ok, ...} or {ok:false, code, error}, except fontMakerPreview, fontMakerFontData
+        // and emojiSpecimenFont (base64, "" when missing or over 24 MB). Ids, tokens and catalog ids are checked against FontLibrary's patterns
+        // and only looked up, so nothing the page sends names a path. The work itself is the activity's fmk* (and gf*) methods. ----
 
         /**
          * Opens Android's file chooser for one slot (regular, bold, emoji). Answer {ok}, or {ok:false, code:"busy"} while a chooser is already
