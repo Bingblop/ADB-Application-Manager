@@ -1,0 +1,21 @@
+ok   1. each row previews its own font (a FontFace from fontMakerFontData)
+ok   2. Delete asks first: "Delete Lato?", what happens, a red Delete and Cancel
+ok      Cancel keeps it, nothing sent
+ok      a tap beside the sheet keeps it too
+ok      Delete removes it: fontMakerDelete, the row gone, a toast
+ok   3. the font in use is refused: "Reset the font changer first." under its row
+ok   4. Uninstall: "Uninstalling…" while it runs, then Install and the toast
+ok      Install: Installed again (the app's pm install), the toast
+ok   5. Export: the save-as of the app, the toast names the .apk
+ok   6. Use as the phone's emoji: sysEmojiApply, the read-back of each file, Undo appears
+ok      the toast: until the next restart
+ok      the emoji in use cannot be deleted: "Undo the system emoji first."
+ok      Undo: sysEmojiUndo, Default again, the toast
+ok   7. Soft reboot asks first: every app closes, a normal restart undoes the swap
+ok      Cancel: softRestart is not called
+ok      Soft reboot: softRestart is called once
+ok      no page errors
+ok   8. without the font maker each card says "Needs the app build"
+ok      a tap on Choose says so too
+ok      no page errors
+all passed

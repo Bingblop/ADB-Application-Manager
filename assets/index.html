@@ -7933,6 +7933,141 @@
             </div>
         </section>
 <!-- ROOTFEATURES:VIEW:END -->
+<!-- FONTS:VIEW:BEGIN -->
+        <!-- v7.17.0 Custom Fonts: make a Samsung FlipFont package (Regular, an optional Bold, emoji inside), the emoji downloads, the fonts made here,
+             the font changer (Root, or Shizuku as the system user UID 1000 or root UID 0) and the system emoji swap (Root or Shizuku as UID 0, until restart).
+             The rows are Root Features' (rf-row, rootLockedRow); the work is the app's (FONTS:JS, the fontMaker* / emoji* / sysEmoji* bridge calls). -->
+        <section id="view-fonts" class="view-content">
+            <style>
+                #view-fonts .color-card-subtitle { margin-bottom: 0; }
+                .fnt-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-1); }
+                .fnt-head .color-card-title { flex: 1 1 auto; margin: 0; min-width: 0; }
+                .fnt-note { font-size: var(--fs-body); line-height: 1.5; color: var(--text-muted); margin-top: var(--space-2); overflow-wrap: anywhere; }
+                .fnt-note b { color: var(--text-main); font-weight: var(--fw-bold); }
+                .fnt-note.is-warn { color: var(--text-main); margin-top: var(--space-3); padding: var(--space-3) var(--space-3h); border-radius: var(--radius-md); border: 1px solid var(--line-suspended); background: var(--tint-suspended); }
+                #view-fonts .rf-row .op-mode-btn { white-space: nowrap; }
+                #view-fonts .rf-name { overflow-wrap: anywhere; }
+                .fnt-sec { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--fill-2); }
+                .fnt-lab { display: block; font-size: var(--fs-item); font-weight: var(--fw-bold); margin-bottom: var(--space-2); }
+                .fnt-sec > .op-select, .fnt-sec > .modal-text-input { width: 100%; font-size: var(--fs-item); padding: var(--space-3); margin: 0; }
+                .fnt-var { margin-top: var(--space-3); padding: var(--space-3) var(--space-3h); border-radius: var(--radius-md); background: var(--fill-1); border: 1px solid var(--border-glass); }
+                .fnt-field { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+                .fnt-field > label { flex: 0 0 auto; font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); }
+                .fnt-field > .op-select { flex: 1 1 140px; min-width: 0; font-size: var(--fs-item); padding: var(--space-3); }
+                .fnt-axis { margin-top: var(--space-3); }
+                .fnt-axis-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); }
+                .fnt-axis-head b { flex: 0 0 auto; font-weight: var(--fw-heavy); color: var(--text-main); font-variant-numeric: tabular-nums; }
+                .fnt-axis input[type=range] { display: block; width: 100%; height: 28px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+                .fnt-axis input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+                #fntPreview { margin-bottom: 0; }
+                #fntPreview .fs-line { overflow-wrap: anywhere; }
+                .fnt-err { font-size: var(--fs-body); line-height: 1.5; margin-top: var(--space-2); overflow-wrap: anywhere; }
+                .fnt-warns { margin: var(--space-2) 0 0; padding-left: var(--space-5); font-size: var(--fs-body); line-height: 1.5; color: var(--text-muted); overflow-wrap: anywhere; }
+                .fnt-build { margin-top: var(--space-4); }
+                .fnt-build .mode-action-btn { flex: 1 1 auto; justify-content: center; min-height: var(--tap); }
+                .fnt-result { margin-top: var(--space-3); font-size: var(--fs-body); line-height: 1.5; overflow-wrap: anywhere; }
+                .fnt-result:empty { display: none; }
+                .fnt-links { font-size: var(--fs-pill); line-height: 1.5; color: var(--text-muted); margin-top: var(--space-1); overflow-wrap: anywhere; }
+                .fnt-links a { color: var(--accent); text-decoration: none; font-weight: var(--fw-bold); }
+                .fnt-emo .agent-ask-prog, .fnt-lib .agent-ask-prog { margin-top: var(--space-2); }
+                .fnt-lib { padding-top: var(--space-3); border-top: 1px solid var(--fill-2); margin-top: var(--space-3); }
+                .fnt-lib-pv { font-size: var(--fs-title); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .fnt-lib-name { font-size: var(--fs-item); font-weight: var(--fw-bold); margin-top: var(--space-1); overflow-wrap: anywhere; }
+                .fnt-lib-meta { font-size: var(--fs-pill); font-weight: var(--fw-medium); color: var(--text-muted); margin-top: 2px; line-height: 1.4; overflow-wrap: anywhere; }
+                .fnt-lib-meta .is-on { color: var(--status-running); font-weight: var(--fw-bold); }
+                .fnt-lib .mode-btn-row { margin-top: var(--space-3); }
+                .fnt-lib .mode-action-btn { flex: 1 1 auto; justify-content: center; min-height: var(--ctl-h); }
+                .fnt-now { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-3); font-size: var(--fs-item); }
+                .fnt-now > span { color: var(--text-muted); font-weight: var(--fw-bold); }
+                .fnt-now > b { font-weight: var(--fw-heavy); text-align: end; overflow-wrap: anywhere; min-width: 0; }
+                .fnt-rb { margin-top: var(--space-3); padding: var(--space-3) var(--space-3h); border-radius: var(--radius-md); background: var(--input-bg); border: 1px solid var(--border-glass); font-size: var(--fs-pill); line-height: 1.45; color: var(--text-muted); overflow-wrap: anywhere; }
+                .fnt-rb code { font-family: monospace; font-size: var(--fs-pkg); color: var(--text-main); word-break: break-all; }
+                .fnt-rb .is-bad { color: var(--status-bloat); font-weight: var(--fw-bold); }
+                .fnt-sys-btns { margin-top: var(--space-3); }
+                #fntSysBody .fnt-field { margin-top: var(--space-3); }
+                .fnt-sys-btns .mode-action-btn { flex: 1 1 auto; justify-content: center; min-height: var(--ctl-h); }
+            </style>
+
+            <div class="color-card" id="fntTop">
+                <div class="color-card-title">Custom Fonts</div>
+                <div class="color-card-subtitle">Make a Samsung font package from a .ttf or .otf file, with a Bold and emoji inside, then install it or apply it. The Font option in this app's Settings changes only the app's own text.</div>
+            </div>
+
+            <div class="color-card" id="fntMakeCard">
+                <div class="color-card-title">Make a font</div>
+                <div class="color-card-subtitle">Choose the font file for normal text. A variable font becomes a fixed font at the weight you pick.</div>
+                <div id="fntRegRow"></div>
+                <div id="fntRegVar"></div>
+                <div id="fntRegMsg"></div>
+                <div class="font-sample" id="fntPreview" translate="no" aria-label="Sample text in the font you are making" style="display:none;">
+                    <div class="fs-big" id="fntPvBig">Aa Bb 123</div>
+                    <div class="fs-line" id="fntPvLine">The quick brown fox jumps over the lazy dog.</div>
+                    <div class="fs-line" id="fntPvBold">The quick brown fox jumps over the lazy dog.</div>
+                </div>
+                <div class="fnt-note" id="fntPvNote" style="display:none;"></div>
+
+                <div class="fnt-sec" id="fntBoldSec">
+                    <label class="fnt-lab" for="fntBoldSel">Bold</label>
+                    <select class="op-select" id="fntBoldSel" onchange="fntBoldChange(this.value)"></select>
+                    <div class="fnt-note" id="fntBoldNone">Without a Bold font, Android makes bold text from the Regular one.</div>
+                    <div id="fntBoldRow"></div>
+                    <div id="fntBoldVar"></div>
+                    <div id="fntBoldMsg"></div>
+                </div>
+
+                <div class="fnt-sec" id="fntEmojiSec">
+                    <label class="fnt-lab" for="fntEmojiSel">Emoji</label>
+                    <select class="op-select" id="fntEmojiSel" onchange="fntEmojiChange(this.value)"></select>
+                    <div class="fnt-note" id="fntEmojiNote"></div>
+                    <div id="fntEmojiRow"></div>
+                    <div id="fntEmojiMsg"></div>
+                </div>
+
+                <div class="fnt-sec">
+                    <label class="fnt-lab" for="fntName">Name</label>
+                    <input type="text" class="modal-text-input" id="fntName" maxlength="40" placeholder="The name in Samsung's font list" oninput="fntNameInput(this.value)" autocomplete="off" autocapitalize="words" spellcheck="false">
+                </div>
+
+                <div class="mode-btn-row fnt-build">
+                    <button type="button" class="mode-action-btn primary" id="fntBuildBtn" onclick="fntBuild()" disabled>Build font</button>
+                    <button type="button" class="mode-action-btn" id="fntCancelBtn" onclick="fntCancel()" style="display:none;">Cancel</button>
+                </div>
+                <div class="agent-ask-prog" id="fntBuildProg" role="progressbar" aria-label="Building the font" aria-valuemin="0" aria-valuemax="100"><div class="agent-ask-bar indet" id="fntBuildBar"><i id="fntBuildBarFill"></i></div><div class="agent-ask-prog-txt" id="fntBuildProgTxt"></div></div>
+                <div class="fnt-result" id="fntBuildResult" role="status" aria-live="polite"></div>
+            </div>
+
+            <div class="color-card" id="fntEmojiCard">
+                <div class="color-card-title">Emoji fonts</div>
+                <div class="color-card-subtitle">Download an emoji font to put it inside a font you make or, with root, to use it as the phone's emoji.</div>
+                <div id="fntEmojiList"></div>
+            </div>
+
+            <div class="color-card" id="fntLibCard">
+                <div class="color-card-title">My fonts</div>
+                <div class="color-card-subtitle">The fonts made on this phone.</div>
+                <div class="fnt-note is-warn" id="fntDeviceNote" style="display:none;"></div>
+                <div id="fntLibList"></div>
+            </div>
+
+            <div class="color-card" id="fntChangerCard">
+                <div class="fnt-head">
+                    <div class="color-card-title">Font changer</div>
+                    <span class="mode-status-tag inactive" id="fntChangerTag">LOCKED</span>
+                </div>
+                <div class="color-card-subtitle">Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).</div>
+                <div id="fntChangerBody"></div>
+            </div>
+
+            <div class="color-card" id="fntSysCard">
+                <div class="fnt-head">
+                    <div class="color-card-title">System emoji</div>
+                    <span class="mode-status-tag inactive" id="fntSysTag">LOCKED</span>
+                </div>
+                <div class="color-card-subtitle">Use a downloaded emoji font as the phone's emoji until the next restart. Needs Root, or Shizuku running as root (UID 0).</div>
+                <div id="fntSysBody"></div>
+            </div>
+        </section>
+<!-- FONTS:VIEW:END -->
         <section id="view-about" class="view-content">
             <style>
                 .auth-code-row { display:flex; gap:var(--space-3); align-items:center; margin-top:var(--space-4); }
@@ -11624,6 +11759,7 @@ Type any command above (e.g. pm list packages -d)</div>
             { key: 'morphe', label: 'Morphe\nPatcher', name: 'Morphe Patcher' },
             { key: 'sdm', label: 'SD Maid', name: 'SD Maid' },
             { key: 'rootfeatures', label: 'Root\nFeatures', name: 'Root Features' },          // v7.15.1: Super User features; unlocked by the root gate (isRootActive)
+            { key: 'fonts', label: 'Custom\nFonts', name: 'Custom Fonts' },                  // v7.17.0: make Samsung font packages, emoji downloads, the font changer (FONTS:VIEW / FONTS:JS)
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
@@ -11726,7 +11862,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // NOTE: these lists name tabs by their key (BNAV_DEFAULT, BNAV_SHORT, BNAV_ICONS, TAB_SHORTCUTS: 'console', 'logcat', 'taskmgr' ...). When a tab is added, renamed or replaced in TAB_DEFS, update them with it:
         // a key that TAB_DEFS does not have is skipped, so nothing breaks, but the default pinned tab and the shortcuts of that tab are lost until it is done (t260 checks that every tab has an icon).
         const BNAV_DEFAULT = ['apps', 'installer', ['extrasettings', 'settings'], 'console'];          // a list inside is "the first of these this version has" (Extra Settings where it exists, else Hidden Settings); Console: the ADB shell and the Terminal
-        const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', console: 'Console', logcat: 'Logcat', settings: 'Hidden', extrasettings: 'Extra', overlays: 'Monet', store: 'Stores', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', rootfeatures: 'Root', about: 'About' };
+        const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', console: 'Console', logcat: 'Logcat', settings: 'Hidden', extrasettings: 'Extra', overlays: 'Monet', store: 'Stores', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', rootfeatures: 'Root', fonts: 'Fonts', about: 'About' };
         const BNAV_ICONS = {                                                         // 24 px Material-style symbols, filled like the rest of the app's icons
             apps: '<path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>',
             'saved-lists': '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>',
@@ -11744,6 +11880,7 @@ Type any command above (e.g. pm list packages -d)</div>
             morphe: '<path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>',
             sdm: '<path d="M18 2h-8L4.02 8 4 20c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 6h-2V4h2v4zm3 0h-2V4h2v4zm3 0h-2V4h2v4z"/>',
             rootfeatures: '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>',          // a shield with a check (Material "verified user"): Super User
+            fonts: '<path d="M1.75 19L6.75 5h2.6l5 14h-2.6l-1.286-3.6H5.636L4.35 19zM6.35 13.4h3.4L8.05 8.64zM18.05 11.8a3.6 3.6 0 1 1 0 7.2a3.6 3.6 0 1 1 0-7.2zM18.05 13.8a1.6 1.6 0 1 0 0 3.2a1.6 1.6 0 1 0 0-3.2zM20 11.8h2V19h-2z"/>',          // "Aa", a capital and a small letter: Custom Fonts
             about: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'
         };
         const BNAV_ICON_MORE = '<path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>';
@@ -12448,6 +12585,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
             if (viewName === 'rootfeatures' && typeof onRootFeaturesShown === 'function') onRootFeaturesShown();
+            if (viewName === 'fonts' && typeof onFontsShown === 'function') onFontsShown();
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
             if (viewName === 'overlays') onOverlaysShown();
@@ -13955,6 +14093,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 try { if (typeof ovlOnModeChange === 'function') ovlOnModeChange(); } catch (e) { console.error('Overlays tab: ' + e); }
                 try { if (typeof tmOnModeChange === 'function') tmOnModeChange(); } catch (e) { console.error('Task Manager tab: ' + e); }
                 try { if (typeof rootOnModeChange === 'function') rootOnModeChange(); } catch (e) { console.error('Root Features tab: ' + e); }
+                try { if (typeof fntOnModeChange === 'function') fntOnModeChange(); } catch (e) { console.error(e); }
                 try { if (typeof installerOnModeChange === 'function') installerOnModeChange(); } catch (e) { console.error(e); }
                 try { if (typeof updOnModeChange === 'function') updOnModeChange(); } catch (e) { console.error(e); }
 
@@ -44621,6 +44760,759 @@ Type any command above (e.g. pm list packages -d)</div>
             S.values = r.values || {}; sdSettingsPaint(SD_SCHEMA[S.tool] || {});
         }
         // SDM:JS:END
+        // FONTS:JS:BEGIN
+        // ---- Custom Fonts tab (v7.17.0) ----
+        // Make a Samsung font package from a .ttf/.otf (a Regular, an optional Bold, emoji inside: fontMaker*), the emoji downloads (emoji*), the fonts made
+        // here (install, apply, export, delete), the font changer (RootGate.unlocked: Root with su, or Shizuku as the system user UID 1000 or root UID 0, the
+        // gate of the tracker switches) and the system emoji swap (RootGate.uid0: Root with su or Shizuku as UID 0, until the next restart: sysEmoji*).
+        // The bridge contract is section 6 of the font maker design. Every call is guarded (an app build without it says so); an answer may come as a JSON
+        // string or as an object. File, font and package names are data (translate="no"); a code the page knows gets the page's own (translated) sentence.
+        const fnt = {
+            pick: { regular: null, bold: null, emoji: null },             // per slot: { token, fileName, size, info } as onFontMakerPicked gave it
+            pickErr: { regular: '', bold: '', emoji: '' },
+            coords: { regular: {}, bold: {} },                              // the chosen point on each variable font's axes ({ tag: value })
+            boldMode: 'none', boldTouched: false, emoji: 'none', name: '', nameTouched: false,
+            job: '', building: false, cancelling: false,
+            lib: null, cat: null, dl: {}, emoErr: {}, libBusy: {}, libMsg: {},
+            changer: null, changerBusy: false, changerRb: null, changerErr: '', applyId: '',
+            sys: null, sysBusy: false, sysRb: null, sysErr: '',
+            faces: { regular: null, bold: null }, faceSeq: 0, libFaces: {}
+        };
+        const FNT_STAGES = ['read', 'instance', 'convert', 'emoji', 'package', 'sign', 'save'];
+        const FNT_STAGE_TEXT = { read: 'Reading the font files…', instance: 'Fixing the variable font at the chosen weight…', convert: 'Converting the outlines to TrueType…', emoji: 'Putting the emoji in…', package: 'Making the font package…', sign: 'Signing the package…', save: 'Saving…' };
+        const FNT_AXIS = { wght: 'Weight', wdth: 'Width', opsz: 'Optical size', slnt: 'Slant', ital: 'Italic' };
+        const FNT_ERR = {
+            not_a_font: 'This file is not a font.',
+            collection: 'This file holds several fonts (a font collection). Choose a single .ttf or .otf file.',
+            woff: 'This is a web font (WOFF). Choose a .ttf or .otf file.',
+            too_big: 'This file is too large to use.',
+            bitmap_emoji: 'This emoji font is made of pictures (CBDT or sbix), which cannot go inside a font. Choose a COLR emoji font.',
+            no_colr: 'This font has no color emoji (COLR). Choose a COLR emoji font.',
+            too_many_glyphs: 'The font and the emoji together have more glyphs than one font can hold (65,535).',
+            bad_font: 'The font file is damaged, or uses something the app cannot read.',
+            applied: 'Reset the font changer first.',
+            sha_mismatch: 'The downloaded file is not the expected one (its checksum differs), so it was not kept.',
+            size_mismatch: 'The downloaded file has the wrong size, so it was not kept.',
+            network: 'The download failed. Check the connection and try again.',
+            no_space: 'There is not enough free space on this phone.',
+            not_samsung: 'Font packages work only on Samsung phones.',
+            in_use: 'Undo the system emoji first.'
+        };
+        const FNT_ANDROID = { 26: '8', 27: '8.1', 28: '9', 29: '10', 30: '11', 31: '12', 32: '12L', 33: '13', 34: '14', 35: '15', 36: '16' };
+
+        function fntHas(m) { const b = window.AndroidBridge; return !!(b && typeof b[m] === 'function'); }
+        function fntJson(x) {
+            if (x && typeof x === 'object') return x;
+            try { const v = JSON.parse(x || 'null'); return v && typeof v === 'object' ? v : { ok: false }; } catch (e) { return { ok: false }; }
+        }
+        // one bridge call: null when this app build does not have it (with the toast, unless quiet); an answer that cannot be read is {ok:false}
+        function fntCall(m, args, quiet) {
+            if (!fntHas(m)) { if (!quiet) showToast('Needs the app build'); return null; }
+            try { return fntJson(window.AndroidBridge[m].apply(window.AndroidBridge, args || [])); } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+        }
+        // the base64 answers (fontMakerPreview, fontMakerFontData): "" when too large, missing or an error
+        function fntB64(m, args) {
+            if (!fntHas(m)) return '';
+            let v = '';
+            try { v = window.AndroidBridge[m].apply(window.AndroidBridge, args || []); } catch (e) { return ''; }
+            v = typeof v === 'string' ? v.trim() : '';
+            return v && v.charAt(0) !== '{' ? v : '';
+        }
+        function fntErrText(r, fallback) {
+            r = r || {};
+            if (r.code && FNT_ERR[r.code]) return txT(FNT_ERR[r.code]);
+            return r.error ? String(r.error) : txT(fallback || 'Something went wrong.');
+        }
+        function fntSafe(id) { return String(id == null ? '' : id).replace(/[^A-Za-z0-9_-]/g, '_'); }
+        function fntNum(v) { v = +v || 0; return String(Math.round(v * 100) / 100); }
+        function fntDevice() { return (fnt.lib && fnt.lib.device) || {}; }
+        function fntSdk() { return (fnt.cat && fnt.cat.sdk) || fntDevice().sdk || 0; }
+        function fntEntry(id) { return ((fnt.lib && fnt.lib.entries) || []).find(e => e.id === id) || null; }
+        function fntChangerOpen() { const st = fnt.changer; return isRootActive() && !(st && st.unlocked === false); }
+        function fntFace(family, b64) {
+            return fetch('data:application/octet-stream;base64,' + b64).then(r => r.arrayBuffer()).then(buf => new FontFace(family, buf).load()).then(face => { document.fonts.add(face); return face; });
+        }
+        function fntFvs(coords) { const k = Object.keys(coords || {}); return k.length ? k.map(t => '"' + t + '" ' + (+coords[t])).join(', ') : 'normal'; }
+        function fntDefaults(info) { const c = {}; ((info && info.axes) || []).forEach(a => { c[a.tag] = +a.def; }); return c; }
+
+        // ---- the tab is shown, the working mode changed ----
+        function onFontsShown() {
+            fntLoadLib();
+            fntLoadCat();
+            fnt.changer = null;                                              // asked again each time: another app may have changed the font meanwhile
+            fnt.sys = null;
+            fntRenderAll();
+            // su's last yes may be stale (T-044): asked once more before the privileged cards open, as Root Features does
+            if (isRootActive()) checkAllWorkingModes(false, true);
+            fntAskStatus();
+        }
+        function fntOnModeChange() {
+            if (currentViewName() !== 'fonts') return;
+            fntRenderLib();
+            fntRenderChanger();
+            fntRenderSys();
+            fntAskStatus();
+        }
+        function fntRenderAll() { fntRenderMake(); fntRenderEmoji(); fntRenderLib(); fntRenderChanger(); fntRenderSys(); }
+        // the privileged cards' status, once per showing, only while their gate is open
+        function fntAskStatus() {
+            if (fntDevice().samsung !== false && fntChangerOpen() && !fnt.changer && !fnt.changerBusy && fntHas('fontMakerChangerStatus')) {
+                const r = fntCall('fontMakerChangerStatus', [], true);
+                if (r && r.ok) fnt.changerBusy = 'status'; else if (r) fnt.changerErr = fntErrText(r, 'Could not start');
+                fntRenderChanger();
+            }
+            if (ovlCanWriteOverlays() && !fnt.sys && !fnt.sysBusy && fntHas('sysEmojiStatus')) {
+                const r = fntCall('sysEmojiStatus', [], true);
+                if (r && r.ok) fnt.sysBusy = 'status'; else if (r) fnt.sysErr = fntErrText(r, 'Could not start');
+                fntRenderSys();
+            }
+        }
+
+        // ---- Make a font: the Regular, the Bold, the emoji, the name, Build ----
+        function fntSlotRow(slot, title, hint) {
+            const p = fnt.pick[slot];
+            const btn = '<button type="button" class="op-mode-btn" id="fntPick_' + slot + '" onclick="fntPick(\'' + slot + '\')"' + (fnt.building ? ' disabled' : '') + '>' + (p ? 'Change' : 'Choose') + '</button>';
+            if (!p) return '<div class="rf-row"><div class="rf-name">' + title + '<span>' + hint + '</span></div>' + btn + '</div>';
+            const i = p.info || {};
+            const bits = [((i.family || '') + ' ' + (i.subfamily || '')).trim(), txF('{0} glyphs', Number(i.glyphs || 0).toLocaleString()),
+                slot === 'emoji' ? (i.color || '') : txF('{0} outlines', i.outlines || 'TrueType'), i.variable ? txT('Variable font') : ''].filter(Boolean);
+            return '<div class="rf-row"><div class="rf-name"><bdi translate="no">' + escapeHtml(p.fileName || i.fullName || '') + '</bdi><span translate="no">' + escapeHtml(bits.join(' · ')) + '</span></div>' + btn + '</div>';
+        }
+        // what the source of a variable panel is: the Regular file, or for the Bold the Regular (same font, another weight) or the Bold file
+        function fntVarSource(which) {
+            if (which === 'regular') return fnt.pick.regular;
+            return fnt.boldMode === 'instance' ? fnt.pick.regular : fnt.boldMode === 'file' ? fnt.pick.bold : null;
+        }
+        function fntInstMatch(info, c) {
+            return ((info && info.instances) || []).findIndex(x => Object.keys(x.coords || {}).every(t => Math.abs((+x.coords[t]) - (+(c[t] !== undefined ? c[t] : NaN))) < 0.01));
+        }
+        function fntStep(a) { const r = (+a.max) - (+a.min); return r <= 2 ? 0.01 : r <= 50 ? 0.1 : 1; }
+        // a named style drop-down and one slider per axis, set to the chosen point
+        function fntVarHtml(which) {
+            const p = fntVarSource(which), i = p && p.info;
+            if (!i || !i.variable || !(i.axes || []).length) return '';
+            const c = fnt.coords[which], W = which === 'regular' ? 'R' : 'B', at = fntInstMatch(i, c), off = fnt.building ? ' disabled' : '';
+            const opts = '<option value=""' + (at < 0 ? ' selected' : '') + '>Custom</option>'
+                + (i.instances || []).map((x, n) => '<option value="' + n + '" translate="no"' + (n === at ? ' selected' : '') + '>' + escapeHtml(x.name) + '</option>').join('');
+            const axes = i.axes.filter(a => !a.hidden).map(a => {
+                const id = 'fntAx' + W + '_' + fntSafe(a.tag), v = c[a.tag] !== undefined ? c[a.tag] : a.def;
+                const name = FNT_AXIS[a.tag] ? FNT_AXIS[a.tag] : '<span translate="no">' + escapeHtml(a.name || a.tag) + '</span>';
+                return '<div class="fnt-axis"><div class="fnt-axis-head"><label for="' + id + '">' + name + '</label><b id="' + id + 'v" translate="no">' + fntNum(v) + '</b></div>'
+                    + '<input type="range" id="' + id + '" min="' + (+a.min) + '" max="' + (+a.max) + '" step="' + fntStep(a) + '" value="' + (+v) + '" oninput="fntAxisInput(\'' + which + '\', ' + jsArg(a.tag) + ', this)"' + off + '></div>';
+            }).join('');
+            return '<div class="fnt-var"><div class="fnt-field"><label for="fntInst' + W + '">Style</label><select class="op-select" id="fntInst' + W + '" onchange="fntInstChange(\'' + which + '\', this.value)"' + off + '>' + opts + '</select></div>' + axes + '</div>';
+        }
+        // the slot's error, else what the app found worth saying about the file
+        function fntMsg(elId, slot, extra) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            el.className = 'fnt-err';
+            if (fnt.pickErr[slot]) { errNote(el, fnt.pickErr[slot]); return; }
+            const p = fnt.pick[slot], w = ((p && p.info && p.info.warnings) || []).filter(Boolean).concat(extra || []);
+            el.innerHTML = w.length ? '<ul class="fnt-warns">' + w.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>' : '';
+        }
+        function fntRenderMake() {
+            const reg = document.getElementById('fntRegRow');
+            if (!reg) return;
+            reg.innerHTML = fntSlotRow('regular', 'Regular', 'A .ttf or .otf file');
+            document.getElementById('fntRegVar').innerHTML = fntVarHtml('regular');
+            fntMsg('fntRegMsg', 'regular');
+            fntRenderBold();
+            fntRenderEmojiSel();
+            const nm = document.getElementById('fntName');
+            if (nm && nm.value !== fnt.name) nm.value = fnt.name;
+            fntApplyPreview();
+            fntRenderBuildBtn();
+        }
+        function fntRenderBold() {
+            const sel = document.getElementById('fntBoldSel');
+            if (!sel) return;
+            const vf = !!(fnt.pick.regular && fnt.pick.regular.info && fnt.pick.regular.info.variable);
+            if (fnt.boldMode === 'instance' && !vf) fnt.boldMode = 'none';
+            sel.innerHTML = '<option value="none">None</option>' + (vf ? '<option value="instance">Same variable font, another weight</option>' : '') + '<option value="file">Another font file</option>';
+            sel.value = fnt.boldMode;
+            sel.disabled = fnt.building;
+            document.getElementById('fntBoldNone').style.display = fnt.boldMode === 'none' ? '' : 'none';
+            document.getElementById('fntBoldRow').innerHTML = fnt.boldMode === 'file' ? fntSlotRow('bold', 'Bold font file', 'A .ttf or .otf file') : '';
+            document.getElementById('fntBoldVar').innerHTML = fnt.boldMode === 'none' ? '' : fntVarHtml('bold');
+            if (fnt.boldMode === 'file') fntMsg('fntBoldMsg', 'bold'); else document.getElementById('fntBoldMsg').innerHTML = '';
+        }
+        // the emoji a font can take: downloaded, COLR, and shown by this Android (COLRv1 needs 13)
+        function fntEmojiChoices() { return ((fnt.cat && fnt.cat.items) || []).filter(it => it.downloaded && it.mergeable && it.usable !== false); }
+        function fntRenderEmojiSel() {
+            const sel = document.getElementById('fntEmojiSel');
+            if (!sel) return;
+            const ch = fntEmojiChoices();
+            if (fnt.emoji.indexOf('cat:') === 0 && !ch.some(it => 'cat:' + it.id === fnt.emoji)) fnt.emoji = 'none';
+            sel.innerHTML = '<option value="none">None</option>' + ch.map(it => '<option value="cat:' + escapeHtml(it.id) + '" translate="no">' + escapeHtml(it.name) + '</option>').join('') + '<option value="file">My own emoji font file</option>';
+            sel.value = fnt.emoji;
+            sel.disabled = fnt.building;
+            const note = document.getElementById('fntEmojiNote');
+            const text = fnt.emoji === 'file' ? 'A COLR emoji font. Picture emoji (CBDT, sbix) cannot go inside a font.'
+                : fnt.emoji !== 'none' ? "The emoji go inside the font, so apps show them instead of the phone's own emoji."
+                : ch.length ? '' : 'To add emoji, download an emoji font under Emoji fonts, or choose your own file.';
+            note.textContent = text;
+            note.style.display = text ? '' : 'none';
+            document.getElementById('fntEmojiRow').innerHTML = fnt.emoji === 'file' ? fntSlotRow('emoji', 'Emoji font file', 'A COLR emoji font') : '';
+            const p = fnt.pick.emoji, old = p && p.info && p.info.color === 'COLRv1' && fntSdk() && fntSdk() < 33;
+            if (fnt.emoji === 'file') fntMsg('fntEmojiMsg', 'emoji', old ? [txF('Needs Android {0} to show inside a font.', '13')] : []); else document.getElementById('fntEmojiMsg').innerHTML = '';
+        }
+        function fntCanBuild() {
+            if (fnt.building || !fnt.pick.regular || !fnt.name.trim()) return false;
+            if (fnt.boldMode === 'file' && !fnt.pick.bold) return false;
+            if (fnt.emoji === 'file' && !fnt.pick.emoji) return false;
+            return true;
+        }
+        function fntRenderBuildBtn() {
+            const b = document.getElementById('fntBuildBtn'), c = document.getElementById('fntCancelBtn'), nm = document.getElementById('fntName');
+            if (b) b.disabled = !fntCanBuild();
+            if (c) { c.style.display = fnt.building ? '' : 'none'; c.disabled = fnt.cancelling; }
+            if (nm) nm.disabled = fnt.building;
+        }
+
+        // the preview: the Regular as it will be built, and the Bold line as Android will draw bold text (from the Bold, or made from the Regular)
+        function fntLoadFace(slot) {
+            const p = fnt.pick[slot];
+            if (!p) return;
+            const token = p.token, old = fnt.faces[slot];
+            if (old && old.face) { try { document.fonts.delete(old.face); } catch (e) {} }
+            const b64 = fntB64('fontMakerPreview', [token]);
+            fnt.faces[slot] = { token: token, family: '', big: !b64, face: null };
+            if (!b64) { fntApplyPreview(); return; }
+            const family = (slot === 'bold' ? 'FntPvB' : 'FntPvR') + (++fnt.faceSeq);
+            fntFace(family, b64).then(face => {
+                const cur = fnt.faces[slot];
+                if (!cur || cur.token !== token) { try { document.fonts.delete(face); } catch (e) {} return; }
+                cur.family = family; cur.face = face;
+                fntApplyPreview();
+            }, () => { const cur = fnt.faces[slot]; if (cur && cur.token === token) { cur.failed = true; fntApplyPreview(); } });
+        }
+        function fntApplyPreview() {
+            const box = document.getElementById('fntPreview'), note = document.getElementById('fntPvNote');
+            if (!box) return;
+            const R = fnt.faces.regular, reg = fnt.pick.regular;
+            const say = (t) => { note.textContent = t; note.style.display = t ? '' : 'none'; };
+            if (!reg || !R || R.token !== reg.token || !R.family) {
+                box.style.display = 'none';
+                say(!reg || !R || R.token !== reg.token ? '' : R.big ? 'No preview: the file is over 24 MB.' : R.failed ? 'This font could not be shown.' : '');
+                return;
+            }
+            say('');
+            box.style.display = '';
+            box.style.fontFamily = "'" + R.family + "'";
+            const fvs = reg.info && reg.info.variable ? fntFvs(fnt.coords.regular) : 'normal';
+            document.getElementById('fntPvBig').style.fontVariationSettings = fvs;
+            document.getElementById('fntPvLine').style.fontVariationSettings = fvs;
+            const bl = document.getElementById('fntPvBold'), B = fnt.faces.bold, bp = fnt.pick.bold;
+            if (fnt.boldMode === 'file' && bp && B && B.token === bp.token && B.family) {
+                bl.style.fontFamily = "'" + B.family + "'";
+                bl.style.fontVariationSettings = bp.info && bp.info.variable ? fntFvs(fnt.coords.bold) : 'normal';
+                bl.style.fontWeight = '400';
+            } else if (fnt.boldMode === 'instance') {
+                bl.style.fontFamily = '';
+                bl.style.fontVariationSettings = fntFvs(fnt.coords.bold);
+                bl.style.fontWeight = '400';
+            } else {
+                bl.style.fontFamily = '';
+                bl.style.fontVariationSettings = fvs;
+                bl.style.fontWeight = '700';
+            }
+        }
+
+        function fntPick(slot) {
+            if (fnt.building) return;
+            const r = fntCall('fontMakerPick', [slot]);
+            if (r && r.ok === false) { fnt.pickErr[slot] = fntErrText(r, 'Could not start'); fntRenderMake(); }
+        }
+        window.onFontMakerPicked = function (slot, json) {
+            if (!(slot in fnt.pick)) return;
+            const r = fntJson(json);
+            if (!r.ok) {                                                     // a file that cannot be used keeps the one chosen before
+                if (r.code !== 'cancelled') { fnt.pickErr[slot] = fntErrText(r); fntRenderMake(); }
+                return;
+            }
+            const info = r.info || {};
+            if (slot === 'emoji' && !/^COLRv[01]$/.test(info.color || '')) {
+                fnt.pickErr.emoji = txT(info.color === 'CBDT' || info.color === 'sbix' ? FNT_ERR.bitmap_emoji : FNT_ERR.no_colr);
+                fntRenderMake();
+                return;
+            }
+            fnt.pick[slot] = { token: r.token, fileName: r.fileName || '', size: r.size || 0, info: info };
+            fnt.pickErr[slot] = '';
+            if (slot === 'regular') {
+                fnt.coords.regular = info.variable ? Object.assign(fntDefaults(info), info.guessRegular || {}) : {};
+                if (info.variable && fnt.boldMode === 'none' && !fnt.boldTouched) fnt.boldMode = 'instance';
+                if (fnt.boldMode === 'instance' && info.variable) fnt.coords.bold = Object.assign(fntDefaults(info), info.guessBold || {});
+                if (!fnt.nameTouched) fnt.name = String(info.family || String(r.fileName || '').replace(/\.[^.]+$/, '')).slice(0, 40);
+                fntLoadFace('regular');
+            } else if (slot === 'bold') {
+                fnt.coords.bold = info.variable ? Object.assign(fntDefaults(info), info.guessBold || {}) : {};
+                fntLoadFace('bold');
+            }
+            fntRenderMake();
+        };
+        function fntBoldChange(v) {
+            fnt.boldMode = v === 'instance' || v === 'file' ? v : 'none';
+            fnt.boldTouched = true;
+            const reg = fnt.pick.regular && fnt.pick.regular.info;
+            if (fnt.boldMode === 'instance') fnt.coords.bold = Object.assign(fntDefaults(reg), (reg && reg.guessBold) || {});
+            if (fnt.boldMode === 'file') { const b = fnt.pick.bold && fnt.pick.bold.info; fnt.coords.bold = b && b.variable ? Object.assign(fntDefaults(b), b.guessBold || {}) : {}; }
+            fntRenderBold();
+            fntApplyPreview();
+            fntRenderBuildBtn();
+        }
+        function fntEmojiChange(v) {
+            fnt.emoji = v === 'file' || String(v).indexOf('cat:') === 0 ? String(v) : 'none';
+            fntRenderEmojiSel();
+            fntRenderBuildBtn();
+        }
+        function fntNameInput(v) {
+            fnt.name = String(v || '');
+            fnt.nameTouched = fnt.name.trim() !== '';
+            fntRenderBuildBtn();
+        }
+        function fntInstChange(which, v) {
+            const p = fntVarSource(which), i = p && p.info, x = i && v !== '' ? (i.instances || [])[+v] : null;
+            if (!x) return;                                                  // Custom: the sliders keep their point
+            fnt.coords[which] = Object.assign(fntDefaults(i), x.coords || {});
+            document.getElementById(which === 'regular' ? 'fntRegVar' : 'fntBoldVar').innerHTML = fntVarHtml(which);
+            fntApplyPreview();
+        }
+        function fntAxisInput(which, tag, el) {
+            fnt.coords[which][tag] = +el.value;
+            const lab = document.getElementById(el.id + 'v');
+            if (lab) lab.textContent = fntNum(el.value);
+            const p = fntVarSource(which), sel = document.getElementById(which === 'regular' ? 'fntInstR' : 'fntInstB');
+            if (sel && p) { const at = fntInstMatch(p.info, fnt.coords[which]); sel.value = at < 0 ? '' : String(at); }
+            fntApplyPreview();
+        }
+
+        // ---- Build ----
+        function fntProg(text, stageIdx, done, total) {
+            const box = document.getElementById('fntBuildProg'), bar = document.getElementById('fntBuildBar'), fill = document.getElementById('fntBuildBarFill');
+            if (!box) return;
+            if (!text) { box.classList.remove('on'); box.removeAttribute('aria-valuenow'); return; }
+            box.classList.add('on');
+            document.getElementById('fntBuildProgTxt').textContent = text;
+            if (stageIdx < 0) { bar.classList.add('indet'); fill.style.width = ''; box.removeAttribute('aria-valuenow'); return; }
+            const pct = Math.round(100 * (stageIdx + (total > 0 ? Math.min(done / total, 1) : 0.5)) / FNT_STAGES.length);
+            bar.classList.remove('indet');
+            fill.style.width = pct + '%';
+            box.setAttribute('aria-valuenow', String(pct));
+        }
+        function fntBuild() {
+            if (!fntCanBuild()) return;
+            const reg = fnt.pick.regular, bp = fnt.pick.bold;
+            let bold = null;
+            if (fnt.boldMode === 'instance') bold = { token: reg.token, coords: Object.assign({}, fnt.coords.bold) };
+            else if (fnt.boldMode === 'file') bold = { token: bp.token, coords: bp.info && bp.info.variable ? Object.assign({}, fnt.coords.bold) : null };
+            const emoji = fnt.emoji === 'none' ? null : fnt.emoji === 'file' ? { token: fnt.pick.emoji.token } : { catalogId: fnt.emoji.slice(4) };
+            const req = { name: fnt.name.trim(), regular: { token: reg.token, coords: reg.info && reg.info.variable ? Object.assign({}, fnt.coords.regular) : null }, bold: bold, emoji: emoji, emojiScale: 1.0, rebuildId: null };
+            const r = fntCall('fontMakerBuild', [JSON.stringify(req)]);
+            if (!r) return;
+            const res = document.getElementById('fntBuildResult');
+            if (!r.ok) { errNote(res, fntErrText(r, 'Could not start')); return; }
+            haptic();
+            fnt.job = r.job || ''; fnt.building = true; fnt.cancelling = false;
+            res.innerHTML = '';
+            fntProg(txT('Starting…'), -1);
+            fntRenderMake();
+        }
+        function fntCancel() {
+            if (!fnt.building || fnt.cancelling) return;
+            const r = fntCall('fontMakerCancel', [fnt.job]);
+            if (!r) return;
+            fnt.cancelling = true;
+            fntProg(txT('Cancelling…'), -1);
+            fntRenderBuildBtn();
+        }
+        window.onFontMakerProgress = function (job, stage, done, total) {
+            if (!fnt.building || fnt.cancelling || (fnt.job && job !== fnt.job)) return;
+            const k = FNT_STAGES.indexOf(stage), label = FNT_STAGE_TEXT[stage] ? txT(FNT_STAGE_TEXT[stage]) : txT('Working…');
+            done = +done || 0; total = +total || 0;
+            fntProg(total > 0 ? label + ' ' + txF('{0} of {1}', done.toLocaleString(), total.toLocaleString()) : label, k, done, total);
+        };
+        window.onFontMakerBuilt = function (job, json) {
+            if (!fnt.building || (fnt.job && job !== fnt.job)) return;
+            const r = fntJson(json);
+            fnt.building = false; fnt.cancelling = false; fnt.job = '';
+            fntProg('');
+            const res = document.getElementById('fntBuildResult');
+            if (r.ok && r.entry) {
+                const w = (r.warnings || []).filter(Boolean);
+                res.innerHTML = '<div>' + escapeHtml(txF('{0} is ready in My fonts.', r.entry.name || '')) + '</div>' + (w.length ? '<ul class="fnt-warns">' + w.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>' : '');
+                fntLoadLib();
+                fntRenderLib();
+            } else if (r.code === 'cancelled') res.textContent = 'The build was cancelled.';
+            else errNote(res, fntErrText(r));
+            fntRenderMake();
+        };
+
+        // ---- Emoji fonts: the five downloads ----
+        function fntLoadCat() {
+            const r = fntCall('emojiCatalog', [], true);
+            fnt.cat = r && r.ok ? r : (r ? { ok: false, items: [], error: fntErrText(r) } : null);
+        }
+        function fntDlText(d) { return d.total ? txF('{0} of {1}', formatBytes(d.done), formatBytes(d.total)) : txT('Downloading…'); }
+        function fntEmoRow(it) {
+            const sid = fntSafe(it.id), d = fnt.dl[it.id], a = jsArg(it.id);
+            const btn = d ? '<button type="button" class="op-mode-btn" onclick="fntEmojiCancel(' + a + ')">Cancel</button>'
+                : it.downloaded ? '<button type="button" class="op-mode-btn" onclick="fntEmojiDelete(' + a + ')">Delete</button>'
+                : '<button type="button" class="op-mode-btn" onclick="fntEmojiDl(' + a + ')">Download</button>';
+            const meta = [it.version, it.format, formatBytes(it.size), it.downloaded ? txT('Downloaded') : ''].filter(Boolean).join(' · ');
+            let notes = '';
+            if (!it.mergeable) notes += '<div class="fnt-note">' + (it.id === 'apple' ? "Apple's emoji art from a third-party build. Used only as the phone's system emoji with root, until the next restart; never inside a font."
+                : "Picture emoji: used only as the phone's system emoji with root, until the next restart; never inside a font.") + '</div>';
+            else if (it.usable === false) notes += '<div class="fnt-note">' + escapeHtml(txF('Needs Android {0} to show inside a font.', FNT_ANDROID[it.minApi] || String(it.minApi))) + '</div>';
+            const link = (u, t) => u ? '<a href="#" onclick="openUrlExternal(' + jsArg(u) + '); return false;">' + t + '</a>' : '';
+            const links = [it.license ? '<span translate="no">' + escapeHtml(it.license) + '</span>' : '', link(it.licenseUrl, 'License'), link(it.sourceUrl, 'Source')].filter(Boolean).join(' · ');
+            const pct = d && d.total ? Math.round(100 * d.done / d.total) : 0;
+            const prog = d ? '<div class="agent-ask-prog on" role="progressbar" aria-label="Downloading" aria-valuemin="0" aria-valuemax="100"' + (d.total ? ' aria-valuenow="' + pct + '"' : '') + '><div class="agent-ask-bar' + (d.total ? '' : ' indet') + '" id="fntEmoBar_' + sid + '"><i' + (d.total ? ' style="width:' + pct + '%"' : '') + '></i></div><div class="agent-ask-prog-txt" id="fntEmoTxt_' + sid + '" translate="no">' + escapeHtml(d.cancelling ? txT('Cancelling…') : fntDlText(d)) + '</div></div>' : '';
+            const err = fnt.emoErr[it.id] ? '<div class="fnt-err"><span class="is-err">' + escapeHtml(fnt.emoErr[it.id]) + '</span></div>' : '';
+            return '<div class="fnt-emo" id="fntEmo_' + sid + '"><div class="rf-row"><div class="rf-name"><bdi translate="no">' + escapeHtml(it.name) + '</bdi><span translate="no">' + escapeHtml(meta) + '</span></div>' + btn + '</div>'
+                + notes + (links ? '<div class="fnt-links">' + links + '</div>' : '') + prog + err + '</div>';
+        }
+        function fntRenderEmoji() {
+            const list = document.getElementById('fntEmojiList');
+            if (!list) return;
+            const C = fnt.cat;
+            if (!C) { list.innerHTML = '<div class="list-empty">Needs the app build</div>'; return; }
+            if (C.error) { errNote(list, C.error); return; }
+            list.innerHTML = (C.items || []).map(fntEmoRow).join('') || '<div class="list-empty">Nothing to download.</div>';
+        }
+        function fntEmojiDl(id) {
+            if (fnt.dl[id]) return;
+            const r = fntCall('emojiDownload', [id]);
+            if (!r) return;
+            if (!r.ok) { fnt.emoErr[id] = fntErrText(r, 'Could not start'); fntRenderEmoji(); return; }
+            haptic();
+            fnt.dl[id] = { done: 0, total: 0 };
+            delete fnt.emoErr[id];
+            fntRenderEmoji();
+        }
+        function fntEmojiCancel(id) {
+            const d = fnt.dl[id];
+            if (!d || d.cancelling) return;
+            if (!fntCall('emojiCancel', [id])) return;
+            d.cancelling = true;
+            const t = document.getElementById('fntEmoTxt_' + fntSafe(id));
+            if (t) t.textContent = txT('Cancelling…');
+        }
+        function fntEmojiDelete(id) {
+            const r = fntCall('emojiDelete', [id]);
+            if (!r) return;
+            if (!r.ok) { fnt.emoErr[id] = fntErrText(r); fntRenderEmoji(); return; }
+            haptic();
+            delete fnt.emoErr[id];
+            fntLoadCat();
+            fntRenderEmoji();
+            fntRenderEmojiSel();
+            fntRenderBuildBtn();
+            fntRenderSys();
+        }
+        window.onEmojiProgress = function (id, done, total) {
+            const d = fnt.dl[id];
+            if (!d || d.cancelling) return;
+            d.done = +done || 0; d.total = +total || 0;
+            const sid = fntSafe(id), bar = document.getElementById('fntEmoBar_' + sid), txt = document.getElementById('fntEmoTxt_' + sid);
+            if (!bar) return;
+            const pct = d.total ? Math.round(100 * Math.min(d.done / d.total, 1)) : 0;
+            bar.classList.toggle('indet', !d.total);
+            bar.firstElementChild.style.width = d.total ? pct + '%' : '';
+            if (d.total) bar.parentElement.setAttribute('aria-valuenow', String(pct)); else bar.parentElement.removeAttribute('aria-valuenow');
+            if (txt) txt.textContent = fntDlText(d);
+        };
+        window.onEmojiDone = function (id, json) {
+            const r = fntJson(json), it = ((fnt.cat && fnt.cat.items) || []).find(x => x.id === id);
+            delete fnt.dl[id];
+            if (r.ok) showToast(txF('{0} downloaded', it ? it.name : id));
+            else if (r.code !== 'cancelled') fnt.emoErr[id] = fntErrText(r);
+            fntLoadCat();
+            fntRenderEmoji();
+            fntRenderEmojiSel();
+            fntRenderBuildBtn();
+            fntRenderSys();
+        };
+
+        // ---- My fonts ----
+        function fntLoadLib() {
+            const r = fntCall('fontMakerLibrary', [], true);
+            fnt.lib = r && r.ok ? r : (r ? { ok: false, entries: [], device: {}, error: fntErrText(r) } : null);
+        }
+        function fntLibRow(e, dev) {
+            const sid = fntSafe(e.id), a = jsArg(e.id), busy = fnt.libBusy[e.id] || '', samsung = dev.samsung !== false, open = fntChangerOpen();
+            const older = e.installed && e.installedVersion && e.installedVersion < e.versionCode;
+            const state = e.applied ? '<span class="is-on">' + escapeHtml(txT('In use')) + '</span>' : escapeHtml(e.installed ? (older ? txT('Installed, an older version') : txT('Installed')) : txT('Not installed'));
+            const meta = [formatBytes(e.sizes && e.sizes.apk), e.hasBold ? txT('Regular and Bold') : txT('Regular only'), e.emoji ? txF('Emoji: {0}', e.emoji.name || e.emoji.id) : '', txF('Version {0}', e.versionCode)].filter(Boolean).join(' · ');
+            const b = (label, on, onclick) => '<button type="button" class="mode-action-btn"' + (onclick ? ' onclick="' + onclick + '"' : '') + (on ? '' : ' disabled') + '>' + label + '</button>';
+            const install = busy === 'install' ? b('Installing…', false) : busy === 'uninstall' ? b('Uninstalling…', false)
+                : e.installed && !older ? b('Uninstall', !busy, 'fntUninstall(' + a + ')')
+                : b(older ? 'Update' : 'Install', samsung && !busy, 'fntInstall(' + a + ')');
+            const apply = !samsung ? b('Apply', false) : open ? b(fnt.changerBusy === 'apply' && fnt.applyId === e.id ? 'Applying…' : 'Apply', !e.applied && !fnt.changerBusy, 'fntApply(' + a + ')')
+                : '<button type="button" class="mode-action-btn locked" onclick="fntApply(' + a + ')" title="Needs Root or the system user">' + XQ_LOCK_SVG + ' <span>Apply</span></button>';
+            const msg = fnt.libMsg[e.id];
+            return '<div class="fnt-lib" id="fntLib_' + sid + '">'
+                + '<div class="fnt-lib-pv" id="fntLibPv_' + sid + '" translate="no" aria-hidden="true">The quick brown fox jumps over the lazy dog.</div>'
+                + '<div class="fnt-lib-name" translate="no">' + escapeHtml(e.name) + '</div>'
+                + '<div class="fnt-lib-meta" translate="no">' + escapeHtml(e.pkg) + '</div>'
+                + '<div class="fnt-lib-meta" translate="no">' + state + ' · ' + escapeHtml(meta) + '</div>'
+                + '<div class="mode-btn-row">' + install + apply + b('Export', !busy, 'fntExport(' + a + ')') + b('Delete', !busy, 'fntDeleteAsk(' + a + ')') + '</div>'
+                + (msg ? '<div class="fnt-err">' + (msg.err ? '<span class="is-err">' + escapeHtml(msg.text) + '</span>' : escapeHtml(msg.text)) + '</div>' : '')
+                + '</div>';
+        }
+        function fntRenderLib() {
+            const list = document.getElementById('fntLibList'), note = document.getElementById('fntDeviceNote');
+            if (!list) return;
+            const L = fnt.lib;
+            if (!L) { note.style.display = 'none'; list.innerHTML = '<div class="list-empty">Needs the app build</div>'; return; }
+            const dev = L.device || {};
+            // said once, above the rows: the phone cannot use Samsung's Font style setting for these fonts
+            let n = '';
+            if (dev.samsung === false) n = 'Font packages work only on Samsung phones. You can still export them.';
+            else if (dev.appliesSelfSigned === false) n = dev.oneUi ? txF("On One UI {0}, Samsung's Font style setting does not apply fonts made on this phone. Use Apply instead: it needs Root, or the system user through Shizuku.", dev.oneUi)
+                : txT("On this phone, Samsung's Font style setting does not apply fonts made here. Use Apply instead: it needs Root, or the system user through Shizuku.");
+            note.textContent = n;
+            note.style.display = n ? '' : 'none';
+            if (L.error) { errNote(list, L.error); return; }
+            const entries = L.entries || [];
+            list.innerHTML = entries.length ? entries.map(e => fntLibRow(e, dev)).join('') : '<div class="list-empty">No fonts yet. The fonts you make appear here.</div>';
+            entries.forEach(fntLibPreview);
+        }
+        // the first line of a row in the font itself (its Regular), loaded once per version
+        function fntLibPreview(e) {
+            const el = document.getElementById('fntLibPv_' + fntSafe(e.id));
+            if (!el) return;
+            const key = e.id + ':' + e.versionCode, known = fnt.libFaces[e.id];
+            if (known && known.key === key) { if (known.family) el.style.fontFamily = "'" + known.family + "'"; return; }
+            const b64 = fntB64('fontMakerFontData', [e.id, 'regular']);
+            if (!b64) { fnt.libFaces[e.id] = { key: key, family: '' }; return; }
+            const family = 'FntLib' + (++fnt.faceSeq);
+            fnt.libFaces[e.id] = { key: key, family: '' };
+            fntFace(family, b64).then(face => {
+                const cur = fnt.libFaces[e.id];
+                if (!cur || cur.key !== key) { try { document.fonts.delete(face); } catch (x) {} return; }
+                if (known && known.face) { try { document.fonts.delete(known.face); } catch (x) {} }
+                cur.family = family; cur.face = face;
+                const now = document.getElementById('fntLibPv_' + fntSafe(e.id));
+                if (now) now.style.fontFamily = "'" + family + "'";
+            }, () => {});
+        }
+        function fntLibSay(id, text, err) { if (text) fnt.libMsg[id] = { text: text, err: !!err }; else delete fnt.libMsg[id]; fntRenderLib(); }
+        function fntInstall(id) {
+            if (fnt.libBusy[id]) return;
+            const r = fntCall('fontMakerInstall', [id]);
+            if (!r) return;
+            if (!r.ok) { fntLibSay(id, fntErrText(r, 'Could not start'), true); return; }
+            haptic();
+            fnt.libBusy[id] = 'install';
+            delete fnt.libMsg[id];
+            fntRenderLib();
+        }
+        function fntUninstall(id) {
+            if (fnt.libBusy[id]) return;
+            const r = fntCall('fontMakerUninstall', [id]);
+            if (!r) return;
+            if (!r.ok) { fntLibSay(id, fntErrText(r, 'Could not start'), true); return; }
+            haptic();
+            fnt.libBusy[id] = 'uninstall';
+            delete fnt.libMsg[id];
+            fntRenderLib();
+        }
+        window.onFontMakerInstalled = function (id, json) {
+            const r = fntJson(json);
+            delete fnt.libBusy[id];
+            fntLoadLib();
+            if (r.ok) { if (r.how === 'installer') fntLibSay(id, r.note || txT("Sent to Android's installer.")); else { fntLibSay(id, r.note || ''); showToast(txT('Installed')); } }
+            else fntLibSay(id, fntErrText(r, 'Install failed'), true);
+        };
+        window.onFontMakerUninstalled = function (id, json) {
+            const r = fntJson(json);
+            delete fnt.libBusy[id];
+            fntLoadLib();
+            if (r.ok) { fntLibSay(id, r.note || ''); showToast(txT('Uninstalled')); }
+            else fntLibSay(id, fntErrText(r), true);
+        };
+        function fntExport(id) {
+            const r = fntCall('fontMakerExport', [id]);
+            if (r && !r.ok) fntLibSay(id, fntErrText(r, 'Could not start'), true);
+        }
+        window.onFontMakerExported = function (id, json) {
+            const r = fntJson(json);
+            if (r.ok) { showToast(r.name ? txF('Saved {0}', r.name) : txT('Saved')); fntLibSay(id, ''); }
+            else if (r.code !== 'cancelled') fntLibSay(id, fntErrText(r), true);
+        };
+        async function fntDeleteAsk(id) {
+            const e = fntEntry(id);
+            if (!e || fnt.libBusy[id]) return;
+            if (!fntHas('fontMakerDelete')) { showToast('Needs the app build'); return; }
+            if (!await mpAsk({ title: txF('Delete {0}?', e.name), text: txT('The font is removed from this app. If it is installed, it stays installed until you uninstall it.'), ok: txT('Delete'), danger: true })) return;
+            const r = fntCall('fontMakerDelete', [id]);
+            if (!r) return;
+            if (!r.ok) { fntLibSay(id, fntErrText(r), true); return; }
+            haptic();
+            delete fnt.libFaces[id];
+            delete fnt.libMsg[id];
+            fntLoadLib();
+            fntRenderLib();
+            fntRenderChanger();
+            showToast(txF('Deleted {0}', e.name));
+        }
+
+        // ---- Font changer (RootGate.unlocked): the phone's font now, Apply from a row, Reset to Default ----
+        function fntRbHtml(rb) {
+            if (!rb) return '';
+            const code = (t) => '<code>' + escapeHtml(t) + '</code>';
+            let lines = '';
+            if (Array.isArray(rb)) lines = rb.map(x => '<div translate="no">' + code(x.target || '') + ' ' + escapeHtml(String(x.sha256 || '').slice(0, 12)) + (x.ok === false ? ' <span class="is-bad">✕</span>' : ' ✓') + '</div>').join('');
+            else {
+                if (rb.sansLoc) lines += '<div translate="no">' + code('sans.loc') + ' ' + code(rb.sansLoc) + '</div>';
+                lines += (rb.files || []).map(f => '<div translate="no">' + code(f.name || '') + ' · ' + escapeHtml(formatBytes(f.size)) + ' · ' + escapeHtml(String(f.sha256 || '').slice(0, 12)) + (f.label ? ' · ' + code(f.label) : '') + '</div>').join('');
+            }
+            const bad = Array.isArray(rb) && rb.some(x => x.ok === false);
+            return '<div class="fnt-rb"><div>' + (bad ? '<span class="is-bad">Some files did not change.</span>' : 'Read back from the phone:') + '</div>' + lines + '</div>';
+        }
+        function fntRenderChanger() {
+            const body = document.getElementById('fntChangerBody');
+            if (!body) return;
+            const dev = fntDevice(), st = fnt.changer;
+            if (!fntHas('fontMakerChangerStatus')) { setTag('fntChangerTag', 'inactive', txT('LOCKED')); body.innerHTML = '<div class="list-empty">Needs the app build</div>'; return; }
+            if (dev.samsung === false || (st && st.available === false)) { setTag('fntChangerTag', 'inactive', txT('SAMSUNG ONLY')); body.innerHTML = '<div class="fnt-note">The font changer needs a Samsung phone.</div>'; return; }
+            if (!fntChangerOpen()) {
+                setTag('fntChangerTag', 'inactive', txT('LOCKED'));
+                body.innerHTML = rootLockedRow('Apply a font', 'Put one of My fonts on the phone, or go back to Default', 'Needs Root or the system user');
+                return;
+            }
+            const busy = fnt.changerBusy, sysUser = st && st.mode ? st.mode === 'system' : !ovlCanWriteOverlays();
+            setTag('fntChangerTag', 'active', sysUser ? txT('SYSTEM USER') : txT('ROOT'));
+            const cur = st && st.current;
+            const now = !st ? '<b>' + escapeHtml(txT(busy === 'status' ? 'Checking…' : 'Unknown')) + '</b>'
+                : cur ? '<b translate="no">' + escapeHtml(cur.name || cur.suffix || '') + '</b>' : '<b>Default</b>';
+            body.innerHTML = '<div class="fnt-now"><span>Phone font</span>' + now + '</div>'
+                + '<div class="fnt-note">Apply a font from My fonts. Reset to Default puts the phone\'s own font back.</div>'
+                + fntRbHtml(fnt.changerRb)
+                + (fnt.changerErr ? '<div class="fnt-err"><span class="is-err">' + escapeHtml(fnt.changerErr) + '</span></div>' : '')
+                + '<div class="mode-btn-row fnt-sys-btns"><button type="button" class="mode-action-btn" id="fntResetBtn" onclick="fntReset()"' + (busy || !cur ? ' disabled' : '') + '>' + (busy === 'reset' ? 'Resetting…' : 'Reset to Default') + '</button></div>';
+        }
+        function fntApply(id) {
+            if (fntDevice().samsung === false) return;
+            if (!isRootActive()) { promptRootThenOpen(txT('The font changer')).then(ok => { fntRenderLib(); fntRenderChanger(); if (ok) fntApply(id); }); return; }
+            if (fnt.changerBusy && fnt.changerBusy !== 'status') return;
+            const r = fntCall('fontMakerApply', [id]);
+            if (!r) return;
+            if (!r.ok) { fnt.changerErr = fntErrText(r, 'Could not start'); fntLibSay(id, fnt.changerErr, true); fntRenderChanger(); return; }
+            haptic();
+            fnt.changerBusy = 'apply'; fnt.applyId = id; fnt.changerErr = ''; fnt.changerRb = null;
+            delete fnt.libMsg[id];
+            fntRenderLib();
+            fntRenderChanger();
+        }
+        function fntReset() {
+            if (!fntChangerOpen() || fnt.changerBusy) return;
+            const r = fntCall('fontMakerReset', []);
+            if (!r) return;
+            if (!r.ok) { fnt.changerErr = fntErrText(r, 'Could not start'); fntRenderChanger(); return; }
+            haptic();
+            fnt.changerBusy = 'reset'; fnt.changerErr = ''; fnt.changerRb = null;
+            fntRenderChanger();
+            fntRenderLib();
+        }
+        function fntChangerDone(r, okText) {
+            fnt.changerBusy = false; fnt.applyId = '';
+            if (r.ok) { fnt.changerRb = r.readBack || null; showToast(r.refreshed === false ? txT('Done. Apps show the change once they restart.') : okText); }
+            else fnt.changerErr = fntErrText(r);
+            fnt.changer = null;
+            fntLoadLib();
+            fntRenderLib();
+            fntRenderChanger();
+            fntAskStatus();
+        }
+        window.onFontMakerChangerStatus = function (json) {
+            const r = fntJson(json);
+            if (fnt.changerBusy === 'status') fnt.changerBusy = false;
+            if (r.ok) fnt.changer = r; else fnt.changerErr = fntErrText(r);
+            fntRenderChanger();
+            fntRenderLib();
+        };
+        window.onFontMakerApplied = function (json) { fntChangerDone(fntJson(json), txT('The font is applied.')); };
+        window.onFontMakerReset = function (json) { fntChangerDone(fntJson(json), txT('The default font is back.')); };
+
+        // ---- System emoji (RootGate.uid0), until the next restart ----
+        function fntSysChoices() { const sdk = fntSdk(); return ((fnt.cat && fnt.cat.items) || []).filter(it => it.downloaded && (it.format !== 'COLRv1' || !sdk || sdk >= 33)); }
+        function fntRenderSys() {
+            const body = document.getElementById('fntSysBody');
+            if (!body) return;
+            if (!fntHas('sysEmojiStatus')) { setTag('fntSysTag', 'inactive', txT('LOCKED')); body.innerHTML = '<div class="list-empty">Needs the app build</div>'; return; }
+            if (!ovlCanWriteOverlays() || (fnt.sys && fnt.sys.unlocked === false)) {
+                setTag('fntSysTag', 'inactive', txT('LOCKED'));
+                body.innerHTML = rootLockedRow("Use as the phone's emoji", 'A downloaded emoji font, until the next restart', 'Needs Super User');
+                return;
+            }
+            setTag('fntSysTag', 'active', txT('ROOT'));
+            const st = fnt.sys, busy = fnt.sysBusy, act = st && st.active, ch = fntSysChoices();
+            const now = !st ? '<b>' + escapeHtml(txT(busy === 'status' ? 'Checking…' : 'Unknown')) + '</b>' : act ? '<b translate="no">' + escapeHtml(act.name || act.id || '') + '</b>' : '<b>Default</b>';
+            const sel = document.getElementById('fntSysSel'), keep = sel ? sel.value : ((act && act.id) || '');
+            const pick = ch.length ? '<div class="fnt-field"><label for="fntSysSel">Emoji font</label><select class="op-select" id="fntSysSel"' + (busy ? ' disabled' : '') + '>'
+                + ch.map(it => '<option value="' + escapeHtml(it.id) + '" translate="no"' + (it.id === keep ? ' selected' : '') + '>' + escapeHtml(it.name) + '</option>').join('') + '</select></div>'
+                : '<div class="list-empty">Download an emoji font above first.</div>';
+            const btn = (id, label, fn, on) => '<button type="button" class="mode-action-btn" id="' + id + '" onclick="' + fn + '"' + (on ? '' : ' disabled') + '>' + label + '</button>';
+            body.innerHTML = '<div class="fnt-now"><span>Phone emoji</span>' + now + '</div>'
+                + pick
+                + '<div class="mode-btn-row fnt-sys-btns">'
+                + btn('fntSysUse', busy === 'apply' ? 'Applying…' : "Use as the phone's emoji", 'fntSysApply()', ch.length && !busy)
+                + (act || busy === 'undo' ? btn('fntSysUndo', busy === 'undo' ? 'Undoing…' : 'Undo', 'fntSysUndo()', !busy) : '')
+                + btn('fntSoftBtn', 'Soft reboot', 'fntSoftRestartAsk()', !busy)
+                + '</div>'
+                + '<div class="fnt-note">Apps that are open keep their emoji until they start again; Soft reboot starts them all again. A normal restart undoes the swap.</div>'
+                + fntRbHtml(fnt.sysRb)
+                + (fnt.sysErr ? '<div class="fnt-err"><span class="is-err">' + escapeHtml(fnt.sysErr) + '</span></div>' : '');
+        }
+        function fntSysApply() {
+            if (!ovlCanWriteOverlays() || fnt.sysBusy) return;
+            const sel = document.getElementById('fntSysSel'), id = sel ? sel.value : '';
+            if (!id) return;
+            const r = fntCall('sysEmojiApply', [id]);
+            if (!r) return;
+            if (!r.ok) { fnt.sysErr = fntErrText(r, 'Could not start'); fntRenderSys(); return; }
+            haptic();
+            fnt.sysBusy = 'apply'; fnt.sysErr = ''; fnt.sysRb = null;
+            fntRenderSys();
+        }
+        function fntSysUndo() {
+            if (!ovlCanWriteOverlays() || fnt.sysBusy) return;
+            const r = fntCall('sysEmojiUndo', []);
+            if (!r) return;
+            if (!r.ok) { fnt.sysErr = fntErrText(r, 'Could not start'); fntRenderSys(); return; }
+            haptic();
+            fnt.sysBusy = 'undo'; fnt.sysErr = ''; fnt.sysRb = null;
+            fntRenderSys();
+        }
+        async function fntSoftRestartAsk() {
+            if (!ovlCanWriteOverlays() || fnt.sysBusy) return;
+            if (!fntHas('softRestart')) { showToast('Needs the app build'); return; }
+            if (!await mpAsk({ title: txT('Soft reboot?'), text: txT('Only Android restarts, not the phone: the screen goes black for a few seconds and every app closes, without the boot screen. Unsaved work in open apps is lost. Faster than a full reboot; it does not clear everything a full one does.')
+                + '\n\n' + txT("Apps start again with the new emoji. A normal restart puts the phone's own emoji back."), ok: txT('Soft reboot'), danger: true })) return;
+            const r = fntCall('softRestart', []);
+            if (r && !r.ok) { fnt.sysErr = fntErrText(r, 'Could not start'); fntRenderSys(); }
+        }
+        function fntSysDone(r, okText) {
+            fnt.sysBusy = false;
+            if (r.ok) { fnt.sysRb = r.readBack || null; showToast(okText); }
+            else fnt.sysErr = fntErrText(r);
+            fnt.sys = null;
+            fntRenderSys();
+            fntAskStatus();
+        }
+        window.onSysEmojiStatus = function (json) {
+            const r = fntJson(json);
+            if (fnt.sysBusy === 'status') fnt.sysBusy = false;
+            if (r.ok) fnt.sys = r; else fnt.sysErr = fntErrText(r);
+            fntRenderSys();
+        };
+        window.onSysEmojiApplied = function (json) { fntSysDone(fntJson(json), txT('The phone uses the new emoji until the next restart.')); };
+        window.onSysEmojiUndone = function (json) { fntSysDone(fntJson(json), txT("The phone's own emoji are back.")); };
+        // a new language: the cards are drawn again, since the texts inside data rows (translate="no") are put together with txT / txF when drawn
+        document.addEventListener('i18nchange', () => { if (currentViewName() === 'fonts') fntRenderAll(); });
+        // FONTS:JS:END
         window.addEventListener('DOMContentLoaded', () => {
             tabLoadConfig();
             navLoad();

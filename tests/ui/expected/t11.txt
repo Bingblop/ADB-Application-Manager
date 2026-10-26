@@ -1,4 +1,4 @@
-tabs: Application Manager | Saved Applications | UAD-NG Debloater | Installer/ Updater | File Manager | Console | Live Logcat | Hidden Settings | Extra Settings | RRO/Monet Customization | App Stores | Task Manager | Connected Devices | Morphe Patcher | SD Maid | Root Features | About
+tabs: Application Manager | Saved Applications | UAD-NG Debloater | Installer/ Updater | File Manager | Console | Live Logcat | Hidden Settings | Extra Settings | RRO/Monet Customization | App Stores | Task Manager | Connected Devices | Morphe Patcher | SD Maid | Root Features | Custom Fonts | About
 first open status: Downloading the latest UAD-NG list (about 1.6 MB)...
 after download: 5,381 known packages • updated just now • 112 found on this phone
 default view: 61 shown • 0 selected | levels shown: RECOMMENDED

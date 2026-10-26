@@ -1,4 +1,4 @@
-// v7.15.1 Root Features tab (the gate, the Super User card, the Super User for apps and App components rows): the tab in the registry (before About,
+// v7.15.1 Root Features tab (the gate, the Super User card, the Super User for apps and App components rows): the tab in the registry (before Custom Fonts and About,
 // on, its own icon and short label, not pinned by default), the feature rows (#rfSuAppsBtn opens the root manager, #rfComponentsBtn the Application
 // Manager), the root-manager hand-off (Open root manager, its toasts, and the status read back on the way back), the root gate (#rootGate shown and the feature area locked unless the working mode is Root AND su granted it; the Java verdict
 // rootWorkingModeActive can veto), the status tag (ACTIVE / AVAILABLE / DENIED / NOT FOUND), the gate's Set Up opening Working Modes, Request Super User
@@ -109,8 +109,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const toastText = () => ev(() => document.getElementById('toastMsg').textContent);
 
   // ---- 1. the registry
-  const reg = await ev(() => ({ idx: TAB_DEFS.findIndex(t => t.key === 'rootfeatures'), n: TAB_DEFS.length, first: TAB_DEFS[0].key, last: TAB_DEFS[TAB_DEFS.length - 1].key, label: tabDef('rootfeatures').label, name: tabDef('rootfeatures').name, icon: !!BNAV_ICONS.rootfeatures && bnavIcon('rootfeatures').indexOf(BNAV_ICON_FALLBACK) < 0, short: bnavShort('rootfeatures'), pinned: tabDefaultPinned().includes('rootfeatures'), on: tabIsOn('rootfeatures'), inBar: !!document.querySelector('.tab-btn[data-tab="rootfeatures"]') }));
-  check('1. the tab is in the registry right before About (Application Manager still first), on, in the tab bar, with its two-line label and its name', reg.idx === reg.n - 2 && reg.first === 'apps' && reg.last === 'about' && reg.on && reg.inBar && reg.label === 'Root\nFeatures' && reg.name === 'Root Features', JSON.stringify(reg));
+  const reg = await ev(() => ({ idx: TAB_DEFS.findIndex(t => t.key === 'rootfeatures'), next: (TAB_DEFS[TAB_DEFS.findIndex(t => t.key === 'rootfeatures') + 1] || {}).key, n: TAB_DEFS.length, first: TAB_DEFS[0].key, last: TAB_DEFS[TAB_DEFS.length - 1].key, label: tabDef('rootfeatures').label, name: tabDef('rootfeatures').name, icon: !!BNAV_ICONS.rootfeatures && bnavIcon('rootfeatures').indexOf(BNAV_ICON_FALLBACK) < 0, short: bnavShort('rootfeatures'), pinned: tabDefaultPinned().includes('rootfeatures'), on: tabIsOn('rootfeatures'), inBar: !!document.querySelector('.tab-btn[data-tab="rootfeatures"]') }));
+  check('1. the tab is in the registry right before Custom Fonts and About (Application Manager still first), on, in the tab bar, with its two-line label and its name', reg.idx === reg.n - 3 && reg.next === 'fonts' && reg.first === 'apps' && reg.last === 'about' && reg.on && reg.inBar && reg.label === 'Root\nFeatures' && reg.name === 'Root Features', JSON.stringify(reg));
   check('   its own icon (not the fallback) and the short label "Root"; not pinned on the bottom bar by default', reg.icon && reg.short === 'Root' && !reg.pinned, JSON.stringify(reg));
 
   // ---- 2. (A) Root in use and su granted: the tab opens unlocked

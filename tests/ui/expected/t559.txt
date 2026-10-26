@@ -1,4 +1,4 @@
-ok   1. the tab is in the registry right before About (Application Manager still first), on, in the tab bar, with its two-line label and its name
+ok   1. the tab is in the registry right before Custom Fonts and About (Application Manager still first), on, in the tab bar, with its two-line label and its name
 ok      its own icon (not the fallback) and the short label "Root"; not pinned on the bottom bar by default
 ok   2. (A) Root in use and su granted: the tab opens and the gate is hidden
 ok      isRootActive() is true, the tag is green ACTIVE, the Super User card is put away, the feature area shows the unlocked Super User for apps row

@@ -1,0 +1,16 @@
+ok   1. the request: name, Regular token and point, Bold same token at wght 700, Twemoji, scale 1, no rebuild
+ok   2. building: the progress shows, Cancel appears, Build and the choices are locked
+ok   3. every stage is named, with its counts where the app gives them
+ok      the bar fills stage by stage and never goes back
+ok   4. done: the progress goes, Build is back, Cancel hidden
+ok      the result names the font and lists the app's warning
+ok      the new font is first in My fonts, not installed, with its emoji
+ok      no page errors
+ok   5. Cancel: fontMakerCancel with the build's job, "Cancelling…", Cancel itself disabled
+ok      the app's answer: "The build was cancelled.", nothing added to My fonts
+ok      no page errors
+ok   6. a static Regular: no point, no Bold, no emoji in the request
+ok      too_many_glyphs is said in the page's words, in the error colour
+ok   7. an app build without fontMakerBuild: "Needs the app build", no progress
+ok      no page errors
+all passed
