@@ -10,14 +10,18 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
  * SamsungFonts, the font changer's and the system-emoji swap's rules and privileged scripts. The One UI rule and the style index are
- * checked on their own; the scripts are run through a real {@code sh} against a fake root (the four absolute roots point into a temp
- * folder whose name has a space and an apostrophe, to prove the quoting) with {@code chown}, {@code chcon}, {@code restorecon},
- * {@code nsenter}, {@code mount}, {@code umount}, {@code setprop} and {@code settings} stubbed on {@code PATH}, the way SettingsDbTest runs
- * a real sh with a fake {@code settings}. A seeded fuzz feeds the parsers and the XML scanner truncated, bit-flipped, random and huge input.
+ * checked on their own; the scripts are run through a real {@code sh} against a fake root (the absolute roots point into a temp folder
+ * whose name has a space and an apostrophe, to prove the quoting) with {@code chown}, {@code chcon}, {@code restorecon}, {@code nsenter},
+ * {@code mount}, {@code umount}, {@code setprop} and {@code settings} stubbed on {@code PATH}, the way SettingsDbTest runs a real sh with a
+ * fake {@code settings}. The fake {@code mount} and {@code umount} keep a mount table in init's format (proc/1/mountinfo under the fake
+ * root), and the fake {@code nsenter} reads a bound file as the file its top mount shows, so a swap stacked on another, a root module's
+ * bind and a bind the record lost are real cases. A seeded fuzz feeds the parsers and the XML scanner truncated, bit-flipped, random and
+ * huge input.
  */
 public class SamsungFontsTest {
 
@@ -26,7 +30,7 @@ public class SamsungFontsTest {
     static void eq(String name, Object got, Object want) { n++; if (!java.util.Objects.equals(got, want)) { fails++; System.out.println("FAIL " + name + ": got <" + got + "> want <" + want + ">"); } }
     static void iae(String name, Runnable r) { n++; try { r.run(); fails++; System.out.println("FAIL " + name + ": no exception"); } catch (IllegalArgumentException e) { /* ok */ } }
 
-    static File root, bin;
+    static File root, bin, mi, log, busy;
     static SamsungFonts.Roots R;
 
     public static void main(String[] a) throws Exception {
@@ -43,6 +47,11 @@ public class SamsungFontsTest {
         changerMismatch();
         resetAndStatus();
         emojiSwap();
+        foreignMounts();
+        lostRecords();
+        busyUndo();
+        stagedCopies();
+        blindMountTable();
         pathConfinement();
 
         fuzz(1234567, 4000);
@@ -221,6 +230,71 @@ public class SamsungFontsTest {
         eq("undo count", undo.size(), 1);
         eq("undo state", undo.get(0).state, "undone");
         eq("undo sha", undo.get(0).sha256, shb);
+        check("an undo that did not say how many of the swap's binds are left is not back", !undo.get(0).back(null));
+
+        // the hash a file had before the bind (what Undo must bring back), and a file that carries a bind of the swap's own already
+        String sw2 = SamsungFonts.M_BIND + " ok /system/fonts/A.ttf\n" + SamsungFonts.M_ORIG + " " + shb + "\n" + SamsungFonts.M_SHA + "\n" + sha + "  /system/fonts/A.ttf\n"
+                + SamsungFonts.M_BIND + " stacked /system/fonts/B.ttf\n"
+                + SamsungFonts.M_BIND + " ok /system/fonts/C.ttf\n" + SamsungFonts.M_ORIG + " not-a-hash\n" + SamsungFonts.M_SHA + "\n" + sha + "  /system/fonts/C.ttf\n"
+                + SamsungFonts.M_END + "\n";
+        List<SamsungFonts.BindResult> s2 = SamsungFonts.parseSwap(sw2);
+        eq("swap with originals: count", s2.size(), 3);
+        eq("the hash before the bind", s2.get(0).original, shb);
+        eq("the hash after the bind", s2.get(0).sha256, sha);
+        eq("stacked", s2.get(1).state, "stacked");
+        eq("stacked: no hash read", s2.get(1).sha256, null);
+        eq("a damaged hash before is no hash", s2.get(2).original, null);
+
+        // after an undo: how many binds of the swap's own are left at each file
+        String un = SamsungFonts.M_UNDO + " /system/fonts/A.ttf\n" + SamsungFonts.M_OWN + " 0\n" + SamsungFonts.M_SHA + "\n" + shb + "  /system/fonts/A.ttf\n"
+                + SamsungFonts.M_UNDO + " /system/fonts/B.ttf\n" + SamsungFonts.M_OWN + " 1\n" + SamsungFonts.M_SHA + "\n" + sha + "  /system/fonts/B.ttf\n"
+                + SamsungFonts.M_UNDO + " /system/fonts/C.ttf\n" + SamsungFonts.M_OWN + " unknown\n" + SamsungFonts.M_SHA + "\n" + shb + "  /system/fonts/C.ttf\n"
+                + SamsungFonts.M_UNDO + " /system/fonts/D.ttf\n" + SamsungFonts.M_OWN + " 0\n" + SamsungFonts.M_SHA + "\n"
+                + SamsungFonts.M_END + "\n";
+        List<SamsungFonts.BindResult> u = SamsungFonts.parseSwap(un);
+        eq("undo with own counts", u.size(), 4);
+        eq("none of the swap's binds left", u.get(0).own, 0);
+        eq("one left", u.get(1).own, 1);
+        eq("not known", u.get(2).own, -1);
+        check("back: none left and the hash from before", u.get(0).back(shb));
+        check("back: none left, no hash recorded", u.get(0).back(null));
+        check("not back: another hash than before", !u.get(0).back(sha));
+        check("not back: a bind of the swap's own is left", !u.get(1).back(null));
+        check("not back: the mount table was not read", !u.get(2).back(null));
+        check("not back: no hash read back", !u.get(3).back(null));
+
+        // the swap's own binds as the mount table lists them (escaped as the table writes them)
+        String mnt = SamsungFonts.M_MNT + " yes\n"
+                + SamsungFonts.M_MOUNT + " /system/fonts/NotoColorEmoji.ttf /adb/adbmgr_fonts/noto.ttf\n"
+                + SamsungFonts.M_MOUNT + " /my\\040fonts/E.ttf /adb/adbmgr_fonts/twemoji.ttf\\040(deleted)\n"
+                + SamsungFonts.M_MOUNT + " /system/fonts/NotoColorEmoji.ttf /adb/adbmgr_fonts/apple.ttf\n"
+                + SamsungFonts.M_MOUNT + " /system/fonts/X.ttf /adb/modules/emoji/system/fonts/X.ttf\n"
+                + SamsungFonts.M_MOUNT + " ../x /adb/adbmgr_fonts/y.ttf\n"
+                + SamsungFonts.M_MOUNT + " /only-one-field\n"
+                + SamsungFonts.M_END + "\n";
+        SamsungFonts.Mounts m = SamsungFonts.parseMounts(mnt);
+        check("mounts readable", m.readable);
+        eq("mount points, each once, unescaped", m.targets, Arrays.asList("/system/fonts/NotoColorEmoji.ttf", "/my fonts/E.ttf"));
+        eq("staged files in the table's order, (deleted) taken off", m.staged, Arrays.asList("noto.ttf", "twemoji.ttf", "apple.ttf"));
+        eq("the newest bind shows", m.showing(), "apple");
+        SamsungFonts.Mounts blind = SamsungFonts.parseMounts(SamsungFonts.M_MNT + " no\n" + SamsungFonts.M_MOUNT + " /a /adb/adbmgr_fonts/z.ttf\n" + SamsungFonts.M_END + "\n");
+        check("mounts not readable", !blind.readable);
+        check("not readable: nothing listed", blind.targets.isEmpty() && blind.staged.isEmpty() && blind.showing() == null);
+        check("no answer: not readable", !SamsungFonts.parseMounts("").readable && !SamsungFonts.parseMounts(null).readable);
+        SamsungFonts.Mounts none = SamsungFonts.parseMounts(SamsungFonts.M_MNT + " yes\n" + SamsungFonts.M_END + "\n");
+        check("no bind of the swap's own", none.readable && none.targets.isEmpty() && none.showing() == null);
+
+        // the staged copies read back
+        Map<String, Boolean> stg = SamsungFonts.parseStaged(SamsungFonts.M_STAGED + " gone noto.ttf\n" + SamsungFonts.M_STAGED + " kept apple.ttf\njunk\n" + SamsungFonts.M_STAGED + " gone\n");
+        eq("staged: two named", stg.size(), 2);
+        eq("staged: gone", stg.get("noto.ttf"), Boolean.TRUE);
+        eq("staged: kept", stg.get("apple.ttf"), Boolean.FALSE);
+
+        // the mount table's escapes, both ways
+        eq("escape", SamsungFonts.mountinfoEscape("/a b\\c\td\ne'f"), "/a\\040b\\134c\\011d\\012e'f");
+        eq("unescape", SamsungFonts.mountinfoUnescape("/a\\040b\\134c\\011d\\012e'f"), "/a b\\c\td\ne'f");
+        eq("unescape: a short escape stays", SamsungFonts.mountinfoUnescape("/a\\04"), "/a\\04");
+        eq("unescape: not octal stays", SamsungFonts.mountinfoUnescape("/a\\089"), "/a\\089");
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -249,13 +323,40 @@ public class SamsungFontsTest {
         check("substring lang does not match", !nomatch.contains("B.ttf"));
 
         SamsungFonts.Roots sys = SamsungFonts.Roots.system();
-        List<String> targets = SamsungFonts.emojiFiles(sys, fonts, null,
-                Arrays.asList("/data/fonts/files/NotoColorEmoji--1/NotoColorEmoji.ttf", "/data/fonts/files/Roboto--1/Roboto.ttf", "/etc/passwd"));
+        List<String> targets = SamsungFonts.emojiFiles(sys, fonts, null);
         check("system path", targets.contains("/system/fonts/NotoColorEmoji.ttf"));
         check("product path", targets.contains("/product/fonts/NotoColorEmoji.ttf"));
-        check("updatable emoji included", targets.contains("/data/fonts/files/NotoColorEmoji--1/NotoColorEmoji.ttf"));
-        check("updatable non-emoji excluded", !targets.contains("/data/fonts/files/Roboto--1/Roboto.ttf"));
-        check("outside dataFonts excluded", !targets.contains("/etc/passwd"));
+        eq("each emoji file in /system/fonts and /product/fonts, nothing else", targets, Arrays.asList("/system/fonts/NotoColorEmoji.ttf",
+                "/product/fonts/NotoColorEmoji.ttf", "/system/fonts/NotoColorEmojiFlags.ttf", "/product/fonts/NotoColorEmojiFlags.ttf"));
+
+        // the updated emoji fonts the phone draws from instead: found, so the swap can refuse, and never a target (PRIV-1)
+        String upEmoji = "/data/fonts/files/~~qK7mVYLC0ixC8b1R7QYs5A==/~~9KnkPwQ2T3AjJ1DQ0w8Ftg==/NotoColorEmoji.ttf";
+        String upFlags = "/data/fonts/files/~~e/~~f/NotoColorEmojiFlags.ttf";
+        List<String> listed = Arrays.asList(upEmoji, "/data/fonts/files/~~a/~~b/Roboto-Regular.ttf", "/etc/passwd", "/data/fonts/files/../../etc/NotoColorEmoji.ttf",
+                "/data/fonts/files/~~c/~~d/NotoColorEmojiLegacy.ttf", "/data/fonts/filesX/NotoColorEmoji.ttf", null, "", upFlags, upEmoji);
+        eq("updated emoji fonts: the emoji and the flags, each once", SamsungFonts.updatedEmojiFiles(sys, fonts, null, listed), Arrays.asList(upEmoji, upFlags));
+        eq("updated emoji fonts: through font_fallback.xml too", SamsungFonts.updatedEmojiFiles(sys, null, fonts, listed), Arrays.asList(upEmoji, upFlags));
+        eq("no updated emoji font", SamsungFonts.updatedEmojiFiles(sys, fonts, null, Arrays.asList("/data/fonts/files/~~a/~~b/Roboto-Regular.ttf")), new ArrayList<String>());
+        eq("nothing listed", SamsungFonts.updatedEmojiFiles(sys, fonts, null, null), new ArrayList<String>());
+        eq("no fonts.xml", SamsungFonts.updatedEmojiFiles(sys, null, null, listed), new ArrayList<String>());
+        // the font map keys an update by PostScript name, which an entry can give apart from its file name
+        String ps = "<family lang=\"und-Zsye\"><font weight=\"400\" style=\"normal\" postScriptName=\"NotoColorEmoji\">NotoColorEmoji-v2.ttf</font></family>";
+        eq("matched by postScriptName", SamsungFonts.updatedEmojiFiles(sys, ps, null, Arrays.asList(upEmoji)), Arrays.asList(upEmoji));
+        eq("…and by the file name", SamsungFonts.updatedEmojiFiles(sys, ps, null, Arrays.asList("/data/fonts/files/~~g/~~h/NotoColorEmoji-v2.ttf")),
+                Arrays.asList("/data/fonts/files/~~g/~~h/NotoColorEmoji-v2.ttf"));
+        eq("the fonts of that family, file name and PostScript name", SamsungFonts.emojiFamilyFonts(ps).get(0)[1], "NotoColorEmoji");
+
+        // what the swap binds over: a file directly in /system/fonts or /product/fonts, nothing else
+        check("a target in /system/fonts", SamsungFonts.isSwapTarget(sys, "/system/fonts/NotoColorEmoji.ttf"));
+        check("a target in /product/fonts", SamsungFonts.isSwapTarget(sys, "/product/fonts/NotoColorEmoji.ttf"));
+        for (String bad : new String[] { upEmoji, "/data/fonts/files/NotoColorEmoji.ttf", "/system/fonts/sub/NotoColorEmoji.ttf", "/system/fonts/../etc/hosts",
+                "/etc/hosts", "/system/fonts/", "/system/fonts", "/system/fontsX/a.ttf", "", null })
+            check("not a target: " + bad, !SamsungFonts.isSwapTarget(sys, bad));
+        iae("the swap never binds under /data/fonts/files", () -> SamsungFonts.emojiSwapScript(sys, "/data/adb/adbmgr_fonts/noto.ttf",
+                Arrays.asList("/system/fonts/NotoColorEmoji.ttf", upEmoji)));
+        iae("…nor outside the font folders", () -> SamsungFonts.emojiSwapScript(sys, "/data/adb/adbmgr_fonts/noto.ttf", Arrays.asList("/etc/hosts")));
+        check("a swap over /system/fonts alone is built", SamsungFonts.emojiSwapScript(sys, "/data/adb/adbmgr_fonts/noto.ttf",
+                Arrays.asList("/system/fonts/NotoColorEmoji.ttf")).contains("mount -o bind"));
 
         // hostile / malformed XML must not throw or hang
         String[] nasty = {
@@ -301,11 +402,15 @@ public class SamsungFontsTest {
             eq("emoji files of " + file, got, want);
             check(file + ": legacy ignored", !got.contains("NotoColorEmojiLegacy.ttf"));
             // emojiFiles resolves each to /system/fonts and /product/fonts
-            List<String> targets = SamsungFonts.emojiFiles(sys, xml, null, null);
+            List<String> targets = SamsungFonts.emojiFiles(sys, xml, null);
             for (String name : want) {
                 check(file + ": system target for " + name, targets.contains("/system/fonts/" + name));
                 check(file + ": product target for " + name, targets.contains("/product/fonts/" + name));
             }
+            // an update of the emoji font under /data/fonts/files is found by its name in the real file
+            String up = "/data/fonts/files/~~qK7mVYLC0ixC8b1R7QYs5A==/~~9KnkPwQ2T3AjJ1DQ0w8Ftg==/NotoColorEmoji.ttf";
+            eq(file + ": the updated emoji font", SamsungFonts.updatedEmojiFiles(sys, xml, null, Arrays.asList(up, "/data/fonts/files/~~a/~~b/Roboto-Regular.ttf")),
+                    Arrays.asList(up));
         }
     }
 
@@ -333,21 +438,87 @@ public class SamsungFontsTest {
         new File(root, "system/fonts").mkdirs();
         new File(root, "product/fonts").mkdirs();
         new File(root, "data/fonts/files").mkdirs();
+        new File(root, "proc/1").mkdirs();
+        mi = new File(root, "proc/1/mountinfo");
+        log = new File(root, "mount.log");
+        busy = new File(root, "busy");
+        resetMounts();
         R = new SamsungFonts.Roots(
                 new File(root, "data/app_fonts").getAbsolutePath(),
                 new File(root, "data/adb").getAbsolutePath(),
                 new File(root, "system/fonts").getAbsolutePath(),
                 new File(root, "product/fonts").getAbsolutePath(),
-                new File(root, "data/fonts/files").getAbsolutePath());
+                new File(root, "data/fonts/files").getAbsolutePath(),
+                mi.getAbsolutePath());
 
-        // stubs: succeed silently (and the ones the swap needs actually move bytes)
+        // stubs: succeed silently (and the ones the swap needs keep a mount table)
         for (String cmd : new String[]{"chown", "chcon", "restorecon", "setprop", "settings"})
             writeStub(cmd, "#!/bin/sh\nexit 0\n");
-        // nsenter -t 1 -m -- CMD...  ->  run CMD
-        writeStub("nsenter", "#!/bin/sh\nwhile [ $# -gt 0 ] && [ \"$1\" != '--' ]; do shift; done\n[ \"$1\" = '--' ] && shift\nexec \"$@\"\n");
-        // mount -o bind SRC DST -> copy SRC over DST (simulates the bind), and log the target
-        writeStub("mount", "#!/bin/sh\nwhile [ \"$1\" = '-o' ]; do shift 2; done\nsrc=\"$1\"; dst=\"$2\"\necho \"mount $dst\" >> \"$FAKE_LOG\"\ncp \"$src\" \"$dst\"\n");
-        writeStub("umount", "#!/bin/sh\necho \"umount $1\" >> \"$FAKE_LOG\"\nexit 0\n");
+        // the table's escapes, and the source of the top mount at a path ("" when nothing is mounted there)
+        String fns = "esc() { printf '%s' \"$1\" | sed -e 's/\\\\/\\\\134/g' -e 's/ /\\\\040/g'; }\n"
+                + "unesc() { printf '%s' \"$1\" | sed -e 's/\\\\040/ /g' -e 's/\\\\134/\\\\/g'; }\n"
+                + "top() { E=\"$(esc \"$1\")\" awk 'BEGIN { e = ENVIRON[\"E\"] } $5 == e { s = $4 } END { print s }' \"$FAKE_MI\"; }\n";
+        // nsenter -t 1 -m -- CMD...  ->  run CMD; a bound file reads as the file its top mount shows, as it does on the phone
+        writeStub("nsenter", "#!/bin/sh\n" + fns
+                + "while [ $# -gt 0 ] && [ \"$1\" != '--' ]; do shift; done\n[ \"$1\" = '--' ] && shift\n"
+                + "if [ \"$1\" = sha256sum ] && [ -n \"$(top \"$2\")\" ]; then\n"
+                + "  h=$(sha256sum \"$(unesc \"$(top \"$2\")\")\" 2>/dev/null | cut -d' ' -f1)\n"
+                + "  [ -n \"$h\" ] && echo \"$h  $2\"\n  exit 0\nfi\nexec \"$@\"\n");
+        // mount -o bind SRC DST -> a line at the end of the table (the newest mount is on top), and the target logged
+        writeStub("mount", "#!/bin/sh\n" + fns
+                + "while [ \"$1\" = '-o' ]; do shift 2; done\necho \"mount $2\" >> \"$FAKE_LOG\"\n"
+                + "if [ ! -e \"$1\" ] || [ ! -e \"$2\" ]; then echo \"mount: $2: No such file or directory\" >&2; exit 1; fi\n"
+                + "n=$(wc -l < \"$FAKE_MI\" | tr -d ' ')\n"
+                + "printf '%s 1 0:2 %s %s rw - none none rw\\n' \"$((n + 100))\" \"$(esc \"$1\")\" \"$(esc \"$2\")\" >> \"$FAKE_MI\"\n");
+        // umount [-l] DST -> the top mount at DST leaves the table; while FAKE_BUSY exists only a lazy one succeeds
+        writeStub("umount", "#!/bin/sh\n" + fns
+                + "echo \"umount $*\" >> \"$FAKE_LOG\"\n"
+                + "lazy=0; if [ \"$1\" = '-l' ]; then lazy=1; shift; fi\n"
+                + "if [ -e \"$FAKE_BUSY\" ] && [ $lazy = 0 ]; then echo 'umount: Device or resource busy' >&2; exit 1; fi\n"
+                + "k=$(E=\"$(esc \"$1\")\" awk 'BEGIN { e = ENVIRON[\"E\"] } $5 == e { k = NR } END { print k + 0 }' \"$FAKE_MI\")\n"
+                + "if [ \"$k\" = 0 ]; then echo \"umount: $1: not mounted\" >&2; exit 1; fi\n"
+                + "awk -v k=\"$k\" 'NR != k' \"$FAKE_MI\" > \"$FAKE_MI.t\" && mv \"$FAKE_MI.t\" \"$FAKE_MI\"\n");
+    }
+
+    /** The fake init mount table with nothing but the root and /data, as after a restart. */
+    static void resetMounts() throws Exception {
+        Files.write(mi.toPath(), "1 0 0:1 / / rw - rootfs rootfs rw\n20 1 253:4 / /data rw,nosuid - f2fs /dev/block/dm-4 rw\n".getBytes(StandardCharsets.UTF_8));
+    }
+
+    static void clearLog() throws Exception { Files.write(log.toPath(), new byte[0]); }
+
+    static String logText() throws Exception { return log.isFile() ? new String(Files.readAllBytes(log.toPath()), StandardCharsets.UTF_8) : ""; }
+
+    /** The fake table's rows split into fields: [3] the source, [4] the mount point, both escaped. */
+    static List<String[]> mountRows() throws Exception {
+        List<String[]> out = new ArrayList<String[]>();
+        for (String line : new String(Files.readAllBytes(mi.toPath()), StandardCharsets.UTF_8).split("\n")) if (!line.isEmpty()) out.add(line.split(" "));
+        return out;
+    }
+
+    /** How many mounts are at a path, and how many of them are the swap's own (their source in adbmgr_fonts). */
+    static int mountsAt(String path) throws Exception {
+        int k = 0;
+        for (String[] f : mountRows()) if (f.length > 4 && f[4].equals(SamsungFonts.mountinfoEscape(path))) k++;
+        return k;
+    }
+
+    static int ownAt(String path) throws Exception {
+        int k = 0;
+        for (String[] f : mountRows()) if (f.length > 4 && f[4].equals(SamsungFonts.mountinfoEscape(path)) && f[3].contains("/adbmgr_fonts/")) k++;
+        return k;
+    }
+
+    /** What the phone shows at a path: the file its top mount binds, else the file itself. */
+    static byte[] seen(String path) throws Exception {
+        String src = path;
+        for (String[] f : mountRows()) if (f.length > 4 && f[4].equals(SamsungFonts.mountinfoEscape(path))) src = SamsungFonts.mountinfoUnescape(f[3]);
+        return Files.readAllBytes(new File(src).toPath());
+    }
+
+    /** Another tool's bind (a root module's emoji), or a swap whose record was lost: through the same fake mount. */
+    static void bind(String src, String dst) throws Exception {
+        sh("mount -o bind " + BackupScripts.quote(src) + " " + BackupScripts.quote(dst), null);
     }
 
     static void writeStub(String name, String body) throws Exception {
@@ -360,7 +531,9 @@ public class SamsungFontsTest {
     static String sh(String script, byte[] stdin) throws Exception {
         ProcessBuilder pb = new ProcessBuilder("sh", "-c", script);
         pb.environment().put("PATH", bin.getAbsolutePath() + ":" + System.getenv("PATH"));
-        pb.environment().put("FAKE_LOG", new File(root, "mount.log").getAbsolutePath());
+        pb.environment().put("FAKE_LOG", log.getAbsolutePath());
+        pb.environment().put("FAKE_MI", mi.getAbsolutePath());
+        pb.environment().put("FAKE_BUSY", busy.getAbsolutePath());
         pb.redirectErrorStream(true);
         Process p = pb.start();
         OutputStream os = p.getOutputStream();
@@ -385,8 +558,11 @@ public class SamsungFontsTest {
         return EmojiCatalog.hex(md.digest(b));
     }
 
+    static String shaOf(String path) throws Exception { return sha256(Files.readAllBytes(new File(path).toPath())); }
+
     static void changerRoundTrip() throws Exception {
         String suffix = "Inter_aa11bb";
+        String dir = R.appFonts + "/0/" + suffix;
         byte[] reg = bytesOf(4096, 1), bold = bytesOf(3000, 2);
         String regSha = sha256(reg), boldSha = sha256(bold);
 
@@ -394,8 +570,9 @@ public class SamsungFontsTest {
         SamsungFonts.WriteResult w1 = SamsungFonts.parseWrite(o1, "DroidSans.ttf");
         check("write regular ok", w1.ok);
         eq("write regular sha", w1.sha256, regSha);
-        check("regular file exists", new File(R.appFonts + "/0/" + suffix + "/DroidSans.ttf").isFile());
-        check("regular .part gone", !new File(R.appFonts + "/0/" + suffix + "/DroidSans.ttf.part").exists());
+        check("the regular waits as .new", new File(dir + "/DroidSans.ttf.new").isFile());
+        check("the regular is not in place before the install", !new File(dir + "/DroidSans.ttf").exists());
+        check("regular .part gone", !new File(dir + "/DroidSans.ttf.part").exists());
 
         String o2 = sh(SamsungFonts.writeFontScript(R, 0, suffix, "DroidSans-Bold.ttf", bold.length, boldSha), bold);
         check("write bold ok", SamsungFonts.parseWrite(o2, "DroidSans-Bold.ttf").ok);
@@ -404,30 +581,78 @@ public class SamsungFontsTest {
         SamsungFonts.ApplyResult r = SamsungFonts.parseApply(o3);
         check("install ok", r.ok);
         if (!r.ok) System.out.println("  install out: " + o3.replace("\n", " | "));
-        eq("install sansLoc", r.sansLoc, R.appFonts + "/0/" + suffix + "#" + suffix);
+        eq("install sansLoc", r.sansLoc, dir + "#" + suffix);
         // the read-back hashes match what we wrote
         String got = "";
         for (SamsungFonts.FileInfo fi : r.files) if (fi.name.equals("DroidSans.ttf")) got = fi.sha256;
         eq("install read-back sha", got, regSha);
+        check("the install moved both files into place", new File(dir + "/DroidSans.ttf").isFile() && new File(dir + "/DroidSans-Bold.ttf").isFile()
+                && !new File(dir + "/DroidSans.ttf.new").exists() && !new File(dir + "/DroidSans-Bold.ttf.new").exists());
         // sans.loc on disk really holds that content, no trailing newline
         byte[] locBytes = Files.readAllBytes(new File(R.appFonts + "/0/sans.loc").toPath());
-        eq("sans.loc bytes", new String(locBytes, StandardCharsets.UTF_8), R.appFonts + "/0/" + suffix + "#" + suffix);
+        eq("sans.loc bytes", new String(locBytes, StandardCharsets.UTF_8), dir + "#" + suffix);
 
-        // made again without a Bold: only the old Bold goes, the folder sans.loc points at stays, and the read-back lists the Regular alone
-        String o4 = sh(SamsungFonts.removeFontScript(R, 0, suffix, "DroidSans-Bold.ttf"), null);
-        check("remove the Bold reports gone", o4.contains(SamsungFonts.M_BIND + " gone") && o4.contains(SamsungFonts.M_END));
-        check("the Bold is removed", !new File(R.appFonts + "/0/" + suffix + "/DroidSans-Bold.ttf").exists());
-        check("the Regular and its folder stay", new File(R.appFonts + "/0/" + suffix + "/DroidSans.ttf").isFile());
-        SamsungFonts.ApplyResult r2 = SamsungFonts.parseApply(sh(SamsungFonts.installScript(R, 0, suffix, new String[]{"DroidSans.ttf"}, new String[]{regSha}), null));
+        // a new build of the font in use whose Bold arrives cut short: the font in use stays whole, and what was staged goes (PRIV-2)
+        byte[] reg2 = bytesOf(4096, 21), bold2 = bytesOf(3000, 22);
+        check("rebuild: the new Regular arrives", SamsungFonts.parseWrite(sh(SamsungFonts.writeFontScript(R, 0, suffix, "DroidSans.ttf", reg2.length, sha256(reg2)), reg2), "DroidSans.ttf").ok);
+        SamsungFonts.WriteResult cut = SamsungFonts.parseWrite(sh(SamsungFonts.writeFontScript(R, 0, suffix, "DroidSans-Bold.ttf", bold2.length, sha256(bold2)),
+                Arrays.copyOf(bold2, 1000)), "DroidSans-Bold.ttf");
+        check("rebuild: the cut-short Bold is refused", !cut.ok && cut.error.contains("size"));
+        eq("rebuild cut short: the Regular in use is still the old one", shaOf(dir + "/DroidSans.ttf"), regSha);
+        eq("rebuild cut short: the Bold in use is still the old one", shaOf(dir + "/DroidSans-Bold.ttf"), boldSha);
+        String d1 = sh(SamsungFonts.discardScript(R, 0, suffix, new String[]{"DroidSans.ttf", "DroidSans-Bold.ttf"}), null);
+        check("discard reads back each staged file gone", d1.contains(SamsungFonts.M_BIND + " gone DroidSans.ttf") && d1.contains(SamsungFonts.M_BIND + " gone DroidSans-Bold.ttf")
+                && d1.contains(SamsungFonts.M_END));
+        check("discard: no .new or .part left", !new File(dir + "/DroidSans.ttf.new").exists() && !new File(dir + "/DroidSans-Bold.ttf.part").exists());
+        eq("discard: the Regular in use stays", shaOf(dir + "/DroidSans.ttf"), regSha);
+        eq("discard: the Bold in use stays", shaOf(dir + "/DroidSans-Bold.ttf"), boldSha);
+        // and an install now finds nothing staged: it stops before it changes anything
+        SamsungFonts.ApplyResult none = SamsungFonts.parseApply(sh(SamsungFonts.installScript(R, 0, suffix, new String[]{"DroidSans.ttf"}, new String[]{sha256(reg2)}), null));
+        check("install with nothing staged refuses", !none.ok && none.error.contains("was not staged"));
+        eq("…and the Regular in use stays", shaOf(dir + "/DroidSans.ttf"), regSha);
+
+        // made again without a Bold: the install takes the old Bold away as it puts the new Regular in place, and the read-back lists the Regular alone
+        byte[] reg3 = bytesOf(4000, 23);
+        String reg3Sha = sha256(reg3);
+        sh(SamsungFonts.writeFontScript(R, 0, suffix, "DroidSans.ttf", reg3.length, reg3Sha), reg3);
+        check("before the install the old Bold is still there", new File(dir + "/DroidSans-Bold.ttf").isFile());
+        SamsungFonts.ApplyResult r2 = SamsungFonts.parseApply(sh(SamsungFonts.installScript(R, 0, suffix, new String[]{"DroidSans.ttf"}, new String[]{reg3Sha},
+                new String[]{"DroidSans-Bold.ttf"}), null));
         boolean boldListed = false;
         for (SamsungFonts.FileInfo fi : r2.files) if (fi.name.equals("DroidSans-Bold.ttf")) boldListed = true;
         check("install again ok, the read-back without a Bold", r2.ok && !boldListed);
-        String path = SamsungFonts.removeFontScript(R, 0, suffix, "DroidSans-Bold.ttf");
-        for (String abs : quotedAbsPaths(path)) check("remove path confined to the suffix folder: " + abs, abs.equals(R.appFonts + "/0/" + suffix + "/DroidSans-Bold.ttf"));
+        check("the old Bold is removed", !new File(dir + "/DroidSans-Bold.ttf").exists());
+        eq("the new Regular is in place", shaOf(dir + "/DroidSans.ttf"), reg3Sha);
+
+        // a staged file that changed after it was written: the install stops before the old Bold goes or the Regular moves
+        Files.write(new File(dir + "/DroidSans-Bold.ttf").toPath(), bold);
+        byte[] reg4 = bytesOf(4000, 24);
+        sh(SamsungFonts.writeFontScript(R, 0, suffix, "DroidSans.ttf", reg4.length, sha256(reg4)), reg4);
+        Files.write(new File(dir + "/DroidSans.ttf.new").toPath(), bytesOf(4000, 25));
+        SamsungFonts.ApplyResult r4 = SamsungFonts.parseApply(sh(SamsungFonts.installScript(R, 0, suffix, new String[]{"DroidSans.ttf"}, new String[]{sha256(reg4)},
+                new String[]{"DroidSans-Bold.ttf"}), null));
+        check("a changed staged file is refused", !r4.ok && r4.error.contains("changed after it was written"));
+        check("…the old Bold is not taken away", new File(dir + "/DroidSans-Bold.ttf").isFile());
+        eq("…and the Regular in use stays", shaOf(dir + "/DroidSans.ttf"), reg3Sha);
+        sh(SamsungFonts.discardScript(R, 0, suffix, new String[]{"DroidSans.ttf", "DroidSans-Bold.ttf"}), null);
+        Files.delete(new File(dir + "/DroidSans-Bold.ttf").toPath());
+
+        iae("a file both written and removed", () -> SamsungFonts.installScript(R, 0, suffix, new String[]{"DroidSans.ttf"}, new String[]{regSha}, new String[]{"DroidSans.ttf"}));
+        iae("a bad name to remove", () -> SamsungFonts.installScript(R, 0, suffix, new String[]{"DroidSans.ttf"}, new String[]{regSha}, new String[]{"../sans.loc"}));
+
+        // a font that was never applied: its folder goes with what was staged in it
+        String fresh = "Fresh_010203";
+        sh(SamsungFonts.writeFontScript(R, 0, fresh, "DroidSans.ttf", reg.length, regSha), reg);
+        check("fresh: staged", new File(R.appFonts + "/0/" + fresh + "/DroidSans.ttf.new").isFile());
+        sh(SamsungFonts.discardScript(R, 0, fresh, new String[]{"DroidSans.ttf", "DroidSans-Bold.ttf"}), null);
+        check("fresh: the folder is gone", !new File(R.appFonts + "/0/" + fresh).exists());
+
+        String path = SamsungFonts.discardScript(R, 0, suffix, new String[]{"DroidSans.ttf", "DroidSans-Bold.ttf"});
+        for (String abs : quotedAbsPaths(path)) check("discard path confined to the suffix folder: " + abs, abs.startsWith(dir + "/") || abs.equals(dir));
         for (String bad : new String[] { "../sans.loc", "a/b.ttf", "x.ttf;rm", ".ttf", "" }) {
             boolean refused = false;
-            try { SamsungFonts.removeFontScript(R, 0, suffix, bad); } catch (IllegalArgumentException e) { refused = true; }
-            check("remove refuses the file name " + bad, refused);
+            try { SamsungFonts.discardScript(R, 0, suffix, new String[]{bad}); } catch (IllegalArgumentException e) { refused = true; }
+            check("discard refuses the file name " + bad, refused);
         }
     }
 
@@ -436,13 +661,14 @@ public class SamsungFontsTest {
         byte[] reg = bytesOf(4096, 3);
         String regSha = sha256(reg);
         File dest = new File(R.appFonts + "/0/" + suffix + "/DroidSans.ttf");
+        File staged = new File(R.appFonts + "/0/" + suffix + "/DroidSans.ttf.new");
 
         // wrong size: declare one byte more than we send
         String o1 = sh(SamsungFonts.writeFontScript(R, 0, suffix, "DroidSans.ttf", reg.length + 1, regSha), reg);
         SamsungFonts.WriteResult w1 = SamsungFonts.parseWrite(o1, "DroidSans.ttf");
         check("size mismatch refused", !w1.ok);
         check("size mismatch names size", w1.error.contains("size"));
-        check("size mismatch: no file placed", !dest.exists());
+        check("size mismatch: no file placed or staged", !dest.exists() && !staged.exists());
         check("size mismatch: no .part left", !new File(dest.getParentFile(), "DroidSans.ttf.part").exists());
 
         // wrong checksum: right size, wrong expected hash
@@ -450,7 +676,7 @@ public class SamsungFontsTest {
         SamsungFonts.WriteResult w2 = SamsungFonts.parseWrite(o2, "DroidSans.ttf");
         check("sha mismatch refused", !w2.ok);
         check("sha mismatch names checksum", w2.error.contains("checksum"));
-        check("sha mismatch: no file placed", !dest.exists());
+        check("sha mismatch: no file placed or staged", !dest.exists() && !staged.exists());
 
         // install refuses when a staged file's hash no longer matches
         byte[] good = bytesOf(2048, 4);
@@ -495,62 +721,241 @@ public class SamsungFontsTest {
         check("no app_fonts: Samsung message", r.error.contains("Samsung"));
     }
 
+    static File sysEmoji, sysFlags;
+    static String staged, origEmojiSha, origFlagsSha, emojiSha;
+
     static void emojiSwap() throws Exception {
         // the targets to bind over exist on the fake root
-        File sysEmoji = new File(R.systemFonts + "/NotoColorEmoji.ttf");
-        File sysFlags = new File(R.systemFonts + "/NotoColorEmojiFlags.ttf");
+        sysEmoji = new File(R.systemFonts + "/NotoColorEmoji.ttf");
+        sysFlags = new File(R.systemFonts + "/NotoColorEmojiFlags.ttf");
         Files.write(sysEmoji.toPath(), bytesOf(500, 11));
         Files.write(sysFlags.toPath(), bytesOf(400, 12));
+        origEmojiSha = shaOf(sysEmoji.getPath());
+        origFlagsSha = shaOf(sysFlags.getPath());
+        String e = sysEmoji.getAbsolutePath(), fl = sysFlags.getAbsolutePath();
 
         byte[] emoji = bytesOf(6000, 20);
-        String emojiSha = sha256(emoji);
+        emojiSha = sha256(emoji);
         String stageOut = sh(SamsungFonts.stageEmojiScript(R, "NotoColorEmoji.ttf", emoji.length, emojiSha), emoji);
         check("stage ok", SamsungFonts.parseWrite(stageOut, "NotoColorEmoji.ttf").ok);
-        String staged = R.adbmgrFonts() + "/NotoColorEmoji.ttf";
+        staged = R.adbmgrFonts() + "/NotoColorEmoji.ttf";
         check("staged file is under adbmgr_fonts", new File(staged).isFile());
 
-        List<String> targets = Arrays.asList(sysEmoji.getAbsolutePath(), sysFlags.getAbsolutePath(), R.productFonts + "/NotoColorEmoji.ttf");
-        String swapOut = sh(SamsungFonts.emojiSwapScript(R, staged, targets), null);
-        List<SamsungFonts.BindResult> sw = SamsungFonts.parseSwap(swapOut);
+        // an emoji update under /data/fonts/files on the fake root is found, and the swap refuses to bind over it (PRIV-1)
+        File upd = new File(R.dataFonts + "/~~qK7mVYLC0ixC8b1R7QYs5A==/~~9KnkPwQ2T3AjJ1DQ0w8Ftg==/NotoColorEmoji.ttf");
+        upd.getParentFile().mkdirs();
+        Files.write(upd.toPath(), bytesOf(300, 13));
+        List<String> listed = new ArrayList<String>();
+        try (java.util.stream.Stream<java.nio.file.Path> w = Files.walk(new File(R.dataFonts).toPath())) {
+            w.filter(Files::isRegularFile).forEach(p -> listed.add(p.toString()));
+        }
+        String xml = "<family lang=\"und-Zsye\"><font weight=\"400\" style=\"normal\">NotoColorEmoji.ttf</font></family>";
+        eq("the update under /data/fonts/files is found", SamsungFonts.updatedEmojiFiles(R, xml, null, listed), Arrays.asList(upd.getAbsolutePath()));
+        check("…and is no target", !SamsungFonts.emojiFiles(R, xml, null).contains(upd.getAbsolutePath()));
+        iae("the swap refuses to bind over it", () -> SamsungFonts.emojiSwapScript(R, staged, Arrays.asList(e, upd.getAbsolutePath())));
+
+        resetMounts();
+        clearLog();
+        List<String> targets = Arrays.asList(e, fl, R.productFonts + "/NotoColorEmoji.ttf");
+        List<SamsungFonts.BindResult> sw = SamsungFonts.parseSwap(sh(SamsungFonts.emojiSwapScript(R, staged, targets), null));
         eq("swap results", sw.size(), 3);
         eq("swap sys emoji ok", sw.get(0).state, "ok");
         eq("swap read-back sha is the staged font", sw.get(0).sha256, emojiSha);
+        eq("swap reads the hash before the bind", sw.get(0).original, origEmojiSha);
+        eq("…of each file", sw.get(1).original, origFlagsSha);
         eq("swap product missing", sw.get(2).state, "missing");
-        // the bind really replaced the target with the staged font on the fake root
-        eq("target now the staged font", sha256(Files.readAllBytes(sysEmoji.toPath())), emojiSha);
+        eq("the phone shows the staged font", sha256(seen(e)), emojiSha);
+        eq("the file itself is not written", shaOf(e), origEmojiSha);
+        eq("one bind of the swap's own on the emoji file", ownAt(e), 1);
+        eq("…and on the flags", ownAt(fl), 1);
 
-        String undoOut = sh(SamsungFonts.emojiUndoScript(targets), null);
-        List<SamsungFonts.BindResult> undo = SamsungFonts.parseSwap(undoOut);
-        eq("undo results", undo.size(), 3);
+        // a second swap over the first is refused at each file: Undo would otherwise take the top one off and leave the first (PRIV-4)
+        List<SamsungFonts.BindResult> again = SamsungFonts.parseSwap(sh(SamsungFonts.emojiSwapScript(R, staged, Arrays.asList(e, fl)), null));
+        eq("stacked: both", again.size(), 2);
+        check("stacked: not bound again", "stacked".equals(again.get(0).state) && "stacked".equals(again.get(1).state));
+        eq("stacked: still one bind of the swap's own", ownAt(e), 1);
+
+        // the swap's binds as the mount table lists them, found without any record (PRIV-4)
+        SamsungFonts.Mounts m = SamsungFonts.parseMounts(sh(SamsungFonts.emojiMountsScript(R), null));
+        check("mounts readable", m.readable);
+        eq("mounts: both files, with the space and the apostrophe", m.targets, Arrays.asList(e, fl));
+        eq("mounts: the font they show", m.showing(), "NotoColorEmoji");
+
+        // Undo takes them off, and each file reads as it did before the swap
+        List<SamsungFonts.BindResult> undo = SamsungFonts.parseSwap(sh(SamsungFonts.emojiUndoScript(R, m.targets), null));
+        eq("undo results", undo.size(), 2);
         eq("undo state", undo.get(0).state, "undone");
-
-        // a target still in use: the plain umount fails as busy, the lazy one follows
-        File log = new File(root, "mount.log");
-        Files.write(log.toPath(), new byte[0]);
-        writeStub("umount", "#!/bin/sh\necho \"umount $*\" >> \"$FAKE_LOG\"\n[ \"$1\" = '-l' ] && exit 0\necho 'umount: Device or resource busy' >&2; exit 1\n");
-        sh(SamsungFonts.emojiUndoScript(Arrays.asList(sysEmoji.getAbsolutePath())), null);
-        String ul = new String(Files.readAllBytes(log.toPath()), StandardCharsets.UTF_8);
-        check("busy: a lazy umount follows the plain one", ul.contains("umount " + sysEmoji.getAbsolutePath()) && ul.contains("umount -l " + sysEmoji.getAbsolutePath()));
-        Files.write(log.toPath(), new byte[0]);
-        writeStub("umount", "#!/bin/sh\necho \"umount $*\" >> \"$FAKE_LOG\"\nexit 0\n");
-        sh(SamsungFonts.emojiUndoScript(Arrays.asList(sysEmoji.getAbsolutePath())), null);
-        check("not busy: no lazy umount", !new String(Files.readAllBytes(log.toPath()), StandardCharsets.UTF_8).contains("umount -l"));
+        eq("undo: none of the swap's binds left", undo.get(0).own, 0);
+        eq("undo: the hash from before", undo.get(0).sha256, origEmojiSha);
+        check("undo: back", undo.get(0).back(sw.get(0).original) && undo.get(1).back(sw.get(1).original));
+        eq("no bind of the swap's own is left", ownAt(e) + ownAt(fl), 0);
+        eq("the phone shows its own emoji again", sha256(seen(e)), origEmojiSha);
+        // a second Undo finds nothing to take off and still reads back
+        clearLog();
+        List<SamsungFonts.BindResult> undo2 = SamsungFonts.parseSwap(sh(SamsungFonts.emojiUndoScript(R, Arrays.asList(e)), null));
+        check("a second undo: back, nothing taken off", undo2.size() == 1 && undo2.get(0).back(origEmojiSha) && !logText().contains("umount"));
 
         eq("soft restart script", SamsungFonts.softRestartScript().trim(), "setprop ctl.restart zygote");
     }
 
-    // every absolute path the emoji-swap scripts touch is under adbmgr_fonts or is a declared target; nothing else
+    // a root module's emoji bound over the same file: Undo never takes it off, only the swap's own bind (PRIV-3)
+    static void foreignMounts() throws Exception {
+        String e = sysEmoji.getAbsolutePath();
+        File mod = new File(root, "data/adb/modules/emoji/system/fonts/NotoColorEmoji.ttf");
+        mod.getParentFile().mkdirs();
+        Files.write(mod.toPath(), bytesOf(700, 31));
+        String modSha = shaOf(mod.getPath());
+        resetMounts();
+        bind(mod.getAbsolutePath(), e);
+        eq("the module's emoji show", sha256(seen(e)), modSha);
+
+        // a record from before a restart names this file: an Undo there leaves the module's emoji alone
+        clearLog();
+        List<SamsungFonts.BindResult> u = SamsungFonts.parseSwap(sh(SamsungFonts.emojiUndoScript(R, Arrays.asList(e)), null));
+        eq("the module's bind is never taken off", mountsAt(e), 1);
+        check("…not even tried", !logText().contains("umount"));
+        check("…and the file reads as the module's", u.size() == 1 && u.get(0).own == 0 && modSha.equals(u.get(0).sha256));
+
+        // a swap over the module's emoji, then Undo: only the swap's own bind goes, and the module's emoji show again
+        List<SamsungFonts.BindResult> sw = SamsungFonts.parseSwap(sh(SamsungFonts.emojiSwapScript(R, staged, Arrays.asList(e)), null));
+        check("swap over a module: bound", sw.size() == 1 && "ok".equals(sw.get(0).state) && emojiSha.equals(sw.get(0).sha256));
+        eq("swap over a module: the hash before is the module's", sw.get(0).original, modSha);
+        u = SamsungFonts.parseSwap(sh(SamsungFonts.emojiUndoScript(R, Arrays.asList(e)), null));
+        check("undo over a module: back to the module's emoji", u.size() == 1 && u.get(0).back(modSha));
+        eq("undo over a module: the module's bind stays", mountsAt(e), 1);
+        eq("undo over a module: the module's emoji show", sha256(seen(e)), modSha);
+
+        // a module bound on top of the swap: Undo stops at it, and says a bind of the swap's own is left below
+        sh(SamsungFonts.emojiSwapScript(R, staged, Arrays.asList(e)), null);
+        File mod2 = new File(root, "data/adb/modules/emoji2/NotoColorEmoji.ttf");
+        mod2.getParentFile().mkdirs();
+        Files.write(mod2.toPath(), bytesOf(800, 32));
+        bind(mod2.getAbsolutePath(), e);
+        clearLog();
+        u = SamsungFonts.parseSwap(sh(SamsungFonts.emojiUndoScript(R, Arrays.asList(e)), null));
+        check("a module on top: nothing taken off", mountsAt(e) == 3 && !logText().contains("umount"));
+        check("a module on top: one of the swap's binds left, so not back", u.size() == 1 && u.get(0).own == 1 && !u.get(0).back(null));
+        resetMounts();
+    }
+
+    // binds the record lost (the app killed after the bind, or its data cleared): the mount table finds them, and Undo takes all off (PRIV-4)
+    static void lostRecords() throws Exception {
+        String e = sysEmoji.getAbsolutePath();
+        File other = new File(R.adbmgrFonts() + "/twemoji.ttf");
+        Files.write(other.toPath(), bytesOf(900, 33));
+        resetMounts();
+        bind(staged, e);
+        bind(other.getAbsolutePath(), e);
+        SamsungFonts.Mounts m = SamsungFonts.parseMounts(sh(SamsungFonts.emojiMountsScript(R), null));
+        eq("two stacked swaps: the file once", m.targets, Arrays.asList(e));
+        eq("…both staged fonts, the newest last", m.staged, Arrays.asList("NotoColorEmoji.ttf", "twemoji.ttf"));
+        eq("…the newest shows", m.showing(), "twemoji");
+        List<SamsungFonts.BindResult> u = SamsungFonts.parseSwap(sh(SamsungFonts.emojiUndoScript(R, m.targets), null));
+        check("undo takes both off", u.size() == 1 && u.get(0).own == 0 && u.get(0).back(origEmojiSha));
+        eq("…nothing mounted there now", mountsAt(e), 0);
+        SamsungFonts.Mounts after = SamsungFonts.parseMounts(sh(SamsungFonts.emojiMountsScript(R), null));
+        check("…and the table lists none of the swap's binds", after.readable && after.targets.isEmpty());
+        Files.delete(other.toPath());
+    }
+
+    // a file still in use: the plain umount fails as busy, the lazy one follows
+    static void busyUndo() throws Exception {
+        String e = sysEmoji.getAbsolutePath();
+        resetMounts();
+        sh(SamsungFonts.emojiSwapScript(R, staged, Arrays.asList(e)), null);
+        Files.write(busy.toPath(), new byte[0]);
+        clearLog();
+        List<SamsungFonts.BindResult> u = SamsungFonts.parseSwap(sh(SamsungFonts.emojiUndoScript(R, Arrays.asList(e)), null));
+        String ul = logText();
+        check("busy: a lazy umount follows the plain one", ul.contains("umount " + e) && ul.contains("umount -l " + e));
+        check("busy: back", u.size() == 1 && u.get(0).back(origEmojiSha));
+        Files.delete(busy.toPath());
+        sh(SamsungFonts.emojiSwapScript(R, staged, Arrays.asList(e)), null);
+        clearLog();
+        sh(SamsungFonts.emojiUndoScript(R, Arrays.asList(e)), null);
+        check("not busy: no lazy umount", logText().contains("umount " + e) && !logText().contains("umount -l"));
+        resetMounts();
+    }
+
+    // the staged copies go once nothing is bound from them, and are read back
+    static void stagedCopies() throws Exception {
+        String m = R.adbmgrFonts();
+        File apple = new File(m + "/apple.ttf"), blob = new File(m + "/blob.ttf"), tw = new File(m + "/twemoji.ttf");
+        for (File f : new File[] { apple, blob, tw }) Files.write(f.toPath(), bytesOf(100, f.getName().length()));
+        Files.write(new File(m + "/blob.ttf.part").toPath(), bytesOf(10, 1));
+        resetMounts();
+        bind(apple.getAbsolutePath(), sysEmoji.getAbsolutePath());
+        // a copy deleted and staged again while a bind still holds the old file: the table writes its source with " (deleted)"
+        Files.write(mi.toPath(), ("300 1 0:2 " + SamsungFonts.mountinfoEscape(tw.getAbsolutePath() + " (deleted)") + " " + SamsungFonts.mountinfoEscape(sysFlags.getAbsolutePath())
+                + " rw - none none rw\n").getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.APPEND);
+        List<String> names = Arrays.asList("apple.ttf", "blob.ttf", "twemoji.ttf", "noto.ttf", "apple.ttf");
+        Map<String, Boolean> st = SamsungFonts.parseStaged(sh(SamsungFonts.removeStagedScript(R, names), null));
+        eq("staged: each name once", st.size(), 4);
+        eq("a copy still bound is kept", st.get("apple.ttf"), Boolean.FALSE);
+        eq("a copy nothing is bound from goes", st.get("blob.ttf"), Boolean.TRUE);
+        eq("a copy whose bind holds the deleted file is kept", st.get("twemoji.ttf"), Boolean.FALSE);
+        eq("a copy never staged reads gone", st.get("noto.ttf"), Boolean.TRUE);
+        check("on disk: the bound copies stay, the other goes with its .part", apple.isFile() && tw.isFile() && !blob.exists() && !new File(m + "/blob.ttf.part").exists());
+        check("the folder stays while a copy is in it", new File(m).isDirectory());
+
+        // the mount table cannot be read: every copy stays
+        SamsungFonts.Roots blind = new SamsungFonts.Roots(R.appFonts, R.adb, R.systemFonts, R.productFonts, R.dataFonts, new File(root, "proc/none/mountinfo").getAbsolutePath());
+        resetMounts();
+        Map<String, Boolean> kept = SamsungFonts.parseStaged(sh(SamsungFonts.removeStagedScript(blind, Arrays.asList("apple.ttf")), null));
+        check("no mount table: kept", Boolean.FALSE.equals(kept.get("apple.ttf")) && apple.isFile());
+
+        // the binds gone (Undo, or a restart): every copy goes, and the folder with them
+        Map<String, Boolean> all = SamsungFonts.parseStaged(sh(SamsungFonts.removeStagedScript(R, Arrays.asList("apple.ttf", "twemoji.ttf", "NotoColorEmoji.ttf")), null));
+        check("unbound: every copy gone", all.size() == 3 && !all.containsValue(Boolean.FALSE));
+        check("unbound: the staging folder is gone", !new File(m).exists());
+
+        iae("a staged name with a path", () -> SamsungFonts.removeStagedScript(R, Arrays.asList("../x.ttf")));
+        iae("a staged name that is no font", () -> SamsungFonts.removeStagedScript(R, Arrays.asList("x.sh")));
+    }
+
+    // init's mount table cannot be read: nothing is bound, nothing taken off, and it says so
+    static void blindMountTable() throws Exception {
+        SamsungFonts.Roots blind = new SamsungFonts.Roots(R.appFonts, R.adb, R.systemFonts, R.productFonts, R.dataFonts, new File(root, "proc/none/mountinfo").getAbsolutePath());
+        String e = sysEmoji.getAbsolutePath();
+        byte[] emoji = bytesOf(6000, 20);
+        sh(SamsungFonts.stageEmojiScript(R, "NotoColorEmoji.ttf", emoji.length, emojiSha), emoji);
+        resetMounts();
+        clearLog();
+        String out = sh(SamsungFonts.emojiSwapScript(blind, staged, Arrays.asList(e)), null);
+        check("no mount table: the swap refuses", out.contains("ERROR: the list of mounts could not be read."));
+        check("no mount table: nothing bound", SamsungFonts.parseSwap(out).isEmpty() && !logText().contains("mount ") && mountsAt(e) == 0);
+        bind(staged, e);
+        clearLog();
+        List<SamsungFonts.BindResult> u = SamsungFonts.parseSwap(sh(SamsungFonts.emojiUndoScript(blind, Arrays.asList(e)), null));
+        check("no mount table: nothing taken off", !logText().contains("umount") && mountsAt(e) == 1);
+        check("no mount table: not known, so not back", u.size() == 1 && u.get(0).own == -1 && !u.get(0).back(null));
+        SamsungFonts.Mounts m = SamsungFonts.parseMounts(sh(SamsungFonts.emojiMountsScript(blind), null));
+        check("no mount table: not readable", !m.readable && m.targets.isEmpty());
+        resetMounts();
+        sh(SamsungFonts.removeStagedScript(R, Arrays.asList("NotoColorEmoji.ttf")), null);
+    }
+
+    // every absolute path the emoji-swap scripts touch is under adbmgr_fonts, a declared target (as it is or as the mount table writes it)
+    // or the mount table; nothing else
     static void pathConfinement() {
         String staged = R.adbmgrFonts() + "/NotoColorEmoji.ttf";
-        List<String> targets = Arrays.asList("/system/fonts/NotoColorEmoji.ttf", "/product/fonts/NotoColorEmoji.ttf");
+        List<String> targets = Arrays.asList(R.systemFonts + "/NotoColorEmoji.ttf", R.productFonts + "/NotoColorEmoji.ttf");
+        List<String> allowed = new ArrayList<String>(targets);
+        for (String t : targets) allowed.add(SamsungFonts.mountinfoEscape(t));
+        allowed.add(R.mountinfo);
         String stage = SamsungFonts.stageEmojiScript(R, "NotoColorEmoji.ttf", 10, "0".repeat(64));
         String swap = SamsungFonts.emojiSwapScript(R, staged, targets);
-        String undo = SamsungFonts.emojiUndoScript(targets);
+        String undo = SamsungFonts.emojiUndoScript(R, targets);
+        String mounts = SamsungFonts.emojiMountsScript(R);
+        String removeStaged = SamsungFonts.removeStagedScript(R, Arrays.asList("NotoColorEmoji.ttf", "apple.ttf"));
         for (String abs : quotedAbsPaths(stage)) check("stage path confined: " + abs, abs.startsWith(R.adbmgrFonts() + "/") || abs.equals(R.adbmgrFonts()));
-        for (String abs : quotedAbsPaths(swap)) check("swap path confined: " + abs, abs.startsWith(R.adbmgrFonts() + "/") || targets.contains(abs));
-        for (String abs : quotedAbsPaths(undo)) check("undo path confined: " + abs, targets.contains(abs));
+        for (String abs : quotedAbsPaths(swap)) check("swap path confined: " + abs, abs.startsWith(R.adbmgrFonts() + "/") || allowed.contains(abs));
+        for (String abs : quotedAbsPaths(undo)) check("undo path confined: " + abs, allowed.contains(abs));
+        for (String abs : quotedAbsPaths(mounts)) check("mounts path confined: " + abs, abs.equals(R.mountinfo));
+        for (String abs : quotedAbsPaths(removeStaged)) check("staged removal path confined: " + abs, abs.startsWith(R.adbmgrFonts() + "/") || abs.equals(R.adbmgrFonts()) || abs.equals(R.mountinfo));
+        check("the swap never names /data/fonts/files", !swap.contains(R.dataFonts) && !undo.contains(R.dataFonts));
         // and the font-changer scripts never leave /data/app_fonts
-        String inst = SamsungFonts.installScript(R, 0, "Inter_aa11bb", new String[]{"DroidSans.ttf"}, new String[]{"0".repeat(64)});
+        String inst = SamsungFonts.installScript(R, 0, "Inter_aa11bb", new String[]{"DroidSans.ttf"}, new String[]{"0".repeat(64)}, new String[]{"DroidSans-Bold.ttf"});
         for (String abs : quotedAbsPaths(inst)) check("install path confined: " + abs, abs.startsWith(R.appFonts + "/") || abs.equals(R.appFonts));
     }
 
@@ -589,7 +994,9 @@ public class SamsungFontsTest {
     static void fuzz(long seed, int rounds) {
         Random rnd = new Random(seed);
         String alphabet = "@SF-LOC LS SHA END AVAIL BIND UNDO WROTE ok fail missing undone /data/app_fonts/0/x#y default#default "
-                + "\n0123456789abcdef  object_r: : DroidSans.ttf -rw-r--r-- system <family lang=\"und-Zsye\"> <font> </font> </family> ignore=true /";
+                + "\n0123456789abcdef  object_r: : DroidSans.ttf -rw-r--r-- system <family lang=\"und-Zsye\"> <font> </font> </family> ignore=true /"
+                + " @@SF-ORIG@@ @@SF-OWN@@ @@SF-MNT@@ yes no @@SF-MOUNT@@ @@SF-STAGED@@ gone kept stacked unknown \\040 \\134 \\0 adbmgr_fonts/ (deleted)"
+                + " postScriptName=\"x\" /data/fonts/files/";
         long t0 = System.currentTimeMillis();
         for (int r = 0; r < rounds; r++) {
             String s = randomString(rnd, alphabet, rnd.nextInt(400));
@@ -597,8 +1004,12 @@ public class SamsungFontsTest {
                 SamsungFonts.parseApply(s);
                 SamsungFonts.parseStatus(s);
                 SamsungFonts.parseWrite(s, "DroidSans.ttf");
-                SamsungFonts.parseSwap(s);
+                for (SamsungFonts.BindResult b : SamsungFonts.parseSwap(s)) b.back(null);
+                SamsungFonts.parseMounts(s).showing();
+                SamsungFonts.parseStaged(s);
+                SamsungFonts.mountinfoUnescape(s);
                 SamsungFonts.emojiFamilyFiles(s);
+                SamsungFonts.updatedEmojiFiles(SamsungFonts.Roots.system(), s, s, Arrays.asList("/data/fonts/files/" + s, s));
                 SamsungFonts.currentSuffixOf(s);
                 SamsungFonts.knownBeforeMarch2026(s);
             } catch (Throwable t) {
@@ -612,6 +1023,7 @@ public class SamsungFontsTest {
             String bs = new String(b, StandardCharsets.ISO_8859_1);
             try {
                 SamsungFonts.parseApply(bs); SamsungFonts.parseStatus(bs); SamsungFonts.parseSwap(bs); SamsungFonts.emojiFamilyFiles(bs);
+                SamsungFonts.parseMounts(bs).showing(); SamsungFonts.parseStaged(bs); SamsungFonts.mountinfoUnescape(bs);
             } catch (Throwable t) { fails++; n++; System.out.println("FAIL fuzz(bytes) threw: " + t); return; }
         }
         // a huge count in a read-back line must not allocate

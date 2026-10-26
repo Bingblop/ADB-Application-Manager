@@ -6713,6 +6713,8 @@ public class MainActivity extends Activity {
     private static final String FMK_NOT_FOUND = "That font is not in My fonts any more.";
     private static final String FMK_CHANGED = "This font's files changed since it was made. Make it again.";
     private static final String FMK_NO_MEMORY = "The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.";
+    private static final String FMK_EMOJI_UPDATED = "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.";
+    private static final String FMK_NO_MOUNTS = "The app cannot read the phone's list of mounts, so it cannot tell its own emoji swap from another tool's and changes nothing. A restart of the phone always puts its own emoji back.";
     // copies of picked files, builds, downloads, exports, installs (side by side); the font changer, the system emoji and Soft reboot one after
     // the other, in the order they were asked for. Both are stopped in onDestroy.
     private final ExecutorService fontExec = Executors.newCachedThreadPool();
@@ -7378,8 +7380,10 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Applies an entry with the font changer: each font streamed into /data/app_fonts/<user>/<suffix>/ (DroidSans.ttf, DroidSans-Bold.ttf) and
-     * checked there by size and SHA-256, then sans.loc pointed at them, the ownership and SELinux label set, and everything read back; the font is
+     * Applies an entry with the font changer: each font streamed into /data/app_fonts/<user>/<suffix>/ as DroidSans.ttf.new (and
+     * DroidSans-Bold.ttf.new) and checked there by size and SHA-256; only when every file has arrived does one install call move them into
+     * place together (taking away a Bold an earlier build left, for a font without one), point sans.loc at them, set the ownership and SELinux
+     * label, and read everything back. A step that fails leaves the font in use as it was: what it staged is cleared (fmkDiscard). The font is
      * applied only when sans.loc and the hashes read back as asked. Then Settings is told (fmkRefreshFontStyle).
      * {ok, readBack:{sansLoc, files}, refreshed, styleIndex} or {ok:false, code, error, readBack}.
      */
@@ -7398,35 +7402,47 @@ public class MainActivity extends Activity {
             for (int i = 0; i < files.length; i++) if (!shas[i].equals(FontLibrary.sha256(files[i]))) return FontLibrary.error("changed", FMK_CHANGED);
             int user = FontLibrary.userIdOf(android.os.Process.myUid());
             SamsungFonts.Roots r = SamsungFonts.Roots.system();
-            for (int i = 0; i < files.length; i++) {
-                String out = fmkRun(backend, SamsungFonts.writeFontScript(r, user, e.suffix, names[i], sizes[i], shas[i]), files[i], 180000);
-                SamsungFonts.WriteResult w = SamsungFonts.parseWrite(out, names[i]);
-                if (!w.ok || !shas[i].equals(w.sha256)) return FontLibrary.error("failed", w.ok ? "The font did not arrive whole on the phone." : w.error);
+            boolean placed = false;
+            try {
+                for (int i = 0; i < files.length; i++) {
+                    String out = fmkRun(backend, SamsungFonts.writeFontScript(r, user, e.suffix, names[i], sizes[i], shas[i]), files[i], 180000);
+                    SamsungFonts.WriteResult w = SamsungFonts.parseWrite(out, names[i]);
+                    if (!w.ok || !shas[i].equals(w.sha256)) return FontLibrary.error("failed", w.ok ? "The font did not arrive whole on the phone." : w.error);
+                }
+                // a Bold an earlier build of this font left would be drawn for bold text: the install takes only that file away
+                String[] drop = e.hasBold ? new String[0] : new String[] { FontLibrary.DROID_BOLD };
+                SamsungFonts.ApplyResult ar = SamsungFonts.parseApply(fmkRun(backend, SamsungFonts.installScript(r, user, e.suffix, names, shas, drop), null, 60000));
+                JSONObject rb = fmkReadBack(ar);
+                boolean filesOk = true;
+                for (int i = 0; i < names.length; i++) {
+                    boolean seen = false;
+                    for (SamsungFonts.FileInfo f : ar.files) if (names[i].equals(f.name) && shas[i].equals(f.sha256)) seen = true;
+                    filesOk &= seen;
+                }
+                if (!e.hasBold) for (SamsungFonts.FileInfo f : ar.files) if (FontLibrary.DROID_BOLD.equals(f.name)) filesOk = false;
+                String want = r.appFonts + "/" + user + "/" + e.suffix + "#" + e.suffix;
+                if (!ar.ok || !want.equals(ar.sansLoc) || !filesOk) {
+                    String why = !ar.error.isEmpty() ? ar.error : "The phone did not take the font (sans.loc reads \"" + ar.sansLoc + "\").";
+                    return FontLibrary.error("failed", why).put("readBack", rb);
+                }
+                placed = true;
+                FontLibrary.writeApplied(d, e.suffix, System.currentTimeMillis());
+                int target = SamsungFonts.styleIndex(fmkFontPackages(), e.pkg);
+                boolean refreshed = fmkRefreshFontStyle(backend, target);
+                return new JSONObject().put("ok", true).put("readBack", rb).put("refreshed", refreshed).put("styleIndex", target);
+            } finally {
+                if (!placed) fmkDiscard(backend, r, user, e.suffix);
             }
-            // a Bold an earlier build of this font left would be drawn for bold text: only that file goes (the folder sans.loc may point at stays)
-            if (!e.hasBold && !fmkRun(backend, SamsungFonts.removeFontScript(r, user, e.suffix, FontLibrary.DROID_BOLD), null, 30000).contains(SamsungFonts.M_BIND + " gone"))
-                return FontLibrary.error("failed", "The Bold font of an earlier version of this font could not be removed from the phone.");
-            SamsungFonts.ApplyResult ar = SamsungFonts.parseApply(fmkRun(backend, SamsungFonts.installScript(r, user, e.suffix, names, shas), null, 60000));
-            JSONObject rb = fmkReadBack(ar);
-            boolean filesOk = true;
-            for (int i = 0; i < names.length; i++) {
-                boolean seen = false;
-                for (SamsungFonts.FileInfo f : ar.files) if (names[i].equals(f.name) && shas[i].equals(f.sha256)) seen = true;
-                filesOk &= seen;
-            }
-            if (!e.hasBold) for (SamsungFonts.FileInfo f : ar.files) if (FontLibrary.DROID_BOLD.equals(f.name)) filesOk = false;
-            String want = r.appFonts + "/" + user + "/" + e.suffix + "#" + e.suffix;
-            if (!ar.ok || !want.equals(ar.sansLoc) || !filesOk) {
-                String why = !ar.error.isEmpty() ? ar.error : "The phone did not take the font (sans.loc reads \"" + ar.sansLoc + "\").";
-                return FontLibrary.error("failed", why).put("readBack", rb);
-            }
-            FontLibrary.writeApplied(d, e.suffix, System.currentTimeMillis());
-            int target = SamsungFonts.styleIndex(fmkFontPackages(), e.pkg);
-            boolean refreshed = fmkRefreshFontStyle(backend, target);
-            return new JSONObject().put("ok", true).put("readBack", rb).put("refreshed", refreshed).put("styleIndex", target);
         } catch (Throwable t) {
             return FontLibrary.error("failed", "The font could not be applied: " + errMsg(t));
         }
+    }
+
+    /** What an Apply that stopped part way staged in the font's folder (.new and .part files, and the folder when it is then empty) goes; the font in use stays. */
+    private void fmkDiscard(String backend, SamsungFonts.Roots r, int user, String suffix) {
+        try {
+            fmkRun(backend, SamsungFonts.discardScript(r, user, suffix, new String[] { FontLibrary.DROID_REGULAR, FontLibrary.DROID_BOLD }), null, 30000);
+        } catch (Throwable ignored) {}                                  // a leftover .new is never drawn, and the next Apply writes over it
     }
 
     /** Back to the phone's own font: sans.loc is default#default again (read back), and Settings is told. {ok, readBack, refreshed}. */
@@ -7548,11 +7564,22 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** The phone's emoji font files: the swap's targets (in /system/fonts or /product/fonts), and the updated ones its font map draws from instead. */
+    private static final class FmkEmoji {
+        final List<String> targets, updated;
+
+        FmkEmoji(List<String> targets, List<String> updated) {
+            this.targets = targets;
+            this.updated = updated;
+        }
+    }
+
     /**
      * The emoji files the swap binds over: every und-Zsye family's file in fonts.xml and font_fallback.xml that is on this phone (in
-     * /system/fonts or /product/fonts), and the updatable emoji fonts under /data/fonts/files (listed with the backend's shell, the app cannot).
+     * /system/fonts or /product/fonts). And the updated emoji fonts under /data/fonts/files the phone draws from instead (listed with the
+     * backend's shell, the app cannot): the swap never binds over those, and while there is one it does not run.
      */
-    private List<String> fmkEmojiTargets(String backend) {
+    private FmkEmoji fmkEmojiFiles(String backend) {
         SamsungFonts.Roots r = SamsungFonts.Roots.system();
         String fontsXml = fmkReadSystemFile(backend, new File("/system/etc/fonts.xml"));
         String fallbackXml = fmkReadSystemFile(backend, new File("/system/etc/font_fallback.xml"));
@@ -7564,23 +7591,94 @@ public class MainActivity extends Activity {
                 if (t.startsWith(r.dataFonts + "/")) updatable.add(t);
             }
         } catch (Throwable ignored) {}
-        List<String> out = new ArrayList<String>();
-        for (String t : SamsungFonts.emojiFiles(r, fontsXml, fallbackXml, updatable)) {
-            if (t.startsWith(r.dataFonts + "/") || new File(t).exists()) out.add(t);
+        // a file reached through a link (a /product that links to /system/product, an emoji file that links to another) is bound, and listed
+        // in the mount table, under its real path: the swap uses that path when it is a file in the font folders, each once
+        List<String> targets = new ArrayList<String>();
+        for (String t : SamsungFonts.emojiFiles(r, fontsXml, fallbackXml)) {
+            try {
+                File f = new File(t);
+                if (!f.exists()) continue;
+                String real = f.getCanonicalPath();
+                if (SamsungFonts.isSwapTarget(r, real) && !targets.contains(real)) targets.add(real);
+            } catch (IOException unreadable) {}
         }
+        return new FmkEmoji(targets, SamsungFonts.updatedEmojiFiles(r, fontsXml, fallbackXml, updatable));
+    }
+
+    /** The swap's own binds, from init's mount table (/proc/1/mountinfo) read through the backend's shell. */
+    private SamsungFonts.Mounts fmkMounts(String backend) throws Exception {
+        return SamsungFonts.parseMounts(fmkRun(backend, SamsungFonts.emojiMountsScript(SamsungFonts.Roots.system()), null, 20000));
+    }
+
+    /**
+     * Takes the swap's own binds off: on this boot's recorded targets, and on every file the mount table shows a bind of the swap's own on (a
+     * swap whose record was lost). The script takes off only the swap's own binds on top of a file, never another tool's, and reads back each
+     * file's hash and how many of the swap's binds are left on it. Null when the mount table cannot be read: nothing is taken off then.
+     */
+    private List<SamsungFonts.BindResult> fmkTakeOff(String backend, FontLibrary.Swap active) throws Exception {
+        SamsungFonts.Mounts m = fmkMounts(backend);
+        if (!m.readable) return null;
+        List<String> targets = FontLibrary.undoTargets(active, m.targets);
+        if (targets.isEmpty()) return new ArrayList<SamsungFonts.BindResult>();
+        return SamsungFonts.parseSwap(fmkRun(backend, SamsungFonts.emojiUndoScript(SamsungFonts.Roots.system(), targets), null, 60000));
+    }
+
+    /** The names a staged emoji copy can have in /data/adb/adbmgr_fonts/: one per catalog font. */
+    private static List<String> fmkStagedNames() {
+        List<String> out = new ArrayList<String>();
+        for (EmojiCatalog.Item it : EmojiCatalog.ITEMS) out.add(it.id + ".ttf");
         return out;
     }
 
-    /** {ok, unlocked, lockReason, targets, active:{id, name}|null}. */
+    /**
+     * Deletes the staged copies among names that nothing is bound from any more (the script reads the mount table again, so a copy still in
+     * use stays) and reads back that they are gone. True when every one of them is gone.
+     */
+    private boolean fmkRemoveStaged(String backend, List<String> names) {
+        try {
+            Map<String, Boolean> gone = SamsungFonts.parseStaged(fmkRun(backend, SamsungFonts.removeStagedScript(SamsungFonts.Roots.system(), names), null, 30000));
+            for (String n : names) if (!Boolean.TRUE.equals(gone.get(n))) return false;
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** After a downloaded emoji font is deleted, its staged copy goes too, when the root user is on and nothing is bound from it. */
+    private void fmkDropStaged(final String id) {
+        try {
+            fontPrivExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    if (activityDestroyed) return;
+                    String backend = fmkGate(true);
+                    if (backend != null) fmkRemoveStaged(backend, Collections.singletonList(id + ".ttf"));
+                }
+            });
+        } catch (RejectedExecutionException closing) {}
+    }
+
+    /**
+     * {ok, unlocked, lockReason, targets, active:{id, name}|null, blocked:{code, error}|null}. Active is this boot's swap or, when its record
+     * was lost, the font a bind of the swap's own still shows (so Undo is offered). Blocked says why a swap would be refused now: the phone's
+     * emoji come from an update in /data/fonts/files, or the mount table cannot be read. When nothing of the swap's is bound any more (after
+     * a restart), the staged copies are deleted.
+     */
     private JSONObject fmkSysStatus() {
         try {
             JSONObject o = new JSONObject().put("ok", true);
             String backend = fmkGate(true);
-            if (backend == null) return o.put("unlocked", false).put("lockReason", FMK_LOCK_SYS).put("targets", new JSONArray()).put("active", JSONObject.NULL);
+            if (backend == null) return o.put("unlocked", false).put("lockReason", FMK_LOCK_SYS).put("targets", new JSONArray()).put("active", JSONObject.NULL).put("blocked", JSONObject.NULL);
             FontLibrary.Swap s = FontLibrary.activeSwap(fmkDirs(), fmkBootId());
-            EmojiCatalog.Item it = s == null ? null : EmojiCatalog.byId(s.id);
-            return o.put("unlocked", true).put("lockReason", "").put("targets", new JSONArray(fmkEmojiTargets(backend)))
-                    .put("active", s == null ? JSONObject.NULL : new JSONObject().put("id", s.id).put("name", it != null ? it.name : s.id));
+            SamsungFonts.Mounts m = fmkMounts(backend);
+            String id = s != null ? s.id : m.showing();
+            if (s == null && m.readable && m.targets.isEmpty()) fmkRemoveStaged(backend, fmkStagedNames());
+            FmkEmoji ef = fmkEmojiFiles(backend);
+            String code = !m.readable ? "mounts_unreadable" : !ef.updated.isEmpty() ? "emoji_updated" : null;
+            EmojiCatalog.Item it = id == null ? null : EmojiCatalog.byId(id);
+            return o.put("unlocked", true).put("lockReason", "").put("targets", new JSONArray(ef.targets))
+                    .put("active", id == null ? JSONObject.NULL : new JSONObject().put("id", id).put("name", it != null ? it.name : id))
+                    .put("blocked", code == null ? JSONObject.NULL : new JSONObject().put("code", code).put("error", "emoji_updated".equals(code) ? FMK_EMOJI_UPDATED : FMK_NO_MOUNTS));
         } catch (Throwable t) {
             return FontLibrary.error("failed", errMsg(t));
         }
@@ -7588,9 +7686,11 @@ public class MainActivity extends Activity {
 
     /**
      * Uses a downloaded emoji font as the phone's emoji until the next restart: the file (its SHA-256 checked again) is streamed to
-     * /data/adb/adbmgr_fonts/<id>.ttf and checked there, then bind-mounted over each target, whose hash is read back. A swap still in place is
-     * undone first. The targets bound are remembered with this boot's id, so Undo knows them and a restart makes the record stale.
-     * {ok, readBack:[{target, sha256, ok}]} or {ok:false, code, error, readBack}.
+     * /data/adb/adbmgr_fonts/<id>.ttf and checked there, then bind-mounted over each target, whose hash is read back before and after. It
+     * refuses, changing nothing, on a phone whose emoji come from an update in /data/fonts/files (never bound over) or whose mount table
+     * cannot be read. The swap's own binds still in place go first (fmkTakeOff), and the copies nothing is bound from any more are deleted.
+     * The swap is recorded with this boot's id before the bind, so Undo knows its targets even when the app dies right after, and again
+     * afterwards with what was bound and each target's hash before. {ok, readBack:[{target, sha256, ok}]} or {ok:false, code, error, readBack}.
      */
     private JSONObject fmkSysApply(EmojiCatalog.Item item) {
         try {
@@ -7605,34 +7705,52 @@ public class MainActivity extends Activity {
             String sha = FontLibrary.sha256(f);
             if (!kept.sha256.equals(sha)) return FontLibrary.error("emoji_changed", "The downloaded file changed on the phone. Delete it and download it again.");
             SamsungFonts.Roots r = SamsungFonts.Roots.system();
+            // the phone draws its emoji from an update in /data/fonts/files: that file is never bound over, and a bind over the original would not show
+            FmkEmoji ef = fmkEmojiFiles(backend);
+            if (!ef.updated.isEmpty()) return FontLibrary.error("emoji_updated", FMK_EMOJI_UPDATED);
             String boot = fmkBootId();
-            FontLibrary.Swap prev = FontLibrary.readSwap(d);
-            if (prev != null && !prev.targets.isEmpty()) {
-                // a swap on top of one still bound would stack, and Undo would take only the top one away: a target that still reads as the
-                // font swapped before stops it (the record stays for Undo); after a restart the targets read as the phone's own again
-                for (SamsungFonts.BindResult b : SamsungFonts.parseSwap(fmkRun(backend, SamsungFonts.emojiUndoScript(prev.targets), null, 60000))) {
-                    if (prev.sha256.equals(b.sha256)) return FontLibrary.error("failed", "The emoji used before could not be taken away. Restart the phone, then try again.");
-                }
-                FontLibrary.clearSwap(d);
+            FontLibrary.Swap prev = FontLibrary.activeSwap(d, boot);       // a record from another boot: that restart took its binds away
+            // a swap on top of one still bound would stack, and Undo would take only the top one away: the swap's own binds go first (this
+            // boot's record and whatever the mount table shows), and one that stays stops it
+            List<SamsungFonts.BindResult> off = fmkTakeOff(backend, prev);
+            if (off == null) return FontLibrary.error("mounts_unreadable", FMK_NO_MOUNTS);
+            for (SamsungFonts.BindResult b : off) {
+                if (b.own != 0) return FontLibrary.error("failed", "The emoji used before could not be taken away. Restart the phone, then try again.");
             }
-            List<String> targets = fmkEmojiTargets(backend);
+            FontLibrary.clearSwap(d);
+            fmkRemoveStaged(backend, fmkStagedNames());
+            List<String> targets = ef.targets;
             if (targets.isEmpty()) return FontLibrary.error("no_targets", "This phone's emoji font file was not found.");
             String name = item.id + ".ttf";
             SamsungFonts.WriteResult w = SamsungFonts.parseWrite(fmkRun(backend, SamsungFonts.stageEmojiScript(r, name, f.length(), sha), f, 180000), name);
             if (!w.ok || !sha.equals(w.sha256)) return FontLibrary.error("failed", w.ok ? "The emoji font did not arrive whole on the phone." : w.error);
+            String bootTag = boot.isEmpty() ? "unknown" : boot;
+            // remembered before the bind: a bind the app could not record afterwards (the app killed, the storage full) is still known to Undo
+            FontLibrary.writeSwap(d, new FontLibrary.Swap(item.id, bootTag, sha, targets));
             List<SamsungFonts.BindResult> bound = SamsungFonts.parseSwap(fmkRun(backend, SamsungFonts.emojiSwapScript(r, r.adbmgrFonts() + "/" + name, targets), null, 60000));
             JSONArray rb = new JSONArray();
             List<String> mounted = new ArrayList<String>();
+            Map<String, String> originals = new java.util.LinkedHashMap<String, String>();
             boolean all = true, any = false;
             for (SamsungFonts.BindResult b : bound) {
                 if ("missing".equals(b.state)) continue;
                 boolean good = "ok".equals(b.state) && sha.equals(b.sha256);
-                if ("ok".equals(b.state)) mounted.add(b.target);
+                if ("ok".equals(b.state)) {
+                    mounted.add(b.target);
+                    if (b.original != null) originals.put(b.target, b.original);
+                }
                 rb.put(new JSONObject().put("target", b.target).put("sha256", b.sha256 == null ? "" : b.sha256).put("ok", good));
                 all &= good;
                 any |= good;
             }
-            if (!mounted.isEmpty()) FontLibrary.writeSwap(d, new FontLibrary.Swap(item.id, boot.isEmpty() ? "unknown" : boot, sha, mounted));   // even a part: Undo must know it
+            if (mounted.isEmpty()) {
+                FontLibrary.clearSwap(d);
+                fmkRemoveStaged(backend, Collections.singletonList(name));          // nothing is bound from the copy
+            } else {
+                try {
+                    FontLibrary.writeSwap(d, new FontLibrary.Swap(item.id, bootTag, sha, mounted, originals));   // even a part: Undo must know it
+                } catch (IOException notNow) {}                                     // the record written before the bind still names every target
+            }
             if (!any) return FontLibrary.error("failed", "No emoji file could be replaced.").put("readBack", rb);
             if (!all) return FontLibrary.error("failed", "Some emoji files did not change.").put("readBack", rb);
             return new JSONObject().put("ok", true).put("readBack", rb);
@@ -7641,25 +7759,30 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Unmounts the swap (the targets recorded, else every emoji file) and reads each hash back: a target is back when it no longer hashes as the swapped font. */
+    /**
+     * Takes the swap off (fmkTakeOff: only the swap's own binds, on this boot's recorded targets and wherever the mount table shows one) and
+     * reads each file back: a file is back when none of the swap's binds is left on it and it hashes as it did before the swap (when that was
+     * recorded). Then the record goes, and the staged copy is deleted and read back. {ok, readBack, copyRemoved} or {ok:false, code, error, readBack}.
+     */
     private JSONObject fmkSysUndo() {
         try {
             String backend = fmkGate(true);
             if (backend == null) return FontLibrary.error("locked", FMK_LOCK_SYS);
             FontLibrary.Dirs d = fmkDirs();
-            FontLibrary.Swap s = FontLibrary.readSwap(d);
-            List<String> targets = s != null && !s.targets.isEmpty() ? s.targets : fmkEmojiTargets(backend);
-            List<SamsungFonts.BindResult> undone = SamsungFonts.parseSwap(fmkRun(backend, SamsungFonts.emojiUndoScript(targets), null, 60000));
+            FontLibrary.Swap s = FontLibrary.activeSwap(d, fmkBootId());   // a record from another boot: that restart took its binds away
+            List<SamsungFonts.BindResult> undone = fmkTakeOff(backend, s);
+            if (undone == null) return FontLibrary.error("mounts_unreadable", FMK_NO_MOUNTS);
             JSONArray rb = new JSONArray();
             boolean all = true;
             for (SamsungFonts.BindResult b : undone) {
-                boolean good = b.sha256 != null && (s == null || !s.sha256.equals(b.sha256));
+                boolean good = b.back(s == null ? null : s.originals.get(b.target));
                 rb.put(new JSONObject().put("target", b.target).put("sha256", b.sha256 == null ? "" : b.sha256).put("ok", good));
                 all &= good;
             }
-            if (!all) return FontLibrary.error("failed", "Some emoji files did not change.").put("readBack", rb);
+            if (!all) return FontLibrary.error("failed", "Some emoji files did not change. Restart the phone to undo the swap.").put("readBack", rb);
             FontLibrary.clearSwap(d);
-            return new JSONObject().put("ok", true).put("readBack", rb);
+            boolean removed = fmkRemoveStaged(backend, fmkStagedNames());
+            return new JSONObject().put("ok", true).put("readBack", rb).put("copyRemoved", removed);
         } catch (Throwable t) {
             return FontLibrary.error("failed", "The swap could not be undone: " + errMsg(t));
         }
@@ -13797,7 +13920,10 @@ public class MainActivity extends Activity {
             return fmkOk(null, null);
         }
 
-        /** Deletes a downloaded emoji font. Refused while it is the phone's emoji (this boot), while a build reads it, or while it downloads. */
+        /**
+         * Deletes a downloaded emoji font, and with the root user on its staged copy for the system emoji when nothing is bound from it. Refused
+         * while it is the phone's emoji (this boot), while a build reads it, or while it downloads.
+         */
         @JavascriptInterface
         public String emojiDelete(String id) {
             if (!FontLibrary.isCatalogId(id) || EmojiCatalog.byId(id) == null) return fmkErr("unknown", "There is no such emoji font.");
@@ -13809,10 +13935,11 @@ public class MainActivity extends Activity {
             if (fmkJobs.inUse("sys:" + id)) return fmkErr("busy", "This emoji font is being put on the phone. Wait for it to finish.");
             File f = d.emojiFile(id);
             if (f != null && f.exists() && !f.delete()) return fmkErr("failed", "The file could not be deleted.");
+            fmkDropStaged(id);
             return fmkOk(null, null);
         }
 
-        /** The system emoji's state. Answer {ok, job}; then window.onSysEmojiStatus({ok, unlocked, lockReason, targets, active}). */
+        /** The system emoji's state. Answer {ok, job}; then window.onSysEmojiStatus({ok, unlocked, lockReason, targets, active, blocked}). */
         @JavascriptInterface
         public String sysEmojiStatus() {
             return fmkPrivJob("sysstatus", null);
@@ -13828,7 +13955,7 @@ public class MainActivity extends Activity {
             return fmkPrivJob("sysapply", id);
         }
 
-        /** Undoes the swap (RootGate.uid0). Answer {ok, job}; then window.onSysEmojiUndone({ok, readBack}). */
+        /** Undoes the swap (RootGate.uid0). Answer {ok, job}; then window.onSysEmojiUndone({ok, readBack, copyRemoved}). */
         @JavascriptInterface
         public String sysEmojiUndo() {
             if (fmkGate(true) == null) return fmkErr("locked", FMK_LOCK_SYS);

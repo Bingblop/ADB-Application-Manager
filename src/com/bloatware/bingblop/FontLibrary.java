@@ -546,23 +546,43 @@ public final class FontLibrary {
         } catch (Exception ignored) {}
     }
 
-    /** The system emoji in use (until the restart it was applied in): which catalog font, the boot it was applied in, the files bound over. */
+    /**
+     * The system emoji in use (until the restart it was applied in): which catalog font, the boot it was applied in, the files bound over,
+     * and each file's SHA-256 before the bind ({@code originals}, what Undo must bring back; empty in the record written before the bind).
+     */
     public static final class Swap {
         public final String id, bootId, sha256;
         public final List<String> targets;
+        public final Map<String, String> originals;
         public Swap(String id, String bootId, String sha256, List<String> targets) {
+            this(id, bootId, sha256, targets, null);
+        }
+        public Swap(String id, String bootId, String sha256, List<String> targets, Map<String, String> originals) {
             this.id = id; this.bootId = bootId; this.sha256 = sha256;
             this.targets = Collections.unmodifiableList(new ArrayList<String>(targets));
+            this.originals = Collections.unmodifiableMap(originals == null ? new LinkedHashMap<String, String>() : new LinkedHashMap<String, String>(originals));
         }
     }
 
     public static void writeSwap(Dirs d, Swap s) throws IOException {
         try {
-            JSONObject o = new JSONObject().put("id", s.id).put("boot", s.bootId).put("sha256", s.sha256).put("targets", new JSONArray(s.targets));
+            JSONObject o = new JSONObject().put("id", s.id).put("boot", s.bootId).put("sha256", s.sha256).put("targets", new JSONArray(s.targets))
+                    .put("originals", new JSONObject(s.originals));
             writeAtomic(d.swapRecord(), o.toString().getBytes("UTF-8"));
         } catch (JSONException e) {
             throw new IOException("The emoji swap could not be remembered.");
         }
+    }
+
+    /**
+     * The files an Undo works on: this boot's recorded targets, then every other file the mount table shows a bind of the swap's own on (a
+     * swap whose record was lost), each once. The undo script itself takes off only the swap's own binds.
+     */
+    public static List<String> undoTargets(Swap active, List<String> ownMounts) {
+        List<String> out = new ArrayList<String>();
+        if (active != null) for (String t : active.targets) if (!out.contains(t)) out.add(t);
+        if (ownMounts != null) for (String t : ownMounts) if (t != null && !out.contains(t)) out.add(t);
+        return out;
     }
 
     public static void clearSwap(Dirs d) { d.swapRecord().delete(); }
@@ -578,7 +598,10 @@ public final class FontLibrary {
         return !b.isEmpty() && b.equals(s.bootId) ? s : null;
     }
 
-    /** The swap record whatever boot it is from (Undo after a lost boot id still knows the targets), or null. */
+    /**
+     * The swap record whatever boot it is from, or null. Apply and Undo go by {@link #activeSwap} instead: a record from another boot names
+     * files whose binds that restart took away, and whatever is mounted there now is not the swap's.
+     */
     public static Swap readSwap(Dirs d) {
         try {
             File f = d.swapRecord();
@@ -592,7 +615,10 @@ public final class FontLibrary {
                 String p = t.optString(i, "");
                 if (p.startsWith("/") && p.indexOf('\n') < 0 && !p.contains("..")) targets.add(p);
             }
-            return new Swap(id, boot, sha, targets);
+            Map<String, String> originals = new LinkedHashMap<String, String>();
+            JSONObject or = o.optJSONObject("originals");
+            if (or != null) for (String p : targets) if (isSha(or.optString(p, ""))) originals.put(p, or.optString(p));
+            return new Swap(id, boot, sha, targets, originals);
         } catch (Exception e) {
             return null;
         }
