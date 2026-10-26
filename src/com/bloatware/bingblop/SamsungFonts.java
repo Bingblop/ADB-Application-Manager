@@ -538,8 +538,9 @@ public final class SamsungFonts {
         s.append("_ok=0; mi_ok && _ok=1\n");
         for (String n : names) {
             String f = m + "/" + n;
-            s.append("_u=1; if [ $_ok = 1 ]; then _u=0; while read -r _a _b _c _r _m _x; do case \"$_r\" in ")
-             .append(in).append(q(n)).append("|").append(in).append(q(n + "\\040(deleted)")).append(") _u=1;; esac; done < \"$MI\"; fi\n");
+            s.append("_u=1; if [ $_ok = 1 ]; then _u=0; while read -r _a _b _c _r _m _x; do case \"$_r\" in ").append(in).append(q(n));
+            for (String d : DELETED) s.append("|").append(in).append(q(mountinfoEscape(n + d)));
+            s.append(") _u=1;; esac; done < \"$MI\"; fi\n");
             s.append("[ $_u = 0 ] && rm -f ").append(q(f)).append(" ").append(q(f + ".part")).append(" 2>/dev/null\n");
             s.append("if [ -e ").append(q(f)).append(" ]; then echo '").append(M_STAGED).append(" kept' ").append(q(n))
              .append("; else echo '").append(M_STAGED).append(" gone' ").append(q(n)).append("; fi\n");
@@ -556,6 +557,12 @@ public final class SamsungFonts {
 
     /** The pattern a bind's source matches when it is a staged font of the swap (the table writes it from its own file system's root). */
     private static final String OWN = "*/" + STAGING_DIR + "/*";
+
+    /**
+     * What the table writes after the source of a bind whose file was deleted while bound: "//deleted" (the kernel's dentry_path, which
+     * prints this field). " (deleted)", the form of {@code /proc/<pid>/maps} and fd links, is accepted too, should a kernel ever write it here.
+     */
+    private static final String[] DELETED = { "//deleted", " (deleted)" };
 
     /**
      * Shell functions over init's mount table, whose fourth field is the path a mount shows from its own file system and fifth the mount
@@ -792,7 +799,7 @@ public final class SamsungFonts {
         public final boolean readable;
         /** Every mount point that carries a bind of the swap's own, in the table's order, each once. */
         public final List<String> targets;
-        /** The staged file each of those binds shows ({@code <catalog id>.ttf}), in the table's order: the last is the newest. */
+        /** The staged file each of those binds shows ({@code <catalog id>.ttf}, also when it was deleted while bound), in the table's order: the last is the newest. */
         public final List<String> staged;
 
         Mounts(boolean readable, List<String> targets, List<String> staged) {
@@ -822,7 +829,7 @@ public final class SamsungFonts {
             String mp = mountinfoUnescape(f[0]);
             if (mp.isEmpty() || mp.charAt(0) != '/' || mp.indexOf('\n') >= 0 || mp.contains("..")) continue;
             String src = mountinfoUnescape(f[1]);
-            if (src.endsWith(" (deleted)")) src = src.substring(0, src.length() - " (deleted)".length());
+            for (String d : DELETED) if (src.endsWith(d)) { src = src.substring(0, src.length() - d.length()); break; }
             if (!targets.contains(mp)) targets.add(mp);
             staged.add(src.substring(src.lastIndexOf('/') + 1));
         }

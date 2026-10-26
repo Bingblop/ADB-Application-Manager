@@ -263,10 +263,11 @@ public class SamsungFontsTest {
         check("not back: the mount table was not read", !u.get(2).back(null));
         check("not back: no hash read back", !u.get(3).back(null));
 
-        // the swap's own binds as the mount table lists them (escaped as the table writes them)
+        // the swap's own binds as the mount table lists them (escaped as the table writes them); a bind whose staged file was deleted while
+        // bound has "//deleted" after its source, as the kernel writes this field
         String mnt = SamsungFonts.M_MNT + " yes\n"
                 + SamsungFonts.M_MOUNT + " /system/fonts/NotoColorEmoji.ttf /adb/adbmgr_fonts/noto.ttf\n"
-                + SamsungFonts.M_MOUNT + " /my\\040fonts/E.ttf /adb/adbmgr_fonts/twemoji.ttf\\040(deleted)\n"
+                + SamsungFonts.M_MOUNT + " /my\\040fonts/E.ttf /adb/adbmgr_fonts/twemoji.ttf//deleted\n"
                 + SamsungFonts.M_MOUNT + " /system/fonts/NotoColorEmoji.ttf /adb/adbmgr_fonts/apple.ttf\n"
                 + SamsungFonts.M_MOUNT + " /system/fonts/X.ttf /adb/modules/emoji/system/fonts/X.ttf\n"
                 + SamsungFonts.M_MOUNT + " ../x /adb/adbmgr_fonts/y.ttf\n"
@@ -275,8 +276,12 @@ public class SamsungFontsTest {
         SamsungFonts.Mounts m = SamsungFonts.parseMounts(mnt);
         check("mounts readable", m.readable);
         eq("mount points, each once, unescaped", m.targets, Arrays.asList("/system/fonts/NotoColorEmoji.ttf", "/my fonts/E.ttf"));
-        eq("staged files in the table's order, (deleted) taken off", m.staged, Arrays.asList("noto.ttf", "twemoji.ttf", "apple.ttf"));
+        eq("staged files in the table's order, //deleted taken off", m.staged, Arrays.asList("noto.ttf", "twemoji.ttf", "apple.ttf"));
         eq("the newest bind shows", m.showing(), "apple");
+        eq("the newest bind holds a deleted copy: its catalog id shows, not \"deleted\"", SamsungFonts.parseMounts(SamsungFonts.M_MNT + " yes\n"
+                + SamsungFonts.M_MOUNT + " /system/fonts/E.ttf /adb/adbmgr_fonts/apple.ttf//deleted\n" + SamsungFonts.M_END + "\n").showing(), "apple");
+        eq("…and so with \" (deleted)\", should a kernel write that", SamsungFonts.parseMounts(SamsungFonts.M_MNT + " yes\n"
+                + SamsungFonts.M_MOUNT + " /system/fonts/E.ttf /adb/adbmgr_fonts/twemoji.ttf\\040(deleted)\n" + SamsungFonts.M_END + "\n").showing(), "twemoji");
         SamsungFonts.Mounts blind = SamsungFonts.parseMounts(SamsungFonts.M_MNT + " no\n" + SamsungFonts.M_MOUNT + " /a /adb/adbmgr_fonts/z.ttf\n" + SamsungFonts.M_END + "\n");
         check("mounts not readable", !blind.readable);
         check("not readable: nothing listed", blind.targets.isEmpty() && blind.staged.isEmpty() && blind.showing() == null);
@@ -880,22 +885,28 @@ public class SamsungFontsTest {
     // the staged copies go once nothing is bound from them, and are read back
     static void stagedCopies() throws Exception {
         String m = R.adbmgrFonts();
-        File apple = new File(m + "/apple.ttf"), blob = new File(m + "/blob.ttf"), tw = new File(m + "/twemoji.ttf");
-        for (File f : new File[] { apple, blob, tw }) Files.write(f.toPath(), bytesOf(100, f.getName().length()));
+        File apple = new File(m + "/apple.ttf"), blob = new File(m + "/blob.ttf"), tw = new File(m + "/twemoji.ttf"), fl = new File(m + "/fluent.ttf");
+        for (File f : new File[] { apple, blob, tw, fl }) Files.write(f.toPath(), bytesOf(100, f.getName().length()));
         Files.write(new File(m + "/blob.ttf.part").toPath(), bytesOf(10, 1));
         resetMounts();
         bind(apple.getAbsolutePath(), sysEmoji.getAbsolutePath());
-        // a copy deleted and staged again while a bind still holds the old file: the table writes its source with " (deleted)"
-        Files.write(mi.toPath(), ("300 1 0:2 " + SamsungFonts.mountinfoEscape(tw.getAbsolutePath() + " (deleted)") + " " + SamsungFonts.mountinfoEscape(sysFlags.getAbsolutePath())
-                + " rw - none none rw\n").getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.APPEND);
-        List<String> names = Arrays.asList("apple.ttf", "blob.ttf", "twemoji.ttf", "noto.ttf", "apple.ttf");
+        // a copy deleted and staged again while a bind still holds the old file: the kernel writes its source with "//deleted" after it (and
+        // " (deleted)" is accepted too, should a kernel write that)
+        for (String src : new String[] { tw.getAbsolutePath() + "//deleted", fl.getAbsolutePath() + " (deleted)" })
+            Files.write(mi.toPath(), ("300 1 0:2 " + SamsungFonts.mountinfoEscape(src) + " " + SamsungFonts.mountinfoEscape(sysFlags.getAbsolutePath())
+                    + " rw - none none rw\n").getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.APPEND);
+        SamsungFonts.Mounts dm = SamsungFonts.parseMounts(sh(SamsungFonts.emojiMountsScript(R), null));
+        eq("the mounts script: a deleted copy by its own name", dm.staged, Arrays.asList("apple.ttf", "twemoji.ttf", "fluent.ttf"));
+        eq("…and the newest bind's catalog id shows", dm.showing(), "fluent");
+        List<String> names = Arrays.asList("apple.ttf", "blob.ttf", "twemoji.ttf", "noto.ttf", "fluent.ttf", "apple.ttf");
         Map<String, Boolean> st = SamsungFonts.parseStaged(sh(SamsungFonts.removeStagedScript(R, names), null));
-        eq("staged: each name once", st.size(), 4);
+        eq("staged: each name once", st.size(), 5);
         eq("a copy still bound is kept", st.get("apple.ttf"), Boolean.FALSE);
         eq("a copy nothing is bound from goes", st.get("blob.ttf"), Boolean.TRUE);
-        eq("a copy whose bind holds the deleted file is kept", st.get("twemoji.ttf"), Boolean.FALSE);
+        eq("a copy whose bind holds the deleted file (//deleted) is kept", st.get("twemoji.ttf"), Boolean.FALSE);
+        eq("…and so with \" (deleted)\"", st.get("fluent.ttf"), Boolean.FALSE);
         eq("a copy never staged reads gone", st.get("noto.ttf"), Boolean.TRUE);
-        check("on disk: the bound copies stay, the other goes with its .part", apple.isFile() && tw.isFile() && !blob.exists() && !new File(m + "/blob.ttf.part").exists());
+        check("on disk: the bound copies stay, the other goes with its .part", apple.isFile() && tw.isFile() && fl.isFile() && !blob.exists() && !new File(m + "/blob.ttf.part").exists());
         check("the folder stays while a copy is in it", new File(m).isDirectory());
 
         // the mount table cannot be read: every copy stays
@@ -905,8 +916,8 @@ public class SamsungFontsTest {
         check("no mount table: kept", Boolean.FALSE.equals(kept.get("apple.ttf")) && apple.isFile());
 
         // the binds gone (Undo, or a restart): every copy goes, and the folder with them
-        Map<String, Boolean> all = SamsungFonts.parseStaged(sh(SamsungFonts.removeStagedScript(R, Arrays.asList("apple.ttf", "twemoji.ttf", "NotoColorEmoji.ttf")), null));
-        check("unbound: every copy gone", all.size() == 3 && !all.containsValue(Boolean.FALSE));
+        Map<String, Boolean> all = SamsungFonts.parseStaged(sh(SamsungFonts.removeStagedScript(R, Arrays.asList("apple.ttf", "twemoji.ttf", "fluent.ttf", "NotoColorEmoji.ttf")), null));
+        check("unbound: every copy gone", all.size() == 4 && !all.containsValue(Boolean.FALSE));
         check("unbound: the staging folder is gone", !new File(m).exists());
 
         iae("a staged name with a path", () -> SamsungFonts.removeStagedScript(R, Arrays.asList("../x.ttf")));
@@ -995,7 +1006,7 @@ public class SamsungFontsTest {
         Random rnd = new Random(seed);
         String alphabet = "@SF-LOC LS SHA END AVAIL BIND UNDO WROTE ok fail missing undone /data/app_fonts/0/x#y default#default "
                 + "\n0123456789abcdef  object_r: : DroidSans.ttf -rw-r--r-- system <family lang=\"und-Zsye\"> <font> </font> </family> ignore=true /"
-                + " @@SF-ORIG@@ @@SF-OWN@@ @@SF-MNT@@ yes no @@SF-MOUNT@@ @@SF-STAGED@@ gone kept stacked unknown \\040 \\134 \\0 adbmgr_fonts/ (deleted)"
+                + " @@SF-ORIG@@ @@SF-OWN@@ @@SF-MNT@@ yes no @@SF-MOUNT@@ @@SF-STAGED@@ gone kept stacked unknown \\040 \\134 \\0 adbmgr_fonts/ (deleted) //deleted"
                 + " postScriptName=\"x\" /data/fonts/files/";
         long t0 = System.currentTimeMillis();
         for (int r = 0; r < rounds; r++) {
