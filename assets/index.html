@@ -44925,6 +44925,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // asked by the cards in view, at most GF_INFLIGHT at a time, once per (family, mode, text) and generation; their faces kept by that key, the oldest
         // removed past GF_FACES
         const GF_PAGE = 30, GF_INFLIGHT = 6, GF_FACES = 150;
+        const GF_FALLBACK = 'var(--ui-font, var(--font-sans))';             // what a preview face does not draw comes in the app's font
         const gf = {
             data: null, by: new Map(), fold: new Map(), refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
@@ -46448,7 +46449,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const rec = gf.faces.get(key), parts = gfKeyParts(key);
             if (rec) {
                 if (el.classList.contains('gf-failed') || el.textContent !== parts.text) { el.textContent = parts.text; el.classList.remove('gf-failed'); }
-                el.style.fontFamily = "'" + rec.name + "', var(--ui-font, var(--font-sans))";
+                el.style.fontFamily = "'" + rec.name + "', " + GF_FALLBACK;
                 if (el.dataset.pvw) {
                     const w = /^\d+$/.test(rec.style.weight || '') ? rec.style.weight : '';
                     el.style.fontWeight = w; el.style.fontStyle = rec.style.style || '';
