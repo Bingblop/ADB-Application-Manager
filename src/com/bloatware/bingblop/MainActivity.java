@@ -387,6 +387,13 @@ public class MainActivity extends Activity {
                     fmkExportId = export;
                 }
             }
+            // ... and a Google Fonts family's
+            String gfSave = savedInstanceState.getString(STATE_GF_SAVE);
+            if (GoogleFonts.isFamily(gfSave)) {
+                synchronized (fmkLock) {
+                    gfSaveFamily = gfSave;
+                }
+            }
         }
         Intent launch = getIntent();
         if (launch != null && IncomingInstall.handOverAtCreate(launch.getAction(), launch.getFlags(), savedInstanceState != null)) handleIncomingIntent(launch);
@@ -476,6 +483,7 @@ public class MainActivity extends Activity {
         if (pendingInstallRef != null) outState.putString(STATE_PENDING_INSTALL, pendingInstallRef);
         synchronized (fmkLock) {
             if (fmkExportId != null) outState.putString(STATE_FMK_EXPORT, fmkExportId);
+            if (gfSaveFamily != null) outState.putString(STATE_GF_SAVE, gfSaveFamily);
         }
     }
 
@@ -6717,6 +6725,7 @@ public class MainActivity extends Activity {
 
     private static final int REQ_FONTMAKER_PICK = 4294;     // a font file for the font maker (Regular, Bold or emoji)
     private static final int REQ_FONTMAKER_EXPORT = 4295;   // where an exported font package is saved
+    private static final int REQ_GFONTS_SAVE = 4296;        // where a downloaded Google Fonts family is saved (a .zip)
     /** The options of every font package install: an update replaces, and Samsung's store is named as the installer (One UI lists fonts by it). */
     private static final String FMK_INSTALL_FLAGS = "-r -i com.sec.android.app.samsungapps";
     private static final String FMK_LOCK_CHANGER = "Needs Root, or Shizuku running as the system user (UID 1000) or root (UID 0).";
@@ -6731,6 +6740,10 @@ public class MainActivity extends Activity {
     // the other, in the order they were asked for. Both are stopped in onDestroy.
     private final ExecutorService fontExec = Executors.newCachedThreadPool();
     private final ExecutorService fontPrivExec = Executors.newSingleThreadExecutor();
+    // Google Fonts previews (gfontsPreview): a css2 answer and its small faces each, at most four at a time; stopped in onDestroy, and the
+    // connections they have open (gfPreviewConns) are closed then
+    private final ExecutorService gfExec = Executors.newFixedThreadPool(4);
+    private final Set<java.net.HttpURLConnection> gfPreviewConns = Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<java.net.HttpURLConnection, Boolean>());
     private final java.security.SecureRandom fmkRandom = new java.security.SecureRandom();
     // The library, the jobs and the open downloads belong to the process, not to one window: a second window (an APK opened with this app from
     // a file manager, a Quick Settings tile's long press) sees what the first one runs, and the folders are tidied once, before anything uses
@@ -6744,9 +6757,25 @@ public class MainActivity extends Activity {
     // of its own, and a step of one window must never read or delete what another window's Apply is staging or binding
     private static final Object fmkSysLock = new Object();
     private static final String STATE_FMK_EXPORT = "fontmaker_export_id";
+    private static final String STATE_GF_SAVE = "gfonts_save_family";
     private final Object fmkLock = new Object();
     private FontLibrary.Picks fmkPicks;
     private String fmkPickSlot, fmkExportId;     // what the open file chooser / "save as" is for, one at a time (guarded by fmkLock)
+    private String gfSaveFamily;                 // the Google Fonts family the open "save as" is for: one save screen for both (guarded by fmkLock)
+    // The Google Fonts list belongs to the process: read from catalog.json once, replaced whole by a refresh (guarded by gfLock), with its
+    // families by name; and the details of the last 24 families asked for (gfontsInfo), least recently asked first.
+    private static final String GF_CATALOG = "catalog.json";
+    private static final java.util.regex.Pattern GF_REQ_ID = java.util.regex.Pattern.compile("[A-Za-z0-9_-]{1,24}");
+    private static final Object gfLock = new Object();
+    private static boolean gfCatalogRead;
+    private static JSONObject gfCatalog;
+    private static Map<String, JSONObject> gfIndex = Collections.emptyMap();
+    private static final java.util.LinkedHashMap<String, JSONObject> gfInfos = new java.util.LinkedHashMap<String, JSONObject>(32, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, JSONObject> eldest) {
+            return size() > GoogleFonts.INFO_CACHE;
+        }
+    };
     private volatile int fmkOneUiRaw = -1;       // ro.build.version.oneui (80500 = 8.5), read once
     private volatile String fmkOneUiText;
 
@@ -6759,6 +6788,8 @@ public class MainActivity extends Activity {
                 EmojiCatalog.sweep(d.emoji);                // a download's .part file and Twemoji's zip
                 FontLibrary.deleteTree(d.work);
                 FontLibrary.deleteTree(d.in);               // picked copies: the pages that knew their tokens are gone
+                GoogleFonts.sweep(d.gfFamilies);            // a download's .part folder, a family moved aside or being deleted, one not whole
+                new File(d.gfonts, GF_CATALOG + ".part").delete();      // a list write cut short
                 fmkSharedDirs = d;
             }
             return fmkSharedDirs;
@@ -6966,13 +6997,15 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Copies the chosen file to this window's folder in cache/fontmaker/in/ (at most 96 MB: one byte more and the copy stops and is deleted),
-     * reads what it is with FontInspect and keeps it under a new random token, the only name the page gets for it, unless a later choice of
-     * the slot ({@code ask}) came in meanwhile. The emoji slot takes only a colour (COLR) font with TrueType outlines, and is not warned that
-     * it has no letters.
+     * Copies a font to this window's folder in cache/fontmaker/in/ (at most 96 MB: one byte more and the copy stops and is deleted), reads
+     * what it is with FontInspect and keeps it under a new random token, the only name the page gets for it, unless a later choice of the
+     * slot ({@code ask}) came in meanwhile. The font is a file the user chose ({@link #fmkCopyPick(String, Uri, int)}) or a downloaded Google
+     * Fonts file (gfontsUse), whose copy must also be the file its meta.json recorded ({@code wantSize}, {@code wantSha}; null for a chosen
+     * file): gf_changed. {@code in} is closed here. The emoji slot takes only a colour (COLR) font with TrueType outlines, and is not warned
+     * that it has no letters.
      * {ok, token, fileName, size, info} or {ok:false, code, error} ("cancelled" for a choice a later one replaced).
      */
-    private JSONObject fmkCopyPick(String slot, Uri uri, int ask) {
+    private JSONObject fmkCopyPick(String slot, InputStream in, String name, int ask, long wantSize, String wantSha) {
         FontLibrary.Picks picks = fmkPicks();
         String token = FontLibrary.newToken(fmkRandom);
         File f = picks.fileFor(slot, token);
@@ -6980,9 +7013,6 @@ public class MainActivity extends Activity {
         try {
             File dir = f.getParentFile();
             if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("The app has no room for a copy of the file.");
-            String name = cdSafeName(contentName(uri));
-            InputStream in = getContentResolver().openInputStream(uri);
-            if (in == null) throw new IOException("The app could not open that file.");
             long size;
             try {
                 FileOutputStream out = new FileOutputStream(f);
@@ -6995,7 +7025,9 @@ public class MainActivity extends Activity {
                 in.close();
             }
             if (size <= 0) throw new Sfnt.FontException("not_a_font", "This file is empty.");
-            FontInspect.Info info = FontInspect.inspect(FontLibrary.readFile(f, FontLibrary.MAX_PICK_BYTES));
+            byte[] data = FontLibrary.readFile(f, FontLibrary.MAX_PICK_BYTES);
+            if (wantSha != null && (size != wantSize || !wantSha.equals(FontLibrary.sha256(data)))) return FontLibrary.error("gf_changed", GoogleFonts.E_CHANGED);
+            FontInspect.Info info = FontInspect.inspect(data);
             if ("emoji".equals(slot)) {
                 if ("CBDT".equals(info.color) || "sbix".equals(info.color))
                     throw new Sfnt.FontException("bitmap_emoji", "This emoji font is made of pictures (" + info.color + "), which cannot be put inside a font. Choose a COLR emoji font.");
@@ -7017,8 +7049,23 @@ public class MainActivity extends Activity {
         } catch (Throwable t) {
             return FontLibrary.error("unreadable", "The app could not read that file: " + errMsg(t));
         } finally {
+            try { in.close(); } catch (IOException ignored) {}         // when the copy did not start
             if (!kept) f.delete();
         }
+    }
+
+    /** The file the user chose for a slot, copied by {@link #fmkCopyPick(String, InputStream, String, int, long, String)} under its own name. */
+    private JSONObject fmkCopyPick(String slot, Uri uri, int ask) {
+        String name;
+        InputStream in;
+        try {
+            name = cdSafeName(contentName(uri));
+            in = getContentResolver().openInputStream(uri);
+            if (in == null) throw new IOException("The app could not open that file.");
+        } catch (Throwable t) {
+            return FontLibrary.error("unreadable", "The app could not read that file: " + errMsg(t));
+        }
+        return fmkCopyPick(slot, in, name, ask, -1, null);
     }
 
     // ---- building ----
@@ -7952,6 +7999,559 @@ public class MainActivity extends Activity {
             }
         }
     }
+
+    // ---- Google Fonts (v7.18.0, google-fonts-v7.18.0.md): the list, previews, details, downloads, Use and Save; the emoji samples ----
+    // What needs no Android classes is GoogleFonts' (the list cut down, the css2 request and its answer, the download plan and licence,
+    // meta.json, the zip) and EmojiSpecimen's (the iOS emoji pictures read out of their font by ranges), tested on the JDK. Every Google Fonts
+    // address is checked at each hop (GoogleFonts.allowed): fonts.google.com, fonts.googleapis.com and fonts.gstatic.com over https, nothing else.
+
+    /** A Google Fonts answer: its status and its body. */
+    private static final class GfAnswer {
+        final int status;
+        final byte[] body;
+        GfAnswer(int status, byte[] body) { this.status = status; this.body = body; }
+        String text() { return new String(body, java.nio.charset.StandardCharsets.UTF_8); }
+    }
+
+    /** An answer with another status than the one asked for: FontLibrary.downloadError says it (http). */
+    private static final class GfHttp extends IOException {
+        final int status;
+        GfHttp(int status) { super("the server answered HTTP " + status); this.status = status; }
+    }
+
+    /** A job that was cancelled, or (a preview, which is no job) the window closing. */
+    private boolean gfStopped(FontLibrary.Jobs.Job job) {
+        return activityDestroyed || (job != null && job.cancelled());
+    }
+
+    /**
+     * Opens a Google Fonts address through HttpSafe. Each hop must be a Google Fonts one: a redirect anywhere else is refused before it
+     * connects. css2 gets the Chrome user agent (it serves TrueType to anything it does not know), every other request the app's. A job's
+     * hops are kept in fmkConns (Cancel and the window closing disconnect them), a preview's in gfPreviewConns and {@code hops}; gfClose
+     * drops them.
+     */
+    private java.net.HttpURLConnection gfOpen(String url, boolean chrome, final FontLibrary.Jobs.Job job, final List<java.net.HttpURLConnection> hops)
+            throws IOException, GoogleFonts.GfException {
+        if (!GoogleFonts.allowed(url)) throw new GoogleFonts.GfException("gf_bad_answer");
+        java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+        hdr.put("User-Agent", chrome ? GoogleFonts.CHROME_UA : GoogleFonts.APP_UA);
+        java.net.HttpURLConnection c = HttpSafe.open(url, 15000, 30000, hdr, new HttpSafe.Hops() {
+            @Override
+            public void opened(java.net.HttpURLConnection hop) throws IOException {
+                if (job != null) {
+                    fmkConns.put(job.id, hop);
+                } else {
+                    hops.add(hop);
+                    gfPreviewConns.add(hop);
+                }
+                if (!GoogleFonts.allowed(hop.getURL().toString())) throw new IOException("refused an address outside Google Fonts (" + hop.getURL().getHost() + ")");
+                if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+            }
+        });
+        if (job != null) fmkConns.put(job.id, c);
+        return c;
+    }
+
+    private void gfClose(java.net.HttpURLConnection c, FontLibrary.Jobs.Job job, List<java.net.HttpURLConnection> hops) {
+        if (job != null) fmkConns.remove(job.id);
+        else gfPreviewConns.removeAll(hops);
+        if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+    }
+
+    /**
+     * A GET of a Google Fonts address, its body read whatever the status (Google says "unknown family" in the body of a 400 and a 404), at
+     * most {@code cap} bytes: one more is {@code overCode}.
+     */
+    private GfAnswer gfGet(String url, boolean chrome, long cap, String overCode, FontLibrary.Jobs.Job job) throws IOException, GoogleFonts.GfException {
+        List<java.net.HttpURLConnection> hops = new ArrayList<java.net.HttpURLConnection>();
+        java.net.HttpURLConnection c = null;
+        try {
+            c = gfOpen(url, chrome, job, hops);
+            int code = c.getResponseCode();
+            InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+            if (in == null) return new GfAnswer(code, new byte[0]);
+            try {
+                if (c.getContentLengthLong() > cap) throw new GoogleFonts.GfException(overCode);
+                java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[65536];
+                long n = 0;
+                int r;
+                while ((r = in.read(buf)) > 0) {
+                    if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                    n += r;
+                    if (n > cap) throw new GoogleFonts.GfException(overCode);
+                    b.write(buf, 0, r);
+                }
+                return new GfAnswer(code, b.toByteArray());
+            } finally {
+                try { in.close(); } catch (IOException ignored) {}
+            }
+        } finally {
+            gfClose(c, job, hops);
+        }
+    }
+
+    /**
+     * What a Google Fonts request (or the iOS emoji sample) that failed answers: its own code (GfException, SpecimenException), cancelled,
+     * no_memory, else FontLibrary.downloadError: the HTTP status, a full phone, or the network.
+     */
+    private JSONObject gfError(Throwable t, FontLibrary.Jobs.Job job) {
+        if (t instanceof GoogleFonts.GfException) return FontLibrary.error(((GoogleFonts.GfException) t).code, t.getMessage());
+        if (t instanceof EmojiSpecimen.SpecimenException) return FontLibrary.error(((EmojiSpecimen.SpecimenException) t).code, t.getMessage());
+        if (gfStopped(job) || t instanceof EmojiCatalog.VerifyException) return FontLibrary.error("cancelled", "The download was cancelled.");
+        if (t instanceof OutOfMemoryError) return FontLibrary.error("no_memory", FMK_NO_MEMORY);
+        return FontLibrary.downloadError(t instanceof GfHttp ? ((GfHttp) t).status : 0, errMsg(t));
+    }
+
+    /** The list, null when none is on the phone: read from catalog.json the first time it is asked for in the process. */
+    private JSONObject gfCatalog() {
+        File f = new File(fmkDirs().gfonts, GF_CATALOG);
+        synchronized (gfLock) {
+            if (!gfCatalogRead) {
+                gfCatalogRead = true;
+                gfSetCatalog(GoogleFonts.readCatalog(f));
+            }
+            return gfCatalog;
+        }
+    }
+
+    /** Under gfLock: the list and its families by name, replaced whole (a JSONObject handed out is never changed). */
+    private static void gfSetCatalog(JSONObject catalog) {
+        gfCatalog = catalog;
+        gfIndex = GoogleFonts.index(catalog);
+    }
+
+    /** The list's entry of a family, or null when it is not in the list (or there is none). */
+    private JSONObject gfEntry(String family) {
+        gfCatalog();
+        synchronized (gfLock) {
+            return gfIndex.get(family);
+        }
+    }
+
+    /**
+     * Gets the list (fonts.google.com/metadata/fonts, 2.7 MB), cuts it down (GoogleFonts.compact), writes catalog.json whole and keeps it in
+     * memory. A list with no family does not replace the one there. window.onGfCatalog({ok, at, count} | {ok:false, code, error}).
+     */
+    private void gfCatalogJob(FontLibrary.Jobs.Job job) {
+        JSONObject res;
+        try {
+            GfAnswer a = gfGet(GoogleFonts.CATALOG_URL, false, GoogleFonts.MAX_CATALOG, "gf_bad_answer", job);
+            if (a.status != 200) throw new GfHttp(a.status);
+            long at = System.currentTimeMillis();
+            JSONObject cat = GoogleFonts.compact(a.text(), at);
+            int count = cat.getJSONArray("families").length();
+            if (count == 0) throw new GoogleFonts.GfException("gf_bad_answer");
+            try {
+                GoogleFonts.writeWhole(new File(fmkDirs().gfonts, GF_CATALOG), cat.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            } catch (IOException notKept) {}                            // a full phone: the list serves this process, and is asked for again in the next
+            synchronized (gfLock) {
+                gfCatalogRead = true;
+                gfSetCatalog(cat);
+            }
+            res = new JSONObject().put("ok", true).put("at", at).put("count", count);
+        } catch (Throwable t) {
+            res = gfError(t, job);
+        } finally {
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onGfCatalog && window.onGfCatalog(" + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /**
+     * A preview (gfontsPreview), as the answer's JSON: from the cache (cache/fontmaker/gfpv/, 30 days), else the css2 answer for the family and
+     * the characters, and each face it names (a woff2 on fonts.gstatic.com): a face over 2 MB is left out, and so are the faces after 8 MB in
+     * all. {ok, family, mode, faces:[{style, weight, stretch, b64}]} is cached, and the cache trimmed to 24 MB, oldest first.
+     */
+    private String gfPreview(JSONObject entry, String family, String mode, String text) {
+        try {
+            String chars = GoogleFonts.uniqueText(text, family);
+            File dir = fmkDirs().gfPreviews;
+            File cached = new File(dir, GoogleFonts.previewKey(family, mode, chars) + ".json");
+            String hit = GoogleFonts.readCached(cached, System.currentTimeMillis(), GoogleFonts.PREVIEW_CACHE_MS);
+            if (hit != null) return hit;
+            GfAnswer css = gfGet(GoogleFonts.css2Url(entry, mode, text), true, GoogleFonts.MAX_CSS, "gf_no_preview", null);
+            if (css.status == 400) throw new GoogleFonts.GfException("gf_no_preview");     // css2 refuses a family or a style it does not serve
+            if (css.status != 200) throw new GfHttp(css.status);
+            JSONArray faces = new JSONArray();
+            long total = 0;
+            for (GoogleFonts.Face f : GoogleFonts.parseCss(css.text())) {
+                GfAnswer w;
+                try {
+                    w = gfGet(f.url, true, GoogleFonts.MAX_FACE, "gf_too_big", null);
+                } catch (GoogleFonts.GfException tooBig) {
+                    continue;
+                }
+                if (w.status != 200 || w.body.length == 0) continue;
+                if (total + w.body.length > GoogleFonts.MAX_PREVIEW) break;
+                total += w.body.length;
+                faces.put(new JSONObject().put("style", f.style).put("weight", f.weight).put("stretch", f.stretch)
+                        .put("b64", android.util.Base64.encodeToString(w.body, android.util.Base64.NO_WRAP)));
+            }
+            if (faces.length() == 0) throw new GoogleFonts.GfException("gf_no_preview");
+            String answer = new JSONObject().put("ok", true).put("family", family).put("mode", mode).put("faces", faces).toString();
+            try {
+                GoogleFonts.writeWhole(cached, answer.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                GoogleFonts.trimCache(dir, GoogleFonts.PREVIEW_CACHE_BYTES);
+            } catch (IOException notCached) {}
+            return answer;
+        } catch (Throwable t) {
+            return gfError(t, null).toString();
+        }
+    }
+
+    /** A family's download list, read by GoogleFonts.plan: Google answers a family it does not have with a 400 that plan reads as gf_unknown. */
+    private GoogleFonts.Plan gfPlan(String family, FontLibrary.Jobs.Job job) throws IOException, GoogleFonts.GfException {
+        GfAnswer a = gfGet(GoogleFonts.listUrl(family), false, GoogleFonts.MAX_LIST, "gf_bad_answer", job);
+        GoogleFonts.Plan plan;
+        try {
+            plan = GoogleFonts.plan(a.text());
+        } catch (GoogleFonts.GfException e) {
+            if (a.status == 200 || "gf_unknown".equals(e.code)) throw e;
+            throw new GfHttp(a.status);
+        }
+        if (a.status != 200) throw new GfHttp(a.status);
+        return plan;
+    }
+
+    /**
+     * A family's details (gfontsInfo): its download list (the files, the licence and its Reserved Font Names) and its details page (the
+     * description, the designers), kept for the 24 families last asked for. Google has no details page for some families it serves (the
+     * Material Symbols ones answer 404): the list's facts and the catalog's designers are then the answer.
+     * window.onGfInfo(family, {ok, family, description, license, licenseName, licenseText, reserved, designers, files} | {ok:false, code, error}).
+     */
+    private void gfInfoJob(FontLibrary.Jobs.Job job, String family, JSONObject entry) {
+        JSONObject res;
+        try {
+            synchronized (gfLock) {
+                res = gfInfos.get(family);
+            }
+            if (res == null) {
+                GoogleFonts.Plan plan = gfPlan(family, job);
+                GfAnswer a = gfGet(GoogleFonts.detailUrl(family), false, GoogleFonts.MAX_DETAIL, "gf_bad_answer", job);
+                GoogleFonts.Info info;
+                try {
+                    info = GoogleFonts.info(a.text());
+                } catch (GoogleFonts.GfException e) {
+                    if (!"gf_unknown".equals(e.code)) {
+                        if (a.status != 200) throw new GfHttp(a.status);
+                        throw e;
+                    }
+                    info = null;
+                }
+                res = GoogleFonts.infoJson(family, plan, info, entry);
+                synchronized (gfLock) {
+                    gfInfos.put(family, res);
+                }
+            }
+        } catch (Throwable t) {
+            res = gfError(t, job);
+        } finally {
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onGfInfo && window.onGfInfo(" + JSONObject.quote(family) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    private void gfProgress(String family, int index, int count, long done, long total) {
+        notifyJs("window.onGfProgress && window.onGfProgress(" + JSONObject.quote(family) + ", " + index + ", " + count + ", " + done + ", " + total + ")");
+    }
+
+    /**
+     * Downloads a family (gfontsDownload) into fam/.&lt;slug&gt;.part/: each file of its download list (GoogleFonts.plan) streamed to the disk
+     * with its SHA-256, at most 64 MB a file and 160 MB in all (gf_too_big), and read by FontInspect (gf_not_a_font); then the licence file
+     * and meta.json, each flushed to the disk, and the folder renamed into place (GoogleFonts.commitDownload: a family downloaded again
+     * replaces the one there). A download that does not end so leaves nothing: its .part folder is deleted (and swept in the next process if
+     * this one ends first). window.onGfProgress(family, fileIndex, fileCount, done, total) for each file (its bytes; total 0 when Google does
+     * not say), then window.onGfDone(family, {ok, entry: its gfontsDownloads row} | {ok:false, code, error}).
+     */
+    private void gfDownloadJob(FontLibrary.Jobs.Job job, String family) {
+        FontLibrary.Dirs d = fmkDirs();
+        FontLibrary.Throttle throttle = new FontLibrary.Throttle(250);
+        File part = GoogleFonts.partDir(d.gfFamilies, family);
+        boolean placed = false;
+        JSONObject res;
+        try {
+            GoogleFonts.Plan plan = gfPlan(family, job);
+            FontLibrary.deleteTree(part);
+            if (!part.mkdirs()) throw new IOException("The app could not make the family's folder.");
+            List<GoogleFonts.MetaFile> files = new ArrayList<GoogleFonts.MetaFile>();
+            long left = GoogleFonts.MAX_FAMILY;
+            for (int i = 0; i < plan.files.size(); i++) {
+                GoogleFonts.MetaFile f = gfFetchFont(job, family, plan.files.get(i), part, i + 1, plan.files.size(), Math.min(GoogleFonts.MAX_FILE, left), throttle);
+                left -= f.size;
+                files.add(f);
+            }
+            if (!plan.licenseFile.isEmpty()) FontLibrary.writeAtomic(new File(part, plan.licenseFile), plan.licenseText.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            FontLibrary.writeAtomic(new File(part, GoogleFonts.META), GoogleFonts.metaJson(family, System.currentTimeMillis(), plan.licenseKind, plan.licenseFile,
+                    plan.reserved, files).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            FontLibrary.syncDir(part);
+            if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+            File dest = GoogleFonts.commitDownload(d.gfFamilies, family);
+            placed = true;
+            JSONObject meta = GoogleFonts.readMeta(dest);
+            if (meta == null) {                                         // what FontInspect read did not make a meta.json readMeta takes
+                FontLibrary.deleteTree(dest);
+                throw new GoogleFonts.GfException("gf_bad_answer");
+            }
+            res = new JSONObject().put("ok", true).put("entry", GoogleFonts.downloadsRow(meta, GoogleFonts.folderSize(dest)));
+        } catch (Throwable t) {
+            res = gfError(t, job);
+        } finally {
+            if (!placed) FontLibrary.deleteTree(part);
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onGfDone && window.onGfDone(" + JSONObject.quote(family) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /** One font file of a download, into {@code part}: streamed with its SHA-256 and flushed, then read by FontInspect for meta.json. */
+    private GoogleFonts.MetaFile gfFetchFont(FontLibrary.Jobs.Job job, String family, GoogleFonts.FileRef ref, File part, int index, int count, long cap,
+            FontLibrary.Throttle throttle) throws Exception {
+        File dest = new File(part, ref.name);
+        List<java.net.HttpURLConnection> hops = new ArrayList<java.net.HttpURLConnection>();
+        java.net.HttpURLConnection c = null;
+        long n = 0;
+        String sha;
+        try {
+            c = gfOpen(ref.url, false, job, hops);
+            int code = c.getResponseCode();
+            if (code != 200) throw new GfHttp(code);
+            long total = Math.max(0, c.getContentLengthLong());
+            if (total > cap) throw new GoogleFonts.GfException("gf_too_big");
+            gfProgress(family, index, count, 0, total);
+            throttle.due("file " + index, 0, total, android.os.SystemClock.elapsedRealtime());
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            InputStream in = c.getInputStream();
+            try {
+                FileOutputStream out = new FileOutputStream(dest);
+                try {
+                    byte[] buf = new byte[65536];
+                    int r;
+                    while ((r = in.read(buf)) > 0) {
+                        if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                        n += r;
+                        if (n > cap) throw new GoogleFonts.GfException("gf_too_big");
+                        md.update(buf, 0, r);
+                        out.write(buf, 0, r);
+                        if (throttle.due("file " + index, n, total, android.os.SystemClock.elapsedRealtime())) gfProgress(family, index, count, n, total);
+                    }
+                    out.getFD().sync();
+                } finally {
+                    out.close();
+                }
+            } finally {
+                try { in.close(); } catch (IOException ignored) {}
+            }
+            sha = FontLibrary.hex(md.digest());
+        } finally {
+            gfClose(c, job, hops);
+        }
+        FontInspect.Info info;
+        try {
+            info = FontInspect.inspect(FontLibrary.readFile(dest, GoogleFonts.MAX_FILE));
+        } catch (Sfnt.FontException notAFont) {
+            throw new GoogleFonts.GfException("gf_not_a_font");
+        }
+        List<String> axes = new ArrayList<String>();
+        for (FontInspect.Axis a : info.axes) if (a.tag != null) axes.add(a.tag);
+        int weight = info.weight >= 1 && info.weight <= 1000 ? info.weight : 400;
+        return new GoogleFonts.MetaFile(ref.name, n, sha, info.variable, info.italic, weight, axes);
+    }
+
+    private void gfSaved(String family, JSONObject res) {
+        notifyJs("window.onGfSaved && window.onGfSaved(" + JSONObject.quote(family) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /**
+     * The "save as" for a family answered: the family's zip is written there, as a job that holds the family ("gfsave:"), so it is not
+     * deleted or downloaded again while it is written. A document nothing is written into is deleted only when it is empty, as for a font
+     * package (fmkExportResult).
+     */
+    private void gfSaveResult(final String family, final Uri uri) {
+        if (family == null) {
+            if (uri != null) fmkDropDocument(uri);
+            return;
+        }
+        if (uri == null) { gfSaved(family, FontLibrary.error("cancelled", "Nothing was saved.")); return; }
+        final FontLibrary.Jobs.Job job = fmkJobs.startFor(this, "gf:" + family, "gfsave", String.valueOf(System.nanoTime()), "gfsave:" + family);
+        if (job == null) {
+            fmkDropDocument(uri);
+            gfSaved(family, FontLibrary.error("busy", "This font family is downloading. Cancel it first."));
+            return;
+        }
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        gfSaved(family, gfSaveTo(family, uri));
+                    } finally {
+                        fmkJobs.finish(job);
+                    }
+                }
+            });
+        } catch (RejectedExecutionException closing) {
+            fmkJobs.finish(job);
+            fmkDeleteIfEmpty(uri);
+        }
+    }
+
+    /** Writes the family's zip (GoogleFonts.writeZip) into the document: once it is open for writing, a zip that does not end whole deletes it. */
+    private JSONObject gfSaveTo(String family, Uri uri) {
+        boolean opened = false, whole = false;
+        try {
+            File famDir = fmkDirs().gfFamilies;
+            JSONObject meta = GoogleFonts.downloaded(famDir, family);
+            if (meta == null) return FontLibrary.error("gf_not_downloaded", GoogleFonts.E_NOT_DOWNLOADED);
+            OutputStream out;
+            try {
+                out = getContentResolver().openOutputStream(uri, "wt");
+            } catch (Exception noTruncate) {
+                out = getContentResolver().openOutputStream(uri, "w");
+            }
+            if (out == null) throw new IOException("The app could not write there.");
+            opened = true;
+            GoogleFonts.writeZip(GoogleFonts.familyDir(famDir, family), meta, out);
+            whole = true;
+            return new JSONObject().put("ok", true).put("name", cdSafeName(contentName(uri)));
+        } catch (GoogleFonts.GfException e) {
+            return FontLibrary.error(e.code, e.getMessage());
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font family could not be saved: " + errMsg(t));
+        } finally {
+            if (opened && !whole) fmkDeleteDocument(uri);
+            else if (!whole) fmkDeleteIfEmpty(uri);
+        }
+    }
+
+    /** Closes the previews' open connections (the window closes), off the UI thread: closing a TLS connection writes to the network. */
+    private void gfDisconnectPreviews() {
+        final List<java.net.HttpURLConnection> open = new ArrayList<java.net.HttpURLConnection>(gfPreviewConns);
+        gfPreviewConns.clear();
+        if (open.isEmpty()) return;
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (java.net.HttpURLConnection c : open) try { c.disconnect(); } catch (Throwable ignored) {}
+            }
+        }, "gfonts-disconnect");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** The sample's pictures for the page: [{cp, b64}]. */
+    private static JSONArray fmkImagesJson(List<EmojiSpecimen.Image> images) throws org.json.JSONException {
+        JSONArray a = new JSONArray();
+        for (EmojiSpecimen.Image i : images) a.put(new JSONObject().put("cp", i.cp).put("b64", android.util.Base64.encodeToString(i.png, android.util.Base64.NO_WRAP)));
+        return a;
+    }
+
+    /**
+     * Reads the iOS emoji sample (emojiSpecimenFetch): the 16 pictures of EmojiSpecimen.SAMPLE out of the iOS emoji font's CBDT table, from
+     * the downloaded file when it is kept (FontLibrary.keptBuild: its exact size; it was checked by SHA-256 when it was downloaded, and only
+     * pictures are read from it), else by HTTP ranges from the pinned address (FmkRanges: about 0.3 MB in 20 requests). The sample is kept in
+     * specimen/apple.json, so it is read once. window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"} | {ok:false, code, error}).
+     */
+    private void fmkSpecimenJob(final FontLibrary.Jobs.Job job, EmojiCatalog.Item item) {
+        FontLibrary.Dirs d = fmkDirs();
+        File kept = d.emojiFile(item.id);
+        boolean web = FontLibrary.keptBuild(item, kept) == null;
+        java.io.RandomAccessFile raf = null;
+        JSONObject res;
+        try {
+            List<EmojiSpecimen.Image> images;
+            if (web) {
+                images = EmojiSpecimen.read(new FmkRanges(job, item), item.size);
+            } else {
+                final java.io.RandomAccessFile file = raf = new java.io.RandomAccessFile(kept, "r");
+                images = EmojiSpecimen.read(new EmojiSpecimen.Source() {
+                    @Override
+                    public byte[] read(long offset, int length) throws IOException {
+                        if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                        byte[] b = new byte[length];
+                        file.seek(offset);
+                        file.readFully(b);
+                        return b;
+                    }
+                }, item.size);
+            }
+            try {
+                FontLibrary.writeAtomic(new File(d.specimen, item.id + ".json"), EmojiSpecimen.cacheJson(images, item.sha256).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            } catch (IOException notKept) {}                            // read again next time
+            res = new JSONObject().put("ok", true).put("images", fmkImagesJson(images)).put("from", web ? "web" : "file");
+        } catch (Throwable t) {
+            res = web || t instanceof EmojiSpecimen.SpecimenException || gfStopped(job) ? gfError(t, job)
+                    : FontLibrary.error("unreadable", "The app could not read that file: " + errMsg(t));
+        } finally {
+            if (raf != null) try { raf.close(); } catch (IOException ignored) {}
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onEmojiSpecimen && window.onEmojiSpecimen(" + JSONObject.quote(item.id) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /**
+     * The iOS emoji font by HTTP ranges, for EmojiSpecimen.read: one request a part (Range, no compression), each answer checked to be exactly
+     * that part of a file of exactly the pinned size (EmojiSpecimen.checkPart: emo_changed). GitHub answers the pinned address with a redirect
+     * to a signed address that also takes ranges: the next part is asked there, and once more from the pinned address when that one stops
+     * answering (its signature is short-lived). Each hop is in fmkConns, so the window closing disconnects it.
+     */
+    private final class FmkRanges implements EmojiSpecimen.Source {
+        private final FontLibrary.Jobs.Job job;
+        private final EmojiCatalog.Item item;
+        private String at;                                              // where the last part came from
+
+        FmkRanges(FontLibrary.Jobs.Job job, EmojiCatalog.Item item) {
+            this.job = job;
+            this.item = item;
+            this.at = item.url;
+        }
+
+        @Override
+        public byte[] read(long offset, int length) throws IOException {
+            for (int attempt = 0; ; attempt++) {
+                java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+                hdr.put("User-Agent", "ADB-Application-Manager");
+                hdr.put("Range", "bytes=" + offset + "-" + (offset + length - 1));
+                hdr.put("Accept-Encoding", "identity");
+                java.net.HttpURLConnection c = null;
+                try {
+                    c = HttpSafe.open(at, 15000, 30000, hdr, new HttpSafe.Hops() {
+                        @Override
+                        public void opened(java.net.HttpURLConnection hop) throws IOException {
+                            fmkConns.put(job.id, hop);
+                            if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                        }
+                    });
+                    fmkConns.put(job.id, c);
+                    int code = c.getResponseCode();
+                    if (code != 200 && code != 206) {
+                        if (attempt == 0 && !at.equals(item.url)) {
+                            at = item.url;
+                            continue;
+                        }
+                        throw new GfHttp(code);
+                    }
+                    EmojiSpecimen.checkPart(code, c.getHeaderField("Content-Range"), offset, length, item.size);
+                    byte[] b = new byte[length];
+                    InputStream in = c.getInputStream();
+                    try {
+                        for (int got = 0; got < length; ) {
+                            if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                            int r = in.read(b, got, length - got);
+                            if (r < 0) throw new IOException("the answer ended early");
+                            got += r;
+                        }
+                    } finally {
+                        try { in.close(); } catch (IOException ignored) {}
+                    }
+                    at = c.getURL().toString();
+                    return b;
+                } finally {
+                    fmkConns.remove(job.id);
+                    if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+                }
+            }
+        }
+    }
     // FONTMAKER:END
 
     // ---------------------------------------------------------------------------------------------
@@ -8822,6 +9422,15 @@ public class MainActivity extends Activity {
                 fmkExportId = null;
             }
             fmkExportResult(id, (resultCode == RESULT_OK && data != null) ? data.getData() : null);
+            return;
+        }
+        if (requestCode == REQ_GFONTS_SAVE) {
+            final String family;
+            synchronized (fmkLock) {
+                family = gfSaveFamily;
+                gfSaveFamily = null;
+            }
+            gfSaveResult(family, (resultCode == RESULT_OK && data != null) ? data.getData() : null);
             return;
         }
         if (requestCode == REQ_PICK_FONT) {
@@ -13979,7 +14588,7 @@ public class MainActivity extends Activity {
             if (e == null) return fmkErr("not_found", FMK_NOT_FOUND);
             if (fmkJobs.inUse("make:" + id)) return fmkErr("busy", "This font is being made again. Wait for it to finish, then save it.");
             synchronized (fmkLock) {
-                if (fmkExportId != null) return fmkErr("busy", "The save screen is already open.");
+                if (fmkExportId != null || gfSaveFamily != null) return fmkErr("busy", "The save screen is already open.");
                 fmkExportId = id;
             }
             runOnUiThread(new Runnable() {
@@ -14214,6 +14823,321 @@ public class MainActivity extends Activity {
                         } finally {
                             fmkJobs.finish(job);
                         }
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        // ---- Google Fonts (v7.18.0): a family is a plain name (GoogleFonts.isFamily) and, where it must be, one of the list's or a downloaded
+        // one; nothing the page sends names a path or an address. The work is the activity's gf* methods. ----
+
+        /** The list on the phone: {ok, at, stale, count, axes:{tag: name}, families:[...]} (at 0 and no families when there is none). */
+        @JavascriptInterface
+        public String gfontsCatalog() {
+            try {
+                JSONObject cat = gfCatalog();
+                long at = cat == null ? 0 : cat.optLong("at");
+                JSONArray families = cat == null ? new JSONArray() : cat.getJSONArray("families");
+                return new JSONObject().put("ok", true).put("at", at).put("stale", GoogleFonts.isStale(at, System.currentTimeMillis()))
+                        .put("count", families.length()).put("axes", cat == null ? new JSONObject() : cat.getJSONObject("axes"))
+                        .put("families", families).toString();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /**
+         * Gets the list again: {ok, job} (the running one's when it is already being got), or {ok, fresh:true} without {@code force} while the
+         * one on the phone is younger than 7 days. Then window.onGfCatalog({ok, at, count}); the page then asks gfontsCatalog().
+         */
+        @JavascriptInterface
+        public String gfontsRefresh(boolean force) {
+            JSONObject cat = gfCatalog();
+            if (!force && cat != null && !GoogleFonts.isStale(cat.optLong("at"), System.currentTimeMillis())) {
+                try {
+                    return new JSONObject().put("ok", true).put("fresh", true).toString();
+                } catch (Exception e) {
+                    return "{\"ok\":true,\"fresh\":true}";
+                }
+            }
+            final FontLibrary.Jobs.Job job;
+            synchronized (fmkJobs) {                                    // a second ask waits for the same answer
+                FontLibrary.Jobs.Job running = fmkJobs.running("gfcat", "only");
+                if (running != null) return fmkOk("job", running.id);
+                job = fmkJobs.startFor(MainActivity.this, null, "gfcat", "only");
+            }
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        gfCatalogJob(job);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /**
+         * A preview of a family of the list for the characters of {@code text} (mode card, styles or axes; GoogleFonts.css2Url), on gfExec.
+         * Answer {ok}; then window.onGfPreview(reqId, {ok, family, mode, faces:[{style, weight, stretch, b64}]}).
+         */
+        @JavascriptInterface
+        public String gfontsPreview(final String reqId, final String family, final String mode, final String text) {
+            if (reqId == null || !GF_REQ_ID.matcher(reqId).matches() || !("card".equals(mode) || "styles".equals(mode) || "axes".equals(mode)))
+                return fmkErr("bad_request", "The page asked for a preview the app does not make.");
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            final JSONObject entry = gfEntry(family);
+            if (entry == null) return fmkErr("gf_unknown", GoogleFonts.E_UNKNOWN);
+            try {
+                gfExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        String res = gfPreview(entry, family, mode, text);
+                        notifyJs("window.onGfPreview && window.onGfPreview(" + JSONObject.quote(reqId) + ", " + JSONObject.quote(res) + ")");
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk(null, null);
+        }
+
+        /**
+         * A family's details: {ok, job} (the running one's when they are already being got); then window.onGfInfo(family, {ok, family,
+         * description, license, licenseName, licenseText, reserved, designers, files:[{name, variable, italic}]}).
+         */
+        @JavascriptInterface
+        public String gfontsInfo(final String family) {
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            final JSONObject entry = gfEntry(family);
+            if (entry == null) return fmkErr("gf_unknown", GoogleFonts.E_UNKNOWN);
+            final FontLibrary.Jobs.Job job;
+            synchronized (fmkJobs) {
+                FontLibrary.Jobs.Job running = fmkJobs.running("gfinfo", family);
+                if (running != null) return fmkOk("job", running.id);
+                job = fmkJobs.startFor(MainActivity.this, null, "gfinfo", family);
+            }
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        gfInfoJob(job, family, entry);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** The downloaded families, newest first: {ok, families:[{family, at, size, license, licenseName, reserved, files:[{name, size, variable, italic, weight}]}]}. */
+        @JavascriptInterface
+        public String gfontsDownloads() {
+            try {
+                return new JSONObject().put("ok", true).put("families", GoogleFonts.downloads(fmkDirs().gfFamilies)).toString();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /**
+         * Downloads a family of the list (a downloaded one again replaces it). Answer {ok, job}; window.onGfProgress(family, fileIndex,
+         * fileCount, done, total), then window.onGfDone(family, {ok, entry}). Refused while it downloads or is being saved.
+         */
+        @JavascriptInterface
+        public String gfontsDownload(final String family) {
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            if (gfEntry(family) == null) return fmkErr("gf_unknown", GoogleFonts.E_UNKNOWN);
+            // "gf:" holds the family against a save, a Use and a delete; one download of a family at a time, none while it is saved
+            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, "gfsave:" + family, "gfdl", family, "gf:" + family);
+            if (job == null) {
+                if (fmkJobs.running("gfdl", family) != null) return fmkErr("busy", "This font family is already downloading.");
+                return fmkErr("busy", "This font family is being saved. Wait for it to finish.");
+            }
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        gfDownloadJob(job, family);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** Stops a family's download; it ends with onGfDone(family, {ok:false, code:"cancelled"}) and leaves no .part folder. */
+        @JavascriptInterface
+        public String gfontsCancel(String family) {
+            FontLibrary.Jobs.Job job = GoogleFonts.isFamily(family) ? fmkJobs.running("gfdl", family) : null;
+            if (job != null) {
+                job.cancel();
+                final java.net.HttpURLConnection c = fmkConns.remove(job.id);
+                if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+            }
+            return fmkOk(null, null);
+        }
+
+        /** Deletes a downloaded family. Refused while it downloads or is being saved. */
+        @JavascriptInterface
+        public String gfontsDelete(String family) {
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            File famDir = fmkDirs().gfFamilies;
+            final File aside = new File(famDir, "." + GoogleFonts.slug(family) + ".del-" + System.nanoTime());
+            synchronized (fmkJobs) {                                    // no download or save of it starts while its folder is moved aside
+                if (fmkJobs.running("gfdl", family) != null) return fmkErr("busy", "This font family is downloading. Cancel it first.");
+                if (fmkJobs.inUse("gfsave:" + family)) return fmkErr("busy", "This font family is being saved. Wait for it to finish.");
+                if (GoogleFonts.downloaded(famDir, family) == null) return fmkErr("gf_not_downloaded", GoogleFonts.E_NOT_DOWNLOADED);
+                if (!GoogleFonts.familyDir(famDir, family).renameTo(aside)) return fmkErr("failed", "The file could not be deleted.");
+            }
+            // gone from the list at once; its files are deleted off this thread (swept in the next process if this one ends first)
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        FontLibrary.deleteTree(aside);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                FontLibrary.deleteTree(aside);
+            }
+            return fmkOk(null, null);
+        }
+
+        /**
+         * Puts a file of a downloaded family in Make a font's Regular or Bold slot, as a chosen file is (fmkCopyPick: its checks and tokens,
+         * numbered with the file chooser's choices), checked against its meta.json (gf_changed). Answer {ok}; then
+         * window.onFontMakerPicked(slot, {ok, token, fileName, size, info, gf:{family, reserved}}). Refused while the file chooser is open or
+         * the family downloads.
+         */
+        @JavascriptInterface
+        public String gfontsUse(final String family, final String fileName, final String slot) {
+            if (!"regular".equals(slot) && !"bold".equals(slot)) return fmkErr("bad_request", "Choose Regular or Bold.");
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            if (fmkJobs.running("gfdl", family) != null) return fmkErr("busy", "This font family is downloading. Cancel it first.");
+            final File famDir = fmkDirs().gfFamilies;
+            final JSONObject meta = GoogleFonts.downloaded(famDir, family);
+            if (meta == null) return fmkErr("gf_not_downloaded", GoogleFonts.E_NOT_DOWNLOADED);
+            final JSONObject file = GoogleFonts.metaFile(meta, fileName);
+            if (file == null) return fmkErr("gf_bad_file", GoogleFonts.E_BAD_FILE);
+            final FontLibrary.Picks picks = fmkPicks();
+            final int ask;
+            synchronized (fmkLock) {
+                if (fmkPickSlot != null) return fmkErr("busy", "The file chooser is already open.");
+                ask = picks.ask(slot);
+            }
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res;
+                        try {
+                            InputStream in = new java.io.FileInputStream(new File(GoogleFonts.familyDir(famDir, family), file.getString("name")));
+                            res = fmkCopyPick(slot, in, file.getString("name"), ask, file.getLong("size"), file.getString("sha256"));
+                            if (res.optBoolean("ok")) res.put("gf", new JSONObject().put("family", family).put("reserved", meta.getJSONObject("license").getJSONArray("reserved")));
+                        } catch (Throwable gone) {                         // deleted since it was checked
+                            res = FontLibrary.error("gf_changed", GoogleFonts.E_CHANGED);
+                        }
+                        fmkPicked(slot, res);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk(null, null);
+        }
+
+        /**
+         * Saves a downloaded family where the user chooses, as one .zip of its fonts and licence (Android's "save as"). Answer {ok}, or
+         * {ok:false, code:"busy"} while a save screen is already open (a font package's or a family's) or the family downloads; then
+         * window.onGfSaved(family, {ok, name}).
+         */
+        @JavascriptInterface
+        public String gfontsSave(final String family) {
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            if (fmkJobs.running("gfdl", family) != null) return fmkErr("busy", "This font family is downloading. Cancel it first.");
+            if (GoogleFonts.downloaded(fmkDirs().gfFamilies, family) == null) return fmkErr("gf_not_downloaded", GoogleFonts.E_NOT_DOWNLOADED);
+            synchronized (fmkLock) {
+                if (fmkExportId != null || gfSaveFamily != null) return fmkErr("busy", "The save screen is already open.");
+                gfSaveFamily = family;
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("application/zip");
+                    i.putExtra(Intent.EXTRA_TITLE, family + ".zip");
+                    if (!startPicker(i, REQ_GFONTS_SAVE)) {
+                        synchronized (fmkLock) {
+                            gfSaveFamily = null;
+                        }
+                        gfSaved(family, FontLibrary.error("no_picker", "No file picker available"));
+                    }
+                }
+            });
+            return fmkOk(null, null);
+        }
+
+        /** A cut-down sample font of the Emoji fonts card (assets/emoji/&lt;id&gt;.ttf: noto, twemoji, blobmoji, openmoji) as base64; "" for any other id. */
+        @JavascriptInterface
+        public String emojiSpecimenFont(String id) {
+            if (id == null || !EmojiSpecimen.SPECIMEN_IDS.contains(id)) return "";
+            try {
+                InputStream in = getAssets().open("emoji/" + id + ".ttf");
+                try {
+                    java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+                    FontLibrary.copyCapped(in, b, 1L << 20);
+                    return android.util.Base64.encodeToString(b.toByteArray(), android.util.Base64.NO_WRAP);
+                } finally {
+                    in.close();
+                }
+            } catch (Throwable t) {
+                return "";
+            }
+        }
+
+        /** The iOS emoji sample read before (specimen/apple.json): {ok, images:[{cp, b64}]}, no images for any other id or when there is none. */
+        @JavascriptInterface
+        public String emojiSpecimenCached(String id) {
+            try {
+                EmojiCatalog.Item item = "apple".equals(id) ? EmojiCatalog.byId(id) : null;
+                List<EmojiSpecimen.Image> images = item == null ? null : EmojiSpecimen.readCache(new File(fmkDirs().specimen, item.id + ".json"), item.sha256);
+                return new JSONObject().put("ok", true).put("images", images == null ? new JSONArray() : fmkImagesJson(images)).toString();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /**
+         * Reads the iOS emoji sample (apple only) from the downloaded file or by HTTP ranges. Answer {ok, job} (the running one's when it is
+         * already being read); then window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"}).
+         */
+        @JavascriptInterface
+        public String emojiSpecimenFetch(String id) {
+            final EmojiCatalog.Item item = "apple".equals(id) ? EmojiCatalog.byId(id) : null;
+            if (item == null) return fmkErr("unknown", "There is no such emoji font.");
+            final FontLibrary.Jobs.Job job;
+            synchronized (fmkJobs) {
+                FontLibrary.Jobs.Job running = fmkJobs.running("emospec", item.id);
+                if (running != null) return fmkOk("job", running.id);
+                job = fmkJobs.startFor(MainActivity.this, null, "emospec", item.id);
+            }
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        fmkSpecimenJob(job, item);
                     }
                 });
             } catch (RejectedExecutionException closing) {
@@ -19374,6 +20298,8 @@ public class MainActivity extends Activity {
         // picked copies go. Another window's jobs and files are its own.
         try { fontExec.shutdownNow(); } catch (Throwable ignored) {}
         try { fontPrivExec.shutdown(); } catch (Throwable ignored) {}
+        try { gfExec.shutdownNow(); } catch (Throwable ignored) {}         // Google Fonts previews: the page that asked for them is gone
+        gfDisconnectPreviews();
         fmkDisconnect(fmkJobs.cancelAll(this));
         try {
             synchronized (fmkLock) {

@@ -80,6 +80,10 @@ public final class FontLibrary {
     /** The tab's folders, from the app's files and cache folders. */
     public static final class Dirs {
         public final File root, library, emoji, in, work;
+        /** Google Fonts (v7.18.0): the catalog (gfonts/catalog.json), the downloaded families (gfonts/fam/), the previews (a cache). */
+        public final File gfonts, gfFamilies, gfPreviews;
+        /** The iOS emoji sample read from its font (specimen/apple.json). */
+        public final File specimen;
 
         public Dirs(File filesDir, File cacheDir) {
             root = new File(filesDir, "fontmaker");
@@ -87,6 +91,10 @@ public final class FontLibrary {
             emoji = new File(root, "emoji");
             in = new File(new File(cacheDir, "fontmaker"), "in");
             work = new File(new File(cacheDir, "fontmaker"), "work");
+            gfonts = new File(root, "gfonts");
+            gfFamilies = new File(gfonts, "fam");
+            gfPreviews = new File(new File(cacheDir, "fontmaker"), "gfpv");
+            specimen = new File(root, "specimen");
         }
 
         /** An entry's folder. A string that is not an id is a caller bug: the bridge checks {@link #isId} first. */

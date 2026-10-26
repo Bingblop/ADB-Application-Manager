@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -198,6 +200,56 @@ public final class GoogleFonts {
         } catch (JSONException e) {
             throw new GfException("gf_bad_answer");
         }
+    }
+
+    /**
+     * The catalog kept in files/fontmaker/gfonts/catalog.json ({@link #compact}'s answer, written whole), or null when it is missing, larger
+     * than a catalog answer can be, or not one: another version, no time, no axes or families, a family whose name is not a plain Google
+     * Fonts name (the bridge looks families up by it).
+     */
+    public static JSONObject readCatalog(File f) {
+        try {
+            if (f == null || !f.isFile() || f.length() > MAX_CATALOG) return null;
+            JSONObject o = new JSONObject(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+            if (o.optInt("v", 0) != 1 || o.optLong("at", 0) <= 0 || o.optJSONObject("axes") == null) return null;
+            JSONArray fams = o.optJSONArray("families");
+            if (fams == null) return null;
+            for (int i = 0; i < fams.length(); i++) {
+                JSONObject e = fams.optJSONObject(i);
+                if (e == null || !(e.opt("f") instanceof String) || !isFamily(e.optString("f"))) return null;
+            }
+            return o;
+        } catch (Exception | OutOfMemoryError e) {
+            return null;
+        }
+    }
+
+    /** A list got at {@code at} is refreshed: none (0), older than 7 days, or from a time ahead of the phone's clock (the clock was set back). */
+    public static boolean isStale(long at, long nowMs) {
+        return at <= 0 || nowMs < at || nowMs - at > STALE_MS;
+    }
+
+    /** The catalog's families by name (the first of a name, as {@link #compact} keeps them). */
+    public static Map<String, JSONObject> index(JSONObject catalog) {
+        Map<String, JSONObject> by = new HashMap<String, JSONObject>();
+        JSONArray fams = catalog == null ? null : catalog.optJSONArray("families");
+        if (fams == null) return by;
+        for (int i = 0; i < fams.length(); i++) {
+            JSONObject e = fams.optJSONObject(i);
+            if (e != null && isFamily(e.optString("f", null)) && !by.containsKey(e.optString("f"))) by.put(e.optString("f"), e);
+        }
+        return by;
+    }
+
+    /** A family's download list and its details (spaces as "+" in the query, as "%20" in the path; a name has nothing else to encode). */
+    public static String listUrl(String family) {
+        if (!isFamily(family)) throw new IllegalArgumentException("not a family");
+        return LIST_URL + family.replace(' ', '+');
+    }
+
+    public static String detailUrl(String family) {
+        if (!isFamily(family)) throw new IllegalArgumentException("not a family");
+        return DETAIL_URL + family.replace(" ", "%20");
     }
 
     private static JSONObject entry(String name, JSONObject f) throws JSONException {
@@ -676,6 +728,28 @@ public final class GoogleFonts {
         return new Info(plainText(desc instanceof String ? (String) desc : "", MAX_DESCRIPTION), lic, designers);
     }
 
+    /**
+     * The page's details of a family (onGfInfo): {ok, family, description, license, licenseName, licenseText, reserved, designers,
+     * files:[{name, variable, italic}]}. The licence is the download list's (its text is the one shown, and the one kept with a download),
+     * else the details'. {@code info} null (Google has no details for the family, as for the Material Symbols ones) leaves the description
+     * empty and takes the designers from the catalog entry ({@code entry}, may be null).
+     */
+    public static JSONObject infoJson(String family, Plan plan, Info info, JSONObject entry) throws JSONException {
+        String kind = !plan.licenseKind.isEmpty() ? plan.licenseKind : info == null ? "" : info.license;
+        JSONArray designers = new JSONArray();
+        if (info != null) {
+            for (String d : info.designers) designers.put(d);
+        } else if (entry != null && entry.optJSONArray("d") != null) {
+            JSONArray d = entry.optJSONArray("d");
+            for (int i = 0; i < d.length(); i++) if (d.opt(i) instanceof String) designers.put(d.opt(i));
+        }
+        JSONArray files = new JSONArray();
+        for (FileRef f : plan.files) files.put(new JSONObject().put("name", f.name).put("variable", f.variable).put("italic", f.italic));
+        return new JSONObject().put("ok", true).put("family", family).put("description", info == null ? "" : info.description)
+                .put("license", kind).put("licenseName", licenseName(kind)).put("licenseText", plan.licenseText)
+                .put("reserved", new JSONArray(plan.reserved)).put("designers", designers).put("files", files);
+    }
+
     private static final Pattern BREAK = Pattern.compile("<br\\s*/?>|</p\\s*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern TAG = Pattern.compile("<[^>]*>?");
     private static final Pattern ENTITY = Pattern.compile("&(#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|amp|lt|gt|quot|apos|nbsp);");
@@ -841,6 +915,109 @@ public final class GoogleFonts {
         JSONArray reserved = lic == null ? null : lic.optJSONArray("reserved");
         return new JSONObject().put("family", meta.optString("family")).put("at", meta.optLong("at")).put("size", size).put("license", kind)
                 .put("licenseName", licenseName(kind)).put("reserved", reserved == null ? new JSONArray() : reserved).put("files", files);
+    }
+
+    /** gfontsDownloads' rows: every family in fam/ whose meta.json passes {@link #readMeta}, newest first (the same time: by name). */
+    public static JSONArray downloads(File famDir) throws JSONException {
+        File[] kids = famDir == null ? null : famDir.listFiles();
+        List<JSONObject> rows = new ArrayList<JSONObject>();
+        if (kids != null) {
+            for (File k : kids) {
+                if (k.getName().startsWith(".")) continue;                  // a download or a delete under way
+                JSONObject meta = readMeta(k);
+                if (meta != null) rows.add(downloadsRow(meta, folderSize(k)));
+            }
+        }
+        Collections.sort(rows, new Comparator<JSONObject>() {
+            @Override public int compare(JSONObject a, JSONObject b) {
+                long x = a.optLong("at"), y = b.optLong("at");
+                return x != y ? (x > y ? -1 : 1) : a.optString("family").compareTo(b.optString("family"));
+            }
+        });
+        return new JSONArray(rows);
+    }
+
+    /**
+     * A downloaded family's meta.json, only when it is {@code family}'s: the folder name is the family's slug, which "open sans" and "Open
+     * Sans" share, so the name itself must match too. Null when it is not downloaded (or not whole).
+     */
+    public static JSONObject downloaded(File famDir, String family) {
+        if (!isFamily(family)) return null;
+        JSONObject meta = readMeta(familyDir(famDir, family));
+        return meta != null && family.equals(meta.optString("family")) ? meta : null;
+    }
+
+    /**
+     * Writes a downloaded family as a zip into {@code out} and closes it: each font file of its meta.json, then the licence file, flat (by
+     * their names in the folder). Each font is checked while it is written against the size and SHA-256 meta.json recorded: gf_changed when
+     * one is not the file that was downloaded. The caller deletes what was written when this throws.
+     */
+    public static void writeZip(File dir, JSONObject meta, OutputStream out) throws IOException, GfException {
+        java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(new java.io.BufferedOutputStream(out, 65536));
+        boolean done = false;
+        try {
+            JSONArray files = meta.getJSONArray("files");
+            byte[] buf = new byte[65536];
+            for (int i = 0; i < files.length(); i++) {
+                JSONObject e = files.getJSONObject(i);
+                String name = e.getString("name");
+                if (!isFileName(name)) throw new GfException("gf_changed");
+                MessageDigest md = MessageDigest.getInstance("SHA-256");
+                long n = 0;
+                zip.putNextEntry(new java.util.zip.ZipEntry(name));
+                java.io.InputStream in = new java.io.FileInputStream(new File(dir, name));
+                try {
+                    int r;
+                    while ((r = in.read(buf)) > 0) {
+                        n += r;
+                        if (n > e.getLong("size")) throw new GfException("gf_changed");
+                        md.update(buf, 0, r);
+                        zip.write(buf, 0, r);
+                    }
+                } finally {
+                    in.close();
+                }
+                zip.closeEntry();
+                if (n != e.getLong("size") || !FontLibrary.hex(md.digest()).equals(e.getString("sha256"))) throw new GfException("gf_changed");
+            }
+            JSONObject lic = meta.optJSONObject("license");
+            String lf = lic == null ? "" : lic.optString("file", "");
+            if (LICENSE_FILES.contains(lf)) {
+                byte[] text = FontLibrary.readFile(new File(dir, lf), MAX_LICENSE * 4L);
+                zip.putNextEntry(new java.util.zip.ZipEntry(lf));
+                zip.write(text);
+                zip.closeEntry();
+            }
+            zip.finish();
+            done = true;
+        } catch (JSONException | java.security.NoSuchAlgorithmException e) {
+            throw new GfException("gf_changed");
+        } finally {
+            if (done) zip.close();                                      // the last bytes reach the document here: a failure is a failure
+            else try { zip.close(); } catch (IOException ignored) {}    // what stopped the copy is the answer, not the close after it
+        }
+    }
+
+    /**
+     * Puts a whole download in place: the family's .part folder ({@link #partDir}) is renamed to its folder. A folder already there (a family
+     * downloaded again) is moved aside under a dot-name first and deleted after (the sweep deletes it when the process ends in between). On
+     * an IOException the family's old folder is back in place. Returns the family's folder.
+     */
+    public static File commitDownload(File famDir, String family) throws IOException {
+        File part = partDir(famDir, family), dest = familyDir(famDir, family);
+        File old = new File(famDir, "." + slug(family) + ".old-" + System.nanoTime());
+        boolean moved = false;
+        if (dest.exists()) {
+            if (!dest.renameTo(old)) throw new IOException("The family's old folder could not be moved aside.");
+            moved = true;
+        }
+        if (!part.renameTo(dest)) {
+            if (moved) old.renameTo(dest);
+            throw new IOException("The download could not be put in place.");
+        }
+        FontLibrary.syncDir(famDir);
+        if (moved) FontLibrary.deleteTree(old);
+        return dest;
     }
 
     /** The bytes of a family's folder (its fonts, its licence and meta.json): what Delete frees. */
