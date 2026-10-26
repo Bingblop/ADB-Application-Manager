@@ -231,7 +231,7 @@ glyf 702353a3
 end
 face cff2 Regular
 tables BASE COLR CPAL GDEF GPOS GSUB OS/2 cmap glyf head hhea hmtx loca maxp name post
-glyphs 257
+glyphs 260
 name 1 0 0 1 Fixture VF
 name 1 0 0 2 Regular
 name 1 0 0 3 Fixture VF Regular; 2026-06-01
@@ -310,12 +310,12 @@ os2 400 0x0040
 head 0 3863116800
 post 3
 cmap 119 4477934c
-hmtx 6ebf251d
-glyf ee3c4659
+hmtx 6747769a
+glyf 8dd2133f
 end
 face cff2 Bold
 tables BASE COLR CPAL GDEF GPOS GSUB OS/2 cmap glyf head hhea hmtx loca maxp name post
-glyphs 257
+glyphs 260
 name 1 0 0 1 Fixture VF
 name 1 0 0 2 Bold
 name 1 0 0 3 Fixture VF Bold; 2026-06-01
@@ -394,12 +394,12 @@ os2 700 0x0020
 head 1 3863116800
 post 3
 cmap 119 4477934c
-hmtx 3701d13d
-glyf 1e2129f7
+hmtx 4dd61442
+glyf a2117faf
 end
 face static Regular
 tables COLR CPAL GDEF GPOS GSUB OS/2 cmap cvt  fpgm gasp glyf head hhea hmtx loca maxp name post prep
-glyphs 261
+glyphs 264
 name 1 0 0 0 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
 name 1 0 0 1 Noto Emoji Test
 name 1 0 0 2 Regular
@@ -434,8 +434,8 @@ os2 400 0x00c0
 head 0 3863116800
 post 3
 cmap 119 f789192d
-hmtx 8b087b04
-glyf 906b8a21
+hmtx 12fefff9
+glyf 4ef3eb08
 end
 face italic Regular
 tables GDEF GPOS GSUB OS/2 cmap cvt  fpgm gasp glyf head hhea hmtx loca maxp name post prep
