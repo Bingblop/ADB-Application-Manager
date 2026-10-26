@@ -882,6 +882,37 @@ public class FontLibraryTest {
             String et = body(js, "function fntErrText(");
             is("the engine's face prefix stays in front of the page's sentence", et.contains("(Regular|Bold|Emoji) font: ") && et.contains("txF('Bold font: {0}'")
                     && et.contains("txF('Emoji font: {0}'") && et.contains("txF('Regular font: {0}'"), true);
+            // the page's name rule is FontPackage.visible's: its two patterns, read with this JDK's Unicode, answer as visible() does for every
+            // code point (an emoji of the emoji blocks that one side's Unicode does not know yet counts on both, R-JOBS-2)
+            int s1 = js.indexOf("function fntNameShows("), s2 = s1 < 0 ? -1 : js.indexOf('\n', s1);
+            Matcher sm = Pattern.compile("return /(\\[[^/\\n]*\\])/u\\.test\\(String\\(n \\|\\| ''\\)\\.replace\\(/(\\[[^/\\n]*\\])/g, ''\\)\\)")
+                    .matcher(s1 >= 0 && s2 > s1 ? js.substring(s1, s2) : "");
+            String differs = sm.find() ? null : "the pattern is not found";
+            if (differs == null) {
+                Pattern counts = Pattern.compile(sm.group(1).replace("\\u{", "\\x{")), blank = Pattern.compile(sm.group(2).replace("\\u{", "\\x{"));
+                for (int cp = 0; cp <= Character.MAX_CODE_POINT && differs == null; cp++) {
+                    String one = new String(Character.toChars(cp));
+                    if (counts.matcher(blank.matcher(one).replaceAll("")).find() != FontPackage.visible(one)) differs = "U+" + Integer.toHexString(cp).toUpperCase();
+                }
+            }
+            is("the page's fntNameShows is FontPackage.visible's rule for every code point" + (differs == null ? "" : " (" + differs + ")"), differs == null, true);
+            // every busy sentence the bridge sends is shown as itself, translated: the first FNT_SAID row of busy that matches it has the same words
+            int r1 = js.indexOf("const FNT_SAID = ["), r2 = r1 < 0 ? -1 : js.indexOf("\n        ];", r1);
+            Matcher row = Pattern.compile("\\['busy', /((?:[^/\\\\\\n]|\\\\.)*)/, '((?:[^'\\\\]|\\\\.)*)'\\]").matcher(r1 >= 0 && r2 > r1 ? js.substring(r1, r2) : "");
+            List<String[]> busyRows = new ArrayList<String[]>();
+            while (row.find()) busyRows.add(new String[] { row.group(1), row.group(2) });
+            Matcher busy = Pattern.compile("(?:fmkErr|FontLibrary\\.error)\\(\"busy\", \"((?:[^\"\\\\]|\\\\.)*)\"\\)").matcher(engine);
+            int nBusy = 0;
+            while (busy.find()) {
+                nBusy++;
+                String shown = null;
+                for (String[] r : busyRows) if (Pattern.compile(r[0]).matcher(busy.group(1)).find()) { shown = r[1]; break; }
+                is("the page shows the busy sentence \"" + busy.group(1) + "\" as itself", busy.group(1).equals(shown), true);
+            }
+            Matcher anyBusy = Pattern.compile("(?:fmkErr|FontLibrary\\.error)\\(\"busy\",").matcher(engine);
+            int sends = 0;
+            while (anyBusy.find()) sends++;
+            is("every busy refusal of the font code is one sentence (" + nBusy + " of " + sends + ")", nBusy == sends && nBusy >= 10, true);
         }
 
         // the gates: the changer needs Root or Shizuku as the system user / root; the system emoji the root user
@@ -1023,7 +1054,16 @@ public class FontLibraryTest {
                 && exResult.indexOf("if (uri != null) fmkDropDocument(uri)") < exResult.indexOf("fontExec.submit("), true);
         is("a save holds the font while it copies", exResult.contains("fmkJobs.startFor(this, \"make:\" + id, \"export\"") && exResult.contains("\"id:\" + id)"), true);
         String exTo = body(ma, "private JSONObject fmkExportTo(");
-        is("a save that is not whole is deleted", exTo.contains("whole = true;") && exTo.contains("if (!whole) fmkDeleteDocument(uri)"), true);
+        int opened = exTo.indexOf("opened = true;");
+        is("a save that is not whole is deleted once it was opened for writing", opened > exTo.indexOf("openOutputStream(uri, \"w\")") && opened < exTo.indexOf("new java.io.FileInputStream(apk)")
+                && exTo.contains("whole = true;") && exTo.contains("if (opened && !whole) fmkDeleteDocument(uri);") && exTo.contains("else if (!whole) fmkDeleteIfEmpty(uri);"), true);
+        // Overwrite in the save screen hands over the user's own file: a refusal before anything is written there deletes only an empty document
+        String ifEmpty = body(ma, "private void fmkDeleteIfEmpty(");
+        is("…a document nothing was written into only when the provider says it is empty", ifEmpty.contains("android.provider.OpenableColumns.SIZE")
+                && ifEmpty.contains("c.isNull(0) || c.getLong(0) != 0) return;") && ifEmpty.indexOf("fmkDeleteDocument(uri)") > ifEmpty.indexOf("finally"), true);
+        String drop = body(ma, "private void fmkDropDocument(");
+        is("…the refusals of the save screen's answer go through that check", !exResult.contains("fmkDeleteDocument(") && exResult.contains("fmkDeleteIfEmpty(uri)")
+                && !drop.contains("fmkDeleteDocument(") && drop.contains("fmkDeleteIfEmpty(uri)"), true);
 
         // Cancel reaches a download that is still connecting or waiting; what failed is said (DL-1, DL-2)
         is("each hop of a download can be disconnected", dl.contains("new HttpSafe.Hops()") && dl.contains("fmkConns.put(job.id, hop)"), true);
@@ -1035,10 +1075,16 @@ public class FontLibraryTest {
         is("own COLRv1 emoji below 13 is not_usable", start.contains("FontLibrary.minApiForEmoji(emo.color) > Build.VERSION.SDK_INT") && start.contains("return fmkErr(\"not_usable\""), true);
 
         // a font made again: same id, suffix and package, a higher versionCode, and never while it is installed, applied or saved ((b), (c))
-        is("a font made again is refused while it is installed, applied or saved", start.contains("fmkJobs.startFor(this, rebuild == null ? null : \"id:\" + rebuild.id, \"build\", \"only\"")
+        is("a font made again is refused while it is installed, uninstalled, applied or saved", start.contains("fmkJobs.startFor(this, rebuild == null ? null : \"id:\" + rebuild.id, \"build\", \"only\"")
                 && start.contains("rebuild == null ? null : \"make:\" + rebuild.id"), true);
         is("…and they are refused while it is made again", body(ma, "private String fmkLibraryJob(").contains("\"install\".equals(kind) ? \"make:\" + id : null")
                 && body(ma, "private String fmkPrivJob(").contains("\"apply\".equals(kind) && id != null ? \"make:\" + id : null"), true);
+        // the refusal names no one job, since every job that holds "id:" can be the one (an uninstall too); a delete says so for a font made again (R-JOBS-3)
+        is("a font made again while another job has it is refused as a busy font", start.contains("return fmkErr(\"busy\", \"This font is busy. Wait for it to finish.\");"), true);
+        String del = body(ma, "private String fmkDelete(");
+        is("a delete of a font another job has: made again, or busy", del.contains("if (fmkJobs.inUse(\"make:\" + id)) return fmkErr(\"busy\", \"This font is being made again. Wait for it to finish.\");")
+                && del.indexOf("return fmkErr(\"busy\", \"This font is busy. Wait for it to finish.\");") > del.indexOf("fmkJobs.inUse(\"make:\" + id)"), true);
+        is("no busy sentence lists the jobs that hold a font (one is always left out)", tab.contains("installed, applied or saved. Wait"), false);
         String build = body(ma, "private void fmkBuildJob(");
         is("the build takes who the font is from FontLibrary", build.contains("FontLibrary.entryFor(req.name, rebuild, rebuild != null ? null : fmkNewId(d), now)")
                 && build.contains("FontLibrary.versionCodeFor(rebuild, installed)"), true);
