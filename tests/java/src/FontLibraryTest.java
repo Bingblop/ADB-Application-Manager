@@ -400,6 +400,28 @@ public class FontLibraryTest {
         FontLibrary.clearSwap(dirs);
         eq("cleared", FontLibrary.readSwap(dirs), null);
 
+        // each file's hash before the bind is kept for Undo: only for a file the swap names, and only as a hash
+        java.util.Map<String, String> orig = new java.util.LinkedHashMap<String, String>();
+        orig.put("/system/fonts/NotoColorEmoji.ttf", SHA_B);
+        FontLibrary.writeSwap(dirs, new FontLibrary.Swap("noto", "boot-1", SHA_A, Arrays.asList("/system/fonts/NotoColorEmoji.ttf", "/product/fonts/NotoColorEmoji.ttf"), orig));
+        FontLibrary.Swap withOrig = FontLibrary.activeSwap(dirs, "boot-1");
+        eq("the hash before the bind", withOrig == null ? null : withOrig.originals.get("/system/fonts/NotoColorEmoji.ttf"), SHA_B);
+        eq("a file without one", withOrig == null ? "" : withOrig.originals.get("/product/fonts/NotoColorEmoji.ttf"), null);
+        FontLibrary.writeSwap(dirs, new FontLibrary.Swap("noto", "boot-1", SHA_A, Arrays.asList("/system/fonts/NotoColorEmoji.ttf")));
+        eq("the record written before the bind has no hashes yet", FontLibrary.readSwap(dirs).originals.size(), 0);
+        Files.write(dirs.swapRecord().toPath(), ("{\"id\":\"noto\",\"boot\":\"b\",\"sha256\":\"" + SHA_A + "\",\"targets\":[\"/ok.ttf\"],\"originals\":{\"/ok.ttf\":\"not-a-hash\",\"/other.ttf\":\""
+                + SHA_B + "\"}}").getBytes("UTF-8"));
+        eq("a damaged hash, and one for a file the swap does not name, are left out", FontLibrary.readSwap(dirs).originals.size(), 0);
+        Files.write(dirs.swapRecord().toPath(), ("{\"id\":\"noto\",\"boot\":\"b\",\"sha256\":\"" + SHA_A + "\",\"targets\":[\"/ok.ttf\"],\"originals\":5}").getBytes("UTF-8"));
+        is("originals that are no object: the record still reads", FontLibrary.readSwap(dirs) != null && FontLibrary.readSwap(dirs).originals.isEmpty(), true);
+        FontLibrary.clearSwap(dirs);
+
+        // what an Undo works on: this boot's record, then every other file the mount table shows a bind of the swap's own on, each once
+        FontLibrary.Swap two = new FontLibrary.Swap("noto", "b", SHA_A, Arrays.asList("/a.ttf", "/b.ttf"));
+        eq("undo targets: the record's, then the table's", FontLibrary.undoTargets(two, Arrays.asList("/b.ttf", "/c.ttf")), Arrays.asList("/a.ttf", "/b.ttf", "/c.ttf"));
+        eq("undo targets: no record (lost), the table's", FontLibrary.undoTargets(null, Arrays.asList("/c.ttf", "/c.ttf", null)), Arrays.asList("/c.ttf"));
+        eq("undo targets: nothing", FontLibrary.undoTargets(null, null), new ArrayList<String>());
+
         FontLibrary.Swap active = new FontLibrary.Swap("noto", "b", SHA_A, new ArrayList<String>());
         FontLibrary.Jobs j = new FontLibrary.Jobs();
         eq("refuse: the system emoji", FontLibrary.emojiDeleteRefusal("noto", active, j), "in_use");
@@ -665,6 +687,42 @@ public class FontLibraryTest {
         String apply = body(ma, "private JSONObject fmkApply(");
         is("the changer's success is read back (sans.loc and every hash), not taken from an exit text",
                 apply.contains("want.equals(ar.sansLoc)") && apply.contains("shas[i].equals(f.sha256)") && apply.contains("shas[i].equals(w.sha256)"), true);
+        is("the changer stages every file and puts them in place in one install; an Apply that stops clears what it staged",
+                apply.contains("SamsungFonts.installScript(r, user, e.suffix, names, shas, drop)") && apply.contains("finally") && apply.contains("if (!placed) fmkDiscard(backend, r, user, e.suffix)")
+                        && body(ma, "private void fmkDiscard(").contains("SamsungFonts.discardScript(") && !tab.contains("removeFontScript"), true);
+
+        // the system emoji: never bound over an update in /data/fonts/files, only the swap's own binds taken off, the record before the bind
+        String sysFiles = body(ma, "private FmkEmoji fmkEmojiFiles(");
+        is("the swap's targets are the /system and /product files; the updated ones are only looked for",
+                sysFiles.contains("SamsungFonts.emojiFiles(r, fontsXml, fallbackXml)") && sysFiles.contains("SamsungFonts.updatedEmojiFiles(r, fontsXml, fallbackXml, updatable)"), true);
+        is("…each by its real path, as the mount table names it, and only in the font folders",
+                sysFiles.contains("String real = f.getCanonicalPath()") && sysFiles.contains("SamsungFonts.isSwapTarget(r, real) && !targets.contains(real)"), true);
+        String sysApply = body(ma, "private JSONObject fmkSysApply(");
+        int upd = sysApply.indexOf("return FontLibrary.error(\"emoji_updated\", FMK_EMOJI_UPDATED)");
+        is("an emoji update is refused before anything changes", upd > 0 && upd < sysApply.indexOf("fmkTakeOff(") && upd < sysApply.indexOf("SamsungFonts.stageEmojiScript("), true);
+        is("Apply goes by this boot's swap, never a record from another boot", sysApply.contains("FontLibrary.activeSwap(d, boot)") && !sysApply.contains("readSwap("), true);
+        is("…takes the swap's own binds off first and stops when one stays or the mount table cannot be read",
+                sysApply.contains("fmkTakeOff(backend, prev)") && sysApply.contains("if (off == null) return FontLibrary.error(\"mounts_unreadable\", FMK_NO_MOUNTS)")
+                        && sysApply.contains("if (b.own != 0)"), true);
+        int rec = sysApply.indexOf("FontLibrary.writeSwap(");
+        is("the swap is recorded before the bind, and again with the hashes before", rec > 0 && rec < sysApply.indexOf("SamsungFonts.emojiSwapScript(")
+                && sysApply.contains("new FontLibrary.Swap(item.id, bootTag, sha, mounted, originals)"), true);
+        is("…and when nothing was bound, the record and the copy go", sysApply.contains("if (mounted.isEmpty())") && sysApply.indexOf("fmkRemoveStaged(backend, Collections.singletonList(name))") > rec, true);
+        String takeOff = body(ma, "private List<SamsungFonts.BindResult> fmkTakeOff(");
+        is("taking the swap off reads the mount table first", takeOff.contains("fmkMounts(backend)") && takeOff.contains("if (!m.readable) return null")
+                && takeOff.contains("FontLibrary.undoTargets(active, m.targets)") && takeOff.contains("SamsungFonts.emojiUndoScript("), true);
+        String sysUndo = body(ma, "private JSONObject fmkSysUndo(");
+        is("Undo: this boot's swap, only its own binds, each file back to its hash before", sysUndo.contains("FontLibrary.activeSwap(d, fmkBootId())") && !sysUndo.contains("readSwap(")
+                && sysUndo.contains("fmkTakeOff(backend, s)") && sysUndo.contains("b.back(s == null ? null : s.originals.get(b.target))"), true);
+        is("…then the record goes, and the staged copy is deleted and read back", sysUndo.indexOf("fmkRemoveStaged(") > sysUndo.indexOf("FontLibrary.clearSwap(d)")
+                && sysUndo.contains(".put(\"copyRemoved\", removed)"), true);
+        String sysStatus = body(ma, "private JSONObject fmkSysStatus(");
+        is("status finds a swap without a record, says why a swap is blocked, and deletes the copies nothing is bound from",
+                sysStatus.contains("fmkMounts(backend)") && sysStatus.contains("m.showing()") && sysStatus.contains(".put(\"blocked\"")
+                        && sysStatus.contains("if (s == null && m.readable && m.targets.isEmpty()) fmkRemoveStaged("), true);
+        is("deleting an emoji font deletes its staged copy, with the root user on", body(ma, "public String emojiDelete(").contains("fmkDropStaged(id)")
+                && body(ma, "private void fmkDropStaged(").contains("fmkGate(true)") && body(ma, "private void fmkDropStaged(").contains("fmkRemoveStaged(backend"), true);
+        is("the staged copies are removed by the script that checks the mount table", body(ma, "private boolean fmkRemoveStaged(").contains("SamsungFonts.removeStagedScript("), true);
         String dl = body(ma, "private void fmkDownloadJob(");
         is("a download is checked by size and SHA-256 (EmojiCatalog.download / extractEntry) into the emoji folder",
                 dl.contains("EmojiCatalog.download(in, dest, b.size, b.sha256") && dl.contains("EmojiCatalog.extractEntry(zip, b.zipEntry, dest, b.size, b.sha256") && dl.contains("b.zipSize, b.zipSha256"), true);
