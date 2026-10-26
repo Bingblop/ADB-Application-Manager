@@ -939,8 +939,8 @@ public class FontLibraryTest {
         is("…and a copy of an older one is not kept", body(ma, "private JSONObject fmkCopyPick(").contains("info.variable), ask))"), true);
 
         // one file chooser and one save screen at a time; a save that does not finish leaves no file (PKG-6, DL-6)
-        String pick = body(ma, "public String fontMakerPick(");
-        is("a second chooser is refused", pick.contains("if (fmkPickSlot != null) return fmkErr(\"busy\""), true);
+        String chooser = body(ma, "public String fontMakerPick(");
+        is("a second chooser is refused", chooser.contains("if (fmkPickSlot != null) return fmkErr(\"busy\""), true);
         String export = body(ma, "public String fontMakerExport(");
         is("a second save screen is refused", export.contains("if (fmkExportId != null) return fmkErr(\"busy\""), true);
         is("…and a save of a font being made again", export.contains("fmkJobs.inUse(\"make:\" + id)"), true);
@@ -976,9 +976,9 @@ public class FontLibraryTest {
         is("…after the copy pm installs is checked", install.indexOf("FontLibrary.sha256(copy)") > 0 && install.indexOf("FontLibrary.sha256(copy)") < install.indexOf("confirmInMode("), true);
 
         // the update check leaves the app's own font packages out (PKG-3)
-        String upd = body(ma, "private void runUpdateCheck(");
-        is("the update check skips the font packages made here", upd.contains("Set<String> ownFonts = fmkMadeHere();") && upd.indexOf("if (ownFonts.contains(ai.packageName)) continue;") > 0
-                && upd.indexOf("if (ownFonts.contains(ai.packageName)) continue;") < upd.indexOf("isGalaxyStoreCandidate(ai, inst)"), true);
+        String updRun = body(ma, "private void runUpdateCheck(");
+        is("the update check skips the font packages made here", updRun.contains("Set<String> ownFonts = fmkMadeHere();") && updRun.indexOf("if (ownFonts.contains(ai.packageName)) continue;") > 0
+                && updRun.indexOf("if (ownFonts.contains(ai.packageName)) continue;") < updRun.indexOf("isGalaxyStoreCandidate(ai, inst)"), true);
         String made = body(ma, "private Set<String> fmkMadeHere()");
         is("…told by My fonts and the app's key", made.contains("FontLibrary.list(fmkDirs())") && made.contains("SigningKey.existing()") && made.contains("signerDigests(pi, true)")
                 && made.contains("FontPackage.madeHere(pkg, system, suffixes, signerDigests(pi, true), key)"), true);
