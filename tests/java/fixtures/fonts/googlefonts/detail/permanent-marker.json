@@ -1,0 +1,22 @@
+)]}'
+{
+ "family": "Permanent Marker",
+ "displayName": null,
+ "category": "Handwriting",
+ "classifications": [
+  "Handwriting"
+ ],
+ "license": "apache2",
+ "lastModified": "2025-05-30",
+ "primaryScript": "",
+ "isNoto": false,
+ "colorCapabilities": [],
+ "description": "<p>\nPermanent Marker represents the look and feel of a favorite writing instrument.\n</p>",
+ "designers": [
+  {
+   "name": "Font Diner",
+   "bio": ""
+  }
+ ],
+ "axes": []
+}

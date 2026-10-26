@@ -134,7 +134,7 @@ public final class GoogleFonts {
     /** Drops the anti-XSSI line ")]}'" Google puts in front of a JSON answer. */
     public static String stripXssi(String s) {
         if (s == null) return "";
-        String t = s.startsWith("﻿") ? s.substring(1) : s;
+        String t = s.startsWith("\ufeff") ? s.substring(1) : s;
         if (!t.startsWith(")]}'")) return t;
         int nl = t.indexOf('\n');
         return nl < 0 ? t.substring(4) : t.substring(nl + 1);
@@ -424,6 +424,22 @@ public final class GoogleFonts {
         return b.toString();
     }
 
+    private static final Pattern ANGLE = Pattern.compile("(-?\\d{1,3}(?:\\.\\d{1,4})?)deg");
+
+    /**
+     * A face's font-style as the page registers it: "italic" for italic and for a slanted oblique, "normal" for anything else, including an
+     * oblique range that takes in 0deg (a variable font with a slnt axis, Roboto Flex's "oblique 0deg 10deg", is also the upright face).
+     */
+    static String faceStyle(String v) {
+        String l = v.trim().toLowerCase(Locale.ROOT);
+        if (l.startsWith("italic")) return "italic";
+        if (!l.startsWith("oblique")) return "normal";
+        Matcher a = ANGLE.matcher(l);
+        double lo = Double.MAX_VALUE, hi = -Double.MAX_VALUE;
+        while (a.find()) { double d = Double.parseDouble(a.group(1)); lo = Math.min(lo, d); hi = Math.max(hi, d); }
+        return lo <= 0 && hi >= 0 ? "normal" : "italic";
+    }
+
     /** One face of a preview: font-style ("normal" | "italic"), font-weight ("400" | "100 900"), font-stretch ("" | "75% 100%") and its woff2. */
     public static final class Face {
         public final String style, weight, stretch, url;
@@ -438,7 +454,7 @@ public final class GoogleFonts {
 
     /**
      * The faces of a css2 answer: one per {@code @font-face} whose source is a font on fonts.gstatic.com (a source anywhere else is left
-     * out), at most 64. A style other than italic or oblique is "normal"; a weight or stretch of another shape is "400" / "". Throws
+     * out), at most 64. The style is {@link #faceStyle}'s; a weight or stretch of another shape is "400" / "". Throws
      * gf_no_preview when there is none.
      */
     public static List<Face> parseCss(String css) throws GfException {
@@ -450,8 +466,7 @@ public final class GoogleFonts {
             while (p.find()) {
                 String k = p.group(1), v = p.group(2).trim();
                 if ("font-style".equals(k)) {
-                    String l = v.toLowerCase(Locale.ROOT);
-                    style = l.startsWith("italic") || l.startsWith("oblique") ? "italic" : "normal";
+                    style = faceStyle(v);
                 } else if ("font-weight".equals(k)) {
                     weight = WEIGHT.matcher(v).matches() ? v : "400";
                 } else if ("font-stretch".equals(k)) {
@@ -579,7 +594,7 @@ public final class GoogleFonts {
             boolean any = false;
             while (i < t.length() && out.size() < 16) {
                 char open = t.charAt(i);
-                String close = open == '"' ? "\"" : open == '\'' ? "'" : open == '“' ? "”\"" : open == '‘' ? "’'" : null;
+                String close = open == '"' ? "\"" : open == '\'' ? "'" : open == '\u201c' ? "\u201d\"" : open == '\u2018' ? "\u2019'" : null;
                 if (close == null) break;
                 int end = i + 1;
                 while (end < t.length() && close.indexOf(t.charAt(end)) < 0 && t.charAt(end) != '\n' && end - i <= 80) end++;

@@ -1,0 +1,9 @@
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: oblique 0deg 10deg;
+  font-weight: 100 1000;
+  font-stretch: 25% 151%;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=NaPccZLOBv5T3oB7Cb4i0wu4TsbOCL5XINn1yQ&skey=7773cbc2d581e322&v=v30) format('woff2');
+  unicode-range: U+46, U+65, U+6c, U+78;
+}
