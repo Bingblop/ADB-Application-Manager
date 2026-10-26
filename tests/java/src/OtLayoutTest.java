@@ -830,7 +830,83 @@ public class OtLayoutTest {
     check("hand GSUB: written and read back the same, through Extension lookups", canonical(OtLayout.parse(w, true)).equals(canonical(m)) && extensionOnly(w, true, m)
         && embedded(w, t, m, OtLayout.parse(w, true)));
     throwsFont("hand GSUB: a glyph id past 65535 is refused", "too_many_glyphs", null, () -> OtLayout.shiftGlyphs(t.clone(), true, 65535 - 25, null));
+
+    // onlyInSequences and the shift that names another glyph in sequences (EmojiMerge: the emoji ZWJ sequences name the text font's joiner)
+    String all = "sub0 sub0+2 c1g c1g+2 c2g c3r c3r+2 c4g rsub rg c6g c5g lgg lgc lgc+2";
+    check("hand GSUB: onlyInSequences: the ligature components past the first, the context rule's input past the first, a glyph not there; "
+        + "not the coverages', the ranges', the substitutes' or the ligature's glyphs", sequenceOnly(t, new int[] { 21, 22, 8, 99 },
+        new int[] { 20, 30, 5, 6, 10, 11, 12, 3, 4, 7, 9 }).isEmpty(), sequenceOnly(t, new int[] { 21, 22, 8, 99 }, new int[] { 20, 30, 5, 6, 10, 11, 12, 3, 4, 7, 9 }));
+    check("hand GSUB: shiftGlyphs(+100, 21 -> 2) names glyph 2 as the ligature's component and moves every other glyph",
+        Arrays.equals(renamed(t, 100, 21, 2), with(plus(b, t, 100, except(all, "lgc")), b.pos("lgc"), 2)));
+    check("hand GSUB: shiftGlyphs(+100, 8 -> 1) names glyph 1 in the context rule's input and moves every other glyph",
+        Arrays.equals(renamed(t, 100, 8, 1), with(plus(b, t, 100, except(all, "rg")), b.pos("rg"), 1)));
+    check("hand GSUB: shiftGlyphs(+100, 5 -> 1) moves glyph 5, which only coverages list, like the others", Arrays.equals(renamed(t, 100, 5, 1), plus(b, t, 100, all.split(" "))));
+
+    Bld q = handSequenceTable();
+    byte[] u = q.bytes(), before = u.clone();
+    int[] yes = { 41, 71, 72, 73, 99 }, no = { 40, 42, 50, 45, 63, 60, 70, 80, 81, 82 };
+    check("hand GSUB: onlyInSequences: a chained rule's backtrack, input and lookahead glyphs and a ligature component; not a component that a "
+        + "coverage lists too, single format 1's targets, a multiple substitution's glyphs; the table is not changed", sequenceOnly(u, yes, no).isEmpty()
+        && Arrays.equals(u, before), sequenceOnly(u, yes, no));
+    String seqAll = "clg ligg ligc ligc+2 csg csg+2 ccg bk inp la cmg mul mul+2";
+    boolean ok = true;
+    for (Object[] c : new Object[][] { { "ligc", 41, 7 }, { "bk", 71, 1 }, { "inp", 72, 2 }, { "la", 73, 5 } })
+      ok &= Arrays.equals(renamed(u, 100, (Integer) c[1], (Integer) c[2]), with(plus(q, u, 100, except(seqAll, (String) c[0])), q.pos((String) c[0]), (Integer) c[2]));
+    check("hand GSUB: shiftGlyphs(+100, g -> h) names h for g in a ligature's components and a chained rule's backtrack, input and lookahead", ok);
+    check("hand GSUB: shiftGlyphs(+100, 42 -> 9) names 9 in the ligature and moves the 42 of the coverage (ask onlyInSequences first)",
+        Arrays.equals(renamed(u, 100, 42, 9), with(plus(q, u, 100, except(seqAll, "ligc+2")), q.pos("ligc") + 2, 9)));
   }
+
+  /** GSUB: a ligature 40 41 42 -> 50, single format 1 (+3) of 42 and 60, chained context format 1 (71 | 70 72 | 73), multiple 80 -> 81 82. */
+  static Bld handSequenceTable() {
+    Bld b = header(new Bld(), 0);
+    b.l("SL").u16(1).tag("DFLT").o16("S0", "SL");
+    b.l("S0").o16("LS0", "S0").u16(0);
+    b.l("LS0").u16(0).u16(0xFFFF).u16(1).u16(0);
+    b.l("FL").u16(1).tag("ccmp").o16("F0", "FL");
+    b.l("F0").u16(0).u16(4).u16(0).u16(1).u16(2).u16(3);
+    b.l("LL").u16(4).o16("L0", "LL").o16("L1", "LL").o16("L2", "LL").o16("L3", "LL");
+    b.l("L0").u16(4).u16(0).u16(1).o16("Lg", "L0");
+    b.l("Lg").u16(1).o16("CL", "Lg").u16(1).o16("LSet", "Lg");
+    b.l("CL").u16(1).u16(1).l("clg").u16(40);
+    b.l("LSet").u16(1).o16("Lig", "LSet");
+    b.l("Lig").l("ligg").u16(50).u16(3).l("ligc").u16(41).u16(42);
+    b.l("L1").u16(1).u16(0).u16(1).o16("Sg", "L1");
+    b.l("Sg").u16(1).o16("CS", "Sg").u16(3);
+    b.l("CS").u16(1).u16(2).l("csg").u16(42).u16(60);
+    b.l("L2").u16(6).u16(0).u16(1).o16("Ch", "L2");
+    b.l("Ch").u16(1).o16("CC", "Ch").u16(1).o16("CRS", "Ch");
+    b.l("CC").u16(1).u16(1).l("ccg").u16(70);
+    b.l("CRS").u16(1).o16("CR", "CRS");
+    b.l("CR").u16(1).l("bk").u16(71).u16(2).l("inp").u16(72).u16(1).l("la").u16(73).u16(1).u16(0).u16(1);
+    b.l("L3").u16(2).u16(0).u16(1).o16("Mu", "L3");
+    b.l("Mu").u16(1).o16("CM", "Mu").u16(1).o16("Sq", "Mu");
+    b.l("CM").u16(1).u16(1).l("cmg").u16(80);
+    b.l("Sq").u16(2).l("mul").u16(81).u16(82);
+    return b;
+  }
+
+  /** The glyphs onlyInSequences answers wrongly for ({@code yes}: only in sequences, {@code no}: elsewhere too); empty when all are right. */
+  static String sequenceOnly(byte[] t, int[] yes, int[] no) throws Sfnt.FontException {
+    StringBuilder s = new StringBuilder();
+    for (int g : yes) if (!OtLayout.onlyInSequences(t, true, g, null)) s.append(" ").append(g).append(" (not only)");
+    for (int g : no) if (OtLayout.onlyInSequences(t, true, g, null)) s.append(" ").append(g).append(" (only)");
+    return s.toString().trim();
+  }
+
+  static byte[] renamed(byte[] t, int d, int from, int to) throws Sfnt.FontException {
+    byte[] c = t.clone();
+    OtLayout.shiftGlyphs(c, true, d, from, to, null);
+    return c;
+  }
+
+  static String[] except(String labels, String l) {
+    List<String> out = new ArrayList<>(Arrays.asList(labels.split(" ")));
+    out.remove(l);
+    return out.toArray(new String[0]);
+  }
+
+  static byte[] with(byte[] t, int at, int v) { Sfnt.w16(t, at, v); return t; }
 
   static Bld handGdef() {
     Bld g = new Bld();

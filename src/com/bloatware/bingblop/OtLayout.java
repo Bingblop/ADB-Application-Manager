@@ -557,6 +557,33 @@ public final class OtLayout {
         new Patch(t, gsub, Patch.GLYPHS, delta, null, p).lookups();
     }
 
+    /**
+     * {@link #shiftGlyphs(byte[], boolean, int, FontProgress)}, except that glyph {@code from} becomes glyph {@code to} (as it is, not shifted)
+     * where it is part of a sequence: a ligature component past the first, a glyph of a contextual or chained rule's sequences (format 1)
+     * past the first input glyph. Ask {@link #onlyInSequences} first: anywhere else, {@code from} is shifted like the other glyphs.
+     */
+    public static void shiftGlyphs(byte[] t, boolean gsub, int delta, int from, int to, FontProgress p) throws Sfnt.FontException {
+        if (to < 0 || to > 0xFFFF) throw new IllegalArgumentException("shiftGlyphs: glyph " + to);
+        Patch q = new Patch(t, gsub, Patch.GLYPHS, delta, null, p);
+        q.from = from;
+        q.to = to;
+        q.lookups();
+    }
+
+    /**
+     * True when glyph {@code g} appears in the lookup subtables of {@code t} only as part of sequences (see
+     * {@link #shiftGlyphs(byte[], boolean, int, int, int, FontProgress)}): never in a coverage or a class definition, never as a substitute
+     * (single, multiple, alternate, reverse chaining) or a ligature's glyph, so no lookup applies at it or puts it in the buffer. Then the
+     * sequences can name another glyph instead and every lookup still applies where it did. Reads the table only.
+     */
+    public static boolean onlyInSequences(byte[] t, boolean gsub, int g, FontProgress p) throws Sfnt.FontException {
+        Patch q = new Patch(t, gsub, Patch.GLYPHS, 0, null, p);
+        q.find = true;
+        q.from = g;
+        q.lookups();
+        return !q.found;
+    }
+
     /** Adds {@code delta} to every lookup index that a contextual or chained contextual subtable of {@code t} calls (every format), in place. */
     public static void shiftLookupIndexes(byte[] t, boolean gsub, int delta, FontProgress p) throws Sfnt.FontException {
         new Patch(t, gsub, Patch.LOOKUPS, delta, null, p).lookups();
@@ -736,6 +763,9 @@ public final class OtLayout {
         final long budget;
         long ops, nextCancelCheck;
         int skipped;
+        // onlyInSequences and the renaming shiftGlyphs: the glyph asked about, its new id, whether the glyphs read now are a sequence's
+        int from = -1, to;
+        boolean find, found, sequence;
 
         Patch(byte[] t, boolean gsub, int mode, int delta, VarStore store, FontProgress p) throws Sfnt.FontException {
             this.t = t; this.gsub = gsub; this.mode = mode; this.delta = delta; this.store = store; this.p = p;
@@ -802,9 +832,22 @@ public final class OtLayout {
         }
 
         void glyph(int at) throws Sfnt.FontException {
-            int v = Sfnt.u16(t, at) + delta;
+            int old = Sfnt.u16(t, at);
+            if (find) { found |= old == from && !sequence; return; }
+            if (old == from && sequence) { Sfnt.w16(t, at, to); return; }
+            int v = old + delta;
             if (v > 0xFFFF || v < 0) throw new Sfnt.FontException("too_many_glyphs", "The merged font would have glyph numbers past 65535.");
             Sfnt.w16(t, at, v);
+        }
+
+        /** The glyphs of a sequence (see {@link #onlyInSequences}). */
+        void sequence(int at, int n) throws Sfnt.FontException {
+            sequence = true;
+            try {
+                glyphs(at, n);
+            } finally {
+                sequence = false;
+            }
         }
 
         void glyphs(int at, int n) throws Sfnt.FontException {
@@ -842,6 +885,7 @@ public final class OtLayout {
                 if (!first(off, K_CLS1)) return;
                 int start = Sfnt.u16(t, off + 2), n = Sfnt.u16(t, off + 4);
                 if (n > 0 && start + n - 1 + delta > 0xFFFF) throw new Sfnt.FontException("too_many_glyphs", "The merged font would have glyph numbers past 65535.");
+                found |= find && from >= start && from < start + n;
                 glyph(off + 2);
             } else if (fmt == 2) {
                 if (first(off, K_RANGES)) ranges(off + 4, Sfnt.u16(t, off + 2));
@@ -851,7 +895,24 @@ public final class OtLayout {
         void ranges(int at, int n) throws Sfnt.FontException {
             Sfnt.need(t, at, 6L * n);
             spend(2L * n);
-            for (int i = 0; i < n; i++) { glyph(at + 6 * i); glyph(at + 6 * i + 2); }
+            for (int i = 0; i < n; i++) {
+                found |= find && from >= Sfnt.u16(t, at + 6 * i) && from <= Sfnt.u16(t, at + 6 * i + 2);
+                glyph(at + 6 * i);
+                glyph(at + 6 * i + 2);
+            }
+        }
+
+        /** True when the coverage at {@code off} lists glyph {@code g} (formats 1 and 2). */
+        boolean covers(int off, int g) throws Sfnt.FontException {
+            if (off < 0) return false;
+            int fmt = Sfnt.u16(t, off), n = Sfnt.u16(t, off + 2);
+            Sfnt.need(t, off + 4, (fmt == 1 ? 2L : fmt == 2 ? 6L : 0) * n);
+            spend(n);
+            for (int i = 0; i < n; i++) {
+                if (fmt == 1 && Sfnt.u16(t, off + 4 + 2 * i) == g) return true;
+                if (fmt == 2 && g >= Sfnt.u16(t, off + 4 + 6 * i) && g <= Sfnt.u16(t, off + 6 + 6 * i)) return true;
+            }
+            return false;
         }
 
         /** Offsets (16-bit, from {@code base}) to coverages at {@code at}. */
@@ -881,6 +942,7 @@ public final class OtLayout {
                 case 1:                                                  // single: format 1 keeps its (relative) delta
                     coverage(off16(so, so + 2));
                     if (fmt == 2) glyphs(so + 6, Sfnt.u16(t, so + 4));
+                    if (fmt == 1 && find) found |= covers(off16(so, so + 2), (from - Sfnt.s16(t, so + 4)) & 0xFFFF);
                     break;
                 case 2: case 3: {                                        // multiple / alternate: [count, glyphs] per covered glyph
                     if (fmt != 1) break;
@@ -910,7 +972,7 @@ public final class OtLayout {
                             int lig = off16(ls, ls + 2 + 2 * k);
                             if (lig < 0 || !first(lig, K_LIG)) continue;
                             glyph(lig);
-                            glyphs(lig + 4, Math.max(0, Sfnt.u16(t, lig + 2) - 1));
+                            sequence(lig + 4, Math.max(0, Sfnt.u16(t, lig + 2) - 1));
                         }
                     }
                     break;
@@ -1052,7 +1114,7 @@ public final class OtLayout {
                         int gc = Sfnt.u16(t, r), sc = Sfnt.u16(t, r + 2);
                         int in = Math.max(0, gc - 1);
                         Sfnt.need(t, r + 4, 2L * in);
-                        if (mode == GLYPHS && fmt == 1) glyphs(r + 4, in);
+                        if (mode == GLYPHS && fmt == 1) sequence(r + 4, in);
                         records(r + 4 + 2 * in, sc);
                     }
                 }
@@ -1089,15 +1151,15 @@ public final class OtLayout {
                         int q = r;
                         int nb = Sfnt.u16(t, q);
                         Sfnt.need(t, q + 2, 2L * nb);
-                        if (glyphRules) glyphs(q + 2, nb);
+                        if (glyphRules) sequence(q + 2, nb);
                         q += 2 + 2 * nb;
                         int ni = Math.max(0, Sfnt.u16(t, q) - 1);
                         Sfnt.need(t, q + 2, 2L * ni);
-                        if (glyphRules) glyphs(q + 2, ni);
+                        if (glyphRules) sequence(q + 2, ni);
                         q += 2 + 2 * ni;
                         int na = Sfnt.u16(t, q);
                         Sfnt.need(t, q + 2, 2L * na);
-                        if (glyphRules) glyphs(q + 2, na);
+                        if (glyphRules) sequence(q + 2, na);
                         q += 2 + 2 * na;
                         records(q + 2, Sfnt.u16(t, q));
                     }
