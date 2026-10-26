@@ -232,7 +232,8 @@ public final class FontBuilder {
 
     /**
      * The emoji font, checked as EmojiMerge checks it before any face is made: a bitmap one (CBDT or sbix, often without outlines) is
-     * refused with code "bitmap_emoji" as FontInspect refuses it, a font without COLR with "not_emoji".
+     * refused with code "bitmap_emoji" as FontInspect refuses it, a font without COLR with "not_emoji", and the rest with EmojiMerge's codes
+     * ("emoji_outlines" for PostScript outlines, ...). Every refusal says "Emoji font: " in front, so the page knows which font to change.
      */
     private static Sfnt parseEmoji(byte[] data) throws Sfnt.FontException {
         try {
@@ -251,12 +252,13 @@ public final class FontBuilder {
     }
 
     /**
-     * The exception with the face named in front of its sentence ("Bold font: ..."). Cancel stays as it is, and so does a sentence that
-     * names the emoji font itself (EmojiMerge's, which may come while a face is made).
+     * The exception with the font named in front of its sentence ("Bold font: ..."): the page shows its own sentence for the code and keeps
+     * that name in front. Cancel stays as it is, and so does a sentence that names the emoji font itself while a face is made (EmojiMerge's,
+     * about both fonts).
      */
     private static Sfnt.FontException about(String label, Sfnt.FontException e) {
         String m = e.getMessage();
-        if ("cancelled".equals(e.code) || m.startsWith(label + ": ") || m.contains("emoji font")) return e;
+        if ("cancelled".equals(e.code) || m.startsWith(label + ": ") || !label.equals("Emoji font") && m.contains("emoji font")) return e;
         Sfnt.FontException w = new Sfnt.FontException(e.code, label + ": " + m);
         if (e.getCause() != null) w.initCause(e.getCause());
         return w;

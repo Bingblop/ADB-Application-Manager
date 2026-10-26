@@ -520,6 +520,17 @@ public class FontBuilderTest {
     return m;
   }
 
+  /** A cmap with only a (3, 0) symbol subtable mapping U+F020..F07E. */
+  static byte[] symbolCmap() {
+    Sfnt.Writer w = new Sfnt.Writer();
+    w.u16(0).u16(1).u16(3).u16(0).u32(12);
+    int segs = 2;
+    w.u16(4).u16(16 + 8 * segs).u16(0).u16(2 * segs).u16(4).u16(1).u16(0);
+    w.u16(0xF07E).u16(0xFFFF).u16(0).u16(0xF020).u16(0xFFFF);
+    w.u16((1 - 0xF020) & 0xFFFF).u16(1).u16(0).u16(0);
+    return w.toByteArray();
+  }
+
   static FontBuilder.Request simple(byte[] regular, String name) {
     FontBuilder.Request r = new FontBuilder.Request();
     r.name = name;
@@ -755,7 +766,7 @@ public class FontBuilderTest {
       r.emoji = cbdt;
       FontBuilder.build(r, rec);
     });
-    check("  ... in a sentence about the emoji font", e != null && (e.getMessage().startsWith("Emoji font: ") || e.getMessage().contains("emoji font")), e == null ? null : e.getMessage());
+    check("  ... that says Emoji font in front, for the page", e != null && e.getMessage().startsWith("Emoji font: "), e == null ? null : e.getMessage());
     boolean instanced = false;
     for (Object[] s : rec.steps) instanced |= FontBuilder.INSTANCE.equals(s[0]);
     check("  ... before the variable Regular is made static", !instanced);
@@ -773,9 +784,38 @@ public class FontBuilderTest {
       r.emoji = font(NOTO);
       FontBuilder.build(r, null);
     });
-    throwsFont("a Regular font that has COLR already: refused, says Regular font", "bad_font", "Regular font: This font already has colour glyphs", () -> {
+    // the refusals that are not damage have codes of their own, so the page does not call the file damaged, and the font in front
+    throwsFont("a Regular font that has COLR already: text_has_color, says Regular font", "text_has_color", "Regular font: This font already has colour glyphs", () -> {
       FontBuilder.Request r = simple(font(TWEMOJI), "X");
       r.emoji = font(NOTO_EMOJI);
+      FontBuilder.build(r, null);
+    });
+    Sfnt sy = Sfnt.parse(font(NOTO));
+    sy.put("cmap", symbolCmap());
+    byte[] sym = sy.toBytes();
+    throwsFont("a symbol Bold font with emoji: symbol_font, says Bold font", "symbol_font", "Bold font: This is a symbol font", () -> {
+      FontBuilder.Request r = simple(font(NOTO), "X");
+      r.bold = new FontBuilder.Face(sym, null);
+      r.emoji = font(NOTO_EMOJI);
+      FontBuilder.build(r, null);
+    });
+    check("a symbol Regular without emoji: built", FontBuilder.build(simple(sym, "X"), null).regular != null);
+    Sfnt ec = Sfnt.parse(font(TWEMOJI));
+    ec.remove("glyf");
+    ec.remove("loca");
+    ec.put("CFF ", new byte[64]);
+    byte[] emojiCff = ec.toBytes();
+    throwsFont("a COLR emoji font with PostScript outlines: emoji_outlines, says Emoji font", "emoji_outlines", "Emoji font: ", () -> {
+      FontBuilder.Request r = simple(font(NOTO), "X");
+      r.emoji = emojiCff;
+      FontBuilder.build(r, null);
+    });
+    Sfnt np = Sfnt.parse(font(TWEMOJI));
+    np.remove("CPAL");
+    byte[] noPalette = np.toBytes();
+    throwsFont("a COLR emoji font without CPAL: no_palette, says Emoji font", "no_palette", "Emoji font: ", () -> {
+      FontBuilder.Request r = simple(font(NOTO), "X");
+      r.emoji = noPalette;
       FontBuilder.build(r, null);
     });
 

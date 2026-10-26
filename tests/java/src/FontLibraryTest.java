@@ -678,6 +678,9 @@ public class FontLibraryTest {
                 body(ma, "private String fmkLibraryJob(").contains("fmkJobs.start(kind, id, \"id:\" + id)") && body(ma, "private String fmkPrivJob(").contains("\"sys:\" : \"id:\"")
                         && body(ma, "private String fmkDelete(").contains("fmkJobs.inUse(\"id:\" + id)") && body(ma, "public String emojiDelete(").contains("fmkJobs.inUse(\"sys:\" + id)"), true);
         is("the request codes reach the tab", ma.contains("requestCode == REQ_FONTMAKER_PICK") && ma.contains("requestCode == REQ_FONTMAKER_EXPORT"), true);
+        String pick = body(ma, "private JSONObject fmkCopyPick(");
+        is("an emoji pick with PostScript outlines is refused at pick with code emoji_outlines (the merge takes only TrueType ones)",
+                pick.contains("if (!\"TrueType\".equals(info.outlines))") && pick.contains("new Sfnt.FontException(\"emoji_outlines\""), true);
 
         // onDestroy stops what the tab started
         String destroy = body(ma, "protected void onDestroy()");

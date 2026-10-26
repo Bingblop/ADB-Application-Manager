@@ -182,15 +182,23 @@ public final class EmojiMerge {
         if (f.numGlyphs() < 1) throw new Sfnt.FontException("The " + which + " font has no glyphs.");
     }
 
+    /**
+     * Whether emoji can be added to {@code f}. The font is fine without them, so a refusal the user can meet has a code of its own and says
+     * what to change: "text_has_color" (COLR, CBDT, sbix or SVG already), "symbol_font". FontBuilder converts and instances a face before
+     * it gets here, so the first two stay "bad_font".
+     */
     private static void checkText(Sfnt f) throws Sfnt.FontException {
         if (!f.has("glyf")) throw new Sfnt.FontException("Emoji can be added only to a font with TrueType outlines; this one has PostScript outlines.");
         if (f.has("fvar") || f.has("gvar")) throw new Sfnt.FontException("Emoji can be added only to a static font; pick an instance of this variable font first.");
         for (String t : new String[] { "COLR", "CBDT", "sbix", "SVG " })
-            if (f.has(t)) throw new Sfnt.FontException("This font already has colour glyphs (" + t.trim() + "), so emoji cannot be added to it.");
-        if (Cmap.readBest(f, null).symbol()) throw new Sfnt.FontException("This is a symbol font, so emoji cannot be added to it.");
+            if (f.has(t)) throw new Sfnt.FontException("text_has_color", "This font already has colour glyphs (" + t.trim() + "), so emoji cannot be added to it. Set Emoji to None.");
+        if (Cmap.readBest(f, null).symbol()) throw new Sfnt.FontException("symbol_font", "This is a symbol font, so emoji cannot be added to it. Set Emoji to None.");
     }
 
-    /** Whether {@code f} can be merged in as the emoji font; FontBuilder asks before its slow steps, so the refusal names the emoji font. */
+    /**
+     * Whether {@code f} can be merged in as the emoji font; FontBuilder asks before its slow steps, so the refusal names the emoji font. Codes:
+     * "bitmap_emoji", "not_emoji", "no_palette", "emoji_outlines" (PostScript outlines), "palette_damaged" and "emoji_symbol".
+     */
     static void checkEmoji(Sfnt f) throws Sfnt.FontException {
         if (!f.has("COLR")) {
             if (f.has("CBDT") || f.has("sbix"))
@@ -198,10 +206,15 @@ public final class EmojiMerge {
                         + "): bitmap emoji cannot be put inside a font. Use a COLR emoji font, such as Noto Color Emoji or Twemoji.");
             throw new Sfnt.FontException("not_emoji", "This font has no colour emoji (no COLR table) to add.");
         }
-        if (!f.has("CPAL")) throw new Sfnt.FontException("This emoji font has colour layers (COLR) but no colour palette (CPAL).");
-        if (!f.has("glyf")) throw new Sfnt.FontException("This emoji font's outlines are PostScript ones; only an emoji font with TrueType outlines (glyf) can be added.");
-        if (f.table("CPAL").length < 12) throw new Sfnt.FontException("This emoji font's colour palette (CPAL) is damaged.");
-        if (Cmap.readBest(f, null).symbol()) throw new Sfnt.FontException("This emoji font's character map is a symbol one, so its emoji cannot be found.");
+        if (!f.has("CPAL"))
+            throw new Sfnt.FontException("no_palette", "This emoji font has colour layers (COLR) but no colour palette (CPAL). Choose another emoji font.");
+        if (!f.has("glyf"))
+            throw new Sfnt.FontException("emoji_outlines", "This emoji font's outlines are PostScript ones; only an emoji font with TrueType outlines (glyf) "
+                    + "can be added. Choose another emoji font.");
+        if (f.table("CPAL").length < 12)
+            throw new Sfnt.FontException("palette_damaged", "This emoji font's colour palette (CPAL) is damaged. Choose another emoji font.");
+        if (Cmap.readBest(f, null).symbol())
+            throw new Sfnt.FontException("emoji_symbol", "This emoji font's character map is a symbol one, so its emoji cannot be found. Choose another emoji font.");
     }
 
     /**

@@ -1452,11 +1452,12 @@ public class EmojiMergeTest {
   }
 
   static void refusals() throws Exception {
-    throwsFont("an emoji font as the text font is refused (it has colour glyphs)", "bad_font", "colour glyphs (COLR)", () -> EmojiMerge.merge(font(NOTO), font(TWEMOJI), null));
+    // the text font would be fine without emoji, so each refusal has a code of its own (the page's sentence says what to change)
+    throwsFont("an emoji font as the text font is refused with code text_has_color", "text_has_color", "colour glyphs (COLR)", () -> EmojiMerge.merge(font(NOTO), font(TWEMOJI), null));
     for (String tag : new String[] { "CBDT", "sbix", "SVG " }) {
       Sfnt T = font(LATO);
       T.put(tag, new byte[16]);
-      throwsFont("a text font with " + tag.trim() + " colour glyphs is refused", "bad_font", "(" + tag.trim() + ")", () -> EmojiMerge.merge(T, font(NOTO), null));
+      throwsFont("a text font with " + tag.trim() + " colour glyphs is refused with code text_has_color", "text_has_color", "(" + tag.trim() + ")", () -> EmojiMerge.merge(T, font(NOTO), null));
     }
     Sfnt cff = without(font(LATO), "glyf", "loca");
     cff.put("CFF ", new byte[64]);
@@ -1466,7 +1467,7 @@ public class EmojiMergeTest {
     throwsFont("a variable text font is refused", "bad_font", "static font", () -> EmojiMerge.merge(fvar, font(NOTO), null));
     Sfnt sym = font(LATO);
     sym.put("cmap", symbolCmap());
-    throwsFont("a symbol text font is refused", "bad_font", "symbol font", () -> EmojiMerge.merge(sym, font(NOTO), null));
+    throwsFont("a symbol text font is refused with code symbol_font", "symbol_font", "symbol font", () -> EmojiMerge.merge(sym, font(NOTO), null));
 
     for (String tag : new String[] { "CBDT", "sbix" }) {
       Sfnt E = without(font(NOTO), "COLR", "CPAL");
@@ -1474,16 +1475,16 @@ public class EmojiMergeTest {
       throwsFont("a bitmap emoji font (" + tag + ") is refused with code bitmap_emoji", "bitmap_emoji", tag, () -> EmojiMerge.merge(font(LATO), E, null));
     }
     throwsFont("a font without COLR is refused with code not_emoji", "not_emoji", null, () -> EmojiMerge.merge(font(LATO), font(INTER), null));
-    throwsFont("an emoji font without CPAL is refused", "bad_font", "no colour palette", () -> EmojiMerge.merge(font(LATO), without(font(NOTO), "CPAL"), null));
+    throwsFont("an emoji font without CPAL is refused with code no_palette", "no_palette", "no colour palette", () -> EmojiMerge.merge(font(LATO), without(font(NOTO), "CPAL"), null));
     Sfnt shortCpal = font(NOTO);
     shortCpal.put("CPAL", new byte[8]);
-    throwsFont("an emoji font with a cut-off CPAL is refused", "bad_font", "palette (CPAL) is damaged", () -> EmojiMerge.merge(font(LATO), shortCpal, null));
+    throwsFont("an emoji font with a cut-off CPAL is refused with code palette_damaged", "palette_damaged", "palette (CPAL) is damaged", () -> EmojiMerge.merge(font(LATO), shortCpal, null));
     Sfnt ecff = without(font(TWEMOJI), "glyf", "loca");
     ecff.put("CFF ", new byte[64]);
-    throwsFont("an emoji font with PostScript outlines is refused", "bad_font", "PostScript", () -> EmojiMerge.merge(font(LATO), ecff, null));
+    throwsFont("an emoji font with PostScript outlines is refused with code emoji_outlines", "emoji_outlines", "PostScript", () -> EmojiMerge.merge(font(LATO), ecff, null));
     Sfnt esym = font(TWEMOJI);
     esym.put("cmap", symbolCmap());
-    throwsFont("an emoji font with a symbol cmap is refused", "bad_font", "symbol", () -> EmojiMerge.merge(font(LATO), esym, null));
+    throwsFont("an emoji font with a symbol cmap is refused with code emoji_symbol", "emoji_symbol", "symbol", () -> EmojiMerge.merge(font(LATO), esym, null));
 
     Sfnt big = font(LATO);
     byte[] maxp = big.table("maxp").clone();

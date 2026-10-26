@@ -6911,7 +6911,8 @@ public class MainActivity extends Activity {
 
     /**
      * Copies the chosen file to cache/fontmaker/in/ (at most 96 MB: one byte more and the copy stops and is deleted), reads what it is with
-     * FontInspect and keeps it under a new random token, the only name the page gets for it. The emoji slot takes only a colour (COLR) font.
+     * FontInspect and keeps it under a new random token, the only name the page gets for it. The emoji slot takes only a colour (COLR) font
+     * with TrueType outlines.
      * {ok, token, fileName, size, info} or {ok:false, code, error}.
      */
     private JSONObject fmkCopyPick(String slot, Uri uri) {
@@ -6942,6 +6943,10 @@ public class MainActivity extends Activity {
                 if ("CBDT".equals(info.color) || "sbix".equals(info.color))
                     throw new Sfnt.FontException("bitmap_emoji", "This emoji font is made of pictures (" + info.color + "), which cannot be put inside a font. Choose a COLR emoji font.");
                 if (!info.color.startsWith("COLR")) throw new Sfnt.FontException("not_emoji", "This font has no colour emoji (COLR). Choose a COLR emoji font.");
+                // the merge takes only TrueType outlines (EmojiMerge.checkEmoji): refused here, not after the Regular is read
+                if (!"TrueType".equals(info.outlines))
+                    throw new Sfnt.FontException("emoji_outlines", "This emoji font's outlines are PostScript ones (" + info.outlines
+                            + "); only an emoji font with TrueType outlines (glyf) can be added. Choose another emoji font.");
             }
             picks.put(new FontLibrary.Pick(slot, token, name, f, size, info.color, info.outlines, info.variable));
             kept = true;
