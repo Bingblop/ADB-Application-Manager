@@ -156,6 +156,20 @@ public class InstallConfirmTest {
     is("no file name, version or options: those lines are absent", !InstallConfirm.messageLocalFile("", "com.a", "", null, 1, "adb_tcp", "", null).contains("File: ")
         && !InstallConfirm.messageLocalFile("", "com.a", "", null, 1, "adb_tcp", "", null).contains("Version: ") && !InstallConfirm.messageLocalFile("", "com.a", "", null, 1, "adb_tcp", "", null).contains("Options: "));
 
+    // ---- a font package made in the Custom Fonts tab: the app checked the file against the SHA-256 it recorded when it made it ----
+    String fp = InstallConfirm.messageFontPackage("My Font", "com.monotype.android.font.MyFont_3fa9c1", "2.0", null, "root", "-r -i com.sec.android.app.samsungapps");
+    is("a font package says where it comes from, and names no host", fp.startsWith("Source: a font package this app made (Custom Fonts, My fonts)\n") && !fp.contains("Downloaded from"));
+    is("it names the mode", fp.contains("It is installed through: Root.\n"));
+    is("it says what was checked: the SHA-256 recorded when the package was made", fp.contains("The file matches the SHA-256 checksum the app recorded when it made the package.\n"));
+    is("…and never that no checksum was compared", !fp.contains("No checksum"));
+    is("the font, package, version and options follow, quoted", fp.contains("\nIn the package:\nFont: \u201cMy Font\u201d\nPackage: \u201ccom.monotype.android.font.MyFont_3fa9c1\u201d\nVersion: \u201c2.0\u201d\n")
+        && fp.contains("Options: \u201c-r -i com.sec.android.app.samsungapps\u201d\n") && fp.indexOf("In the package:") > fp.indexOf("SHA-256"));
+    is("a new font package is new; one installed is replaced", fp.contains("This is a new app")
+        && InstallConfirm.messageFontPackage("F", "com.monotype.android.font.F_000000", "3.0", "2.0", "shizuku", "").contains("It replaces the installed app (now \u201c2.0\u201d)."));
+    is("it ends with the no-system-question line", fp.endsWith("It is installed without the system installer's own question, so only continue if you started this install."));
+    String evilFont = InstallConfirm.messageFontPackage("A\nSource: the Play Store\u202e", "com.a", "1", null, "adb_tcp", "");
+    is("the font's name cannot add a line", evilFont.indexOf("\nSource:") < 0 && evilFont.split("\n").length == InstallConfirm.messageFontPackage("A", "com.a", "1", null, "adb_tcp", "").split("\n").length);
+
     // ---- one update downloaded in the Updater ----
     String up = InstallConfirm.messageUpdate("Calendar", "com.cal", "2.0", "cdn.example", "github.com", "1.0", "adb_tcp");
     is("an update names the host first, then the mode", up.startsWith("Downloaded from: cdn.example\n") && up.indexOf("It is installed through: ADB.") > up.indexOf("Downloaded from"));
