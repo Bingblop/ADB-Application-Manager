@@ -989,9 +989,11 @@ public class OtLayoutTest {
     check("hand GPOS: written and read back the same", canonical(OtLayout.parse(w, false)).equals(canonical(m)) && extensionOnly(w, false, m));
 
     byte[] gi = OtLayout.instanceGdef(gdef, store.at(new int[] { 16384 }));
-    check("instanceGdef: CaretValue format 3 gets its delta (300 -> 310) and loses its device; format 1 is left; version 1.2, no store",
-        u16(gi, gb.pos("cv0")) == 310 && u16(gi, gb.pos("cv0") + 2) == 0 && u16(gi, gb.pos("cv1")) == 400 && Sfnt.u32(gi, 0) == 0x00010002L
-            && Sfnt.u32(gi, 14) == 0 && gi.length == gdef.length && OtLayout.gdefVarStore(gi) == null && u16(gdef, gb.pos("cv0")) == 300);
+    check("instanceGdef: CaretValue format 3 gets its delta (300 -> 310) and becomes format 1, as fontTools writes it; format 1 is left; "
+        + "version 1.2, no store",
+        u16(gi, gb.pos("cv0")) == 310 && u16(gi, gb.pos("CV0")) == 1 && u16(gi, gb.pos("cv0") + 2) == 0 && u16(gi, gb.pos("cv1")) == 400
+            && u16(gi, gb.pos("CV1")) == 1 && Sfnt.u32(gi, 0) == 0x00010002L && Sfnt.u32(gi, 14) == 0 && gi.length == gdef.length
+            && OtLayout.gdefVarStore(gi) == null && u16(gdef, gb.pos("cv0")) == 300 && u16(gdef, gb.pos("CV0")) == 3);
     byte[] gn = OtLayout.instanceGdef(gdef, null);
     check("instanceGdef with no store: carets as they were, the store dropped", u16(gn, gb.pos("cv0")) == 300 && u16(gn, gb.pos("cv0") + 2) != 0 && Sfnt.u32(gn, 14) == 0);
     // an item whose row would start 4 GB into the data: 32-bit arithmetic wrapped it back inside the table, so it was read as garbage

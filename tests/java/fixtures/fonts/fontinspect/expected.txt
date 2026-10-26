@@ -401,6 +401,7 @@ variable false
 avar2 false
 guessRegular none
 guessBold none
+warning nolatin
 end
 font fontinspect/Twemoji-COLRv0.ttf 52538cf103a1110a2140c0108f368ba3f6b73c4f8aa8210c77dc2c5fc37d0cd9
 family Twemoji Mozilla
@@ -427,6 +428,7 @@ variable false
 avar2 false
 guessRegular none
 guessBold none
+warning nolatin
 end
 font fontpackage/Inter-Bold-sub.ttf 0a1f197859b0ef964d241c9ee45d1e93728c453f68ea01adbc75fa007d283742
 family Inter

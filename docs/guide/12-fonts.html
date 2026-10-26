@@ -87,9 +87,12 @@
       <tr><td>"This is a web font (WOFF). Choose a .ttf or .otf file."</td><td>Web fonts are packed for websites. The font's maker usually offers the <code>.ttf</code> or <code>.otf</code> too.</td></tr>
       <tr><td>"This file is too large to use."</td><td>The file, or the finished font, is over the size the app accepts.</td></tr>
       <tr><td>"The font file is damaged, or uses something the app cannot read."</td><td>Try another copy of the font, or another font.</td></tr>
+      <tr><td>"This font already has color glyphs, so emoji cannot be added to it. Set Emoji to None."</td><td>With "Regular font:" or "Bold font:" in front. The app does not add emoji to a font that has colour glyphs of its own (COLR, CBDT, sbix or SVG). Without emoji it builds.</td></tr>
+      <tr><td>"This is a symbol font, so emoji cannot be added to it. Set Emoji to None."</td><td>With "Regular font:" or "Bold font:" in front. A symbol font's characters are not at their Unicode places, so the emoji cannot be fitted in among them. Without emoji it builds, with the symbol font warning below.</td></tr>
+      <tr><td>"Only an emoji font with TrueType outlines can go inside a font; this one has PostScript (CFF) outlines. Choose another emoji font."</td><td>The file under <b>My own emoji font file</b> has PostScript outlines, which the app converts for letters but not for emoji. Look for a TrueType build of that emoji font, or choose one from the list.</td></tr>
       <tr><td>"The font and the emoji together have more glyphs than one font can hold (65,535)."</td><td>Choose a smaller emoji font (Twemoji is the smallest), or a text font with fewer glyphs. See <a href="#fonts-emoji">Emoji fonts</a>.</td></tr>
       <tr><td>"No preview: the file is over 24 MB."</td><td>Only the preview is left out. The font can still be built.</td></tr>
-      <tr><td>"This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font."</td><td>A warning, not a refusal. The font is meant for another script; text it does not cover is drawn in the phone's own font.</td></tr>
+      <tr><td>"This font has no basic Latin letters and digits (A-Z, a-z, 0-9): English text would show in the phone's own font."</td><td>A warning, not a refusal. The font is meant for another script, or is an emoji font; text it does not cover is drawn in the phone's own font. An emoji font chosen as Regular or Bold changes almost no text: choose it under <b>Emoji</b> instead.</td></tr>
       <tr><td>"This is a symbol font: its characters are not at their Unicode places, so ordinary text does not show in it."</td><td>A warning. Such a font is no good as the phone's text font.</td></tr>
     </tbody>
   </table>
@@ -151,7 +154,7 @@
   <h4>Why only some emoji fonts can go inside a font</h4>
   <ul>
     <li><b>COLR</b> emoji are drawn from outlines and colours, the same way letters are drawn, so they can sit inside a text font. <b>COLRv0</b> uses flat colours and shows on every Android this app runs on. <b>COLRv1</b> adds gradients and shows only on Android 13 and newer; on an older phone those emoji would not appear, so the app does not offer them there (OpenMoji comes in both, and an older phone gets the COLRv0 one).</li>
-    <li><b>CBDT</b> and <b>sbix</b> emoji are pictures (bitmaps), and pictures cannot be combined with the outlines of a text font. Apple's emoji exist only as pictures, which is why the iOS row is for System emoji only. If you choose such a file under <b>My own emoji font file</b>, the card says "This emoji font is made of pictures (CBDT or sbix), which cannot go inside a font. Choose a COLR emoji font."; a font with no colour emoji at all gets "This font has no color emoji (COLR). Choose a COLR emoji font."</li>
+    <li><b>CBDT</b> and <b>sbix</b> emoji are pictures (bitmaps), and pictures cannot be combined with the outlines of a text font. Apple's emoji exist only as pictures, which is why the iOS row is for System emoji only. If you choose such a file under <b>My own emoji font file</b>, the card says "This emoji font is made of pictures (CBDT or sbix), which cannot go inside a font. Choose a COLR emoji font."; a font with no colour emoji at all gets "This font has no color emoji (COLR). Choose a COLR emoji font." An emoji font file whose colour palette is missing or damaged, or whose characters are not at their Unicode places, is refused when the font is made, with "Emoji font:" in front and "Choose another emoji font." at the end.</li>
   </ul>
 
   <h4>How the emoji go inside your font</h4>

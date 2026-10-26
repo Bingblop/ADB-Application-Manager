@@ -19,9 +19,10 @@ import java.util.zip.CRC32;
  * FontInstancer, the variable font instancer of the Custom Fonts engine. Against tests/java/fixtures/fonts/fontinstancer: subsets of Inter,
  * Noto Sans, Roboto Flex, Source Sans 3 (renamed) and Roboto (hinted), two hand-made fonts (every gvar / cvar / MVAR / HVAR case; avar 2) and
  * the cfftoglyf CFF2 subset, each instanced at the locations its .expect.txt names and compared with what make_fixtures.py recorded from
- * fontTools' instantiateVariableFont at HarfBuzz's normalized coordinates: the coordinates themselves, every glyph's points (CRC-32),
- * advance, bearing and bounds, all the points of sample glyphs, the OS/2 / hhea / post / head / maxp values, the tables kept, the cvt,
- * kerning and mark attachment of sample glyphs and the glyphs FeatureVariations swap in. The CFF2 font is compared with its outlines drawn
+ * fontTools' instantiateVariableFont at HarfBuzz's normalized coordinates (with HarfBuzz's advances, which come from HVAR where fontTools
+ * takes gvar's phantom points): the coordinates themselves, every glyph's points (CRC-32), advance, bearing and bounds, all the points of
+ * sample glyphs, the OS/2 / hhea / post / head / maxp values, the tables kept, the cvt, kerning and mark attachment of sample glyphs and
+ * the glyphs FeatureVariations swap in. The CFF2 font is compared with its outlines drawn
  * at the location, as CffToGlyfTest compares them. Hand-built gvar and MVAR data cover the encodings and edge cases; the location helpers,
  * options, warnings, errors, progress and Cancel are checked here; a seeded fuzz runs the instancer on damaged variation tables.
  *
@@ -76,7 +77,7 @@ public class FontInstancerTest {
     } else {
       final int[] totals = new int[4];
       for (final String name : FIXTURES) section(name, () -> fixture(fix, name, totals));
-      check(String.format("all fixtures: %d glyphs at %d locations compared with fontTools' instances, %d with other points, %d with another advance",
+      check(String.format("all fixtures: %d glyphs at %d locations compared with fontTools' instances (HVAR's advances), %d with other points, %d with another advance",
           totals[0], totals[1], totals[2], totals[3]), totals[0] >= 4700 && totals[1] >= 58 && totals[2] == 0 && totals[3] == 0);
       section("locations", () -> locations(fix));
       section("options", () -> options(fix));
@@ -793,12 +794,13 @@ public class FontInstancerTest {
     return w.toByteArray();
   }
 
-  /** synth-gvar with glyph E's (gid 6) variations replaced; the other glyphs vary not at all. */
+  /** synth-gvar with glyph E's (gid 6) variations replaced; the other glyphs vary not at all. Without HVAR, so the phantom points give the advances. */
   static Sfnt withE(Sfnt synth, int[][] shared, byte[] e) {
     Sfnt f = synth.copy();
     byte[][] data = new byte[f.numGlyphs()][];
     data[6] = e;
     f.put("gvar", gvarTable(4, shared, data));
+    f.remove("HVAR");
     return f;
   }
 
@@ -858,6 +860,13 @@ public class FontInstancerTest {
     got = eAt(withE(synth, new int[][] { { 16384, 0, 0, 0 }, { 0, -16384, 0, 0 } }, e3), 900);
     check("hand gvar: shared tuples, every point listed (phantoms too: advance + 6), a tuple outside its region skipped",
         Arrays.equals(got, new int[] { 61, 62, 423, 424, -10, 650, 650, -10, 486, 61 }), Arrays.toString(got));
+    // The same with synth-gvar's HVAR kept: HVAR gives the advance (480 + 11 at wght 900), as HarfBuzz and FreeType take it, and the
+    // phantom points' + 6 is not used; the bearing still comes from the left phantom point
+    Sfnt hv = withE(synth, new int[][] { { 16384, 0, 0, 0 }, { 0, -16384, 0, 0 } }, e3);
+    hv.put("HVAR", synth.table("HVAR"));
+    got = eAt(hv, 900);
+    check("hand gvar: with HVAR the advance is HVAR's, not the phantom points' (HarfBuzz's and FreeType's choice); the bearing is the phantom points'",
+        Arrays.equals(got, new int[] { 61, 62, 423, 424, -10, 650, 650, -10, 491, 61 }), Arrays.toString(got));
 
     // A point listed twice (the last delta counts) and one the glyph does not have (ignored); one listed point moves its whole contour
     int[] p4 = { 0x03, 0x02, 0, 0, 100 }, x4 = { 0x02, 5, 9, 77 }, y4 = { 0x82 };

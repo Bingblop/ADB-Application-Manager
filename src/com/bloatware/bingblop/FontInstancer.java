@@ -14,13 +14,14 @@ import java.util.Map;
  * both). The location helpers ({@link #userCoords}, {@link #guessRegular}, {@link #guessBold}) turn what the page sends into coordinates.
  * The result follows fontTools' {@code instancer.instantiateVariableFont} for a full instance: glyf points and component offsets move by
  * their gvar deltas (inferred deltas for the points a tuple does not list, summed in the same order and rounded once, so the points match
- * fontTools'), advances and bearings come from the phantom points, MVAR moves the OS/2, hhea and post values, GPOS and GDEF get their
- * deltas and GSUB / GPOS their FeatureVariations ({@link OtLayout}), and OS/2 takes the weight and width classes of the location. A CFF2
- * font is converted at the location ({@link CffToGlyf}) and gets its advances from HVAR. Hinting is dropped unless asked for (variable
- * fonts' instructions often expect the variation tables), in which case cvar is applied to the cvt. The location is normalized as the spec
- * and HarfBuzz do it ({@link #normalize}, avar 2 included), so the static font is the variable font as HarfBuzz lays it out there. The input
- * is untrusted: every read is bounds-checked, the work is capped, and every failure ends in a {@link Sfnt.FontException} whose message can be
- * shown. Pure Java.
+ * fontTools'), bearings come from the phantom points, MVAR moves the OS/2, hhea and post values, GPOS and GDEF get their deltas and
+ * GSUB / GPOS their FeatureVariations ({@link OtLayout}), and OS/2 takes the weight and width classes of the location. The advances come
+ * from HVAR when the font has it, as HarfBuzz and FreeType take them (fontTools uses the phantom points, which some fonts leave unvaried
+ * where HVAR moves the advance), else from the phantom points. A CFF2 font is converted at the location ({@link CffToGlyf}) and gets its
+ * advances from HVAR. Hinting is dropped unless asked for (variable fonts' instructions often expect the variation tables), in which case
+ * cvar is applied to the cvt. The location is normalized as the spec and HarfBuzz do it ({@link #normalize}, avar 2 included), so the
+ * static font is the variable font as HarfBuzz lays it out there. The input is untrusted: every read is bounds-checked, the work is capped,
+ * and every failure ends in a {@link Sfnt.FontException} whose message can be shown. Pure Java.
  */
 public final class FontInstancer {
 
@@ -285,15 +286,18 @@ public final class FontInstancer {
     // ---------------------------------------------------------------------------------------------
 
     /**
-     * Moves every glyph's points (or component offsets) by its gvar deltas and sets each advance and left side bearing from the phantom
-     * points, as fontTools' instancer does: advance = round(right - left phantom), bearing = round(xMin - left phantom), where xMin is the
-     * instanced glyph's (for a composite, of its instanced components). Without gvar the outlines stay and HVAR gives the advances.
+     * Moves every glyph's points (or component offsets) by its gvar deltas and sets each left side bearing from the phantom points, as
+     * fontTools' instancer does: bearing = round(xMin - left phantom), where xMin is the instanced glyph's (for a composite, of its instanced
+     * components), which is where HarfBuzz draws the outline. The advances come from HVAR when the font has it, as HarfBuzz and FreeType take
+     * them (advance + round(delta)); only a font without HVAR gets them from the phantom points, round(right - left phantom). Without gvar the
+     * outlines stay.
      */
     private static void outlines(Sfnt vf, Sfnt out, VarStore.Fvar fv, int[] coords, Options opt, FontProgress p) throws Sfnt.FontException {
         byte[][] glyphs = Glyf.readAll(vf);
         Glyf.Metrics m = Glyf.Metrics.read(vf);
         int n = glyphs.length;
         Tuples gvar = vf.has("gvar") ? Tuples.gvar(vf.table("gvar"), fv, n, coords) : null;
+        byte[] hvar = vf.table("HVAR");
         double[] left = new double[n];
         long[] work = { 0 };
         for (int g = 0; g < n; g++) {
@@ -337,7 +341,7 @@ public final class FontInstancer {
                 if (opt.overlapFlags) gl.overlap = true;
             }
             left[g] = x[np] + dx[np];
-            if (gvar != null) m.advance[g] = Math.max(0, Glyf.round((x[np + 1] + dx[np + 1]) - left[g]));
+            if (gvar != null && hvar == null) m.advance[g] = Math.max(0, Glyf.round((x[np + 1] + dx[np + 1]) - left[g]));
             if (!opt.keepHinting) gl.instructions = new byte[0];
             glyphs[g] = Glyf.encode(gl);
         }
@@ -349,9 +353,10 @@ public final class FontInstancer {
                 int[] bb = Glyf.headerBounds(glyphs[g]);
                 m.lsb[g] = Glyf.round((bb == null ? 0 : bb[0]) - left[g]);
             }
-        } else {
-            hvarApply(out, vf.table("HVAR"), coords, m, p);                     // a glyf font without gvar: only HVAR moves the advances
         }
+        // HVAR, when the font has it, gives every advance, gvar or not: HarfBuzz and FreeType take the advance from it and not from the
+        // phantom points, and some fonts vary a glyph's advance in HVAR only. m.advance still holds hmtx's advances here.
+        hvarApply(out, hvar, coords, m, p);
         m.write(out, glyphs);
     }
 
@@ -633,7 +638,7 @@ public final class FontInstancer {
         m.write(out, Glyf.readAll(out));
     }
 
-    /** Adds HVAR's advance deltas to {@code m} (as fontTools does for a font without gvar: max(0, advance + round(delta))). */
+    /** Adds HVAR's advance deltas to hmtx's advances in {@code m}: max(0, advance + round(delta)), as HarfBuzz and FreeType read them. */
     private static void hvarApply(Sfnt out, byte[] hvar, int[] coords, Glyf.Metrics m, FontProgress p) throws Sfnt.FontException {
         if (hvar == null) return;
         if (hvar.length < 20 || Sfnt.u16(hvar, 0) != 1) throw damaged("metrics variation table (HVAR)");

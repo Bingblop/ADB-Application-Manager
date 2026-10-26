@@ -693,8 +693,9 @@ public final class OtLayout {
 
     /**
      * A copy of GDEF for a static instance: when {@code store} is given (at the instance's location), the ligature caret positions of
-     * CaretValue format 3 get their VariationIndex deltas added (and that Device offset cleared); then the ItemVariationStore offset is
-     * cleared and the version set to 1.2, so no variation store is left. The store's bytes stay in the table, unreferenced.
+     * CaretValue format 3 with a VariationIndex get their deltas added and become format 1, as fontTools writes them (a format 3 with a
+     * hinting Device stays); then the ItemVariationStore offset is cleared and the version set to 1.2, so no variation store is left. The
+     * store's bytes stay in the table, unreferenced.
      */
     public static byte[] instanceGdef(byte[] gdef, VarStore store) throws Sfnt.FontException {
         byte[] g = gdef.clone();
@@ -724,6 +725,9 @@ public final class OtLayout {
                         if (Sfnt.u16(g, cv + dev + 4) != 0x8000) continue;
                         double d = store.delta(Sfnt.u16(g, cv + dev), Sfnt.u16(g, cv + dev + 2));
                         Sfnt.w16(g, cv + 2, clamp16(Sfnt.s16(g, cv + 2) + Glyf.round(d)));
+                        // Format 1 (the coordinate alone): format 3 must have a Device, OTS refuses one without. The 2 bytes left over
+                        // are not read, so no offset moves.
+                        Sfnt.w16(g, cv, 1);
                         Sfnt.w16(g, cv + 4, 0);
                     }
                 }

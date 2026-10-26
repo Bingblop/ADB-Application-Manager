@@ -140,7 +140,7 @@ public final class CffToGlyf {
 
     /**
      * Reads a DICT: operator -> its operands. In a CFF2 Private DICT, {@code regions} gives the region count of each vsindex so a blend keeps
-     * its default values (the conversion needs none of the blended hint values).
+     * its default values (the conversion needs none of the blended hint values). A reserved operator byte is skipped with its operands.
      */
     static Map<Integer, double[]> readDict(byte[] t, int start, int end, boolean cff2, double[][] regions) throws Sfnt.FontException {
         Map<Integer, double[]> d = new HashMap<Integer, double[]>();
@@ -199,7 +199,11 @@ public final class CffToGlyf {
                 sp = 0;
                 continue;
             } else {
-                throw damagedDict();
+                // A reserved operator (22-27 in CFF 1, 25-27 in CFF2, 31, 255): ignored with its operands, as the CFF2 specification
+                // says for an operator it does not know. CFF2's maxstack (25), dropped after OpenType 1.8.0, is one; FreeType still reads it
+                p++;
+                sp = 0;
+                continue;
             }
             if (sp >= stack.length) throw damagedDict();
             stack[sp++] = v;

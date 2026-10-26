@@ -40,8 +40,8 @@ What each font is for:
   one and with no listed point, intermediate regions (one negative), a region on three axes, shared tuples, a composite with scaled and
   2x2 components, a point-matched component, a nested composite, phantom points that move the advance only and the bearing only, glyph
   instructions, a cvar with sparse, all-entries and intermediate tuples, MVAR with 24 tags (a vertical and a gasp one that are left alone),
-  an HVAR with an advance map (for the suite's no-gvar case), `rvrn` with 3 condition sets, an axis whose default is its maximum (`slnt`)
-  and one whose default is its minimum (`XHGT`).
+  an HVAR with an advance map whose rows do not follow the phantom points (and move `.notdef`, `A.rvrn` and `B.rvrn`, which have no gvar
+  data), `rvrn` with 3 condition sets, an axis whose default is its maximum (`slnt`) and one whose default is its minimum (`XHGT`).
 * `synth-avar2.ttf`: avar version 2 (its own variation store and index map: the width follows the weight and the weight the width).
 
 ## The expect files
@@ -66,16 +66,17 @@ One line per item, a location opened by `loc` and closed by `end`:
 | `S` | a character and the glyph `rvrn` gives it |
 
 Everything on a `g` / `P` / `M` / `T` / `V` / `K` / `A` / `S` line comes from fontTools' `instantiateVariableFont` (4.67, full instance,
-default options) run at HarfBuzz's normalized coordinates. Before writing anything, `expect` checks its kerning, mark and `rvrn`
-evaluators against HarfBuzz shaping (10,522 runs).
+default options) run at HarfBuzz's normalized coordinates, but for the advances of a glyf font with HVAR (and the average width and hhea
+values that follow from them): those are HarfBuzz's at the same coordinates. Before writing anything, `expect` checks its kerning, mark
+and `rvrn` evaluators against HarfBuzz shaping (10,522 runs).
 
 ## What the suite compares
 
 At every location (58: 8 Inter, 6 Noto Sans, 9 Roboto Flex, 4 Fixture Sans 3, 6 Roboto, 15 synth-gvar, 7 synth-avar2, 3 CFF2):
 
 * the location from the named instance or the tag map, and the normalized coordinates, equal to HarfBuzz's;
-* glyf fonts: every glyph's points or components exact (CRC-32), advances exact, the sample glyphs point for point; bearings and bounds
-  within 1 (composites, see below);
+* glyf fonts: every glyph's points or components exact (CRC-32), advances exact (HarfBuzz's when the font has HVAR), the sample glyphs
+  point for point; bearings and bounds within 1 (composites, see below);
 * the CFF2 font: every glyph as CffToGlyfTest compares outlines (contours, on-curve points within 1, bounds within 1, area within 0.5 %),
   advances exact, bearing = xMin;
 * the metrics equal (head bounds and hhea's minLeftSideBearing / minRightSideBearing / xMaxExtent within 1), the cvt equal, the tables
@@ -93,7 +94,10 @@ segment maps, and a seeded fuzz (truncation, bit flips, random bytes, huge count
   shows them). The expectations are made at HarfBuzz's coordinates.
 * Composite bounds and bearings come from the rounded outline (fontTools takes them from unrounded component offsets): 1 apart for two
   composites at three synth-gvar locations.
-* A glyf font with HVAR and no gvar takes its advances from HVAR, as HarfBuzz does (fontTools ignores HVAR there): the `H` lines.
+* A glyf font with HVAR takes its advances from HVAR, gvar or not, as HarfBuzz and FreeType do; fontTools takes them from gvar's phantom
+  points (and ignores HVAR when there is no gvar). The real fixtures' HVAR gives their phantom points' advances to the unit, so only
+  synth-gvar shows it; real fonts that move an advance in HVAR only are listed under "Results at dev time". The `H` lines (synth-gvar
+  without gvar) check the font without gvar.
 * STAT, DSIG, hdmx, LTSH, VDMX, vhea and vmtx are dropped; a CFF2 font becomes a glyf font (fontTools keeps CFF2, with the default's
   bearings).
 * MVAR's vertical tags are left alone when there is no vhea (fontTools fails on them).
@@ -127,8 +131,8 @@ whenever `FontInstancer` changes what it writes.
 
 Not part of CI.
 
-* The suite: 509 checks pass. 4,749 glyphs at the 58 locations: no glyph with other points and no other advance than fontTools'; the
-  normalized coordinates are HarfBuzz's at all 58.
+* The suite: 511 checks pass. 4,749 glyphs at the 58 locations: no glyph with other points than fontTools' and no other advance than
+  the expected one; the normalized coordinates are HarfBuzz's at all 58.
 * `verify` on the suite's instances: against fontTools at HarfBuzz's coordinates, 0 glyphs with other points, 0 other advances, the
   metrics equal but head.xMin and hhea.minLeftSideBearing 1 apart at one synth-gvar location (a composite's bounds); HarfBuzz shaping
   (every character, the kerning pairs, bases with marks, the `rvrn` characters: 44,908 glyphs) gives the same glyphs as the variable font
@@ -138,14 +142,21 @@ Not part of CI.
   locations); the CFF2 renderings are at most 59 apart (about 2 % of pixels more than 16 apart: the quadratic outlines are within 1 unit of
   the cubic ones); hinted at 16 pixels, Roboto's points are within 1/32 pixel of the variable font's but for one glyph (S at instance 15,
   1 pixel), where fontTools' instance does the same.
-  synth-gvar is shaped and drawn without its HVAR there: its rows are made up for the no-gvar case, and both engines prefer HVAR to gvar's
-  phantom points.
+  synth-gvar is shaped with its HVAR there, and FreeType reads its advances with it but draws it without: its glyph H moves gvar's left
+  phantom point, which HarfBuzz, fontTools and the app move the outline by and FreeType ignores when the font has HVAR.
 * The full source fonts (not committed: Inter 2,933 glyphs, Noto Sans 4,515, Roboto Flex 948, Source Sans 3 2,478, Roboto 1,326, and the CFF2
   fonts Source Sans 3 VF 2,478 and Source Serif 4 Variable 1,464), each at its maximum, its minimum and a seeded point: the glyf fonts have
   no glyph with other points and no other advance than fontTools' (one glyph of Source Sans 3 has bounds 1 apart); HarfBuzz gives the same
   glyphs, the same advances and offsets at most 1 apart; FreeType draws simple glyphs within 0.516 units and composites within 1.484; the
   CFF2 fonts match the variable font drawn at the location in every glyph (CffToGlyfTest's criteria) with fontTools' advances. Instancing
   takes 46 to 133 ms per font on the dev machine.
+* Advances of 53 glyf variable fonts with HVAR from Google Fonts (369 instances: default, the Regular and Bold the app guesses, minimum,
+  maximum, two seeded points; 1,014,842 glyphs) against HarfBuzz and FreeType on the variable font at the location: every advance is
+  HarfBuzz's, FreeType's within 1, and HarfBuzz draws every glyph within 2 units of where it draws the variable font's. Taking the advances
+  from the phantom points instead, as fontTools does, left 108 glyphs at another width in seven of them: Fraunces' gcircumflex and gmacron
+  (1225 for HarfBuzz's 1029 at opsz 9, wght 100), Literata's ldot, tcaron and three more (376 for 513 at opsz 72, wght 900), Oswald's dong
+  sign, Playfair Display's underscore and the .notdef of Open Sans and Open Sans Italic, whose gvar data does not move the phantom points
+  while HVAR moves the advance, and glyphs of Lexend, Open Sans and Open Sans Italic 1 unit apart (the phantom points round otherwise).
 * Shaping runs of many stacked marks in one go (all the combining marks of a block in a row) puts the last mark up to 7 units from where
   HarfBuzz puts it on the variable font, each mark being within 1 of the one it sits on: every anchor is rounded on its own in a static
   font. `verify` shapes the characters one by one.

@@ -278,7 +278,7 @@ def block(path):
         warnings.append("symbol")
     elif not m:
         warnings.append("nocharacters")
-    elif not latin and col == "none" and "COLR" not in tags:
+    elif not latin:
         warnings.append("nolatin")
     if fstype & 2:
         warnings.append("restricted")

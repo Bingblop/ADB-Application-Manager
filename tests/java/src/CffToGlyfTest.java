@@ -777,6 +777,16 @@ public class CffToGlyfTest {
 
   static String bounds(Glyf.Glyph g) { return g == null ? "empty" : g.xMin + "," + g.yMin + "," + g.xMax + "," + g.yMax; }
 
+  /** Passes when glyph 1 of the converted font has these bounds; a refusal counts as a failure. */
+  static void converts(String name, Sfnt f, String want) {
+    try {
+      Glyf.Glyph g = converted(f, null, 1);
+      check(name, bounds(g).equals(want), bounds(g));
+    } catch (Throwable e) {
+      check(name, false, e.toString());
+    }
+  }
+
   // ---------- subroutine biases ----------
 
   /** Each bias at the INDEX sizes where it changes: the call reaches the one subroutine that draws (the rest only return). */
@@ -1233,11 +1243,33 @@ public class CffToGlyfTest {
     refused("a CFF table without CharStrings is refused", "has no glyphs", b.font(1000));
     b = new Builder(false);
     refused("a CFF table with an empty CharStrings INDEX is refused", "has no glyphs", otf(b.build(), false, 1, 1000));
-    for (Object[] dmg : new Object[][] { { "a reserved byte (255)", bytes(255) }, { "a real number with a bad nibble", bytes(30, 0x1D) },
-        { "a number cut off", bytes(247) }, { "an escape cut off", bytes(12) }, { "49 operands", cs(times(49, 0)) }, { "a 16-bit number cut off", bytes(28, 1) } }) {
+    for (Object[] dmg : new Object[][] { { "a real number with a bad nibble", bytes(30, 0x1D) }, { "a number cut off", bytes(247) },
+        { "an escape cut off", bytes(12) }, { "49 operands", cs(times(49, 0)) }, { "a 16-bit number cut off", bytes(28, 1) } }) {
       b = squareFont();
       b.topTail = (byte[]) dmg[1];
       refused("a Top DICT with " + dmg[0] + " is refused", "damaged DICT", b.font(1000));
+    }
+    // reserved operators are ignored with their operands, as the CFF2 specification says (CFF2's maxstack, 25, among them)
+    b = squareFont();
+    b.topTail = bytes(146, 22, 147, 23, 148, 24, 149, 25, 150, 26, 151, 27, 152, 31, 153, 255);
+    converts("a CFF 1 Top DICT with the reserved operators 22-27, 31 and 255 converts", b.font(1000), "0,0,100,100");
+    Builder ms = new Builder(true);
+    ms.glyphs.add(new byte[0]);
+    ms.glyphs.add(cs(SQUARE));
+    ms.topTail = bytes(28, 0x02, 0x01, 25, 140, 26, 141, 27, 142, 31, 143, 255);
+    converts("a CFF2 Top DICT with maxstack 513 (25) and the reserved operators 26, 27, 31 and 255 converts", ms.font(1000), "0,0,100,100");
+    byte[] rd = bytes(140, 141, 25, 142, 17, 143, 144, 22, 145, 18);
+    try {
+      Map<Integer, double[]> cff1 = CffToGlyf.readDict(rd, 0, rd.length, false, null);
+      check("a reserved operator clears the operands before it: CFF 1 reads 25 and 22 as reserved",
+          Arrays.equals(cff1.get(CffToGlyf.CHARSTRINGS), new double[] { 3 }) && Arrays.equals(cff1.get(CffToGlyf.PRIVATE), new double[] { 6 })
+              && cff1.size() == 2, cff1.keySet().toString());
+      Map<Integer, double[]> cff2 = CffToGlyf.readDict(rd, 0, rd.length, true, null);
+      check("in CFF2, 25 is reserved and 22 is vsindex", Arrays.equals(cff2.get(CffToGlyf.CHARSTRINGS), new double[] { 3 })
+          && Arrays.equals(cff2.get(CffToGlyf.VSINDEX), new double[] { 4, 5 }) && Arrays.equals(cff2.get(CffToGlyf.PRIVATE), new double[] { 6 })
+          && cff2.size() == 3, cff2.keySet().toString());
+    } catch (Sfnt.FontException e) {
+      check("a DICT with reserved operators is read", false, e.getMessage());
     }
     b = squareFont();
     b.main.noPrivate = true;
