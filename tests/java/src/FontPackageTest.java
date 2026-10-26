@@ -194,6 +194,13 @@ public class FontPackageTest {
     check("no space left at the cut", FontPackage.cleanName(repeat("ab ", 30)).equals(repeat("ab ", 21) + "a"));
     for (String bad : new String[] { null, "", "   ", "\u0000\u0001", "\u202e\u202c", "\ud800", "\n\t" })
       throwsFont("refused when nothing is left: " + visible(bad), "bad_name", () -> FontPackage.cleanName(bad));
+    // a name that shows nothing would be a blank label in Settings, Font style and My fonts (PKG-8)
+    for (String blank : new String[] { "\u200b\u200b", "\u3164", "\u2060", "\u200d", "\udb40\udc41\udb40\udc42", "\u115f\u1160", "\u00ad", "\u034f",
+        "\uffa0", "\u2800", "\u200b \u3164", "\u0301\u0308" })
+      throwsFont("refused when it shows nothing: " + visible(blank), "bad_name", () -> FontPackage.cleanName(blank));
+    for (String[] ok : new String[][] { { "\u200bA", "\u200bA" }, { "\u3164x", "\u3164x" }, { "\ud83d\ude00", "\ud83d\ude00" }, { "-", "-" }, { "\u00a9", "\u00a9" },
+        { "\u0661", "\u0661" }, { "\u2167", "\u2167" }, { "\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f", null } })
+      check("kept when something shows: " + visible(ok[0]), FontPackage.cleanName(ok[0]).equals(ok[1] == null ? ok[0] : ok[1]));
   }
 
   // ---------- suffix and package name ----------
@@ -238,6 +245,17 @@ public class FontPackageTest {
     check("suffixOf: Samsung's own fonts are not this tab's", FontPackage.suffixOf("com.monotype.android.font.foundation") == null);
     check("suffixOf: another package", FontPackage.suffixOf("com.example.MyFont_3fa9c1") == null && FontPackage.suffixOf(null) == null);
     check("fontFileBase", FontPackage.fontFileBase("MyFont_3fa9c1").equals("MyFont"));
+    // the update check leaves out the font packages made here (PKG-3): in My fonts, or signed with the app's key
+    String key = repeat("ab", 32), other = repeat("cd", 32), mine = FontPackage.packageName(s);
+    java.util.List<String> lib = Arrays.asList(s), none = new java.util.ArrayList<String>();
+    check("made here: in My fonts", FontPackage.madeHere(mine, false, lib, none, key));
+    check("made here: deleted from My fonts, signed with the app's key", FontPackage.madeHere(mine, false, none, Arrays.asList(other, key), key));
+    check("not made here: another key and not in My fonts", !FontPackage.madeHere(mine, false, none, Arrays.asList(other), key));
+    check("not made here: a system font package", !FontPackage.madeHere(mine, true, lib, Arrays.asList(key), key));
+    check("not made here: Samsung's own font names", !FontPackage.madeHere("com.monotype.android.font.foundation", false, Arrays.asList("foundation"), Arrays.asList(key), key));
+    check("not made here: another package", !FontPackage.madeHere("com.example.MyFont_3fa9c1", false, Arrays.asList("MyFont_3fa9c1"), Arrays.asList(key), key));
+    check("no app key yet: only My fonts counts", !FontPackage.madeHere(mine, false, none, Arrays.asList(key), null)
+        && !FontPackage.madeHere(mine, false, none, Arrays.asList(""), "") && !FontPackage.madeHere(mine, false, null, null, key));
     for (String ok : new String[] { "a.b", PKG, "com.example.a_b.C9", "A.B_", "a." + repeat("b", 253) })
       check("valid package name " + ok.substring(0, Math.min(40, ok.length())), FontPackage.isValidPackageName(ok));
     for (String bad : new String[] { null, "", "com", "com.", ".com", "com..x", "1com.x", "com.1x", "com.x-y", "com.x y", "com._x", "com.\u00e9",
@@ -909,7 +927,8 @@ public class FontPackageTest {
         try {
           clean = FontPackage.cleanName(name);
         } catch (Sfnt.FontException e) {
-          if (!e.code.equals("bad_name") || !FontPackage.clean(name, FontPackage.MAX_NAME).isEmpty()) throw new IllegalStateException("refused a usable name");
+          String left = FontPackage.clean(name, FontPackage.MAX_NAME);
+          if (!e.code.equals("bad_name") || (!left.isEmpty() && FontPackage.visible(left))) throw new IllegalStateException("refused a usable name");
           refused++;
           continue;
         }

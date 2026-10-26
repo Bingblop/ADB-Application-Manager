@@ -58,12 +58,38 @@ public final class FontPackage {
     /**
      * The display name as it goes into the package: control characters, unpaired surrogates, noncharacters and bidi embedding / override /
      * isolate controls removed, every run of white space one space, trimmed, at most {@link #MAX_NAME} characters. Refuses a name that is
-     * empty after that.
+     * empty after that, or that shows nothing ({@link #visible}).
      */
     public static String cleanName(String name) throws Sfnt.FontException {
         String s = clean(name, MAX_NAME);
-        if (s.isEmpty()) throw new Sfnt.FontException("bad_name", "Give the font a name.");
+        if (s.isEmpty() || !visible(s)) throw new Sfnt.FontException("bad_name", "Give the font a name.");
         return s;
+    }
+
+    /**
+     * Whether a name shows something: at least one letter, number, punctuation mark or symbol that is not drawn blank (the Hangul fillers,
+     * the blank Braille pattern). Format characters (zero-width spaces and joiners, the word joiner, tag characters, the soft hyphen) and
+     * combining marks draw nothing on their own, so a name made only of them would be an empty label in Settings and in My fonts.
+     */
+    static boolean visible(String s) {
+        for (int i = 0; i < s.length(); ) {
+            int cp = s.codePointAt(i);
+            i += Character.charCount(cp);
+            if (cp == 0x115F || cp == 0x1160 || cp == 0x3164 || cp == 0xFFA0 || cp == 0x2800) continue;
+            switch (Character.getType(cp)) {
+                case Character.UPPERCASE_LETTER: case Character.LOWERCASE_LETTER: case Character.TITLECASE_LETTER:
+                case Character.MODIFIER_LETTER: case Character.OTHER_LETTER:
+                case Character.DECIMAL_DIGIT_NUMBER: case Character.LETTER_NUMBER: case Character.OTHER_NUMBER:
+                case Character.CONNECTOR_PUNCTUATION: case Character.DASH_PUNCTUATION: case Character.START_PUNCTUATION:
+                case Character.END_PUNCTUATION: case Character.INITIAL_QUOTE_PUNCTUATION: case Character.FINAL_QUOTE_PUNCTUATION:
+                case Character.OTHER_PUNCTUATION:
+                case Character.MATH_SYMBOL: case Character.CURRENCY_SYMBOL: case Character.MODIFIER_SYMBOL: case Character.OTHER_SYMBOL:
+                    return true;
+                default:
+                    break;
+            }
+        }
+        return false;
     }
 
     /** {@link #cleanName} without the refusal: "" for nothing usable. */
@@ -156,6 +182,19 @@ public final class FontPackage {
         if (packageName == null || !packageName.startsWith(PACKAGE_PREFIX)) return null;
         String s = packageName.substring(PACKAGE_PREFIX.length());
         return isValidSuffix(s) ? s : null;
+    }
+
+    /**
+     * Whether an installed package is a font package this app made: named the way {@link #suffixFor} names one, not part of the system, and
+     * either still in My fonts ({@code librarySuffixes}) or signed with this app's own key ({@code signers}, the SHA-256 digests of the
+     * package's certificates, holds {@code appKeySha256}: one deleted from My fonts but still installed). The update check leaves these out:
+     * no store has them, and asking one would send the font's name along with the phone's model and region.
+     */
+    public static boolean madeHere(String packageName, boolean system, java.util.Collection<String> librarySuffixes, java.util.Collection<String> signers, String appKeySha256) {
+        String s = suffixOf(packageName);
+        if (s == null || system) return false;
+        if (librarySuffixes != null && librarySuffixes.contains(s)) return true;
+        return appKeySha256 != null && !appKeySha256.isEmpty() && signers != null && signers.contains(appKeySha256);
     }
 
     /** The font file name in the package, without ".ttf": the name part of the suffix ("MyFont" for "MyFont_3fa9c1"). */
