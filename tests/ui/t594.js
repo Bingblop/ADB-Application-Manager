@@ -4,7 +4,9 @@
 // and Reset to Default stays on (the way back from a font that went wrong); Try again asks once more and the error goes. A Samsung without
 // /data/app_fonts: the changer says so (SAMSUNG ONLY), My fonts says its packages are not used here, Install and Apply are off, Export stays. A change
 // that fails still shows what the phone read back: Reset (sans.loc as it is), the system emoji swap (one file changed, one not: "Some files did not
-// change", ✓ and ✕) and its Undo; the error of a change stays when the status asked after it answers.
+// change", ✓ and ✕) and its Undo; the error of a change stays when the status asked after it answers, and the tab shown again or another working
+// mode takes the read-back box away with its error, at once even while that status is still being asked. What a status found about /data/app_fonts
+// stays while the next one is asked, and without a mode.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -78,11 +80,25 @@ const switchMode = (page, m) => page.evaluate(m => { window.__fmk.setMode(m); ch
   }
   {
     // ---- 3. a Samsung without /data/app_fonts ----
-    const { ctx, page, errors } = await open(b, { mode: 'root', noAppFonts: true });
+    const { ctx, page, errors } = await open(b, { mode: 'root', noAppFonts: true, hold: true });
+    await page.evaluate(() => window.__fmk.stepAll());
+    await page.waitForTimeout(50);
     const c = await cards(page);
     check('3. no /data/app_fonts: SAMSUNG ONLY, the card says why', c.cTag === 'SAMSUNG ONLY' && c.cBody === "The font changer needs Samsung's font folder (/data/app_fonts), which this phone does not have.", JSON.stringify([c.cTag, c.cBody]));
     check('   My fonts says its packages are not used here', c.note === "This phone does not have Samsung's font folder (/data/app_fonts), so its font packages are not used here. You can still export them.", c.note);
     check('   Install and Apply off, Export on', c.rows.every(r => /(Install|Uninstall|Update):off/.test(r) || /Uninstall:on/.test(r)) && c.rows.every(r => /Apply:off/.test(r) && /Export:on/.test(r)), JSON.stringify(c.rows));
+    // the mode changes: the status is dropped and asked again, and what the last one found is kept meanwhile (no Install that comes back on in between)
+    await switchMode(page, 'system');
+    await page.waitForTimeout(50);
+    const m = await cards(page);
+    check('   the system user, the status asked again and not answered yet: still SAMSUNG ONLY, Install still off', await statusCalls(page) === 2 && m.cTag === 'SAMSUNG ONLY'
+      && m.rows[1] === 'Install:off|Apply:off|Export:on|Delete:on|Make again:on' && /does not have Samsung's font folder/.test(m.note), JSON.stringify([m.cTag, m.rows, m.note]));
+    await page.evaluate(() => window.__fmk.stepAll());
+    await switchMode(page, 'none');
+    await page.waitForTimeout(50);
+    const n = await cards(page);
+    check('   no working mode (nothing can look): what Root found stays, Install off, no advice to use Apply', n.rows[1] === 'Install:off|Apply:off|Export:on|Delete:on|Make again:on'
+      && /does not have Samsung's font folder/.test(n.note) && !/Use Apply instead/.test(n.note), JSON.stringify([n.rows, n.note]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -94,6 +110,13 @@ const switchMode = (page, m) => page.evaluate(m => { window.__fmk.setMode(m); ch
     const c = await cards(page);
     check('4. Reset fails: the page\'s sentence, sans.loc as the phone reads it', /The phone could not reset sans\.loc\./.test(c.cBody) && /Read back from the phone: sans\.loc \/data\/app_fonts\/0\/InterDisplay_3fa9c1#InterDisplay_3fa9c1/.test(c.cBody), c.cBody);
     check('   the error stays after the status asked again answers', /Phone font Inter Display/.test(c.cBody) && await statusCalls(page) === 2, c.cBody);
+    // the tab shown again: the card asks the phone afresh, and the read-back box goes with the error that explained it
+    await page.evaluate(() => switchView('about'));
+    await page.evaluate(() => switchView('fonts'));
+    await page.waitForTimeout(300);
+    const r = await cards(page);
+    check('   shown again: a fresh status, no read-back box and no error left', /Phone font Inter Display/.test(r.cBody) && !/Read back from the phone/.test(r.cBody) && !/could not reset/.test(r.cBody)
+      && await statusCalls(page) === 3, r.cBody);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -110,6 +133,10 @@ const switchMode = (page, m) => page.evaluate(m => { window.__fmk.setMode(m); ch
     check('   the status asked after it: the swap is on, Undo is there', /Phone emoji Twemoji/.test(c.sBody) && c.undo === true, JSON.stringify([c.sBody, c.undo]));
     await page.evaluate(() => document.getElementById('fntSysCard').scrollIntoView());
     await page.screenshot({ path: 'sys-half.png' });
+    await switchMode(page, 'uid0');                                               // another working mode: both cards ask again
+    await page.waitForTimeout(300);
+    const r = await cards(page);
+    check('   another working mode: the read-back box goes with its error', /Phone emoji Twemoji/.test(r.sBody) && !/Some files did not change/.test(r.sBody) && !/Some emoji files/.test(r.sBody) && !/✓|✕/.test(r.sBody), r.sBody);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -122,6 +149,32 @@ const switchMode = (page, m) => page.evaluate(m => { window.__fmk.setMode(m); ch
     const c = await cards(page);
     check('6. Undo fails: the lead in the page\'s words, the shell\'s detail kept, the file read back', /The swap could not be undone: umount: \/system\/fonts\/NotoColorEmoji\.ttf: Device or resource busy/.test(c.sBody)
       && /NotoColorEmoji\.ttf d2d721abc0ab ✕/.test(c.sBody) && /Phone emoji Twemoji/.test(c.sBody) && c.undo === true, c.sBody);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    // ---- 7. a Reset and a swap that fail, and another working mode before the status asked after them answers ----
+    const rb = [{ target: '/system/fonts/NotoColorEmoji.ttf', sha256: 'd2d721abc0ab04c0f40673e4b521e8b580a6b31d1018b7f2dcb438fdae4c265e', ok: false }];
+    const { ctx, page, errors } = await open(b, { mode: 'root', hold: true, resetError: { code: 'failed', error: 'cannot reset sans.loc.', readBack: { sansLoc: '/data/app_fonts/0/InterDisplay_3fa9c1#InterDisplay_3fa9c1', files: [] } },
+      sysApplyError: { code: 'failed', error: 'Some emoji files did not change. Restart the phone to undo the swap.', readBack: rb } });
+    await page.evaluate(() => window.__fmk.stepAll());
+    await page.waitForTimeout(50);
+    await page.click('#fntResetBtn');
+    await page.click('#fntSysUse');
+    await page.evaluate(() => window.__fmk.step(2));                               // the two changes end; the status asked after each waits
+    await page.waitForTimeout(50);
+    const c = await cards(page);
+    check('7. both fail: each card has its error and its read-back box, the status asked after them not answered yet', /could not reset sans\.loc/.test(c.cBody) && /Read back from the phone/.test(c.cBody)
+      && /Some emoji files did not change/.test(c.sBody) && /✕/.test(c.sBody) && await page.evaluate(() => fnt.changerBusy === 'status' && fnt.sysBusy === 'status'), JSON.stringify([c.cBody, c.sBody]));
+    await switchMode(page, 'uid0');
+    await page.waitForTimeout(50);
+    const m = await cards(page);
+    check('   another working mode meanwhile: the boxes go with their errors at once', !/could not reset|Read back from the phone/.test(m.cBody) && !/Some emoji files|Some files did not change|✓|✕/.test(m.sBody), JSON.stringify([m.cBody, m.sBody]));
+    await page.evaluate(() => window.__fmk.stepAll());
+    await page.waitForTimeout(50);
+    const r = await cards(page);
+    check('   the status asked again answers: the cards show it, still no error or box', /Phone font Inter Display/.test(r.cBody) && !/could not reset|Read back from the phone/.test(r.cBody)
+      && /Phone emoji/.test(r.sBody) && !/Some emoji files|Some files did not change|✓|✕/.test(r.sBody), JSON.stringify([r.cBody, r.sBody]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

@@ -2,8 +2,9 @@
 // font without a Weight axis keeps Bold at None (Android makes bold text from the Regular); choosing "Same variable font" for it says the Bold would
 // look like the Regular. With a Weight axis, a Bold set at the Regular's weight or lighter says bold text would look like the rest; a heavier one says
 // nothing. An own COLRv1 emoji file on Android 12 says it needs Android 13 and Build waits. A name made only of blank fillers (U+3164) is named as such
-// and Build waits. A font deleted from My fonts takes its preview face with it (document.fonts). Root Features has its "?" (HELP_LINKS) in the top
-// card, beside the status tag and not over it, and it opens the guide at that tab.
+// and Build waits, and so is a name of only spaces. A font deleted from My fonts takes its preview face with it (document.fonts). Root Features has its
+// "?" (HELP_LINKS) in the top card, beside the status tag and not over it, and it opens the guide at that tab. FULL-GUIDE's table of tabs says "right
+// before …" as the tab bar has it, and gives the Font changer's gate with root (UID 0) as the app's lock does.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -71,6 +72,10 @@ const make = (page) => page.evaluate(() => {
     await page.waitForTimeout(100);
     const n1 = await make(page);
     check('   a letter after it: the line goes, Build is on', n1.hint === '' && n1.build, JSON.stringify(n1));
+    await page.fill('#fntName', '   ');
+    await page.waitForTimeout(100);
+    const n2 = await make(page);
+    check('   a name of only spaces: named as such too, Build waits', n2.hint === 'The name needs at least one letter, digit or sign that can be seen.' && !n2.build, JSON.stringify(n2));
     await page.fill('#fntName', '');
     await page.waitForTimeout(100);
     check('   an empty name: no line (nothing typed yet), Build waits', (await make(page)).hint === '' && !(await make(page)).build);
@@ -120,6 +125,15 @@ const make = (page) => page.evaluate(() => {
     await page.click('#rfTop > .help-q');
     await page.waitForTimeout(900);
     check('   it opens the guide at Root Features', await page.evaluate(() => document.getElementById('helpGuideModal').classList.contains('show') && hg.cur === 'tab-rootfeatures'), await page.evaluate(() => String(hg.cur)));
+    // ---- 7. the full guide's table of tabs: "right before X" as the tab bar has it, and the Font changer's gate as the app words its lock ----
+    const tabs = await page.evaluate(() => TAB_DEFS.map(t => t.name));
+    const md = fs.readFileSync(require('path').join(__dirname, '..', '..', 'docs', 'FULL-GUIDE.md'), 'utf8').split('\n').filter(l => /^\| \*\*[^*]+\*\* \|/.test(l));
+    const before = md.map(l => { const m = /right before \*{0,2}([A-Z][\w/ -]*?)\*{0,2}[:,.]/.exec(l); return m ? [/^\| \*\*([^*]+)\*\*/.exec(l)[1], m[1]] : null; }).filter(Boolean);
+    const wrong = before.filter(([tab, next]) => tabs[tabs.indexOf(tab) + 1] !== next);
+    check('7. FULL-GUIDE: every "right before …" in the table of tabs matches the tab bar (Root Features right before Custom Fonts)', before.length >= 2 && !wrong.length
+      && before.some(([t, n]) => t === 'Root Features' && n === 'Custom Fonts'), JSON.stringify({ before, wrong }));
+    const fontsRow = md.find(l => l.startsWith('| **Custom Fonts** |')) || '';
+    check('   the Custom Fonts row gives the Font changer\'s gate with the system user (UID 1000) and root (UID 0)', /Font changer\*\*[^)]*\(Apply[^;]*; Root, or Shizuku as the system user \(UID 1000\) or as root \(UID 0\)\)/.test(fontsRow), fontsRow.slice(0, 600));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

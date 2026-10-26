@@ -2,7 +2,8 @@
 // font ("Making Inter Display again", its name filled in, New font to go back); the build sends rebuildId, and while it runs the row waits ("Making…",
 // its other buttons off). The font made again keeps its id and package and takes the next version, so the copy on the phone (version 2, in use) is
 // older and the row offers Update. New font drops the link; deleting the font being made again drops it too. The file chooser: Choose is off while it is open
-// and a second pick sends nothing. The save screen: Export is off on every row until it answers.
+// and a second pick sends nothing; Build is off until the file chosen is read (a Change with a Regular chosen), so it never builds the one before.
+// The save screen: Export is off on every row until it answers.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -94,6 +95,17 @@ const clickBtn = (page, id, label) => page.evaluate(([id, l]) => [...document.qu
     check('   a second pick sends nothing', (await page.evaluate(() => window.__fmk.calls.filter(c => /^fontMakerPick/.test(c)).length)) === 1);
     await page.waitForTimeout(1700);
     check('   the file is read: Change is on', await page.evaluate(() => { const x = document.getElementById('fntPick_regular'); return !x.disabled && x.textContent === 'Change'; }));
+    // Change with a Regular chosen: Build waits until the new file is read, so a build never takes the file chosen before
+    const buildOn = () => page.evaluate(() => !document.getElementById('fntBuildBtn').disabled);
+    check('   a Regular is chosen: Build is on', await buildOn());
+    await page.evaluate(() => { window.__fmk.picks.regular = 'vf'; });
+    await page.click('#fntPick_regular');
+    await page.waitForTimeout(100);
+    check('   Change, the new file not read yet: Build is off', !(await buildOn()));
+    await page.evaluate(() => fntBuild());
+    check('   a build asked for now sends nothing', !(await page.evaluate(() => window.__fmk.calls.includes('fontMakerBuild'))), await page.evaluate(() => window.__fmk.calls.join()));
+    await page.waitForTimeout(1700);
+    check('   the new file is read: Build is on, for the new file', await buildOn() && await page.evaluate(() => fnt.pick.regular.fileName === 'InterVariable.ttf' && fnt.name === 'Inter Variable'));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

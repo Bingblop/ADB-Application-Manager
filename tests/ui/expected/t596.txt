@@ -17,6 +17,10 @@ ok      no page errors
 ok   5. while the chooser is open: Choose is off
 ok      a second pick sends nothing
 ok      the file is read: Change is on
+ok      a Regular is chosen: Build is on
+ok      Change, the new file not read yet: Build is off
+ok      a build asked for now sends nothing
+ok      the new file is read: Build is on, for the new file
 ok      no page errors
 ok   6. while the save screen is open: Export is off on every row
 ok      saved: a toast, Export on again

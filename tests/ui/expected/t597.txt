@@ -6,6 +6,7 @@ ok      at the Regular's own weight: the same
 ok      the Weight slider moved past the Regular: the line goes
 ok   3. a name of blank fillers (U+3164): named as such, Build waits
 ok      a letter after it: the line goes, Build is on
+ok      a name of only spaces: named as such too, Build waits
 ok      an empty name: no line (nothing typed yet), Build waits
 ok   4. Lato's row shows its first line in Lato (a face of its own)
 ok      deleted: the face is gone from document.fonts
@@ -16,5 +17,7 @@ ok      no page errors
 ok   6. Root Features has its "?" in the top card, pointing at its topic
 ok      beside the status tag and the title, never over them, level with the tag
 ok      it opens the guide at Root Features
+ok   7. FULL-GUIDE: every "right before …" in the table of tabs matches the tab bar (Root Features right before Custom Fonts)
+ok      the Custom Fonts row gives the Font changer's gate with the system user (UID 1000) and root (UID 0)
 ok      no page errors
 all passed

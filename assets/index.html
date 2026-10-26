@@ -44783,6 +44783,7 @@ Type any command above (e.g. pm list packages -d)</div>
             built: null,                                                     // what the last build was asked for: { emoji, variable: { Regular, Bold } } (fntTableTooBig)
             lib: null, cat: null, dl: {}, emoErr: {}, libBusy: {}, libMsg: {}, exporting: '',
             modeKey: '',                                                     // the working mode the two cards' status was asked in
+            noAppFonts: false,                                               // a status that looked found no /data/app_fonts: kept when the status goes (fntSamsung)
             changer: null, changerBusy: false, changerRb: null, changerErr: '', changerStatusErr: '', applyId: '', changerStale: false,
             sys: null, sysBusy: false, sysRb: null, sysErr: '', sysStatusErr: '', sysStale: false,
             faces: { regular: null, bold: null }, faceSeq: 0, libFaces: {}
@@ -45004,8 +45005,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function fntSdk() { return (fnt.cat && fnt.cat.sdk) || fntDevice().sdk || 0; }
         function fntEntry(id) { return ((fnt.lib && fnt.lib.entries) || []).find(e => e.id === id) || null; }
         function fntChangerOpen() { const st = fnt.changer; return isRootActive() && !(st && st.unlocked === false); }
-        // a Samsung phone with the font folder the changer writes to (its status says available:false on a Samsung build without /data/app_fonts)
-        function fntSamsung() { return fntDevice().samsung !== false && !(fnt.changer && fnt.changer.available === false); }
+        // a Samsung phone with the font folder the changer writes to. Only a status that looked (Root or the system user) can say the folder is missing
+        // (available:false); that is kept while the status is asked again, so Install does not come back on in between
+        function fntSamsung() { return fntDevice().samsung !== false && !fnt.noAppFonts; }
         // the working mode as the two cards see it: their gates, and which mode (a status asked in another one is that mode's: its tag, its lock)
         function fntModeKey() { return [isRootActive(), ovlCanWriteOverlays(), currentWorkingMode].join(); }
         function fntFace(family, b64) {
@@ -45040,11 +45042,14 @@ Type any command above (e.g. pm list packages -d)</div>
             fntAskStatus();
         }
         function fntRenderAll() { fntRenderMake(); fntRenderEmoji(); fntRenderLib(); fntRenderChanger(); fntRenderSys(); }
-        // the two cards' status is dropped (and the errors), unless a change is running; a status being asked is asked again when it answers.
-        // A status keeps its own error (changerStatusErr, sysStatusErr): the next status that answers clears it, never the error of an Apply or a Reset
+        // the two cards' status is dropped (and the errors, and the read-back box they explain), unless a change is running; a status being asked is asked
+        // again when it answers, and the error and box of the change before it go now. A status keeps its own error (changerStatusErr, sysStatusErr): the
+        // next status that answers clears it, never the error of an Apply or a Reset
         function fntForget() {
-            if (!fnt.changerBusy) { fnt.changer = null; fnt.changerErr = ''; fnt.changerStatusErr = ''; } else if (fnt.changerBusy === 'status') fnt.changerStale = true;
-            if (!fnt.sysBusy) { fnt.sys = null; fnt.sysErr = ''; fnt.sysStatusErr = ''; } else if (fnt.sysBusy === 'status') fnt.sysStale = true;
+            if (!fnt.changerBusy) { fnt.changer = null; fnt.changerErr = ''; fnt.changerStatusErr = ''; fnt.changerRb = null; }
+            else if (fnt.changerBusy === 'status') { fnt.changerStale = true; fnt.changerErr = ''; fnt.changerRb = null; }
+            if (!fnt.sysBusy) { fnt.sys = null; fnt.sysErr = ''; fnt.sysStatusErr = ''; fnt.sysRb = null; }
+            else if (fnt.sysBusy === 'status') { fnt.sysStale = true; fnt.sysErr = ''; fnt.sysRb = null; }
         }
         // Try again by a status that failed
         function fntStatusAgain(which) {
@@ -45180,8 +45185,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function fntNameShows(n) { return /[\p{L}\p{N}\p{P}\p{S}]/u.test(String(n || '').replace(/[\u115F\u1160\u3164\uFFA0\u2800]/g, '')); }
         // an own COLRv1 emoji file shows only from Android 13 (the bridge refuses it below: not_usable)
         function fntEmojiTooNew() { const p = fnt.pick.emoji, sdk = fntSdk(); return fnt.emoji === 'file' && !!(p && p.info && p.info.color === 'COLRv1') && sdk > 0 && sdk < 33; }
+        // not while a file chooser is open or its file is still being read: the build would take the file chosen before, and the card would then show the new one
         function fntCanBuild() {
-            if (fnt.building || !fnt.pick.regular || !fntNameShows(fnt.name)) return false;
+            if (fnt.building || fnt.picking || !fnt.pick.regular || !fntNameShows(fnt.name)) return false;
             if (fnt.boldMode === 'file' && !fnt.pick.bold) return false;
             if (fnt.emoji === 'file' && (!fnt.pick.emoji || fntEmojiTooNew())) return false;
             return !fntEmojiClash();
@@ -45191,7 +45197,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (b) b.disabled = !fntCanBuild();
             if (c) { c.style.display = fnt.building ? '' : 'none'; c.disabled = fnt.cancelling; }
             if (nm) nm.disabled = fnt.building;
-            if (hint) { const bad = fnt.name.trim() !== '' && !fntNameShows(fnt.name); hint.textContent = bad ? 'The name needs at least one letter, digit or sign that can be seen.' : ''; hint.style.display = bad ? '' : 'none'; }
+            if (hint) { const bad = fnt.name !== '' && !fntNameShows(fnt.name); hint.textContent = bad ? 'The name needs at least one letter, digit or sign that can be seen.' : ''; hint.style.display = bad ? '' : 'none'; }
         }
         // making a font of My fonts again: it keeps its package and gets the next version, so it installs over the one on the phone
         function fntRenderRemake() {
@@ -45714,7 +45720,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const r = fntJson(json);
             if (fnt.changerBusy === 'status') fnt.changerBusy = false;
             if (fnt.changerStale) { fnt.changerStale = false; fnt.changer = null; fnt.changerStatusErr = ''; fntAskStatus(); }     // asked in the working mode before
-            else if (r.ok) { fnt.changer = r; fnt.changerStatusErr = ''; } else fnt.changerStatusErr = fntErrText(r);
+            else if (r.ok) { fnt.changer = r; fnt.changerStatusErr = ''; if (r.unlocked) fnt.noAppFonts = r.available === false; } else fnt.changerStatusErr = fntErrText(r);
             fntRenderChanger();
             fntRenderLib();
         };
