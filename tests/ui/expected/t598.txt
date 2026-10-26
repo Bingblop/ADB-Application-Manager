@@ -1,0 +1,68 @@
+ok   1. the top card: "Search Google Fonts" with the count of families
+ok      Make a font: "Find one on Google Fonts" under the empty Regular slot (not inside its row)
+ok      still one primary button in the tab
+ok   2. the sheet opens on the list: title "Google Fonts", search shown, no Back
+ok      status: "64 families · updated Oct 1, 2026 · Refresh"
+ok      a fresh list is not asked for again
+ok      count "64 families", 30 cards, "Show 30 more · 34 left"
+ok      Popular first: Roboto, Open Sans, Google Sans, Inter, Montserrat
+ok   3. a card is one button: Lato "Sans serif · Łukasz Dziedzic · 10 styles", Downloaded
+ok      Roboto "Sans serif · Christian Robertson (+2) · Variable", Variable and Downloaded
+ok      the credit names Google Fonts and the licences
+ok      the chips are buttons, not pressed
+ok      the preview size: 14-72, 28
+ok      placeholders
+ok   4. Show more: 60 cards, "Show 4 more · 4 left"
+ok      then all 64, no more button; the family without popularity comes last
+ok   5. Trending: Noto Sans Georgian, Arimo, Rajdhani
+ok      Newest: Arimo, Google Sans, Roboto Mono
+ok      Name (A–Z): Abhaya Libre, Arimo, Bebas Neue
+ok      a new sort starts again at 30 cards
+ok   6. the search waits (120 ms) before the list changes
+ok      "ROBOTO slab": every word, any case: Roboto Slab, "1 of 64"
+ok      "adele" finds Buda by its designer Adèle Antignac (accents aside)
+ok      "christian robertson": his four families
+ok   7. Monospace: four families
+ok      languages: All languages first, then the subsets by name
+ok      Canadian Aboriginal: Google Sans
+ok      Japanese: Noto Sans JP
+ok   8. Variable: only variable families (45), the chip pressed
+ok      and Downloaded: Roboto
+ok      Downloaded alone: Roboto and Lato
+ok   9. no match: "No fonts match." with Clear filters, "0 of 64", no more button
+ok      Clear filters: every family again, search and chips cleared (the sort kept)
+ok   10. a card opens the family: title Lato (translate="no"), Back shown, no search
+ok      Back: the list again, still open
+ok      Back again: the sheet closes, the tab stays
+ok   11. the Make a font link opens the sheet on the list
+ok      a tap outside the sheet: from the family to the list
+ok      and then closed
+ok      Close shuts the sheet from a family's page
+ok      opened again: the list, at the top
+ok   12. dark, 412 px: nothing wider than the screen
+ok      no page errors
+ok   13. no list yet: the button shows without a count
+ok      opening asks for it (gfontsRefresh false) and says so; no cards, no count
+ok      the list comes: status, 30 cards, the button counts 64
+ok      Refresh: gfontsRefresh true, "Updating the list…" while the list stays
+ok      and back to Refresh
+ok      no page errors
+ok   14. a failed first list: "The list of fonts is not on this phone yet.", the reason, Retry
+ok      Retry asks again (gfontsRefresh true)
+ok      and the list comes
+ok      no page errors
+ok   15. a list older than 7 days: in use (30 cards) while it updates (gfontsRefresh false)
+ok      the update fails: the reason in the page's words, Retry; the list stays
+ok      Retry: updated, the reason gone
+ok      no page errors
+ok   16. an older build: no button, no link; the Regular row as before
+ok      no page errors
+ok   17. light-360: the list, nothing wider than the screen
+ok      a family's page, nothing wider than the screen
+ok      the light theme: a light sheet
+ok      no page errors
+ok   17. dark-360-rtl: the list, nothing wider than the screen
+ok      a family's page, nothing wider than the screen
+ok      right to left: the Back arrow points the other way
+ok      no page errors
+all passed

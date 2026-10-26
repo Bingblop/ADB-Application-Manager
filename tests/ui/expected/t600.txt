@@ -1,0 +1,44 @@
+ok   1. Lato: its page at the top, titled Lato
+ok      the head: the name, waiting for its own font (translate="no")
+ok      meta: "Sans serif · Łukasz Dziedzic · 10 styles"
+ok      tester: the sample, size 14-96 at 40, no axis for a static family
+ok      styles: ten rows, named
+ok      each row in its weight and style, with the tester text
+ok      the details asked once (gfontsInfo), "Getting the details from Google Fonts…" meanwhile
+ok      asked: the head (card, the name), the tester (axes), the styles
+ok   2. drawn: the head and the tester in their faces, every style row too
+ok      the head is big
+ok      the styles preview: one face per style (10)
+ok   3. About: the description in three lines with More
+ok      the licence: "SIL Open Font License 1.1", its text under a closed <details>
+ok      designer, added, updated
+ok      "Open on fonts.google.com"
+ok      More: the whole description, More gone
+ok      the site opens through the app (openUrl), the family with + for spaces
+ok      the licence text opens
+ok   4. new tester text: asked after 400 ms (axes and styles, the head unchanged)
+ok      meanwhile the tester and the rows show the new text in the faces they had
+ok      then their new faces
+ok      size 72: the tester line at 72 px
+ok   5. Back: the list, scrolled where it was
+ok      Lato again: its details at once, not asked again; the tester starts over
+ok   6. Roboto: meta with its axes
+ok      two sliders from the list's axis names, at their defaults
+ok      the tester line at the defaults
+ok      18 style rows, the first "Thin 100", the last "Black 900 Italic"
+ok      Weight 700, Width 80: the values shown, font-variation-settings follows
+ok      no new preview for a slider
+ok      the axes face covers the ranges (weight 100 900, width 75% 100%), upright and italic
+ok      Apache License 2.0, three designers
+ok      "Weight N" for a weight with no name
+ok   7. the details fail: the reason in the page's words and Retry; the designer from the list
+ok      Download still there, without the number of files
+ok      Retry: asked again, "Getting the details…"
+ok      then the details, and "2 font files" under Download
+ok   8. a family's page left before its previews came: dropped
+ok      its details came meanwhile: shown at once, not asked again
+ok   9. Nabla (colour): meta says Colour; a note that Make a font needs a plain text font
+ok      Material Symbols (symbols, no category): the symbol note; the meta starts with its designer
+ok   10. Back: the list, then closed
+ok      no page errors
+all passed

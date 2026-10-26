@@ -1,0 +1,31 @@
+ok   1. Roboto (variable, on the phone): Use in Make a font, nothing to choose
+ok      Use: the sheet closes; until the file is read the chooser gate is shut (Choose waits, no link)
+ok      gfontsUse: only the Regular, the upright variable file
+ok      a toast: "Roboto is in Make a font"; Make a font scrolled into view
+ok   2. the Regular is Roboto's variable file; Bold: its own Bold instance
+ok      the Name: "Roboto" (no reserved names), no note; the gate open again; Build usable
+ok   3. while a font is being made: Use waits, saying why
+ok      pressing it anyway asks nothing
+ok      the font made: Use is usable again, the reason gone
+ok   4. Lato's page: "\"Lato\" is a Reserved Font Name: …"
+ok      Regular: Lato-Regular.ttf, Bold: Lato-Bold.ttf (None first among the choices)
+ok   5. static Lato: gfontsUse for the Regular and the Bold
+ok      Regular Lato-Regular.ttf, Bold the file Lato-Bold.ttf
+ok      the Name typed before is kept ("Roboto Neo"), no note
+ok   6. a Name holding "lato" (any case): the licence note; Build stays usable
+ok      another name: no note
+ok   7. the Name left to the page: "Lato" is not filled in (it is a Reserved Font Name)
+ok      typed anyway: the note
+ok   8. Regular Lato-Light.ttf, Bold None: only the Regular asked; Bold None
+ok      the family's page keeps that choice
+ok   9. UnifrakturCook (700 only): Regular its one file, Bold None (never the Regular's own file)
+ok      Molle (italic only): Regular Molle-Italic.ttf, Bold None
+ok   10. the file chooser open: Use waits, saying why
+ok      the chooser answered: Use is usable again
+ok   11. with Lato in the Regular slot, "My Lato" has the note
+ok      a Regular chosen from a file: the note goes (the family's names no longer apply)
+ok      no page errors
+ok   12. the file changed on the phone: the Regular slot says why; the gate open again; nothing chosen
+ok      the link is back
+ok      no page errors
+all passed

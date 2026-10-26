@@ -1,0 +1,31 @@
+ok   1. noto: the sixteen emoji under the name, in fntEmo_noto once loaded
+ok   1. twemoji: the sixteen emoji under the name, in fntEmo_twemoji once loaded
+ok   1. blobmoji: the sixteen emoji under the name, in fntEmo_blobmoji once loaded
+ok   1. openmoji: the sixteen emoji under the name, in fntEmo_openmoji once loaded
+ok      each is an image "Sample of <name>" (translate="no"), about 28 px
+ok      the four faces in document.fonts, loaded
+ok      each face draws the sample
+ok      each font read once (emojiSpecimenFont)
+ok      the rows keep Download (or Delete) as their first button
+ok   2. the tab shown again: the strips at once, the fonts not read again
+ok   3. iOS: the kept pictures asked (none); the note and "Show these emoji"
+ok      Show: emojiSpecimenFetch, "Reading the iOS emoji…", no button meanwhile
+ok      then sixteen pictures, 28 x 28, alt the emoji
+ok      each a PNG in the page (data:image/png)
+ok      the next render: the pictures at once, not read again
+ok   4. 360 px: the strips wrap, nothing wider than the screen
+ok      no page errors
+ok   5. a fresh page with the pictures kept: shown at once, nothing read
+ok      no page errors
+ok   6. the iOS emoji on the phone: "Read from the downloaded file."
+ok   7. the read fails: the page's sentence and the button again
+ok      again: the pictures, the error gone
+ok      an answer without a usable picture: "The sample could not be read from the emoji font."
+ok      no page errors
+ok   8. Chrome 97: Noto and Blobmoji (COLRv1) say the WebView is too old, and are not read
+ok      Twemoji (COLRv0) is drawn
+ok   9. no font for OpenMoji: no strip, nothing said
+ok      no page errors
+ok   10. an older build: no strip, no note, no button; the rows as before
+ok      no page errors
+all passed

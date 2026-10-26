@@ -1,0 +1,34 @@
+ok   1. only cards in view ask, 6 of them at most
+ok      in the card mode, with the sample text
+ok      a card waits with its text in the app font (translate="no")
+ok   2. answered: every card in view asked once, none past it, never more than 6 on their way
+ok      the card is drawn in its face (gfpv<n>)
+ok      one face per card in document.fonts
+ok   3. scrolled: the cards now in view ask, the ones drawn before do not
+ok      scrolled back: nothing asked again
+ok   4. typing waits 400 ms; then the cards in view ask for the last text only
+ok      a card shows the new text at once, in the face it had until its new one comes
+ok   5. answers of an older text are dropped: no face made of them
+ok      the new text's answers draw the cards in view
+ok      never more than 6 on their way
+ok   6. the size slider: 50, every line at 50 px
+ok   7. a search took the cards out: their answers are dropped
+ok      the one card left asks and is drawn
+ok   8. closed with previews on their way: no face made of them
+ok      no page errors
+ok   9. no preview (gf_no_preview): the name in the app font and "No preview"
+ok      a failed preview (network): the same
+ok      the others are drawn
+ok      scrolled away and back: not asked again
+ok      a new text asks again (and it fails again: "No preview" under the name)
+ok   10. Noto Sans JP (Jpan): the Japanese sample, asked with it
+ok      Cairo (Arab): the Arabic sample, its direction from the text (dir="auto")
+ok      Sunflower (Hang, no sample in the table): its own name
+ok      no script: Latin
+ok      no page errors
+ok   11. 64 cards in view: 64 faces, never more than 6 asked at a time
+ok      three texts later: at most 150 faces kept, the oldest taken out of document.fonts
+ok      every card still drawn in its newest face
+ok      never more than 6 asked at a time
+ok      no page errors
+all passed
