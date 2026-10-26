@@ -8,6 +8,9 @@ ok   1. bitmap_emoji: "Emoji font: This font's emoji are made of pictures (CBDT 
 ok   2. a GSUB table too large to write is the emoji's doing: it says so and what to change
 ok      a font over 96 MB: the font package's limit
 ok      too_many_glyphs keeps both counts
+ok      GPOS too large, emoji chosen: only the instancer writes GPOS, so the weight is named, not the emoji
+ok      GSUB too large, a variable face with emoji: either could be the cause, and the sentence says so
+ok      GSUB too large with Emoji None: the variable font at its weight, not the emoji
 ok   3. failed: the page's lead, Java's detail kept
 ok      failed with a bare detail: "Something went wrong: …"
 ok      a code the page does not know: Java's sentence as it is
@@ -23,4 +26,10 @@ ok      a known sentence is the page's; one the page does not know stays as it i
 ok      each line takes its own direction (dir="auto")
 ok      each line is indented at its start, here the left (margin-inline-start)
 ok   7. no page errors
+ok   8. de on a en-US phone: the glyph count "2.164 Glyphen", the progress "1.200 von 3.913"
+ok      too_many_glyphs: both counts grouped as the sentence groups 65,535
+ok      no page errors
+ok   8. en on a de-DE phone: the glyph count "2,164 glyphs", the progress "1,200 of 3,913"
+ok      too_many_glyphs: both counts grouped as the sentence groups 65,535
+ok      no page errors
 all passed

@@ -6,6 +6,8 @@
 // with PostScript outlines is refused (emoji_outlines); an emoji font chosen as the Regular carries the no-Latin warning and, being in color, holds
 // Build back while an emoji is chosen; in the emoji slot it has no such warning. The engine's warnings after a build are the page's sentences ("color",
 // the counts in the page's number format), each line in its own direction (dir="auto") and indented at its start; one the page does not know stays as Java wrote it.
+// A GSUB or GPOS table too large to write from a variable font fixed at its point (GPOS always, GSUB with Emoji None) names the weight, not the emoji;
+// GSUB from a variable face with emoji says it may be either. The counts (glyphs, progress, the sentences) follow the app's language, not the phone's.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -64,6 +66,17 @@ const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Reg
   check('   a font over 96 MB: the font package\'s limit', big.text === 'Bold font: The finished font would be too large for a font package (over 96 MB).', big.text);
   const many = await buildEnds({ code: 'too_many_glyphs', error: 'Regular font: The text font has 62,410 glyphs and the emoji font 3,913: together they pass the 65,535 glyphs a font can hold.' });
   check('   too_many_glyphs keeps both counts', many.text === 'Regular font: The font has 62,410 glyphs and the emoji font 3,913: together they pass the 65,535 glyphs one font can hold.', many.text);
+  // the same sentence from a variable font fixed at its point (the instancer writes GSUB and GPOS too): the emoji are not blamed when they are not the cause
+  await pickFile('regular', 'vf');
+  const gpos = await buildEnds({ code: 'too_big', error: 'Regular font: The GPOS table would be too big to write.' });
+  check('   GPOS too large, emoji chosen: only the instancer writes GPOS, so the weight is named, not the emoji', gpos.text === "Regular font: The font's GPOS table would be too large to write at this weight. Choose another font.", gpos.text);
+  const both = await buildEnds({ code: 'too_big', error: 'Bold font: The GSUB table would be too big to write.' });
+  check('   GSUB too large, a variable face with emoji: either could be the cause, and the sentence says so', both.text === "Bold font: The font's GSUB table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", both.text);
+  await page.selectOption('#fntEmojiSel', 'none');
+  const inst = await buildEnds({ code: 'too_big', error: 'Regular font: The GSUB table would be too big to write.' });
+  check('   GSUB too large with Emoji None: the variable font at its weight, not the emoji', inst.text === "Regular font: The font's GSUB table would be too large to write at this weight. Choose another font.", inst.text);
+  await pickFile('regular', 'static');
+  await page.selectOption('#fntEmojiSel', 'cat:twemoji');
   // ---- 3. a failure without a sentence of its own, a code the page does not know ----
   const made = await buildEnds({ code: 'failed', error: 'The font could not be made: Broken pipe' });
   check('3. failed: the page\'s lead, Java\'s detail kept', made.text === 'The font could not be made: Broken pipe', made.text);
@@ -110,6 +123,37 @@ const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Reg
   check('   each line is indented at its start, here the left (margin-inline-start)', pad.length === 4 && pad.every(m => m[0] > 0 && m[1] === 0), JSON.stringify(pad));
   await page.screenshot({ path: 'warnings.png' });
   check('7. no page errors', !errors.length, errors.join(' | '));
+  await ctx.close();
+
+  // ---- 8. counts in the app's language, as the words around them: German on an English phone, and English on a German phone ----
+  for (const [lang, locale, glyphs, of, err] of [
+    ['de', 'en-US', '2.164 Glyphen', '1.200 von 3.913', /hat 62\.410 Glyphen und die Emoji-Schriftart 3\.913: .*65\.535 Glyphen/],
+    ['en', 'de-DE', '2,164 glyphs', '1,200 of 3,913', /has 62,410 glyphs and the emoji font 3,913: .*65,535 glyphs/]]) {
+    const c2 = await b.newContext({ viewport: { width: 412, height: 900 }, locale });
+    const p2 = await c2.newPage();
+    const e2 = []; p2.on('pageerror', e => e2.push(e.message));
+    await p2.addInitScript(fmk.initScript, { mode: 'root', b64: FONTS, picks: { regular: 'static' }, hold: true });
+    await p2.goto(PAGE);
+    await p2.waitForTimeout(500);
+    await p2.evaluate(() => switchView('fonts'));
+    await p2.evaluate(c => LANG_ENGINE.set(c), lang);                            // (a German phone would start the app in German)
+    await p2.waitForTimeout(600);
+    await p2.click('#fntPick_regular');
+    await p2.waitForTimeout(250);
+    const row = await p2.evaluate(() => document.getElementById('fntRegRow').textContent);
+    await p2.selectOption('#fntEmojiSel', 'cat:twemoji');
+    await p2.evaluate(() => { window.__fmk.buildError = { code: 'too_many_glyphs', error: 'Regular font: The text font has 62,410 glyphs and the emoji font 3,913: together they pass the 65,535 glyphs a font can hold.' }; });
+    await p2.click('#fntBuildBtn');
+    await p2.evaluate(() => window.onFontMakerProgress(window.__fmk.buildJob, 'emoji', 1200, 3913));
+    const prog = await p2.evaluate(() => document.getElementById('fntBuildProgTxt').textContent);
+    await p2.evaluate(() => window.__fmk.stepAll());
+    await p2.waitForTimeout(100);
+    const res = await p2.evaluate(() => document.getElementById('fntBuildResult').textContent.trim());
+    check('8. ' + lang + ' on a ' + locale + ' phone: the glyph count "' + glyphs + '", the progress "' + of + '"', row.includes(glyphs) && prog.includes(of), JSON.stringify([row, prog]));
+    check('   too_many_glyphs: both counts grouped as the sentence groups 65,535', err.test(res), res);
+    check('   no page errors', !e2.length, e2.join(' | '));
+    await c2.close();
+  }
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');
   process.exit(bad ? 1 : 0);

@@ -6747,5 +6747,7 @@ p: [
 ["{0} needs Android 13 or newer.", "{0} perlu Android 13 atau yang lebih baru."],
 ["{0} needs a newer Android to show inside a font.", "{0} perlu Android yang lebih baru agar tampil di dalam font."],
 ["{0} was not on the phone when it was to be put in place.", "{0} tidak ada di ponsel saat akan dipasang di tempatnya."],
+["The font's {0} table would be too large to write at this weight. Choose another font.", "Tabel {0} font ini akan terlalu besar untuk ditulis pada ketebalan ini. Pilih font lain."],
+["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "Tabel {0} font ini akan terlalu besar untuk ditulis, pada ketebalan ini atau dengan emoji di dalamnya. Setel Emoji ke Tidak ada, atau pilih font lain."],
 ]
 };

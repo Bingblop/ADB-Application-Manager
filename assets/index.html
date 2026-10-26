@@ -44780,6 +44780,7 @@ Type any command above (e.g. pm list packages -d)</div>
             boldMode: 'none', boldTouched: false, emoji: 'none', name: '', nameTouched: false,
             job: '', building: false, cancelling: false, picking: '',
             rebuildId: '', buildFor: '',                                     // the My fonts entry being made again (its package is kept), and the one a running build makes
+            built: null,                                                     // what the last build was asked for: { emoji, variable: { Regular, Bold } } (fntTableTooBig)
             lib: null, cat: null, dl: {}, emoErr: {}, libBusy: {}, libMsg: {}, exporting: '',
             modeKey: '',                                                     // the working mode the two cards' status was asked in
             changer: null, changerBusy: false, changerRb: null, changerErr: '', changerStatusErr: '', applyId: '', changerStale: false,
@@ -44849,8 +44850,9 @@ Type any command above (e.g. pm list packages -d)</div>
         };
         // Java's sentence, for a code that has more than one: [code, what Java says (after the face it names in front), the page's sentence]. A group
         // of the pattern fills {0} and {1}: Java's details (a name, a size, an HTTP status, pm's Failure line, an exception's message) stay as they are.
+        // A sentence made by a function gets the match and the face Java named in front ('Regular', 'Bold', 'Emoji' or '').
         const FNT_SAID = [
-            ['too_big', /^The (GSUB|GPOS) table would be too big to write/, m => txF("With the emoji inside, the font's {0} table would be too large to write. Choose another emoji font, or set Emoji to None.", m[1])],
+            ['too_big', /^The (GSUB|GPOS) table would be too big to write/, (m, face) => fntTableTooBig(m[1], face)],
             ['too_big', /would be over \d+ MB|would be too big|too big for (one font|a font package)/, 'The finished font would be too large for a font package (over 96 MB).'],
             ['too_many_glyphs', /^The text font has ([\d,]+) glyphs and the emoji font ([\d,]+)/, m => txF('The font has {0} glyphs and the emoji font {1}: together they pass the 65,535 glyphs one font can hold.', fntInt(m[1]), fntInt(m[2]))],
             ['http', /\(HTTP (\d+)\)\. Update the app/, m => txF('The file is no longer at its address (HTTP {0}). Update the app.', m[1])],
@@ -44963,16 +44965,26 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function fntErrText(r, fallback) {
             r = r || {};
-            const raw = String(r.error || ''), fm = /^(Regular|Bold|Emoji) font: /.exec(raw), face = fm ? fm[1] : '', said = fm ? raw.slice(fm[0].length) : raw;
+            const raw = String(r.error || ''), fm = /^(Regular|Bold|Emoji) font: /.exec(raw), face = fm ? fm[1] : '';
+            // what pm or an exception printed can run over several lines (fmkFailLine keeps it whole): one line, so the patterns still find it
+            const said = (fm ? raw.slice(fm[0].length) : raw).replace(/\s*\n\s*/g, ' ').trim();
             let t = '';
             for (const [code, re, page] of FNT_SAID) {
                 const m = code === r.code ? re.exec(said) : null;
-                if (m) { t = typeof page === 'function' ? page(m) : txT(page); break; }
+                if (m) { t = typeof page === 'function' ? page(m, face) : txT(page); break; }
             }
             if (!t && r.code && FNT_ERR[r.code]) t = txT(FNT_ERR[r.code]);
             if (!t) return raw || txT(fallback || 'Something went wrong.');
             // the face the engine names in front of its sentence ("Bold font: ...") stays in front of the page's own sentence
             return face === 'Regular' ? txF('Regular font: {0}', t) : face === 'Bold' ? txF('Bold font: {0}', t) : face === 'Emoji' ? txF('Emoji font: {0}', t) : t;
+        }
+        // a GSUB or GPOS table too large to write (OtLayout, 16-bit offsets). The instancer writes either, for a variable face at the chosen point; the
+        // emoji merge writes only GSUB, and only in a build with emoji. Java says the same sentence for both, so the page tells them apart by the build
+        function fntTableTooBig(table, face) {
+            const b = fnt.built || { emoji: false, variable: {} }, merge = table === 'GSUB' && b.emoji, inst = !!b.variable[face];
+            if (merge && !inst) return txF("With the emoji inside, the font's {0} table would be too large to write. Choose another emoji font, or set Emoji to None.", table);
+            if (merge) return txF("The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", table);
+            return txF("The font's {0} table would be too large to write at this weight. Choose another font.", table);
         }
         // an engine warning in the page's words (one it does not know stays as Java wrote it), and a list of them
         function fntWarnText(w) {
@@ -44986,7 +44998,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function fntSafe(id) { return String(id == null ? '' : id).replace(/[^A-Za-z0-9_-]/g, '_'); }
         function fntNum(v) { v = +v || 0; return String(Math.round(v * 100) / 100); }
-        function fntInt(s) { return Number(String(s).replace(/[^0-9]/g, '')).toLocaleString(); }
+        // a count in the app's language, as the words around it (in English the sentences write 65,535, so English grouping then, not the phone's)
+        function fntInt(s) { return Number(String(s).replace(/[^0-9]/g, '')).toLocaleString(langLocale() || 'en'); }
         function fntDevice() { return (fnt.lib && fnt.lib.device) || {}; }
         function fntSdk() { return (fnt.cat && fnt.cat.sdk) || fntDevice().sdk || 0; }
         function fntEntry(id) { return ((fnt.lib && fnt.lib.entries) || []).find(e => e.id === id) || null; }
@@ -45060,7 +45073,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = '<button type="button" class="op-mode-btn" id="fntPick_' + slot + '" onclick="fntPick(\'' + slot + '\')"' + (fnt.building || fnt.picking ? ' disabled' : '') + '>' + (p ? 'Change' : 'Choose') + '</button>';
             if (!p) return '<div class="rf-row"><div class="rf-name">' + title + '<span>' + hint + '</span></div>' + btn + '</div>';
             const i = p.info || {};
-            const bits = [((i.family || '') + ' ' + (i.subfamily || '')).trim(), txF('{0} glyphs', Number(i.glyphs || 0).toLocaleString()),
+            const bits = [((i.family || '') + ' ' + (i.subfamily || '')).trim(), txF('{0} glyphs', fntInt(i.glyphs || 0)),
                 slot === 'emoji' ? (i.color || '') : txF('{0} outlines', i.outlines || 'TrueType'), i.variable ? txT('Variable font') : ''].filter(Boolean);
             return '<div class="rf-row"><div class="rf-name"><bdi translate="no">' + escapeHtml(p.fileName || i.fullName || '') + '</bdi><span translate="no">' + escapeHtml(bits.join(' · ')) + '</span></div>' + btn + '</div>';
         }
@@ -45354,6 +45367,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!r.ok) { errNote(res, fntErrText(r, 'Could not start')); return; }
             haptic();
             fnt.job = r.job || ''; fnt.building = true; fnt.cancelling = false; fnt.buildFor = remake || '';
+            fnt.built = { emoji: !!emoji, variable: { Regular: !!req.regular.coords, Bold: !!(bold && bold.coords) } };
             res.innerHTML = '';
             fntProg(txT('Starting…'), -1);
             fntRenderMake();
@@ -45371,7 +45385,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!fnt.building || fnt.cancelling || (fnt.job && job !== fnt.job)) return;
             const k = FNT_STAGES.indexOf(stage), label = FNT_STAGE_TEXT[stage] ? txT(FNT_STAGE_TEXT[stage]) : txT('Working…');
             done = +done || 0; total = +total || 0;
-            fntProg(total > 0 ? label + ' ' + txF('{0} of {1}', done.toLocaleString(), total.toLocaleString()) : label, k, done, total);
+            fntProg(total > 0 ? label + ' ' + txF('{0} of {1}', fntInt(done), fntInt(total)) : label, k, done, total);
         };
         window.onFontMakerBuilt = function (job, json) {
             if (!fnt.building || (fnt.job && job !== fnt.job)) return;

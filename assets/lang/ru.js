@@ -6747,5 +6747,7 @@ p: [
 ["{0} needs Android 13 or newer.", "{0}: нужен Android 13 или новее."],
 ["{0} needs a newer Android to show inside a font.", "{0}: нужен более новый Android, чтобы показываться внутри шрифта."],
 ["{0} was not on the phone when it was to be put in place.", "{0} не было на телефоне, когда его нужно было поставить на место."],
+["The font's {0} table would be too large to write at this weight. Choose another font.", "Таблица {0} шрифта при этой насыщенности стала бы слишком большой для записи. Выберите другой шрифт."],
+["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "Таблица {0} шрифта стала бы слишком большой для записи — при этой насыщенности или с эмодзи. Выберите для «Эмодзи» значение «Нет» или выберите другой шрифт."],
 ]
 };

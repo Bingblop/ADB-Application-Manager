@@ -6747,5 +6747,7 @@ p: [
 ["{0} needs Android 13 or newer.", "يتطلب {0} Android 13 أو أحدث."],
 ["{0} needs a newer Android to show inside a font.", "يتطلب {0} إصدار Android أحدث ليظهر داخل خط."],
 ["{0} was not on the phone when it was to be put in place.", "لم يكن {0} على الهاتف حين كان يجب وضعه في مكانه."],
+["The font's {0} table would be too large to write at this weight. Choose another font.", "سيصبح جدول {0} في الخط أكبر من أن يُكتب بهذا السُمك. اختر خطًا آخر."],
+["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "سيصبح جدول {0} في الخط أكبر من أن يُكتب، بهذا السُمك أو مع الرموز التعبيرية داخله. اضبط الرموز التعبيرية على لا شيء، أو اختر خطًا آخر."],
 ]
 };

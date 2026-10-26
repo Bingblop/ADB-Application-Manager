@@ -6747,5 +6747,7 @@ p: [
 ["{0} needs Android 13 or newer.", "{0} için Android 13 veya daha yenisi gerekir."],
 ["{0} needs a newer Android to show inside a font.", "{0} için bir yazı tipinin içinde görünmek üzere daha yeni bir Android gerekir."],
 ["{0} was not on the phone when it was to be put in place.", "{0}, yerine konacağı sırada telefonda yoktu."],
+["The font's {0} table would be too large to write at this weight. Choose another font.", "Yazı tipinin {0} tablosu bu kalınlıkta yazılamayacak kadar büyük olurdu. Başka bir yazı tipi seçin."],
+["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "Yazı tipinin {0} tablosu, bu kalınlıkta ya da emojiler içindeyken, yazılamayacak kadar büyük olurdu. Emoji'yi Yok olarak ayarlayın veya başka bir yazı tipi seçin."],
 ]
 };

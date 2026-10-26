@@ -6747,5 +6747,7 @@ p: [
 ["{0} needs Android 13 or newer.", "{0} には Android 13 以降が必要です。"],
 ["{0} needs a newer Android to show inside a font.", "{0} をフォント内で表示するには、より新しい Android が必要です。"],
 ["{0} was not on the phone when it was to be put in place.", "{0} は、所定の場所に置くときに端末にありませんでした。"],
+["The font's {0} table would be too large to write at this weight. Choose another font.", "このウェイトでは、フォントの {0} テーブルが大きすぎて書き込めません。別のフォントを選んでください。"],
+["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "このウェイトか、入れた絵文字のために、フォントの {0} テーブルが大きすぎて書き込めません。絵文字を「なし」にするか、別のフォントを選んでください。"],
 ]
 };

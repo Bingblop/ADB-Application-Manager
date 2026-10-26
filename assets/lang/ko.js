@@ -6747,5 +6747,7 @@ p: [
 ["{0} needs Android 13 or newer.", "{0}에는 Android 13 이상이 필요합니다."],
 ["{0} needs a newer Android to show inside a font.", "{0}을(를) 글꼴 안에 표시하려면 더 새로운 Android가 필요합니다."],
 ["{0} was not on the phone when it was to be put in place.", "{0}을(를) 제자리에 놓으려 할 때 휴대전화에 없었습니다."],
+["The font's {0} table would be too large to write at this weight. Choose another font.", "이 굵기에서는 글꼴의 {0} 테이블이 너무 커져 쓸 수 없습니다. 다른 글꼴을 선택하세요."],
+["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "이 굵기 또는 넣은 이모지 때문에 글꼴의 {0} 테이블이 너무 커져 쓸 수 없습니다. 이모지를 없음으로 설정하거나 다른 글꼴을 선택하세요."],
 ]
 };

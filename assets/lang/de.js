@@ -6747,5 +6747,7 @@ p: [
 ["{0} needs Android 13 or newer.", "{0} braucht Android 13 oder neuer."],
 ["{0} needs a newer Android to show inside a font.", "{0} braucht ein neueres Android, um in einer Schriftart angezeigt zu werden."],
 ["{0} was not on the phone when it was to be put in place.", "{0} war nicht auf dem Telefon, als es an seinen Platz gebracht werden sollte."],
+["The font's {0} table would be too large to write at this weight. Choose another font.", "Die {0}-Tabelle der Schriftart wäre in dieser Stärke zu groß zum Schreiben. Wählen Sie eine andere Schriftart."],
+["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "Die {0}-Tabelle der Schriftart wäre zu groß zum Schreiben, in dieser Stärke oder mit den Emoji. Stellen Sie „Emoji“ auf „Keiner“ oder wählen Sie eine andere Schriftart."],
 ]
 };

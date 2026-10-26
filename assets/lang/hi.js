@@ -6747,5 +6747,7 @@ p: [
 ["{0} needs Android 13 or newer.", "{0} को Android 13 या नया चाहिए।"],
 ["{0} needs a newer Android to show inside a font.", "फ़ॉन्ट के अंदर दिखने के लिए {0} को नया Android चाहिए।"],
 ["{0} was not on the phone when it was to be put in place.", "जब {0} को उसकी जगह रखना था, तब वह फ़ोन पर नहीं थी।"],
+["The font's {0} table would be too large to write at this weight. Choose another font.", "इस मोटाई पर फ़ॉन्ट की {0} टेबल लिखने के लिए बहुत बड़ी हो जाएगी। कोई दूसरा फ़ॉन्ट चुनें।"],
+["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "फ़ॉन्ट की {0} टेबल लिखने के लिए बहुत बड़ी हो जाएगी, इस मोटाई पर या इमोजी अंदर होने पर। इमोजी को कोई नहीं पर सेट करें, या कोई दूसरा फ़ॉन्ट चुनें।"],
 ]
 };

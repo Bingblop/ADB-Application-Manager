@@ -1,8 +1,9 @@
 // v7.17.0 Custom Fonts: what goes wrong outside a build, in the page's words with Java's details kept. Emoji downloads: a file no longer at its
 // address (HTTP 404, "Update the app") told apart from a server that answered 503 (try later), a network failure with its detail, and a zip without
-// the font (its name kept). My fonts: pm's Failure line after "The phone did not install the font:", and the bridge's busy refusals (an Export while
-// the font is installed, a second save screen). The font changer: the lock that names the system user (UID 1000) and root (UID 0), and a SamsungFonts
-// script's ERROR line ("cannot put DroidSans.ttf in place.") as a sentence of the page. System emoji: the root-only lock. In German the HTTP status
+// the font (its name kept). My fonts: pm's Failure line after "The phone did not install the font:", pm's answer over several lines (an exception and
+// its trace, for an install and an uninstall) kept whole on one line, and the bridge's busy refusals (an Export while the font is installed, a second
+// save screen). The font changer: the lock that names the system user (UID 1000) and root (UID 0), a SamsungFonts script's ERROR line ("cannot put
+// DroidSans.ttf in place.") as a sentence of the page, and a sans.loc read back over two lines. System emoji: the root-only lock. In German the HTTP status
 // stays in the sentence; in Arabic the build's warnings run right to left, each line in its own direction and indented at its own start.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -62,6 +63,27 @@ const download = async (page, id) => { await page.click('#fntEmo_' + id + ' .op-
     await page.waitForTimeout(200);
     const pm = await txt(page, '#fntLib_c4d5e6 .fnt-err');
     check('2. pm\'s Failure line after "The phone did not install the font:"', pm === 'The phone did not install the font: Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package com.monotype.android.font.Lato_8b21d0 signatures do not match newer version; ignoring!]', pm);
+    // pm's answer with no Failure line (an exception and its trace): Java sends it whole, over several lines; the details stay, on one line
+    const multi = (m, cb, code, error) => page.evaluate(([m, cb, code, error]) => {
+      window.AndroidBridge[m] = function (id) { window.__fmk.calls.push(m + ':' + id); setTimeout(() => window[cb](id, JSON.stringify({ ok: false, code, error })), 20); return JSON.stringify({ ok: true, job: 'jm' }); };
+    }, [m, cb, code, error]);
+    const EXC = "Exception occurred while executing 'install-write':\njava.lang.SecurityException: Permission Denial: writing com.android.server.pm.PackageInstallerService\n\tat android.os.Parcel.createExceptionOrNull(Parcel.java:3011)";
+    const EXC1 = "Exception occurred while executing 'install-write': java.lang.SecurityException: Permission Denial: writing com.android.server.pm.PackageInstallerService at android.os.Parcel.createExceptionOrNull(Parcel.java:3011)";
+    await multi('fontMakerInstall', 'onFontMakerInstalled', 'install_failed', EXC);
+    await page.click('#fntLib_c4d5e6 .mode-btn-row .mode-action-btn');
+    await page.waitForTimeout(200);
+    const pmx = await txt(page, '#fntLib_c4d5e6 .fnt-err');
+    check('   pm\'s exception over several lines: "The phone did not install the font:" and every detail, on one line', pmx === 'The phone did not install the font: ' + EXC1, pmx);
+    await multi('fontMakerUninstall', 'onFontMakerUninstalled', 'uninstall_failed', EXC.replace('install-write', 'uninstall'));
+    await page.click('#fntLib_f1a2b3 .mode-btn-row .mode-action-btn');           // Uninstall on Inter Display
+    await page.waitForTimeout(200);
+    const unx = await txt(page, '#fntLib_f1a2b3 .fnt-err');
+    check('   the same for an uninstall: "The phone did not uninstall the font:" and the details', unx === 'The phone did not uninstall the font: ' + EXC1.replace('install-write', 'uninstall'), unx);
+    await multi('fontMakerInstall', 'onFontMakerInstalled', 'failed', 'The font could not be installed: line one\nline two');
+    await page.click('#fntLib_c4d5e6 .mode-btn-row .mode-action-btn');
+    await page.waitForTimeout(200);
+    const fx = await txt(page, '#fntLib_c4d5e6 .fnt-err');
+    check('   a failure whose message runs over two lines keeps the page\'s lead and both lines', fx === 'The font could not be installed: line one line two', fx);
     await refuse(page, 'fontMakerExport', { code: 'busy', error: 'This font is being installed, applied or saved. Wait for it to finish.' });
     await page.evaluate(() => [...document.querySelectorAll('#fntLib_f1a2b3 .mode-action-btn')].find(x => x.textContent === 'Export').click());
     await page.waitForTimeout(100);
@@ -94,6 +116,16 @@ const download = async (page, id) => { await page.click('#fntEmo_' + id + ' .op-
     const body = await page.evaluate(() => document.getElementById('fntChangerBody').innerText.replace(/\s+/g, ' ').trim());
     check('4. a script\'s ERROR line is a sentence of the page', /DroidSans\.ttf could not be put in place\./.test(body) && !/cannot put/.test(body), body);
     check('   what the phone read back is shown with it (sans.loc default#default)', /Read back from the phone: sans\.loc default#default/.test(body), body);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    // a sans.loc that reads back over two lines: the page's sentence, with what it reads on one line
+    const { ctx, page, errors } = await open(b, { mode: 'root', applyError: { code: 'failed', error: 'The phone did not take the font (sans.loc reads "/data/app_fonts/0/Lato_8b21d0\n#Lato_8b21d0").', readBack: { sansLoc: 'x', files: [] } } });
+    await page.click('#fntLib_c4d5e6 .mode-action-btn:nth-child(2)');
+    await page.waitForTimeout(300);
+    const err = await txt(page, '#fntChangerBody .fnt-err');
+    check('   sans.loc read back over two lines: "The phone did not take the font (sans.loc reads "…")."', err === 'The phone did not take the font (sans.loc reads "/data/app_fonts/0/Lato_8b21d0 #Lato_8b21d0").', err);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

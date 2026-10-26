@@ -6747,5 +6747,7 @@ p: [
 ["{0} needs Android 13 or newer.", "{0} 需要 Android 13 或更高版本。"],
 ["{0} needs a newer Android to show inside a font.", "{0} 需要更新的 Android 才能在字体中显示。"],
 ["{0} was not on the phone when it was to be put in place.", "要将 {0} 放到位时，它不在手机上。"],
+["The font's {0} table would be too large to write at this weight. Choose another font.", "在此字重下，字体的 {0} 表会大到无法写入。请选择其他字体。"],
+["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "在此字重下或加入表情符号后，字体的 {0} 表会大到无法写入。请将表情符号设为无，或选择其他字体。"],
 ]
 };
