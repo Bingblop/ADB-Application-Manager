@@ -294,10 +294,12 @@ public class FontInspectTest {
         inter.guessRegular + " " + inter.guessBold + " " + inter.instances.size());
 
     FontInspect.Info v1 = inspect(fixture(fonts, "fontinspect/NotoColorEmoji-COLRv1.ttf"));
-    check("Noto Color Emoji subset: COLRv1, 4 characters, no Latin and no warning about it (an emoji font needs none)",
-        v1.color.equals("COLRv1") && v1.codepoints == 4 && !v1.latin && v1.warnings.isEmpty(), v1.color + " " + v1.codepoints + " " + v1.warnings);
+    // the no-Latin warning holds for an emoji font too: as the Regular or Bold it changes almost no text (the emoji slot drops it)
+    check("Noto Color Emoji subset: COLRv1, 4 characters, no Latin, and the no-Latin warning",
+        v1.color.equals("COLRv1") && v1.codepoints == 4 && !v1.latin && v1.warnings.equals(Collections.singletonList(FontInspect.W_NO_LATIN)), v1.color + " " + v1.codepoints + " " + v1.warnings);
     FontInspect.Info v0 = inspect(fixture(fonts, "fontinspect/Twemoji-COLRv0.ttf"));
-    check("Twemoji subset: COLRv0, family Twemoji Mozilla", v0.color.equals("COLRv0") && v0.family.equals("Twemoji Mozilla") && v0.warnings.isEmpty(),
+    check("Twemoji subset: COLRv0, family Twemoji Mozilla, the no-Latin warning", v0.color.equals("COLRv0") && v0.family.equals("Twemoji Mozilla")
+        && v0.warnings.equals(Collections.singletonList(FontInspect.W_NO_LATIN)),
         v0.color + " " + v0.family + " " + v0.warnings);
     throwsFont("Noto Color Emoji CBDT subset: refused with code bitmap_emoji, naming CBDT and a COLR font to pick", "bitmap_emoji", "(CBDT)",
         () -> inspect(fixture(fonts, "fontinspect/NotoColorEmoji-CBDT.ttf")));
@@ -415,10 +417,11 @@ public class FontInspectTest {
     byte[] twemoji = fixture(fonts, "fontinspect/Twemoji-COLRv0.ttf");
     byte[] lato = fixture(fonts, "cmap/Lato-cmap.ttf");
     FontInspect.Info noPal = inspect(edited(noto, f -> f.remove("CPAL")));
-    check("COLR without CPAL: not a colour font, with the no-palette warning (and no no-Latin warning)",
-        noPal.color.equals("none") && noPal.warnings.equals(Collections.singletonList(FontInspect.W_NO_PALETTE)), noPal.color + " " + noPal.warnings);
+    check("COLR without CPAL: not a colour font, with the no-palette warning, then the no-Latin one",
+        noPal.color.equals("none") && noPal.warnings.equals(Arrays.asList(FontInspect.W_NO_PALETTE, FontInspect.W_NO_LATIN)), noPal.color + " " + noPal.warnings);
     FontInspect.Info bad = inspect(edited(noto, f -> f.put("COLR", new byte[] { 0, 1, 0, 5 })));
-    check("a COLR table cut off: the damaged-colour warning", bad.color.equals("none") && bad.warnings.equals(Collections.singletonList(FontInspect.W_COLOR_DAMAGED)),
+    check("a COLR table cut off: the damaged-colour warning, then the no-Latin one", bad.color.equals("none")
+        && bad.warnings.equals(Arrays.asList(FontInspect.W_COLOR_DAMAGED, FontInspect.W_NO_LATIN)),
         bad.color + " " + bad.warnings);
     FontInspect.Info badList = inspect(edited(noto, f -> {
       byte[] t = f.table("COLR").clone();
@@ -434,7 +437,8 @@ public class FontInspectTest {
     }));
     check("COLR version 1 with only version 0 base glyphs: COLRv0", v0in1.color.equals("COLRv0"), v0in1.color);
     FontInspect.Info emptyColr = inspect(edited(twemoji, f -> f.put("COLR", new byte[14])));
-    check("an empty COLR (no base glyphs): not a colour font, no warning", emptyColr.color.equals("none") && emptyColr.warnings.isEmpty(),
+    check("an empty COLR (no base glyphs): not a colour font, only the no-Latin warning", emptyColr.color.equals("none")
+        && emptyColr.warnings.equals(Collections.singletonList(FontInspect.W_NO_LATIN)),
         emptyColr.color + " " + emptyColr.warnings);
     FontInspect.Info svg = inspect(edited(lato, f -> f.put("SVG ", new byte[10])));
     check("SVG next to outlines: SVG, with the SVG warning", svg.color.equals("SVG") && svg.warnings.equals(Collections.singletonList(FontInspect.W_SVG)),
@@ -446,7 +450,8 @@ public class FontInspectTest {
     check("sbix next to outlines: sbix", sbix.color.equals("sbix") && sbix.warnings.equals(Collections.singletonList(String.format(FontInspect.W_BITMAP, "sbix"))),
         sbix.color + " " + sbix.warnings);
     FontInspect.Info both = inspect(edited(twemoji, f -> f.put("SVG ", new byte[10])));
-    check("COLR and SVG: COLR is the one used, no warning", both.color.equals("COLRv0") && both.warnings.isEmpty(), both.color + " " + both.warnings);
+    check("COLR and SVG: COLR is the one used, no SVG warning", both.color.equals("COLRv0") && both.warnings.equals(Collections.singletonList(FontInspect.W_NO_LATIN)),
+        both.color + " " + both.warnings);
   }
 
   // ---------- refused files ----------

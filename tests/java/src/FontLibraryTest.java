@@ -681,6 +681,10 @@ public class FontLibraryTest {
         String pick = body(ma, "private JSONObject fmkCopyPick(");
         is("an emoji pick with PostScript outlines is refused at pick with code emoji_outlines (the merge takes only TrueType ones)",
                 pick.contains("if (!\"TrueType\".equals(info.outlines))") && pick.contains("new Sfnt.FontException(\"emoji_outlines\""), true);
+        int emojiSlot = pick.indexOf("if (\"emoji\".equals(slot)) {");
+        is("…and the emoji slot drops the no-Latin warning, which the Regular and Bold keep (an emoji font there changes almost no text)",
+                emojiSlot > 0 && pick.indexOf("info.warnings.remove(FontInspect.W_NO_LATIN)", emojiSlot) > emojiSlot
+                        && pick.indexOf("info.warnings.remove(FontInspect.W_NO_LATIN)", emojiSlot) < pick.indexOf("picks.put(", emojiSlot), true);
 
         // onDestroy stops what the tab started
         String destroy = body(ma, "protected void onDestroy()");

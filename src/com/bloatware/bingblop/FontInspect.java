@@ -163,7 +163,8 @@ public final class FontInspect {
 
         if (in.symbol) in.warnings.add(W_SYMBOL);
         else if (in.codepoints == 0) in.warnings.add(W_NO_CHARACTERS);
-        else if (!in.latin && in.color.equals("none") && !f.has("COLR")) in.warnings.add(W_NO_LATIN);   // an emoji font needs no letters
+        // an emoji font too: picked as the Regular or Bold it would change almost no text (MainActivity drops it for the emoji slot)
+        else if (!in.latin) in.warnings.add(W_NO_LATIN);
         if ((in.fsType & 0x0002) != 0) in.warnings.add(W_RESTRICTED);
         if (in.avar2) in.warnings.add(W_AVAR2);
         return in;

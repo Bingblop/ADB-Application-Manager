@@ -6912,7 +6912,7 @@ public class MainActivity extends Activity {
     /**
      * Copies the chosen file to cache/fontmaker/in/ (at most 96 MB: one byte more and the copy stops and is deleted), reads what it is with
      * FontInspect and keeps it under a new random token, the only name the page gets for it. The emoji slot takes only a colour (COLR) font
-     * with TrueType outlines.
+     * with TrueType outlines, and is not warned that it has no letters.
      * {ok, token, fileName, size, info} or {ok:false, code, error}.
      */
     private JSONObject fmkCopyPick(String slot, Uri uri) {
@@ -6947,6 +6947,7 @@ public class MainActivity extends Activity {
                 if (!"TrueType".equals(info.outlines))
                     throw new Sfnt.FontException("emoji_outlines", "This emoji font's outlines are PostScript ones (" + info.outlines
                             + "); only an emoji font with TrueType outlines (glyf) can be added. Choose another emoji font.");
+                info.warnings.remove(FontInspect.W_NO_LATIN);                 // an emoji font needs no letters
             }
             picks.put(new FontLibrary.Pick(slot, token, name, f, size, info.color, info.outlines, info.variable));
             kept = true;

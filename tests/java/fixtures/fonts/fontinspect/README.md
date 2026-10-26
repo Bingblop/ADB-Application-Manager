@@ -56,8 +56,8 @@ What fontTools reads, and the rules FontInspect adds on top of it (the script mi
 * the guesses: the named instance whose wght, clamped to the axis, is closest to 400 (Regular) or 700 (Bold), ties going to the one
   nearest the defaults of the other axes and then to the first, unless wght itself clamped to its range (the other axes at their
   defaults) is closer; with no wght axis, Regular is every axis at its default and Bold is none;
-* warnings, in this order: the colour ones; then symbol map, or no characters, or no basic Latin (only for a font without COLR or other
-  colour glyphs); restricted-license embedding (fsType bit 0x0002); avar version 2.
+* warnings, in this order: the colour ones; then symbol map, or no characters, or no basic Latin (an emoji font too: MainActivity drops
+  that one for the emoji slot); restricted-license embedding (fsType bit 0x0002); avar version 2.
 
 A font that changed in this folder or in `../cmap` fails the suite until `expect` is run again; a new or changed font in another suite's
 folder gets a `NOTE` and is checked only for being read or refused with a FontException.
