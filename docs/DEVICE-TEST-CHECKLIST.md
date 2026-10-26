@@ -684,6 +684,73 @@ None of this has been run on a phone yet. Open the Console tab, ADB Shell part, 
 - [ ] **Protected screens.** Take a screenshot of an app that blocks screenshots: the file is saved but black, which is Android's doing; the toast still names the file.
 - [ ] **Another language:** the two buttons, their hints and the toasts are translated and nothing is cut off.
 
+## 41. Custom Fonts: make a font (v7.17.0)
+
+Any phone, no working mode, no internet. The font engine was checked on a computer against fontTools, HarfBuzz, FreeType, aapt2 and apksigner; nothing on the Custom Fonts tab has been run on a phone. Have four font files in Downloads (plus, for the refusals below, a `.ttc`, a `.woff2` and a file that is not a font, and for section 42 a variable font with no Weight axis): a static Regular with its Bold (for example Lato Regular and Bold), an `.otf` with PostScript (CFF) outlines, and a variable font (for example Roboto Flex or Inter).
+
+- [ ] **Where it is.** The tab is on out of the box, under **More** (not pinned to the bottom bar), its tile in the More sheet reads *Custom Fonts* (*Fonts* on screens 340 px wide or narrower), and while the tab is open the bottom bar's More slot shows its icon and reads **Fonts**; the top bar, off out of the box (Settings > Navigation > *Bottom bar + top bar*), calls it *Custom Fonts*, after Root Features and right before About. Settings > Feature List can switch it off and move it.
+- [ ] **A Regular and a Bold.** Make a font > Regular > **Choose**: Android's file chooser opens and, while it is open, the card's Choose and Change buttons are greyed out. Pick the Regular: the row names the file and "Lato Regular · N glyphs · TrueType outlines"; the preview draws "Aa Bb 123" and the sentence in your font, and the Name box fills in. Bold > **Another font file** > Choose the Bold: the preview's bold line is drawn in it. **Build font**: the bar names each step, then "Lato is ready in My fonts." and the font is listed in My fonts, its first line drawn in itself.
+- [ ] **A CFF font.** Build an `.otf` with PostScript outlines (its row says "CFF outlines"): the step "Converting the outlines to TrueType..." shows, and the result in My fonts looks like the original.
+- [ ] **Refusals.** Choose a `.ttc`, a `.woff2` and a file that is not a font: each is refused with its own sentence (a font collection, a web font, "This file is not a font.") in the error colour, and the file chosen before stays on the row, so Build font stays as it was (on, with the `.otf` from the step before still the Regular).
+- [ ] **The Name.** Clear the Name: Build font is off. Type only spaces: the hint "The name needs at least one letter, digit or sign that can be seen." and Build font off. A name of 40 characters is the limit.
+- [ ] **Cancel.** Start a build of a big font with emoji (section 43) and tap **Cancel**: "The build was cancelled." and nothing new in My fonts.
+- [ ] **Leaving and coming back.** Start a build, switch to another tab and back: the bar is still going (or the result is shown); turn the screen off for a minute during a build: it finishes.
+
+## 42. Custom Fonts: variable fonts (v7.17.0)
+
+Any phone, no working mode.
+
+- [ ] **The panel.** Choose a variable font as the Regular: its row ends with "Variable font", and a panel shows **Style** (the font's named styles) and a slider per axis. It starts at weight 400 or the nearest, using a named style when there is one. Move the Weight slider: Style reads **Custom** and the preview follows at once; land on a named style: its name comes back.
+- [ ] **Bold from the same file.** Bold switched by itself to **Same variable font, another weight**, with its own panel at weight 700 or the nearest. (It does this only while Bold has not been changed by hand since the app was opened. Section 41 set Bold to Another font file, so close the app from Recents and open it again before this section, or Bold stays at Another font file.) Drag its Weight to or below the Regular's: the note "This Bold is no heavier than the Regular, so bold text would look like the rest of the text." shows and Build font stays on. Put it back to 700, Build font: "Fixing the variable font at the chosen weight..." shows; in My fonts the line says Regular and Bold.
+- [ ] **No Weight axis.** With a variable font that has no Weight axis (a width- or shape-only display font), Bold stays at **None**; choosing Same variable font shows "This font has no Weight axis, so this Bold would look like the Regular. With None, Android makes bold text from the Regular."
+
+## 43. Custom Fonts: emoji fonts (v7.17.0)
+
+Any phone, with internet for the downloads. Android 13 or newer for Noto Color Emoji and Blobmoji inside a font.
+
+- [ ] **The five rows.** Emoji fonts lists Noto Color Emoji, Twemoji, Blobmoji, OpenMoji and iOS emoji, each with its version, format, size, licence and **License** / **Source** links that open in the browser. The iOS row says it is used only as the phone's system emoji with root and never inside a font. On Android 8 to 12, Noto Color Emoji and Blobmoji say "Needs Android 13 to show inside a font." and OpenMoji shows its COLRv0 build.
+- [ ] **Download.** Download Noto Color Emoji: a bar ("2.1 MB of 4.8 MB"), then "Noto Color Emoji downloaded" and the row says Downloaded. Download Twemoji (a zip, unpacked). Start the iOS download (41.8 MB) and **Cancel**: nothing kept. Turn on airplane mode and try one: the row says "The download failed (…). Check the connection and try again.", with Android's reason inside the brackets.
+- [ ] **Emoji inside a font.** Make a font with a Regular, a Bold and Emoji set to Noto Color Emoji (or Twemoji on Android 12 or older): "Putting the emoji in..." shows, and the row in My fonts says "Emoji: Noto Color Emoji" and is about 5 MB bigger per face. Once it is on the phone (section 44 or 45), type a red heart, a family, a flag and a skin-tone thumb in Samsung Notes and Messages: they are the chosen emoji, and the letters, digits and # * are your font's. Note which apps keep their own emoji (WhatsApp, Telegram and the like draw their own).
+- [ ] **Hindi and other joined scripts.** With that font in use, type Hindi (क्ष, त्र, श्र) in Samsung Notes: the conjuncts join as with the phone's own font.
+- [ ] **A refused emoji file.** Emoji > My own emoji font file, and choose a CBDT font (the iOS file is not offered; any other bitmap emoji font will do): "This font's emoji are made of pictures (CBDT or sbix), which cannot go inside a font. Choose a COLR emoji font."
+- [ ] **Delete.** Delete a downloaded emoji font: its button reads **Download** once more; a font made with it keeps its emoji.
+
+## 44. Custom Fonts: My fonts on a Samsung phone (v7.17.0)
+
+A Samsung phone. Install works with any working mode, or without one through Android's installer. Write down the One UI version and the security patch date (Settings > About phone > Software information).
+
+- [ ] **The One UI box.** On One UI 8.5 or newer (or 8.0 to 8.4 with the March 2026 patch or newer) the box above the rows says Samsung's Font style does not apply fonts made on this phone and to use Apply. On older One UI there is no such box. On a phone of another make: "Font packages work only on Samsung phones. You can still export them." and Install and Apply are greyed out.
+- [ ] **Install.** With a working mode, **Install**: the app's own dialog says "Source: a font package this app made (Custom Fonts, My fonts)" and that the file matches the SHA-256 recorded when it was made; Install: "Installed", and the row reads Installed with **Uninstall**. The package is listed in Settings > Apps under your Name. Without a working mode, Android's installer opens (the row says "Sent to Android's installer.").
+- [ ] **Font style.** Samsung's Settings > Display > Font size and style > Font style: on older One UI pick your font by its Name: the whole phone uses it, Default puts it back. On One UI 8.5: write down whether the font is listed at all, and what happens when you pick it (the expected answer is that it is not applied).
+- [ ] **Make again.** On an installed font, **Make again**: the card shows "Making Lato again" with **New font**; choose the files again (another weight, say) and Build font: "Lato is made again in My fonts.", the row's Version is one higher and its button reads **Update**. Update installs over the installed copy without uninstalling.
+- [ ] **Uninstall.** Uninstall with a working mode: "Uninstalled". Without one: the font's App info opens and the row says "Tap Uninstall on the font's App info." Either way the font stays in My fonts.
+- [ ] **Export.** Export: Android's save screen with your Name and `.apk`; save to Downloads: "Saved Lato.apk". Install that file on another Samsung phone if you have one.
+- [ ] **Delete.** Delete asks "Delete Lato?", then "Deleted Lato". A font that is In use is refused with "Reset the font changer first."
+
+## 45. Custom Fonts: the font changer (v7.17.0)
+
+A Samsung phone with Root and su granted, or Shizuku running as the system user (UID 1000) or as root (UID 0). Not run on a phone: Kyle's phone cannot be rooted. On a phone without either, only the first item applies. Before Apply, know the two ways back: **Reset to Default** on this card, or Default in Samsung's Font style.
+
+- [ ] **Locked.** With Shizuku over ADB (UID 2000), ADB TCP or Wireless Debugging: the Font changer's tag reads LOCKED, the card shows one row with a greyed-out Locked button and "Needs Root or the system user", and Apply on a My fonts row carries a small lock. A tap on it asks "The font changer needs Super User. Open Root Features to check if your device supports Super User?" (or, on a phone with su, switches to Root and the root manager asks).
+- [ ] **The tag.** With Root and su, or Shizuku as UID 0: ROOT. With Shizuku as UID 1000: SYSTEM USER. Phone font reads Default, or the font in use.
+- [ ] **Apply.** Apply a font: "Applying...", then "The font is applied." (or "Done. Apps show the change once they restart."), the row reads In use, Phone font names it, and the read-back box lists sans.loc, each file with its size, the start of its SHA-256 and the label `u:object_r:app_fonts_data_file:s0`. Apps show the font at once; Samsung's Settings, the lock screen and the keyboard too. Restart the phone: the font is still in use.
+- [ ] **Reset to Default.** "The default font is back.", Phone font reads Default, the read-back box shows `default#default`. Apps show the phone's own font.
+- [ ] **A font without a Bold.** Apply a font with Bold None after one with a Bold: bold text is the thickened Regular, not the old Bold.
+- [ ] **Make again, then Apply.** A font made again that is In use stays In use with Apply greyed out; Reset to Default, then Apply: the new files are on the phone.
+- [ ] **Delete while applied.** Delete the font in use: refused. Reset, then Delete: its folder under `/data/app_fonts/0/` is removed too (check with a root file manager).
+
+## 46. Custom Fonts: system emoji (v7.17.0)
+
+Root with su granted, or Shizuku running as root (UID 0); the system user is not enough. Not run on a phone. Write down whether the phone's emoji were updated by Google Play services (`/data/fonts/files` holds an updated copy of one of the phone's emoji fonts, a file named like that emoji font or its PostScript name; any other updated font there does not stop the swap): on such a phone the swap is refused.
+
+- [ ] **Locked.** Without root (including Shizuku as UID 1000): the card's tag reads LOCKED with "Needs Super User".
+- [ ] **Use as the phone's emoji.** Pick a downloaded emoji font (try the iOS one) and **Use as the phone's emoji**: the read-back box shows each emoji file of the phone with its checksum after; open Samsung Notes and another app: their emoji are the chosen ones. Apps that were open may need to be reopened.
+- [ ] **Soft reboot.** Soft reboot asks first and says what the apps come back with; after it, the emoji are still the chosen ones. Open this app again and check the working-mode badge.
+- [ ] **Undo.** "The phone's own emoji are back.", and the copy in `/data/adb/adbmgr_fonts/` is gone. Reopen an app: its own emoji.
+- [ ] **Restart.** Use as the phone's emoji again, then restart the phone normally: the phone's own emoji are back, and Undo is not offered.
+- [ ] **An updated emoji font.** On a phone whose emoji Google Play services updated, the card refuses the swap and says why; nothing changes.
+- [ ] **Delete.** Deleting the emoji font in use is refused with "Undo the system emoji first."
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
