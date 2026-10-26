@@ -871,7 +871,7 @@ public class FontLibraryTest {
             int nw = 0;
             while (wc.find()) {
                 nw++;
-                String text = wc.group(2).replace("\\\"", "\"").replace("\\'", "'").replace("%s", "CBDT").replace("%d", "1");
+                String text = wc.group(2).replace("\\\"", "\"").replace("\\'", "'").replace("%s", "CBDT").replace("%,d", "1,234").replace("%d", "1");
                 boolean found = false;
                 for (Pattern sp : said) if (sp.matcher(text).find()) { found = true; break; }
                 is("FNT_WARN words the engine's " + wc.group(1), found, true);

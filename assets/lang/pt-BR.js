@@ -5530,7 +5530,6 @@ x: {
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Esta fonte variável monta os glifos a partir de componentes variáveis (VARC), com os quais o app não consegue criar uma fonte fixa.",
 "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Esta fonte variável mapeia os eixos uns nos outros (avar versão 2). O app aplica esse mapeamento como o HarfBuzz faz, então os pesos dela podem parecer um pouco diferentes dos apps que não fazem isso.",
 "The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Os emojis ficariam grandes demais para esta fonte. Escolha outra fonte de emojis ou defina Emojis como Nenhum.",
-"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "A fonte tem tantos glifos que algumas sequências de emojis com U+FE0F podem aparecer como emojis separados.",
 "This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "Este arquivo de fonte está danificado ou usa algo que o app não consegue ler. Escolha outra fonte de emojis.",
 "This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Esta fonte é complexa demais para o app colocar os emojis dela dentro de uma fonte. Escolha outra fonte de emojis."
 },
@@ -6751,5 +6750,6 @@ p: [
 ["{0} was not on the phone when it was to be put in place.", "{0} não estava no telefone quando devia ser colocado no lugar."],
 ["The font's {0} table would be too large to write at this weight. Choose another font.", "A tabela {0} da fonte ficaria grande demais para gravar neste peso. Escolha outra fonte."],
 ["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "A tabela {0} da fonte ficaria grande demais para gravar, neste peso ou com os emojis dentro. Defina Emojis como Nenhum ou escolha outra fonte."],
+["The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", "A fonte tem tantos glifos que há sequências da fonte de emojis com U+FE0F que podem aparecer como emojis separados (total: {0})."],
 ]
 };

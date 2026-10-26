@@ -1681,8 +1681,8 @@ public class EmojiMergeTest {
 
   /**
    * Lato + Twemoji makes 9 U+FE0F copies. With the text font padded so that only some of them (or none) fit, the merge still ends with
-   * 65,535 glyphs: the characters left without a copy keep (c, U+FE0F) on the emoji glyph itself, with W_FE0F_SEQUENCES. One glyph more
-   * and the emoji font's own 624 glyphs do not fit.
+   * 65,535 glyphs: the characters left without a copy keep (c, U+FE0F) on the emoji glyph itself, with W_FE0F_SEQUENCES and the count of
+   * the sequences that then shape otherwise. One glyph more and the emoji font's own 624 glyphs do not fit.
    */
   static void fe0fCopiesAtTheLimit() throws Exception {
     Sfnt E = font(TWEMOJI);
@@ -1700,8 +1700,10 @@ public class EmojiMergeTest {
         continue;
       }
       Sfnt M = Sfnt.parse(r.font.toBytes());
-      check(name + ": merges into 65,535 glyphs, warning " + EmojiMerge.W_FE0F_SEQUENCES, M.numGlyphs() == 65535
-          && r.warnings.contains(EmojiMerge.W_FE0F_SEQUENCES), M.numGlyphs() + " glyphs, warnings " + r.warnings);
+      List<int[]> broken = fe0fBroken(E, M, n);
+      String warning = String.format(Locale.ROOT, EmojiMerge.W_FE0F_SEQUENCES, broken.size());
+      check(name + ": merges into 65,535 glyphs, warning \"" + warning + "\" (the Twemoji sequences that shape otherwise than in Twemoji alone)",
+          M.numGlyphs() == 65535 && !broken.isEmpty() && r.warnings.equals(Arrays.asList(warning)), M.numGlyphs() + " glyphs, warnings " + r.warnings);
       byte[][] mg = Glyf.readAll(M);
       TreeMap<Integer, Integer> mcmap = Cmap.read(M, null);
       Cmap.Uvs mu = Cmap.readUvs(M);
@@ -1721,6 +1723,62 @@ public class EmojiMergeTest {
     int over = 65535 - m + 1;
     throwsFont(String.format(Locale.ROOT, "%,d text glyphs + Twemoji are refused with code too_many_glyphs, the emoji font counted as its 624 glyphs", over),
         "too_many_glyphs", String.format(Locale.ROOT, "%,d glyphs and the emoji font 624:", over), () -> EmojiMerge.merge(padded(LATO, over), E, null));
+
+    // The copies that fit go to the glyphs the most Twemoji ligatures put before U+FE0F: U+2764 (in 80 of them) is the fifth of the 9
+    // in code point order, and keeps the one copy there is room for
+    int n = 65535 - m - 1, heart = ecmap.get(0x2764) + n;
+    EmojiMerge.Result r = EmojiMerge.merge(padded(LATO, n), E, null);
+    Sfnt M = Sfnt.parse(r.font.toBytes());
+    TreeMap<Integer, Integer> mcmap = Cmap.read(M, null);
+    int fe = resolve(Cmap.readUvs(M), mcmap, 0x2764, 0xFE0F);
+    List<int[]> broken = fe0fBroken(E, M, n);
+    int hearts = 0, lost = 0;
+    String first = null;
+    for (int[] c : fe0fSequences(E)) {
+      boolean in = false;
+      for (int i = 0; i + 1 < c.length; i++) in |= c[i] == 0x2764 && c[i + 1] == 0xFE0F;
+      if (!in) continue;
+      hearts++;
+      for (int[] b : broken) if (Arrays.equals(b, c) && lost++ == 0) first = hex(c);
+    }
+    byte[][] mg = Glyf.readAll(M);
+    check(String.format(Locale.ROOT, "%,d text glyphs + Twemoji (room for 1 of the 9 copies): U+2764 gets it, the most used, so the %d Twemoji sequences "
+        + "with U+2764 U+FE0F shape as in Twemoji alone", n, hearts), fe == 65534 && samePadded(mg[fe], mg[heart]) && hearts >= 80 && lost == 0,
+        "(U+2764, U+FE0F) gives " + fe + ", " + lost + " of " + hearts + " differ, first " + first);
+    check("   the warning gives the count of the Twemoji sequences that shape otherwise, those of the 8 characters left without a copy ("
+        + broken.size() + ")", !broken.isEmpty() && r.warnings.equals(Arrays.asList(String.format(Locale.ROOT, EmojiMerge.W_FE0F_SEQUENCES, broken.size()))),
+        r.warnings.toString());
+  }
+
+  /** The sequences of {@code E}'s ligatures with U+FE0F's glyph in them, as code points (each glyph by its lowest code point). */
+  static List<int[]> fe0fSequences(Sfnt E) throws Exception {
+    TreeMap<Integer, Integer> ecmap = Cmap.read(E, null);
+    HashMap<Integer, Integer> cpOf = new HashMap<>();
+    for (Map.Entry<Integer, Integer> e : ecmap.descendingMap().entrySet()) cpOf.put(e.getValue(), e.getKey());
+    BitSet any = new BitSet();
+    any.set(0, E.numGlyphs());
+    int f = ecmap.get(0xFE0F);
+    LinkedHashSet<List<Integer>> seqs = new LinkedHashSet<>();
+    for (int[] l : EmojiMerge.ligatures(E.table("GSUB"), any, new long[] { EmojiMerge.LIGATURE_WORK }, null)) {
+      List<Integer> c = new ArrayList<>();
+      boolean fe = false;
+      for (int i = 1; i < l.length && c != null; i++) {
+        fe |= l[i] == f;
+        if (cpOf.containsKey(l[i])) c.add(cpOf.get(l[i])); else c = null;
+      }
+      if (fe && c != null) seqs.add(c);
+    }
+    List<int[]> out = new ArrayList<>();
+    for (List<Integer> c : seqs) out.add(toArray(c));
+    return out;
+  }
+
+  /** Those of {@link #fe0fSequences} the suite's applier shapes in M (E merged after n text glyphs) otherwise than in E alone (+n). */
+  static List<int[]> fe0fBroken(Sfnt E, Sfnt M, int n) throws Exception {
+    Shaper se = new Shaper(E), sm = new Shaper(M);
+    List<int[]> out = new ArrayList<>();
+    for (int[] c : fe0fSequences(E)) if (!Arrays.equals(shifted(se.shape(c, "Zyyy"), n), sm.shape(c, "Zyyy"))) out.add(c);
+    return out;
   }
 
   /** Damaged COLR / GSUB / GDEF in the emoji font, each refused with a sentence and code emoji_damaged (FontBuilder names the emoji font for it). */

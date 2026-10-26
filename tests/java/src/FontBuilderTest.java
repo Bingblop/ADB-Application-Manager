@@ -873,7 +873,7 @@ public class FontBuilderTest {
       FontBuilder.build(r, null);
     });
     check("65,500 glyphs without emoji: built", FontBuilder.build(simple(manyBytes, "X"), null).regular != null);
-    // 65,387 + 147 leave one glyph id for the 3 U+FE0F copies Twemoji needs: built, the other two characters warned about
+    // 65,387 + 147 leave one glyph id for the 3 U+FE0F copies Twemoji needs: built, with the count of the sequences the other two lose
     Sfnt near = Sfnt.parse(font(NOTO));
     byte[][] ng = Arrays.copyOf(Glyf.readAll(near), 65387);
     for (int i = 0; i < ng.length; i++) if (ng[i] == null) ng[i] = new byte[0];
@@ -887,8 +887,9 @@ public class FontBuilderTest {
     String nearFails;
     FontBuilder.Result built = null;
     try { built = FontBuilder.build(nr, null); nearFails = null; } catch (Sfnt.FontException x) { nearFails = x.code + ": " + x.getMessage() + " cause " + x.getCause(); }
-    check("65,387 glyphs and Twemoji with 3 U+FE0F copies, room for 1: built with " + EmojiMerge.W_FE0F_SEQUENCES,
-        built != null && Sfnt.parse(built.regular).numGlyphs() == 65535 && built.warnings.contains(EmojiMerge.W_FE0F_SEQUENCES),
+    String fe0f = String.format(Locale.ROOT, EmojiMerge.W_FE0F_SEQUENCES, 2);
+    check("65,387 glyphs and Twemoji with 3 U+FE0F copies, room for 1: built with " + fe0f,
+        built != null && Sfnt.parse(built.regular).numGlyphs() == 65535 && built.warnings.contains(fe0f),
         nearFails != null ? nearFails : built.warnings.toString());
 
     // An engine's RuntimeException is still a FontException, with the cause kept

@@ -5530,7 +5530,6 @@ x: {
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Этот вариативный шрифт строит глифы из вариативных компонентов (VARC), из которых приложение не может сделать фиксированный шрифт.",
 "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Этот вариативный шрифт отображает свои оси друг на друга (avar версии 2). Приложение применяет это отображение так же, как HarfBuzz, поэтому его насыщенности могут выглядеть чуть иначе, чем в приложениях, которые этого не делают.",
 "The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Эмодзи были бы слишком большими для этого шрифта. Выберите другой шрифт эмодзи или выберите для «Эмодзи» значение «Нет».",
-"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "В шрифте так много глифов, что несколько последовательностей эмодзи с U+FE0F могут показываться как отдельные эмодзи.",
 "This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "Этот файл шрифта повреждён или использует то, что приложение не может прочитать. Выберите другой шрифт эмодзи.",
 "This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Этот шрифт слишком сложен, чтобы приложение могло поместить его эмодзи в шрифт. Выберите другой шрифт эмодзи."
 },
@@ -6751,5 +6750,6 @@ p: [
 ["{0} was not on the phone when it was to be put in place.", "{0} не было на телефоне, когда его нужно было поставить на место."],
 ["The font's {0} table would be too large to write at this weight. Choose another font.", "Таблица {0} шрифта при этой насыщенности стала бы слишком большой для записи. Выберите другой шрифт."],
 ["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "Таблица {0} шрифта стала бы слишком большой для записи — при этой насыщенности или с эмодзи. Выберите для «Эмодзи» значение «Нет» или выберите другой шрифт."],
+["The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", "В шрифте так много глифов, что последовательности эмодзи с U+FE0F из шрифта эмодзи могут показываться как отдельные эмодзи (всего: {0})."],
 ]
 };

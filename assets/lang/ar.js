@@ -5530,7 +5530,6 @@ x: {
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "يبني هذا الخط المتغيّر حروفه الرسومية من مكوّنات متغيّرة (VARC)، ولا يستطيع التطبيق أن يصنع منها خطًا ثابتًا.",
 "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "يربط هذا الخط المتغيّر محاوره بعضها ببعض (avar الإصدار 2). يطبّق التطبيق هذا الربط كما يفعل HarfBuzz، لذا قد تبدو أوزانه مختلفة قليلًا عن التطبيقات التي لا تفعل ذلك.",
 "The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "ستكون الرموز التعبيرية أكبر من اللازم لهذا الخط. اختر خط رموز تعبيرية آخر، أو اضبط الرموز التعبيرية على لا شيء.",
-"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "في الخط عدد كبير جدًا من الحروف الرسومية، لذا قد تظهر بعض تسلسلات الرموز التعبيرية التي تحتوي على U+FE0F كرموز تعبيرية منفصلة.",
 "This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "ملف الخط هذا تالف، أو يستخدم شيئًا لا يستطيع التطبيق قراءته. اختر خط رموز تعبيرية آخر.",
 "This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "هذا الخط معقّد جدًا ولا يستطيع التطبيق وضع رموزه التعبيرية داخل خط. اختر خط رموز تعبيرية آخر."
 },
@@ -6751,5 +6750,6 @@ p: [
 ["{0} was not on the phone when it was to be put in place.", "لم يكن {0} على الهاتف حين كان يجب وضعه في مكانه."],
 ["The font's {0} table would be too large to write at this weight. Choose another font.", "سيصبح جدول {0} في الخط أكبر من أن يُكتب بهذا السُمك. اختر خطًا آخر."],
 ["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "سيصبح جدول {0} في الخط أكبر من أن يُكتب، بهذا السُمك أو مع الرموز التعبيرية داخله. اضبط الرموز التعبيرية على لا شيء، أو اختر خطًا آخر."],
+["The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", "في الخط عدد كبير جدًا من الحروف الرسومية، لذا قد تظهر تسلسلات من خط الرموز التعبيرية تحتوي على U+FE0F كرموز تعبيرية منفصلة (العدد: {0})."],
 ]
 };

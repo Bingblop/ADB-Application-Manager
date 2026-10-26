@@ -120,7 +120,7 @@ const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Reg
     "This font's colour glyphs are bitmaps (CBDT): bitmap emoji cannot be put inside a font, so only its outlines would be used.",
     'The font has more characters than the older part of its character map (format 4) can hold: it lists the first 31000 of the 40112 characters below U+FFFF. Android reads the newer part, which has them all; a few older apps may miss the rest.',
     'The Bold font is no heavier than the Regular one, so bold text will look like the rest of the text.',
-    'The text font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.',
+    "The text font has so many glyphs that 1,234 of the emoji font's sequences with U+FE0F in them may show as separate emoji.",
     'A warning the page has no words for.']; });
   await page.click('#fntBuildBtn');
   await page.waitForTimeout(400);
@@ -128,7 +128,7 @@ const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Reg
   check('6. the warnings in the page\'s words: color, not colour; the bitmap kind kept', w[0] && w[0][0] === "This font's color glyphs are bitmaps (CBDT): bitmap emoji cannot be put inside a font, so only its outlines would be used.", JSON.stringify(w[0]));
   check('   the character map line keeps its counts, in the page\'s number format', w[1] && /lists the first 31,000 of the 40,112 characters below U\+FFFF/.test(w[1][0]), JSON.stringify(w[1]));
   check('   a known sentence is the page\'s; one the page does not know stays as it is', w[2] && w[2][0] === 'The Bold font is no heavier than the Regular one, so bold text will look like the rest of the text.' && w[4] && w[4][0] === 'A warning the page has no words for.', JSON.stringify(w.slice(2)));
-  check('   the emoji sequences a font with very many glyphs cannot keep: "The font has so many glyphs…"', w[3] && w[3][0] === 'The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.', JSON.stringify(w[3]));
+  check('   the emoji sequences a font with very many glyphs cannot keep: "The font has so many glyphs…", their count kept', w[3] && w[3][0] === "The font has so many glyphs that 1,234 of the emoji font's sequences with U+FE0F in them may show as separate emoji.", JSON.stringify(w[3]));
   check('   each line takes its own direction (dir="auto")', w.length === 5 && w.every(x => x[1] === 'auto'), JSON.stringify(w.map(x => x[1])));
   const pad = await page.evaluate(() => [...document.querySelectorAll('#fntBuildResult .fnt-warns li')].map(li => { const c = getComputedStyle(li); return [parseFloat(c.marginLeft), parseFloat(c.marginRight)]; }));
   check('   each line is indented at its start, here the left (margin-inline-start)', pad.length === 5 && pad.every(m => m[0] > 0 && m[1] === 0), JSON.stringify(pad));

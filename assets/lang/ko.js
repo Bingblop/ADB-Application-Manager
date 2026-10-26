@@ -5530,7 +5530,6 @@ x: {
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "이 가변 글꼴은 가변 구성요소(VARC)로 글리프를 만들기 때문에 앱이 고정 글꼴로 만들 수 없습니다.",
 "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "이 가변 글꼴은 축끼리 서로 매핑합니다(avar 버전 2). 앱은 HarfBuzz와 같은 방식으로 이 매핑을 적용하므로, 적용하지 않는 앱과 굵기가 조금 다르게 보일 수 있습니다.",
 "The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "이 글꼴에서는 이모지가 너무 커집니다. 다른 이모지 글꼴을 선택하거나 이모지를 없음으로 설정하세요.",
-"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "글꼴의 글리프가 너무 많아서 U+FE0F가 들어간 일부 이모지 시퀀스가 따로 떨어진 이모지로 보일 수 있습니다.",
 "This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "이 글꼴 파일이 손상되었거나 앱이 읽을 수 없는 요소를 사용합니다. 다른 이모지 글꼴을 선택하세요.",
 "This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "이 글꼴은 너무 복잡해서 앱이 그 이모지를 글꼴 안에 넣을 수 없습니다. 다른 이모지 글꼴을 선택하세요."
 },
@@ -6751,5 +6750,6 @@ p: [
 ["{0} was not on the phone when it was to be put in place.", "{0}을(를) 제자리에 놓으려 할 때 휴대전화에 없었습니다."],
 ["The font's {0} table would be too large to write at this weight. Choose another font.", "이 굵기에서는 글꼴의 {0} 테이블이 너무 커져 쓸 수 없습니다. 다른 글꼴을 선택하세요."],
 ["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "이 굵기 또는 넣은 이모지 때문에 글꼴의 {0} 테이블이 너무 커져 쓸 수 없습니다. 이모지를 없음으로 설정하거나 다른 글꼴을 선택하세요."],
+["The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", "글꼴의 글리프가 너무 많아서 이모지 글꼴에서 U+FE0F가 들어간 시퀀스 {0}개가 따로 떨어진 이모지로 보일 수 있습니다."],
 ]
 };

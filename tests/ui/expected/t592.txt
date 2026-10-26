@@ -26,7 +26,7 @@ ok      Emoji None: the line goes, Build is on
 ok   6. the warnings in the page's words: color, not colour; the bitmap kind kept
 ok      the character map line keeps its counts, in the page's number format
 ok      a known sentence is the page's; one the page does not know stays as it is
-ok      the emoji sequences a font with very many glyphs cannot keep: "The font has so many glyphs…"
+ok      the emoji sequences a font with very many glyphs cannot keep: "The font has so many glyphs…", their count kept
 ok      each line takes its own direction (dir="auto")
 ok      each line is indented at its start, here the left (margin-inline-start)
 ok   7. no page errors

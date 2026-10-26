@@ -5530,7 +5530,6 @@ x: {
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "这个可变字体用可变组件 (VARC) 构建字形，应用无法据此制作固定字体。",
 "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "这个可变字体会将其轴相互映射（avar 版本 2）。应用会像 HarfBuzz 一样应用该映射，因此其字重可能与不这样做的应用略有不同。",
 "The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "表情符号在这个字体中会过大。请选择其他表情符号字体，或将表情符号设为无。",
-"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "这个字体的字形太多，少数包含 U+FE0F 的表情符号序列可能显示为分开的表情符号。",
 "This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "此字体文件已损坏，或使用了本应用无法读取的内容。请选择其他表情符号字体。",
 "This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "此字体过于复杂，本应用无法将其表情符号放入字体中。请选择其他表情符号字体。"
 },
@@ -6751,5 +6750,6 @@ p: [
 ["{0} was not on the phone when it was to be put in place.", "要将 {0} 放到位时，它不在手机上。"],
 ["The font's {0} table would be too large to write at this weight. Choose another font.", "在此字重下，字体的 {0} 表会大到无法写入。请选择其他字体。"],
 ["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "在此字重下或加入表情符号后，字体的 {0} 表会大到无法写入。请将表情符号设为无，或选择其他字体。"],
+["The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", "这个字体的字形太多，表情符号字体中有 {0} 个包含 U+FE0F 的序列可能显示为分开的表情符号。"],
 ]
 };

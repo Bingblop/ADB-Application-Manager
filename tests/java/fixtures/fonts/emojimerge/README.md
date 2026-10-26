@@ -210,4 +210,17 @@ so `expect` added only its `seq` lines, and `verify` passed the nine merged font
 The fixture fonts were not made again: `verify` passed the nine merged fonts the suite makes and recorded their new hashes (the U+FE0F
 glyph's advance changed in three of them).
 
+## Checks made on full fonts after the third review
+
+* When not all U+FE0F copies fit, the glyph ids left go to the emoji glyphs the most ligatures put before U+FE0F (ties by code point), not
+  to the lowest code points; `W_FE0F_SEQUENCES` gives the count of the ligatures left without their U+FE0F glyph. Lato 2.015 padded with
+  empty glyphs to 24,156 glyphs, merged with OpenMoji 17.0.0 COLRv0 (41,369 glyphs,
+  `8376fee074649ece235faba0d157d851f3d93632f0540ad1165feba1aba9ba37`; 21 copies, room for 10), shaped with HarfBuzz over emoji-test.txt
+  (5,244 lines) against OpenMoji alone: 317 lines gave other glyphs with the engine before (198 with U+2764, 108 with U+27A1), 10 now.
+  Of OpenMoji's 1,008 ligatures with its U+FE0F glyph, 330 broke before and 12 now, the count the warning gives. Padded to 24,166 (room for
+  none) the font is the same as before: 995 lines and 976 ligatures, and the warning says 976. Unpadded Lato with OpenMoji COLRv0 is the
+  same font, byte for byte.
+
+The fixture fonts were not made again, and the nine merged fonts the suite makes keep their hashes.
+
 Not run: on a device. The suite and the checks above ran on the JDK and on a desktop with the tools named here only.

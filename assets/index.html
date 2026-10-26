@@ -44942,7 +44942,7 @@ Type any command above (e.g. pm list packages -d)</div>
             [/^The emoji font's positioning table \(GPOS\) was left out/, "The emoji font's positioning table (GPOS) was left out; its emoji do not need it to show."],
             [/^A few of the emoji font's sequences rely on glyph classes/, "A few of the emoji font's sequences rely on glyph classes the merged font cannot keep, so they may show as separate emoji."],
             [/^The text font's Apple layout table \(morx\) was left out/, "The text font's Apple layout table (morx) was left out so that the emoji sequences work; its OpenType features are kept."],
-            [/^The text font has so many glyphs that a few emoji sequences/, 'The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.'],
+            [/^The text font has so many glyphs that ([\d,]+) of the emoji font's sequences/, m => txF("The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", fntInt(m[1]))],
             [/^The font has more characters than the older part of its character map \(format 4\) can hold: it lists the first (\d+) of the (\d+)/,
                 m => txF('The font has more characters than the older part of its character map (format 4) can hold: it lists the first {0} of the {1} characters below U+FFFF. Android reads the newer part, which has them all; a few older apps may miss the rest.', fntInt(m[1]), fntInt(m[2]))]
         ];

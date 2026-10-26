@@ -5530,7 +5530,6 @@ x: {
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "यह वेरिएबल फ़ॉन्ट अपने ग्लिफ़ वेरिएबल कंपोनेंट (VARC) से बनाता है, जिनसे ऐप फ़िक्स्ड फ़ॉन्ट नहीं बना सकता।",
 "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "यह वेरिएबल फ़ॉन्ट अपने अक्षों को एक-दूसरे पर मैप करता है (avar वर्शन 2)। ऐप यह मैपिंग HarfBuzz की तरह लागू करता है, इसलिए इसकी मोटाइयां उन ऐप्स से थोड़ी अलग दिख सकती हैं जो ऐसा नहीं करते।",
 "The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "इस फ़ॉन्ट के लिए इमोजी बहुत बड़े हो जाएँगे। कोई दूसरा इमोजी फ़ॉन्ट चुनें, या इमोजी को कोई नहीं पर सेट करें।",
-"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "फ़ॉन्ट में इतने ग्लिफ़ हैं कि U+FE0F वाले कुछ इमोजी सीक्वेंस अलग-अलग इमोजी के रूप में दिख सकते हैं।",
 "This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "यह फ़ॉन्ट फ़ाइल खराब है, या उसमें ऐसा कुछ है जिसे ऐप नहीं पढ़ सकता। कोई दूसरा इमोजी फ़ॉन्ट चुनें।",
 "This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "यह फ़ॉन्ट इतना जटिल है कि ऐप इसके इमोजी को फ़ॉन्ट के अंदर नहीं रख सकता। कोई दूसरा इमोजी फ़ॉन्ट चुनें।"
 },
@@ -6751,5 +6750,6 @@ p: [
 ["{0} was not on the phone when it was to be put in place.", "जब {0} को उसकी जगह रखना था, तब वह फ़ोन पर नहीं थी।"],
 ["The font's {0} table would be too large to write at this weight. Choose another font.", "इस मोटाई पर फ़ॉन्ट की {0} टेबल लिखने के लिए बहुत बड़ी हो जाएगी। कोई दूसरा फ़ॉन्ट चुनें।"],
 ["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "फ़ॉन्ट की {0} टेबल लिखने के लिए बहुत बड़ी हो जाएगी, इस मोटाई पर या इमोजी अंदर होने पर। इमोजी को कोई नहीं पर सेट करें, या कोई दूसरा फ़ॉन्ट चुनें।"],
+["The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", "फ़ॉन्ट में इतने ग्लिफ़ हैं कि इमोजी फ़ॉन्ट के U+FE0F वाले सीक्वेंस अलग-अलग इमोजी के रूप में दिख सकते हैं (कुल: {0})।"],
 ]
 };

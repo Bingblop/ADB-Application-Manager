@@ -5530,7 +5530,6 @@ x: {
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "この可変フォントは可変コンポーネント (VARC) でグリフを組み立てるため、アプリは固定フォントにできません。",
 "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "この可変フォントは軸どうしを対応付けています (avar バージョン 2)。アプリは HarfBuzz と同じようにこの対応付けを適用するため、対応付けを適用しないアプリとはウェイトが少し違って見えることがあります。",
 "The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "このフォントでは絵文字が大きくなりすぎます。別の絵文字フォントを選ぶか、絵文字を「なし」にしてください。",
-"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "フォントのグリフが多すぎるため、U+FE0F を含む一部の絵文字シーケンスが別々の絵文字として表示されることがあります。",
 "This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "このフォントファイルが壊れているか、アプリが読めない形式を使っています。別の絵文字フォントを選んでください。",
 "This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "このフォントは複雑すぎて、アプリがその絵文字をフォントに入れられません。別の絵文字フォントを選んでください。"
 },
@@ -6751,5 +6750,6 @@ p: [
 ["{0} was not on the phone when it was to be put in place.", "{0} は、所定の場所に置くときに端末にありませんでした。"],
 ["The font's {0} table would be too large to write at this weight. Choose another font.", "このウェイトでは、フォントの {0} テーブルが大きすぎて書き込めません。別のフォントを選んでください。"],
 ["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "このウェイトか、入れた絵文字のために、フォントの {0} テーブルが大きすぎて書き込めません。絵文字を「なし」にするか、別のフォントを選んでください。"],
+["The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", "フォントのグリフが多すぎるため、絵文字フォントの U+FE0F を含むシーケンスのうち {0} 個が別々の絵文字として表示されることがあります。"],
 ]
 };

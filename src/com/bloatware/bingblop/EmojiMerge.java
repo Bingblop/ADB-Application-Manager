@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -44,7 +46,8 @@ public final class EmojiMerge {
     public static final String W_EMOJI_GPOS = "The emoji font's positioning table (GPOS) was left out; its emoji do not need it to show.";
     public static final String W_GLYPH_CLASSES = "A few of the emoji font's sequences rely on glyph classes the merged font cannot keep, so they may show as separate emoji.";
     public static final String W_MORX = "The text font's Apple layout table (morx) was left out so that the emoji sequences work; its OpenType features are kept.";
-    public static final String W_FE0F_SEQUENCES = "The text font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.";
+    /** Takes the count of the emoji font's sequences that lose their U+FE0F form ({@code String.format(Locale.ROOT, ...)}). */
+    public static final String W_FE0F_SEQUENCES = "The text font has so many glyphs that %,d of the emoji font's sequences with U+FE0F in them may show as separate emoji.";
 
     /** Lookup flag bits that read GDEF's glyph classes or mark sets (IgnoreBase, IgnoreLigatures, IgnoreMarks, UseMarkFilteringSet, MarkAttachmentType). */
     static final int CLASS_FLAGS = 0xFF1E;
@@ -392,7 +395,8 @@ public final class EmojiMerge {
      * to the default for each character with an emoji variation sequence ({@link EmojiData#hasEmojiVariation}) that shows the emoji glyph:
      * Android takes (c, U+FE0F) from the first font whose cmap has the pair and else from the system emoji font. Where a ligature of the
      * emoji font names the character's glyph and U+FE0F, (c, U+FE0F) maps to a key instead (see {@link Front}); a key that has to be a copy
-     * gets one only while the merged font has glyph ids left, and past that the pair gives the glyph ({@link #W_FE0F_SEQUENCES}).
+     * gets one only while the merged font has glyph ids left (the glyphs in the most such ligatures first), and past that the pair gives the
+     * glyph ({@link #W_FE0F_SEQUENCES}, with the count of the ligatures that lose their U+FE0F glyph).
      */
     private static Front characters(Maps maps, Sfnt emoji, int n, int dupBase, int[] joiner, Sfnt out, TreeMap<Integer, Integer> map,
             List<String> warnings, FontProgress p) throws Sfnt.FontException {
@@ -461,6 +465,7 @@ public final class EmojiMerge {
         long[] budget = { LIGATURE_WORK };
         List<int[]> ligs = new ArrayList<int[]>();
         BitSet named = new BitSet();
+        final HashMap<Integer, Integer> uses = new HashMap<Integer, Integer>();       // named glyph -> how often a ligature puts it before U+FE0F
         if (f != null && gsub != null && !asked.isEmpty()) {
             BitSet of = new BitSet();
             for (int g : asked.values()) of.set(g);
@@ -470,31 +475,41 @@ public final class EmojiMerge {
                 throw ofEmoji(x);
             }
             for (int[] l : ligs)
-                for (int c = 1; c + 1 < l.length; c++) if (l[c + 1] == f && of.get(l[c])) named.set(l[c]);
+                for (int c = 1; c + 1 < l.length; c++)
+                    if (l[c + 1] == f && of.get(l[c])) {
+                        named.set(l[c]);
+                        Integer u = uses.get(l[c]);
+                        uses.put(l[c], u == null ? 1 : u + 1);
+                    }
         }
+        // A named glyph a character shows alone gets a copy for its key, so U+FE0F can tell: in code point order, or when not all copies
+        // fit in the glyph ids left, first to the glyphs the most ligatures put before U+FE0F (ties by code point), so the fewest break
         HashSet<Integer> nominal = new HashSet<Integer>(map.values());
+        List<Integer> copies = new ArrayList<Integer>();
+        for (int g : new LinkedHashSet<Integer>(asked.values())) if (named.get(g) && nominal.contains(g + n)) copies.add(g);
+        int room = 0xFFFF - dupBase;
+        if (copies.size() > room)
+            Collections.sort(copies, new Comparator<Integer>() {
+                @Override public int compare(Integer a, Integer b) { return uses.get(b) - uses.get(a); }
+            });
+        for (int g : copies.subList(0, Math.min(room, copies.size()))) {
+            fr.keys.put(g, dupBase + fr.dups.size());
+            fr.dups.add(g);
+        }
         for (Map.Entry<Integer, Integer> e : asked.entrySet()) {
             int cp = e.getKey(), g = e.getValue();
-            if (!named.get(g)) {
-                if (map.get(cp) == g + n) uvs.addDefault(fe, cp);
-                continue;
-            }
             Integer key = fr.keys.get(g);
-            if (key == null) {
-                if (nominal.contains(g + n)) {                                // a character shows g alone: U+FE0F gets a copy to tell
-                    if (dupBase + fr.dups.size() >= 0xFFFF) {                 // no glyph id left for one: (c, U+FE0F) gives g, as above
-                        if (map.get(cp) == g + n) uvs.addDefault(fe, cp);
-                        if (!warnings.contains(W_FE0F_SEQUENCES)) warnings.add(W_FE0F_SEQUENCES);
-                        continue;
-                    }
-                    key = dupBase + fr.dups.size();
-                    fr.dups.add(g);
-                } else {
-                    key = g + n;
-                }
-                fr.keys.put(g, key);
-            }
-            uvs.put(fe, cp, key);
+            if (key == null && named.get(g) && !nominal.contains(g + n)) fr.keys.put(g, key = g + n);
+            if (key != null) uvs.put(fe, cp, key);
+            else if (map.get(cp) == g + n) uvs.addDefault(fe, cp);        // no U+FE0F glyph needed, or no copy left: (c, U+FE0F) gives g
+        }
+        if (copies.size() > room) {
+            HashSet<Integer> lost = new HashSet<Integer>(copies.subList(room, copies.size()));
+            int broken = 0;
+            for (int[] l : ligs)
+                for (int c = 1; c + 1 < l.length; c++)
+                    if (l[c + 1] == f && lost.contains(l[c])) { broken++; break; }
+            warnings.add(String.format(Locale.ROOT, W_FE0F_SEQUENCES, broken));
         }
         out.put("cmap", Cmap.build(map, uvs, warnings, sub(p, 30, 50)));
         if (!fr.keys.isEmpty()) {

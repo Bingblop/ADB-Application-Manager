@@ -5530,7 +5530,6 @@ x: {
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Diese variable Schriftart baut ihre Glyphen aus variablen Komponenten (VARC) auf, aus denen die App keine feste Schriftart machen kann.",
 "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Diese variable Schriftart bildet ihre Achsen aufeinander ab (avar Version 2). Die App wendet diese Abbildung wie HarfBuzz an, daher können ihre Stärken etwas anders aussehen als in Apps, die das nicht tun.",
 "The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Die Emoji wären für diese Schriftart zu groß. Wählen Sie eine andere Emoji-Schriftart oder stellen Sie „Emoji“ auf „Keiner“.",
-"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "Die Schriftart hat so viele Glyphen, dass einige Emoji-Sequenzen mit U+FE0F evtl. als einzelne Emoji erscheinen.",
 "This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "Diese Schriftdatei ist beschädigt oder nutzt etwas, das die App nicht lesen kann. Wählen Sie eine andere Emoji-Schriftart.",
 "This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Diese Schriftart ist zu komplex, als dass die App ihre Emoji in eine Schriftart einfügen könnte. Wählen Sie eine andere Emoji-Schriftart."
 },
@@ -6751,5 +6750,6 @@ p: [
 ["{0} was not on the phone when it was to be put in place.", "{0} war nicht auf dem Telefon, als es an seinen Platz gebracht werden sollte."],
 ["The font's {0} table would be too large to write at this weight. Choose another font.", "Die {0}-Tabelle der Schriftart wäre in dieser Stärke zu groß zum Schreiben. Wählen Sie eine andere Schriftart."],
 ["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "Die {0}-Tabelle der Schriftart wäre zu groß zum Schreiben, in dieser Stärke oder mit den Emoji. Stellen Sie „Emoji“ auf „Keiner“ oder wählen Sie eine andere Schriftart."],
+["The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", "Die Schriftart hat so viele Glyphen, dass Sequenzen der Emoji-Schriftart mit U+FE0F evtl. als einzelne Emoji erscheinen (Anzahl: {0})."],
 ]
 };

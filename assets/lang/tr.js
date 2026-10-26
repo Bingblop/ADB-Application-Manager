@@ -5530,7 +5530,6 @@ x: {
 "This variable font builds its glyphs from variable components (VARC), which the app cannot make a fixed font of.": "Bu değişken yazı tipi gliflerini değişken bileşenlerden (VARC) oluşturuyor; uygulama bundan sabit bir yazı tipi yapamaz.",
 "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.": "Bu değişken yazı tipi eksenlerini birbirine eşliyor (avar sürüm 2). Uygulama bu eşlemeyi HarfBuzz gibi uygular; bu yüzden kalınlıkları bunu yapmayan uygulamalardakinden biraz farklı görünebilir.",
 "The emoji would be too large for this font. Choose another emoji font, or set Emoji to None.": "Emojiler bu yazı tipi için çok büyük olurdu. Başka bir emoji yazı tipi seçin veya Emoji'yi Yok olarak ayarlayın.",
-"The font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.": "Yazı tipinde o kadar çok glif var ki U+FE0F içeren birkaç emoji dizisi ayrı emojiler olarak görünebilir.",
 "This font file is damaged, or uses something the app cannot read. Choose another emoji font.": "Bu yazı tipi dosyası bozuk veya uygulamanın okuyamadığı bir şey kullanıyor. Başka bir emoji yazı tipi seçin.",
 "This font is too complex for the app to put its emoji inside a font. Choose another emoji font.": "Bu yazı tipi, uygulamanın emojilerini bir yazı tipinin içine koyamayacağı kadar karmaşık. Başka bir emoji yazı tipi seçin."
 },
@@ -6751,5 +6750,6 @@ p: [
 ["{0} was not on the phone when it was to be put in place.", "{0}, yerine konacağı sırada telefonda yoktu."],
 ["The font's {0} table would be too large to write at this weight. Choose another font.", "Yazı tipinin {0} tablosu bu kalınlıkta yazılamayacak kadar büyük olurdu. Başka bir yazı tipi seçin."],
 ["The font's {0} table would be too large to write, at this weight or with the emoji inside. Set Emoji to None, or choose another font.", "Yazı tipinin {0} tablosu, bu kalınlıkta ya da emojiler içindeyken, yazılamayacak kadar büyük olurdu. Emoji'yi Yok olarak ayarlayın veya başka bir yazı tipi seçin."],
+["The font has so many glyphs that {0} of the emoji font's sequences with U+FE0F in them may show as separate emoji.", "Yazı tipinde o kadar çok glif var ki emoji yazı tipinin U+FE0F içeren dizilerinden {0} tanesi ayrı emojiler olarak görünebilir."],
 ]
 };
