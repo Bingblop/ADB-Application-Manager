@@ -22,8 +22,8 @@ import java.util.TimeZone;
  * hand the fonts that come back to {@link FontPackage}. Each face goes through the same steps: the file is read; a variable font is made static at
  * the location the page chose, or else at the one {@link FontInstancer#guessRegular} / {@link FontInstancer#guessBold} picks (so one file
  * can give both faces); PostScript outlines become TrueType ones ({@link CffToGlyf}); the emoji font is merged in ({@link EmojiMerge});
- * then the font is renamed to the display name with the Regular or Bold style bits that Android and font menus read, written, parsed again
- * and every glyph decoded before its bytes are handed back. Without a Bold face the package holds only the Regular font and Android
+ * bitmap glyphs are left out; then the font is renamed to the display name with the Regular or Bold style bits that Android and font
+ * menus read, written, parsed again and every glyph decoded before its bytes are handed back. Without a Bold face the package holds only the Regular font and Android
  * draws bold text by thickening it. The sources are not changed. Progress is reported under the page's stage names (read, instance,
  * convert, emoji), each stage on one scale across both faces. The input is untrusted: every failure ends in a {@link Sfnt.FontException}
  * whose message can be shown, and one that comes from a face says which. Pure Java, no Android classes.
@@ -47,6 +47,12 @@ public final class FontBuilder {
     static final int NAME_STORAGE = 0xFFFF, NAME_RECORDS = (0xFFFF - 6) / 12;
     /** Variation tables that mean nothing in a font without fvar, and PostScript outlines a font with glyf does not need. */
     static final String[] STATIC_DROPPED = { "gvar", "cvar", "avar", "HVAR", "VVAR", "MVAR", "CFF ", "CFF2", "VORG" };
+    /**
+     * Bitmap glyphs, in colour (CBDT / CBLC, sbix) or not (EBDT / EBLC / EBSC, and Apple's bdat / bloc), left out of every face whatever
+     * made it, so only the outlines are drawn, as FontInspect's W_BITMAP says. FreeType takes a font with CBLC for a bitmap-only one, and a
+     * letter without a bitmap would then not show at all.
+     */
+    static final String[] BITMAPS_DROPPED = { "CBDT", "CBLC", "sbix", "EBDT", "EBLC", "EBSC", "bdat", "bloc" };
 
     /** One face's source: a font file and, for a variable font, where to make it static. */
     public static final class Face {
@@ -203,6 +209,7 @@ public final class FontBuilder {
             }
             t = System.nanoTime();
             FontProgress.Check.cancel(j.p);
+            for (String tag : BITMAPS_DROPPED) f.remove(tag);             // after the merge, which refuses a text font with colour bitmaps
             out.weight = weight(f);
             style(f, j.family, bold, italic, j.time);
             byte[] bytes = f.toBytes();

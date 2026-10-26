@@ -345,6 +345,7 @@ public class FontBuilderTest {
       section("the name table's limits", FontBuilderTest::nameLimits);
       section("refusals", FontBuilderTest::refusals);
       section("damaged glyphs", FontBuilderTest::damagedGlyphs);
+      section("bitmap glyphs", FontBuilderTest::bitmaps);
       section("progress", FontBuilderTest::progress);
       section("cancel", FontBuilderTest::cancel);
       section("fuzz", () -> fuzz(0x26102026L, 600, 12));
@@ -850,6 +851,33 @@ public class FontBuilderTest {
       });
       check("  ... its cause is that exception", fe != null && fe.getCause() == boom, fe == null ? null : String.valueOf(fe.getCause()));
     }
+  }
+
+  // ---------- bitmap glyphs ----------
+
+  /**
+   * Bitmap glyph tables leave every face, whatever made it, so only the outlines are drawn as FontInspect's W_BITMAP says: FreeType takes
+   * a font with CBLC for a bitmap-only one, and its letters without a bitmap would not show.
+   */
+  static void bitmaps() throws Exception {
+    String[][] sources = { { NOTO, "a static" }, { INTER, "a variable" }, { SS3, "a PostScript" } };
+    for (String[] src : sources) {
+      Sfnt f = Sfnt.parse(font(src[0]));
+      for (String t : FontBuilder.BITMAPS_DROPPED) f.put(t, new byte[16]);
+      Sfnt out = Sfnt.parse(FontBuilder.build(simple(f.toBytes(), "X"), null).regular);
+      List<String> kept = new ArrayList<String>();
+      for (String t : FontBuilder.BITMAPS_DROPPED) if (out.has(t)) kept.add(t);
+      check(src[1] + " Regular with " + String.join(", ", FontBuilder.BITMAPS_DROPPED) + ": none of them in the package font", kept.isEmpty(), kept.toString());
+    }
+    // with emoji: the plain bitmaps go too (a text font with colour bitmaps is refused by the merge: text_has_color)
+    Sfnt e = Sfnt.parse(font(NOTO));
+    e.put("EBDT", new byte[16]);
+    e.put("EBLC", new byte[16]);
+    FontBuilder.Request r = simple(e.toBytes(), "X");
+    r.emoji = font(TWEMOJI);
+    Sfnt out = Sfnt.parse(FontBuilder.build(r, null).regular);
+    check("a Regular with EBDT and EBLC, with emoji: the emoji in, the bitmaps out", out.has("COLR") && !out.has("EBDT") && !out.has("EBLC"), out.tags().toString());
+    check("CBDT, CBLC, sbix, EBDT, EBLC and EBSC are all left out", Arrays.asList(FontBuilder.BITMAPS_DROPPED).containsAll(Arrays.asList("CBDT", "CBLC", "sbix", "EBDT", "EBLC", "EBSC")));
   }
 
   // ---------- damaged glyphs ----------

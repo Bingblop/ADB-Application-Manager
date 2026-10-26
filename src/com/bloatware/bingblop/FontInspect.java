@@ -29,7 +29,8 @@ public final class FontInspect {
     public static final String W_AVAR2 = "This variable font maps its axes onto each other (avar version 2). The app applies that mapping as HarfBuzz does, so its weights may look a little different from apps that do not.";
     public static final String W_NO_PALETTE = "This font has colour layers (COLR) but no colour palette (CPAL), so its colour glyphs cannot be shown.";
     public static final String W_COLOR_DAMAGED = "This font's colour table (COLR) is damaged; its colour glyphs are left out.";
-    public static final String W_BITMAP = "This font's colour glyphs are bitmaps (%s): bitmap emoji cannot be put inside a font, so only its outlines would be used.";
+    /** What the package font does: FontBuilder leaves every bitmap table out ({@link FontBuilder#BITMAPS_DROPPED}). */
+    public static final String W_BITMAP ="This font's colour glyphs are bitmaps (%s): bitmap emoji cannot be put inside a font, so only its outlines would be used.";
     public static final String W_SVG = "This font's colour glyphs are SVG pictures, which Android does not draw: only its outlines would be used.";
 
     /** A variation axis. */
