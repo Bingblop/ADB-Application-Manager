@@ -43,6 +43,7 @@ public final class EmojiMerge {
     public static final String W_EMOJI_GPOS = "The emoji font's positioning table (GPOS) was left out; its emoji do not need it to show.";
     public static final String W_GLYPH_CLASSES = "A few of the emoji font's sequences rely on glyph classes the merged font cannot keep, so they may show as separate emoji.";
     public static final String W_MORX = "The text font's Apple layout table (morx) was left out so that the emoji sequences work; its OpenType features are kept.";
+    public static final String W_FE0F_SEQUENCES = "The text font has so many glyphs that a few emoji sequences with U+FE0F in them may show as separate emoji.";
 
     /** Lookup flag bits that read GDEF's glyph classes or mark sets (IgnoreBase, IgnoreLigatures, IgnoreMarks, UseMarkFilteringSet, MarkAttachmentType). */
     static final int CLASS_FLAGS = 0xFF1E;
@@ -100,13 +101,13 @@ public final class EmojiMerge {
         Colr scan = new Colr(emoji.table("COLR"), m, p);
         scan.walk();
         Layers ly = new Layers(eg, scan, maps, n, m, p);
+        if ((long) n + m + ly.copies.size() > 0xFFFF) throw tooMany(n, m + ly.copies.size());
         Sfnt out = text.copy();
         out.sfntVersion = Sfnt.TRUETYPE;
         Result r = new Result(out, n, m, s);
         TreeMap<Integer, Integer> map = new TreeMap<Integer, Integer>();
         Front front = characters(maps, emoji, n, n + m + ly.copies.size(), zwj, out, map, r.warnings, p);
-        int total = front.dupBase + front.dups.size();
-        if (total > 0xFFFF) throw tooMany(n, total - n);
+        int total = front.dupBase + front.dups.size();                  // characters() makes only the copies that fit
         step(p, 60);
 
         // Outlines: the text glyphs as they are; the emoji glyphs without hints, their components moved past the text glyphs, scaled
@@ -333,7 +334,8 @@ public final class EmojiMerge {
      * where the emoji glyph won (and to the default where the text glyph won); (c, U+FE0F) to the emoji glyph where the text glyph won, and
      * to the default for each character with an emoji variation sequence ({@link EmojiData#hasEmojiVariation}) that shows the emoji glyph:
      * Android takes (c, U+FE0F) from the first font whose cmap has the pair and else from the system emoji font. Where a ligature of the
-     * emoji font names the character's glyph and U+FE0F, (c, U+FE0F) maps to a key instead (see {@link Front}).
+     * emoji font names the character's glyph and U+FE0F, (c, U+FE0F) maps to a key instead (see {@link Front}); a key that has to be a copy
+     * gets one only while the merged font has glyph ids left, and past that the pair gives the glyph ({@link #W_FE0F_SEQUENCES}).
      */
     private static Front characters(Maps maps, Sfnt emoji, int n, int dupBase, int[] joiner, Sfnt out, TreeMap<Integer, Integer> map,
             List<String> warnings, FontProgress p) throws Sfnt.FontException {
@@ -419,6 +421,11 @@ public final class EmojiMerge {
             Integer key = fr.keys.get(g);
             if (key == null) {
                 if (nominal.contains(g + n)) {                                // a character shows g alone: U+FE0F gets a copy to tell
+                    if (dupBase + fr.dups.size() >= 0xFFFF) {                 // no glyph id left for one: (c, U+FE0F) gives g, as above
+                        if (map.get(cp) == g + n) uvs.addDefault(fe, cp);
+                        if (!warnings.contains(W_FE0F_SEQUENCES)) warnings.add(W_FE0F_SEQUENCES);
+                        continue;
+                    }
                     key = dupBase + fr.dups.size();
                     fr.dups.add(g);
                 } else {

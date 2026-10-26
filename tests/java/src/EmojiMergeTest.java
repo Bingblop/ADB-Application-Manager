@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -170,6 +171,18 @@ public class EmojiMergeTest {
     Sfnt c = f.copy();
     for (String t : tags) c.remove(t);
     return c;
+  }
+
+  /** Fixture {@code name} with empty glyphs added up to {@code glyphs} glyphs (its cmap as it was). */
+  static Sfnt padded(String name, int glyphs) throws Sfnt.FontException {
+    Sfnt f = font(name);
+    byte[][] g = Arrays.copyOf(Glyf.readAll(f), glyphs);
+    Glyf.Metrics fm = Glyf.Metrics.read(f), mm = new Glyf.Metrics(g.length);
+    System.arraycopy(fm.advance, 0, mm.advance, 0, fm.advance.length);
+    System.arraycopy(fm.lsb, 0, mm.lsb, 0, fm.lsb.length);
+    Glyf.write(f, g);
+    mm.write(f, g);
+    return f;
   }
 
   static int[] shifted(int[] ids, int n) {
@@ -1599,15 +1612,11 @@ public class EmojiMergeTest {
     throwsFont("65,000 text glyphs and 772 emoji glyphs are refused with code too_many_glyphs", "too_many_glyphs",
         "The text font has 65,000 glyphs and the emoji font 772: together they pass the 65,535 glyphs a font can hold.", () -> EmojiMerge.merge(big, font(NOTO), null));
     // 65,522 + 13 fit, but not with the emoji-units copy the synthetic font needs
-    Sfnt T = font(NOTOSANS);
-    byte[][] g = Arrays.copyOf(Glyf.readAll(T), 65522);
-    Glyf.Metrics tm = Glyf.Metrics.read(T), mm = new Glyf.Metrics(g.length);
-    System.arraycopy(tm.advance, 0, mm.advance, 0, tm.advance.length);
-    Glyf.write(T, g);
-    mm.write(T, g);
+    Sfnt T = padded(NOTOSANS, 65522);
     throwsFont("65,522 text glyphs, 13 emoji glyphs and an emoji-units copy are refused with code too_many_glyphs", "too_many_glyphs", "65,522 glyphs and the emoji font 14",
         () -> EmojiMerge.merge(T, font(SYNTH1), null));
     check("65,522 text glyphs and the 7 of the COLR v0 font fit", EmojiMerge.merge(T, font(SYNTH0), null).font.numGlyphs() == 65529);
+    fe0fCopiesAtTheLimit();
 
     Sfnt upem = font(LATO);
     byte[] head = upem.table("head").clone();
@@ -1619,6 +1628,50 @@ public class EmojiMergeTest {
     throwsFont("an emoji font with a cut-off head is refused", "bad_font", "too short", () -> EmojiMerge.merge(font(LATO), shortHead, null));
     Sfnt noMaxp = without(font(LATO), "maxp");
     throwsFont("a text font without maxp is refused", "bad_font", "no maxp", () -> EmojiMerge.merge(noMaxp, font(NOTO), null));
+  }
+
+  /**
+   * Lato + Twemoji makes 9 U+FE0F copies. With the text font padded so that only some of them (or none) fit, the merge still ends with
+   * 65,535 glyphs: the characters left without a copy keep (c, U+FE0F) on the emoji glyph itself, with W_FE0F_SEQUENCES. One glyph more
+   * and the emoji font's own 624 glyphs do not fit.
+   */
+  static void fe0fCopiesAtTheLimit() throws Exception {
+    Sfnt E = font(TWEMOJI);
+    int m = E.numGlyphs(), dups = EmojiMerge.merge(font(LATO), E, null).font.numGlyphs() - font(LATO).numGlyphs() - m;
+    check("Lato + Twemoji: 624 emoji glyphs and 9 U+FE0F copies", m == 624 && dups == 9, m + " and " + dups);
+    TreeMap<Integer, Integer> ecmap = Cmap.read(E, null);
+    Cmap.Uvs eu = Cmap.readUvs(E);
+    for (int n : new int[] { 65535 - m - dups + 1, 65535 - m - dups + 3, 65535 - m }) {
+      String name = String.format(Locale.ROOT, "%,d text glyphs + Twemoji (room for %d of the %d copies)", n, 65535 - m - n, dups);
+      EmojiMerge.Result r;
+      try {
+        r = EmojiMerge.merge(padded(LATO, n), E, null);
+      } catch (Exception x) {
+        check(name + ": merges", false, x.toString());
+        continue;
+      }
+      Sfnt M = Sfnt.parse(r.font.toBytes());
+      check(name + ": merges into 65,535 glyphs, warning " + EmojiMerge.W_FE0F_SEQUENCES, M.numGlyphs() == 65535
+          && r.warnings.contains(EmojiMerge.W_FE0F_SEQUENCES), M.numGlyphs() + " glyphs, warnings " + r.warnings);
+      byte[][] mg = Glyf.readAll(M);
+      TreeMap<Integer, Integer> mcmap = Cmap.read(M, null);
+      Cmap.Uvs mu = Cmap.readUvs(M);
+      int bad = 0, withVs = 0, copied = 0;
+      String first = null;
+      for (int cp : ecmap.keySet()) {
+        if (!EmojiData.hasEmojiVariation(cp)) continue;
+        withVs++;
+        int g = (eu.glyph(0xFE0F, cp) >= 0 ? eu.glyph(0xFE0F, cp) : ecmap.get(cp)) + n, fe = resolve(mu, mcmap, cp, 0xFE0F);
+        boolean copy = fe >= n + m && fe < 65535 && samePadded(mg[fe], mg[g]);
+        if (copy) copied++;
+        if (fe != g && !copy && bad++ == 0) first = String.format(Locale.ROOT, "U+%04X: glyph %d, want %d or a copy of it", cp, fe, g);
+      }
+      check(name + ": (c, U+FE0F) of the " + withVs + " characters with an emoji variation sequence gives the emoji glyph, or one of the "
+          + (65535 - m - n) + " copies of it", bad == 0 && copied >= 65535 - m - n, bad + " differ, first " + first + "; " + copied + " copies");
+    }
+    int over = 65535 - m + 1;
+    throwsFont(String.format(Locale.ROOT, "%,d text glyphs + Twemoji are refused with code too_many_glyphs, the emoji font counted as its 624 glyphs", over),
+        "too_many_glyphs", String.format(Locale.ROOT, "%,d glyphs and the emoji font 624:", over), () -> EmojiMerge.merge(padded(LATO, over), E, null));
   }
 
   /** Damaged COLR / GSUB / GDEF in the emoji font, each refused with a sentence. */
