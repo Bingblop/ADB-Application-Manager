@@ -345,13 +345,22 @@ public final class Glyf {
 
     /** The glyph's outline with every component placed (recursively), in font units. */
     public static Outline flatten(byte[][] glyphs, int gid) throws Sfnt.FontException {
-        return flatten(glyphs, gid, 0);
+        return flatten(glyphs, gid, 0, new long[] { FLATTEN_WORK });
     }
 
-    private static Outline flatten(byte[][] glyphs, int gid, int depth) throws Sfnt.FontException {
+    /**
+     * Points placed and glyphs decoded that one {@link #write} may spend on its composites: about 25 times what the most composite-heavy
+     * real font measured needs (OpenMoji's COLRv0 font, 0.68 M), while a hostile one (components that each name a glyph of many components,
+     * nested to {@link #MAX_DEPTH}) would otherwise take hours.
+     */
+    static final long FLATTEN_WORK = 1L << 24;
+
+    private static Outline flatten(byte[][] glyphs, int gid, int depth, long[] work) throws Sfnt.FontException {
         if (depth > MAX_DEPTH) throw new Sfnt.FontException("A composite glyph of this font nests too deep (or names itself).");
         if (gid < 0 || gid >= glyphs.length) throw new Sfnt.FontException("A composite glyph names glyph " + gid + ", which this font does not have.");
         Glyph g = decode(glyphs[gid]);
+        work[0] -= 1 + g.x.length + g.components.size();
+        if (work[0] < 0) throw new Sfnt.FontException("too_complex", "The composite glyphs of this font are too complex to rewrite.");
         Outline o = new Outline();
         if (!g.isComposite()) {
             int n = g.x.length;
@@ -365,7 +374,7 @@ public final class Glyf {
         int total = 0;
         double[] allX = new double[0], allY = new double[0];
         for (Component k : g.components) {
-            Outline c = flatten(glyphs, k.glyph, depth + 1);
+            Outline c = flatten(glyphs, k.glyph, depth + 1, work);
             double a = k.a / 16384.0, b = k.b / 16384.0, cc = k.c / 16384.0, d = k.d / 16384.0;
             int n = c.x.length;
             double[] tx = new double[n], ty = new double[n];
@@ -391,14 +400,17 @@ public final class Glyf {
             int[] e = c.endPts.clone();
             for (int i = 0; i < e.length; i++) e[i] += total;
             ends.add(e);
+            if (total + n > MAX_POINTS * 4) throw new Sfnt.FontException("A composite glyph of this font has too many points.");
+            work[0] -= n;
+            if (work[0] < 0) throw new Sfnt.FontException("too_complex", "The composite glyphs of this font are too complex to rewrite.");
+            if (total + n > allX.length) {                               // grown by doubling: many small components stay linear
+                int cap = Math.max(total + n, Math.min(MAX_POINTS * 4, Math.max(16, allX.length * 2)));
+                allX = java.util.Arrays.copyOf(allX, cap); allY = java.util.Arrays.copyOf(allY, cap);
+            }
+            System.arraycopy(tx, 0, allX, total, n); System.arraycopy(ty, 0, allY, total, n);
             total += n;
-            if (total > MAX_POINTS * 4) throw new Sfnt.FontException("A composite glyph of this font has too many points.");
-            double[] nx = new double[total], ny = new double[total];
-            System.arraycopy(allX, 0, nx, 0, allX.length); System.arraycopy(tx, 0, nx, allX.length, n);
-            System.arraycopy(allY, 0, ny, 0, allY.length); System.arraycopy(ty, 0, ny, allY.length, n);
-            allX = nx; allY = ny;
         }
-        o.x = allX; o.y = allY;
+        o.x = java.util.Arrays.copyOf(allX, total); o.y = java.util.Arrays.copyOf(allY, total);
         o.on = new boolean[total];
         int at = 0;
         for (boolean[] b : ons) { System.arraycopy(b, 0, o.on, at, b.length); at += b.length; }
@@ -428,6 +440,8 @@ public final class Glyf {
     public static void write(Sfnt f, byte[][] glyphs) throws Sfnt.FontException {
         if (glyphs.length < 1 || glyphs.length > 0xFFFF) throw new Sfnt.FontException("A font holds 1 to 65,535 glyphs; this one would have " + glyphs.length + ".");
         int maxPoints = 0, maxContours = 0, maxCPoints = 0, maxCContours = 0, maxElements = 0, maxDepth = 0, maxInstr = 0;
+        long[] work = { FLATTEN_WORK };
+        int[] depths = new int[glyphs.length];                         // depth + 1 once known: each glyph's is worked out once
         for (int i = 0; i < glyphs.length; i++) {
             byte[] raw = glyphs[i];
             if (raw == null) { glyphs[i] = raw = new byte[0]; }
@@ -441,7 +455,7 @@ public final class Glyf {
                 continue;
             }
             Glyph g = decode(raw);
-            Outline o = flatten(glyphs, i);
+            Outline o = flatten(glyphs, i, 0, work);
             int[] bb = boundsOf(o);
             if (bb == null) bb = new int[4];
             for (int v : bb) checkS16(v, "edge");
@@ -449,7 +463,7 @@ public final class Glyf {
             maxCPoints = Math.max(maxCPoints, o.x.length);
             maxCContours = Math.max(maxCContours, o.endPts.length);
             maxElements = Math.max(maxElements, g.components.size());
-            maxDepth = Math.max(maxDepth, depthOf(glyphs, i, 0));
+            maxDepth = Math.max(maxDepth, depthOf(glyphs, i, 0, depths));
             maxInstr = Math.max(maxInstr, g.instructions.length);
         }
         long total = 0;
@@ -495,15 +509,17 @@ public final class Glyf {
         f.put("maxp", maxp);
     }
 
-    private static int depthOf(byte[][] glyphs, int gid, int depth) throws Sfnt.FontException {
+    private static int depthOf(byte[][] glyphs, int gid, int depth, int[] known) throws Sfnt.FontException {
         if (depth > MAX_DEPTH) throw new Sfnt.FontException("A composite glyph of this font nests too deep (or names itself).");
+        if (known[gid] > 0) return known[gid] - 1;
         byte[] raw = glyphs[gid];
         if (raw.length < 10 || Sfnt.s16(raw, 0) >= 0) return 0;
         int best = 0;
         for (Component k : decode(raw).components) {
             if (k.glyph >= glyphs.length) throw new Sfnt.FontException("A composite glyph names glyph " + k.glyph + ", which this font does not have.");
-            best = Math.max(best, depthOf(glyphs, k.glyph, depth + 1));
+            best = Math.max(best, depthOf(glyphs, k.glyph, depth + 1, known));
         }
+        known[gid] = best + 2;
         return best + 1;
     }
 

@@ -199,22 +199,29 @@ public final class Sfnt {
         if (name == null || name.length < 6) return "";
         int count = u16(name, 2), strOff = u16(name, 4);
         if (6 + 12L * count > name.length) throw new FontException("This font's name table is cut off.");
-        int best = -1, bestScore = -1;
+        int best = -1, bestScore = 0;
         for (int i = 0; i < count; i++) {
             int r = 6 + 12 * i;
             if (u16(name, r + 6) != nameId) continue;
-            int pid = u16(name, r), eid = u16(name, r + 2), lang = u16(name, r + 4);
-            int score;
-            if (pid == 3 && (eid == 1 || eid == 10) && lang == 0x409) score = 5;
-            else if (pid == 3 && (eid == 1 || eid == 10)) score = 4;
-            else if (pid == 0) score = 3;
-            else if (pid == 1 && eid == 0 && lang == 0) score = 2;
-            else if (pid == 3 && eid == 0) score = 1;      // a symbol font's names are still UTF-16
-            else continue;
+            int score = score(name, r);
             if (score > bestScore) { bestScore = score; best = r; }
         }
-        if (best < 0) return "";
-        int pid = u16(name, best), len = u16(name, best + 8), off = strOff + u16(name, best + 10);
+        return best < 0 ? "" : recordString(name, strOff, best);
+    }
+
+    /** How much {@link #nameString} prefers the record at {@code r}; 0 for one it cannot read. */
+    private static int score(byte[] name, int r) throws FontException {
+        int pid = u16(name, r), eid = u16(name, r + 2), lang = u16(name, r + 4);
+        if (pid == 3 && (eid == 1 || eid == 10) && lang == 0x409) return 5;
+        if (pid == 3 && (eid == 1 || eid == 10)) return 4;
+        if (pid == 0) return 3;
+        if (pid == 1 && eid == 0 && lang == 0) return 2;
+        if (pid == 3 && eid == 0) return 1;                // a symbol font's names are still UTF-16
+        return 0;
+    }
+
+    private static String recordString(byte[] name, int strOff, int r) throws FontException {
+        int pid = u16(name, r), len = u16(name, r + 8), off = strOff + u16(name, r + 10);
         if (off + (long) len > name.length) return "";
         Charset cs = pid == 1 ? Charset.forName("ISO-8859-1") : Charset.forName("UTF-16BE");
         return new String(name, off, len, cs).replace("\u0000", "").trim();
@@ -226,7 +233,7 @@ public final class Sfnt {
      */
     public static byte[] buildName(Map<Integer, String> names) {
         TreeMap<Integer, String> sorted = new TreeMap<Integer, String>(names);
-        List<int[]> recs = new ArrayList<int[]>();               // platform, encoding, language, nameId, offset, length
+        List<int[]> recs = new ArrayList<int[]>();               // platform, encoding, language, nameId, length, offset
         Writer strings = new Writer();
         Charset utf16 = Charset.forName("UTF-16BE"), latin = Charset.forName("ISO-8859-1");
         List<int[]> mac = new ArrayList<int[]>(), win = new ArrayList<int[]>();
@@ -235,11 +242,11 @@ public final class Sfnt {
             if (s.isEmpty()) continue;
             if (isAscii(s)) {
                 byte[] b = s.getBytes(latin);
-                mac.add(new int[] { 1, 0, 0, e.getKey(), strings.size(), b.length });
+                mac.add(new int[] { 1, 0, 0, e.getKey(), b.length, strings.size() });
                 strings.bytes(b);
             }
             byte[] b = s.getBytes(utf16);
-            win.add(new int[] { 3, 1, 0x409, e.getKey(), strings.size(), b.length });
+            win.add(new int[] { 3, 1, 0x409, e.getKey(), b.length, strings.size() });
             strings.bytes(b);
         }
         recs.addAll(mac);                                          // sorted by platform, encoding, language, name id
@@ -259,13 +266,18 @@ public final class Sfnt {
         byte[] name = table("name");
         if (name == null || name.length < 6) return out;
         try {
-            int count = u16(name, 2);
+            int count = u16(name, 2), strOff = u16(name, 4);
             if (6 + 12L * count > name.length) return out;
+            // One pass for the best record of every id (as nameString picks it): a call per id would be quadratic in a hostile table
+            TreeMap<Integer, int[]> best = new TreeMap<Integer, int[]>();          // id -> {score, record}
             for (int i = 0; i < count; i++) {
-                int id = u16(name, 6 + 12 * i + 6);
-                if (out.containsKey(id)) continue;
-                String s = nameString(name, id);
-                if (!s.isEmpty()) out.put(id, s);
+                int r = 6 + 12 * i, id = u16(name, r + 6), score = score(name, r);
+                int[] had = best.get(id);
+                if (score > 0 && (had == null || score > had[0])) best.put(id, new int[] { score, r });
+            }
+            for (Map.Entry<Integer, int[]> e : best.entrySet()) {
+                String s = recordString(name, strOff, e.getValue()[1]);
+                if (!s.isEmpty()) out.put(e.getKey(), s);
             }
         } catch (FontException ignored) {}
         return out;

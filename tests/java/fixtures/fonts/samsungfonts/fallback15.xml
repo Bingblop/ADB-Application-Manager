@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<familyset>
+    <family name="sans-serif"> <font supportedAxes="wght,ital">Roboto-Regular.ttf <axis tag="wdth" stylevalue="100" /> </font> </family>
+    <family name="sans-serif-condensed"> <font supportedAxes="wght,ital">Roboto-Regular.ttf <axis tag="wdth" stylevalue="75" /> </font> </family>
+    <family lang="und-Zsye"> <font weight="400" style="normal">NotoColorEmoji.ttf</font> </family>
+    <family lang="und-Zsye"> <font weight="400" style="normal">NotoColorEmojiFlags.ttf</font> </family>
+</familyset>

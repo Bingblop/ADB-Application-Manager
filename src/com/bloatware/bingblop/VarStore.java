@@ -184,7 +184,7 @@ public final class VarStore {
         dataOff = new int[dataCount];
         for (int i = 0; i < dataCount; i++) {
             long d = Sfnt.u32(t, off + 8 + 4 * i);
-            dataOff[i] = d == 0 ? -1 : (int) (off + d);
+            dataOff[i] = d == 0 ? -1 : (int) Math.min(off + d, Integer.MAX_VALUE);     // past the table either way: delta() refuses it
         }
         if (regOff > t.length) throw new Sfnt.FontException("A variation store of this font is cut off.");
         int r = (int) regOff;
@@ -230,8 +230,9 @@ public final class VarStore {
         int ri = p + 6;
         int wordSize = longWords ? 4 : 2, smallSize = longWords ? 2 : 1;
         int rowSize = wordCount * wordSize + (regionIndexCount - wordCount) * smallSize;
-        int row = ri + 2 * regionIndexCount + inner * rowSize;
-        Sfnt.need(t, row, rowSize);
+        long rowAt = ri + 2L * regionIndexCount + (long) inner * rowSize;     // past 2 GB for a damaged count: int arithmetic would wrap
+        Sfnt.need(t, rowAt, rowSize);
+        int row = (int) rowAt;
         double sum = 0;
         for (int k = 0; k < regionIndexCount; k++) {
             int region = Sfnt.u16(t, ri + 2 * k);
