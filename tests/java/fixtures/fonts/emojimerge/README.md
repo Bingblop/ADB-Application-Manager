@@ -186,4 +186,28 @@ Twemoji. Unicode 18.0's emoji-test.txt as above.
 The fixture fonts were not made again: the one sequence added to the suite's (U+261D U+FE0F U+1F3FD) uses characters they already have,
 so `expect` added only its `seq` lines, and `verify` passed the nine merged fonts the suite makes now and recorded their hashes.
 
+## Checks made on full fonts after the second review
+
+* Glyph ids: the text, emoji and emoji-units glyphs are counted before any work (too_many_glyphs), and a U+FE0F copy is made only while
+  a glyph id is left; past that (c, U+FE0F) gives the glyph itself, with `W_FE0F_SEQUENCES`. Lato padded with empty glyphs to 49,083,
+  49,084, 49,300 and 49,428 glyphs merged with Twemoji (16,107 glyphs, 345 copies) into 65,535 glyphs each, the last three with the
+  warning; 49,429 is refused with the emoji font counted as its 16,107 glyphs. The engine before refused 49,084 counting the emoji font
+  as 16,452, and 49,300 and 49,428 with an IllegalArgumentException from `Cmap.Uvs.put`.
+* U+FE0F's glyph now advances 0. The restore lookup matches its context the way HarfBuzz matches context (ZWNJ and ZWJ skipped), not
+  the way the ligature then matches its input, so a ZWNJ inside a ZWJ sequence, or (under the Arabic shaper, whose `rlig` does not skip
+  ZWJ) a joiner doubled, leaves a U+FE0F glyph after the key that is not default-ignorable. Every ZWJ sequence of emoji-test.txt (2,667)
+  with a ZWNJ before or after its first joiner, and with that joiner doubled, was shaped with default buffer flags (as Android shapes)
+  with no script and as Arabic. With Twemoji Mozilla 0.7.0 (13,723 glyphs,
+  `6d90152ee0d29e82fe2a87793af5aa4b7ad13e6538360889e141e81ed299ee8e`; its U+FE0F glyph advances a full em) in Lato, Noto Sans and Noto
+  Naskh Arabic 2.021 (`ff41f8c16c38a2ca43aa4e068c017b89fde21af79fdc7955ecc2ba3e37133210`), what is drawn differed from the emoji font
+  alone in 902 sequences per variant with the engine before this change, and in none now. OpenMoji (COLRv0 and v1, whose U+FE0F glyph
+  advances 0 already) differed in none with either, though both leave the extra glyph (997 sequences per variant); Twemoji, Noto Color
+  Emoji and Blobmoji2 never leave it.
+* `check` as above on Lato and Noto Sans with Twemoji, OpenMoji COLRv1, Noto Color Emoji and Blobmoji2, FreeSans with Twemoji and Noto
+  Sans Sinhala with Noto Color Emoji and Twemoji: no difference (5,854 to 5,916 sequences per font), and the conjuncts as the text font
+  alone (2 in Noto Sans, 5 in FreeSans, 3 in Noto Sans Sinhala).
+
+The fixture fonts were not made again: `verify` passed the nine merged fonts the suite makes and recorded their new hashes (the U+FE0F
+glyph's advance changed in three of them).
+
 Not run: on a device. The suite and the checks above ran on the JDK and on a desktop with the tools named here only.
