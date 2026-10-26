@@ -821,8 +821,46 @@ public class FontLibraryTest {
             int f1 = js.indexOf("const FNT_ERR = {"), f2 = f1 < 0 ? -1 : js.indexOf("};", f1);
             String err = f1 >= 0 && f2 > f1 ? js.substring(f1, f2) : "";
             for (String c : new String[] { "too_complex", "no_regular", "bad_request", "no_memory", "not_emoji", "cancelled", "too_big", "bitmap_emoji",
-                    "sha_mismatch", "size_mismatch", "network", "not_samsung", "applied", "in_use", "busy", "building", "not_found", "changed", "emoji_changed" })
+                    "sha_mismatch", "size_mismatch", "network", "not_samsung", "applied", "in_use", "busy", "building", "not_found", "changed", "emoji_changed",
+                    "http", "bad_name", "text_has_color", "symbol_font", "emoji_outlines", "no_palette", "palette_damaged", "emoji_symbol", "emoji_updated",
+                    "mounts_unreadable", "install_failed", "uninstall_failed", "no_answer", "no_targets", "not_downloaded", "not_usable", "locked", "unreadable",
+                    "no_picker", "zip_entry", "bad_zip", "unknown", "missing_table", "no_outlines", "not_supported", "bad_package", "bad_version", "write_failed",
+                    "read_failed", "failed" })
                 is("FNT_ERR words the code " + c, err.contains("\n            " + c + ": "), true);
+            // every code the font engine and the bridge send has a sentence of the page; the three named here never leave Java (the engine catches them)
+            Set<String> internal = new HashSet<String>(Arrays.asList("not_cff", "no_instance", "not_variable"));
+            Set<String> sent = new java.util.TreeSet<String>();
+            Pattern thrown = Pattern.compile("(?:FontException|VerifyException|error)\\(\"([a-z_]+)\"");
+            StringBuilder engine = new StringBuilder();
+            for (String f : new String[] { "Sfnt", "CffToGlyf", "Cmap", "EmojiCatalog", "EmojiData", "EmojiMerge", "FontBuilder", "FontInspect", "FontInstancer",
+                    "FontLibrary", "FontPackage", "FontScan", "FontStore", "OtLayout", "SamsungFonts" }) {
+                String s = src("src/com/bloatware/bingblop/" + f + ".java");
+                if (s != null) engine.append(s);
+            }
+            int m1 = ma.indexOf("// FONTMAKER:BEGIN"), m2 = ma.indexOf("// FONTMAKER:END"), n1 = ma.indexOf("// FONTMAKER:BRIDGE:BEGIN"), n2 = ma.indexOf("// FONTMAKER:BRIDGE:END");
+            if (m1 >= 0 && m2 > m1) engine.append(ma, m1, m2);
+            if (n1 >= 0 && n2 > n1) engine.append(ma, n1, n2);
+            Matcher tm = thrown.matcher(engine);
+            while (tm.find()) sent.add(tm.group(1));
+            is("the font code sends codes", sent.size() >= 40, true);
+            for (String c : sent) if (!internal.contains(c)) is("FNT_ERR has a sentence for the sent code " + c, err.contains("\n            " + c + ": "), true);
+            // the engine's warnings (W_* constants) each have a sentence of the page in FNT_WARN
+            int w1 = js.indexOf("const FNT_WARN = ["), w2 = w1 < 0 ? -1 : js.indexOf("\n        ];", w1);
+            String warn = w1 >= 0 && w2 > w1 ? js.substring(w1, w2) : "";
+            List<Pattern> said = new ArrayList<Pattern>();
+            Matcher wm = Pattern.compile("\\[/(\\^[^\\n]*?)/, ").matcher(warn);
+            while (wm.find()) said.add(Pattern.compile(wm.group(1)));
+            is("FNT_WARN has the engine's warnings", said.size() >= 15, true);
+            Matcher wc = Pattern.compile("static final String (W_[A-Z0-9_]+)\\s*=\\s*\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(engine);
+            int nw = 0;
+            while (wc.find()) {
+                nw++;
+                String text = wc.group(2).replace("\\\"", "\"").replace("\\'", "'").replace("%s", "CBDT").replace("%d", "1");
+                boolean found = false;
+                for (Pattern sp : said) if (sp.matcher(text).find()) { found = true; break; }
+                is("FNT_WARN words the engine's " + wc.group(1), found, true);
+            }
+            is("the engine's warnings are found", nw >= 10, true);
             Matcher nc = Pattern.compile("no_colr: ('[^']*')").matcher(err), ne = Pattern.compile("not_emoji: ('[^']*')").matcher(err);
             is("not_emoji shows the no_colr sentence", nc.find() && ne.find() && nc.group(1).equals(ne.group(1)), true);
             String et = body(js, "function fntErrText(");
