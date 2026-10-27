@@ -22,7 +22,9 @@ import java.util.regex.Pattern;
  * committed, made again, cut short and swept up after a crash, the list order, export names, the font changer's and the emoji swap's
  * records (a swap from another boot is not in use), jobs and their Cancel, the progress throttle, and the JSON the page gets (info of real
  * fixture fonts, a library row, the emoji downloads below and above Android 13). Then a scan of MainActivity: every bridge method and
- * callback of design section 6, the Root / system-user gate, the executors stopped in onDestroy, network through HttpSafe only.
+ * callback of design section 6 and of the Google Fonts browser and emoji samples (v7.18.0), the Root / system-user gate, the executors
+ * stopped in onDestroy, network through HttpSafe only, one save screen for a font package and a family, and the emoji sample the same in
+ * EmojiSpecimen, tools/make-emoji-specimens.sh and the page.
  */
 public class FontLibraryTest {
     static int fails = 0, n = 0;
@@ -83,6 +85,9 @@ public class FontLibraryTest {
         is("not a slot", FontLibrary.isSlot("italic") || FontLibrary.isSlot(null) || FontLibrary.isSlot("Regular"), false);
 
         eq("library folder", dirs.library, new File(new File(new File(tmp, "files"), "fontmaker"), "library"));
+        eq("Google Fonts folders", dirs.gfonts + " " + dirs.gfFamilies + " " + dirs.specimen, new File(dirs.root, "gfonts") + " " + new File(new File(dirs.root, "gfonts"), "fam")
+                + " " + new File(dirs.root, "specimen"));
+        eq("the previews are a cache", dirs.gfPreviews, new File(new File(new File(tmp, "cache"), "fontmaker"), "gfpv"));
         eq("pick folder", dirs.in, new File(new File(new File(tmp, "cache"), "fontmaker"), "in"));
         eq("entry folder", dirs.entryDir("0123456789ab"), new File(dirs.library, "0123456789ab"));
         boolean threw = false;
@@ -542,6 +547,19 @@ public class FontLibraryTest {
         is("…and not the other window's, or one with no window", b1.cancelled() || any.cancelled(), false);
         eq("no window: nothing", w.cancelAll(null).size(), 0);
 
+        // a second ask joins only a job its own window started and did not cancel: a job's answer goes to its window only (R1-06)
+        FontLibrary.Jobs g = new FontLibrary.Jobs();
+        FontLibrary.Jobs.Job cat = g.startFor(win1, null, "gfcat", "only");
+        is("a window joins its own running job", g.joinable(win1, "gfcat", "only") == cat, true);
+        eq("another window does not join it", g.joinable(win2, "gfcat", "only"), null);
+        eq("…and cannot start a second (the bridge answers busy)", g.startFor(win2, null, "gfcat", "only"), null);
+        eq("no window joins nothing", g.joinable(null, "gfcat", "only"), null);
+        eq("nothing to join of another key", g.joinable(win1, "gfcat", "other"), null);
+        g.cancelAll(win1);
+        is("a cancelled job is not joined, not even by its window, though it runs until it ends", g.joinable(win1, "gfcat", "only") == null && g.running("gfcat", "only") == cat, true);
+        g.finish(cat);
+        is("once it ended another window starts its own", g.startFor(win2, null, "gfcat", "only") != null, true);
+
         // a font made again and its install, apply or save exclude each other, in one step ((b), (c))
         String id = "aaaaaaaaaaa1";
         FontLibrary.Jobs x = new FontLibrary.Jobs();
@@ -635,6 +653,14 @@ public class FontLibraryTest {
         JSONObject net = FontLibrary.downloadError(0, "Read timed out");
         is("a timeout is the network", net.optString("code").equals("network") && net.optString("error").equals("The download failed: Read timed out") && !net.has("status"), true);
         eq("no detail", FontLibrary.downloadError(0, null).optString("error"), "The download failed: no answer");
+        // a folder not made or a rename refused on the phone's storage gives no errno: a full phone or its own sentence, never the network (R2-03)
+        String folder = "The app could not make the family's folder.";
+        JSONObject noRoom = FontLibrary.localError(folder, 0);
+        is("a local failure with no room is no_space", noRoom.optString("code").equals("no_space") && noRoom.optString("error").equals("There is not enough free space on this phone."), true);
+        eq("…under 16 MB free too", FontLibrary.localError(folder, (16L << 20) - 1).optString("code"), "no_space");
+        JSONObject local = FontLibrary.localError(folder, 16L << 20);
+        is("16 MB free: failed, its sentence unchanged", local.optString("code").equals("failed") && local.optString("error").equals(folder) && !local.optBoolean("ok", true), true);
+        eq("…no sentence", FontLibrary.localError(null, 1L << 30).optString("error"), "Something went wrong.");
 
         eq("COLRv1 inside a font needs Android 13", FontLibrary.minApiForEmoji("COLRv1"), 33);
         eq("COLRv0 from Android 8", FontLibrary.minApiForEmoji("COLRv0"), 26);
@@ -811,14 +837,23 @@ public class FontLibraryTest {
                 { "fontMakerUninstall", "String id" }, { "fontMakerChangerStatus", "" }, { "fontMakerApply", "String id" },
                 { "fontMakerReset", "" }, { "emojiCatalog", "" }, { "emojiDownload", "String id" }, { "emojiCancel", "String id" },
                 { "emojiDelete", "String id" }, { "sysEmojiStatus", "" }, { "sysEmojiApply", "String id" }, { "sysEmojiUndo", "" },
-                { "softRestart", "" } };
+                { "softRestart", "" },
+                // v7.18.0: the Google Fonts browser and the emoji samples (google-fonts-v7.18.0.md section 5)
+                { "gfontsCatalog", "" }, { "gfontsRefresh", "boolean force" }, { "gfontsPreview", "String reqId, String family, String mode, String text" },
+                { "gfontsInfo", "String family" }, { "gfontsDownloads", "" }, { "gfontsDownload", "String family" }, { "gfontsCancel", "String family" },
+                { "gfontsDelete", "String family" }, { "gfontsUse", "String family, String fileName, String slot" }, { "gfontsSave", "String family" },
+                { "emojiSpecimenFont", "String id" }, { "emojiSpecimenCached", "String id" }, { "emojiSpecimenFetch", "String id" } };
         for (String[] m : methods) {
-            Pattern p = Pattern.compile("@JavascriptInterface\\s+public\\s+String\\s+" + m[0] + "\\(" + (m[1].isEmpty() ? "" : "(final )?" + Pattern.quote(m[1])) + "\\)");
+            // each parameter may be final (an anonymous class reads it)
+            StringBuilder params = new StringBuilder();
+            for (String one : m[1].isEmpty() ? new String[0] : m[1].split(", ")) params.append(params.length() > 0 ? ", " : "").append("(final )?").append(Pattern.quote(one));
+            Pattern p = Pattern.compile("@JavascriptInterface\\s+public\\s+String\\s+" + m[0] + "\\(" + params + "\\)");
             is("bridge method " + m[0] + "(" + m[1] + ")", p.matcher(ma).find(), true);
         }
         for (String cb : new String[] { "onFontMakerPicked", "onFontMakerProgress", "onFontMakerBuilt", "onFontMakerInstalled", "onFontMakerUninstalled",
                 "onFontMakerExported", "onFontMakerChangerStatus", "onFontMakerApplied", "onFontMakerReset", "onEmojiProgress", "onEmojiDone",
-                "onSysEmojiStatus", "onSysEmojiApplied", "onSysEmojiUndone" })
+                "onSysEmojiStatus", "onSysEmojiApplied", "onSysEmojiUndone",
+                "onGfCatalog", "onGfPreview", "onGfInfo", "onGfProgress", "onGfDone", "onGfSaved", "onEmojiSpecimen" })
             is("callback " + cb, ma.contains("window." + cb + " && window." + cb + "("), true);
 
         // the page calls exactly these (FONTS:JS) and the mock fakes them
@@ -841,15 +876,17 @@ public class FontLibraryTest {
                     "http", "bad_name", "text_has_color", "symbol_font", "emoji_outlines", "no_palette", "palette_damaged", "emoji_symbol", "emoji_updated",
                     "mounts_unreadable", "install_failed", "uninstall_failed", "no_answer", "no_targets", "not_downloaded", "not_usable", "locked", "unreadable",
                     "no_picker", "zip_entry", "bad_zip", "unknown", "missing_table", "no_outlines", "not_supported", "bad_package", "bad_version", "write_failed",
-                    "read_failed", "emoji_damaged", "emoji_too_complex", "emoji_too_big", "failed" })
+                    "read_failed", "emoji_damaged", "emoji_too_complex", "emoji_too_big", "failed",
+                    "gf_unknown", "gf_bad_name", "gf_bad_answer", "gf_no_files", "gf_too_big", "gf_not_a_font", "gf_no_preview", "gf_not_downloaded",
+                    "gf_bad_file", "gf_changed", "emo_changed", "emo_no_sample" })
                 is("FNT_ERR words the code " + c, err.contains("\n            " + c + ": "), true);
             // every code the font engine and the bridge send has a sentence of the page; the three named here never leave Java (the engine catches them)
             Set<String> internal = new HashSet<String>(Arrays.asList("not_cff", "no_instance", "not_variable"));
             Set<String> sent = new java.util.TreeSet<String>();
-            Pattern thrown = Pattern.compile("(?:FontException|VerifyException|error)\\(\"([a-z_]+)\"");
+            Pattern thrown = Pattern.compile("(?:FontException|VerifyException|GfException|SpecimenException|error|fmkErr)\\(\"([a-z_]+)\"");
             StringBuilder engine = new StringBuilder();
             for (String f : new String[] { "Sfnt", "CffToGlyf", "Cmap", "EmojiCatalog", "EmojiData", "EmojiMerge", "FontBuilder", "FontInspect", "FontInstancer",
-                    "FontLibrary", "FontPackage", "FontScan", "FontStore", "OtLayout", "SamsungFonts" }) {
+                    "FontLibrary", "FontPackage", "FontScan", "FontStore", "OtLayout", "SamsungFonts", "GoogleFonts", "EmojiSpecimen" }) {
                 String s = src("src/com/bloatware/bingblop/" + f + ".java");
                 if (s != null) engine.append(s);
             }
@@ -1037,6 +1074,8 @@ public class FontLibraryTest {
         is("onDestroy stops the privileged font executor", destroy.contains("fontPrivExec.shutdown()"), true);
         is("onDestroy cancels this window's font jobs and drops their downloads", destroy.contains("fmkDisconnect(fmkJobs.cancelAll(this))"), true);
         is("onDestroy deletes the picked copies", destroy.contains("fmkPicks.clear()"), true);
+        is("onDestroy stops the Google Fonts previews and closes their connections", destroy.contains("gfExec.shutdownNow()") && destroy.contains("gfDisconnectPreviews()"), true);
+        is("…a fixed pool of four", ma.contains("private final ExecutorService gfExec = Executors.newFixedThreadPool(4);"), true);
         is("…not another window's jobs", destroy.contains("fmkJobs.cancelAll()"), false);
 
         // one set of jobs, downloads and folders for the process; a window's picks in a folder of its own (PKG-5, DL-5, PKG-7, DL-3)
@@ -1057,10 +1096,14 @@ public class FontLibraryTest {
         String chooser = body(ma, "public String fontMakerPick(");
         is("a second chooser is refused", chooser.contains("if (fmkPickSlot != null) return fmkErr(\"busy\""), true);
         String export = body(ma, "public String fontMakerExport(");
-        is("a second save screen is refused", export.contains("if (fmkExportId != null) return fmkErr(\"busy\""), true);
+        // one save screen for a font package and a Google Fonts family (google-fonts-v7.18.0.md section 5)
+        is("a second save screen is refused", export.contains("if (fmkExportId != null || gfSaveFamily != null) return fmkErr(\"busy\", \"The save screen is already open.\");"), true);
+        is("…by a family's save too", body(ma, "public String gfontsSave(").contains("if (fmkExportId != null || gfSaveFamily != null) return fmkErr(\"busy\", \"The save screen is already open.\");"), true);
         is("…and a save of a font being made again", export.contains("fmkJobs.inUse(\"make:\" + id)"), true);
         is("the open save screen's font is kept when Android ends the process", body(ma, "protected void onSaveInstanceState(").contains("outState.putString(STATE_FMK_EXPORT, fmkExportId)")
                 && body(ma, "protected void onCreate(").contains("savedInstanceState.getString(STATE_FMK_EXPORT)"), true);
+        is("…and its answer waits for the page of a window Android made again (R4-03)", body(ma, "private void fmkExported(").contains("notifyJsWhenReady(\"window.onFontMakerExported && window.onFontMakerExported(")
+                && !body(ma, "private void fmkExported(").contains("notifyJs(\""), true);
         String exResult = body(ma, "private void fmkExportResult(");
         is("a save with no font waiting deletes the empty file", exResult.indexOf("if (uri != null) fmkDropDocument(uri)") > 0
                 && exResult.indexOf("if (uri != null) fmkDropDocument(uri)") < exResult.indexOf("fontExec.submit("), true);
@@ -1112,5 +1155,179 @@ public class FontLibraryTest {
         String made = body(ma, "private Set<String> fmkMadeHere()");
         is("…told by My fonts and the app's key", made.contains("FontLibrary.list(fmkDirs())") && made.contains("SigningKey.existing()") && made.contains("signerDigests(pi, true)")
                 && made.contains("FontPackage.madeHere(pkg, system, suffixes, signerDigests(pi, true), key)"), true);
+
+        googleFontsScan(ma);
+    }
+
+    /** The Google Fonts browser and the emoji samples on the activity's side (google-fonts-v7.18.0.md sections 3 and 5). */
+    static void googleFontsScan(String ma) throws Exception {
+        // the save screen's family comes back to this window when Android ends the process, and only a family name does
+        is("the family save's request code", ma.contains("private static final int REQ_GFONTS_SAVE = 4296;") && ma.contains("requestCode == REQ_GFONTS_SAVE"), true);
+        is("the open save screen's family is kept when Android ends the process", ma.contains("private static final String STATE_GF_SAVE = \"gfonts_save_family\";")
+                && body(ma, "protected void onSaveInstanceState(").contains("outState.putString(STATE_GF_SAVE, gfSaveFamily)")
+                && body(ma, "protected void onCreate(").contains("savedInstanceState.getString(STATE_GF_SAVE)")
+                && body(ma, "protected void onCreate(").contains("if (GoogleFonts.isFamily(gfSave))"), true);
+        // …and its answer, which comes (onActivityResult) before that window's page has loaded, waits for onPageFinished: nothing sends it
+        // again (R4-03). pageReady is read on the UI thread, after the check that the window is still there
+        String whenReady = body(ma, "private void notifyJsWhenReady("), runAt = "public void run()", gone = "if (activityDestroyed || webView == null) return;",
+                wait = "if (!pageReady) { pendingPageScripts.add(script); return; }";
+        is("a family save's answer that comes before the page has loaded waits for it", body(ma, "private void gfSaved(").contains("notifyJsWhenReady(\"window.onGfSaved && window.onGfSaved(")
+                && !body(ma, "private void gfSaved(").contains("notifyJs(\"") && whenReady.indexOf(runAt) > 0 && whenReady.indexOf(gone) > whenReady.indexOf(runAt)
+                && whenReady.indexOf(wait) > whenReady.indexOf(gone) && whenReady.indexOf("webView.evaluateJavascript(script, null);") > whenReady.indexOf(wait), true);
+        String waited = body(ma, "private void deliverPendingPageScripts(");
+        is("…and is run, in order, once the page has finished loading", ma.contains("deliverPendingQuickOpen();\n                deliverPendingPageScripts();")
+                && waited.contains("if (!pageReady || pendingPageScripts.isEmpty()) return;") && waited.indexOf("pendingPageScripts.clear();") < waited.indexOf("for (String script : scripts) notifyJs(script);")
+                && ma.contains("private final List<String> pendingPageScripts = new ArrayList<String>();"), true);
+        // every Google Fonts address, at every hop, is a Google Fonts one; css2 with Chrome's user agent, the rest with the app's
+        String open = body(ma, "private java.net.HttpURLConnection gfOpen(");
+        is("each hop of a Google Fonts request is checked before it connects", open.contains("if (!GoogleFonts.allowed(url))")
+                && open.contains("GoogleFonts.allowed(hop.getURL().toString())") && open.contains("new HttpSafe.Hops()"), true);
+        is("…css2 with Chrome's user agent, every other request with the app's", open.contains("chrome ? GoogleFonts.CHROME_UA : GoogleFonts.APP_UA"), true);
+        is("…and a job's hops can be disconnected by Cancel", open.contains("fmkConns.put(job.id, hop)") && open.indexOf("fmkConns.put(job.id, hop)") < open.indexOf("if (gfStopped(job))"), true);
+        // a download's font file asks for gzip itself: Android then keeps its Content-Length (it drops that header from an answer it unzips for
+        // the caller), so the progress has a total (R4-02); every other request is as before
+        is("only a download's font file asks for gzip itself", open.contains("if (gzip) hdr.put(\"Accept-Encoding\", \"gzip\");")
+                && body(ma, "private GfAnswer gfGet(").contains("gfOpen(url, chrome, job, hops, false)"), true);
+        int chrome = 0, requests = 0;
+        for (String line : ma.split("\n")) {
+            if (!line.contains("gfGet(") && !line.contains("gfOpen(")) continue;
+            if (line.contains("private ")) continue;                               // the declarations
+            requests++;
+            if (line.contains(", true, ")) { chrome++; is("the request with Chrome's user agent is css2's", line.contains("gfGet(GoogleFonts.css2Url("), true); }
+        }
+        is("only css2 asks with Chrome's user agent (" + chrome + " of " + requests + " requests)", chrome == 1 && requests >= 6, true);
+        // a download: staged in fam/.<slug>.part/, put in place whole, and nothing left when it does not end so
+        String dl = body(ma, "private void gfDownloadJob(");
+        is("a family is downloaded into its .part folder and put in place after meta.json", dl.contains("GoogleFonts.partDir(d.gfFamilies, family)")
+                && dl.indexOf("GoogleFonts.META") < dl.indexOf("GoogleFonts.commitDownload(d.gfFamilies, family)") && dl.contains("if (!placed) FontLibrary.deleteTree(part);"), true);
+        String fetch = body(ma, "private GoogleFonts.MetaFile gfFetchFont(");
+        is("…each file capped, hashed, flushed and read by FontInspect", fetch.contains("if (n > cap) throw new GoogleFonts.GfException(\"gf_too_big\")")
+                && fetch.contains("md.update(buf, 0, r)") && fetch.contains("out.getFD().sync()") && fetch.contains("throw new GoogleFonts.GfException(\"gf_not_a_font\")"), true);
+        is("…the family capped at 160 MB", dl.contains("Math.min(GoogleFonts.MAX_FILE, left)"), true);
+        is("…each file asked for as gzip and unzipped here, its progress the bytes on the network against their Content-Length", fetch.contains("gfOpen(ref.url, false, job, hops, true)")
+                && fetch.contains("boolean gz = enc.equals(\"gzip\");") && fetch.contains("if (!gz && !enc.isEmpty() && !enc.equals(\"identity\")) throw new GoogleFonts.GfException(\"gf_bad_answer\");")
+                && fetch.contains("if (gz) in = new java.util.zip.GZIPInputStream(wire, 65536);") && fetch.contains("gfProgress(family, index, count, wire.count(), total)")
+                && fetch.contains("if (!gz && total > cap) throw new GoogleFonts.GfException(\"gf_too_big\")") && !fetch.contains("gfProgress(family, index, count, n, total)"), true);
+        // a failure on the phone's own storage (the .part folder not made, the rename refused) is a full phone or its own sentence, never "check the
+        // connection" (R2-03): no plain IOException of the job reaches downloadError, and gfError reads GfLocal before it
+        String ge = body(ma, "private JSONObject gfError(");
+        is("a download's local failures are GfLocal", !dl.contains("new IOException(") && dl.contains("if (!part.mkdirs()) throw new GfLocal(\"")
+                && Pattern.compile("try \\{\\s*dest = GoogleFonts\\.commitDownload\\(d\\.gfFamilies, family\\);\\s*\\} catch \\(IOException e\\) \\{\\s*throw new GfLocal\\(errMsg\\(e\\)\\);").matcher(dl).find()
+                && dl.indexOf("GoogleFonts.commitDownload(") == dl.lastIndexOf("GoogleFonts.commitDownload("), true);
+        is("…said by FontLibrary.localError (a full phone, else failed) before downloadError", ge.contains("if (t instanceof GfLocal) return FontLibrary.localError(t.getMessage(), getFilesDir().getUsableSpace());")
+                && ge.indexOf("t instanceof GfLocal") < ge.indexOf("FontLibrary.downloadError("), true);
+        // …and the page shows each of their sentences as itself, translated: the first FNT_SAID row of failed that matches it says the same words
+        String gpage = src("assets/index.html"), gfj = src("src/com/bloatware/bingblop/GoogleFonts.java");
+        int s1 = gpage == null ? -1 : gpage.indexOf("const FNT_SAID = ["), s2 = s1 < 0 ? -1 : gpage.indexOf("\n        ];", s1);
+        List<String[]> failedRows = new ArrayList<String[]>();
+        Matcher fr = Pattern.compile("\\['failed', /((?:[^/\\\\\\n]|\\\\.)*)/, ([^\\n]*?)\\],?\\n").matcher(s1 >= 0 && s2 > s1 ? gpage.substring(s1, s2 + 1) : "");
+        while (fr.find()) {
+            Matcher lit = Pattern.compile("^(?:'((?:[^'\\\\]|\\\\.)*)'|\"((?:[^\"\\\\]|\\\\.)*)\")$").matcher(fr.group(2));
+            failedRows.add(new String[] { fr.group(1), lit.matches() ? (lit.group(1) != null ? lit.group(1) : lit.group(2)) : null });
+        }
+        is("the page's failed rows are found", failedRows.size() >= 20, true);
+        List<String> local = new ArrayList<String>();
+        Matcher gl = Pattern.compile("new GfLocal\\(\"((?:[^\"\\\\]|\\\\.)*)\"\\)").matcher(ma);
+        while (gl.find()) local.add(gl.group(1));
+        Matcher cm = Pattern.compile("throw new IOException\\(\"((?:[^\"\\\\]|\\\\.)*)\"\\)").matcher(body(gfj == null ? "" : gfj, "public static File commitDownload("));
+        int nCommit = 0;
+        while (cm.find()) { local.add(cm.group(1)); nCommit++; }
+        is("the local failures' sentences are found (" + local.size() + ")", local.size() >= 3 && nCommit == 2, true);
+        for (String said : local) {
+            String shown = "(no row)";
+            for (String[] r : failedRows) if (Pattern.compile(r[0]).matcher(said).find()) { shown = r[1]; break; }
+            is("the page shows the local failure \"" + said + "\" as itself", said.replace("\\'", "'").equals(shown == null ? null : shown.replace("\\'", "'")), true);
+        }
+        is("the folders are swept once per process", body(ma, "private FontLibrary.Dirs fmkDirs()").contains("GoogleFonts.sweep(d.gfFamilies)"), true);
+        // Use: the file chooser's copy, with the file checked against meta.json; Save and Delete wait for each other and for a download
+        String pick = body(ma, "private JSONObject fmkCopyPick(");
+        is("Use copies like a chosen file, checked against meta.json", pick.contains("if (wantSha != null && (size != wantSize || !wantSha.equals(FontLibrary.sha256(data))))")
+                && pick.contains("FontLibrary.error(\"gf_changed\", GoogleFonts.E_CHANGED)") && ma.contains("return fmkCopyPick(slot, in, name, ask, -1, null);"), true);
+        String use = body(ma, "public String gfontsUse(");
+        is("…refused while the file chooser is open, numbered with its choices", use.contains("if (fmkPickSlot != null) return fmkErr(\"busy\", \"The file chooser is already open.\");")
+                && use.contains("ask = picks.ask(slot);") && use.contains("GoogleFonts.metaFile(meta, fileName)") && use.contains("GoogleFonts.downloaded(famDir, family)"), true);
+        is("a download holds the family; a save waits for it and it for a save", body(ma, "public String gfontsDownload(").contains("fmkJobs.startFor(MainActivity.this, \"gfsave:\" + family, \"gfdl\", family, \"gf:\" + family)")
+                && body(ma, "private void gfSaveResult(").contains("fmkJobs.startFor(this, \"gf:\" + family, \"gfsave\""), true);
+        String del = body(ma, "public String gfontsDelete(");
+        is("a delete waits for a download and a save, in one step with the rename", del.contains("synchronized (fmkJobs)") && del.contains("fmkJobs.running(\"gfdl\", family)")
+                && del.contains("fmkJobs.inUse(\"gfsave:\" + family)") && del.indexOf("renameTo(aside)") < del.indexOf("fontExec.submit("), true);
+        String saveTo = body(ma, "private JSONObject gfSaveTo(");
+        is("a family's zip that is not whole is deleted once it was opened for writing", saveTo.contains("GoogleFonts.writeZip(") && saveTo.contains("opened = true;")
+                && saveTo.contains("if (opened && !whole) fmkDeleteDocument(uri);") && saveTo.contains("else if (!whole) fmkDeleteIfEmpty(uri);"), true);
+        is("…and an answer with no family waiting deletes only an empty file", body(ma, "private void gfSaveResult(").contains("if (uri != null) fmkDropDocument(uri);"), true);
+        // the iOS emoji sample: the downloaded file when it is kept, else ranges checked to be the pinned file
+        String spec = body(ma, "private void fmkSpecimenJob(");
+        is("the iOS sample reads the kept file, else ranges", spec.contains("FontLibrary.keptBuild(item, kept) == null") && spec.contains("new FmkRanges(job, item)")
+                && spec.contains("EmojiSpecimen.cacheJson(images, item.sha256)"), true);
+        // …once: a sample kept in specimen/apple.json is the answer before anything is read, also when it was kept after this page asked
+        // emojiSpecimenCached (another window's read), so a phone offline by then still shows it (R4-12)
+        int cached = spec.indexOf("List<EmojiSpecimen.Image> images = EmojiSpecimen.readCache(cache, item.sha256);"), kept = spec.indexOf("if (images != null && !images.isEmpty()) {");
+        is("…a kept sample is the answer, before the file or the ranges are read", cached > 0 && kept > cached && kept < spec.indexOf("new FmkRanges(job, item)")
+                && kept < spec.indexOf("new java.io.RandomAccessFile(kept, \"r\")") && spec.contains("File kept = d.emojiFile(item.id), cache = new File(d.specimen, item.id + \".json\");")
+                && spec.contains(".put(\"images\", fmkImagesJson(images)).put(\"from\", \"cache\");") && spec.contains("FontLibrary.writeAtomic(cache, EmojiSpecimen.cacheJson(images, item.sha256)"), true);
+        String ranges = body(ma, "private final class FmkRanges");
+        is("…each range checked to be that part of the pinned file, uncompressed, its hops disconnectable", ranges.contains("EmojiSpecimen.checkPart(code, c.getHeaderField(\"Content-Range\"), offset, length, item.size)")
+                && ranges.contains("hdr.put(\"Accept-Encoding\", \"identity\")") && ranges.contains("fmkConns.put(job.id, hop)") && ranges.contains("this.at = item.url;"), true);
+        is("only the iOS emoji are read by ranges", body(ma, "public String emojiSpecimenFetch(").contains("\"apple\".equals(id) ? EmojiCatalog.byId(id) : null"), true);
+        is("the sample fonts are only the four in assets/emoji", body(ma, "public String emojiSpecimenFont(").contains("!EmojiSpecimen.SPECIMEN_IDS.contains(id)")
+                && body(ma, "public String emojiSpecimenFont(").contains("getAssets().open(\"emoji/\" + id + \".ttf\")"), true);
+        // a second ask joins only this window's running job: another window's answers busy, so no page waits for a callback that goes to
+        // another window (R1-06); the join and the start are one step under fmkJobs
+        for (String[] m : new String[][] { { "gfontsRefresh(", "\"gfcat\", \"only\"" }, { "gfontsInfo(", "\"gfinfo\", family" }, { "emojiSpecimenFetch(", "\"emospec\", item.id" } }) {
+            String b = body(ma, "public String " + m[0]), join = "fmkJobs.joinable(MainActivity.this, " + m[1] + ")", start = "fmkJobs.startFor(MainActivity.this, null, " + m[1] + ")";
+            List<int[]> locked = lockedRegions(b, "fmkJobs");
+            int j = b.indexOf(join), s = b.indexOf(start), busy = b.indexOf("if (job == null) return fmkErr(\"busy\", ");
+            is(m[0] + " joins only this window's running job, in one step with the start; another window's answers busy", j >= 0 && s > j && !b.contains("fmkJobs.running(")
+                    && locked.size() == 1 && locked.get(0)[0] < j && s < locked.get(0)[1] && busy > s && busy < b.indexOf("fontExec.submit("), true);
+        }
+        // a preview that lost a face to an HTTP status or an empty answer is shown but not cached for 30 days; one left out for its size still is (R1-08)
+        String pv = body(ma, "private String gfPreview(");
+        Matcher lost = Pattern.compile("if \\(w\\.status != 200 \\|\\| w\\.body\\.length == 0\\) \\{ (\\w+) = true; continue; \\}").matcher(pv);
+        String flag = lost.find() ? lost.group(1) : null, guard = "if (!" + flag + ") {";
+        int write = pv.indexOf("GoogleFonts.writeWhole(cached"), g = pv.indexOf(guard);
+        is("a preview that lost a face to an HTTP error is not cached", flag != null && pv.contains("boolean " + flag + " = false;") && g >= 0 && write > g
+                && write < g + body(pv.substring(g), guard).length() && pv.indexOf("GoogleFonts.writeWhole(") == write && pv.lastIndexOf("GoogleFonts.writeWhole(") == write, true);
+        is("…a face too big for the cap is left out without that", Pattern.compile("catch \\(GoogleFonts\\.GfException tooBig\\) \\{\\s*continue;\\s*\\}").matcher(pv).find(), true);
+        // a cached preview is named by the css2 request it stands for (the entry's styles and axes, the characters), so a family whose styles or
+        // axes changed in a newer list is fetched again, never drawn with the old faces for 30 days (R2-01)
+        is("a preview's cache file is GoogleFonts.previewFile of the very request fetched", pv.contains("cached = GoogleFonts.previewFile(dir, entry, mode, text);")
+                && pv.contains("gfGet(GoogleFonts.css2Url(entry, mode, text), true,") && !pv.contains("previewKey(") && !pv.contains("uniqueText("), true);
+        // "no details page" is kept for the process only when Google's envelope and the HTTP status both say 404 (R1-09)
+        String ij = body(ma, "private void gfInfoJob(");
+        is("a family's details: a 5xx or a 429 is asked again, not kept as no details", ij.contains("if (!\"gf_unknown\".equals(e.code) || a.status != 404) {")
+                && ij.indexOf("info = null;") > ij.indexOf("a.status != 404") && ij.contains("if (a.status != 200) throw new GfHttp(a.status);"), true);
+
+        // the 16 sample emoji are one string in the app, in the script that cut the sample fonts, and on the page
+        String script = src("tools/make-emoji-specimens.sh"), page = src("assets/index.html");
+        Matcher sm = Pattern.compile("(?m)^SAMPLE='([^']*)'").matcher(script == null ? "" : script);
+        is("the script's SAMPLE is EmojiSpecimen.SAMPLE", sm.find() && sm.group(1).equals(EmojiSpecimen.SAMPLE), true);
+        Matcher pm = Pattern.compile("FNT_EMO_SAMPLE\\s*=\\s*(['\"`])((?:\\\\.|(?!\\1).)*)\\1").matcher(page == null ? "" : page);
+        boolean onPage = pm.find();
+        is("the page has FNT_EMO_SAMPLE", onPage, true);
+        is("the page's FNT_EMO_SAMPLE is EmojiSpecimen.SAMPLE", onPage && jsString(pm.group(2)).equals(EmojiSpecimen.SAMPLE), true);
+    }
+
+    /** A JavaScript string literal's text with its escapes (\\uXXXX, \\u{...}, \\x.., \\n ...) undone. */
+    static String jsString(String lit) {
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < lit.length(); i++) {
+            char c = lit.charAt(i);
+            if (c != '\\' || i + 1 >= lit.length()) { b.append(c); continue; }
+            char e = lit.charAt(++i);
+            if (e == 'u' && i + 1 < lit.length() && lit.charAt(i + 1) == '{') {
+                int end = lit.indexOf('}', i);
+                b.appendCodePoint(Integer.parseInt(lit.substring(i + 2, end), 16));
+                i = end;
+            } else if (e == 'u') {
+                b.append((char) Integer.parseInt(lit.substring(i + 1, i + 5), 16));
+                i += 4;
+            } else if (e == 'x') {
+                b.append((char) Integer.parseInt(lit.substring(i + 1, i + 3), 16));
+                i += 2;
+            } else {
+                b.append(e == 'n' ? '\n' : e == 't' ? '\t' : e);
+            }
+        }
+        return b.toString();
     }
 }

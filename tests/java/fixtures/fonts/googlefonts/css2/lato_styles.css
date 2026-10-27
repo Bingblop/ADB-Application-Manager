@@ -1,0 +1,80 @@
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 100;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6u-w4BMUTPHjxsIPy-qNiXg7e8oztoMt6ymaOrLXzxBMrphQ110QqjLrlwDkePwvXA&skey=3404b88e33a27f67&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 300;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6u_w4BMUTPHjxsI9w2PGQ3q5d0H89R2gq-nb-vIXjNAMbtmQl51XanIr1sCkuL_vHNN&skey=8107d606b7e3d38e&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6u8w4BMUTPHjxswXiWtFCfa8P0bupU6taqgaujFUT5DNLxjQUNqQKrNqF4Bn-3y&skey=51512958f8cff7a8&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 700;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6u_w4BMUTPHjxsI5wqPGQ3q5d0H89R2gq-nb-vIXjNAMbtmQl51XanIr1sCkuL_vHNN&skey=5334e9c0b67702e2&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 900;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6u_w4BMUTPHjxsI3wiPGQ3q5d0H89R2gq-nb-vIXjNAMbtmQl51XanIr1sCkuL_vHNN&skey=4066143815f8bfc2&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 100;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6u8w4BMUTPHh30wXiWtFCfa8P0bupU6taqgaujFUT5DNLxjQUNqQKrNqF4Bn-3y&skey=cfa1ba7b04a1ba34&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6u9w4BMUTPHh7USewqFHi_o38AVwKA5tK2haenKUD1CM71gQFxrQ6vKqV0AkOzxvg&skey=91f32e07d083dd3a&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6uyw4BMUTPHvxw6WQevLjrIw4lUjJc8s6iiZObHUzhFNr59X0FoRqzPqlAPnQ&skey=2d58b92a99e1c086&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6u9w4BMUTPHh6UVewqFHi_o38AVwKA5tK2haenKUD1CM71gQFxrQ6vKqV0AkOzxvg&skey=3480a19627739c0d&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url(https://fonts.gstatic.com/l/font?kit=S6u9w4BMUTPHh50XewqFHi_o38AVwKA5tK2haenKUD1CM71gQFxrQ6vKqV0AkOzxvg&skey=d01acf708cb3b73b&v=v25) format('woff2');
+  unicode-range: U+20, U+2e, U+54, U+61-7a;
+}

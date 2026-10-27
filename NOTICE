@@ -60,6 +60,27 @@ Terminal tab: the full-screen real terminal
 * The pseudo-terminal helper (native/pty/ptyexec.c, run as libptyexec.so) and PtyShell.java were written for this app; no code from Termux or
   any other terminal app. The extra-keys row follows the layout people know from Termux (ESC, CTRL, ALT, arrows, HOME/END, PGUP/PGDN).
 
+Custom Fonts tab: the emoji samples
+-----------------------------------
+The rows of the Emoji fonts card show sixteen sample emoji in each font. For four of the fonts the sample ships in the app as a copy of the
+font cut down to those sixteen emoji (assets/emoji/<id>.ttf, made by tools/make-emoji-specimens.sh from the exact file the app downloads);
+each keeps its own copyright and licence, listed in assets/emoji/NOTICE.txt:
+* Noto Color Emoji (Google; googlefonts/noto-emoji) - OFL-1.1 - https://github.com/googlefonts/noto-emoji - assets/emoji/noto.ttf,
+  Copyright 2022 Google Inc. The licence's full text is in assets/emoji/OFL.txt.
+* Twemoji (graphics by Twitter, Inc. and contributors, jdecked/twemoji; the COLR build by SableClient/twemoji-font) - CC-BY-4.0 -
+  https://github.com/SableClient/twemoji-font - assets/emoji/twemoji.ttf (https://creativecommons.org/licenses/by/4.0/); the font build is
+  Copyright 2016-2018, Mozilla Foundation, under Apache-2.0 (https://www.apache.org/licenses/LICENSE-2.0). Both licences are in
+  assets/emoji/Twemoji-LICENSE.md, the release's own LICENSE.md.
+* Blobmoji (DavidBerdik/blobmoji2, a fork of Noto Emoji with the blob art) - OFL-1.1 - https://github.com/DavidBerdik/blobmoji2 -
+  assets/emoji/blobmoji.ttf, Copyright 2022 Google Inc. The licence's full text is in assets/emoji/OFL.txt.
+* OpenMoji (HfG Schwaebisch Gmuend; hfg-gmuend/openmoji) - CC-BY-SA-4.0 - https://github.com/hfg-gmuend/openmoji - assets/emoji/openmoji.ttf,
+  shared under the same licence (https://creativecommons.org/licenses/by-sa/4.0/).
+The cut-down copies are changed only by leaving the other glyphs out. The full emoji fonts are downloaded at run time when chosen and are not
+shipped. The iOS-style emoji are never shipped: they are Apple's art, from a third-party build (samuelngs/apple-emoji-ttf, the file the iOS
+emoji download comes from). When asked, the app reads their sixteen sample pictures from that file: from the downloaded copy when it is on the
+phone, else about 0.3 MB of it by HTTP range from its pinned address on GitHub. It keeps those pictures on the phone, in
+files/fontmaker/specimen/apple.json.
+
 Other components
 ----------------
 * Universal Android Debloater Next Generation (Universal-Debloater-Alliance) - GPL-3.0 - the debloat list, downloaded at run time.

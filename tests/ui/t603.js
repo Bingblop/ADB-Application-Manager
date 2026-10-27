@@ -1,0 +1,292 @@
+// v7.18.0 Emoji fonts, the samples: under each row the sixteen sample emoji, in the font itself. Noto, Twemoji, Blobmoji and OpenMoji each load their
+// cut-down copy once (emojiSpecimenFont) as the FontFace 'fntEmo_<id>'; the strip stays hidden until it is loaded, never the phone's own emoji in its
+// place, and a font that does not load takes its strip away. On a WebView older than Chrome 98 the two COLRv1 fonts (Noto, Blobmoji) say it is too
+// old to draw them, and are not loaded. The iOS emoji: the pictures the app kept are asked at render (emojiSpecimenCached); without them a note
+// ("Reads about 0.3 MB of the iOS emoji file.", or "Read from the downloaded file." when the iOS emoji are on the phone) and "Show these emoji"
+// (emojiSpecimenFetch), "Reading the iOS emoji…" while it runs, then sixteen 28 px pictures (alt: the emoji), kept for the next render and on a
+// fresh page. A failure, and another window of the app reading them (busy), says why in the page's words with the button again; that sentence goes
+// once the iOS emoji are downloaded or deleted (the next read is another file). Pictures kept since the page asked (that other window's read) are
+// the read's answer (from 'cache', as fmkSpecimenJob does), so a page offline by then still shows them. Show these emoji pressed with a keyboard
+// leaves the focus on "Reading the iOS emoji…", then on the pictures or the button again; one on another row's control (its Download, Cancel or
+// Delete, License or Source) stays there when the list is drawn again (the pictures came, a download). An older app build shows no strip. The row's Download stays its
+// first button; nothing is wider than the screen at 360 px. The licences travel with the
+// samples: assets/emoji/OFL.txt holds the full SIL Open Font License 1.1 with the copyright lines of noto.ttf and blobmoji.ttf (OFL condition 2),
+// assets/emoji/NOTICE.txt points to it (and to Twemoji-LICENSE.md, the release's licences of Twemoji: its art CC-BY-4.0, its font build
+// Mozilla's under Apache-2.0), and the root NOTICE lists the four fonts with their licences (ASCII, the iOS emoji never shipped, their
+// sample read from the downloaded copy, else by HTTP range from the pinned address).
+// Mock bridge: lib/fontmaker_mock.js (opts.emoB64: assets/emoji/<id>.ttf; opts.gf: hold, specimenError, appleCached, otherWindow).
+const fs = require('fs');
+const path = require('path');
+const { chromium, PAGE, REPO, fixture } = require('./lib/pw');
+const fmk = require('./lib/fontmaker_mock');
+let bad = 0;
+function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok ? '' : ': ' + (extra === undefined ? ok : extra))); }
+const b64 = f => fs.readFileSync(fixture(f)).toString('base64');
+const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Regular.ttf'), bold: b64('Fixture-Boxes-Bold.ttf') };
+const IDS = ['noto', 'twemoji', 'blobmoji', 'openmoji'];
+const EMO = {}; IDS.forEach(id => { EMO[id] = fs.readFileSync(path.join(REPO, 'assets', 'emoji', id + '.ttf')).toString('base64'); });
+const SAMPLE = '😀😂🥰😎🥳😭👍👋❤️🔥🎉🐶🦄🍕🚀🌈';
+const OLD_UA = 'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.98 Mobile Safari/537.36';
+
+async function open(b, opts, ctxOpts) {
+  const ctx = await b.newContext(Object.assign({ viewport: { width: 412, height: 900 } }, ctxOpts || {}));
+  const page = await ctx.newPage();
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.addInitScript(fmk.initScript, Object.assign({ b64: FONTS, emoB64: EMO }, opts));
+  await page.goto(PAGE);
+  await page.waitForTimeout(500);
+  await page.evaluate(() => switchView('fonts'));
+  await page.waitForTimeout(800);
+  return { ctx, page, errors };
+}
+const strips = (page) => page.evaluate(() => {
+  const out = {};
+  document.querySelectorAll('#fntEmojiList .fnt-emo').forEach(row => {
+    const id = row.id.replace(/^fntEmo_/, ''), pv = row.querySelector('.fnt-emo-pv'), say = row.querySelector('.fnt-emo-say'), show = row.querySelector('#fntEmoShow');
+    out[id] = {
+      pv: pv ? { id: pv.id, wait: pv.classList.contains('is-wait'), hidden: getComputedStyle(pv).visibility === 'hidden', role: pv.getAttribute('role'), label: pv.getAttribute('aria-label'), noTr: pv.getAttribute('translate'),
+        spans: [...pv.querySelectorAll('span')].map(s => s.textContent).join(''), n: pv.querySelectorAll('span').length, ff: [...new Set([...pv.querySelectorAll('span')].map(s => s.style.fontFamily))].join(','),
+        imgs: [...pv.querySelectorAll('img')].map(i => i.alt).join(''), nImg: pv.querySelectorAll('img').length, imgSize: pv.querySelector('img') ? [pv.querySelector('img').getBoundingClientRect().width, pv.querySelector('img').getBoundingClientRect().height].join('x') : '',
+        size: getComputedStyle(pv).fontSize, afterName: !!(pv.previousElementSibling && pv.previousElementSibling.classList.contains('rf-row')) } : null,
+      say: say ? say.textContent : '', show: show ? show.textContent + (show.classList.contains('batch-tool-link') ? '' : '!') : '', err: (row.querySelector('.fnt-err .is-err') || {}).textContent || '',
+      first: (row.querySelector('.op-mode-btn') || {}).textContent || '', notes: row.querySelectorAll('.fnt-note').length,
+    };
+  });
+  return out;
+});
+const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new RegExp(src).test(c)), re);
+
+(async () => {
+  const b = await chromium.launch();
+  {
+    const { ctx, page, errors } = await open(b, { gf: { hold: true } });
+    let s = await strips(page);
+    for (const id of IDS) {
+      const p = s[id].pv;
+      const ff = p && p.ff.replace(/["']/g, '');
+      check('1. ' + id + ': the sixteen emoji under the name, in fntEmo_' + id + ' once loaded', !!p && p.id === 'fntEmoPv_' + id && p.afterName && p.n === 16 && p.spans === SAMPLE && !p.wait && !p.hidden && ff === 'fntEmo_' + id, JSON.stringify(p));
+    }
+    const labels = IDS.map(id => s[id].pv.label + '/' + s[id].pv.role + '/' + s[id].pv.noTr).join(' | ');
+    check('   each is an image "Sample of <name>" (translate="no"), about 28 px', labels === 'Sample of Noto Color Emoji/img/no | Sample of Twemoji/img/no | Sample of Blobmoji/img/no | Sample of OpenMoji/img/no' && IDS.every(id => s[id].pv.size === '28px'), labels);
+    const faces = await page.evaluate(() => [...document.fonts].filter(f => /^fntEmo_/.test(f.family)).map(f => f.family.replace(/"/g, '') + ':' + f.status).sort().join(','));
+    check('   the four faces in document.fonts, loaded', faces === 'fntEmo_blobmoji:loaded,fntEmo_noto:loaded,fntEmo_openmoji:loaded,fntEmo_twemoji:loaded', faces);
+    const drawn = await page.evaluate(() => ['noto', 'twemoji', 'blobmoji', 'openmoji'].every(id => document.fonts.check("28px 'fntEmo_" + id + "'", '😀🦄')));
+    check('   each face draws the sample', drawn);
+    check('   each font read once (emojiSpecimenFont)', (await calls(page, '^emojiSpecimenFont:')).sort().join(',') === 'emojiSpecimenFont:blobmoji,emojiSpecimenFont:noto,emojiSpecimenFont:openmoji,emojiSpecimenFont:twemoji', (await calls(page, '^emojiSpecimenFont:')).join(','));
+    check('   the rows keep Download (or Delete) as their first button', s.noto.first === 'Download' && s.twemoji.first === 'Delete' && s.apple.first === 'Download', JSON.stringify(IDS.concat('apple').map(id => s[id].first)));
+    // drawn again: the faces are not read again, the strips at once
+    await page.evaluate(() => { switchView('apps'); });
+    await page.waitForTimeout(200);
+    await page.evaluate(() => { switchView('fonts'); });
+    await page.waitForTimeout(100);
+    s = await strips(page);
+    check('2. the tab shown again: the strips at once, the fonts not read again', IDS.every(id => s[id].pv && !s[id].pv.wait) && (await calls(page, '^emojiSpecimenFont:')).length === 4, JSON.stringify((await calls(page, '^emojiSpecimenFont:'))));
+    // the iOS emoji
+    check('3. iOS: the kept pictures asked (none); the note and "Show these emoji"', (await calls(page, '^emojiSpecimenCached:')).length >= 1 && (await calls(page, '^emojiSpecimenCached:')).every(c => c === 'emojiSpecimenCached:apple')
+      && !s.apple.pv && s.apple.say === 'Reads about 0.3 MB of the iOS emoji file.' && s.apple.show === 'Show these emoji' && s.apple.notes === 1, JSON.stringify(s.apple));
+    await page.click('#fntEmoShow');
+    s = await strips(page);
+    check('   Show: emojiSpecimenFetch, "Reading the iOS emoji…", no button meanwhile', (await calls(page, '^emojiSpecimenFetch:')).join(',') === 'emojiSpecimenFetch:apple' && s.apple.say === 'Reading the iOS emoji…' && !s.apple.show, JSON.stringify(s.apple));
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(200);
+    s = await strips(page);
+    check('   then sixteen pictures, 28 x 28, alt the emoji', s.apple.pv && s.apple.pv.nImg === 16 && s.apple.pv.imgs === SAMPLE && s.apple.pv.imgSize === '28x28' && s.apple.pv.label === 'Sample of iOS emoji' && !s.apple.say && !s.apple.show, JSON.stringify(s.apple));
+    const src = await page.evaluate(() => document.querySelector('#fntEmoPv_apple img').getAttribute('src').slice(0, 22));
+    check('   each a PNG in the page (data:image/png)', src === 'data:image/png;base64,', src);
+    await page.evaluate(() => { switchView('apps'); });
+    await page.waitForTimeout(150);
+    await page.evaluate(() => { switchView('fonts'); });
+    await page.waitForTimeout(150);
+    s = await strips(page);
+    check('   the next render: the pictures at once, not read again', s.apple.pv && s.apple.pv.nImg === 16 && (await calls(page, '^emojiSpecimenFetch:')).length === 1, JSON.stringify(s.apple));
+    // dark and light at 360 px: nothing wider
+    await page.setViewportSize({ width: 360, height: 900 });
+    await page.waitForTimeout(200);
+    const wide = await page.evaluate(() => { const cw = document.documentElement.clientWidth; return { sw: document.documentElement.scrollWidth, cw, out: [...document.querySelectorAll('#fntEmojiCard *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.right > cw + 0.5; }).map(e => e.id || e.className).slice(0, 5) }; });
+    check('4. 360 px: the strips wrap, nothing wider than the screen', wide.sw <= wide.cw && !wide.out.length, JSON.stringify(wide));
+    await page.evaluate(() => document.getElementById('fntEmojiCard').scrollIntoView());
+    await page.screenshot({ path: 'emoji-360.png' });
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a fresh page: the pictures the app kept
+  {
+    const { ctx, page, errors } = await open(b, { gf: { appleCached: true } });
+    const s = await strips(page);
+    check('5. a fresh page with the pictures kept: shown at once, nothing read', s.apple.pv && s.apple.pv.nImg === 16 && !(await calls(page, '^emojiSpecimenFetch:')).length, JSON.stringify(s.apple));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the iOS emoji downloaded; a failed read; an answer without pictures
+  {
+    const { ctx, page, errors } = await open(b, { downloaded: ['twemoji', 'apple'], gf: { specimenError: { code: 'emo_changed', error: 'The iOS emoji file at its address is not the expected one.' } } });
+    let s = await strips(page);
+    check('6. the iOS emoji on the phone: "Read from the downloaded file."', s.apple.say === 'Read from the downloaded file.' && s.apple.show === 'Show these emoji', JSON.stringify(s.apple));
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    s = await strips(page);
+    check('7. the read fails: the page\'s sentence and the button again', s.apple.err === 'The iOS emoji file at its address is not the expected one, so its sample was not read. Update the app.' && s.apple.show === 'Show these emoji' && !s.apple.pv && s.apple.notes === 1, JSON.stringify(s.apple));
+    await page.evaluate(() => { __fmk.specimenError = null; });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    s = await strips(page);
+    check('   again: the pictures, the error gone', s.apple.pv && s.apple.pv.nImg === 16 && !s.apple.err, JSON.stringify(s.apple));
+    await page.evaluate(() => { fnt.emoApple.images = null; fnt.emoApple.busy = true; onEmojiSpecimen('apple', JSON.stringify({ ok: true, images: [{ cp: 0x1F600, b64: 'not base64!' }] })); });
+    s = await strips(page);
+    check('   an answer without a usable picture: "The sample could not be read from the emoji font."', s.apple.err === 'The sample could not be read from the emoji font.' && s.apple.show === 'Show these emoji', JSON.stringify(s.apple));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // another window of the app is reading the iOS emoji: the bridge answers busy (that read's answer goes to that window only), so the strip says so
+  // with the button again instead of "Reading the iOS emoji…" for good
+  {
+    const { ctx, page, errors } = await open(b, { gf: { otherWindow: true } });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    let s = await strips(page);
+    check('7b. another window is reading the iOS emoji: its sentence and the button again', s.apple.err === 'Another window of the app is reading the iOS emoji. Try again in a moment.' && s.apple.show === 'Show these emoji'
+      && !s.apple.pv && !/Reading the iOS emoji/.test(s.apple.say) && (await calls(page, '^emojiSpecimenFetch:')).length === 1, JSON.stringify(s.apple));
+    await page.evaluate(() => { __fmk.gfOtherWindow = false; });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    s = await strips(page);
+    check('   once it ended, the button reads them here', s.apple.pv && s.apple.pv.nImg === 16 && !s.apple.err && (await calls(page, '^emojiSpecimenFetch:')).length === 2, JSON.stringify(s.apple));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // an earlier read's failure does not stay under the iOS row once what is read changed: the iOS emoji downloaded (the file is read now), or deleted
+  // (the web again)
+  {
+    const { ctx, page, errors } = await open(b, { gf: { specimenError: { code: 'network', error: 'The download failed: Unable to resolve host' } } });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    let s = await strips(page);
+    check('7c. offline, Show: the network sentence; the iOS emoji not on the phone', /^The download failed/.test(s.apple.err) && s.apple.first === 'Download', JSON.stringify(s.apple));
+    await page.evaluate(() => { __fmk.specimenError = null; });
+    await page.click('#fntEmo_apple .op-mode-btn');
+    await page.waitForFunction(() => !fnt.dl.apple, null, { timeout: 5000 }); await page.waitForTimeout(150);
+    s = await strips(page);
+    check('   then downloaded: that sentence gone, "Read from the downloaded file." and the button', s.apple.first === 'Delete' && !s.apple.err && s.apple.say === 'Read from the downloaded file.' && s.apple.show === 'Show these emoji' && !s.apple.pv, JSON.stringify(s.apple));
+    await page.evaluate(() => { __fmk.specimenError = { code: 'unreadable', error: 'The app could not read that file: x' }; });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    const readErr = (await strips(page)).apple.err;
+    await page.evaluate(() => { __fmk.specimenError = null; });
+    await page.click('#fntEmo_apple .op-mode-btn'); await page.waitForTimeout(200);
+    s = await strips(page);
+    check('   the file not read, then Delete: that sentence gone, "Reads about 0.3 MB of the iOS emoji file."', !!readErr && s.apple.first === 'Download' && !s.apple.err && s.apple.say === 'Reads about 0.3 MB of the iOS emoji file.', JSON.stringify([readErr, s.apple]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // that other window's read was kept (specimen/apple.json) after this page asked for the kept pictures, and this phone is offline now: the read
+  // answers with the kept pictures instead of reading the web again (R4-12)
+  {
+    const { ctx, page, errors } = await open(b, { gf: { otherWindow: true } });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    await page.evaluate(() => {
+      __fmk.gfOtherWindow = false; __fmk.appleCached = true; __fmk.specimenError = { code: 'network', error: 'The download failed: Unable to resolve host' };
+      const on = window.onEmojiSpecimen; window.__emoFrom = [];
+      window.onEmojiSpecimen = function (id, json) { __emoFrom.push(JSON.parse(json).from); return on.apply(this, arguments); };
+    });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    const s = await strips(page), from = await page.evaluate(() => __emoFrom.join(','));
+    check('7d. the other window\'s read was kept, this phone is offline: Show these emoji shows the kept pictures, no error', s.apple.pv && s.apple.pv.nImg === 16 && !s.apple.err
+      && s.apple.show === '' && (await calls(page, '^emojiSpecimenFetch:')).length === 2, JSON.stringify(s.apple));
+    check('   answered from the kept pictures, not read again', from === 'cache', from);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // with a keyboard (switch access, TalkBack): Show these emoji turns into "Reading the iOS emoji…", which takes the focus (and is read), also
+  // through a redraw of the list meanwhile; a failure gives it to the button again, the pictures to their strip (one image, read by its label);
+  // never the body. A focus on another row's control stays on it through the redraws
+  {
+    const { ctx, page, errors } = await open(b, { gf: { hold: true, specimenError: { code: 'network', error: 'The download failed: Unable to resolve host' } } });
+    const fo = () => page.evaluate(() => { const a = document.activeElement; return { id: a ? a.id || a.tagName : '', text: a ? a.textContent.trim() : '', label: a ? a.getAttribute('aria-label') || '' : '' }; });
+    const answer = async () => { await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150); return fo(); };
+    await page.focus('#fntEmoShow'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+    const f1 = await fo();
+    await page.evaluate(() => fntRenderEmoji());
+    const f2 = await fo(), f3 = await answer();
+    check('7e. Show these emoji with the keyboard: the focus on "Reading the iOS emoji…" (also when the list is drawn again meanwhile), then on the button again when it fails',
+      f1.id === 'fntEmoSay_apple' && f1.text === 'Reading the iOS emoji…' && f2.id === 'fntEmoSay_apple' && f3.id === 'fntEmoShow' && /^The download failed/.test((await strips(page)).apple.err), JSON.stringify([f1, f2, f3]));
+    await page.evaluate(() => { __fmk.specimenError = null; });
+    await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+    const f4 = await fo(), f5 = await answer();
+    check('   again: "Reading the iOS emoji…", then the sixteen pictures, read as "Sample of iOS emoji"', f4.id === 'fntEmoSay_apple' && f5.id === 'fntEmoPv_apple' && f5.label === 'Sample of iOS emoji'
+      && (await strips(page)).apple.pv.nImg === 16, JSON.stringify([f4, f5]));
+    // the read under way, the focus goes on to another row's control (Blobmoji's Download, Noto's Source, the iOS row's License): the answer draws
+    // the list again, and the focus stays on that control
+    const other = async (sel, i) => {
+      await page.evaluate(() => { fnt.emoApple.images = null; fnt.emoApple.asked = true; fntRenderEmoji(); });         // the button again
+      await page.focus('#fntEmoShow'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+      const said = (await fo()).id;
+      await page.evaluate(([sel, i]) => document.querySelectorAll(sel)[i].focus(), [sel, i]);
+      const f = await answer();
+      return { said, f: f.id + ':' + f.text.slice(0, 40), same: await page.evaluate(([sel, i]) => document.activeElement === document.querySelectorAll(sel)[i], [sel, i]), n: ((await strips(page)).apple.pv || {}).nImg };
+    };
+    let o = await other('#fntEmo_blobmoji .op-mode-btn', 0);
+    check('   the focus on Blobmoji\'s Download while they are read: there still when the pictures come, not the body', o.said === 'fntEmoSay_apple' && o.same && o.f === 'BUTTON:Download' && o.n === 16, JSON.stringify(o));
+    o = await other('#fntEmo_noto .fnt-links a', 1);
+    check('   on Noto\'s Source: there still', o.same && o.f === 'A:Source' && o.n === 16, JSON.stringify(o));
+    o = await other('#fntEmo_apple .fnt-links a', 0);
+    check('   on the iOS row\'s License: there still', o.same && o.f === 'A:License' && o.n === 16, JSON.stringify(o));
+    // a row's own button pressed with the keyboard: Download turns into Cancel, then Delete once downloaded, in the same place, which keeps the focus
+    const dl = await page.evaluate(() => { const b = document.querySelector('#fntEmo_blobmoji .op-mode-btn'); b.focus(); b.click(); const a = document.activeElement; return (a.closest('.fnt-emo') || {}).id + ':' + a.textContent.trim().slice(0, 40); });
+    await page.waitForTimeout(300);
+    const done = await page.evaluate(() => { const a = document.activeElement; return (a.closest('.fnt-emo') || {}).id + ':' + a.textContent.trim().slice(0, 40); });
+    check('   Blobmoji\'s Download pressed: the focus on its Cancel, then on its Delete', dl === 'fntEmo_blobmoji:Cancel' && done === 'fntEmo_blobmoji:Delete', JSON.stringify([dl, done]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a WebView older than Chrome 98; a font the app does not have
+  {
+    const emo = Object.assign({}, EMO); delete emo.openmoji;
+    const { ctx, page, errors } = await open(b, { emoB64: emo }, { userAgent: OLD_UA });
+    const s = await strips(page);
+    const old = 'This phone\'s WebView is too old to draw these emoji.';
+    check('8. Chrome 97: Noto and Blobmoji (COLRv1) say the WebView is too old, and are not read', s.noto.say === old && !s.noto.pv && s.blobmoji.say === old && !s.blobmoji.pv
+      && (await calls(page, '^emojiSpecimenFont:')).sort().join(',') === 'emojiSpecimenFont:openmoji,emojiSpecimenFont:twemoji', JSON.stringify([s.noto, await calls(page, '^emojiSpecimenFont:')]));
+    check('   Twemoji (COLRv0) is drawn', s.twemoji.pv && !s.twemoji.pv.wait && s.twemoji.pv.n === 16, JSON.stringify(s.twemoji));
+    check('9. no font for OpenMoji: no strip, nothing said', !s.openmoji.pv && !s.openmoji.say && !s.openmoji.err, JSON.stringify(s.openmoji));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // an older app build
+  {
+    const { ctx, page, errors } = await open(b, { missing: ['emojiSpecimenFont', 'emojiSpecimenCached', 'emojiSpecimenFetch'] });
+    const s = await strips(page);
+    const any = Object.keys(s).filter(id => s[id].pv || s[id].say || s[id].show);
+    check('10. an older build: no strip, no note, no button; the rows as before', Object.keys(s).length === 5 && !any.length && s.noto.first === 'Download', JSON.stringify([Object.keys(s), any]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the licences that travel with the samples (read from the files: the app ships assets/ as it is)
+  {
+    const read = (...p) => { try { return fs.readFileSync(path.join(REPO, ...p), 'utf8'); } catch (e) { return ''; } };
+    const ofl = read('assets', 'emoji', 'OFL.txt'), note = read('assets', 'emoji', 'NOTICE.txt'), root = read('NOTICE');
+    const ascii = t => !/[^\x00-\x7f]/.test(t);
+    const body = ['SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007', 'PREAMBLE', 'DEFINITIONS', 'PERMISSION & CONDITIONS', '5) The Font Software, modified or unmodified',
+      'TERMINATION', 'DISCLAIMER', 'OTHER DEALINGS IN THE FONT SOFTWARE.'].filter(x => ofl.indexOf(x) < 0);
+    check('11. assets/emoji/OFL.txt: the full SIL Open Font License 1.1, in ASCII', ofl.length > 4000 && !body.length && ascii(ofl), JSON.stringify([ofl.length, body]));
+    const hdr = ofl.split('-----------------------------------------------------------')[0];
+    check('   its head names noto.ttf and blobmoji.ttf as Modified Versions, each with "Copyright 2022 Google Inc."', /Modified Versions/.test(hdr)
+      && /noto\.ttf \(made from Noto Color Emoji[^\n]*\):\nCopyright 2022 Google Inc\./.test(hdr) && /blobmoji\.ttf \(made from Blobmoji[^\n]*\):\nCopyright 2022 Google Inc\./.test(hdr), hdr);
+    // the file that travels with the samples says of twemoji.ttf what NOTICE.txt says: its art CC-BY-4.0, its font build Mozilla's under Apache-2.0
+    const h1 = hdr.replace(/\s+/g, ' ');
+    check('   its head gives twemoji.ttf both its licences (art CC-BY-4.0, font build Apache-2.0, Mozilla) and points to Twemoji-LICENSE.md', /twemoji\.ttf is under Creative Commons Attribution 4\.0/.test(h1)
+      && /Apache License 2\.0/.test(h1) && /Copyright 2016-2018, Mozilla Foundation/.test(h1) && /Twemoji-LICENSE\.md/.test(h1), h1);
+    const rows = id => (note.split(/\n(?=\S)/).find(x => x.indexOf(id + '.ttf ') === 0) || '');
+    check('   assets/emoji/NOTICE.txt: the Noto and Blobmoji rows point to OFL.txt, the other two do not', /OFL\.txt in this folder/.test(rows('noto')) && /OFL\.txt in this folder/.test(rows('blobmoji'))
+      && !/OFL\.txt/.test(rows('twemoji')) && !/OFL\.txt/.test(rows('openmoji')), JSON.stringify(IDS.map(rows)));
+    const sec = (root.split(/\n(?=Custom Fonts tab: the emoji samples\n-+\n)/)[1] || '').split(/\n\n(?=\S[^\n]*\n-+\n)/)[0];
+    const lic = [['Noto Color Emoji', 'OFL-1.1'], ['Twemoji', 'CC-BY-4.0'], ['Blobmoji', 'OFL-1.1'], ['OpenMoji', 'CC-BY-SA-4.0']].filter(([f, l]) => !new RegExp('\\* ' + f + ' \\([^\\n]*\\) - ' + l + ' -\\s').test(sec));
+    check('   the root NOTICE lists the four sample fonts with their licences, OFL.txt named, the iOS emoji never shipped', sec && !lic.length && /assets\/emoji\/OFL\.txt/.test(sec) && /iOS-style emoji are never shipped/.test(sec), JSON.stringify([lic, sec.slice(0, 200)]));
+    // Twemoji's font build is Mozilla's, under Apache-2.0 (its art CC-BY-4.0), and its font names neither: the release's LICENSE.md goes with the copy
+    const twl = read('assets', 'emoji', 'Twemoji-LICENSE.md'), twRow = rows('twemoji'), twNote = (sec.split(/\n(?=\* )/).find(x => /^\* Twemoji /.test(x)) || '').replace(/\s+/g, ' ');
+    check('   Twemoji: assets/emoji/Twemoji-LICENSE.md, its release\'s own, with Mozilla\'s copyright and Apache-2.0 for the font build, CC-BY-4.0 for the art', /Copyright 2016-2018, Mozilla Foundation/.test(twl)
+      && /Apache License, Version 2\.0/.test(twl) && /creativecommons\.org\/licenses\/by\/4\.0/.test(twl), twl.slice(0, 300));
+    check('   its NOTICE.txt row names both, the cut-down copy and that file; the root NOTICE too', /Copyright 2016-2018, Mozilla Foundation/.test(twRow) && /Apache License 2\.0/.test(twRow) && /Creative Commons Attribution 4\.0/.test(twRow)
+      && /Twemoji-LICENSE\.md/.test(twRow) && /cut down to sixteen emoji/.test(twRow) && /Apache-2\.0/.test(twNote) && /Mozilla Foundation/.test(twNote) && /assets\/emoji\/Twemoji-LICENSE\.md/.test(twNote), JSON.stringify([twRow, twNote]));
+    // both ways the app reads the iOS sample (fmkSpecimenJob): the downloaded file, else a few parts of Apple's file by HTTP range from its pinned address
+    const ios = sec.replace(/\s+/g, ' ');
+    check('   …their sample read from the downloaded copy, else by HTTP range from the pinned address of the third-party build', /from the downloaded copy/.test(ios) && /about 0\.3 MB of it by HTTP range from its pinned address/.test(ios)
+      && /samuelngs\/apple-emoji-ttf/.test(ios) && !/reads their sample from the downloaded file when asked/.test(ios), ios.slice(-600));
+    check('   the root NOTICE is ASCII', ascii(root));
+  }
+  await b.close();
+  console.log(bad ? bad + ' FAILED' : 'all passed');
+  process.exit(bad ? 1 : 0);
+})().catch(e => { console.error(e); process.exit(1); });

@@ -98,6 +98,7 @@ if (cmd === 'chunks') {
       if (!/tab label/.test(e.ctx || '')) problems.push('a line break in ' + tag + ' (only tab labels may have one)');
       else if ((v.match(/\n/g) || []).length > 1 || v.split('\n').some(l => l.length > 12)) warns.push('tab label ' + tag + ' -> ' + JSON.stringify(v) + ': one break, lines of at most 12 characters');
     }
+    if (/\s\[[^\]]*\]$/.test(e.en) && /\[[^\]]*\]$/.test(v)) problems.push('the sense in brackets is not shown: translate only the words before it in ' + tag + ' -> ' + JSON.stringify(v.slice(0, 80)));
     if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(v)) problems.push('control character in ' + tag);
     const words = e.en.replace(/\{\d+\}|<\/?\d+\/?>|<br>/g, ' ').split(/\s+/).filter(Boolean);
     if (words.length >= 3) {

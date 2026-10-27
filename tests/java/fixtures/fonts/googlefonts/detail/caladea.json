@@ -1,0 +1,28 @@
+)]}'
+{
+ "family": "Caladea",
+ "displayName": null,
+ "category": "Serif",
+ "classifications": [],
+ "license": "ofl",
+ "lastModified": "2026-06-30",
+ "primaryScript": "",
+ "isNoto": false,
+ "colorCapabilities": [],
+ "description": "<p>Caladea is a free modern, friendly serif font family based on <a href=\"https://fonts.google.com/specimen/Cambo\">Cambo</a>, designed by Carolina Giovagnoli and Andrés Torresi for HT Fonts.</p>\n<p>Caladea has the following differences:</p>\n<ul>\n <li>More condensed width</li>\n <li>New metrics</li>\n <li>4 styles. Regular, Bold, Italic, and Bold Italic</li>\n <li>Character set expanded to WGL (418 glyphs)</li>\n</ul>\n<p>To contribute, see <a href=\"https://github.com/huertatipografica/Caladea\" target=\"_blank\">github.com/huertatipografica/Caladea</a>.</p>",
+ "designers": [
+  {
+   "name": "HT Fonts",
+   "bio": "<p>HT Fonts is a London based type foundry with a deep respect for design and typography. Founded in 2009 in Argentina, "
+  },
+  {
+   "name": "Carolina Giovagnoli",
+   "bio": "<p>Carolina Giovagnoli is a typeface and book designer, editor, teacher, and independent researcher. Her practice combin"
+  },
+  {
+   "name": "Andrés Torresi",
+   "bio": ""
+  }
+ ],
+ "axes": []
+}

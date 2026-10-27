@@ -1,0 +1,78 @@
+)]}'
+{
+ "zipName": "Ubuntu.zip",
+ "manifest": {
+  "files": [
+   {
+    "filename": "UFL.txt",
+    "contents": "-------------------------------\r\nUBUNTU FONT LICENCE Version 1.0\r\n-------------------------------\r\n\r\nPREAMBLE\r\nThis licence allows the licensed fonts to be used, studied, modified and\r\nredistributed freely. The fonts, including any derivative works, can be\r\nbundled, embedded, and redistributed provided the terms of this licence\r\nare met. The fonts and derivatives, however, cannot be released under\r\nany other licence. The requirement for fonts to remain under this\r\nlicence does not require any document created using the fonts or their\r\nderivatives to be published under this licence, as long as the primary\r\npurpose of the document is not to be a vehicle for the distribution of\r\nthe fonts.\r\n\r\nDEFINITIONS\r\n\"Font Software\" refers to the set of files released by the Copyright\r\nHolder(s) under this licence and clearly marked as such. This may\r\ninclude source files, build scripts and documentation.\r\n\r\n\"Original Version\" refers to the collection of Font Software components\r\nas received under this licence.\r\n\r\n\"Modified Version\" refers to any derivative made by adding to, deleting,\r\nor substituting -- in part or in whole -- any of the components of the\r\nOriginal Version, by changing formats or by porting the Font Software to\r\na new environment.\r\n\r\n\"Copyright Holder(s)\" refers to all individuals and companies who have a\r\ncopyright ownership of the Font Software.\r\n\r\n\"Substantially Changed\" refers to Modified Versions which can be easily\r\nidentified as dissimilar to the Font Software by users of the Font\r\nSoftware comparing the Original Version with the Modified Version.\r\n\r\nTo \"Propagate\" a work means to do anything with it that, without\r\npermission, would make you directly or secondarily liable for\r\ninfringement under applicable copyright law, except executing it on a\r\ncomputer or modifying a private copy. Propagation includes copying,\r\ndistribution (with or without modification and with or without charging\r\na redistribution fee), making available to the public, and in some\r\ncountries other activities as well.\r\n\r\nPERMISSION & CONDITIONS\r\nThis licence does not grant any rights under trademark law and all such\r\nrights are reserved.\r\n\r\nPermission is hereby granted, free of charge, to any person obtaining a\r\ncopy of the Font Software, to propagate the Font Software, subject to\r\nthe below conditions:\r\n\r\n1) Each copy of the Font Software must contain the above copyright\r\nnotice and this licence. These can be included either as stand-alone\r\ntext files, human-readable headers or in the appropriate machine-\r\nreadable metadata fields within text or binary files as long as those\r\nfields can be easily viewed by the user.\r\n\r\n2) The font name complies with the following:\r\n(a) The Original Version must retain its name, unmodified.\r\n(b) Modified Versions which are Substantially Changed must be renamed to\r\navoid use of the name of the Original Version or similar names entirely.\r\n(c) Modified Versions which are not Substantially Changed must be\r\nrenamed to both (i) retain the name of the Original Version and (ii) add\r\nadditional naming elements to distinguish the Modified Version from the\r\nOriginal Version. The name of such Modified Versions must be the name of\r\nthe Original Version, with \"derivative X\" where X represents the name of\r\nthe new work, appended to that name.\r\n\r\n3) The name(s) of the Copyright Holder(s) and any contributor to the\r\nFont Software shall not be used to promote, endorse or advertise any\r\nModified Version, except (i) as required by this licence, (ii) to\r\nacknowledge the contribution(s) of the Copyright Holder(s) or (iii) with\r\ntheir explicit written permission.\r\n\r\n4) The Font Software, modified or unmodified, in part or in whole, must\r\nbe distributed entirely under this licence, and must not be distributed\r\nunder any other licence. The requirement for fonts to remain under this\r\nlicence does not affect any document created using the Font Software,\r\nexcept any version of the Font Software extracted from a document\r\ncreated using the Font Software may only be distributed under this\r\nlicence.\r\n\r\nTERMINATION\r\nThis licence becomes null and void if any of the above conditions are\r\nnot met.\r\n\r\nDISCLAIMER\r\nTHE FONT SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\r\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF\r\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF\r\nCOPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE\r\nCOPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,\r\nINCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL\r\nDAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\r\nFROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER\r\nDEALINGS IN THE FONT SOFTWARE.\r\n"
+   }
+  ],
+  "fileRefs": [
+   {
+    "filename": "Ubuntu-Light.ttf",
+    "url": "https://fonts.gstatic.com/s/ubuntu/v21/4iCv6KVjbNBYlgoC1CzTt2aMH4V_gg.ttf",
+    "date": {
+     "seconds": 1756835318,
+     "nanos": 857000000
+    }
+   },
+   {
+    "filename": "Ubuntu-LightItalic.ttf",
+    "url": "https://fonts.gstatic.com/s/ubuntu/v21/4iCp6KVjbNBYlgoKejZftWyIPYBvgpUI.ttf",
+    "date": {
+     "seconds": 1756835318,
+     "nanos": 857000000
+    }
+   },
+   {
+    "filename": "Ubuntu-Regular.ttf",
+    "url": "https://fonts.gstatic.com/s/ubuntu/v21/4iCs6KVjbNBYlgo6eAT3v02QFg.ttf",
+    "date": {
+     "seconds": 1756835318,
+     "nanos": 857000000
+    }
+   },
+   {
+    "filename": "Ubuntu-Italic.ttf",
+    "url": "https://fonts.gstatic.com/s/ubuntu/v21/4iCu6KVjbNBYlgoKeg7znUiAFpxm.ttf",
+    "date": {
+     "seconds": 1756835318,
+     "nanos": 857000000
+    }
+   },
+   {
+    "filename": "Ubuntu-Medium.ttf",
+    "url": "https://fonts.gstatic.com/s/ubuntu/v21/4iCv6KVjbNBYlgoCjC3Tt2aMH4V_gg.ttf",
+    "date": {
+     "seconds": 1756835318,
+     "nanos": 857000000
+    }
+   },
+   {
+    "filename": "Ubuntu-MediumItalic.ttf",
+    "url": "https://fonts.gstatic.com/s/ubuntu/v21/4iCp6KVjbNBYlgoKejYHtGyIPYBvgpUI.ttf",
+    "date": {
+     "seconds": 1756835318,
+     "nanos": 857000000
+    }
+   },
+   {
+    "filename": "Ubuntu-Bold.ttf",
+    "url": "https://fonts.gstatic.com/s/ubuntu/v21/4iCv6KVjbNBYlgoCxCvTt2aMH4V_gg.ttf",
+    "date": {
+     "seconds": 1756835318,
+     "nanos": 857000000
+    }
+   },
+   {
+    "filename": "Ubuntu-BoldItalic.ttf",
+    "url": "https://fonts.gstatic.com/s/ubuntu/v21/4iCp6KVjbNBYlgoKejZPsmyIPYBvgpUI.ttf",
+    "date": {
+     "seconds": 1756835318,
+     "nanos": 857000000
+    }
+   }
+  ]
+ }
+}

@@ -7990,11 +7990,88 @@
                 .fnt-sys-btns { margin-top: var(--space-3); }
                 #fntSysBody .fnt-field { margin-top: var(--space-3); }
                 .fnt-sys-btns .mode-action-btn { flex: 1 1 auto; justify-content: center; min-height: var(--ctl-h); }
+                /* v7.18.0: the sixteen sample emoji under each row of Emoji fonts, each font's own (a FontFace of assets/emoji/<id>.ttf), or the iOS pictures.
+                   Blank until the font is loaded: never the phone's own emoji in its place */
+                .fnt-emo-pv { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--space-1); margin-top: var(--space-2); font-size: 28px; line-height: 1.2; }
+                .fnt-emo-pv.is-wait { visibility: hidden; }
+                .fnt-emo-pv img { display: block; width: 28px; height: 28px; }
+                .fnt-emo-say { font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); margin-top: var(--space-2); overflow-wrap: anywhere; }
+                .fnt-emo-say + .batch-tool-link, .fnt-emo .fnt-err + .batch-tool-link { margin-top: var(--space-1); padding-inline: 0; }
+                /* v7.18.0 Google Fonts: the button that opens the search page (it looks like a search field), and the page itself (#gfSheet, a tall sheet
+                   like the Help Guide's: a sticky bar, the list of families, one family's page) */
+                .gf-open { display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: var(--tap); margin-top: var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--input-bg); color: var(--text-muted); font-size: var(--fs-body); text-align: start; cursor: pointer; }
+                .gf-open:active { border-color: var(--accent); }
+                .gf-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+                .gf-open svg { flex: 0 0 auto; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+                .gf-open-lab { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+                .gf-open-n { flex: 0 0 auto; font-size: var(--fs-pkg); font-weight: var(--fw-bold); }
+                .gf-sheet { max-width: 760px; height: 85vh; padding: 0 var(--space-5) var(--space-6); }      /* as tall as a sheet may be (85%, the Help Guide alone takes more), whatever the list holds */
+                .gf-sheet.sheet-expanded { height: calc(100vh - 14px); }      /* pulled up by its handle: the whole screen, like the list editor (a fixed height would keep it at 85%) */
+                .gf-bar { position: sticky; top: 0; z-index: 5; background: var(--bg-sheet); margin: 0 calc(-1 * var(--space-5)) var(--space-2); padding: var(--space-4) var(--space-5) var(--space-3); border-bottom: 1px solid var(--border-glass); }
+                .gf-bar-row { display: flex; align-items: center; gap: var(--space-3h); }
+                .gf-title { flex: 1 1 auto; min-width: 0; font-size: 18px; font-weight: var(--fw-black); letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .gf-back { flex: 0 0 auto; width: var(--tap); height: var(--tap); margin-block: calc(-1 * var(--space-3h)); margin-inline: calc(-1 * var(--space-3h)) 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: transparent; color: var(--text-main); cursor: pointer; -webkit-tap-highlight-color: transparent; }      /* the Settings back button (.st-back), with the close button's focus ring */
+                .gf-back:active { background: var(--fill-3); }
+                .gf-back:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+                .gf-back svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+                [dir="rtl"] .gf-back svg { transform: scaleX(-1); }
+                #gfSearch { display: block; width: 100%; margin-top: var(--space-3); }
+                #gfListView .chip-row { margin: var(--space-3) 0 0; }
+                #gfListView .filter-chip:not(.active) { background: transparent; }          /* a <button> chip: without this the browser's grey button fill shows (as .sdb-filters does); :not(.active) keeps .filter-chip.active's fill */
+                .gf-pvctl { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-4); margin: var(--space-3) 0; }
+                .gf-pvctl > .list-search { flex: 1 1 200px; }
+                .gf-pvctl > .fnt-axis { flex: 1 1 140px; margin-top: 0; }
+                .gf-count { font-size: var(--fs-pkg); color: var(--text-muted); margin: 0 0 var(--space-2); }
+                .gf-count:empty { display: none; }
+                #gfStatus:empty { display: none; }
+                .gf-list { display: flex; flex-direction: column; gap: var(--space-3h); --gf-pv: 28px; }
+                .gf-card { display: block; width: 100%; min-width: 0; text-align: start; padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--fill-2); color: var(--text-main); font-size: var(--fs-body); cursor: pointer; }
+                .gf-card:active { background: var(--fill-3); }
+                .gf-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+                .gf-card > span { display: block; }
+                .gf-name { font-size: var(--fs-item); font-weight: var(--fw-bold); overflow-wrap: anywhere; }
+                .gf-meta { font-size: var(--fs-pill); font-weight: var(--fw-medium); line-height: 1.4; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+                .gf-card > .gf-badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }      /* over .gf-card > span's block, so the gap applies */
+                .gf-badges .uad-badge { margin: 0; color: var(--accent); }
+                .gf-badges .uad-badge.is-dl { color: var(--status-running); }
+                /* the clip the ellipsis needs (overflow: hidden) is vertical too: .6em of room above and below the 1.35 line keeps the marks that reach past
+                   it (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts, a script face's swashes). In em, the element's own size, at every size the
+                   slider gives (14-72) and for .gf-failed too (.5em still cut Nastaliq's dots). The top margin takes its room back, so the line stays where
+                   it was; the bottom margin takes back only what the card's own padding holds, so the room stays inside the card (the card grows by the
+                   rest past 20 px): past its border it took the taps in the gap between cards and drew the marks over the next card (v7.18.0) */
+                .gf-pv { margin-block: calc(var(--space-2) - .6em) calc(-1 * min(.6em, var(--space-4))); padding-block: .6em; font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .gf-pv.gf-wait { visibility: hidden; }
+                .gf-pv.gf-failed { font-size: var(--fs-item); font-weight: var(--fw-bold); color: var(--text-muted); }
+                .gf-nopv { font-size: var(--fs-pill); font-weight: var(--fw-medium); margin-inline-start: var(--space-2); }
+                .gf-credit { margin-top: var(--space-4); }
+                .gf-dhead { font-size: 34px; line-height: 1.2; overflow-wrap: anywhere; }
+                .gf-dhead.gf-wait { visibility: hidden; }
+                #gfDetail .gf-meta { font-size: var(--fs-body); margin-top: var(--space-2); }
+                #gfDetail .fnt-sec > .list-search { display: block; width: 100%; }
+                .gf-tester { margin-bottom: 0; }
+                .gf-tline { line-height: 1.3; overflow-wrap: anywhere; }
+                .gf-tline.gf-wait { visibility: hidden; }
+                .gf-style { padding: var(--space-3) 0; border-top: 1px solid var(--fill-2); }
+                .gf-style:first-child { border-top: 0; padding-top: 0; }
+                .gf-style-name { font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); }
+                .gf-style-pv { padding-block: .6em; margin-block: -.6em; font-size: 24px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }      /* room for the marks past the line, as .gf-pv */
+                .gf-style-pv.gf-wait { visibility: hidden; }
+                #gfGet .fnt-field { margin-top: var(--space-3); }
+                #gfGet .mode-btn-row { margin-top: var(--space-3); }
+                #gfGet .mode-action-btn { flex: 1 1 auto; justify-content: center; min-height: var(--ctl-h); }
+                /* a licence note is a sentence of the page (txF), kept from the i18n walker by translate="no": it reads in the page's direction even when it starts with the family's name */
+                html[dir="rtl"] #gfGet .gf-rfn { unicode-bidi: isolate; }
+                .gf-desc { font-size: var(--fs-body); line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+                .gf-desc.gf-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+                .gf-lic { margin-top: var(--space-3); }
+                .gf-lic summary { cursor: pointer; color: var(--accent); font-size: var(--fs-body); font-weight: var(--fw-bold); padding: var(--space-1) 0; }
+                .gf-lic pre { margin-top: var(--space-2); max-height: 40vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: var(--space-3); border-radius: var(--radius-md); background: var(--input-bg); border: 1px solid var(--border-glass); font-family: monospace; font-size: var(--fs-pkg); line-height: 1.45; color: var(--text-main); }
             </style>
 
             <div class="color-card" id="fntTop">
                 <div class="color-card-title">Custom Fonts</div>
                 <div class="color-card-subtitle">Make a Samsung font package from a .ttf or .otf file, with a Bold and emoji inside, then install it or apply it. The Font option in this app's Settings changes only the app's own text.</div>
+                <button type="button" class="gf-open" id="gfOpenBtn" onclick="gfOpen()" style="display:none;"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg><span class="gf-open-lab">Search Google Fonts</span><span class="gf-open-n" id="gfOpenCount"></span></button>
             </div>
 
             <div class="color-card" id="fntMakeCard">
@@ -8002,6 +8079,7 @@
                 <div class="color-card-subtitle">Choose the font file for normal text. A variable font becomes a fixed font at the weight you pick.</div>
                 <div id="fntRemake"></div>
                 <div id="fntRegRow"></div>
+                <div id="gfFind"></div>
                 <div id="fntRegVar"></div>
                 <div id="fntRegMsg"></div>
                 <div class="font-sample" id="fntPreview" translate="no" aria-label="Sample text in the font you are making" style="display:none;">
@@ -8073,6 +8151,70 @@
                 <div id="fntSysBody"></div>
             </div>
         </section>
+        <!-- v7.18.0 Google Fonts: the search page that pulls up over the tab (gfOpen in FONTS:JS; the gfonts* bridge calls). Back, and a tap outside the
+             sheet, step back: from a family's page to the list, from the list to the tab. The sheet itself scrolls (the root of the previews' observer) -->
+        <div class="modal-overlay" id="gfSheet" onclick="if(event.target===this) gfBackStep()">
+            <div class="modal-sheet gf-sheet" id="gfScroll" role="dialog" aria-labelledby="gfTitle">
+                <div class="gf-bar">
+                    <div class="gf-bar-row">
+                        <button type="button" class="gf-back" id="gfBack" aria-label="Back" onclick="gfBackToList()" style="display:none;"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></button>
+                        <div class="gf-title" id="gfTitle">Google Fonts</div>
+                        <button type="button" class="sheet-close" aria-label="Close" onclick="gfClose()">&#10005;</button>
+                    </div>
+                    <input type="search" class="list-search" id="gfSearch" placeholder="Search fonts or designers" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="gfSearchInput()">
+                </div>
+                <div id="gfListView">
+                    <div class="store-toolbar">
+                        <select class="op-select" id="gfCat" onchange="gfFilter(true)" aria-label="Category">
+                            <option value="">All categories</option>
+                            <option value="sans">Sans serif</option>
+                            <option value="serif">Serif</option>
+                            <option value="display" translate="no">Display</option>
+                            <option value="hand">Handwriting</option>
+                            <option value="mono">Monospace</option>
+                        </select>
+                        <select class="op-select" id="gfLang" onchange="gfFilter(true)" aria-label="Language"><option value="">All languages</option></select>
+                        <select class="op-select" id="gfSort" onchange="gfFilter(true)" aria-label="Sort">
+                            <option value="pop">Popular</option>
+                            <option value="trend">Trending</option>
+                            <option value="new">Newest</option>
+                            <option value="name">Name (A–Z)</option>
+                        </select>
+                    </div>
+                    <div class="chip-row" role="group" aria-label="Show only">
+                        <button type="button" class="filter-chip" id="gfChipVar" aria-pressed="false" onclick="gfChip('var')">Variable</button>
+                        <button type="button" class="filter-chip" id="gfChipDl" aria-pressed="false" onclick="gfChip('dl')">Downloaded</button>
+                    </div>
+                    <div class="gf-pvctl">
+                        <input type="text" class="list-search" id="gfText" maxlength="200" placeholder="Type something to preview" aria-label="Preview text" autocomplete="off" spellcheck="false" oninput="gfTextInput(this.value)">
+                        <div class="fnt-axis"><div class="fnt-axis-head"><label for="gfSize">Size</label><b id="gfSizeV" translate="no">28</b></div><input type="range" id="gfSize" min="14" max="72" step="1" value="28" oninput="gfSizeInput(this.value)"></div>
+                    </div>
+                    <div class="uad-status" id="gfStatus" role="status" aria-live="polite"></div>
+                    <div class="gf-count" id="gfCount"></div>
+                    <div class="gf-list" id="gfList"></div>
+                    <div class="store-more" id="gfMore"></div>
+                    <div class="uad-credit gf-credit">Fonts and their list come from Google Fonts (fonts.google.com). Each family is free to use under its own licence, shown with it.</div>
+                </div>
+                <div id="gfDetail" style="display:none;">
+                    <div class="gf-dhead gf-wait" id="gfDHead" translate="no"></div>
+                    <div class="gf-meta" id="gfDMeta" translate="no"></div>
+                    <!-- Download and Use come first: a family can have 18 style rows below -->
+                    <div class="fnt-sec" id="gfGet"></div>
+                    <div class="fnt-sec">
+                        <label class="fnt-lab" for="gfDText">Type tester</label>
+                        <input type="text" class="list-search" id="gfDText" maxlength="200" placeholder="Type something to preview" autocomplete="off" spellcheck="false" oninput="gfDTextInput(this.value)">
+                        <div class="fnt-axis"><div class="fnt-axis-head"><label for="gfDSize">Size</label><b id="gfDSizeV" translate="no">40</b></div><input type="range" id="gfDSize" min="14" max="96" step="1" value="40" oninput="gfDSizeInput(this.value)"></div>
+                        <div id="gfDAxes"></div>
+                        <div class="font-sample gf-tester"><div class="gf-tline gf-wait" id="gfDLine" translate="no" dir="auto"></div></div>
+                    </div>
+                    <div class="fnt-sec">
+                        <div class="fnt-lab">Styles</div>
+                        <div id="gfStyles"></div>
+                    </div>
+                    <div class="fnt-sec" id="gfAbout"></div>
+                </div>
+            </div>
+        </div>
 <!-- FONTS:VIEW:END -->
         <section id="view-about" class="view-content">
             <style>
@@ -33761,6 +33903,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function txT(s) { try { return LANG_ENGINE && LANG_ENGINE.t ? LANG_ENGINE.t(s) : s; } catch (e) { return s; } }
         // A sentence with changing parts ({0}, {1} ...): translated as a pattern, then filled in, so a model or key name is never looked up in a dictionary
         function txF(tpl) { const args = Array.prototype.slice.call(arguments, 1); return txT(tpl).replace(/\{(\d+)\}/g, (m, n) => (args[+n] !== undefined ? String(args[+n]) : m)); }
+        // A word that other places of the app translate otherwise ("Light" the theme, "Light" the font weight): the key names its sense in square brackets
+        // at the end ("Light [font weight]"), which no language shows; English, and a language without the key, show the word before the brackets
+        function txC(k) { const r = txT(k); return r === k ? k.replace(/\s*\[[^\]]*\]$/, '') : r; }
 
         // The Terminal: the real terminal and the Coding Agents, the second segment of the Console tab (next to the ADB Shell; the log has its own tab).
         function onTerminalShown() { txOnShown(); txFitQueue(); }
@@ -44786,7 +44931,26 @@ Type any command above (e.g. pm list packages -d)</div>
             noAppFonts: false,                                               // a status that looked found no /data/app_fonts: kept when the status goes (fntSamsung)
             changer: null, changerBusy: false, changerRb: null, changerErr: '', changerStatusErr: '', applyId: '', changerStale: false,
             sys: null, sysBusy: false, sysRb: null, sysErr: '', sysStatusErr: '', sysStale: false,
-            faces: { regular: null, bold: null }, faceSeq: 0, libFaces: {}
+            faces: { regular: null, bold: null }, faceSeq: 0, libFaces: {},
+            reserved: [], reservedFamily: '',                                // v7.18.0: the Reserved Font Names of the Google Fonts family in the Regular slot
+            reservedUfl: false,                                              // that family is under the Ubuntu Font Licence: its own name is kept the same way
+            reservedBold: { names: [], family: '', ufl: false },             // the same for the family whose file is in the Bold slot (fntGfReserved)
+            emoFaces: {},                                                    // v7.18.0: the emoji samples' faces by catalog id ({ family, face } or { failed })
+            emoApple: { images: null, asked: false, busy: false, err: '', focusWait: false }   // the iOS sample: its pictures once read, asked once per showing
+                                                                             // (focusWait: its line or strip holds a keyboard's focus, fntRenderEmoji)
+        };
+        // v7.18.0 Google Fonts (#gfSheet): the list on the phone (gfontsCatalog), the filters, the downloads, a family's page, and the previews (gfontsPreview):
+        // asked by the cards in view, at most GF_INFLIGHT at a time, once per (family, mode, text) and generation; their faces kept by that key, the oldest
+        // removed past GF_FACES
+        const GF_PAGE = 30, GF_INFLIGHT = 6, GF_FACES = 150;
+        const GF_STYLES = 18;                                                 // GoogleFonts.MAX_STYLES: the 'styles' preview carries a family's first 18 styles
+        const GF_FALLBACK = 'var(--ui-font, var(--font-sans))';             // what a preview face does not draw comes in the app's font
+        const gf = {
+            data: null, by: new Map(), fold: new Map(), gone: [], refreshing: false, refreshErr: '',
+            onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
+            dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null, useFam: '', useOk: false, getFocus: null,
+            text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null, cv: null,
+            open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, licOpen: false, tq: 0, tt: 0, td: 0
         };
         const FNT_STAGES = ['read', 'instance', 'convert', 'emoji', 'package', 'sign', 'save'];
         const FNT_STAGE_TEXT = { read: 'Reading the font files…', instance: 'Fixing the variable font at the chosen weight…', convert: 'Converting the outlines to TrueType…', emoji: 'Putting the emoji in…', package: 'Making the font package…', sign: 'Signing the package…', save: 'Saving…' };
@@ -44850,6 +45014,19 @@ Type any command above (e.g. pm list packages -d)</div>
             bad_version: 'This font package cannot get a newer version number. Make it again as a new font.',
             write_failed: 'The font package could not be saved.',
             read_failed: 'The font file changed while it was being packaged. Try again.',
+            // v7.18.0: Google Fonts and the emoji samples
+            gf_unknown: 'This family is not in the Google Fonts list. Update the list and try again.',
+            gf_bad_name: 'That is not a Google Fonts family name.',
+            gf_bad_answer: 'Google Fonts sent an answer the app cannot read. Try again later.',
+            gf_no_files: 'Google Fonts lists no font files for this family.',
+            gf_too_big: 'This family is larger than the app downloads (160 MB or 64 files).',
+            gf_not_a_font: 'Google Fonts sent a file that is not a font, so the family was not kept.',
+            gf_no_preview: 'Google Fonts sent no preview for this family.',
+            gf_not_downloaded: 'Download this family first.',
+            gf_bad_file: "That file is not part of this family's download.",
+            gf_changed: "This family's files changed on the phone. Delete it and download it again.",
+            emo_changed: 'The iOS emoji file at its address is not the expected one, so its sample was not read. Update the app.',
+            emo_no_sample: 'The sample could not be read from the emoji font.',
             failed: 'Something went wrong.'
         };
         // Java's sentence, for a code that has more than one: [code, what Java says (after the face it names in front), the page's sentence]. A group
@@ -44883,9 +45060,16 @@ Type any command above (e.g. pm list packages -d)</div>
             ['busy', /^This emoji font is already downloading/, 'This emoji font is already downloading.'],
             ['busy', /^This emoji font is downloading\./, 'This emoji font is downloading. Cancel it first.'],
             ['busy', /^This emoji font is being put on the phone/, 'This emoji font is being put on the phone. Wait for it to finish.'],
+            ['busy', /^This font family is already downloading/, 'This font family is already downloading.'],
+            ['busy', /^This font family is downloading\./, 'This font family is downloading. Cancel it first.'],
+            ['busy', /^This font family is being saved/, 'This font family is being saved. Wait for it to finish.'],
+            ['busy', /^Another window of the app is getting the list of fonts/, 'Another window of the app is getting the list of fonts. Try again in a moment.'],
+            ['busy', /^Another window of the app is getting the details of this family/, 'Another window of the app is getting the details of this family. Try again in a moment.'],
+            ['busy', /^Another window of the app is reading the iOS emoji/, 'Another window of the app is reading the iOS emoji. Try again in a moment.'],
             ['busy', /^The phone is still busy with the last change/, 'The phone is still busy with the last change. Wait for it to finish.'],
             ['failed', /^The font could not be made: (.+)$/, m => txF('The font could not be made: {0}', m[1])],
             ['failed', /^The font package could not be saved: (.+)$/, m => txF('The font package could not be saved: {0}', m[1])],
+            ['failed', /^The font family could not be saved: (.+)$/, m => txF('The font family could not be saved: {0}', m[1])],
             ['failed', /^The font could not be installed: (.+)$/, m => txF('The font could not be installed: {0}', m[1])],
             ['failed', /^The font could not be uninstalled: (.+)$/, m => txF('The font could not be uninstalled: {0}', m[1])],
             ['failed', /^The font could not be applied: (.+)$/, m => txF('The font could not be applied: {0}', m[1])],
@@ -44902,6 +45086,10 @@ Type any command above (e.g. pm list packages -d)</div>
             ['failed', /^Some emoji files did not change\. Restart the phone/, 'Some emoji files did not change. Restart the phone to undo the swap.'],
             ['failed', /^Some emoji files did not change/, 'Some emoji files did not change.'],
             ['failed', /^The file could not be deleted/, 'The file could not be deleted.'],
+            // a Google Fonts download that failed on the phone's own storage (GfLocal, FontLibrary.localError): not the connection
+            ['failed', /^The app could not make the family's folder/, "The app could not make the family's folder."],
+            ['failed', /^The family's old folder could not be moved aside/, "The family's old folder could not be moved aside."],
+            ['failed', /^The download could not be put in place/, 'The download could not be put in place.'],
             // the ERROR line of a SamsungFonts script, as the phone's shell printed it
             ['failed', /^cannot create the font folder/, "The phone could not make the font's folder."],
             ['failed', /^cannot write the font$/, 'The phone could not write the font.'],
@@ -45012,8 +45200,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function fntSamsung() { return fntDevice().samsung !== false && !fnt.noAppFonts; }
         // the working mode as the two cards see it: their gates, and which mode (a status asked in another one is that mode's: its tag, its lock)
         function fntModeKey() { return [isRootActive(), ovlCanWriteOverlays(), currentWorkingMode].join(); }
-        function fntFace(family, b64) {
-            return fetch('data:application/octet-stream;base64,' + b64).then(r => r.arrayBuffer()).then(buf => new FontFace(family, buf).load()).then(face => { document.fonts.add(face); return face; });
+        // a font the bridge sent as base64, loaded and added to the page; desc: the face's style, weight and stretch (a family of several faces)
+        function fntFace(family, b64, desc) {
+            return fetch('data:application/octet-stream;base64,' + b64).then(r => r.arrayBuffer()).then(buf => new FontFace(family, buf, desc || {}).load()).then(face => { document.fonts.add(face); return face; });
         }
         function fntFvs(coords) { const k = Object.keys(coords || {}); return k.length ? k.map(t => '"' + t + '" ' + (+coords[t])).join(', ') : 'normal'; }
         function fntDefaults(info) { const c = {}; ((info && info.axes) || []).forEach(a => { c[a.tag] = +a.def; }); return c; }
@@ -45027,6 +45216,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function onFontsShown() {
             fntLoadLib();
             fntLoadCat();
+            fnt.emoApple.asked = false;                                      // the iOS sample is looked for again (emojiSpecimenCached)
+            if (!gfHasList()) gfLoadCat();                                   // the Google Fonts list on the phone (one another window got too), for the count
+            gfLoadDls();                                                     // and the downloads: a family the list no longer has counts there too (gfSyncGone)
             fnt.modeKey = fntModeKey();
             fntForget();                                                     // asked again each time: another app may have changed the font meanwhile
             fntRenderAll();
@@ -45043,7 +45235,7 @@ Type any command above (e.g. pm list packages -d)</div>
             fntRenderSys();
             fntAskStatus();
         }
-        function fntRenderAll() { fntRenderMake(); fntRenderEmoji(); fntRenderLib(); fntRenderChanger(); fntRenderSys(); }
+        function fntRenderAll() { gfRenderEntry(); fntRenderMake(); fntRenderEmoji(); fntRenderLib(); fntRenderChanger(); fntRenderSys(); }
         // the two cards' status is dropped (and the errors, and the read-back box they explain), unless a change is running; a status being asked is asked
         // again when it answers, and the error and box of the change before it go now. A status keeps its own error (changerStatusErr, sysStatusErr): the
         // next status that answers clears it, never the error of an Apply or a Reset
@@ -45121,6 +45313,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const reg = document.getElementById('fntRegRow');
             if (!reg) return;
             reg.innerHTML = fntSlotRow('regular', 'Regular', 'A .ttf or .otf file');
+            // v7.18.0: while nothing is picked, a way to the Google Fonts page (an app build that has it)
+            const find = document.getElementById('gfFind');
+            if (find) find.innerHTML = !fnt.pick.regular && !fnt.picking && fntHas('gfontsCatalog') ? '<div class="fnt-links"><a href="#" id="gfFindLink" onclick="gfOpen(); return false;">Find one on Google Fonts</a></div>' : '';
             document.getElementById('fntRegVar').innerHTML = fntVarHtml('regular');
             fntMsg('fntRegMsg', 'regular');
             fntRenderBold();
@@ -45208,7 +45403,42 @@ Type any command above (e.g. pm list packages -d)</div>
             if (b) b.disabled = !fntCanBuild();
             if (c) { c.style.display = fnt.building ? '' : 'none'; c.disabled = fnt.cancelling; }
             if (nm) nm.disabled = fnt.building;
-            if (hint) { const bad = fnt.name !== '' && !fntNameShows(fnt.name); hint.textContent = bad ? 'The name needs at least one letter, digit or sign that can be seen.' : ''; hint.style.display = bad ? '' : 'none'; }
+            if (hint) {
+                // v7.18.0: a name that holds a Reserved Font Name of the Google Fonts family in use is a warning only (Build stays as it is)
+                const bad = fnt.name !== '' && !fntNameShows(fnt.name), hit = bad ? null : fntReservedHit(fnt.name);
+                hint.textContent = bad ? 'The name needs at least one letter, digit or sign that can be seen.'
+                    : hit ? txF('{0}\'s licence keeps the name "{1}" for the original font. A font made from it is a changed copy, so give it another name.', hit.family, hit.name) : '';
+                hint.style.display = bad || hit ? '' : 'none';
+            }
+            if (gf.open && gf.view === 'detail') gfUseState();               // Use in Make a font waits for a build and a file chooser too
+        }
+        // the first Reserved Font Name the text holds (letter case aside), with its family, or null: the Regular's family's, and the Bold's while the Bold is
+        // that file (a Bold made from the Regular is the Regular's). Under the Ubuntu Font Licence "<family> derivative <a name>" is allowed
+        function fntReservedHit(name) {
+            const n = String(name || '').toLowerCase().trim(), drv = / derivative \S/.exec(n);
+            if (!n) return null;
+            const sets = [{ names: fnt.reserved, family: fnt.reservedFamily, ufl: fnt.reservedUfl }];
+            if (fnt.boldMode === 'file' && fnt.pick.bold) sets.push(fnt.reservedBold);
+            for (const s of sets) {
+                if (drv && s.ufl && n.slice(0, drv.index) === String(s.family || '').trim().toLowerCase()) continue;
+                const hit = (s.names || []).find(r => r && n.indexOf(String(r).toLowerCase()) >= 0);
+                if (hit) return { name: hit, family: s.family };
+            }
+            return null;
+        }
+        // a Google Fonts family's Reserved Font Names, from a slot's answer (r.gf, gfontsUse); a file from the file chooser has none. The Ubuntu Font Licence
+        // (its download's licence kind) has no Reserved Font Name line, but a changed copy must not keep the family's name, nor a similar one, unless it
+        // is "<family> derivative <a name>" (UFL 1.0, condition 2): the name is held like one, and so are its leading words ("Ubuntu" for Ubuntu Mono,
+        // "Ubuntu Sans" and "Ubuntu" for Ubuntu Sans Mono), longest first so a name holding the whole one reports it
+        function fntGfReserved(r) {
+            const g = r && r.gf && typeof r.gf === 'object' ? r.gf : null;
+            const names = g && Array.isArray(g.reserved) ? g.reserved.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim()) : [];
+            const family = g ? String(g.family || '') : '', fam = family.trim(), ufl = !!fam && (gf.dls[family] || {}).license === 'ufl';
+            if (ufl) {
+                const w = fam.split(/\s+/);
+                for (let i = w.length; i >= 1; i--) { const x = w.slice(0, i).join(' '); if (!names.some(y => y.toLowerCase() === x.toLowerCase())) names.push(x); }
+            }
+            return { names: names, family: family, ufl: ufl };
         }
         // making a font of My fonts again: it keeps its package and gets the next version, so it installs over the one on the phone
         function fntRenderRemake() {
@@ -45289,6 +45519,17 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!(slot in fnt.pick)) return;
             if (fnt.picking === slot) fnt.picking = '';
             const r = fntJson(json);
+            // a Google Fonts family's files (gfontsUse) answer here too: the gate stays shut until each slot asked for has answered, and only then, when
+            // every one was read, a toast says the family is in Make a font (a refused one says why in its slot, and nothing more)
+            if (fnt.picking === 'gf' && gf.useWait) {
+                delete gf.useWait[slot];
+                if (!r.ok) gf.useOk = false;
+                if (!Object.keys(gf.useWait).length) {
+                    fnt.picking = ''; gf.useWait = null;
+                    if (gf.useOk && gf.useFam) showToast(txF('{0} is in Make a font', gf.useFam));
+                    gf.useFam = ''; gf.useOk = false;
+                }
+            }
             if (!r.ok) {                                                     // a file that cannot be used keeps the one chosen before
                 if (r.code !== 'cancelled') fnt.pickErr[slot] = fntErrText(r);
                 fntRenderMake();
@@ -45309,10 +45550,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (fnt.boldMode === 'none' && !fnt.boldTouched && fntHeavier(info)) fnt.boldMode = 'instance';
                 else if (fnt.boldMode === 'instance' && !fnt.boldTouched && !fntHeavier(info)) fnt.boldMode = 'none';
                 if (fnt.boldMode === 'instance' && info.variable) fnt.coords.bold = Object.assign(fntDefaults(info), info.guessBold || {});
-                if (!fnt.nameTouched) fnt.name = String(info.family || String(r.fileName || '').replace(/\.[^.]+$/, '')).slice(0, 40);
+                // a Google Fonts family's Reserved Font Names (r.gf): a name holding one is not filled in, and the Name field warns while it holds one
+                const g = fntGfReserved(r);
+                fnt.reserved = g.names; fnt.reservedFamily = g.family; fnt.reservedUfl = g.ufl;
+                if (!fnt.nameTouched) { const cand = String(info.family || String(r.fileName || '').replace(/\.[^.]+$/, '')).slice(0, 40); fnt.name = fntReservedHit(cand) ? '' : cand; }
                 fntLoadFace('regular');
             } else if (slot === 'bold') {
                 fnt.coords.bold = info.variable ? Object.assign(fntDefaults(info), info.guessBold || {}) : {};
+                fnt.reservedBold = fntGfReserved(r);                         // a Bold from a family with them warns too (while Bold is that file)
                 fntLoadFace('bold');
             }
             fntRenderMake();
@@ -45442,7 +45687,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const prog = d ? '<div class="agent-ask-prog on" role="progressbar" aria-label="Downloading" aria-valuemin="0" aria-valuemax="100"' + (d.total ? ' aria-valuenow="' + pct + '"' : '') + '><div class="agent-ask-bar' + (d.total ? '' : ' indet') + '" id="fntEmoBar_' + sid + '"><i' + (d.total ? ' style="width:' + pct + '%"' : '') + '></i></div><div class="agent-ask-prog-txt" id="fntEmoTxt_' + sid + '" translate="no">' + escapeHtml(d.cancelling ? txT('Cancelling…') : fntDlText(d)) + '</div></div>' : '';
             const err = fnt.emoErr[it.id] ? '<div class="fnt-err"><span class="is-err">' + escapeHtml(fnt.emoErr[it.id]) + '</span></div>' : '';
             return '<div class="fnt-emo" id="fntEmo_' + sid + '"><div class="rf-row"><div class="rf-name"><bdi translate="no">' + escapeHtml(it.name) + '</bdi><span translate="no">' + escapeHtml(meta) + '</span></div>' + btn + '</div>'
-                + notes + (links ? '<div class="fnt-links">' + links + '</div>' : '') + prog + err + '</div>';
+                + fntEmoStrip(it) + notes + (links ? '<div class="fnt-links">' + links + '</div>' : '') + prog + err + '</div>';
         }
         function fntRenderEmoji() {
             const list = document.getElementById('fntEmojiList');
@@ -45450,8 +45695,112 @@ Type any command above (e.g. pm list packages -d)</div>
             const C = fnt.cat;
             if (!C) { list.innerHTML = '<div class="list-empty">Needs the app build</div>'; return; }
             if (C.error) { errNote(list, C.error); return; }
+            fntEmoAppleCached();
+            // v7.18.0: Show these emoji pressed with a keyboard (TalkBack) turns into "Reading the iOS emoji…": that line takes the focus (read out),
+            // then the sixteen pictures (one image, read by its label) or the button again after a failure, never the body; a redraw meanwhile
+            // (another row's download) keeps it there
+            const ae = document.activeElement, A = fnt.emoApple;
+            const ios = !!ae && (ae.id === 'fntEmoShow' || (A.focusWait && (ae.id === 'fntEmoSay_apple' || ae.id === 'fntEmoPv_apple')));
+            // v7.18.0: a focus on another control of the list (a row's Download, Cancel or Delete, its License or Source) stays on it through the
+            // redraw, such as the iOS sample's answer: the row's button (its three words share one place), else its link by place, not by its words
+            const row = !ios && ae && ae !== list && list.contains(ae) ? ae.closest('.fnt-emo') : null;
+            const keep = row && row.id ? { row: row.id, link: [...row.querySelectorAll('.fnt-links a')].indexOf(ae) } : null;
             list.innerHTML = (C.items || []).map(fntEmoRow).join('') || '<div class="list-empty">Nothing to download.</div>';
+            fntEmoFacesLoad();
+            if (keep) {
+                const r = document.getElementById(keep.row), to = r && ((keep.link >= 0 && r.querySelectorAll('.fnt-links a')[keep.link]) || r.querySelector('.op-mode-btn'));
+                if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
+            }
+            if (!ios) return;
+            const btn = document.getElementById('fntEmoShow'), to = btn || document.getElementById('fntEmoPv_apple') || document.getElementById('fntEmoSay_apple');
+            A.focusWait = !!to && to !== btn;
+            if (A.focusWait) to.tabIndex = -1;
+            if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
         }
+
+        // ---- v7.18.0: the sixteen sample emoji under each row of Emoji fonts ----
+        // the four vector fonts: a cut-down copy of each in the app (assets/emoji/<id>.ttf: emojiSpecimenFont), loaded once as the FontFace 'fntEmo_<id>';
+        // the iOS emoji: their pictures read from Apple's file on request (emojiSpecimenFetch), kept by the app (emojiSpecimenCached). The strip stays blank
+        // until its font is loaded: never the phone's own emoji in its place
+        const FNT_EMO_SAMPLE = '😀😂🥰😎🥳😭👍👋❤️🔥🎉🐶🦄🍕🚀🌈';
+        // one entry per emoji: a variation selector (0xFE0F, the red heart's) stays with the emoji before it
+        const FNT_EMO_CHARS = Array.from(FNT_EMO_SAMPLE).reduce((a, c) => { if (c.codePointAt(0) === 0xFE0F && a.length) a[a.length - 1] += c; else a.push(c); return a; }, []);
+        const FNT_EMO_IDS = ['noto', 'twemoji', 'blobmoji', 'openmoji'];
+        const FNT_EMO_V1 = { noto: true, blobmoji: true };                  // COLRv1: Chrome (WebView) 98 or newer draws them
+        function fntChromeMajor() { const m = /Chrome\/(\d+)/.exec(navigator.userAgent || ''); return m ? +m[1] : 0; }
+        function fntEmoOld(id) { const v = fntChromeMajor(); return !!FNT_EMO_V1[id] && v > 0 && v < 98; }
+        function fntEmoStrip(it) {
+            if (!fntHas('emojiSpecimenFont')) return '';
+            const id = String(it.id || ''), sid = fntSafe(id), label = escapeHtml(txF('Sample of {0}', it.name || id));
+            if (FNT_EMO_IDS.indexOf(id) >= 0) {
+                if (fntEmoOld(id)) return '<div class="fnt-emo-say">This phone\'s WebView is too old to draw these emoji.</div>';
+                const f = fnt.emoFaces[id];
+                if (f && f.failed) return '';
+                const style = f && f.family ? ' style="font-family:\'' + f.family + '\'"' : '';
+                return '<div class="fnt-emo-pv' + (style ? '' : ' is-wait') + '" id="fntEmoPv_' + sid + '" translate="no" role="img" aria-label="' + label + '">'
+                    + FNT_EMO_CHARS.map(c => '<span' + style + '>' + c + '</span>').join('') + '</div>';
+            }
+            if (id !== 'apple') return '';
+            const A = fnt.emoApple;
+            if (A.images && A.images.length) {
+                return '<div class="fnt-emo-pv" id="fntEmoPv_apple" translate="no" role="img" aria-label="' + label + '">' + A.images.map(im => {
+                    const ch = FNT_EMO_CHARS.find(c => c.codePointAt(0) === im.cp) || String.fromCodePoint(im.cp);
+                    return '<img src="data:image/png;base64,' + im.b64 + '" alt="' + escapeHtml(ch) + '" width="28" height="28">';
+                }).join('') + '</div>';
+            }
+            if (A.busy) return '<div class="fnt-emo-say" id="fntEmoSay_apple">Reading the iOS emoji…</div>';
+            return (A.err ? '<div class="fnt-err"><span class="is-err">' + escapeHtml(A.err) + '</span></div>'
+                : '<div class="fnt-emo-say" id="fntEmoSay_apple">' + (it.downloaded ? 'Read from the downloaded file.' : 'Reads about 0.3 MB of the iOS emoji file.') + '</div>')
+                + '<button type="button" class="batch-tool-link" id="fntEmoShow" onclick="fntEmoAppleFetch()">Show these emoji</button>';
+        }
+        // the pictures of an answer: a code point of the sample and PNG data each (anything else is left out)
+        function fntEmoImages(list) {
+            return (Array.isArray(list) ? list : []).filter(im => im && Number.isInteger(im.cp) && im.cp > 0 && im.cp <= 0x10FFFF && typeof im.b64 === 'string' && /^[A-Za-z0-9+/=]+$/.test(im.b64));
+        }
+        // the iOS pictures the app kept from an earlier read: asked once per showing of the tab
+        function fntEmoAppleCached() {
+            const A = fnt.emoApple;
+            if (A.asked || (A.images && A.images.length) || !fntHas('emojiSpecimenCached')) return;
+            A.asked = true;
+            const r = fntCall('emojiSpecimenCached', ['apple'], true), im = r && r.ok ? fntEmoImages(r.images) : [];
+            if (im.length) A.images = im;
+        }
+        function fntEmoFacesLoad() {
+            if (!fntHas('emojiSpecimenFont')) return;
+            ((fnt.cat && fnt.cat.items) || []).forEach(it => {
+                const id = it.id;
+                if (FNT_EMO_IDS.indexOf(id) < 0 || fnt.emoFaces[id] || fntEmoOld(id)) return;
+                const b64 = fntB64('emojiSpecimenFont', [id]), rec = fnt.emoFaces[id] = { family: '', face: null, failed: false };
+                if (!b64 || !/^[A-Za-z0-9+/=\s]+$/.test(b64)) { rec.failed = true; fntEmoFaceShow(id); return; }
+                fntFace('fntEmo_' + id, b64.replace(/\s+/g, '')).then(face => { rec.family = 'fntEmo_' + id; rec.face = face; fntEmoFaceShow(id); }, () => { rec.failed = true; fntEmoFaceShow(id); });
+            });
+        }
+        // a font that loaded (or failed) after its row was drawn: the strip takes it (or goes)
+        function fntEmoFaceShow(id) {
+            const el = document.getElementById('fntEmoPv_' + fntSafe(id)), rec = fnt.emoFaces[id];
+            if (!el || !rec) return;
+            if (rec.failed) { el.remove(); return; }
+            [...el.children].forEach(s => { s.style.fontFamily = "'" + rec.family + "'"; });
+            el.classList.remove('is-wait');
+        }
+        function fntEmoAppleFetch() {
+            const A = fnt.emoApple;
+            if (A.busy) return;
+            const r = fntCall('emojiSpecimenFetch', ['apple']);
+            if (!r) return;
+            if (!r.ok) { A.err = fntErrText(r, 'Could not start'); fntRenderEmoji(); return; }
+            haptic();
+            A.busy = true; A.err = '';
+            fntRenderEmoji();
+        }
+        window.onEmojiSpecimen = function (id, json) {
+            if (id !== 'apple') return;
+            const A = fnt.emoApple, r = fntJson(json), im = r.ok ? fntEmoImages(r.images) : [];
+            A.busy = false;
+            if (im.length) { A.images = im; A.err = ''; }
+            else if (r.code !== 'cancelled') A.err = r.ok ? txT(FNT_ERR.emo_no_sample) : fntErrText(r);
+            fntRenderEmoji();
+        };
         function fntEmojiDl(id) {
             if (fnt.dl[id]) return;
             const r = fntCall('emojiDownload', [id]);
@@ -45476,6 +45825,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!r.ok) { fnt.emoErr[id] = fntErrText(r); fntRenderEmoji(); return; }
             haptic();
             delete fnt.emoErr[id];
+            if (id === 'apple') fnt.emoApple.err = '';                      // the iOS sample is read from the web again: a failed read of the file no longer applies
             fntLoadCat();
             fntRenderEmoji();
             fntRenderEmojiSel();
@@ -45497,6 +45847,7 @@ Type any command above (e.g. pm list packages -d)</div>
         window.onEmojiDone = function (id, json) {
             const r = fntJson(json), it = ((fnt.cat && fnt.cat.items) || []).find(x => x.id === id);
             delete fnt.dl[id];
+            if (r.ok && id === 'apple') fnt.emoApple.err = '';               // the iOS sample is read from the file now: an earlier read's failure no longer applies
             if (r.ok) showToast(txF('{0} downloaded', it ? it.name : id));
             else if (r.code !== 'cancelled') fnt.emoErr[id] = fntErrText(r);
             fntLoadCat();
@@ -45538,7 +45889,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 + '<div class="fnt-lib-name" translate="no">' + escapeHtml(e.name) + '</div>'
                 + '<div class="fnt-lib-meta" translate="no">' + escapeHtml(e.pkg) + '</div>'
                 + '<div class="fnt-lib-meta" translate="no">' + state + ' · ' + escapeHtml(meta) + '</div>'
-                + '<div class="mode-btn-row">' + install + apply + b('Export', !busy && !fnt.exporting, 'fntExport(' + a + ')') + b('Delete', !busy, 'fntDeleteAsk(' + a + ')')
+                + '<div class="mode-btn-row">' + install + apply + b('Export', !busy && !fnt.exporting && !gf.saving, 'fntExport(' + a + ')') + b('Delete', !busy, 'fntDeleteAsk(' + a + ')')
                 + b(busy === 'make' ? 'Making…' : 'Make again', !busy && !fnt.building && fnt.rebuildId !== e.id, 'fntRemake(' + a + ')') + '</div>'
                 + (msg ? '<div class="fnt-err">' + (msg.err ? '<span class="is-err">' + escapeHtml(msg.text) + '</span>' : escapeHtml(msg.text)) + '</div>' : '')
                 + '</div>';
@@ -45620,7 +45971,7 @@ Type any command above (e.g. pm list packages -d)</div>
             else fntLibSay(id, fntErrText(r), true);
         };
         function fntExport(id) {
-            if (fnt.exporting) return;
+            if (fnt.exporting || gf.saving) return;                          // one save screen at a time (a Google Fonts family's Save to phone too)
             const r = fntCall('fontMakerExport', [id]);
             if (!r) return;
             if (!r.ok) { fntLibSay(id, fntErrText(r, 'Could not start'), true); return; }
@@ -45630,6 +45981,7 @@ Type any command above (e.g. pm list packages -d)</div>
         window.onFontMakerExported = function (id, json) {
             const r = fntJson(json);
             fnt.exporting = '';
+            if (gf.open && gf.view === 'detail') gfRenderGet();             // Save to phone waits for this save screen
             if (r.ok) { showToast(r.name ? txF('Saved {0}', r.name) : txT('Saved')); fntLibSay(id, ''); }
             else if (r.code !== 'cancelled') fntLibSay(id, fntErrText(r), true);
             else fntRenderLib();
@@ -45826,8 +46178,1005 @@ Type any command above (e.g. pm list packages -d)</div>
         };
         window.onSysEmojiApplied = function (json) { fntSysDone(fntJson(json), txT('The phone uses the new emoji until the next restart.')); };
         window.onSysEmojiUndone = function (json) { fntSysDone(fntJson(json), txT("The phone's own emoji are back.")); };
+        // ---- v7.18.0 Google Fonts: the search page that pulls up over the tab (#gfSheet) ----
+        // The list is Google Fonts' own (kept on the phone by the app: gfontsCatalog, compact). Every font the page shows comes over the bridge as base64
+        // (gfontsPreview: a family cut down to the text it is to show) and is loaded with FontFace: the page itself opens nothing on the network. Family
+        // names, designers, file names and the sample texts are data (translate="no"); the words around them are put together with txT / txF.
+        const GF_CATS = { sans: 'Sans serif', serif: 'Serif', display: 'Display', hand: 'Handwriting', mono: 'Monospace' };
+        // a subset by its name for a person; one the table does not know is shown title-cased ("canadian-aboriginal": Canadian Aboriginal)
+        const GF_SUBSETS = {
+            latin: 'Latin', 'latin-ext': 'Latin Extended', cyrillic: 'Cyrillic', 'cyrillic-ext': 'Cyrillic Extended', greek: 'Greek', 'greek-ext': 'Greek Extended',
+            vietnamese: 'Vietnamese', arabic: 'Arabic', hebrew: 'Hebrew', thai: 'Thai', lao: 'Lao', khmer: 'Khmer', myanmar: 'Myanmar', tibetan: 'Tibetan',
+            japanese: 'Japanese', korean: 'Korean', 'chinese-simplified': 'Chinese (Simplified)', 'chinese-traditional': 'Chinese (Traditional)', 'chinese-hongkong': 'Chinese (Hong Kong)',
+            devanagari: 'Devanagari', bengali: 'Bengali', gujarati: 'Gujarati', gurmukhi: 'Gurmukhi', kannada: 'Kannada', malayalam: 'Malayalam', oriya: 'Odia',
+            sinhala: 'Sinhala', tamil: 'Tamil', telugu: 'Telugu', armenian: 'Armenian', georgian: 'Georgian', ethiopic: 'Ethiopic', math: 'Math', symbols: 'Symbols',
+            emoji: 'Emoji', music: 'Music'
+        };
+        // the sample of a family's main script (primaryScript): data, never translated. Latin for none (but see gfSample); a script not in the table shows
+        // the family's name
+        const GF_LATIN = 'The quick brown fox jumps over the lazy dog.';
+        const GF_SAMPLES = {
+            Arab: 'أنا قادر على أكل الزجاج و هذا لا يؤلمني.',
+            Armn: 'Կրնամ ապակի ուտել և ինծի անհանգիստ չըներ։',
+            Beng: 'আমি কাঁচ খেতে পারি, তাতে আমার কোনো ক্ষতি হয় না।',
+            Cyrl: 'Я могу есть стекло, оно мне не вредит.',
+            Deva: 'मैं काँच खा सकता हूँ और मुझे उससे कोई चोट नहीं पहुंचती.',
+            Ethi: 'ብርጭቆ መብላት እችላለሁ፣ እና አያመመኝም።',
+            Geor: 'მინას ვჭამ და არა მტკივა.',
+            Grek: 'Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.',
+            Gujr: 'હું કાચ ખાઇ શકુ છુ અને તેનાથી મને દર્દ નથી થતુ.',
+            Guru: 'ਮੈਂ ਗਲਾਸ ਖਾ ਸਕਦਾ ਹਾਂ ਅਤੇ ਇਸ ਨਾਲ ਮੈਨੂੰ ਕੋਈ ਤਕਲੀਫ ਨਹੀਂ.',
+            Hans: '我能吞下玻璃而不伤身体。',
+            Hant: '我能吞下玻璃而不傷身體。',
+            Hebr: 'אני יכול לאכול זכוכית וזה לא מזיק לי.',
+            Hira: 'いろはにほへと ちりぬるを わかよたれそ つねならむ',
+            Jpan: '私はガラスを食べられます。それは私を傷つけません。',
+            Khmr: 'ខ្ញុំអាចញុំកញ្ចក់បាន ដោយគ្មានបញ្ហារ',
+            Knda: 'ನಾನು ಗಾಜನ್ನು ತಿನ್ನಬಲ್ಲೆ ಮತ್ತು ಅದರಿಂದ ನನಗೆ ನೋವಾಗುವುದಿಲ್ಲ.',
+            Kore: '나는 유리를 먹을 수 있어요. 그래도 아프지 않아요.',
+            Laoo: 'ຂອ້ຍກິນແກ້ວໄດ້ໂດຍທີ່ມັນບໍ່ໄດ້ເຮັດໃຫ້ຂອ້ຍເຈັບ.',
+            Mlym: 'എനിക്ക് ഗ്ലാസ് തിന്നാം. അതെന്നെ വേദനിപ്പിക്കില്ല.',
+            Mymr: 'ကျွန်တော် ကျွန်မ မှန်စားနိုင်တယ်။ ၎င်းကြောင့် ထိခိုက်မှုမရှိပါ။',
+            Orya: 'ମୁଁ କାଚ ଖାଇପାରେ ଏବଂ ତାହା ମୋର କ୍ଷତି କରିନଥାଏ।',
+            Sinh: 'මට වීදුරු කෑමට හැකියි. එයින් මට කිසි හානියක් සිදු නොවේ.',
+            Taml: 'நான் கண்ணாடி சாப்பிடுவேன், அதனால் எனக்கு ஒரு கேடும் வராது.',
+            Telu: 'నేను గాజు తినగలను మరియు అలా చేసినా నాకు ఏమి ఇబ్బంది లేదు',
+            Thai: 'ฉันกินกระจกได้ แต่มันไม่ทำให้ฉันเจ็บ',
+            Tibt: 'ཤེལ་སྒོ་ཟ་ནས་ང་ན་གི་མ་རེད།'
+        };
+        // a family with no main script whose subsets leave Latin out has no Latin letters: Latin would come only in the app's font, shown as its look. It
+        // takes the sample of what its subsets name (Noto Color Emoji and Noto Emoji: emoji; Chenla and Siemreap: khmer; Noto Serif Myanmar: myanmar),
+        // else '' (Noto Sans Lycian), which is "No preview" without asking (gfAskEl). No subsets listed (Playwrite, the math families): Latin
+        const GF_SUBSET_SAMPLE = { khmer: GF_SAMPLES.Khmr, myanmar: GF_SAMPLES.Mymr };   // the samples themselves: a script code here would read as page text (i18n/extract.js)
+        function gfSample(e) {
+            const k = (e && e.k) || '';
+            if (k && k !== 'Latn') return GF_SAMPLES[k] || e.f;
+            const s = e && Array.isArray(e.s) ? e.s : [];
+            if (k || !s.length || s.indexOf('latin') >= 0) return GF_LATIN;
+            if (s.indexOf('emoji') >= 0) return FNT_EMO_SAMPLE;          // the emoji fonts' sample itself, never a second copy of it (t78: written once)
+            return s.map(x => GF_SUBSET_SAMPLE[x]).find(Boolean) || '';
+        }
+        function gfCardText(e) { return gf.text.trim() ? gf.text : gfSample(e); }
+        function gfDShown(e) { return gf.dText.trim() ? gf.dText : gfSample(e); }
+        // the search text of a family (its name and designers): letter case and accents aside, and the letters NFD does not take apart as their plain
+        // ones ("lukasz" finds Łukasz Dziedzic, "sorensen" Claus Eggers Sørensen, "griesshammer" Grießhammer)
+        const GF_FOLD = { 'ł': 'l', 'đ': 'd', 'ð': 'd', 'ø': 'o', 'ı': 'i', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'þ': 'th' };
+        function gfFold(s) { return String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[łđðøıßæœþ]/g, c => GF_FOLD[c]); }
+        function gfHasList() { return !!(gf.data && gf.data.at > 0 && gf.data.families.length); }
+        // older than 7 days now (GoogleFonts.isStale): gfontsCatalog's stale is Java's word when the list was read, which a page kept open for days outlives
+        function gfOld() { const at = gf.data.at, now = Date.now(); return !!gf.data.stale || now < at || now - at > 7 * 864e5; }
+        function gfWhen(ms) { try { return new Date(ms).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric' }); } catch (e) { return ''; } }
+        // a date of the list (YYYY-MM-DD), as a day in the app's language
+        function gfDate(s) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+            if (!m) return '';
+            try { return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }); } catch (e) { return String(s); }
+        }
+        function gfSubsetName(s) { return GF_SUBSETS[s] ? txT(GF_SUBSETS[s]) : String(s).split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
+        // "Display" the font category, not the screen setting other places translate (txC)
+        function gfCatName(c) { return c === 'display' ? txC('Display [font category]') : GF_CATS[c] ? txT(GF_CATS[c]) : ''; }
+        // an axis' name as Make a font says it: the five the app knows in the page's words, any other one Google's name for it (data)
+        function gfAxisName(tag) { tag = String(tag); return FNT_AXIS[tag] ? txT(FNT_AXIS[tag]) : ((gf.data && gf.data.axes && gf.data.axes[tag]) || tag); }
+        // a weight's name, each a txT call of its own so that tests/i18n/extract.js lists it ("ExtraLight" looks like data to it otherwise)
+        function gfWeightName(n) { return ({ 100: txT('Thin'), 200: txT('ExtraLight'), 300: txC('Light [font weight]'), 400: txT('Regular'), 500: txT('Medium'), 600: txT('SemiBold'), 700: txT('Bold'), 800: txT('ExtraBold'), 900: txT('Black') })[n] || ''; }
+        function gfStyleName(w) {
+            const n = parseInt(w, 10) || 400, it = /i$/.test(String(w)), wn = gfWeightName(n);
+            return (wn ? wn + ' ' + n : txF('Weight {0}', n)) + (it ? ' ' + txT('Italic') : '');
+        }
+        function gfStylesText(e) { const n = (e.w || []).length; return n === 1 ? txT('1 style') : txF('{0} styles', n); }
+        function gfDesigners(d) { d = Array.isArray(d) ? d : []; return !d.length ? '' : d.length === 1 ? d[0] : d[0] + ' (+' + (d.length - 1) + ')'; }
+        function gfFamText(n) { return n === 1 ? txT('1 family') : txF('{0} families', fntInt(n)); }
+        function gfSpecimenUrl(f) { return 'https://fonts.google.com/specimen/' + String(f).replace(/ /g, '+'); }
+        function gfKey(f, mode, text) { return f + '|' + mode + '|' + text; }
+        function gfKeyParts(key) { const a = key.indexOf('|'), b = key.indexOf('|', a + 1); return { f: key.slice(0, a), m: key.slice(a + 1, b), text: key.slice(b + 1) }; }
+
+        // ---- the list on the phone, the downloads, the button that opens the page ----
+        // the list on the phone; returns the families whose styles or axes differ from the list before (gfForgetChanged)
+        function gfLoadCat() {
+            const r = fntCall('gfontsCatalog', [], true);
+            if (!r) { gf.data = null; return new Set(); }
+            const old = gf.by, had = gfHasList();
+            const fams = r.ok && Array.isArray(r.families) ? r.families.filter(e => e && typeof e.f === 'string' && e.f) : [];
+            gf.data = { at: r.ok ? +r.at || 0 : 0, stale: !!r.stale, axes: r.ok && r.axes && typeof r.axes === 'object' ? r.axes : {}, families: fams, err: r.ok ? '' : fntErrText(r) };
+            gf.by = new Map(fams.map(e => [e.f, e]));
+            gf.fold = new Map(fams.map(e => [e.f, gfFold(e.f + ' ' + (Array.isArray(e.d) ? e.d.join(' ') : ''))]));
+            // a first list read (one another window of the app got while this one had none): the error of getting one ("busy", a failed fetch) is moot
+            if (!had && gfHasList()) gf.refreshErr = '';
+            gfSyncGone();
+            return gfForgetChanged(old);
+        }
+        // a preview asked of the list before is of no use for a family whose styles or axes changed in the new one (it turned variable, it gained an
+        // axis): its faces go, an answer still on its way is dropped as an older generation's, and what shows the family asks again
+        function gfForgetChanged(old) {
+            const sig = e => JSON.stringify(e ? [e.w, e.x] : null), fams = new Set(), chg = new Set();
+            const going = Object.values(gf.inflight).concat(Object.values(gf.late), [...gf.loading]);
+            [...gf.faces.keys()].concat(Object.keys(gf.asked)).forEach(k => fams.add(gfKeyParts(k).f));
+            going.concat(gf.queue).forEach(it => fams.add(it.f));
+            fams.forEach(f => { if (sig(old.get(f)) !== sig(gf.by.get(f))) chg.add(f); });
+            if (!chg.size) return chg;
+            going.forEach(it => { if (chg.has(it.f)) it.gen = -1; });
+            gf.queue = gf.queue.filter(it => !chg.has(it.f));
+            Object.keys(gf.asked).forEach(k => { if (chg.has(gfKeyParts(k).f)) delete gf.asked[k]; });
+            [...gf.faces].forEach(([k, rec]) => {
+                if (!chg.has(gfKeyParts(k).f)) return;
+                rec.list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} });
+                gf.nFaces -= rec.list.length;
+                gf.faces.delete(k);
+            });
+            return chg;
+        }
+        function gfLoadDls() {
+            const r = fntCall('gfontsDownloads', [], true);
+            gf.dls = {};
+            if (r && r.ok && Array.isArray(r.families)) r.families.forEach(x => { if (x && typeof x.family === 'string') gf.dls[x.family] = x; });
+            gfSyncGone();
+            gfRenderEntry();                                                 // a Delete or a download can add or take away a gone family: the button's count follows
+        }
+        // a downloaded family the list no longer has (renamed or removed on Google Fonts): a short entry of its own (gone), so that its card and page still
+        // offer Use, Save to phone and Delete. Its styles come from its files; it stays out of gf.data.families (the languages menu), but both counts, the
+        // search button's (gfRenderEntry) and the sheet's (gfRenderList), add gf.gone
+        function gfSyncGone() {
+            gf.gone.forEach(e => { if (gf.by.get(e.f) === e) { gf.by.delete(e.f); gf.fold.delete(e.f); } });
+            gf.gone = !gf.data ? [] : Object.keys(gf.dls).filter(f => !gf.by.has(f)).map(f => {
+                const w = [...new Set(gfFiles(f).map(x => (x.variable ? 400 : +x.weight || 400) + (x.italic ? 'i' : '')))];
+                w.sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || a.length - b.length);
+                return { f: f, c: '', d: [], w: w.length ? w : ['400'], x: [], s: [], gone: true };
+            });
+            gf.gone.forEach(e => { gf.by.set(e.f, e); gf.fold.set(e.f, gfFold(e.f)); });
+        }
+        function gfRenderEntry() {
+            const btn = document.getElementById('gfOpenBtn'), n = document.getElementById('gfOpenCount');
+            if (!btn) return;
+            const on = fntHas('gfontsCatalog');
+            btn.style.display = on ? '' : 'none';
+            if (n) n.textContent = on && gfHasList() ? gfFamText(gf.data.families.length + gf.gone.length) : '';
+        }
+        function gfOpen() {
+            if (!fntHas('gfontsCatalog')) { showToast('Needs the app build'); return; }
+            haptic();
+            if (!gfHasList()) gfLoadCat();
+            gfLoadDls();
+            gf.open = true; gf.view = 'list'; gf.fam = '';
+            document.getElementById('gfSheet').classList.add('show');
+            gfApplyView();
+            gfBuildLangs();
+            gfChipsShow();
+            gfFilter(true);
+            const sc = document.getElementById('gfScroll');
+            if (sc) sc.scrollTop = 0;
+            // no list yet, or one older than 7 days: asked for (a list on the phone stays in use meanwhile; Java answers fresh when it has a newer one)
+            if (!gfHasList() || gfOld()) gfRefresh(false); else gfRenderStatus();
+        }
+        function gfClose() {
+            const sh = document.getElementById('gfSheet');
+            if (sh) sh.classList.remove('show');
+            // the sheet hides by its opacity, so a field of it (the search, the preview text, the tester) keeps the focus after Back took the keyboard
+            // down: it would keep the bottom bar away (bnavTextFocus) and take a hardware keyboard's typing
+            const ae = document.activeElement;
+            if (sh && ae && ae !== document.body && sh.contains(ae)) try { ae.blur(); } catch (e) {}
+            if (gf.view === 'detail') gfDetailForget();
+            gf.open = false; gf.view = 'list'; gf.fam = '';
+            clearTimeout(gf.tq); clearTimeout(gf.tt); clearTimeout(gf.td);
+            gfNewGen();                                                      // what is still on its way is dropped when it comes
+        }
+        // Back, and a tap outside the sheet: from a family's page to the list, from the list to the tab
+        function gfBackStep() { if (gf.view === 'detail') gfBackToList(); else gfClose(); }
+        function gfApplyView() {
+            const det = gf.view === 'detail', show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+            show('gfListView', !det); show('gfDetail', det); show('gfBack', det); show('gfSearch', !det);
+            const t = document.getElementById('gfTitle');
+            if (!t) return;
+            t.textContent = det ? gf.fam : 'Google Fonts';
+            if (det) t.setAttribute('translate', 'no'); else t.removeAttribute('translate');
+        }
+        function gfRefresh(force) {
+            if (gf.refreshing) return;
+            const r = fntCall('gfontsRefresh', [!!force]);
+            if (!r) return;
+            if (!r.ok) gf.refreshErr = fntErrText(r, 'Could not start');
+            else if (!r.fresh) { gf.refreshing = true; gf.refreshErr = ''; }
+            else { gfListCame(); gfRenderEntry(); }                          // the list on the phone is younger than a week: another window of the app got it
+            gfRenderStatus();
+        }
+        window.onGfCatalog = function (json) {
+            const r = fntJson(json);
+            gf.refreshing = false;
+            if (r.ok) gfListCame(); else if (r.code !== 'cancelled') gf.refreshErr = fntErrText(r);
+            gfRenderEntry();
+            if (gf.open) gfRenderStatus();
+        };
+        // a new list on the phone (this window's refresh, or another window's): read again, and the sheet drawn from it where it is open
+        function gfListCame() {
+            gf.refreshErr = '';
+            const chg = gfLoadCat();
+            // a newer list may come with a family's new files, licence or Reserved Font Names, and Java has dropped the details it kept too: the
+            // details follow the list, as the previews do (gfForgetChanged). One still on its way is kept, and is Google's answer of now. The open
+            // family's stay shown, marked stale, until the newer ones come (gfAskInfo below): its page does not empty itself, and a focus in About stays
+            Object.keys(gf.info).forEach(f => {
+                const I = gf.info[f] || {};
+                if (I.asking || I.refreshing) return;
+                if (I.ok && gf.open && gf.view === 'detail' && f === gf.fam) gf.info[f] = Object.assign({}, I, { stale: true }); else delete gf.info[f];
+            });
+            if (!gf.open) return;
+            gfBuildLangs();
+            // the family whose page is open left the new list (renamed or removed) and is not on the phone: its page has nothing left to show, so back
+            // to the list, as Delete does for a family no longer on Google Fonts. One on the phone stays, and says now that it left (its note, no link)
+            if (gf.view === 'detail' && !gf.by.has(gf.fam)) { gfBackToList(); return; }
+            gfFilter(false);                                                 // the cards in view ask again for what gfForgetChanged dropped
+            if (gf.view !== 'detail') return;
+            // the family's page shown and its styles or axes changed: its sliders and style rows are the new list's, from the axes' defaults, and its
+            // previews asked again; else only its Download and About parts
+            if (chg && chg.has(gf.fam)) { gf.axes = gfAxesStart(gf.by.get(gf.fam)); gfRenderDetail(); } else { gfRenderGet(); gfRenderAbout(); }
+            // its details asked again (Get and About say they are coming); a gone family's never are (gfShow)
+            const e = gf.by.get(gf.fam);
+            if (e && !e.gone) gfAskInfo(gf.fam, false);
+        }
+        // v7.18.0: a section drawn again (the status line, About) must not drop a keyboard's, switch access' or TalkBack's focus to the body behind
+        // the sheet (the rule gfRenderGet follows). gfFocusNote, before the write, notes the control that has it (by id); gfFocusBack, after it,
+        // gives it to that control when it is still there and usable, else to the first of alt there. With none (Refresh turned into "Updating the
+        // list…", Retry into "Getting the details…") the section itself takes it (tabindex -1), so its sentence is read, and the next redraw hands
+        // it on to the control once it is back
+        function gfFocusNote(box) {
+            const ae = document.activeElement;
+            if (ae && ae !== box && box.contains(ae)) return { id: ae.id || '' };
+            if (ae === box && box._gfPend) return box._gfPend;
+            box._gfPend = null; box.removeAttribute('tabindex');               // the focus went on meanwhile: the section is no stop of its own
+            return null;
+        }
+        function gfFocusBack(box, k, alt) {
+            if (!k) return;
+            const ok = el => !!el && box.contains(el) && !el.disabled && (el.tabIndex >= 0 || el.hasAttribute('tabindex')) && el.getClientRects().length > 0;
+            const to = [k.id ? document.getElementById(k.id) : null].concat(alt.map(sel => box.querySelector(sel))).find(ok);
+            box._gfPend = to ? null : { id: k.id };
+            if (to) box.removeAttribute('tabindex'); else box.tabIndex = -1;
+            try { (to || box).focus({ preventScroll: true }); } catch (err) {}
+        }
+        function gfRenderStatus() {
+            const el = document.getElementById('gfStatus');
+            if (!el) return;
+            const D = gf.data, err = gf.refreshErr || (D && D.err) || '';
+            let h;
+            if (!gfHasList()) {
+                h = gf.refreshing ? '<div class="gf-getting">Getting the list of fonts from Google Fonts…</div>'
+                    : emptyStateHtml({ key: 'gf-nolist', icon: err ? 'alert' : 'search', title: 'The list of fonts is not on this phone yet.', hint: err, actions: [{ label: 'Retry', onclick: 'gfRefresh(true)', primary: true }] });
+            } else {
+                // the count is the line under the filters (gfCount), so this line says only how fresh the list is
+                const line = escapeHtml(txF('List updated {0}', gfWhen(D.at))) + ' · '
+                    + (gf.refreshing ? escapeHtml(txT('Updating the list…')) : '<button type="button" class="batch-tool-link" id="gfRefreshBtn" onclick="gfRefresh(true)">Refresh</button>');
+                h = '<div>' + line + '</div>'
+                    + (err && !gf.refreshing ? '<div class="fnt-err"><span class="is-err">' + escapeHtml(err) + '</span> <button type="button" class="batch-tool-link" id="gfRetryBtn" onclick="gfRefresh(true)">Retry</button></div>' : '');
+            }
+            // Refresh or a Retry pressed: the line holds the focus while it gets the list, then Retry (failed again) or Refresh has it (the empty
+            // state's Retry has no id: 'button')
+            const k = gfFocusNote(el);
+            el.innerHTML = h;
+            gfFocusBack(el, k, ['#gfRetryBtn', '#gfRefreshBtn', 'button']);
+        }
+
+        // ---- the list: search, filters, sort, 30 cards at a time ----
+        function gfBuildLangs() {
+            const sel = document.getElementById('gfLang'), dOpt = document.querySelector('#gfCat option[value="display"]');
+            // the category's own word, here only: the option is translate="no", since its English "Display" is also the screen setting's key, which the
+            // page's walker would put over this text (fr "Affichage", id "Layar")
+            if (dOpt) dOpt.textContent = gfCatName('display');
+            if (!sel) return;
+            const keep = sel.value, have = new Set();
+            ((gf.data && gf.data.families) || []).forEach(e => (Array.isArray(e.s) ? e.s : []).forEach(s => { if (typeof s === 'string' && s) have.add(s); }));
+            const loc = langLocale() || 'en', opts = [...have].map(s => [s, gfSubsetName(s)]).sort((a, b) => a[1].localeCompare(b[1], loc));
+            sel.innerHTML = '<option value="">All languages</option>' + opts.map(([v, t]) => '<option value="' + escapeHtml(v) + '">' + escapeHtml(t) + '</option>').join('');
+            sel.value = have.has(keep) ? keep : '';
+        }
+        function gfFilter(reset) {
+            const v = id => (document.getElementById(id) || {}).value || '';
+            const words = gfFold(v('gfSearch')).split(/\s+/).filter(Boolean), cat = v('gfCat'), lang = v('gfLang'), sort = v('gfSort') || 'pop';
+            const L = ((gf.data && gf.data.families) || []).concat(gf.gone).filter(e => (!cat || e.c === cat) && (!lang || (e.s || []).indexOf(lang) >= 0)
+                && (!gf.onlyVar || (e.x || []).length > 0) && (!gf.onlyDl || !!gf.dls[e.f])
+                && (!words.length || words.every(w => (gf.fold.get(e.f) || '').indexOf(w) >= 0)));
+            const rank = x => (+x > 0 ? +x : Infinity), byName = (a, b) => a.f.localeCompare(b.f, 'en', { sensitivity: 'base' });
+            L.sort(sort === 'trend' ? (a, b) => rank(a.t) - rank(b.t) || byName(a, b)
+                : sort === 'new' ? (a, b) => String(b.a || '').localeCompare(String(a.a || '')) || byName(a, b)
+                : sort === 'name' ? byName : (a, b) => rank(a.p) - rank(b.p) || byName(a, b));
+            gf.list = L;
+            if (reset) gf.shown = GF_PAGE;
+            gfRenderList();
+            // a new search, filter or sort starts at its first cards (a list update and Show more keep the place): a sheet scrolled past the list's top goes
+            // back to the top; a search that lands while a family's page is open does so on Back
+            if (reset) {
+                const sc = document.getElementById('gfScroll'), box = document.getElementById('gfList'), bar = document.querySelector('#gfSheet .gf-bar');
+                if (gf.view !== 'list') gf.listTop = 0;
+                else if (sc && box && bar && box.getBoundingClientRect().top < bar.getBoundingClientRect().bottom) sc.scrollTop = 0;
+            }
+        }
+        function gfSearchInput() { clearTimeout(gf.tq); gf.tq = setTimeout(() => gfFilter(true), 120); }
+        function gfChip(which) {
+            if (which === 'var') gf.onlyVar = !gf.onlyVar; else gf.onlyDl = !gf.onlyDl;
+            gfChipsShow();
+            gfFilter(true);
+        }
+        function gfChipsShow() {
+            [['gfChipVar', gf.onlyVar], ['gfChipDl', gf.onlyDl]].forEach(([id, on]) => {
+                const c = document.getElementById(id);
+                if (c) { c.classList.toggle('active', on); c.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+            });
+        }
+        function gfClearFilters() {
+            ['gfSearch', 'gfCat', 'gfLang'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            gf.onlyVar = false; gf.onlyDl = false;
+            gfChipsShow();
+            gfFilter(true);
+        }
+        function gfMore() { gf.shown += GF_PAGE; gfRenderList(); }
+        function gfRenderList() {
+            const box = document.getElementById('gfList'), more = document.getElementById('gfMore'), cnt = document.getElementById('gfCount');
+            if (!box) return;
+            // a redraw (a download that ended or a newer list while the list shows, Show more, Clear filters) must not drop a keyboard's or TalkBack's
+            // focus from the cards or Show more to the body behind the sheet: the same family's card (dataset.f compared, a family's name is never put
+            // into a selector), else the new Show more or the first card it brought, the first card, the empty state's Clear filters, the bar's Close
+            // (as gfBackToList). A focus elsewhere (the search, a chip, the family's page that gfBackToList leaves) stays where it is
+            const ae = document.activeElement, inBox = !!ae && ae !== box && box.contains(ae), inMore = !!ae && !!more && more.contains(ae);
+            const fc = inBox && ae.closest ? ae.closest('.gf-card') : null, keepF = fc ? fc.dataset.f : null, had = box.querySelectorAll('.gf-card').length;
+            const refocus = () => {
+                if (!inBox && !inMore) return;
+                const cards = [...box.querySelectorAll('.gf-card')];
+                const to = (keepF !== null && cards.find(c => c.dataset.f === keepF)) || (inMore && (document.getElementById('gfMoreBtn') || cards[had])) || cards[0]
+                    || box.querySelector('button') || document.querySelector('#gfSheet .gf-bar .sheet-close');
+                if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
+            };
+            if (gf.io) gf.io.disconnect();
+            if (!gfHasList()) { box.innerHTML = ''; more.innerHTML = ''; cnt.textContent = ''; refocus(); return; }
+            const L = gf.list, total = gf.data.families.length + gf.gone.length, n = Math.min(gf.shown, L.length), left = L.length - n;
+            cnt.textContent = L.length === total ? gfFamText(total) : txF('{0} of {1}', fntInt(L.length), fntInt(total));
+            if (!L.length) {
+                box.innerHTML = emptyStateHtml({ key: 'gf-none', icon: 'search', title: 'No fonts match.', hint: 'Try other words, or clear the filters.', actions: [{ label: 'Clear filters', onclick: 'gfClearFilters()' }] });
+                more.innerHTML = '';
+                refocus();
+                return;
+            }
+            box.innerHTML = L.slice(0, n).map(gfCardHtml).join('');
+            more.innerHTML = left > 0 ? `<button type="button" class="batch-tool-link" id="gfMoreBtn" onclick="gfMore()">Show ${Math.min(GF_PAGE, left)} more · ${left} left</button>` : '';
+            refocus();
+            gfObserve();
+        }
+        // one tap target: the name, a line about it, its badges and the preview line in its own font
+        function gfCardHtml(e) {
+            const vf = (e.x || []).length > 0, text = gfCardText(e);
+            const meta = [gfCatName(e.c), gfDesigners(e.d), gfStylesText(e)].filter(Boolean).join(' · ');
+            const badge = (t, cls) => '<span class="uad-badge' + (cls ? ' ' + cls : '') + '">' + escapeHtml(t) + '</span>';
+            const badges = (vf ? badge(txT('Variable')) : '') + (e.col ? badge(txT('Colour')) : '') + (gf.dls[e.f] ? badge(txT('Downloaded'), 'is-dl') : '')
+                + (e.gone ? badge(txT('No longer on Google Fonts'), 'is-gone') : '');
+            return '<button type="button" class="gf-card" data-f="' + escapeHtml(e.f) + '" onclick="gfShow(' + jsArg(e.f) + ')">'
+                + '<span class="gf-name" translate="no">' + escapeHtml(e.f) + '</span>'
+                + '<span class="gf-meta" translate="no">' + escapeHtml(meta) + '</span>'
+                + (badges ? '<span class="gf-badges" translate="no">' + badges + '</span>' : '')
+                + '<span class="gf-pv gf-wait" translate="no" dir="auto" data-pvw="1" data-pvk="' + escapeHtml(gfKey(e.f, 'card', text)) + '">' + escapeHtml(text) + '</span>'
+                + '</button>';
+        }
+        function gfTextInput(v) {
+            gf.text = String(v || '');
+            clearTimeout(gf.tt);
+            gf.tt = setTimeout(gfRetext, 400);
+        }
+        // the cards take the new text: each one in view asks again (a new generation), and keeps the face it has until the new one comes only when that
+        // face was made for every character of the new text; else it waits, blank (gfHold)
+        function gfRetext() {
+            gfNewGen();
+            document.querySelectorAll('#gfList .gf-card').forEach(card => {
+                const e = gf.by.get(card.dataset.f), pv = card.querySelector('.gf-pv');
+                if (!e || !pv) return;
+                const text = gfCardText(e);
+                pv.dataset.pvk = gfKey(e.f, 'card', text);
+                if (gfApplyEl(pv)) return;
+                gfHold(pv, text, true);
+                if (pv._gfVis) gfAskEl(pv);
+            });
+            gfPump();
+        }
+        function gfSizeInput(v) {
+            const n = Math.max(14, Math.min(72, +v || 28)), lab = document.getElementById('gfSizeV'), box = document.getElementById('gfList');
+            if (lab) lab.textContent = String(n);
+            if (box) box.style.setProperty('--gf-pv', n + 'px');
+        }
+
+        // ---- the previews: asked by what is in view, at most GF_INFLIGHT at a time; their faces kept by family|mode|text ----
+        function gfNewGen() { gf.gen++; gf.asked = {}; gf.queue = []; gf.late = {}; }
+        function gfObserve() {
+            const els = document.querySelectorAll('#gfList .gf-pv');
+            els.forEach(el => gfApplyEl(el));
+            if (!('IntersectionObserver' in window)) { els.forEach(el => { el._gfVis = true; gfAskEl(el); }); gfPump(); return; }
+            if (!gf.io) gf.io = new IntersectionObserver(gfSeen, { root: document.getElementById('gfScroll'), rootMargin: '300px' });
+            els.forEach(el => gf.io.observe(el));
+        }
+        function gfSeen(entries) {
+            entries.forEach(en => { en.target._gfVis = en.isIntersecting; if (en.isIntersecting) gfAskEl(en.target); });
+            gfPump();
+        }
+        function gfElsFor(key) { return [...document.querySelectorAll('#gfSheet [data-pvk]')].filter(el => el.dataset.pvk === key); }
+        // a preview element: its face when it is loaded (the newest in use), its failure, else asked for once in this generation
+        function gfAskEl(el) {
+            const key = el.dataset.pvk;
+            if (!key) return;
+            const rec = gf.faces.get(key);
+            if (rec) { gf.faces.delete(key); gf.faces.set(key, rec); gfApplyEl(el); return; }
+            if (gf.asked[key] === 'failed') { gfApplyEl(el); return; }
+            if (gf.asked[key]) return;
+            const p = gfKeyParts(key), g = gf.by.get(p.f);
+            if (g && g.gone) { gf.asked[key] = 'failed'; gfApplyEl(el); return; }        // a family no longer on Google Fonts has no preview to ask for
+            if (!p.text.trim()) { gf.asked[key] = 'failed'; gfApplyEl(el); return; }     // nor one with no sample it could draw ('', gfSample)
+            gf.asked[key] = true;
+            gf.queue.push(Object.assign(gfKeyParts(key), { key: key, gen: gf.gen }));
+        }
+        // still worth asking: this generation, and an element of the page in view wants it (a card in view, or the family's page)
+        function gfWanted(it) {
+            return it.gen === gf.gen && gf.open && gfElsFor(it.key).some(el => (el.classList.contains('gf-pv') ? !!el._gfVis : gf.view === 'detail'));
+        }
+        function gfPump() {
+            const now = Date.now();
+            // slow to answer (Java's queue, then css2 and up to 18 faces at up to 45 s a fetch): no longer counted, its answer still used when it comes
+            Object.keys(gf.inflight).forEach(id => { if (now - gf.inflight[id].t > 30000) { gf.late[id] = gf.inflight[id]; delete gf.inflight[id]; } });
+            while (Object.keys(gf.inflight).length < GF_INFLIGHT && gf.queue.length) {
+                const it = gf.queue.shift();
+                if (!gfWanted(it)) { if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; continue; }
+                const id = 'gp' + (++gf.seq), r = fntCall('gfontsPreview', [id, it.f, it.m, it.text], true);
+                if (!r || !r.ok) { gf.asked[it.key] = 'failed'; gfShowKey(it.key); continue; }
+                it.t = now;
+                gf.inflight[id] = it;
+            }
+        }
+        window.onGfPreview = function (reqId, json) {
+            const it = gf.inflight[reqId] || gf.late[reqId];
+            if (!it) return;
+            delete gf.inflight[reqId]; delete gf.late[reqId];
+            const r = fntJson(json), here = () => it.gen === gf.gen && gfElsFor(it.key).length > 0;
+            // an answer of an older generation, or for a card that is no longer in the list, is dropped
+            if (!here()) { if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; gfPump(); return; }
+            const faces = r.ok && Array.isArray(r.faces) ? r.faces.filter(x => x && typeof x.b64 === 'string' && /^[A-Za-z0-9+/=]+$/.test(x.b64)) : [];
+            if (!faces.length) { gf.asked[it.key] = 'failed'; gfShowKey(it.key); gfPump(); return; }
+            const name = 'gfpv' + (++gf.faceN);
+            gf.loading.add(it);                                              // while its faces load, a newer list can still drop them (gfForgetChanged)
+            Promise.all(faces.map(x => fntFace(name, x.b64, gfDesc(x)).catch(() => null))).then(list => {
+                gf.loading.delete(it);
+                list = list.filter(Boolean);
+                if (!here()) { list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} }); if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; return; }
+                if (!list.length) { gf.asked[it.key] = 'failed'; gfShowKey(it.key); return; }
+                if (gfDrawsNone(name, it.text)) { list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} }); gf.asked[it.key] = 'failed'; gfShowKey(it.key); return; }
+                gf.faces.set(it.key, { name: name, list: list, style: gfDesc(faces[0]) });
+                gf.nFaces += list.length;
+                gfTrim(it.key);
+                gfShowKey(it.key);
+                gfPump();
+            });
+            gfPump();
+        };
+        // a face's style, weight and stretch as FontFace takes them ("400", "100 900", "75% 100%"): anything else is left out
+        function gfDesc(x) {
+            const d = {};
+            if (/^(normal|italic)$/.test(String(x.style || ''))) d.style = String(x.style);
+            if (/^\d{1,4}( \d{1,4})?$/.test(String(x.weight || ''))) d.weight = String(x.weight);
+            if (/^\d{1,3}(\.\d+)?%( \d{1,3}(\.\d+)?%)?$/.test(String(x.stretch || ''))) d.stretch = String(x.stretch);
+            return d;
+        }
+        // a face that draws none of a Latin text's letters and digits is no preview: they would all come in the app's font, shown as the family's look
+        // (asked for Latin, Google answers an emoji or a Khmer family with a face that holds the space alone). Told on a canvas: a letter the face has is
+        // as wide whatever follows it in the font list; one it lacks takes the width of each fallback. A text with letters of another script, symbols or
+        // emoji is not judged: the fallbacks can all be one font for those, which tells nothing
+        function gfDrawsNone(name, text) {
+            const t = String(text || '');
+            if (/[^\p{Script=Latin}\p{Script=Inherited}\x20-\x7E\p{P}\p{Z}\p{Cc}\p{Cf}]/u.test(t)) return false;
+            const cs = [...new Set(Array.from(t).filter(c => /[\p{Script=Latin}0-9]/u.test(c)))].slice(0, 40);
+            let x = null;
+            try { x = (gf.cv || (gf.cv = document.createElement('canvas'))).getContext('2d'); } catch (e) {}
+            if (!cs.length || !x) return false;
+            const w = (c, fb) => { x.font = "100px '" + name + "', " + fb; return x.measureText(c).width; };
+            return !cs.some(c => { const a = w(c, 'serif'); return a === w(c, 'monospace') && a === w(c, 'sans-serif'); });
+        }
+        // past GF_FACES faces the oldest in use go (document.fonts.delete); an element in view that had one asks for it again. One that kept that face
+        // for a new text (gfHold) waits, blank, for its own
+        function gfTrim(keep) {
+            for (const [k, rec] of gf.faces) {
+                if (gf.nFaces <= GF_FACES) break;
+                if (k === keep) continue;
+                rec.list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} });
+                gf.nFaces -= rec.list.length;
+                gf.faces.delete(k);
+                if (gf.asked[k] === true) delete gf.asked[k];
+                [...document.querySelectorAll('#gfSheet [data-pvk]')].filter(el => el.dataset.pvk === k || gfFaceName(el) === rec.name).forEach(el => {
+                    el.style.fontFamily = '';
+                    el.classList.add('gf-wait');
+                    if (el.classList.contains('gf-pv') ? el._gfVis : gf.view === 'detail') gfAskEl(el);
+                });
+            }
+        }
+        function gfShowKey(key) { gfElsFor(key).forEach(gfApplyEl); }
+        // the preview face an element is drawn in (gfpv<n>), '' for none
+        function gfFaceName(el) { const m = /^['"]?(gfpv\d+)['"]?(,|$)/.exec(el.style.fontFamily || ''); return m ? m[1] : ''; }
+        // whether the face an element shows draws all of a new text: a css2 text= face holds the characters of the text it was made for alone, and a
+        // character it lacks would come in the app's font, shown as the family's look. A face no longer kept (gfTrim) draws nothing
+        function gfKeeps(el, text) {
+            const name = gfFaceName(el);
+            if (!name || el.classList.contains('gf-failed')) return false;
+            for (const [k, rec] of gf.faces) {
+                if (rec.name !== name) continue;
+                const had = gfKeyParts(k).text;
+                return Array.from(String(text)).every(c => /\s/.test(c) || had.indexOf(c) >= 0);
+            }
+            return false;
+        }
+        // an element moved to a key with no face yet: its new text, in the face it shows only when that face draws all of it (keep), else blank (gf-wait,
+        // never the app's font as the family's look; a failed one too) until its own face comes
+        function gfHold(el, text, keep) {
+            const k = !!keep && gfKeeps(el, text);
+            el.textContent = text;
+            el.classList.remove('gf-failed');
+            if (!k) { el.style.fontFamily = ''; el.classList.add('gf-wait'); }
+        }
+        // whether a preview's faces hold a style ("700", "700i"): a FontFace's weight is "700" or a range "100 900" ("normal" when the answer gave none),
+        // its style "normal" or "italic"
+        function gfHasStyle(rec, s) {
+            const n = parseInt(s, 10) || 400, it = /i$/.test(String(s));
+            return rec.list.some(fc => {
+                const w = String(fc.weight || '400').replace('normal', '400').replace('bold', '700').split(' ').map(Number);
+                return (String(fc.style) === 'italic') === it && n >= w[0] && n <= (w.length > 1 ? w[1] : w[0]);
+            });
+        }
+        // the family's name (a card, the heading) or the line's text in the app's font, and "No preview"
+        function gfDrawFailed(el, parts) {
+            el.textContent = el.classList.contains('gf-pv') ? parts.f : parts.text;
+            el.insertAdjacentHTML('beforeend', '<span class="gf-nopv">' + escapeHtml(txT('No preview')) + '</span>');
+            el.style.fontFamily = ''; el.style.fontWeight = ''; el.style.fontStyle = '';
+            el.classList.remove('gf-wait');
+            el.classList.add('gf-failed');
+        }
+        // draws what is known of an element's preview: its face, or its failure (the family's name in the app's font, and "No preview"); false while it waits
+        function gfApplyEl(el) {
+            const key = el.dataset.pvk;
+            if (!key) return false;
+            const rec = gf.faces.get(key), parts = gfKeyParts(key), sty = el.dataset.pvs || '';
+            if (rec) {
+                // a style row whose own face is not in the answer ('styles' leaves out a face lost to a 429 or a 503, one past 2 MB and those past 8 MB;
+                // one that does not load is dropped): "No preview", never the nearest weight that came under its name. The key stays asked: the
+                // other rows have theirs
+                if (sty && !gfHasStyle(rec, sty)) { gfDrawFailed(el, parts); return true; }
+                if (el.classList.contains('gf-failed') || el.textContent !== parts.text) { el.textContent = parts.text; el.classList.remove('gf-failed'); }
+                el.style.fontFamily = "'" + rec.name + "', " + GF_FALLBACK;
+                if (el.dataset.pvw) {
+                    const w = /^\d+$/.test(rec.style.weight || '') ? rec.style.weight : '';
+                    el.style.fontWeight = w; el.style.fontStyle = rec.style.style || '';
+                } else if (sty) {                                            // a style row: its own weight and style again (a failure cleared them)
+                    el.style.fontWeight = String(parseInt(sty, 10)); el.style.fontStyle = /i$/.test(sty) ? 'italic' : 'normal';
+                }
+                el.classList.remove('gf-wait');
+                return true;
+            }
+            if (gf.asked[key] !== 'failed') return false;
+            gfDrawFailed(el, parts);
+            return true;
+        }
+
+        // ---- a family's page: the name in its own font, the type tester, the styles, getting it, about it ----
+        function gfShow(f) {
+            const e = gf.by.get(f);
+            if (!e) return;
+            const sc = document.getElementById('gfScroll'), lv = document.getElementById('gfListView');
+            const fromList = gf.view === 'list' && !!lv && lv.contains(document.activeElement);
+            if (gf.view === 'list' && sc) gf.listTop = sc.scrollTop;
+            haptic();
+            clearTimeout(gf.tt);                                             // the list's new text (gf.text) is drawn on Back; its timer must not drop this page's previews
+            gf.view = 'detail'; gf.fam = f; gf.descOpen = false; gf.licOpen = false;
+            gf.dText = gf.text.trim() ? gf.text : gfSample(e);
+            gf.dSize = 40;
+            gf.axes = gfAxesStart(e);
+            gfApplyView();
+            gfRenderDetail();
+            if (sc) sc.scrollTop = 0;
+            if (!e.gone) gfAskInfo(f, false);                                // Google Fonts no longer knows a gone family: its details would only say so
+            // the card that was tapped is hidden now: the focus goes to the Back arrow (as sheetFullOpen), never left on the page's body
+            const bk = document.getElementById('gfBack');
+            if (fromList && bk) try { bk.focus({ preventScroll: true }); } catch (err) {}
+        }
+        // the type tester's axis values to start with: each axis at its default
+        function gfAxesStart(e) { const ax = {}; ((e && e.x) || []).forEach(a => { if (Array.isArray(a)) ax[String(a[0])] = +a[3]; }); return ax; }
+        function gfBackToList() {
+            if (gf.view !== 'detail') return;
+            // the focus on the page (its Back arrow, a field of it), on a question that closed (a gone family's Delete) or already lost to the body: it goes
+            // back to the family's card, so a keyboard, switch access or TalkBack goes on from where it was. Not to the search field: a field given the
+            // focus can raise the soft keyboard
+            const from = gf.fam, ae = document.activeElement, sh = document.getElementById('gfSheet'), lv = document.getElementById('gfListView');
+            const refocus = !ae || ae === document.body || (!!sh && sh.contains(ae) && !(lv && lv.contains(ae))) || !!(ae.closest && ae.closest('.modal-overlay:not(.show)'));
+            clearTimeout(gf.td);                                             // the tester's new text must not drop the list's previews
+            gfDetailForget();
+            gf.view = 'list'; gf.fam = '';
+            gfApplyView();
+            gfFilter(false);                                                 // a download or a Delete made on the page shows in the list (its badge, the Downloaded filter, the count)
+            const sc = document.getElementById('gfScroll');
+            if (sc) sc.scrollTop = gf.listTop;
+            if (!refocus) return;
+            // its card (dataset.f compared, a family's name is never put into a selector); one no longer listed (a gone family deleted, a newer list without
+            // it): the first card, or the empty state's Clear filters; else the bar's Close
+            const to = [...document.querySelectorAll('#gfList .gf-card')].find(c => c.dataset.f === from) || document.querySelector('#gfList button') || document.querySelector('#gfSheet .gf-bar .sheet-close');
+            if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
+        }
+        // the family's page asks for nothing more once it is left
+        function gfDetailForget() {
+            ['gfDHead', 'gfDLine'].forEach(id => { const el = document.getElementById(id); if (el) el.dataset.pvk = ''; });
+            const st = document.getElementById('gfStyles');
+            if (st) st.innerHTML = '';
+            gf.getFocus = null;                                              // a focus the Get section lost is not placed on another visit
+        }
+        function gfRenderDetail() {
+            const e = gf.by.get(gf.fam);
+            if (!e) return;
+            const head = document.getElementById('gfDHead');
+            head.textContent = e.f;
+            head.className = 'gf-dhead gf-wait';
+            head.style.fontFamily = '';
+            head.dataset.pvw = '1';
+            head.dataset.pvk = gfKey(e.f, 'card', e.f);
+            const axes = (e.x || []).filter(Array.isArray).map(a => gfAxisName(a[0]));
+            document.getElementById('gfDMeta').textContent = [gfCatName(e.c), (e.d || []).join(', '), gfStylesText(e), axes.length ? txF('Variable: {0}', axes.join(', ')) : '', e.col ? txT('Colour') : ''].filter(Boolean).join(' · ');
+            const t = document.getElementById('gfDText');
+            if (t.value !== gf.dText) t.value = gf.dText;
+            document.getElementById('gfDSize').value = String(gf.dSize);
+            document.getElementById('gfDSizeV').textContent = String(gf.dSize);
+            // the sliders drawn again (a newer list, a new language): a focus on one stays on it (the same axis), else on the first, else on the size
+            const axBox = document.getElementById('gfDAxes'), ae = document.activeElement, axId = ae && ae !== axBox && axBox.contains(ae) ? ae.id || '' : null;
+            axBox.innerHTML = gfAxesHtml(e);
+            if (axId !== null) {
+                const to = (axId && document.getElementById(axId)) || axBox.querySelector('input') || document.getElementById('gfDSize');
+                if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
+            }
+            gfRenderTester(false);
+            gfRenderGet();
+            gfRenderAbout();
+        }
+        // one slider per axis, from the axis' default; they drive font-variation-settings on the tester line. Named as Make a font names them (fntVarHtml): the
+        // page's word for the five it knows (translated where it is shown), else the list's name for it, kept as data
+        function gfAxesHtml(e) {
+            return (e.x || []).filter(Array.isArray).map(a => {
+                const tag = String(a[0]), id = 'gfAx_' + fntSafe(tag), v = gf.axes[tag] !== undefined ? gf.axes[tag] : +a[3];
+                const name = FNT_AXIS[tag] ? escapeHtml(FNT_AXIS[tag]) : '<span translate="no">' + escapeHtml(gfAxisName(tag)) + '</span>';
+                return '<div class="fnt-axis"><div class="fnt-axis-head"><label for="' + id + '">' + name + '</label><b id="' + id + 'v" translate="no">' + fntNum(v) + '</b></div>'
+                    + '<input type="range" id="' + id + '" min="' + (+a[1]) + '" max="' + (+a[2]) + '" step="' + fntStep({ min: a[1], max: a[2] }) + '" value="' + (+v) + '" oninput="gfAxisInput(' + jsArg(tag) + ', this)"></div>';
+            }).join('');
+        }
+        function gfAxisInput(tag, el) {
+            gf.axes[tag] = +el.value;
+            const lab = document.getElementById(el.id + 'v'), line = document.getElementById('gfDLine');
+            if (lab) lab.textContent = fntNum(el.value);
+            if (line) line.style.fontVariationSettings = fntFvs(gf.axes);
+        }
+        // the tester line (the 'axes' preview) and one row per style (the 'styles' preview); keep: a new text keeps the faces shown until the new ones
+        // come, where they draw all of it (gfKeeps), else that line waits, blank
+        function gfRenderTester(keep) {
+            const e = gf.by.get(gf.fam), line = document.getElementById('gfDLine'), box = document.getElementById('gfStyles');
+            if (!e || !line || !box) return;
+            const text = gfDShown(e);
+            line.dataset.pvk = gfKey(e.f, 'axes', text);
+            line.style.fontSize = gf.dSize + 'px';
+            line.style.fontVariationSettings = fntFvs(gf.axes);
+            if (!gfApplyEl(line)) gfHold(line, text, keep);
+            const sk = gfKey(e.f, 'styles', text), had = keep ? [...box.querySelectorAll('.gf-style-pv')].map(x => gfKeeps(x, text) ? x.style.fontFamily : '') : [];
+            box.innerHTML = (e.w || []).map((w, i) => {
+                const n = parseInt(w, 10) || 400, it = /i$/.test(String(w)), ff = had[i] ? ' font-family:' + escapeHtml(had[i]) + ';' : '';
+                const head = '<div class="gf-style"><div class="gf-style-name" translate="no">' + escapeHtml(gfStyleName(w)) + '</div>';
+                // past the styles the preview carries, a row would show the nearest weight it has under another style's name: "No preview" instead
+                if (i >= GF_STYLES) return head + '<div class="gf-style-pv gf-failed" translate="no" dir="auto">' + escapeHtml(text) + '<span class="gf-nopv">' + escapeHtml(txT('No preview')) + '</span></div></div>';
+                // data-pvs: the row's own style, which its face must hold (gfApplyEl) and which a failure's cleared weight comes back from
+                return head + '<div class="gf-style-pv' + (ff ? '' : ' gf-wait') + '" translate="no" dir="auto" data-pvk="' + escapeHtml(sk) + '" data-pvs="' + n + (it ? 'i' : '') + '" style="font-weight:' + n + '; font-style:' + (it ? 'italic' : 'normal') + ';' + ff + '">' + escapeHtml(text) + '</div></div>';
+            }).join('');
+            ['gfDHead', 'gfDLine'].forEach(id => gfAskEl(document.getElementById(id)));
+            box.querySelectorAll('.gf-style-pv').forEach(gfAskEl);
+            gfPump();
+        }
+        function gfDTextInput(v) {
+            gf.dText = String(v || '');
+            clearTimeout(gf.td);
+            gf.td = setTimeout(() => {
+                // a card's preview (the list's, the page's head) does not depend on the tester's text: its "No preview" stays, so Back draws those cards
+                // at their short height and lands where it left (gf.listTop); gfClose and a new list text (gfRetext) still clear them
+                const keep = Object.keys(gf.asked).filter(k => gf.asked[k] === 'failed' && gfKeyParts(k).m === 'card');
+                gfNewGen();
+                keep.forEach(k => { gf.asked[k] = 'failed'; });
+                gfRenderTester(true);
+            }, 400);
+        }
+        function gfDSizeInput(v) {
+            gf.dSize = Math.max(14, Math.min(96, +v || 40));
+            const lab = document.getElementById('gfDSizeV'), line = document.getElementById('gfDLine');
+            if (lab) lab.textContent = String(gf.dSize);
+            if (line) line.style.fontSize = gf.dSize + 'px';
+        }
+        // the family's details (description, licence, Reserved Font Names, the files), asked once; an error is asked again when the page opens again
+        function gfAskInfo(f, again) {
+            const cur = gf.info[f];
+            if (cur && (cur.asking || cur.refreshing || (cur.ok && !again && !cur.stale))) return;
+            const keep = !!(cur && cur.ok && cur.stale), r = fntCall('gfontsInfo', [f], true);
+            // details of an older list (stale, gfListCame) stay shown while the newer list's come: refreshing, not asking. Refused at once (another window
+            // is getting them, no bridge), they stay as they are, still stale, as when the newer ones cannot be had (onGfInfo)
+            gf.info[f] = !r || !r.ok ? (keep ? cur : !r ? { err: '' } : { err: fntErrText(r, 'Could not start') })
+                : keep ? Object.assign({}, cur, { stale: false, refreshing: true }) : { asking: true };
+            if (gf.open && gf.view === 'detail' && gf.fam === f) { gfRenderGet(); gfRenderAbout(); }
+        }
+        window.onGfInfo = function (family, json) {
+            const r = fntJson(json), cur = gf.info[family] || {};
+            // the newer list's details not to be had (no connection right after the list, too many requests): the older list's stay shown, still
+            // stale, so the page opened again asks once more. Details on screen a moment ago are not traded for an error
+            gf.info[family] = r.ok ? r : cur.ok && cur.refreshing ? Object.assign({}, cur, { refreshing: false, stale: true }) : { err: fntErrText(r) };
+            if (gf.open && gf.view === 'detail' && gf.fam === family) { gfRenderGet(); gfRenderAbout(); }
+        };
+        function gfFiles(f) { const d = gf.dls[f]; return d && Array.isArray(d.files) ? d.files.filter(x => x && typeof x.name === 'string' && x.name) : []; }
+        // the files Use in Make a font takes. A variable family: its upright variable file (Make a font offers its own Bold instance). A static one: the
+        // chosen ones, by default the 400 upright file (else the upright one nearest 400) and the 700 upright one (else none, and never the Regular's file)
+        function gfUseChoice(f) {
+            const files = gfFiles(f);
+            if (files.some(x => x.variable)) { const v = files.find(x => x.variable && !x.italic) || files.find(x => x.variable); return { variable: true, reg: v.name, bold: '' }; }
+            const w = x => +x.weight || 400, up = files.filter(x => !x.italic), pool = up.length ? up : files;
+            const near = pool.slice().sort((a, b) => Math.abs(w(a) - 400) - Math.abs(w(b) - 400) || w(b) - w(a))[0];
+            const has = n => files.some(x => x.name === n), sel = gf.useSel[f] || {};
+            const reg = has(sel.reg) ? sel.reg : near ? near.name : '';
+            const b7 = up.find(x => w(x) === 700 && x.name !== reg);
+            return { variable: false, reg: reg, bold: sel.bold === '' || has(sel.bold) ? sel.bold : b7 ? b7.name : '' };
+        }
+        function gfUseSelect() {
+            const r = document.getElementById('gfUseReg'), b = document.getElementById('gfUseBold');
+            gf.useSel[gf.fam] = { reg: r ? r.value : '', bold: b ? b.value : '' };
+            gfUseState();
+        }
+        // Use in Make a font waits, as a file chooser does, while a font is being made or the picking gate is shut. Android's chooser covers the page
+        // while it is open (startActivityForResult), so the gate a user meets here is always a read: a chosen file still being copied and read on
+        // fontExec (fmkPickResult) until onFontMakerPicked, or the files of a family used before ('gf' until each gfontsUse answer came)
+        function gfUseBlocked() {
+            if (fnt.building) return txT('A font is being made. Wait for it to finish, or cancel it.');
+            if (fnt.picking) return txT('The files you chose are still being read. Wait a moment.');
+            return '';
+        }
+        function gfUseState() {
+            const b = document.getElementById('gfUseBtn'), why = document.getElementById('gfUseWhy');
+            if (!b) return;
+            const t = gfUseBlocked();
+            b.disabled = !!t || !gfUseChoice(gf.fam).reg;
+            if (why) { why.textContent = t; why.style.display = t ? '' : 'none'; }
+        }
+        function gfDlText(d) {
+            if (d.cancelling) return txT('Cancelling…');
+            if (!d.n) return txT('Starting…');
+            return d.total ? txF('File {0} of {1} · {2} of {3}', d.i, d.n, formatBytes(d.done), formatBytes(d.total)) : txF('File {0} of {1}', d.i, d.n) + (d.done ? ' · ' + formatBytes(d.done) : '');
+        }
+        function gfDlPct(d) { return d.n ? Math.round(100 * Math.min(1, ((d.i - 1) + (d.total ? Math.min(d.done / d.total, 1) : 0)) / d.n)) : 0; }
+        function gfRenderGet() {
+            const box = document.getElementById('gfGet'), f = gf.fam, e = gf.by.get(f);
+            if (!box || !e) return;
+            const d = gf.dls[f], job = gf.dl[f], I = gf.info[f] || {}, a = jsArg(f), msg = gf.msg[f], err = gf.dlErr[f];
+            let h = '<div class="fnt-lab">Font files</div>';
+            if (job) {
+                const pct = gfDlPct(job);
+                h += '<div class="agent-ask-prog on" id="gfDlProg" role="progressbar" aria-label="Downloading" aria-valuemin="0" aria-valuemax="100"' + (job.n ? ' aria-valuenow="' + pct + '"' : '') + '>'
+                    + '<div class="agent-ask-bar' + (job.n ? '' : ' indet') + '" id="gfDlBar"><i' + (job.n ? ' style="width:' + pct + '%"' : '') + '></i></div>'
+                    + '<div class="agent-ask-prog-txt" id="gfDlTxt" translate="no">' + escapeHtml(gfDlText(job)) + '</div></div>'
+                    + '<div class="mode-btn-row"><button type="button" class="mode-action-btn" id="gfCancelBtn" onclick="gfCancelDl(' + a + ')"' + (job.cancelling ? ' disabled' : '') + '>Cancel</button></div>';
+            } else if (!d) {
+                const n = I.ok && Array.isArray(I.files) ? I.files.length : 0;
+                h += '<div class="mode-btn-row"><button type="button" class="mode-action-btn primary" id="gfDlBtn" onclick="gfDownload(' + a + ')">Download</button></div>'
+                    + (n ? '<div class="fnt-note" id="gfFileCount" translate="no">' + escapeHtml(n === 1 ? txT('1 font file') : txF('{0} font files', n)) + '</div>' : '');
+            } else {
+                const files = gfFiles(f), size = +d.size || files.reduce((s, x) => s + (+x.size || 0), 0), ch = gfUseChoice(f), saving = gf.saving === f;
+                h += '<div class="fnt-note" id="gfHave" translate="no">' + escapeHtml([txT('Downloaded'), files.length === 1 ? txT('1 file') : txF('{0} files', files.length), formatBytes(size)].join(' · ')) + '</div>';
+                if (!ch.variable) {
+                    const opt = (x, sel) => '<option value="' + escapeHtml(x.name) + '" translate="no"' + (x.name === sel ? ' selected' : '') + '>' + escapeHtml(x.name) + '</option>';
+                    h += '<div class="fnt-field"><label for="gfUseReg">Regular</label><select class="op-select" id="gfUseReg" onchange="gfUseSelect()">' + files.map(x => opt(x, ch.reg)).join('') + '</select></div>'
+                        + '<div class="fnt-field"><label for="gfUseBold">Bold</label><select class="op-select" id="gfUseBold" onchange="gfUseSelect()"><option value=""' + (ch.bold ? '' : ' selected') + '>None</option>'
+                        + files.map(x => opt(x, ch.bold)).join('') + '</select></div>';
+                }
+                h += '<div class="mode-btn-row"><button type="button" class="mode-action-btn primary" id="gfUseBtn" onclick="gfUse()">Use in Make a font</button>'
+                    + '<button type="button" class="mode-action-btn" id="gfSaveBtn" onclick="gfSave()"' + (gf.saving || fnt.exporting ? ' disabled' : '') + '>' + (saving ? 'Saving…' : 'Save to phone') + '</button>'
+                    + '<button type="button" class="mode-action-btn" id="gfDelBtn" onclick="gfDelete()"' + (saving ? ' disabled' : '') + '>Delete</button></div>'
+                    + '<div class="fnt-note" id="gfUseWhy" style="display:none;"></div>';
+            }
+            if (e.gone) h += '<div class="fnt-note" id="gfGoneNote">This family is no longer on Google Fonts. Its downloaded files still work here.</div>';
+            // a colour or symbol family goes through the same checks as any file (FontInspect warns); a Reserved Font Name is said before a font is made
+            if (e.col || e.sym) h += '<div class="fnt-note" id="gfPlainNote">' + (e.col ? 'This family has colour glyphs. Make a font needs a plain text font, so this one may not work there.'
+                : 'This is a symbol family. Make a font needs a plain text font, so this one may not work there.') + '</div>';
+            const res = (d && Array.isArray(d.reserved) ? d.reserved : I.ok && Array.isArray(I.reserved) ? I.reserved : []).filter(x => typeof x === 'string' && x.trim());
+            res.forEach(n => { h += '<div class="fnt-note gf-rfn" translate="no">' + escapeHtml(txF('"{0}" is a Reserved Font Name: a font made from this family must have another name.', n.trim())) + '</div>'; });
+            // the Ubuntu Font Licence keeps the family's own name for the original (condition 2), with no Reserved Font Name line to say so
+            if ((d ? d.license : I.ok ? I.license : '') === 'ufl') h += '<div class="fnt-note gf-rfn" id="gfUflNote" translate="no">'
+                + escapeHtml(txF('{0} is under the Ubuntu Font Licence: a font made from this family must have another name, or "{1} derivative" and a name of your own.', f, f)) + '</div>';
+            if (err) h += '<div class="fnt-err" id="gfDlErr"><span class="is-err">' + escapeHtml(err) + '</span></div>';
+            if (msg) h += '<div class="fnt-err" id="gfMsg">' + (msg.err ? '<span class="is-err">' + escapeHtml(msg.text) + '</span>' : escapeHtml(msg.text)) + '</div>';
+            // drawn only when it changed: the details of a downloaded family change nothing here, and a redraw would take the Regular/Bold choice
+            // being made (its select, an open picker) and the focus with it
+            const key = f + '\n' + h, ae = document.activeElement;
+            let fid = null;
+            if (box._gfH !== key) {
+                // the focus in the section (a keyboard, switch access, TalkBack), or lost to the body by the last redraw (Cancel while it cancels)
+                fid = ae && ae !== box && box.contains(ae) ? ae.id || '' : (!ae || ae === document.body) && gf.getFocus && gf.getFocus.f === f ? gf.getFocus.id : null;
+                gf.getFocus = null;
+                box.innerHTML = h;
+                box._gfH = key;
+            }
+            gfUseState();                                                    // Use's state and why it waits are set in place, after the redraw (not part of h)
+            if (fid === null) return;
+            // it goes to the same control when it is still there and usable, else the section's primary button, else its first usable control; with
+            // none it waits for the next redraw (Download, once the cancel came)
+            const same = fid ? document.getElementById(fid) : null;
+            const to = same && box.contains(same) && !same.disabled ? same : box.querySelector('.mode-action-btn.primary:not([disabled])') || box.querySelector('button:not([disabled]), select:not([disabled])');
+            if (to) { try { to.focus({ preventScroll: true }); } catch (err) {} } else gf.getFocus = { f: f, id: fid };
+        }
+        function gfDownload(f) {
+            if (gf.dl[f]) return;
+            const r = fntCall('gfontsDownload', [f]);
+            if (!r) return;
+            if (!r.ok) { gf.dlErr[f] = fntErrText(r, 'Could not start'); gfRenderGet(); return; }
+            haptic();
+            gf.dl[f] = { i: 0, n: 0, done: 0, total: 0, cancelling: false };
+            delete gf.dlErr[f]; delete gf.msg[f];
+            gfRenderGet();
+        }
+        function gfCancelDl(f) {
+            const d = gf.dl[f];
+            if (!d || d.cancelling) return;
+            if (!fntCall('gfontsCancel', [f])) return;
+            d.cancelling = true;
+            gfRenderGet();
+        }
+        window.onGfProgress = function (family, fileIndex, fileCount, done, total) {
+            const d = gf.dl[family];
+            if (!d || d.cancelling) return;
+            d.i = Math.max(1, +fileIndex || 1); d.n = Math.max(d.i, +fileCount || 1); d.done = +done || 0; d.total = +total || 0;
+            if (!(gf.open && gf.view === 'detail' && gf.fam === family)) return;
+            const bar = document.getElementById('gfDlBar'), txt = document.getElementById('gfDlTxt');
+            if (!bar || bar.classList.contains('indet')) { gfRenderGet(); return; }
+            const pct = gfDlPct(d);
+            bar.firstElementChild.style.width = pct + '%';
+            bar.parentElement.setAttribute('aria-valuenow', String(pct));
+            if (txt) txt.textContent = gfDlText(d);
+        };
+        window.onGfDone = function (family, json) {
+            const r = fntJson(json), shown = gf.open && gf.view === 'detail' && gf.fam === family;
+            delete gf.dl[family];
+            if (r.ok) { showToast(txF('{0} downloaded', family)); delete gf.dlErr[family]; }
+            else if (r.code !== 'cancelled') {
+                gf.dlErr[family] = fntErrText(r);
+                // its page, when it shows, says why beside Download (#gfDlErr); left or closed meanwhile, a failure is said as a finished one is
+                if (!shown) showToast(txF('{0} was not downloaded. {1}', family, gf.dlErr[family]));
+            }
+            gfLoadDls();
+            // without the details About's Licence is the download's (gfRenderAbout): drawn again then, and only then (an open Licence text stays open)
+            if (shown) { gfRenderGet(); if (!(gf.info[family] || {}).ok) gfRenderAbout(); }
+            else if (gf.open && gf.view === 'list' && r.ok) gfFilter(false);         // finished while the list shows: its badge, the Downloaded filter, the count
+        };
+        // the family's files into Make a font's slots, as a chosen file would come (onFontMakerPicked); the sheet closes on Make a font, and a toast
+        // says the family is in it once its files are read
+        function gfUse() {
+            const f = gf.fam;
+            if (!gf.dls[f] || gfUseBlocked()) { gfUseState(); return; }
+            const ch = gfUseChoice(f);
+            if (!ch.reg) return;
+            const r = fntCall('gfontsUse', [f, ch.reg, 'regular']);
+            if (!r) return;
+            if (!r.ok) { gf.msg[f] = { text: fntErrText(r, 'Could not start'), err: true }; gfRenderGet(); return; }
+            haptic();
+            delete gf.msg[f];
+            const wait = { regular: true };
+            // the family's files take the slots: a failed answer leaves its slot empty (Build waits), never with a file chosen before from another font
+            fnt.pickErr.regular = '';
+            fnt.pick.regular = null; fnt.reserved = []; fnt.reservedFamily = ''; fnt.reservedUfl = false;
+            // Bold: the chosen file; none (Android makes bold from the Regular, or Make a font offers a variable font's own Bold instance)
+            fnt.boldMode = 'none'; fnt.boldTouched = false;
+            let boldOk = true;
+            if (ch.bold) {
+                fnt.pick.bold = null; fnt.reservedBold = { names: [], family: '', ufl: false };
+                const r2 = fntCall('gfontsUse', [f, ch.bold, 'bold']);
+                fnt.boldMode = 'file'; fnt.boldTouched = true;
+                boldOk = !!(r2 && r2.ok);
+                if (boldOk) { wait.bold = true; fnt.pickErr.bold = ''; } else fnt.pickErr.bold = r2 ? fntErrText(r2, 'Could not start') : '';
+            }
+            fnt.picking = 'gf';
+            gf.useWait = wait;
+            gf.useFam = f; gf.useOk = boldOk;                                // the toast once the files are read (onFontMakerPicked)
+            gfClose();
+            fntRenderMake();
+            const card = document.getElementById('fntMakeCard');
+            if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        }
+        function gfSave() {
+            const f = gf.fam;
+            if (!gf.dls[f] || gf.saving || fnt.exporting) return;
+            const r = fntCall('gfontsSave', [f]);
+            if (!r) return;
+            if (!r.ok) { gf.msg[f] = { text: fntErrText(r, 'Could not start'), err: true }; gfRenderGet(); return; }
+            gf.saving = f;                                                   // one save screen at a time, until it answers (My fonts' Export waits too)
+            delete gf.msg[f];
+            gfRenderGet();
+            fntRenderLib();
+        }
+        window.onGfSaved = function (family, json) {
+            const r = fntJson(json), shown = gf.open && gf.view === 'detail' && gf.fam === family;
+            gf.saving = '';
+            if (r.ok) { showToast(r.name ? txF('Saved {0}', r.name) : txT('Saved')); delete gf.msg[family]; }
+            else if (r.code !== 'cancelled') {
+                gf.msg[family] = { text: fntErrText(r), err: true };
+                // its page, when it shows, says why under its buttons (#gfMsg); left or closed meanwhile, a failure is said as a finished save is (as onGfDone)
+                if (!shown) showToast(txF('{0} was not saved. {1}', family, gf.msg[family].text));
+            }
+            if (gf.open && gf.view === 'detail') gfRenderGet();               // any family's page: Save to phone waited for this one (gf.saving)
+            fntRenderLib();
+        };
+        // no question first, as an emoji font's Delete: the family is downloaded again in a moment. One no longer on Google Fonts cannot be, so it asks
+        // first, as My fonts' Delete does
+        async function gfDelete() {
+            const f = gf.fam, e = gf.by.get(f);
+            if (!gf.dls[f] || gf.saving === f) return;
+            if (e && e.gone) {
+                if (!await mpAsk({ title: txF('Delete {0}?', f), text: txT('This family is no longer on Google Fonts, so it cannot be downloaded again. Save to phone first to keep a copy.'), ok: txT('Delete'), danger: true })) return;
+                if (!gf.dls[f] || gf.saving === f) return;                   // as before the question: still on the phone, not being saved
+            }
+            const r = fntCall('gfontsDelete', [f]);
+            if (!r) return;
+            if (!r.ok) { gf.msg[f] = { text: fntErrText(r), err: true }; gfRenderGet(); return; }
+            haptic();
+            delete gf.msg[f]; delete gf.useSel[f];
+            gfLoadDls();
+            if (gf.by.has(f)) { gfRenderGet(); if (!(gf.info[f] || {}).ok) gfRenderAbout(); }          // About's Licence goes with the download, as in onGfDone
+            else gfBackToList();                                             // a family no longer on Google Fonts is gone with its files: back to the list
+            showToast(txF('Deleted {0}', f));
+        }
+        function gfRenderAbout() {
+            const box = document.getElementById('gfAbout'), f = gf.fam, e = gf.by.get(f);
+            if (!box || !e) return;
+            // a gone family's details are never asked (gfShow), and an answer, an error or a wait from before it left the list is not shown either: Google
+            // Fonts no longer offers it, so its page has only what its download recorded
+            const I = (!e.gone && gf.info[f]) || {}, ok = !!I.ok;
+            const row = (label, value) => value ? '<div class="fnt-now"><span>' + label + '</span><b translate="no">' + escapeHtml(value) + '</b></div>' : '';
+            let h = '<div class="fnt-lab">About this family</div>';
+            if (I.asking) h += '<div class="fnt-note" id="gfInfoWait">Getting the details from Google Fonts…</div>';
+            else if (I.err) h += '<div class="fnt-err" id="gfInfoErr"><span class="is-err">' + escapeHtml(I.err) + '</span></div><button type="button" class="batch-tool-link" id="gfInfoRetry" onclick="gfAskInfo(' + jsArg(f) + ', true)">Retry</button>';
+            // opened by More, the description may hold the focus More had (gfDescMore): it stays able to after a redraw. Opened, the Licence text stays
+            // open when About is drawn again (a newer list, its details asked again), as the description does (gf.licOpen; a new family's page starts closed)
+            if (ok && I.description) h += '<div class="gf-desc' + (gf.descOpen ? '' : ' gf-clamp') + '" id="gfDesc"' + (gf.descOpen ? ' tabindex="-1"' : '') + ' translate="no" dir="auto">' + escapeHtml(I.description) + '</div>'
+                + '<button type="button" class="batch-tool-link" id="gfDescMore" onclick="gfDescMore()" style="display:none;">More</button>';
+            const designers = ok && Array.isArray(I.designers) && I.designers.length ? I.designers : (e.d || []);
+            // without the details (a gone family has none; no connection, or still on their way): the licence as the family's download recorded it. A
+            // gone family has no page on fonts.google.com to open
+            const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : String((gf.dls[f] || {}).licenseName || '');
+            h += row('Licence', lic)
+                + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"' + (gf.licOpen ? ' open' : '') + ' ontoggle="gfLicToggle(this)"><summary id="gfLicSum">Licence text</summary><pre id="gfLicText" tabindex="0" translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
+                + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Last updated', gfDate(e.m))
+                + (e.gone ? '' : '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>');
+            // the Licence text scrolls on its own (a keyboard reaches it: tabindex; no name of its own, so a screen reader reads the text itself): a
+            // redraw keeps where it was read to while it stays open. A page opened (gfShow closes it) starts at the top, whatever the page left kept
+            const k = gfFocusNote(box), lp = gf.licOpen ? document.getElementById('gfLicText') : null, top = lp ? lp.scrollTop : 0;
+            box.innerHTML = h;
+            const lp2 = document.getElementById('gfLicText');
+            if (lp2 && top) lp2.scrollTop = top;
+            // More only when the description runs past its three lines
+            const desc = document.getElementById('gfDesc'), more = document.getElementById('gfDescMore');
+            if (desc && more && !gf.descOpen && desc.scrollHeight > desc.clientHeight + 1) more.style.display = '';
+            // a focus in About (the details came unasked, a download or a Delete, a newer list) stays on its control (the link, Licence text), else
+            // goes to Retry or the first control; Retry pressed, About holds it (read: "Getting the details…") until the details or the reason come
+            gfFocusBack(box, k, I.asking ? [] : ['#gfInfoRetry', '#gfDescMore', '#gfLicSum', '#gfOpenSite']);
+        }
+        // the Licence text opened or closed (a tap, Enter): kept for About's redraws. One already drawn over (a redraw before its toggle came) says nothing
+        function gfLicToggle(el) { if (el.isConnected) gf.licOpen = !!el.open; }
+        function gfDescMore() {
+            gf.descOpen = true;
+            const desc = document.getElementById('gfDesc'), more = document.getElementById('gfDescMore');
+            if (desc) { desc.classList.remove('gf-clamp'); desc.tabIndex = -1; }
+            // More goes once pressed: its focus goes to the description it opened (read from its start), not to the body behind the sheet
+            if (desc && more && more.contains(document.activeElement)) try { desc.focus({ preventScroll: true }); } catch (err) {}
+            if (more) more.style.display = 'none';
+        }
+        // the page drawn again (a new language): the list's words and the family's page
+        function gfRedraw() {
+            const g = document.getElementById('gfGet');
+            if (g) g._gfH = '';                                              // its sentences (txT / txF) are drawn again in the new language
+            if (!gf.open) return;
+            gfApplyView();
+            gfBuildLangs();
+            gfRenderStatus();
+            if (gf.view === 'detail') gfRenderDetail(); else gfRenderList();
+        }
         // a new language: the cards are drawn again, since the texts inside data rows (translate="no") are put together with txT / txF when drawn
-        document.addEventListener('i18nchange', () => { if (currentViewName() === 'fonts') fntRenderAll(); });
+        document.addEventListener('i18nchange', () => { if (currentViewName() === 'fonts') fntRenderAll(); gfRedraw(); });
         // FONTS:JS:END
         window.addEventListener('DOMContentLoaded', () => {
             tabLoadConfig();

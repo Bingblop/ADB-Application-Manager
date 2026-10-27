@@ -22,6 +22,15 @@ if (fs.existsSync(tmp)) {
   check('tests/i18n/keys.json has no string the page lost', !gone.length, JSON.stringify(gone.slice(0, 5)) + (gone.length > 5 ? ' and ' + (gone.length - 5) + ' more' : ''));
   const gt = [...now].filter(k => /^[xp] .*>/.test(k) && !/<\/?[A-Za-z0-9][^<>]*>/.test(k)).length;
   check('texts of txT/txF with a ">" in them ("Settings > Battery") are listed', gt >= 2, String(gt));
+  // v7.18.0: words the page says only through a literal txT call, which the extractor would otherwise take for data ("Added" for a hex colour, "ExtraLight"),
+  // and the sentences of the Google Fonts fixes (a family no longer on Google Fonts and its Delete, a failed family save, the Ubuntu Font Licence, a download
+  // or a save that failed while its page was not shown), and the words with a sense of their own (txC)
+  const gfWords = ['x Added', 'x ExtraLight', 'x SemiBold', 'x ExtraBold', 'x No longer on Google Fonts', 'x This family is no longer on Google Fonts. Its downloaded files still work here.',
+    'p The font family could not be saved: {0}', 'p {0} is under the Ubuntu Font Licence: a font made from this family must have another name, or "{1} derivative" and a name of your own.',
+    'p {0} was not downloaded. {1}', 'p {0} was not saved. {1}', 'x This family is no longer on Google Fonts, so it cannot be downloaded again. Save to phone first to keep a copy.',
+    // the words other screens translate in another sense, asked for with txC: their keys carry the sense in brackets
+    'x Light [font weight]', 'x Display [font category]', 'x About this family'].filter(k => !now.has(k));
+  check('the Google Fonts weight names, the About label "Added" and the new Google Fonts sentences are listed', !gfWords.length, JSON.stringify(gfWords));
   fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
 }
 const ck = node([path.join(TESTS, 'i18n', 'check.js'), '--strict']);

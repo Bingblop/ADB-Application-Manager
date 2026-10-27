@@ -1,0 +1,20 @@
+)]}'
+{
+ "family": "Ubuntu",
+ "displayName": null,
+ "category": "Sans Serif",
+ "classifications": [],
+ "license": "ufl",
+ "lastModified": "2025-09-02",
+ "primaryScript": "",
+ "isNoto": false,
+ "colorCapabilities": [],
+ "description": "<p>\nThe <a href=\"http://font.ubuntu.com\">Ubuntu Font Family</a> are a set of matching new libre/open fonts in development during 2010-2011. \nThe development is being funded by Canonical Ltd on behalf the wider Free Software community and the Ubuntu project. \nThe technical font design work and implementation is being undertaken by <a href=\"http://www.daltonmaag.com/\">Dalton Maag</a>.\n</p><p>\nBoth the final font Truetype/OpenType files and the design files used to produce the font family are distributed under an open licence and you are expressly encouraged to experiment, modify, share and improve.\n</p>",
+ "designers": [
+  {
+   "name": "Dalton Maag",
+   "bio": "<p><a href=\"http://www.daltonmaag.com/\" target=\"_blank\">Dalton Maag</a> is an international font foundry specializing in"
+  }
+ ],
+ "axes": []
+}

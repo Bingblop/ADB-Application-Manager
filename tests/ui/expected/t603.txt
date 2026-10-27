@@ -1,0 +1,57 @@
+ok   1. noto: the sixteen emoji under the name, in fntEmo_noto once loaded
+ok   1. twemoji: the sixteen emoji under the name, in fntEmo_twemoji once loaded
+ok   1. blobmoji: the sixteen emoji under the name, in fntEmo_blobmoji once loaded
+ok   1. openmoji: the sixteen emoji under the name, in fntEmo_openmoji once loaded
+ok      each is an image "Sample of <name>" (translate="no"), about 28 px
+ok      the four faces in document.fonts, loaded
+ok      each face draws the sample
+ok      each font read once (emojiSpecimenFont)
+ok      the rows keep Download (or Delete) as their first button
+ok   2. the tab shown again: the strips at once, the fonts not read again
+ok   3. iOS: the kept pictures asked (none); the note and "Show these emoji"
+ok      Show: emojiSpecimenFetch, "Reading the iOS emoji…", no button meanwhile
+ok      then sixteen pictures, 28 x 28, alt the emoji
+ok      each a PNG in the page (data:image/png)
+ok      the next render: the pictures at once, not read again
+ok   4. 360 px: the strips wrap, nothing wider than the screen
+ok      no page errors
+ok   5. a fresh page with the pictures kept: shown at once, nothing read
+ok      no page errors
+ok   6. the iOS emoji on the phone: "Read from the downloaded file."
+ok   7. the read fails: the page's sentence and the button again
+ok      again: the pictures, the error gone
+ok      an answer without a usable picture: "The sample could not be read from the emoji font."
+ok      no page errors
+ok   7b. another window is reading the iOS emoji: its sentence and the button again
+ok      once it ended, the button reads them here
+ok      no page errors
+ok   7c. offline, Show: the network sentence; the iOS emoji not on the phone
+ok      then downloaded: that sentence gone, "Read from the downloaded file." and the button
+ok      the file not read, then Delete: that sentence gone, "Reads about 0.3 MB of the iOS emoji file."
+ok      no page errors
+ok   7d. the other window's read was kept, this phone is offline: Show these emoji shows the kept pictures, no error
+ok      answered from the kept pictures, not read again
+ok      no page errors
+ok   7e. Show these emoji with the keyboard: the focus on "Reading the iOS emoji…" (also when the list is drawn again meanwhile), then on the button again when it fails
+ok      again: "Reading the iOS emoji…", then the sixteen pictures, read as "Sample of iOS emoji"
+ok      the focus on Blobmoji's Download while they are read: there still when the pictures come, not the body
+ok      on Noto's Source: there still
+ok      on the iOS row's License: there still
+ok      Blobmoji's Download pressed: the focus on its Cancel, then on its Delete
+ok      no page errors
+ok   8. Chrome 97: Noto and Blobmoji (COLRv1) say the WebView is too old, and are not read
+ok      Twemoji (COLRv0) is drawn
+ok   9. no font for OpenMoji: no strip, nothing said
+ok      no page errors
+ok   10. an older build: no strip, no note, no button; the rows as before
+ok      no page errors
+ok   11. assets/emoji/OFL.txt: the full SIL Open Font License 1.1, in ASCII
+ok      its head names noto.ttf and blobmoji.ttf as Modified Versions, each with "Copyright 2022 Google Inc."
+ok      its head gives twemoji.ttf both its licences (art CC-BY-4.0, font build Apache-2.0, Mozilla) and points to Twemoji-LICENSE.md
+ok      assets/emoji/NOTICE.txt: the Noto and Blobmoji rows point to OFL.txt, the other two do not
+ok      the root NOTICE lists the four sample fonts with their licences, OFL.txt named, the iOS emoji never shipped
+ok      Twemoji: assets/emoji/Twemoji-LICENSE.md, its release's own, with Mozilla's copyright and Apache-2.0 for the font build, CC-BY-4.0 for the art
+ok      its NOTICE.txt row names both, the cut-down copy and that file; the root NOTICE too
+ok      …their sample read from the downloaded copy, else by HTTP range from the pinned address of the third-party build
+ok      the root NOTICE is ASCII
+all passed

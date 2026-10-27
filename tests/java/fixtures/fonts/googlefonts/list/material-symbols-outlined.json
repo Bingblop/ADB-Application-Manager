@@ -1,0 +1,474 @@
+)]}'
+{
+ "zipName": "Material_Symbols_Outlined.zip",
+ "manifest": {
+  "files": [
+   {
+    "filename": "LICENSE.txt",
+    "contents": "\r\n                                 Apache License\r\n                           Version 2.0, January 2004\r\n                        http://www.apache.org/licenses/\r\n\r\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\r\n\r\n   1. Definitions.\r\n\r\n      \"License\" shall mean the terms and conditions for use, reproduction,\r\n      and distribution as defined by Sections 1 through 9 of this document.\r\n\r\n      \"Licensor\" shall mean the copyright owner or entity authorized by\r\n      the copyright owner that is granting the License.\r\n\r\n      \"Legal Entity\" shall mean the union of the acting enti"
+   },
+   {
+    "filename": "README.txt",
+    "contents": "Material Symbols Outlined Variable Font"
+   }
+  ],
+  "fileRefs": [
+   {
+    "filename": "static/MaterialSymbolsOutlined-Thin.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHeembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined-ExtraLight.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDAvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined-Light.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDDxHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined-Regular.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined-Medium.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCdHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined-SemiBold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDBxG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined-Bold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDBIG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_28pt-Thin.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDCvHeembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_28pt-ExtraLight.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDAvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_28pt-Light.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDDxHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_28pt-Regular.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDCvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_28pt-Medium.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDCdHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_28pt-SemiBold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDBxG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_28pt-Bold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDBIG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_36pt-Thin.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDCvHeembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_36pt-ExtraLight.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDAvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_36pt-Light.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDDxHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_36pt-Regular.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDCvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_36pt-Medium.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDCdHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_36pt-SemiBold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDBxG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_36pt-Bold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDBIG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_48pt-Thin.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDCvHeembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_48pt-ExtraLight.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDAvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_48pt-Light.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDDxHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_48pt-Regular.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDCvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_48pt-Medium.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDCdHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_48pt-SemiBold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDBxG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_48pt-Bold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDBIG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled-Thin.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHeembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled-ExtraLight.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDAvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled-Light.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDDxHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled-Regular.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled-Medium.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCdHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled-SemiBold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDBxG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled-Bold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDBIG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_28pt-Thin.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDCvHeembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_28pt-ExtraLight.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDAvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_28pt-Light.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDDxHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_28pt-Regular.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDCvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_28pt-Medium.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDCdHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_28pt-SemiBold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDBxG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_28pt-Bold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1t-p_4MrImHCIJIZrDBIG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_36pt-Thin.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDCvHeembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_36pt-ExtraLight.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDAvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_36pt-Light.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDDxHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_36pt-Regular.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDCvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_36pt-Medium.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDCdHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_36pt-SemiBold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDBxG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_36pt-Bold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1i-q_4MrImHCIJIZrDBIG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_48pt-Thin.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDCvHeembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_48pt-ExtraLight.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDAvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_48pt-Light.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDDxHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_48pt-Regular.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDCvHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_48pt-Medium.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDCdHOembd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_48pt-SemiBold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDBxG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "static/MaterialSymbolsOutlined_Filled_48pt-Bold.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzazHD_dY43zj-jCxv3fzvRNU22ZXGJpEpjC_1n-q_4MrImHCIJIZrDBIG-embd5zrTgt.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   },
+   {
+    "filename": "MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf",
+    "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v380/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsfjAOVZBgs.ttf",
+    "date": {
+     "seconds": 1792542562,
+     "nanos": 113000000
+    }
+   }
+  ]
+ }
+}

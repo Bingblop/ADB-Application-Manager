@@ -7,7 +7,8 @@
 //   await page.addInitScript(fmk.initScript, { mode: 'system', b64: { vf, regular, bold }, ... });
 // opts.mode: 'root' (Root with su) | 'system' (Shizuku as UID 1000) | 'uid0' (Shizuku as UID 0) | 'shell' (Shizuku as UID 2000) | 'none' (no working mode)
 // opts.samsung (true), opts.oneUi ('8.5'), opts.appliesSelfSigned (false), opts.sdk (36), opts.dark (true), opts.userId (0)
-// opts.b64: { vf, regular, bold }: base64 of the fixture fonts the previews load (the script reads them from tests/ui/fixtures)
+// opts.b64: { vf, regular, bold }: base64 of the fixture fonts the previews load (the script reads them from tests/ui/fixtures); emoji: the faces of
+//   opts.gf.emojiFace
 // opts.picks: { regular, bold, emoji }: what the file chooser hands back for a slot: 'vf' | 'vfWidth' (variable, no Weight axis) | 'static' | 'cff' | 'colr' |
 //   'colr1' (COLRv1) | 'colrCff' (COLR with PostScript outlines: refused in the emoji slot, emoji_outlines) | 'cbdt' | an error code ('cancelled', 'woff' ...);
 //   a font without Latin letters carries the bridge's no-Latin warning in the Regular and Bold slots, never in the emoji slot (as fmkCopyPick drops it)
@@ -23,6 +24,28 @@
 // While a file chooser or a save screen is open (until its answer) a second one is refused with busy, as the bridge does. A build with rebuildId keeps the
 // entry's id and package and takes the next versionCode (not_found for an id that is not in the library).
 // window.__fmk: { calls, requests, picks, step(), stepAll(), pending(), lib, cat, setMode(m), save() }
+// v7.18.0: Google Fonts (gfonts*) and the emoji samples (emojiSpecimen*), with the shapes of section 5 of the Google Fonts design
+// (/mnt/project-files/plans/google-fonts-v7.18.0.md). opts.gf:
+//   catalog: the compact list on the phone at the start (default none: at 0); stale: it is older than 7 days; remote: what a refresh brings (default the
+//   catalog; __fmk.gfRemote instead when it is set); refreshError: { code, error } a refresh ends with (also __fmk.gfRefreshError); downloads: families
+//   on the phone at the start; reserved: { family: [names] } (default { Lato: ['Lato'] }; also __fmk.gfReserved: a family's details answered before keep
+//   theirs until a new list, as the app keeps them); previewError: families answered gf_no_preview; previewFail:
+//   families answered with a network error; emojiFace: families answered with faces that draw the sixteen sample emoji and no letter (opts.b64.emoji:
+//   a cut-down emoji font, as Google's answer for an emoji family asked for letters holds no letter either); dropFaces: { family: ['700', '900i'] }:
+//   styles a 'styles' answer leaves out (as the app skips a face lost to a 429 or 503, one past 2 MB and those past 8 MB); badFaces: the same, faces
+//   answered with bytes that are no font (their FontFace does not load); infoError: { code, error } every family's details end with (also __fmk.gfInfoError); licenceLines: n lines
+//   added to an OFL family's Licence text (a long one, which scrolls); downloadError:
+//   { family: { code, error } }; useError: { code, error, slot? } gfontsUse answers with (only that slot's when slot is set); saveError: { code, error }
+//   the save ends with ('cancelled' too); specimenError: { code, error } the iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept
+//   from an earlier read (also __fmk.appleCached: emojiSpecimenCached gives them, and emojiSpecimenFetch's job answers with them, from 'cache', before
+//   specimenError); hold: the preview answers wait for __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh,
+//   details, download, iOS read) for __fmk.gfStep(n) / gfStepAll(); otherWindow: another window of the app is getting the list, a family's details
+//   and the iOS emoji (also __fmk.gfOtherWindow): gfontsRefresh, gfontsInfo and emojiSpecimenFetch answer busy, as the bridge does when the running
+//   job is not this window's (a second ask of this window joins its own); __fmk.gfOtherWindowDone(): that window's refresh ended (the list on the phone
+//   is the remote one, and only that window was told: no onGfCatalog here). The list is stale, as GoogleFonts.isStale says, when opts.gf.stale is set
+//   or its time is more than 7 days before the page's clock (Date.now, which a script may move)
+// opts.emoB64: { noto, twemoji, blobmoji, openmoji }: base64 of assets/emoji/<id>.ttf (emojiSpecimenFont answers "" for an id without one)
+// __fmk.gfPreviews: every preview asked ({ reqId, family, mode, text }); gfOut / gfOutMax: the previews asked and not answered, now and at most
 exports.initScript = function (opts) {
   opts = opts || {};
   const J = JSON.stringify;
@@ -129,6 +152,93 @@ exports.initScript = function (opts) {
   let current = opts.current !== undefined ? opts.current : ((lib.find(e => e.applied) || {}).id || null);
   let sysActive = opts.sysActive || null;
   const dls = {};
+
+  // ---- v7.18.0 Google Fonts: the list, the downloads, the jobs ----
+  const G = opts.gf || {};
+  const GF_UNKNOWN = 'This family is not in the Google Fonts list. Update the list and try again.';
+  const gfq = [], pvq = [];
+  const gfRun = (events) => { if (G.hold) { events.forEach(e => gfq.push(e)); return; } events.forEach((e, i) => setTimeout(e, delay * (i + 1))); };
+  st.gfStep = (n) => { for (let i = 0; i < (n || 1) && gfq.length; i++) gfq.shift()(); return gfq.length; };
+  st.gfStepAll = () => { while (gfq.length) gfq.shift()(); return 0; };
+  st.gfAnswer = (n) => { for (let i = 0; i < (n || 1) && pvq.length; i++) pvq.shift().run(); return pvq.length; };
+  st.gfAnswerAll = () => { while (pvq.length) pvq.shift().run(); return 0; };
+  st.gfPending = () => pvq.map(p => ({ reqId: p.reqId, family: p.family, mode: p.mode, text: p.text }));
+  st.gfPreviews = []; st.gfOut = 0; st.gfOutMax = 0;
+  let gfCat = JSON.parse(J(G.catalog || { v: 1, at: 0, axes: {}, families: [] }));
+  let gfStale = !!G.stale, gfRefreshJob = null, appleJob = null;
+  const gfIsStale = () => gfCat.at > 0 && (gfStale || Date.now() < gfCat.at || Date.now() - gfCat.at > 7 * day);
+  // the details answered, by family, kept as the app's gfInfos keeps them: answered again from here (an error is not kept) until a new list
+  const gfInfoJobs = {}, gfInfoKept = {};
+  // a refresh's new list on the phone (the remote one); the details kept go with the old list, as gfCatalogJob clears gfInfos
+  const gfGot = () => {
+    gfCat = JSON.parse(J(st.gfRemote || G.remote || G.catalog || { v: 1, at: 0, axes: {}, families: [] })); if (!gfCat.at) gfCat.at = Date.now(); gfStale = false;
+    Object.keys(gfInfoKept).forEach(k => { delete gfInfoKept[k]; });
+  };
+  st.gfOtherWindowDone = () => { gfGot(); st.gfOtherWindow = false; };
+  const gfFam = (f) => gfCat.families.find(e => e.f === f) || null;
+  const GF_W = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
+  // the files of a family's download, as GoogleFonts.plan keeps them: a variable family's top-level variable files (tags in ASCII order), else its static files
+  const gfFilesOf = (e) => {
+    const F = e.f.replace(/ /g, ''), its = e.w.some(w => /i$/.test(w));
+    if (e.x && e.x.length) {
+      const tags = e.x.map(a => a[0]).sort().join(',');
+      const v = [{ name: F + '-VariableFont_' + tags + '.ttf', variable: true, italic: false, weight: 400 }];
+      if (its) v.push({ name: F + '-Italic-VariableFont_' + tags + '.ttf', variable: true, italic: true, weight: 400 });
+      return v.map((x, i) => Object.assign(x, { size: 300 * 1024 + i * 21 * 1024 }));
+    }
+    return e.w.map((w, i) => {
+      const n = parseInt(w, 10), it = /i$/.test(w), nm = GF_W[n] || ('W' + n);
+      return { name: F + '-' + (it ? (n === 400 ? 'Italic' : nm + 'Italic') : nm) + '.ttf', variable: false, italic: it, weight: n, size: 120 * 1024 + i * 7 * 1024 };
+    });
+  };
+  const gfReserved = (f) => ((st.gfReserved || G.reserved || { Lato: ['Lato'] })[f] || []).slice();
+  const gfLicense = (f) => {
+    const r = gfReserved(f), q = r.map(x => '"' + x + '"').join(' and ');
+    if (f === 'Roboto') return { kind: 'apache2', name: 'Apache License 2.0', text: 'Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/' };
+    if (/^Ubuntu/.test(f)) return { kind: 'ufl', name: 'Ubuntu Font Licence 1.0', text: 'Copyright 2010,2011 Canonical Ltd.\n\nThis Font Software is licensed under the Ubuntu Font Licence, Version 1.0.\nhttps://ubuntu.com/legal/font-licence\n\nUBUNTU FONT LICENCE Version 1.0' };
+    return { kind: 'ofl', name: 'SIL Open Font License 1.1', text: 'Copyright 2010-2014 The ' + f + ' Project Authors' + (r.length ? ', with Reserved Font Name' + (r.length > 1 ? 's ' : ' ') + q : '') + '.\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.\nThis license is copied below, and is also available with a FAQ at:\nhttps://openfontlicense.org'
+      + Array.from({ length: G.licenceLines || 0 }, (x, i) => '\nLicence line ' + (i + 1)).join('') };
+  };
+  const gfDesc = (e) => e.f === 'Lato'
+    ? 'Lato is a sans serif typeface family started in the summer of 2010 by Warsaw-based designer Łukasz Dziedzic ("Lato" means "Summer" in Polish).\nIn December 2010 the Lato family was published under the Open Font License by his foundry tyPoland, with support from Google.\n\nIn the last ten or so years, during which Łukasz has been designing type, most of his projects were rooted in a particular design task that he needed to solve. With Lato, it was no different. Originally, the family was conceived as a set of corporate fonts for a large client, who in the end decided to go in different stylistic direction, so the family became available for a public release.'
+    : e.f + ' is a ' + ({ sans: 'sans serif', serif: 'serif', display: 'display', hand: 'handwriting', mono: 'monospace' }[e.c] || '') + ' family on Google Fonts.';
+  const gfRow = (e) => {
+    const files = gfFilesOf(e), lic = gfLicense(e.f);
+    return { family: e.f, at: Date.now(), size: files.reduce((s, x) => s + x.size, 0), license: lic.kind, licenseName: lic.name, reserved: gfReserved(e.f), files };
+  };
+  // the downloads, and the list entry each was made from: like the app's meta.json, a download stays usable when a later list no longer has its family
+  const gfDl = {}, gfDlOf = {};
+  (G.downloads || []).forEach((f, i) => { const e = gfFam(f) || ((G.remote || {}).families || []).find(x => x.f === f); if (e) { gfDl[f] = gfRow(e); gfDl[f].at = now - i * day; gfDlOf[f] = e; } });
+  const gfJobs = {};
+  // what FontInspect says of a family's file (the fixture fonts stand in for it)
+  const gfInfoOf = (e, fi) => {
+    if (fi.variable) {
+      const axes = (e.x || []).map(a => ({ tag: a[0], name: (gfCat.axes || {})[a[0]] || a[0], min: a[1], def: a[3], max: a[2], hidden: false }));
+      const wa = axes.find(a => a.tag === 'wght'), reg = {}, bold = {};
+      axes.forEach(a => { reg[a.tag] = a.def; bold[a.tag] = a.def; });
+      if (wa) { reg.wght = Math.max(wa.min, Math.min(wa.max, 400)); bold.wght = Math.max(wa.min, Math.min(wa.max, 700)); }
+      return { family: e.f, subfamily: fi.italic ? 'Italic' : 'Regular', fullName: e.f + (fi.italic ? ' Italic' : ' Regular'), version: 'Version 3.010', weight: 400, width: 5, italic: fi.italic,
+        outlines: 'TrueType', glyphs: 1326, upem: 2048, codepoints: 1012, latin: true, color: e.col ? 'COLRv1' : 'none', variable: true, axes,
+        instances: wa ? instances.filter(x => x.coords.wght >= wa.min && x.coords.wght <= wa.max).map(x => ({ name: x.name, coords: Object.assign({}, reg, { wght: x.coords.wght }) })) : [],
+        guessRegular: reg, guessBold: wa && wa.max >= 700 ? bold : null, warnings: [] };
+    }
+    return { family: e.f, subfamily: (GF_W[fi.weight] || 'Regular') + (fi.italic ? ' Italic' : ''), fullName: e.f + ' ' + (GF_W[fi.weight] || 'Regular'), version: 'Version 2.015', weight: fi.weight, width: 5, italic: fi.italic,
+      outlines: 'TrueType', glyphs: 2164, upem: 2000, codepoints: 1981, latin: true, color: e.col ? 'COLRv1' : 'none', variable: false, axes: [], instances: [], guessRegular: {}, guessBold: {}, warnings: [] };
+  };
+  // a preview's faces (a woff2 subset each in the app; the fixture fonts here): card, one face; styles, one per style (18 at most); axes, the variable ones
+  const gfFaces = (e, mode) => {
+    const st1 = (w) => { const n = parseInt(w, 10), it = /i$/.test(w); return { style: it ? 'italic' : 'normal', weight: String(n), stretch: '', b64: n >= 600 ? (b64.bold || '') : (b64.regular || '') }; };
+    if (mode === 'styles') return e.w.slice(0, 18).map(st1);
+    if (mode === 'axes' && e.x && e.x.length) {
+      const wa = e.x.find(a => a[0] === 'wght'), wd = e.x.find(a => a[0] === 'wdth');
+      const f0 = { style: 'normal', weight: wa ? wa[1] + ' ' + wa[2] : '400', stretch: wd ? wd[1] + '% ' + wd[2] + '%' : '', b64: b64.vf || '' };
+      return e.w.some(w => /i$/.test(w)) ? [f0, Object.assign({}, f0, { style: 'italic' })] : [f0];
+    }
+    return [st1(e.w.indexOf('400') >= 0 ? '400' : e.w[0])];
+  };
+  // the sixteen iOS sample pictures (a 1x1 PNG each here)
+  const PNG1 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  const APPLE = [0x1F600, 0x1F602, 0x1F970, 0x1F60E, 0x1F973, 0x1F62D, 0x1F44D, 0x1F44B, 0x2764, 0x1F525, 0x1F389, 0x1F436, 0x1F984, 0x1F355, 0x1F680, 0x1F308].map(cp => ({ cp, b64: PNG1 }));
 
   const missing = new Set(opts.missing || []);
   const b = window.AndroidBridge = {
@@ -328,10 +438,158 @@ exports.initScript = function (opts) {
       return J({ ok: true, job: j });
     },
     softRestart() { st.calls.push('softRestart'); return uid0() ? J({ ok: true }) : J({ ok: false, code: 'locked', error: 'Needs Root.' }); },
+
+    // ---- v7.18.0 Google Fonts ----
+    gfontsCatalog() { st.calls.push('gfontsCatalog'); return J(Object.assign({ ok: true, stale: gfIsStale(), count: gfCat.families.length }, gfCat)); },
+    gfontsRefresh(force) {
+      st.calls.push('gfontsRefresh:' + force);
+      if (gfRefreshJob) return J({ ok: true, job: gfRefreshJob });
+      if (!force && gfCat.at > 0 && !gfIsStale()) return J({ ok: true, fresh: true });
+      if (st.gfOtherWindow) return J({ ok: false, code: 'busy', error: 'Another window of the app is getting the list of fonts. Try again in a moment.' });
+      const j = gfRefreshJob = job();
+      gfRun([() => {
+        gfRefreshJob = null;
+        if (st.gfRefreshError) { window.onGfCatalog(J(Object.assign({ ok: false }, st.gfRefreshError))); return; }
+        gfGot();
+        window.onGfCatalog(J({ ok: true, at: gfCat.at, count: gfCat.families.length }));
+      }]);
+      return J({ ok: true, job: j });
+    },
+    gfontsPreview(reqId, family, mode, text) {
+      st.calls.push('gfontsPreview:' + family + ':' + mode);
+      st.gfPreviews.push({ reqId, family, mode, text });
+      if (!/^[A-Za-z0-9_-]{1,24}$/.test(String(reqId)) || ['card', 'styles', 'axes'].indexOf(mode) < 0) return J({ ok: false, code: 'bad_request', error: 'The request could not be read.' });
+      const e = gfFam(family);
+      if (!e) return J({ ok: false, code: 'gf_unknown', error: GF_UNKNOWN });
+      st.gfOut++; st.gfOutMax = Math.max(st.gfOutMax, st.gfOut);
+      const answer = () => {
+        st.gfOut--;
+        if ((G.previewError || []).indexOf(family) >= 0) { window.onGfPreview(reqId, J({ ok: false, code: 'gf_no_preview', error: 'Google Fonts sent no preview for this family.' })); return; }
+        if ((G.previewFail || []).indexOf(family) >= 0) { window.onGfPreview(reqId, J({ ok: false, code: 'network', error: 'The download failed: timeout' })); return; }
+        let faces = gfFaces(e, mode);
+        if ((G.emojiFace || []).indexOf(family) >= 0) faces.forEach(x => { x.b64 = b64.emoji || ''; });
+        if (mode === 'styles') {
+          const sty = x => parseInt(x.weight, 10) + (x.style === 'italic' ? 'i' : ''), drop = (G.dropFaces || {})[family] || [], bad = (G.badFaces || {})[family] || [];
+          faces = faces.filter(x => drop.indexOf(sty(x)) < 0);
+          faces.forEach(x => { if (bad.indexOf(sty(x)) >= 0) x.b64 = 'AAAAAAAA'; });
+        }
+        window.onGfPreview(reqId, J({ ok: true, family, mode, faces }));
+      };
+      if (G.hold) pvq.push({ reqId, family, mode, text, run: answer }); else setTimeout(answer, delay);
+      return J({ ok: true });
+    },
+    gfontsInfo(family) {
+      st.calls.push('gfontsInfo:' + family);
+      const e = gfFam(family);
+      if (!e) return J({ ok: false, code: 'gf_unknown', error: GF_UNKNOWN });
+      if (gfInfoJobs[family]) return J({ ok: true, job: gfInfoJobs[family] });
+      if (st.gfOtherWindow) return J({ ok: false, code: 'busy', error: 'Another window of the app is getting the details of this family. Try again in a moment.' });
+      const j = gfInfoJobs[family] = job();
+      gfRun([() => {
+        delete gfInfoJobs[family];
+        if (gfInfoKept[family]) { window.onGfInfo(family, J(gfInfoKept[family])); return; }
+        if (st.gfInfoError) { window.onGfInfo(family, J(Object.assign({ ok: false }, st.gfInfoError))); return; }
+        const lic = gfLicense(family);
+        gfInfoKept[family] = { ok: true, family, description: gfDesc(e), license: lic.kind, licenseName: lic.name, licenseText: lic.text, reserved: gfReserved(family),
+          designers: e.d.slice(), files: gfFilesOf(e).map(x => ({ name: x.name, variable: x.variable, italic: x.italic })) };
+        window.onGfInfo(family, J(gfInfoKept[family]));
+      }]);
+      return J({ ok: true, job: j });
+    },
+    gfontsDownloads() {
+      st.calls.push('gfontsDownloads');
+      return J({ ok: true, families: Object.keys(gfDl).map(k => gfDl[k]).sort((a, b) => b.at - a.at) });
+    },
+    gfontsDownload(family) {
+      st.calls.push('gfontsDownload:' + family);
+      const e = gfFam(family);
+      if (!e) return J({ ok: false, code: 'gf_unknown', error: GF_UNKNOWN });
+      if (gfJobs[family]) return J({ ok: false, code: 'busy', error: 'This font family is already downloading.' });
+      const files = gfFilesOf(e), n = files.length, j = job();
+      gfJobs[family] = { cancelled: false };
+      const live = () => gfJobs[family] && !gfJobs[family].cancelled;
+      const ev = [];
+      files.forEach((f, i) => {
+        ev.push(() => { if (live()) window.onGfProgress(family, i + 1, n, Math.round(f.size / 2), f.size); });
+        ev.push(() => { if (live()) window.onGfProgress(family, i + 1, n, f.size, f.size); });
+      });
+      ev.push(() => {
+        const d = gfJobs[family];
+        delete gfJobs[family];
+        if (!d || d.cancelled) { window.onGfDone(family, J({ ok: false, code: 'cancelled', error: 'The download was cancelled.' })); return; }
+        const err = (st.gfDownloadError || {})[family];
+        if (err) { window.onGfDone(family, J(Object.assign({ ok: false }, err))); return; }
+        gfDl[family] = gfRow(e); gfDlOf[family] = e;
+        window.onGfDone(family, J({ ok: true, entry: gfDl[family] }));
+      });
+      gfRun(ev);
+      return J({ ok: true, job: j });
+    },
+    gfontsCancel(family) { st.calls.push('gfontsCancel:' + family); if (gfJobs[family]) gfJobs[family].cancelled = true; return J({ ok: true }); },
+    gfontsDelete(family) {
+      st.calls.push('gfontsDelete:' + family);
+      if (gfJobs[family]) return J({ ok: false, code: 'busy', error: 'This font family is downloading. Cancel it first.' });
+      if (st.gfSaving === family) return J({ ok: false, code: 'busy', error: 'This font family is being saved. Wait for it to finish.' });
+      if (!gfDl[family]) return J({ ok: false, code: 'gf_not_downloaded', error: 'Download this family first.' });
+      delete gfDl[family]; delete gfDlOf[family];
+      return J({ ok: true });
+    },
+    gfontsUse(family, fileName, slot) {
+      st.calls.push('gfontsUse:' + family + ':' + fileName + ':' + slot);
+      if (st.pickOpen) return J({ ok: false, code: 'busy', error: 'The file chooser is already open.' });
+      if (slot !== 'regular' && slot !== 'bold') return J({ ok: false, code: 'bad_request', error: 'The request could not be read.' });
+      // the download alone (its meta.json), as the app: a family the list no longer has is still used
+      const row = gfDl[family], e = gfDlOf[family];
+      if (!row || !e) return J({ ok: false, code: 'gf_not_downloaded', error: 'Download this family first.' });
+      const fi = row.files.find(x => x.name === fileName);
+      if (!fi) return J({ ok: false, code: 'gf_bad_file', error: "That file is not part of this family's download." });
+      setTimeout(() => {
+        if (G.useError && (!G.useError.slot || G.useError.slot === slot)) { const x = Object.assign({ ok: false }, G.useError); delete x.slot; window.onFontMakerPicked(slot, J(x)); return; }
+        const token = 'tok-gf-' + slot + '-' + (++seq), info = gfInfoOf(e, fi);
+        tokens[token] = { fileName: fi.name, size: fi.size, preview: fi.variable ? 'vf' : fi.weight >= 600 ? 'bold' : 'regular', info };
+        window.onFontMakerPicked(slot, J({ ok: true, token, fileName: fi.name, size: fi.size, info, gf: { family, reserved: gfReserved(family) } }));
+      }, delay);
+      return J({ ok: true });
+    },
+    gfontsSave(family) {
+      st.calls.push('gfontsSave:' + family);
+      if (st.saveOpen) return J({ ok: false, code: 'busy', error: 'The save screen is already open.' });
+      if (!gfDl[family]) return J({ ok: false, code: 'gf_not_downloaded', error: 'Download this family first.' });
+      st.saveOpen = true; st.gfSaving = family;
+      const done = () => {
+        st.saveOpen = false; st.gfSaving = '';
+        window.onGfSaved(family, J(G.saveError ? Object.assign({ ok: false }, G.saveError) : { ok: true, name: family.replace(/ /g, '') + '.zip' }));
+      };
+      if (opts.holdSave) st.save = done; else setTimeout(done, delay);
+      return J({ ok: true });
+    },
+
+    // ---- v7.18.0 the emoji samples ----
+    emojiSpecimenFont(id) { st.calls.push('emojiSpecimenFont:' + id); return (opts.emoB64 || {})[id] || ''; },
+    emojiSpecimenCached(id) { st.calls.push('emojiSpecimenCached:' + id); return J({ ok: true, images: id === 'apple' && st.appleCached ? APPLE : [] }); },
+    emojiSpecimenFetch(id) {
+      st.calls.push('emojiSpecimenFetch:' + id);
+      if (id !== 'apple') return J({ ok: false, code: 'unknown', error: 'There is no such emoji font.' });
+      if (appleJob) return J({ ok: true, job: appleJob });
+      if (st.gfOtherWindow) return J({ ok: false, code: 'busy', error: 'Another window of the app is reading the iOS emoji. Try again in a moment.' });
+      const j = appleJob = job();
+      gfRun([() => {
+        appleJob = null;
+        // as fmkSpecimenJob: pictures kept (specimen/apple.json, maybe by another window since the page asked) are the answer, nothing is read
+        if (st.appleCached) { window.onEmojiSpecimen('apple', J({ ok: true, images: APPLE, from: 'cache' })); return; }
+        if (st.specimenError) { window.onEmojiSpecimen('apple', J(Object.assign({ ok: false }, st.specimenError))); return; }
+        st.appleCached = true;
+        window.onEmojiSpecimen('apple', J({ ok: true, images: APPLE, from: downloaded.has('apple') ? 'file' : 'web' }));
+      }]);
+      return J({ ok: true, job: j });
+    },
   };
   st.kv = Object.assign({}, opts.kv || {});
   st.statusFails = opts.statusFails || 0;
   st.buildError = opts.buildError || null; st.buildWarnings = opts.buildWarnings || null; st.downloadError = opts.downloadError || {};
+  st.gfRemote = null; st.gfReserved = null; st.gfRefreshError = G.refreshError || null; st.gfInfoError = G.infoError || null; st.gfDownloadError = G.downloadError || {};
+  st.specimenError = G.specimenError || null; st.appleCached = !!G.appleCached; st.gfSaving = ''; st.gfOtherWindow = !!G.otherWindow;
+  st.gfDl = gfDl;
   Object.keys(opts.refuse || {}).forEach(m => { b[m] = function () { st.calls.push(m + ':' + [].join.call(arguments, ',')); return J(Object.assign({ ok: false }, opts.refuse[m])); }; });
   missing.forEach(m => { delete b[m]; });
   st.setMode = (m) => { st.mode = m; };

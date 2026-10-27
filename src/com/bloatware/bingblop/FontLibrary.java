@@ -80,6 +80,10 @@ public final class FontLibrary {
     /** The tab's folders, from the app's files and cache folders. */
     public static final class Dirs {
         public final File root, library, emoji, in, work;
+        /** Google Fonts (v7.18.0): the catalog (gfonts/catalog.json), the downloaded families (gfonts/fam/), the previews (a cache). */
+        public final File gfonts, gfFamilies, gfPreviews;
+        /** The iOS emoji sample read from its font (specimen/apple.json). */
+        public final File specimen;
 
         public Dirs(File filesDir, File cacheDir) {
             root = new File(filesDir, "fontmaker");
@@ -87,6 +91,10 @@ public final class FontLibrary {
             emoji = new File(root, "emoji");
             in = new File(new File(cacheDir, "fontmaker"), "in");
             work = new File(new File(cacheDir, "fontmaker"), "work");
+            gfonts = new File(root, "gfonts");
+            gfFamilies = new File(gfonts, "fam");
+            gfPreviews = new File(new File(cacheDir, "fontmaker"), "gfpv");
+            specimen = new File(root, "specimen");
         }
 
         /** An entry's folder. A string that is not an id is a caller bug: the bridge checks {@link #isId} first. */
@@ -737,6 +745,15 @@ public final class FontLibrary {
             return null;
         }
 
+        /**
+         * The running job of this kind and key when {@code owner} started it and it is not cancelled: a second ask from that window waits
+         * for its answer. Null when none runs, another window's runs (its answer goes only to that window) or a cancelled one has not ended.
+         */
+        public synchronized Job joinable(Object owner, String kind, String key) {
+            Job j = running(kind, key);
+            return j != null && owner != null && j.owner == owner && !j.cancelled() ? j : null;
+        }
+
         /** Cancel by job id; false when it is not running (finished already, or never was). */
         public synchronized boolean cancel(String id) {
             Job j = get(id);
@@ -888,6 +905,16 @@ public final class FontLibrary {
         }
         if (d.contains("ENOSPC") || d.contains("No space left")) return error("no_space", "There is not enough free space on this phone.");
         return error("network", "The download failed: " + (d.isEmpty() ? "no answer" : d));
+    }
+
+    /**
+     * The answer for a download that failed on the phone's own storage where no errno says why (a folder that was not made, a rename that was
+     * refused): "no_space" when less than 16 MB is free ({@code usableBytes}, of a folder that exists), else "failed" with {@code detail}.
+     * Never "network": nothing went wrong with the connection.
+     */
+    public static JSONObject localError(String detail, long usableBytes) {
+        if (usableBytes < (16L << 20)) return error("no_space", "There is not enough free space on this phone.");
+        return error("failed", detail);
     }
 
     /** The Android API level a merged emoji font of this colour format needs to be drawn: COLRv1 from Android 13 (API 33), COLRv0 from 8. */
