@@ -44945,7 +44945,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const gf = {
             data: null, by: new Map(), fold: new Map(), gone: [], refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
-            dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null,
+            dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null, getFocus: null,
             text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null, cv: null,
             open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, tq: 0, tt: 0, td: 0
         };
@@ -46710,6 +46710,7 @@ Type any command above (e.g. pm list packages -d)</div>
             ['gfDHead', 'gfDLine'].forEach(id => { const el = document.getElementById(id); if (el) el.dataset.pvk = ''; });
             const st = document.getElementById('gfStyles');
             if (st) st.innerHTML = '';
+            gf.getFocus = null;                                              // a focus the Get section lost is not placed on another visit
         }
         function gfRenderDetail() {
             const e = gf.by.get(gf.fam);
@@ -46873,8 +46874,24 @@ Type any command above (e.g. pm list packages -d)</div>
                 + escapeHtml(txF('{0} is under the Ubuntu Font Licence: a font made from this family must have another name, or "{1} derivative" and a name of your own.', f, f)) + '</div>';
             if (err) h += '<div class="fnt-err" id="gfDlErr"><span class="is-err">' + escapeHtml(err) + '</span></div>';
             if (msg) h += '<div class="fnt-err" id="gfMsg">' + (msg.err ? '<span class="is-err">' + escapeHtml(msg.text) + '</span>' : escapeHtml(msg.text)) + '</div>';
-            box.innerHTML = h;
-            gfUseState();
+            // drawn only when it changed: the details of a downloaded family change nothing here, and a redraw would take the Regular/Bold choice
+            // being made (its select, an open picker) and the focus with it
+            const key = f + '\n' + h, ae = document.activeElement;
+            let fid = null;
+            if (box._gfH !== key) {
+                // the focus in the section (a keyboard, switch access, TalkBack), or lost to the body by the last redraw (Cancel while it cancels)
+                fid = ae && ae !== box && box.contains(ae) ? ae.id || '' : (!ae || ae === document.body) && gf.getFocus && gf.getFocus.f === f ? gf.getFocus.id : null;
+                gf.getFocus = null;
+                box.innerHTML = h;
+                box._gfH = key;
+            }
+            gfUseState();                                                    // Use's state and why it waits are set in place, after the redraw (not part of h)
+            if (fid === null) return;
+            // it goes to the same control when it is still there and usable, else the section's primary button, else its first usable control; with
+            // none it waits for the next redraw (Download, once the cancel came)
+            const same = fid ? document.getElementById(fid) : null;
+            const to = same && box.contains(same) && !same.disabled ? same : box.querySelector('.mode-action-btn.primary:not([disabled])') || box.querySelector('button:not([disabled]), select:not([disabled])');
+            if (to) { try { to.focus({ preventScroll: true }); } catch (err) {} } else gf.getFocus = { f: f, id: fid };
         }
         function gfDownload(f) {
             if (gf.dl[f]) return;
@@ -47021,6 +47038,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // the page drawn again (a new language): the list's words and the family's page
         function gfRedraw() {
+            const g = document.getElementById('gfGet');
+            if (g) g._gfH = '';                                              // its sentences (txT / txF) are drawn again in the new language
             if (!gf.open) return;
             gfApplyView();
             gfBuildLangs();

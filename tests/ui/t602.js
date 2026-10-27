@@ -11,6 +11,8 @@
 // another font, and a refused Regular takes the Reserved Font Names of that earlier font with it. A family under the Ubuntu Font Licence (Ubuntu)
 // says so on its page; its own name is not filled in and warns in the Name like a Reserved Font Name, but "Ubuntu derivative <a name>" is allowed
 // (UFL 1.0, condition 2), and only for such a family. In Arabic both licence notes read right to left, even when they start with the family's name.
+// The details of a downloaded family that come while its Regular is being chosen leave the section as it is (the select, the focus), so the file
+// chosen there is the one handed over.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf; opts.hold holds the build); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -279,6 +281,28 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     }
     await page.screenshot({ path: 'notes-ar.png' });
     await page.evaluate(() => LANG_ENGINE.set('en')); await page.waitForTimeout(300);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the details of a downloaded family come while its Regular is being chosen: they change nothing in the section, so it is not drawn again, and the
+  // select (an open picker) and the focus stay; the file chosen on it is the one Use hands over
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato'], hold: true } });
+    await showFam(page, 'Lato');
+    const s = await page.evaluate(() => {
+      const s = document.getElementById('gfUseReg'), asking = !!(gf.info.Lato || {}).asking;
+      s.focus(); window.__sel = s;
+      __fmk.gfStepAll();
+      return { asking, connected: s.isConnected, focus: document.activeElement === s, ok: !!(gf.info.Lato || {}).ok };
+    });
+    check('18. Lato on the phone, its Regular select focused when the details come: the same select, still focused', s.asking && s.connected && s.focus && s.ok, JSON.stringify(s));
+    await page.evaluate(() => { const s = window.__sel; s.value = 'Lato-Light.ttf'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+    const sel = await page.evaluate(() => gf.useSel.Lato || null);
+    check('   Lato-Light.ttf chosen on it: the family\'s choice', !!sel && sel.reg === 'Lato-Light.ttf' && sel.bold === 'Lato-Bold.ttf', JSON.stringify(sel));
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    const c = await useCalls(page), m = await make(page);
+    check('   Use hands Lato-Light.ttf to the Regular slot', c.join(',') === 'gfontsUse:Lato:Lato-Light.ttf:regular,gfontsUse:Lato:Lato-Bold.ttf:bold' && m.reg === 'Lato-Light.ttf', JSON.stringify([c, m.reg]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

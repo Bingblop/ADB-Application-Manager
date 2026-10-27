@@ -13,7 +13,9 @@
 // refreshed list no longer has (renamed or removed on Google Fonts) keeps a card ("No longer on Google Fonts") and a page with Use, Save and Delete;
 // the search button counts it as the sheet does, and its Delete asks first (it cannot be downloaded again; after it the focus is on the list, not
 // on the closed question). A refreshed list that drops the family
-// whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts.
+// whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts. With a keyboard
+// (switch access, TalkBack) the focus is not lost when the section is drawn again: it stays on the same control (the details came, the first
+// progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font).
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the jobs move when the script says; opts.holdSave); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -60,6 +62,8 @@ const get = (page) => page.evaluate(() => {
   };
 });
 const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new RegExp(src).test(c)), re);
+// where the focus is (a keyboard, switch access, TalkBack): the focused element's id, or its tag when it has none ('BODY': lost)
+const focused = (page) => page.evaluate(() => { const a = document.activeElement; return a ? a.id || a.tagName : ''; });
 const kb = n => (n * 1024);
 
 (async () => {
@@ -69,17 +73,21 @@ const kb = n => (n * 1024);
     await showFam(page, 'Roboto');
     let g = await get(page);
     check('1. Roboto, not on the phone: Download (primary), the number of files once the details came', g.dl === 'Download*' && g.n === '' && !g.prog, JSON.stringify(g));
+    await page.focus('#gfDlBtn');
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(100);
     g = await get(page);
     check('   the details: "2 font files"', g.n === '2 font files', g.n);
+    check('   the section drawn again with them: the focus stays on Download', (await focused(page)) === 'gfDlBtn', await focused(page));
     await page.click('#gfDlBtn');
     g = await get(page);
     check('2. Download: gfontsDownload, an open-ended bar, "Starting…", Cancel; no Download button', (await calls(page, '^gfontsDownload:')).join(',') === 'gfontsDownload:Roboto' && g.prog && g.prog.on && g.prog.indet && g.prog.role === 'progressbar' && g.prog.now === null
       && g.prog.txt === 'Starting…' && g.cancel === 'Cancel' && g.dl === null, JSON.stringify(g));
+    check('   the focus goes from Download (gone) to Cancel, not to the body', (await focused(page)) === 'gfCancelBtn', await focused(page));
     const fmt = await page.evaluate(() => [formatBytes(150 * 1024), formatBytes(300 * 1024), formatBytes(321 * 1024), formatBytes(621 * 1024)]);
     await step(page, 1);
     g = await get(page);
     check('3. progress: "File 1 of 2 · ' + fmt[0] + ' of ' + fmt[1] + '", the bar at 25%', g.prog && !g.prog.indet && g.prog.txt === 'File 1 of 2 · ' + fmt[0] + ' of ' + fmt[1] && g.prog.now === '25' && g.prog.w === '25%', JSON.stringify(g.prog));
+    check('   the first progress (the bar drawn again, no longer open-ended): the focus stays on Cancel', (await focused(page)) === 'gfCancelBtn', await focused(page));
     await step(page, 1);
     g = await get(page);
     check('   the first file done: 50%', g.prog.now === '50' && g.prog.w === '50%' && g.prog.txt === 'File 1 of 2 · ' + fmt[1] + ' of ' + fmt[1], JSON.stringify(g.prog));
@@ -110,6 +118,7 @@ const kb = n => (n * 1024);
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     g = await get(page);
     check('   cancelled: Download again, no error, not on the phone', g.dl === 'Download*' && !g.err && !g.prog && !(await page.evaluate(() => !!gf.dls.Inter)), JSON.stringify(g));
+    check('   the focus, which Cancel (waiting) could not keep, is on Download', (await focused(page)) === 'gfDlBtn', await focused(page));
     // a download that fails
     await page.evaluate(() => { __fmk.gfDownloadError = { Inter: { code: 'gf_not_a_font', error: 'Google Fonts sent a file that is not a font, so the family was not kept.' } }; });
     await page.click('#gfDlBtn');
@@ -183,16 +192,19 @@ const kb = n => (n * 1024);
     g = await get(page);
     const exp = () => page.evaluate(() => [...document.querySelectorAll('#fntLibList button')].filter(x => x.textContent.trim() === 'Export').map(x => x.disabled));
     check('8. Save to phone: gfontsSave, "Saving…" waits, Delete waits', (await calls(page, '^gfontsSave:')).join(',') === 'gfontsSave:Lato' && g.save === '-Saving…' && g.del === '-Delete', JSON.stringify(g));
+    check('   the focus goes from Save to phone (waiting) to Use in Make a font', (await focused(page)) === 'gfUseBtn', await focused(page));
     check('   My fonts\' Export waits too', (await exp()).length === 2 && (await exp()).every(Boolean), JSON.stringify(await exp()));
     await page.evaluate(() => gfDelete());
     check('   Delete is not asked while it saves', !(await calls(page, '^gfontsDelete:')).length);
     await page.evaluate(() => __fmk.save()); await page.waitForTimeout(100);
     g = await get(page);
     check('   saved: a toast with the file\'s name; the buttons back', g.toast === 'Saved Lato.zip' && g.save === 'Save to phone' && g.del === 'Delete' && (await exp()).every(x => !x), JSON.stringify([g, await exp()]));
+    check('   the focus stays on Use in Make a font', (await focused(page)) === 'gfUseBtn', await focused(page));
     await page.click('#gfDelBtn');
     g = await get(page);
     const asked = await page.evaluate(() => document.getElementById('mpAskModal').classList.contains('show'));
     check('9. Delete: gfontsDelete, at once (no question), a toast, Download again', (await calls(page, '^gfontsDelete:')).join(',') === 'gfontsDelete:Lato' && g.toast === 'Deleted Lato' && g.dl === 'Download*' && !g.have && !asked, JSON.stringify([g, asked]));
+    check('   the focus goes from Delete (gone) to Download', (await focused(page)) === 'gfDlBtn', await focused(page));
     await page.evaluate(() => gfBackToList()); await page.waitForTimeout(100);
     const badge2 = await page.evaluate(() => [...document.querySelectorAll('#gfList .gf-card[data-f="Lato"] .uad-badge')].map(x => x.textContent).join(','));
     check('   its card has no Downloaded badge any more', badge2 === '', badge2);

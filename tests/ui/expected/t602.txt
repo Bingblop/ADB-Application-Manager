@@ -54,4 +54,8 @@ ok      Roboto (Apache): the Name "Roboto", no note
 ok   17. Arabic, Ubuntu: its note in Arabic, starting with the name, runs right to left from the right edge
 ok      Lato: its note in Arabic, starting with the name, runs right to left from the right edge
 ok      no page errors
+ok   18. Lato on the phone, its Regular select focused when the details come: the same select, still focused
+ok      Lato-Light.ttf chosen on it: the family's choice
+ok      Use hands Lato-Light.ttf to the Regular slot
+ok      no page errors
 all passed

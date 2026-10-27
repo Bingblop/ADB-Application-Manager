@@ -1,7 +1,10 @@
 ok   1. Roboto, not on the phone: Download (primary), the number of files once the details came
 ok      the details: "2 font files"
+ok      the section drawn again with them: the focus stays on Download
 ok   2. Download: gfontsDownload, an open-ended bar, "Starting…", Cancel; no Download button
+ok      the focus goes from Download (gone) to Cancel, not to the body
 ok   3. progress: "File 1 of 2 · 150 KB of 300 KB", the bar at 25%
+ok      the first progress (the bar drawn again, no longer open-ended): the focus stays on Cancel
 ok      the first file done: 50%
 ok      the second file: "File 2 of 2", past 50%
 ok      left and opened again while it runs: the bar where it was
@@ -11,6 +14,7 @@ ok      its card: Downloaded
 ok   5. Cancel: gfontsCancel, "Cancelling…", Cancel waits
 ok      later progress does not change it
 ok      cancelled: Download again, no error, not on the phone
+ok      the focus, which Cancel (waiting) could not keep, is on Download
 ok   6. a failed download: the page's sentence, Download again
 ok      its page shows it: no toast says it again
 ok      Download again: the error goes
@@ -26,10 +30,13 @@ ok      a failure on the phone: "The download could not be put in place." as its
 ok      a full phone: "There is not enough free space on this phone."
 ok   7. Lato on the phone: "Downloaded · 10 files", the Regular and Bold choices
 ok   8. Save to phone: gfontsSave, "Saving…" waits, Delete waits
+ok      the focus goes from Save to phone (waiting) to Use in Make a font
 ok      My fonts' Export waits too
 ok      Delete is not asked while it saves
 ok      saved: a toast with the file's name; the buttons back
+ok      the focus stays on Use in Make a font
 ok   9. Delete: gfontsDelete, at once (no question), a toast, Download again
+ok      the focus goes from Delete (gone) to Download
 ok      its card has no Downloaded badge any more
 ok      while My fonts saves a font: Save to phone waits
 ok      no page errors
