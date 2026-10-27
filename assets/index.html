@@ -44937,7 +44937,7 @@ Type any command above (e.g. pm list packages -d)</div>
             data: null, by: new Map(), fold: new Map(), gone: [], refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
             dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null,
-            text: '', gen: 0, seq: 0, inflight: {}, late: {}, queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null,
+            text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null,
             open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, tq: 0, tt: 0, td: 0
         };
         const FNT_STAGES = ['read', 'instance', 'convert', 'emoji', 'package', 'sign', 'save'];
@@ -46191,14 +46191,37 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfKeyParts(key) { const a = key.indexOf('|'), b = key.indexOf('|', a + 1); return { f: key.slice(0, a), m: key.slice(a + 1, b), text: key.slice(b + 1) }; }
 
         // ---- the list on the phone, the downloads, the button that opens the page ----
+        // the list on the phone; returns the families whose styles or axes differ from the list before (gfForgetChanged)
         function gfLoadCat() {
             const r = fntCall('gfontsCatalog', [], true);
-            if (!r) { gf.data = null; return; }
+            if (!r) { gf.data = null; return new Set(); }
+            const old = gf.by;
             const fams = r.ok && Array.isArray(r.families) ? r.families.filter(e => e && typeof e.f === 'string' && e.f) : [];
             gf.data = { at: r.ok ? +r.at || 0 : 0, stale: !!r.stale, axes: r.ok && r.axes && typeof r.axes === 'object' ? r.axes : {}, families: fams, err: r.ok ? '' : fntErrText(r) };
             gf.by = new Map(fams.map(e => [e.f, e]));
             gf.fold = new Map(fams.map(e => [e.f, gfFold(e.f + ' ' + (Array.isArray(e.d) ? e.d.join(' ') : ''))]));
             gfSyncGone();
+            return gfForgetChanged(old);
+        }
+        // a preview asked of the list before is of no use for a family whose styles or axes changed in the new one (it turned variable, it gained an
+        // axis): its faces go, an answer still on its way is dropped as an older generation's, and what shows the family asks again
+        function gfForgetChanged(old) {
+            const sig = e => JSON.stringify(e ? [e.w, e.x] : null), fams = new Set(), chg = new Set();
+            const going = Object.values(gf.inflight).concat(Object.values(gf.late), [...gf.loading]);
+            [...gf.faces.keys()].concat(Object.keys(gf.asked)).forEach(k => fams.add(gfKeyParts(k).f));
+            going.concat(gf.queue).forEach(it => fams.add(it.f));
+            fams.forEach(f => { if (sig(old.get(f)) !== sig(gf.by.get(f))) chg.add(f); });
+            if (!chg.size) return chg;
+            going.forEach(it => { if (chg.has(it.f)) it.gen = -1; });
+            gf.queue = gf.queue.filter(it => !chg.has(it.f));
+            Object.keys(gf.asked).forEach(k => { if (chg.has(gfKeyParts(k).f)) delete gf.asked[k]; });
+            [...gf.faces].forEach(([k, rec]) => {
+                if (!chg.has(gfKeyParts(k).f)) return;
+                rec.list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} });
+                gf.nFaces -= rec.list.length;
+                gf.faces.delete(k);
+            });
+            return chg;
         }
         function gfLoadDls() {
             const r = fntCall('gfontsDownloads', [], true);
@@ -46268,11 +46291,17 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         window.onGfCatalog = function (json) {
             const r = fntJson(json);
+            let chg = new Set();
             gf.refreshing = false;
-            if (r.ok) { gf.refreshErr = ''; gfLoadCat(); } else if (r.code !== 'cancelled') gf.refreshErr = fntErrText(r);
+            if (r.ok) { gf.refreshErr = ''; chg = gfLoadCat(); } else if (r.code !== 'cancelled') gf.refreshErr = fntErrText(r);
             gfRenderEntry();
             if (!gf.open) return;
-            if (r.ok) { gfBuildLangs(); gfFilter(false); }
+            if (r.ok) {
+                gfBuildLangs();
+                gfFilter(false);                                             // the cards in view ask again for what gfForgetChanged dropped
+                // the family's page shown: its sliders and style rows are the new list's, from the axes' defaults, and its previews asked again
+                if (gf.view === 'detail' && chg.has(gf.fam)) { gf.axes = gfAxesStart(gf.by.get(gf.fam)); gfRenderDetail(); }
+            }
             gfRenderStatus();
         };
         function gfRenderStatus() {
@@ -46451,7 +46480,9 @@ Type any command above (e.g. pm list packages -d)</div>
             const faces = r.ok && Array.isArray(r.faces) ? r.faces.filter(x => x && typeof x.b64 === 'string' && /^[A-Za-z0-9+/=]+$/.test(x.b64)) : [];
             if (!faces.length) { gf.asked[it.key] = 'failed'; gfShowKey(it.key); gfPump(); return; }
             const name = 'gfpv' + (++gf.faceN);
+            gf.loading.add(it);                                              // while its faces load, a newer list can still drop them (gfForgetChanged)
             Promise.all(faces.map(x => fntFace(name, x.b64, gfDesc(x)).catch(() => null))).then(list => {
+                gf.loading.delete(it);
                 list = list.filter(Boolean);
                 if (!here()) { list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} }); if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; return; }
                 if (!list.length) { gf.asked[it.key] = 'failed'; gfShowKey(it.key); return; }
@@ -46523,13 +46554,14 @@ Type any command above (e.g. pm list packages -d)</div>
             gf.view = 'detail'; gf.fam = f; gf.descOpen = false;
             gf.dText = gf.text.trim() ? gf.text : gfSample(e);
             gf.dSize = 40;
-            gf.axes = {};
-            (e.x || []).forEach(a => { if (Array.isArray(a)) gf.axes[String(a[0])] = +a[3]; });
+            gf.axes = gfAxesStart(e);
             gfApplyView();
             gfRenderDetail();
             if (sc) sc.scrollTop = 0;
             if (!e.gone) gfAskInfo(f, false);                                // Google Fonts no longer knows a gone family: its details would only say so
         }
+        // the type tester's axis values to start with: each axis at its default
+        function gfAxesStart(e) { const ax = {}; ((e && e.x) || []).forEach(a => { if (Array.isArray(a)) ax[String(a[0])] = +a[3]; }); return ax; }
         function gfBackToList() {
             if (gf.view !== 'detail') return;
             clearTimeout(gf.td);                                             // the tester's new text must not drop the list's previews

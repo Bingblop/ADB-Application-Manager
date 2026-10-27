@@ -8160,16 +8160,15 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * A preview (gfontsPreview), as the answer's JSON: from the cache (cache/fontmaker/gfpv/, 30 days), else the css2 answer for the family and
-     * the characters, and each face it names (a woff2 on fonts.gstatic.com): a face over 2 MB is left out, and so are the faces after 8 MB in
-     * all. {ok, family, mode, faces:[{style, weight, stretch, b64}]} is cached, and the cache trimmed to 24 MB, oldest first. An answer that
-     * lost a face to an HTTP status other than 200 or an empty body is returned but not cached.
+     * A preview (gfontsPreview), as the answer's JSON: from the cache (cache/fontmaker/gfpv/, 30 days; GoogleFonts.previewFile names an answer by
+     * its css2 address, so a family whose styles or axes changed is fetched again), else the css2 answer for the family and the characters, and
+     * each face it names (a woff2 on fonts.gstatic.com): a face over 2 MB is left out, and so are the faces after 8 MB in all.
+     * {ok, family, mode, faces:[{style, weight, stretch, b64}]} is cached, and the cache trimmed to 24 MB, oldest first. An answer that lost a
+     * face to an HTTP status other than 200 or an empty body is returned but not cached.
      */
     private String gfPreview(JSONObject entry, String family, String mode, String text) {
         try {
-            String chars = GoogleFonts.uniqueText(text, family);
-            File dir = fmkDirs().gfPreviews;
-            File cached = new File(dir, GoogleFonts.previewKey(family, mode, chars) + ".json");
+            File dir = fmkDirs().gfPreviews, cached = GoogleFonts.previewFile(dir, entry, mode, text);     // named by the css2 address fetched below
             String hit = GoogleFonts.readCached(cached, System.currentTimeMillis(), GoogleFonts.PREVIEW_CACHE_MS);
             if (hit != null) return hit;
             GfAnswer css = gfGet(GoogleFonts.css2Url(entry, mode, text), true, GoogleFonts.MAX_CSS, "gf_no_preview", null);

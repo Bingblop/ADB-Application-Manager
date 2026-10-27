@@ -44,7 +44,8 @@ import java.util.regex.Pattern;
  * <li>{@link #info}: a family's description (as plain text), licence and designers.</li>
  * <li>{@link #metaJson} / {@link #readMeta} / {@link #sweep}: a downloaded family's folder files/fontmaker/gfonts/fam/&lt;slug&gt;/ and
  * its meta.json; {@link #downloadsRow} is the page's row for it.</li>
- * <li>The preview cache in cache/fontmaker/gfpv/ ({@link #previewKey}, {@link #readCached}, {@link #trimCache}).</li>
+ * <li>The preview cache in cache/fontmaker/gfpv/ ({@link #previewFile}, {@link #readCached}, {@link #trimCache}), each answer named by the css2
+ * request it stands for.</li>
  * </ul>
  * Every refusal is a {@link GfException} whose code and sentence are the page's (design section 5.1).
  */
@@ -1077,11 +1078,20 @@ public final class GoogleFonts {
     // The preview cache
     // ---------------------------------------------------------------------------------------------
 
-    /** A preview's cache file name: the SHA-256 of family, mode and the asked characters ({@link #uniqueText}), one per line. */
-    public static String previewKey(String family, String mode, String text) {
+    /**
+     * A preview's cache file in {@code dir}: named by {@link #previewKey} of the family, the mode and the css2 address the preview is fetched
+     * from ({@link #css2Url}). The address carries the styles or axes asked for (from the entry's w and x) and the characters, so a family whose
+     * styles or axes changed in a newer list is asked for again instead of being drawn with the faces it had.
+     */
+    public static File previewFile(File dir, JSONObject entry, String mode, String text) {
+        return new File(dir, previewKey(entry.optString("f"), mode, css2Url(entry, mode, text)) + ".json");
+    }
+
+    /** A preview's cache file name: the SHA-256 of family, mode and the css2 address, one per line. */
+    public static String previewKey(String family, String mode, String css2Url) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            return FontLibrary.hex(md.digest((family + "\n" + mode + "\n" + text).getBytes(StandardCharsets.UTF_8)));
+            return FontLibrary.hex(md.digest((family + "\n" + mode + "\n" + css2Url).getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             throw new IllegalStateException("SHA-256 is always present", e);
         }

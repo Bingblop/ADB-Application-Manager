@@ -1223,6 +1223,10 @@ public class FontLibraryTest {
         is("a preview that lost a face to an HTTP error is not cached", flag != null && pv.contains("boolean " + flag + " = false;") && g >= 0 && write > g
                 && write < g + body(pv.substring(g), guard).length() && pv.indexOf("GoogleFonts.writeWhole(") == write && pv.lastIndexOf("GoogleFonts.writeWhole(") == write, true);
         is("…a face too big for the cap is left out without that", Pattern.compile("catch \\(GoogleFonts\\.GfException tooBig\\) \\{\\s*continue;\\s*\\}").matcher(pv).find(), true);
+        // a cached preview is named by the css2 request it stands for (the entry's styles and axes, the characters), so a family whose styles or
+        // axes changed in a newer list is fetched again, never drawn with the old faces for 30 days (R2-01)
+        is("a preview's cache file is GoogleFonts.previewFile of the very request fetched", pv.contains("cached = GoogleFonts.previewFile(dir, entry, mode, text);")
+                && pv.contains("gfGet(GoogleFonts.css2Url(entry, mode, text), true,") && !pv.contains("previewKey(") && !pv.contains("uniqueText("), true);
         // "no details page" is kept for the process only when Google's envelope and the HTTP status both say 404 (R1-09)
         String ij = body(ma, "private void gfInfoJob(");
         is("a family's details: a 5xx or a 429 is asked again, not kept as no details", ij.contains("if (!\"gf_unknown\".equals(e.code) || a.status != 404) {")

@@ -743,10 +743,35 @@ public class GoogleFontsTest {
         check("key is 64 hex", k.matches("[0-9a-f]{64}"));
         eq("key is stable", GoogleFonts.previewKey("Roboto", "card", "Robt Aa"), k);
         check("key depends on the mode", !k.equals(GoogleFonts.previewKey("Roboto", "styles", "Robt Aa")));
-        check("key depends on the text", !k.equals(GoogleFonts.previewKey("Roboto", "card", "Robt A")));
+        check("key depends on the address", !k.equals(GoogleFonts.previewKey("Roboto", "card", "Robt A")));
         check("fields do not run together", !GoogleFonts.previewKey("Ab", "card", "c").equals(GoogleFonts.previewKey("A", "bcard", "c")));
 
+        // a cached answer is named by the css2 request it stands for: a family that turned variable, or gained an axis, in a newer list is asked
+        // for again, never drawn with the faces of the old request (R2-01)
         File dir = new File(tmp, "gfpv");
+        JSONObject st = new JSONObject("{\"f\":\"Roboto\",\"w\":[\"400\",\"700\"]}");
+        JSONObject va = new JSONObject("{\"f\":\"Roboto\",\"w\":[\"100\",\"200\",\"300\",\"400\",\"500\",\"600\",\"700\",\"800\",\"900\"],\"x\":[[\"wght\",100,900,400]]}");
+        JSONObject vo = new JSONObject(va.toString());
+        vo.getJSONArray("x").put(new JSONArray("[\"opsz\",14,32,14]"));
+        JSONObject sx = new JSONObject(st.toString()).put("x", new JSONArray("[[\"wght\",100,900,400]]"));
+        String t = "Robt Aa";
+        for (String m : new String[] { "card", "styles", "axes" }) {
+            File a = GoogleFonts.previewFile(dir, st, m, t);
+            eq("previewFile " + m + ": in the folder, 64 hex", a.getParentFile().equals(dir) && a.getName().matches("[0-9a-f]{64}\\.json"), true);
+            eq("previewFile " + m + ": the same entry, mode and text, the same file", GoogleFonts.previewFile(dir, new JSONObject(st.toString()), m, t), a);
+            eq("previewFile " + m + ": the key of the family, the mode and the css2 address", a.getName(), GoogleFonts.previewKey("Roboto", m, GoogleFonts.css2Url(st, m, t)) + ".json");
+            check("previewFile " + m + ": another text, another file", !a.equals(GoogleFonts.previewFile(dir, st, m, "Robt A")));
+        }
+        check("static 400/700 and variable 100-900: the styles differ", !GoogleFonts.previewFile(dir, st, "styles", t).equals(GoogleFonts.previewFile(dir, va, "styles", t)));
+        check("…and the axes", !GoogleFonts.previewFile(dir, st, "axes", t).equals(GoogleFonts.previewFile(dir, va, "axes", t)));
+        check("the same styles, an axis added: the axes differ", !GoogleFonts.previewFile(dir, st, "axes", t).equals(GoogleFonts.previewFile(dir, sx, "axes", t)));
+        check("an axis added to a variable family (opsz): the axes differ", !GoogleFonts.previewFile(dir, va, "axes", t).equals(GoogleFonts.previewFile(dir, vo, "axes", t)));
+        check("card and axes of a static family: two files (the same request)", GoogleFonts.css2Url(st, "card", t).equals(GoogleFonts.css2Url(st, "axes", t))
+                && !GoogleFonts.previewFile(dir, st, "card", t).equals(GoogleFonts.previewFile(dir, st, "axes", t)));
+        check("card and styles: two files", !GoogleFonts.previewFile(dir, st, "card", t).equals(GoogleFonts.previewFile(dir, st, "styles", t)));
+        check("no text: the family name's, as css2Url asks", GoogleFonts.previewFile(dir, st, "card", "").equals(GoogleFonts.previewFile(dir, st, "card", "Roboto Aa")));
+        eq("previewFile of a name that is not a family: css2Url's refusal", code(() -> GoogleFonts.previewFile(dir, new JSONObject().put("f", "../x"), "card", t)), "threw java.lang.IllegalArgumentException: not a family");
+
         File f = new File(dir, k + ".json");
         String answer = "{\"ok\":true,\"family\":\"Roboto\",\"mode\":\"card\",\"faces\":[{\"style\":\"normal\",\"weight\":\"400\",\"stretch\":\"\",\"b64\":\"d09GMg==\"}]}";
         GoogleFonts.writeWhole(f, answer.getBytes(StandardCharsets.UTF_8));
