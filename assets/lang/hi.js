@@ -6881,6 +6881,5 @@ p: [
 ["{0} was not downloaded. {1}", "{0} डाउनलोड नहीं हो सका। {1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "{0} का लाइसेंस “{1}” नाम मूल फ़ॉन्ट के लिए आरक्षित रखता है। इससे बना फ़ॉन्ट एक बदली हुई कॉपी है, इसलिए उसे कोई दूसरा नाम दें।"],
 ["{0} was not saved. {1}", "{0} सहेजा नहीं जा सका। {1}"],
-
 ]
 };

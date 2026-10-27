@@ -6881,6 +6881,5 @@ p: [
 ["{0} was not downloaded. {1}", "Семейство {0} не скачано. {1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "Лицензия {0} закрепляет название «{1}» за оригинальным шрифтом. Шрифт, созданный из него, — изменённая копия, поэтому дайте ему другое название."],
 ["{0} was not saved. {1}", "Семейство {0} не сохранено. {1}"],
-
 ]
 };

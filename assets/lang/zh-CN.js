@@ -6881,6 +6881,5 @@ p: [
 ["{0} was not downloaded. {1}", "未能下载 {0}。{1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "{0} 的许可证将名称“{1}”保留给原始字体。用它制作的字体是修改后的副本，因此请为其另取名称。"],
 ["{0} was not saved. {1}", "未能保存 {0}。{1}"],
-
 ]
 };

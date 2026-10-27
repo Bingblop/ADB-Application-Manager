@@ -6881,6 +6881,5 @@ p: [
 ["{0} was not downloaded. {1}", "Échec du téléchargement de {0}. {1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "La licence de {0} réserve le nom « {1} » à la police d’origine. Une police créée à partir de celle-ci en est une copie modifiée : donnez-lui donc un autre nom."],
 ["{0} was not saved. {1}", "Échec de l’enregistrement de {0}. {1}"],
-
 ]
 };
