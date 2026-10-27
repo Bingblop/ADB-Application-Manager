@@ -16,9 +16,11 @@
 // whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts. With a keyboard
 // (switch access, TalkBack) the focus is not lost when the section is drawn again: it stays on the same control (the details came, the first
 // progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font).
+// The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the jobs move when the script says; opts.holdSave); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
-const { chromium, PAGE, fixture } = require('./lib/pw');
+const path = require('path');
+const { chromium, PAGE, REPO, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -444,6 +446,14 @@ const kb = n => (n * 1024);
     check('   "This font family is downloading. Cancel it first." is said as itself', said === 'This font family is downloading. Cancel it first.', said);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
+  }
+  // the Help Guide's example: the progress counts a file's bytes as they come over the network (packed by Google Fonts, against their Content-Length),
+  // so its sizes are not the file's on the phone, and "Downloaded · N files · X" is not their sum
+  {
+    const g = fs.readFileSync(path.join(REPO, 'assets', 'guide.js'), 'utf8'), H = JSON.parse(g.slice(g.indexOf('{'), g.indexOf('};\n') + 1));
+    const html = (H.sections.find(x => x.id === 'fonts-google') || {}).html || '', said = (/File 1 of 2 · (\d+) KB of (\d+) KB"?: ([^)]*)\)/.exec(html) || []), have = /Downloaded · 2 files · (\d+) KB/.exec(html);
+    check('16. the Help Guide: the progress sizes are a file\'s as it comes over the network, the "Downloaded" size the space on the phone (not their sum)', said.length && /over the network/.test(said[3]) && !/sizes are those of that file, and they start/.test(html)
+      && !!have && +have[1] !== 2 * +said[2], JSON.stringify([said[3], have && have[0]]));
   }
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');

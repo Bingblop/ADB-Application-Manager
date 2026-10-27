@@ -87,4 +87,5 @@ ok      "This font family is being saved. Wait for it to finish."
 ok      "The save screen is already open."
 ok      "This font family is downloading. Cancel it first." is said as itself
 ok      no page errors
+ok   16. the Help Guide: the progress sizes are a file's as it comes over the network, the "Downloaded" size the space on the phone (not their sum)
 all passed
