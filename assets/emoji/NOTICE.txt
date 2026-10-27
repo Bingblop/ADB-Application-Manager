@@ -8,7 +8,11 @@ noto.ttf      Noto Color Emoji (googlefonts/noto-emoji, tag v2026-09-24-unicode1
               Copyright 2022 Google Inc. SIL Open Font License 1.1, full text in OFL.txt in this folder (https://openfontlicense.org)
 twemoji.ttf   Twemoji (SableClient/twemoji-font v1.0.4, the COLR build of jdecked/twemoji)
               Graphics (c) Twitter, Inc. and other contributors. Creative Commons Attribution 4.0:
-              https://creativecommons.org/licenses/by/4.0/ (the copy is cut down to sixteen emoji)
+              https://creativecommons.org/licenses/by/4.0/
+              The font build: Copyright 2016-2018, Mozilla Foundation. Apache License 2.0:
+              https://www.apache.org/licenses/LICENSE-2.0
+              Both, as the release gives them (its LICENSE.md), are in Twemoji-LICENSE.md in this folder
+              (the copy is cut down to sixteen emoji)
 blobmoji.ttf  Blobmoji (DavidBerdik/blobmoji2, tag blobmoji-17r1, a fork of Noto Emoji with the blob art)
               Copyright 2022 Google Inc. SIL Open Font License 1.1, full text in OFL.txt in this folder (https://openfontlicense.org)
 openmoji.ttf  OpenMoji (hfg-gmuend/openmoji 17.0.0, the COLRv0 build)
