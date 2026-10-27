@@ -45785,6 +45785,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!r.ok) { fnt.emoErr[id] = fntErrText(r); fntRenderEmoji(); return; }
             haptic();
             delete fnt.emoErr[id];
+            if (id === 'apple') fnt.emoApple.err = '';                      // the iOS sample is read from the web again: a failed read of the file no longer applies
             fntLoadCat();
             fntRenderEmoji();
             fntRenderEmojiSel();
@@ -45806,6 +45807,7 @@ Type any command above (e.g. pm list packages -d)</div>
         window.onEmojiDone = function (id, json) {
             const r = fntJson(json), it = ((fnt.cat && fnt.cat.items) || []).find(x => x.id === id);
             delete fnt.dl[id];
+            if (r.ok && id === 'apple') fnt.emoApple.err = '';               // the iOS sample is read from the file now: an earlier read's failure no longer applies
             if (r.ok) showToast(txF('{0} downloaded', it ? it.name : id));
             else if (r.code !== 'cancelled') fnt.emoErr[id] = fntErrText(r);
             fntLoadCat();
