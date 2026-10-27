@@ -7,9 +7,11 @@
 #   tools/make-emoji-specimens.sh [repository root]      (needs curl, unzip, sha256sum and python3 with fontTools: pip install fonttools)
 #
 # Run it again when an emoji font in EmojiCatalog changes, and commit what it writes. The licences of the cut-down copies are the fonts'
-# own (assets/emoji/NOTICE.txt): OFL-1.1 for Noto Color Emoji and Blobmoji, CC-BY-4.0 for Twemoji's art, CC-BY-SA-4.0 for OpenMoji. The
-# OFL travels with its copies as text (condition 2): assets/emoji/OFL.txt holds it with their copyright lines, so when a new tag of
-# Noto Color Emoji or Blobmoji changes the copyright line, change it there and in NOTICE.txt too. The root NOTICE lists the four fonts.
+# own (assets/emoji/NOTICE.txt): OFL-1.1 for Noto Color Emoji and Blobmoji, CC-BY-4.0 for Twemoji's art with its font build under
+# Apache-2.0 (Copyright 2016-2018, Mozilla Foundation), CC-BY-SA-4.0 for OpenMoji. The OFL travels with its copies as text (condition 2):
+# assets/emoji/OFL.txt holds it with their copyright lines, so when a new tag of Noto Color Emoji or Blobmoji changes the copyright line,
+# change it there and in NOTICE.txt too. Twemoji's notices are not in its font's name table: the release's own LICENSE.md goes beside
+# the copy as assets/emoji/Twemoji-LICENSE.md. The root NOTICE lists the four fonts.
 set -euo pipefail
 
 root="${1:-.}"
@@ -47,6 +49,8 @@ fetch openmoji "https://raw.githubusercontent.com/hfg-gmuend/openmoji/17.0.0/fon
   8376fee074649ece235faba0d157d851f3d93632f0540ad1165feba1aba9ba37 -
 echo "d2d721abc0ab04c0f40673e4b521e8b580a6b31d1018b7f2dcb438fdae4c265e  $work/twemoji.ttf" | sha256sum -c --quiet - \
   || { echo "FAIL twemoji: the font in the zip is not the pinned one" >&2; exit 1; }
+# Twemoji's licences as its release gives them (Apache-2.0 for the font build, CC-BY-4.0 for the art) travel with its copy
+unzip -p "$work/twemoji.download" LICENSE.md > "$out/Twemoji-LICENSE.md"
 
 for id in noto twemoji blobmoji openmoji; do
   # every name record is kept (the copyright and the licence travel with the copy); the hinting and the layout rules of the sample stay

@@ -9,7 +9,8 @@
 // the read's answer (from 'cache', as fmkSpecimenJob does), so a page offline by then still shows them. An older app build shows no strip. The row's Download stays its
 // first button; nothing is wider than the screen at 360 px. The licences travel with the
 // samples: assets/emoji/OFL.txt holds the full SIL Open Font License 1.1 with the copyright lines of noto.ttf and blobmoji.ttf (OFL condition 2),
-// assets/emoji/NOTICE.txt points to it, and the root NOTICE lists the four fonts with their licences (ASCII, the iOS emoji never shipped, their
+// assets/emoji/NOTICE.txt points to it (and to Twemoji-LICENSE.md, the release's licences of Twemoji: its art CC-BY-4.0, its font build
+// Mozilla's under Apache-2.0), and the root NOTICE lists the four fonts with their licences (ASCII, the iOS emoji never shipped, their
 // sample read from the downloaded copy, else by HTTP range from the pinned address).
 // Mock bridge: lib/fontmaker_mock.js (opts.emoB64: assets/emoji/<id>.ttf; opts.gf: hold, specimenError, appleCached, otherWindow).
 const fs = require('fs');
@@ -225,6 +226,12 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     const sec = (root.split(/\n(?=Custom Fonts tab: the emoji samples\n-+\n)/)[1] || '').split(/\n\n(?=\S[^\n]*\n-+\n)/)[0];
     const lic = [['Noto Color Emoji', 'OFL-1.1'], ['Twemoji', 'CC-BY-4.0'], ['Blobmoji', 'OFL-1.1'], ['OpenMoji', 'CC-BY-SA-4.0']].filter(([f, l]) => !new RegExp('\\* ' + f + ' \\([^\\n]*\\) - ' + l + ' -\\s').test(sec));
     check('   the root NOTICE lists the four sample fonts with their licences, OFL.txt named, the iOS emoji never shipped', sec && !lic.length && /assets\/emoji\/OFL\.txt/.test(sec) && /iOS-style emoji are never shipped/.test(sec), JSON.stringify([lic, sec.slice(0, 200)]));
+    // Twemoji's font build is Mozilla's, under Apache-2.0 (its art CC-BY-4.0), and its font names neither: the release's LICENSE.md goes with the copy
+    const twl = read('assets', 'emoji', 'Twemoji-LICENSE.md'), twRow = rows('twemoji'), twNote = (sec.split(/\n(?=\* )/).find(x => /^\* Twemoji /.test(x)) || '').replace(/\s+/g, ' ');
+    check('   Twemoji: assets/emoji/Twemoji-LICENSE.md, its release\'s own, with Mozilla\'s copyright and Apache-2.0 for the font build, CC-BY-4.0 for the art', /Copyright 2016-2018, Mozilla Foundation/.test(twl)
+      && /Apache License, Version 2\.0/.test(twl) && /creativecommons\.org\/licenses\/by\/4\.0/.test(twl), twl.slice(0, 300));
+    check('   its NOTICE.txt row names both, the cut-down copy and that file; the root NOTICE too', /Copyright 2016-2018, Mozilla Foundation/.test(twRow) && /Apache License 2\.0/.test(twRow) && /Creative Commons Attribution 4\.0/.test(twRow)
+      && /Twemoji-LICENSE\.md/.test(twRow) && /cut down to sixteen emoji/.test(twRow) && /Apache-2\.0/.test(twNote) && /Mozilla Foundation/.test(twNote) && /assets\/emoji\/Twemoji-LICENSE\.md/.test(twNote), JSON.stringify([twRow, twNote]));
     // both ways the app reads the iOS sample (fmkSpecimenJob): the downloaded file, else a few parts of Apple's file by HTTP range from its pinned address
     const ios = sec.replace(/\s+/g, ' ');
     check('   …their sample read from the downloaded copy, else by HTTP range from the pinned address of the third-party build', /from the downloaded copy/.test(ios) && /about 0\.3 MB of it by HTTP range from its pinned address/.test(ios)

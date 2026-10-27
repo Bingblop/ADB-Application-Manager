@@ -13,10 +13,16 @@
 // refreshed list no longer has (renamed or removed on Google Fonts) keeps a card ("No longer on Google Fonts") and a page with Use, Save and Delete;
 // the search button counts it as the sheet does, and its Delete asks first (it cannot be downloaded again; after it the focus is on the list, not
 // on the closed question). A refreshed list that drops the family
-// whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts.
+// whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts. With a keyboard
+// (switch access, TalkBack) the focus is not lost when the section is drawn again: it stays on the same control (the details came, the first
+// progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font).
+// The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone. Without
+// a family's details, About's Licence is its download's: it comes with a download made on the family's page and goes with a Delete there. A
+// family that left Google Fonts shows no details in About (no description, Licence text, reason or Retry), even ones that came before it left.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the jobs move when the script says; opts.holdSave); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
-const { chromium, PAGE, fixture } = require('./lib/pw');
+const path = require('path');
+const { chromium, PAGE, REPO, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -60,6 +66,11 @@ const get = (page) => page.evaluate(() => {
   };
 });
 const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new RegExp(src).test(c)), re);
+// the family's About: its rows, and which of the details' parts (description, Licence text) or their wait, reason and Retry are there
+const about = (page) => page.evaluate(() => ({ rows: [...document.querySelectorAll('#gfAbout .fnt-now')].map(r => [...r.children].map(c => c.textContent.trim()).join(' ')).join(' | '),
+  extra: ['gfDesc', 'gfDescMore', 'gfLic', 'gfInfoWait', 'gfInfoErr', 'gfInfoRetry'].filter(id => !!document.getElementById(id)) }));
+// where the focus is (a keyboard, switch access, TalkBack): the focused element's id, or its tag when it has none ('BODY': lost)
+const focused = (page) => page.evaluate(() => { const a = document.activeElement; return a ? a.id || a.tagName : ''; });
 const kb = n => (n * 1024);
 
 (async () => {
@@ -69,17 +80,21 @@ const kb = n => (n * 1024);
     await showFam(page, 'Roboto');
     let g = await get(page);
     check('1. Roboto, not on the phone: Download (primary), the number of files once the details came', g.dl === 'Download*' && g.n === '' && !g.prog, JSON.stringify(g));
+    await page.focus('#gfDlBtn');
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(100);
     g = await get(page);
     check('   the details: "2 font files"', g.n === '2 font files', g.n);
+    check('   the section drawn again with them: the focus stays on Download', (await focused(page)) === 'gfDlBtn', await focused(page));
     await page.click('#gfDlBtn');
     g = await get(page);
     check('2. Download: gfontsDownload, an open-ended bar, "Starting…", Cancel; no Download button', (await calls(page, '^gfontsDownload:')).join(',') === 'gfontsDownload:Roboto' && g.prog && g.prog.on && g.prog.indet && g.prog.role === 'progressbar' && g.prog.now === null
       && g.prog.txt === 'Starting…' && g.cancel === 'Cancel' && g.dl === null, JSON.stringify(g));
+    check('   the focus goes from Download (gone) to Cancel, not to the body', (await focused(page)) === 'gfCancelBtn', await focused(page));
     const fmt = await page.evaluate(() => [formatBytes(150 * 1024), formatBytes(300 * 1024), formatBytes(321 * 1024), formatBytes(621 * 1024)]);
     await step(page, 1);
     g = await get(page);
     check('3. progress: "File 1 of 2 · ' + fmt[0] + ' of ' + fmt[1] + '", the bar at 25%', g.prog && !g.prog.indet && g.prog.txt === 'File 1 of 2 · ' + fmt[0] + ' of ' + fmt[1] && g.prog.now === '25' && g.prog.w === '25%', JSON.stringify(g.prog));
+    check('   the first progress (the bar drawn again, no longer open-ended): the focus stays on Cancel', (await focused(page)) === 'gfCancelBtn', await focused(page));
     await step(page, 1);
     g = await get(page);
     check('   the first file done: 50%', g.prog.now === '50' && g.prog.w === '50%' && g.prog.txt === 'File 1 of 2 · ' + fmt[1] + ' of ' + fmt[1], JSON.stringify(g.prog));
@@ -91,9 +106,11 @@ const kb = n => (n * 1024);
     await page.click('#gfList .gf-card[data-f="Roboto"]'); await page.waitForTimeout(150);
     g = await get(page);
     check('   left and opened again while it runs: the bar where it was', g.prog && /^File 2 of 2 · /.test(g.prog.txt) && g.cancel === 'Cancel', JSON.stringify(g.prog));
+    await page.evaluate(() => { document.getElementById('gfLic').open = true; });
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     g = await get(page);
     check('4. done: a toast, "Downloaded · 2 files · ' + fmt[3] + '"', g.toast === 'Roboto downloaded' && g.have === 'Downloaded · 2 files · ' + fmt[3] && !g.prog, JSON.stringify(g));
+    check('   About is not drawn again (its details came): the Licence text opened meanwhile stays open', await page.evaluate(() => !!document.getElementById('gfLic') && document.getElementById('gfLic').open));
     check('   a variable family: nothing to choose; Use in Make a font (the one primary), Save to phone, Delete', !g.selects && g.use === 'Use in Make a font*' && g.save === 'Save to phone' && g.del === 'Delete' && g.primaries === 1, JSON.stringify(g));
     await page.evaluate(() => gfBackToList()); await page.waitForTimeout(100);
     const badge = await page.evaluate(() => [...document.querySelectorAll('#gfList .gf-card[data-f="Roboto"] .uad-badge')].map(x => x.textContent).join(','));
@@ -110,6 +127,7 @@ const kb = n => (n * 1024);
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     g = await get(page);
     check('   cancelled: Download again, no error, not on the phone', g.dl === 'Download*' && !g.err && !g.prog && !(await page.evaluate(() => !!gf.dls.Inter)), JSON.stringify(g));
+    check('   the focus, which Cancel (waiting) could not keep, is on Download', (await focused(page)) === 'gfDlBtn', await focused(page));
     // a download that fails
     await page.evaluate(() => { __fmk.gfDownloadError = { Inter: { code: 'gf_not_a_font', error: 'Google Fonts sent a file that is not a font, so the family was not kept.' } }; });
     await page.click('#gfDlBtn');
@@ -183,16 +201,19 @@ const kb = n => (n * 1024);
     g = await get(page);
     const exp = () => page.evaluate(() => [...document.querySelectorAll('#fntLibList button')].filter(x => x.textContent.trim() === 'Export').map(x => x.disabled));
     check('8. Save to phone: gfontsSave, "Saving…" waits, Delete waits', (await calls(page, '^gfontsSave:')).join(',') === 'gfontsSave:Lato' && g.save === '-Saving…' && g.del === '-Delete', JSON.stringify(g));
+    check('   the focus goes from Save to phone (waiting) to Use in Make a font', (await focused(page)) === 'gfUseBtn', await focused(page));
     check('   My fonts\' Export waits too', (await exp()).length === 2 && (await exp()).every(Boolean), JSON.stringify(await exp()));
     await page.evaluate(() => gfDelete());
     check('   Delete is not asked while it saves', !(await calls(page, '^gfontsDelete:')).length);
     await page.evaluate(() => __fmk.save()); await page.waitForTimeout(100);
     g = await get(page);
     check('   saved: a toast with the file\'s name; the buttons back', g.toast === 'Saved Lato.zip' && g.save === 'Save to phone' && g.del === 'Delete' && (await exp()).every(x => !x), JSON.stringify([g, await exp()]));
+    check('   the focus stays on Use in Make a font', (await focused(page)) === 'gfUseBtn', await focused(page));
     await page.click('#gfDelBtn');
     g = await get(page);
     const asked = await page.evaluate(() => document.getElementById('mpAskModal').classList.contains('show'));
     check('9. Delete: gfontsDelete, at once (no question), a toast, Download again', (await calls(page, '^gfontsDelete:')).join(',') === 'gfontsDelete:Lato' && g.toast === 'Deleted Lato' && g.dl === 'Download*' && !g.have && !asked, JSON.stringify([g, asked]));
+    check('   the focus goes from Delete (gone) to Download', (await focused(page)) === 'gfDlBtn', await focused(page));
     await page.evaluate(() => gfBackToList()); await page.waitForTimeout(100);
     const badge2 = await page.evaluate(() => [...document.querySelectorAll('#gfList .gf-card[data-f="Lato"] .uad-badge')].map(x => x.textContent).join(','));
     check('   its card has no Downloaded badge any more', badge2 === '', badge2);
@@ -403,11 +424,33 @@ const kb = n => (n * 1024);
     const pg = () => page.evaluate(() => ({ view: gf.view, title: document.getElementById('gfTitle').textContent, note: (document.getElementById('gfGoneNote') || {}).textContent || '', site: !!document.getElementById('gfOpenSite'),
       btns: ['gfUseBtn', 'gfSaveBtn', 'gfDelBtn'].filter(id => !!document.getElementById(id)).length }));
     let p = await pg();
-    check('15. Lato\'s page (on the phone), its details came: the link, no note', p.view === 'detail' && p.site && !p.note, JSON.stringify(p));
+    const a0 = await about(page);
+    check('15. Lato\'s page (on the phone), its details came: the link, no note; About with its description and Licence text', p.view === 'detail' && p.site && !p.note && a0.extra.join(',') === 'gfDesc,gfDescMore,gfLic', JSON.stringify([p, a0]));
     await page.evaluate(() => gfRefresh(true)); await page.waitForTimeout(50);
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     p = await pg();
     check('   Refresh brings a list without Lato: the page stays, with the note, without the link; Use, Save and Delete', p.view === 'detail' && p.title === 'Lato' && p.note === 'This family is no longer on Google Fonts. Its downloaded files still work here.' && !p.site && p.btns === 3, JSON.stringify(p));
+    const a = await about(page);
+    check('   About: only the licence its download recorded; the details from before it left (description, Licence text, designer) are not shown', a.rows === 'Licence SIL Open Font License 1.1' && !a.extra.length, JSON.stringify([a, a0]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a family's details asked while it was listed, answered (an error) once a refreshed list no longer has it: its page, and its page opened again, show
+  // only the licence its download recorded (no reason, no Retry: Google Fonts no longer knows it)
+  {
+    const REMOTE = Object.assign({}, CAT, { families: CAT.families.filter(e => e.f !== 'Lato') });
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, stale: true, remote: REMOTE, downloads: ['Lato'], hold: true,
+      infoError: { code: 'gf_unknown', error: 'This family is not in the Google Fonts list. Update the list and try again.' } } });
+    await page.click('#gfList .gf-card[data-f="Lato"]'); await page.waitForTimeout(200);
+    const asked = await calls(page, '^gfontsInfo:');
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(200);           // the refresh (no Lato) and the details' error
+    const note = () => page.evaluate(() => (document.getElementById('gfGoneNote') || {}).textContent || '');
+    let a = await about(page), n = await note();
+    check('15b. Lato\'s details asked, then the list without it and their error: the note; About only the licence, no reason or Retry', asked.join(',') === 'gfontsInfo:Lato' && !!n && a.rows === 'Licence SIL Open Font License 1.1' && !a.extra.length, JSON.stringify([asked, n, a]));
+    await page.evaluate(() => gfBackToList()); await page.waitForTimeout(150);
+    await showFam(page, 'Lato');
+    a = await about(page); n = await note();
+    check('   its page opened again: the same (the error from before it left is not shown)', !!n && a.rows === 'Licence SIL Open Font License 1.1' && !a.extra.length, JSON.stringify([n, a]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -430,6 +473,34 @@ const kb = n => (n * 1024);
     check('   "The save screen is already open."', g.msg === 'The save screen is already open.' && g.save === 'Save to phone', JSON.stringify(g));
     const said = await page.evaluate(() => fntErrText({ code: 'busy', error: 'This font family is downloading. Cancel it first.' }));
     check('   "This font family is downloading. Cancel it first." is said as itself', said === 'This font family is downloading. Cancel it first.', said);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the Help Guide's example: the progress counts a file's bytes as they come over the network (packed by Google Fonts, against their Content-Length),
+  // so its sizes are not the file's on the phone, and "Downloaded · N files · X" is not their sum
+  {
+    const g = fs.readFileSync(path.join(REPO, 'assets', 'guide.js'), 'utf8'), H = JSON.parse(g.slice(g.indexOf('{'), g.indexOf('};\n') + 1));
+    const html = (H.sections.find(x => x.id === 'fonts-google') || {}).html || '', said = (/File 1 of 2 · (\d+) KB of (\d+) KB"?: ([^)]*)\)/.exec(html) || []), have = /Downloaded · 2 files · (\d+) KB/.exec(html);
+    check('16. the Help Guide: the progress sizes are a file\'s as it comes over the network, the "Downloaded" size the space on the phone (not their sum)', said.length && /over the network/.test(said[3]) && !/sizes are those of that file, and they start/.test(html)
+      && !!have && +have[1] !== 2 * +said[2], JSON.stringify([said[3], have && have[0]]));
+  }
+  // a family whose details cannot be had (no connection): About's Licence is its download's, so it comes with a download made on its page and goes
+  // with a Delete there, without opening the page again
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, hold: true, infoError: { code: 'network', error: 'The download failed: timeout' } } });
+    const aboutLic = () => page.evaluate(() => ({ rows: [...document.querySelectorAll('#gfAbout .fnt-now')].map(r => [...r.children].map(c => c.textContent.trim()).join(' ')).filter(t => /^Licence /.test(t)),
+      err: !!document.getElementById('gfInfoErr'), retry: !!document.getElementById('gfInfoRetry'), lic: !!document.getElementById('gfLic'), dl: !!document.getElementById('gfDlBtn') }));
+    await showFam(page, 'Lato');
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    let a = await aboutLic();
+    check('17. Lato, not on the phone, its details not to be had: the reason and Retry, no Licence row', a.err && a.retry && !a.rows.length && a.dl, JSON.stringify(a));
+    await page.click('#gfDlBtn');
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    a = await aboutLic();
+    check('   downloaded on its page: "Licence SIL Open Font License 1.1" from the download (no Licence text); the reason and Retry stay', a.rows.join('|') === 'Licence SIL Open Font License 1.1' && !a.lic && a.err && a.retry, JSON.stringify(a));
+    await page.click('#gfDelBtn'); await page.waitForTimeout(150);
+    a = await aboutLic();
+    check('   deleted there: Download, and the Licence row goes', a.dl && !a.rows.length, JSON.stringify(a));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

@@ -68,7 +68,9 @@ each keeps its own copyright and licence, listed in assets/emoji/NOTICE.txt:
 * Noto Color Emoji (Google; googlefonts/noto-emoji) - OFL-1.1 - https://github.com/googlefonts/noto-emoji - assets/emoji/noto.ttf,
   Copyright 2022 Google Inc. The licence's full text is in assets/emoji/OFL.txt.
 * Twemoji (graphics by Twitter, Inc. and contributors, jdecked/twemoji; the COLR build by SableClient/twemoji-font) - CC-BY-4.0 -
-  https://github.com/SableClient/twemoji-font - assets/emoji/twemoji.ttf (https://creativecommons.org/licenses/by/4.0/).
+  https://github.com/SableClient/twemoji-font - assets/emoji/twemoji.ttf (https://creativecommons.org/licenses/by/4.0/); the font build is
+  Copyright 2016-2018, Mozilla Foundation, under Apache-2.0 (https://www.apache.org/licenses/LICENSE-2.0). Both licences are in
+  assets/emoji/Twemoji-LICENSE.md, the release's own LICENSE.md.
 * Blobmoji (DavidBerdik/blobmoji2, a fork of Noto Emoji with the blob art) - OFL-1.1 - https://github.com/DavidBerdik/blobmoji2 -
   assets/emoji/blobmoji.ttf, Copyright 2022 Google Inc. The licence's full text is in assets/emoji/OFL.txt.
 * OpenMoji (HfG Schwaebisch Gmuend; hfg-gmuend/openmoji) - CC-BY-SA-4.0 - https://github.com/hfg-gmuend/openmoji - assets/emoji/openmoji.ttf,

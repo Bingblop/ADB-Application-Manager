@@ -1,7 +1,8 @@
 // v7.18.0 Google Fonts, Use in Make a font: a downloaded variable family (Roboto) hands its upright variable file to the Regular slot (gfontsUse) and
 // Make a font offers its own Bold instance; a static family (Lato) offers a Regular and a Bold choice (by default its 400 and 700 upright files; a
 // family with one weight, 700 only, has no Bold by default; an italic-only one uses its italic) and hands both. The sheet closes, Make a font scrolls
-// into view and a toast says "Roboto is in Make a font"; until the files are read the file chooser gate is shut (Choose waits, no Google Fonts link).
+// into view and, once the files are read, a toast says "Roboto is in Make a font" (none when one is refused: its slot says why); until then the
+// file chooser gate is shut (Choose waits, no Google Fonts link).
 // The Name is filled in from the family unless it holds one of its Reserved Font Names (Lato): then it stays empty, and a Name that holds one (any
 // case) shows the licence note under the field while Build stays usable; a Regular chosen from a file clears the Regular's names, but a Bold from
 // the family keeps its own while Bold is that file (the note shows with Bold "From a file", not with None). The family's page says
@@ -10,7 +11,10 @@
 // the Regular slot. The family's files take the slots: a refused one leaves its slot empty (Build waits), never with a file chosen before from
 // another font, and a refused Regular takes the Reserved Font Names of that earlier font with it. A family under the Ubuntu Font Licence (Ubuntu)
 // says so on its page; its own name is not filled in and warns in the Name like a Reserved Font Name, but "Ubuntu derivative <a name>" is allowed
-// (UFL 1.0, condition 2), and only for such a family. In Arabic both licence notes read right to left, even when they start with the family's name.
+// (UFL 1.0, condition 2), and only for such a family; for Ubuntu Mono or Ubuntu Sans Mono the shorter names they share ("Ubuntu", "Ubuntu Sans")
+// warn too, and the derivative form takes the whole name. In Arabic both licence notes read right to left, even when they start with the family's name.
+// The details of a downloaded family that come while its Regular is being chosen leave the section as it is (the select, the focus), so the file
+// chosen there is the one handed over.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf; opts.hold holds the build); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -62,7 +66,8 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     // the sheet opened again on another family before the file is read (the answer comes on a timer: one evaluate, so it cannot come in between)
     const now = await page.evaluate(() => {
       gfUse();
-      const o = { picking: fnt.picking, choose: document.getElementById('fntPick_regular').disabled, link: !!document.getElementById('gfFindLink'), sheet: document.getElementById('gfSheet').classList.contains('show') };
+      const o = { picking: fnt.picking, choose: document.getElementById('fntPick_regular').disabled, link: !!document.getElementById('gfFindLink'), sheet: document.getElementById('gfSheet').classList.contains('show'),
+        toast: document.getElementById('toast').classList.contains('show') ? document.getElementById('toastMsg').innerText : '' };
       gfOpen(); gfShow('Lato');
       const b = document.getElementById('gfUseBtn'), w = document.getElementById('gfUseWhy');
       o.again = { picking: fnt.picking, d: b.disabled, why: w.style.display !== 'none' ? w.textContent : '' };
@@ -70,6 +75,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
       return o;
     });
     check('   Use: the sheet closes; until the file is read the chooser gate is shut (Choose waits, no link)', now.picking === 'gf' && now.choose && !now.link && !now.sheet, JSON.stringify(now));
+    check('   no toast yet: it waits for the file to be read', !now.toast, now.toast);
     check('   reopened on Lato before the file is read: Use waits, saying the files are still being read (no file chooser is open)', now.again.picking === 'gf' && now.again.d
       && now.again.why === 'The files you chose are still being read. Wait a moment.', JSON.stringify(now.again));
     check('   gfontsUse: only the Regular, the upright variable file', (await useCalls(page)).join(',') === 'gfontsUse:Roboto:Roboto-VariableFont_wdth,wght.ttf:regular', (await useCalls(page)).join(','));
@@ -182,6 +188,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     await page.waitForTimeout(400);
     const m = await make(page);
     check('12. the file changed on the phone: the Regular slot says why; the gate open again; nothing chosen', m.regErr === "This family's files changed on the phone. Delete it and download it again." && m.regMsg === m.regErr && m.picking === '' && !m.reg, JSON.stringify(m));
+    check('   no "Roboto is in Make a font" toast: the slot\'s reason is the only word', m.toast !== 'Roboto is in Make a font', m.toast);
     check('   the link is back', m.link, JSON.stringify(m));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
@@ -202,6 +209,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     m = await make(page);
     let s2 = await slots(page);
     check('   Lato\'s Bold refused: the Bold slot says why and holds nothing (not the file chosen before); Build waits', m.reg === 'Lato-Regular.ttf' && m.bold === '' && m.boldMode === 'file' && s2.boldErr === CHANGED && !m.build, JSON.stringify([m, s2]));
+    check('   no "Lato is in Make a font" toast (its Bold is not)', m.toast !== 'Lato is in Make a font', m.toast);
     check('   the Regular\'s names are Lato\'s, the empty Bold slot has none', s2.reserved === 'Lato' && s2.family === 'Lato' && s2.boldReserved === '' && s2.boldFamily === '', JSON.stringify(s2));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
@@ -216,6 +224,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     m = await make(page);
     s2 = await slots(page);
     check('   Lato\'s Regular refused: the Regular slot says why and holds nothing; Build waits', m.reg === '' && m.regErr === CHANGED && m.regMsg === CHANGED && !m.build && m.picking === '', JSON.stringify(m));
+    check('   no "Lato is in Make a font" toast (its Regular is not)', m.toast !== 'Lato is in Make a font', m.toast);
     check('   its Bold still comes (Lato-Bold.ttf); the empty Regular slot has no Reserved Font Names, the Bold has Lato\'s', m.bold === 'Lato-Bold.ttf' && m.boldMode === 'file' && s2.reserved === '' && s2.family === ''
       && s2.boldReserved === 'Lato' && s2.boldFamily === 'Lato', JSON.stringify([m, s2]));
     await page.fill('#fntName', 'My Lato');
@@ -279,6 +288,60 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     }
     await page.screenshot({ path: 'notes-ar.png' });
     await page.evaluate(() => LANG_ENGINE.set('en')); await page.waitForTimeout(300);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the Ubuntu Font Licence keeps similar names too (condition 2): for Ubuntu Mono the name "Ubuntu" it shares with the other Ubuntu families, for
+  // Ubuntu Sans Mono "Ubuntu Sans" and "Ubuntu"; the derivative form takes the whole family's name ("Ubuntu Mono derivative <a name>")
+  {
+    const UB = CAT.families.find(e => e.f === 'Ubuntu'), mono = f => Object.assign({}, UB, { f, c: 'mono', w: ['400', '400i', '700', '700i'] });
+    const CAT3 = Object.assign({}, CAT, { families: CAT.families.concat([mono('Ubuntu Mono'), mono('Ubuntu Sans Mono')]) });
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT3, downloads: ['Ubuntu Mono', 'Ubuntu Sans Mono'] } });
+    const note = (f, n) => f + '\'s licence keeps the name "' + n + '" for the original font. A font made from it is a changed copy, so give it another name.';
+    const names = async (f, cases, ok) => {
+      for (const [n, held] of cases) {
+        await page.fill('#fntName', n);
+        const m = await make(page);
+        check('   "' + n + '": the note for "' + held + '"; Build stays usable', m.msg === note(f, held) && m.build, JSON.stringify(m));
+      }
+      await page.fill('#fntName', ok);
+      const m = await make(page);
+      check('   "' + ok + '": no note', !m.msg && m.build, JSON.stringify(m));
+    };
+    await showFam(page, 'Ubuntu Mono');
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    let m = await make(page);
+    check('15b. Ubuntu Mono (UFL): Use; the Name is not filled in', m.reg === 'UbuntuMono-Regular.ttf' && m.bold === 'UbuntuMono-Bold.ttf' && m.name === '' && !m.msg, JSON.stringify(m));
+    await names('Ubuntu Mono', [['Ubuntu', 'Ubuntu'], ['my ubuntu', 'Ubuntu'], ['Ubuntu derivative Mine', 'Ubuntu'], ['Ubuntu Mono Foo', 'Ubuntu Mono']], 'Ubuntu Mono derivative Mine');
+    await showFam(page, 'Ubuntu Sans Mono');
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    m = await make(page);
+    check('   Ubuntu Sans Mono in Make a font', m.reg === 'UbuntuSansMono-Regular.ttf', JSON.stringify(m));
+    await names('Ubuntu Sans Mono', [['Ubuntu Sans', 'Ubuntu Sans'], ['Ubuntu', 'Ubuntu'], ['Ubuntu Sans Mono Bold', 'Ubuntu Sans Mono'], ['Ubuntu Sans derivative Mine', 'Ubuntu Sans']], 'Ubuntu Sans Mono derivative Mine');
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the details of a downloaded family come while its Regular is being chosen: they change nothing in the section, so it is not drawn again, and the
+  // select (an open picker) and the focus stay; the file chosen on it is the one Use hands over
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato'], hold: true } });
+    await showFam(page, 'Lato');
+    const s = await page.evaluate(() => {
+      const s = document.getElementById('gfUseReg'), asking = !!(gf.info.Lato || {}).asking;
+      s.focus(); window.__sel = s;
+      __fmk.gfStepAll();
+      return { asking, connected: s.isConnected, focus: document.activeElement === s, ok: !!(gf.info.Lato || {}).ok };
+    });
+    check('18. Lato on the phone, its Regular select focused when the details come: the same select, still focused', s.asking && s.connected && s.focus && s.ok, JSON.stringify(s));
+    await page.evaluate(() => { const s = window.__sel; s.value = 'Lato-Light.ttf'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+    const sel = await page.evaluate(() => gf.useSel.Lato || null);
+    check('   Lato-Light.ttf chosen on it: the family\'s choice', !!sel && sel.reg === 'Lato-Light.ttf' && sel.bold === 'Lato-Bold.ttf', JSON.stringify(sel));
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    const c = await useCalls(page), m = await make(page);
+    check('   Use hands Lato-Light.ttf to the Regular slot', c.join(',') === 'gfontsUse:Lato:Lato-Light.ttf:regular,gfontsUse:Lato:Lato-Bold.ttf:bold' && m.reg === 'Lato-Light.ttf', JSON.stringify([c, m.reg]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

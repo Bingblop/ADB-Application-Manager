@@ -8034,7 +8034,10 @@
                 .gf-card > .gf-badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }      /* over .gf-card > span's block, so the gap applies */
                 .gf-badges .uad-badge { margin: 0; color: var(--accent); }
                 .gf-badges .uad-badge.is-dl { color: var(--status-running); }
-                .gf-pv { margin-top: var(--space-2); font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                /* the clip the ellipsis needs (overflow: hidden) is vertical too: .6em of room above and below the 1.35 line keeps the marks that reach past
+                   it (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts, a script face's swashes), and the margins take that room back, so nothing moves.
+                   In em, the element's own size: it cancels at every size the slider gives (14-72) and for .gf-failed too (.5em still cut Nastaliq's dots) */
+                .gf-pv { margin-block: calc(var(--space-2) - .6em) -.6em; padding-block: .6em; font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 .gf-pv.gf-wait { visibility: hidden; }
                 .gf-pv.gf-failed { font-size: var(--fs-item); font-weight: var(--fw-bold); color: var(--text-muted); }
                 .gf-nopv { font-size: var(--fs-pill); font-weight: var(--fw-medium); margin-inline-start: var(--space-2); }
@@ -8049,7 +8052,7 @@
                 .gf-style { padding: var(--space-3) 0; border-top: 1px solid var(--fill-2); }
                 .gf-style:first-child { border-top: 0; padding-top: 0; }
                 .gf-style-name { font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); }
-                .gf-style-pv { font-size: 24px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .gf-style-pv { padding-block: .6em; margin-block: -.6em; font-size: 24px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }      /* room for the marks past the line, as .gf-pv */
                 .gf-style-pv.gf-wait { visibility: hidden; }
                 #gfGet .fnt-field { margin-top: var(--space-3); }
                 #gfGet .mode-btn-row { margin-top: var(--space-3); }
@@ -44942,7 +44945,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const gf = {
             data: null, by: new Map(), fold: new Map(), gone: [], refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
-            dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null,
+            dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null, useFam: '', useOk: false, getFocus: null,
             text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null, cv: null,
             open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, tq: 0, tt: 0, td: 0
         };
@@ -45421,13 +45424,17 @@ Type any command above (e.g. pm list packages -d)</div>
             return null;
         }
         // a Google Fonts family's Reserved Font Names, from a slot's answer (r.gf, gfontsUse); a file from the file chooser has none. The Ubuntu Font Licence
-        // (its download's licence kind) has no Reserved Font Name line, but a changed copy must not keep the family's name either, unless it is
-        // "<family> derivative <a name>" (UFL 1.0, condition 2): the name is held like one
+        // (its download's licence kind) has no Reserved Font Name line, but a changed copy must not keep the family's name, nor a similar one, unless it
+        // is "<family> derivative <a name>" (UFL 1.0, condition 2): the name is held like one, and so are its leading words ("Ubuntu" for Ubuntu Mono,
+        // "Ubuntu Sans" and "Ubuntu" for Ubuntu Sans Mono), longest first so a name holding the whole one reports it
         function fntGfReserved(r) {
             const g = r && r.gf && typeof r.gf === 'object' ? r.gf : null;
             const names = g && Array.isArray(g.reserved) ? g.reserved.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim()) : [];
             const family = g ? String(g.family || '') : '', fam = family.trim(), ufl = !!fam && (gf.dls[family] || {}).license === 'ufl';
-            if (ufl && !names.some(x => x.toLowerCase() === fam.toLowerCase())) names.push(fam);
+            if (ufl) {
+                const w = fam.split(/\s+/);
+                for (let i = w.length; i >= 1; i--) { const x = w.slice(0, i).join(' '); if (!names.some(y => y.toLowerCase() === x.toLowerCase())) names.push(x); }
+            }
             return { names: names, family: family, ufl: ufl };
         }
         // making a font of My fonts again: it keeps its package and gets the next version, so it installs over the one on the phone
@@ -45508,9 +45515,18 @@ Type any command above (e.g. pm list packages -d)</div>
         window.onFontMakerPicked = function (slot, json) {
             if (!(slot in fnt.pick)) return;
             if (fnt.picking === slot) fnt.picking = '';
-            // a Google Fonts family's files (gfontsUse) answer here too: the gate stays shut until each slot asked for has answered
-            if (fnt.picking === 'gf' && gf.useWait) { delete gf.useWait[slot]; if (!Object.keys(gf.useWait).length) { fnt.picking = ''; gf.useWait = null; } }
             const r = fntJson(json);
+            // a Google Fonts family's files (gfontsUse) answer here too: the gate stays shut until each slot asked for has answered, and only then, when
+            // every one was read, a toast says the family is in Make a font (a refused one says why in its slot, and nothing more)
+            if (fnt.picking === 'gf' && gf.useWait) {
+                delete gf.useWait[slot];
+                if (!r.ok) gf.useOk = false;
+                if (!Object.keys(gf.useWait).length) {
+                    fnt.picking = ''; gf.useWait = null;
+                    if (gf.useOk && gf.useFam) showToast(txF('{0} is in Make a font', gf.useFam));
+                    gf.useFam = ''; gf.useOk = false;
+                }
+            }
             if (!r.ok) {                                                     // a file that cannot be used keeps the one chosen before
                 if (r.code !== 'cancelled') fnt.pickErr[slot] = fntErrText(r);
                 fntRenderMake();
@@ -46707,6 +46723,7 @@ Type any command above (e.g. pm list packages -d)</div>
             ['gfDHead', 'gfDLine'].forEach(id => { const el = document.getElementById(id); if (el) el.dataset.pvk = ''; });
             const st = document.getElementById('gfStyles');
             if (st) st.innerHTML = '';
+            gf.getFocus = null;                                              // a focus the Get section lost is not placed on another visit
         }
         function gfRenderDetail() {
             const e = gf.by.get(gf.fam);
@@ -46870,8 +46887,24 @@ Type any command above (e.g. pm list packages -d)</div>
                 + escapeHtml(txF('{0} is under the Ubuntu Font Licence: a font made from this family must have another name, or "{1} derivative" and a name of your own.', f, f)) + '</div>';
             if (err) h += '<div class="fnt-err" id="gfDlErr"><span class="is-err">' + escapeHtml(err) + '</span></div>';
             if (msg) h += '<div class="fnt-err" id="gfMsg">' + (msg.err ? '<span class="is-err">' + escapeHtml(msg.text) + '</span>' : escapeHtml(msg.text)) + '</div>';
-            box.innerHTML = h;
-            gfUseState();
+            // drawn only when it changed: the details of a downloaded family change nothing here, and a redraw would take the Regular/Bold choice
+            // being made (its select, an open picker) and the focus with it
+            const key = f + '\n' + h, ae = document.activeElement;
+            let fid = null;
+            if (box._gfH !== key) {
+                // the focus in the section (a keyboard, switch access, TalkBack), or lost to the body by the last redraw (Cancel while it cancels)
+                fid = ae && ae !== box && box.contains(ae) ? ae.id || '' : (!ae || ae === document.body) && gf.getFocus && gf.getFocus.f === f ? gf.getFocus.id : null;
+                gf.getFocus = null;
+                box.innerHTML = h;
+                box._gfH = key;
+            }
+            gfUseState();                                                    // Use's state and why it waits are set in place, after the redraw (not part of h)
+            if (fid === null) return;
+            // it goes to the same control when it is still there and usable, else the section's primary button, else its first usable control; with
+            // none it waits for the next redraw (Download, once the cancel came)
+            const same = fid ? document.getElementById(fid) : null;
+            const to = same && box.contains(same) && !same.disabled ? same : box.querySelector('.mode-action-btn.primary:not([disabled])') || box.querySelector('button:not([disabled]), select:not([disabled])');
+            if (to) { try { to.focus({ preventScroll: true }); } catch (err) {} } else gf.getFocus = { f: f, id: fid };
         }
         function gfDownload(f) {
             if (gf.dl[f]) return;
@@ -46912,10 +46945,12 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!shown) showToast(txF('{0} was not downloaded. {1}', family, gf.dlErr[family]));
             }
             gfLoadDls();
-            if (shown) gfRenderGet();
+            // without the details About's Licence is the download's (gfRenderAbout): drawn again then, and only then (an open Licence text stays open)
+            if (shown) { gfRenderGet(); if (!(gf.info[family] || {}).ok) gfRenderAbout(); }
             else if (gf.open && gf.view === 'list' && r.ok) gfFilter(false);         // finished while the list shows: its badge, the Downloaded filter, the count
         };
-        // the family's files into Make a font's slots, as a chosen file would come (onFontMakerPicked); the sheet closes on Make a font
+        // the family's files into Make a font's slots, as a chosen file would come (onFontMakerPicked); the sheet closes on Make a font, and a toast
+        // says the family is in it once its files are read
         function gfUse() {
             const f = gf.fam;
             if (!gf.dls[f] || gfUseBlocked()) { gfUseState(); return; }
@@ -46932,19 +46967,21 @@ Type any command above (e.g. pm list packages -d)</div>
             fnt.pick.regular = null; fnt.reserved = []; fnt.reservedFamily = ''; fnt.reservedUfl = false;
             // Bold: the chosen file; none (Android makes bold from the Regular, or Make a font offers a variable font's own Bold instance)
             fnt.boldMode = 'none'; fnt.boldTouched = false;
+            let boldOk = true;
             if (ch.bold) {
                 fnt.pick.bold = null; fnt.reservedBold = { names: [], family: '', ufl: false };
                 const r2 = fntCall('gfontsUse', [f, ch.bold, 'bold']);
                 fnt.boldMode = 'file'; fnt.boldTouched = true;
-                if (r2 && r2.ok) { wait.bold = true; fnt.pickErr.bold = ''; } else fnt.pickErr.bold = r2 ? fntErrText(r2, 'Could not start') : '';
+                boldOk = !!(r2 && r2.ok);
+                if (boldOk) { wait.bold = true; fnt.pickErr.bold = ''; } else fnt.pickErr.bold = r2 ? fntErrText(r2, 'Could not start') : '';
             }
             fnt.picking = 'gf';
             gf.useWait = wait;
+            gf.useFam = f; gf.useOk = boldOk;                                // the toast once the files are read (onFontMakerPicked)
             gfClose();
             fntRenderMake();
             const card = document.getElementById('fntMakeCard');
             if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
-            showToast(txF('{0} is in Make a font', f));
         }
         function gfSave() {
             const f = gf.fam;
@@ -46984,13 +47021,16 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             delete gf.msg[f]; delete gf.useSel[f];
             gfLoadDls();
-            if (gf.by.has(f)) gfRenderGet(); else gfBackToList();          // a family no longer on Google Fonts is gone with its files: back to the list
+            if (gf.by.has(f)) { gfRenderGet(); if (!(gf.info[f] || {}).ok) gfRenderAbout(); }          // About's Licence goes with the download, as in onGfDone
+            else gfBackToList();                                             // a family no longer on Google Fonts is gone with its files: back to the list
             showToast(txF('Deleted {0}', f));
         }
         function gfRenderAbout() {
             const box = document.getElementById('gfAbout'), f = gf.fam, e = gf.by.get(f);
             if (!box || !e) return;
-            const I = gf.info[f] || {}, ok = !!I.ok;
+            // a gone family's details are never asked (gfShow), and an answer, an error or a wait from before it left the list is not shown either: Google
+            // Fonts no longer offers it, so its page has only what its download recorded
+            const I = (!e.gone && gf.info[f]) || {}, ok = !!I.ok;
             const row = (label, value) => value ? '<div class="fnt-now"><span>' + label + '</span><b translate="no">' + escapeHtml(value) + '</b></div>' : '';
             let h = '<div class="fnt-lab">About this family</div>';
             if (I.asking) h += '<div class="fnt-note" id="gfInfoWait">Getting the details from Google Fonts…</div>';
@@ -47018,6 +47058,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // the page drawn again (a new language): the list's words and the family's page
         function gfRedraw() {
+            const g = document.getElementById('gfGet');
+            if (g) g._gfH = '';                                              // its sentences (txT / txF) are drawn again in the new language
             if (!gf.open) return;
             gfApplyView();
             gfBuildLangs();
