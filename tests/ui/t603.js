@@ -145,24 +145,6 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
-  // that other window's read was kept (specimen/apple.json) after this page asked for the kept pictures, and this phone is offline now: the read
-  // answers with the kept pictures instead of reading the web again (R4-12)
-  {
-    const { ctx, page, errors } = await open(b, { gf: { otherWindow: true } });
-    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
-    await page.evaluate(() => {
-      __fmk.gfOtherWindow = false; __fmk.appleCached = true; __fmk.specimenError = { code: 'network', error: 'The download failed: Unable to resolve host' };
-      const on = window.onEmojiSpecimen; window.__emoFrom = [];
-      window.onEmojiSpecimen = function (id, json) { __emoFrom.push(JSON.parse(json).from); return on.apply(this, arguments); };
-    });
-    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
-    const s = await strips(page), from = await page.evaluate(() => __emoFrom.join(','));
-    check('7c. the other window\'s read was kept, this phone is offline: Show these emoji shows the kept pictures, no error', s.apple.pv && s.apple.pv.nImg === 16 && !s.apple.err
-      && s.apple.show === '' && (await calls(page, '^emojiSpecimenFetch:')).length === 2, JSON.stringify(s.apple));
-    check('   answered from the kept pictures, not read again', from === 'cache', from);
-    check('   no page errors', !errors.length, errors.join(' | '));
-    await ctx.close();
-  }
   // an earlier read's failure does not stay under the iOS row once what is read changed: the iOS emoji downloaded (the file is read now), or deleted
   // (the web again)
   {
@@ -182,6 +164,24 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     await page.click('#fntEmo_apple .op-mode-btn'); await page.waitForTimeout(200);
     s = await strips(page);
     check('   the file not read, then Delete: that sentence gone, "Reads about 0.3 MB of the iOS emoji file."', !!readErr && s.apple.first === 'Download' && !s.apple.err && s.apple.say === 'Reads about 0.3 MB of the iOS emoji file.', JSON.stringify([readErr, s.apple]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // that other window's read was kept (specimen/apple.json) after this page asked for the kept pictures, and this phone is offline now: the read
+  // answers with the kept pictures instead of reading the web again (R4-12)
+  {
+    const { ctx, page, errors } = await open(b, { gf: { otherWindow: true } });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    await page.evaluate(() => {
+      __fmk.gfOtherWindow = false; __fmk.appleCached = true; __fmk.specimenError = { code: 'network', error: 'The download failed: Unable to resolve host' };
+      const on = window.onEmojiSpecimen; window.__emoFrom = [];
+      window.onEmojiSpecimen = function (id, json) { __emoFrom.push(JSON.parse(json).from); return on.apply(this, arguments); };
+    });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    const s = await strips(page), from = await page.evaluate(() => __emoFrom.join(','));
+    check('7d. the other window\'s read was kept, this phone is offline: Show these emoji shows the kept pictures, no error', s.apple.pv && s.apple.pv.nImg === 16 && !s.apple.err
+      && s.apple.show === '' && (await calls(page, '^emojiSpecimenFetch:')).length === 2, JSON.stringify(s.apple));
+    check('   answered from the kept pictures, not read again', from === 'cache', from);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
