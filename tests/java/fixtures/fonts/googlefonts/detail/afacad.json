@@ -1,0 +1,34 @@
+)]}'
+{
+ "family": "Afacad",
+ "displayName": null,
+ "category": "Sans Serif",
+ "classifications": [],
+ "license": "ofl",
+ "lastModified": "2025-09-04",
+ "primaryScript": "",
+ "isNoto": false,
+ "colorCapabilities": [],
+ "description": "",
+ "designers": [
+  {
+   "name": "Kristian Möller",
+   "bio": "<p>Kristian Möller, the Stockholm-based type designer, specializes in crafting custom typefaces for a diverse portfolio "
+  },
+  {
+   "name": "Dicotype",
+   "bio": "<p>Dicotype is an independent type foundry in Stockholm.</p>\n<p><a href=\"https://www.dicotype.com\">dicotype.com</a> | <a"
+  }
+ ],
+ "axes": [
+  {
+   "tag": "wght",
+   "min": 400.0,
+   "max": 700.0,
+   "defaultValue": 400.0
+  }
+ ],
+ "article": [
+  "<p>The ’Afacad typeface project’ commenced in 2017 as a personalised lettering endeavour for Slagskeppet, a Swedish housing tenant, who sought fresh house address numbering for their entrances. The letters and numerals were meticulously crafted to harmonise with the architectural proportions and materials employed by Architect Sture Elmén during the 1940s.</p>\n<p>Furthermore, the inclusion of supplementary weights and expanded language support contributes to a versatile typeface collection that is well-suited for both industrial and commercial applications. The alphabet, numerals and symbols were designed by Kristian Möller and are part of the Dicotype Library.</p>\n<p>To contribute, please see <a href=\"https://github.com/Dicotype/Afacad\">github.com/Dicotype/Afacad</a>.</p>\n<hr><img src=\"https://lh3.googleusercontent.com/P1P0wtUnVgMlV9ZGW3eor-hjSrdCueAubPzwfUcOcWRXYx0nNjl48a3_TA\"> <img src=\"https://lh3.googleusercontent.com/Mg7wtdbC9OWTU_k-kOXOp1fy3qNHyO-cM7zdlWBEXAYv4TyK1bG93Rt_-yQ\"> <img src=\"https://lh3.googleusercontent.com/EALUX1PRhn4Op7UVu7AW2ycSuK-xdbBkR84w_5ZR0VyE8bA9sBtXaXIMX_v6\"> <img src=\"https://lh3.googleusercontent.com/Ya9v3pl88njXlxlGVyaF7SQgEvo3no2s0dnV_YX3XBChhH_Tyw42ruzIoZs\">"
+ ]
+}
