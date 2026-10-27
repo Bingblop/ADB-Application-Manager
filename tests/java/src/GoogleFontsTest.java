@@ -571,6 +571,15 @@ public class GoogleFontsTest {
         check("Noto Sans JP em as text", i.description.contains("design for the Japanese language") && i.designers.contains("Google"));
         eq("Google's not-found answer", code(() -> GoogleFonts.info(read("detail/nonexistent-family-x.json"))), "gf_unknown");
         eq("a family the metadata does not have", code(() -> GoogleFonts.info(read("detail/material-symbols-outlined.json"))), "gf_unknown");
+        // the envelope carries its own status: only 404 is "no details page", anything else is no answer about the family (R1-09)
+        eq("Google's 405 answer (to a POST) is not 'no details'", code(() -> GoogleFonts.info(read("detail/lato-post-405.json"))), "gf_bad_answer");
+        for (String[] e : new String[][] { { "503", "14" }, { "500", "13" }, { "429", "8" } })
+            eq("a " + e[0] + " in Google's envelope is not 'no details'", code(() -> GoogleFonts.info(")]}'\n\n[[\"er\",null,null,null,null," + e[0] + ",null,null,null," + e[1]
+                    + "],[\"di\",7],[\"af.httprm\",7,\"1\",0]]")), "gf_bad_answer");
+        eq("an er row cut short", code(() -> GoogleFonts.info("[[\"er\"]]")), "gf_bad_answer");
+        eq("an er row with no status", code(() -> GoogleFonts.info("[[\"er\",null,null,null,null,null],[\"di\",7]]")), "gf_bad_answer");
+        eq("an er that does not parse", code(() -> GoogleFonts.info("[[\"er\",null,null,null,null,404")), "gf_bad_answer");
+        eq("the 404 row anywhere in the envelope", code(() -> GoogleFonts.info("[[\"di\",7],[\"er\",null,null,null,null,404]]")), "gf_unknown");
         eq("not JSON", code(() -> GoogleFonts.info("<html>")), "gf_bad_answer");
         eq("no family", code(() -> GoogleFonts.info(")]}'\n{\"description\":\"x\"}")), "gf_bad_answer");
         eq("an array without er", code(() -> GoogleFonts.info("[[\"di\",7]]")), "gf_bad_answer");

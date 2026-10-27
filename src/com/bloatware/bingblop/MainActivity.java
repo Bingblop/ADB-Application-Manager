@@ -8234,7 +8234,8 @@ public class MainActivity extends Activity {
                 try {
                     info = GoogleFonts.info(a.text());
                 } catch (GoogleFonts.GfException e) {
-                    if (!"gf_unknown".equals(e.code)) {
+                    // no details page (kept for the process) only when the answer and its HTTP status both say 404: a 5xx or a 429 is asked again
+                    if (!"gf_unknown".equals(e.code) || a.status != 404) {
                         if (a.status != 200) throw new GfHttp(a.status);
                         throw e;
                     }

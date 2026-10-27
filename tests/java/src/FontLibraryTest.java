@@ -1193,6 +1193,11 @@ public class FontLibraryTest {
         is("only the iOS emoji are read by ranges", body(ma, "public String emojiSpecimenFetch(").contains("\"apple\".equals(id) ? EmojiCatalog.byId(id) : null"), true);
         is("the sample fonts are only the four in assets/emoji", body(ma, "public String emojiSpecimenFont(").contains("!EmojiSpecimen.SPECIMEN_IDS.contains(id)")
                 && body(ma, "public String emojiSpecimenFont(").contains("getAssets().open(\"emoji/\" + id + \".ttf\")"), true);
+        // "no details page" is kept for the process only when Google's envelope and the HTTP status both say 404 (R1-09)
+        String ij = body(ma, "private void gfInfoJob(");
+        is("a family's details: a 5xx or a 429 is asked again, not kept as no details", ij.contains("if (!\"gf_unknown\".equals(e.code) || a.status != 404) {")
+                && ij.indexOf("info = null;") > ij.indexOf("a.status != 404") && ij.contains("if (a.status != 200) throw new GfHttp(a.status);"), true);
+
 
         // the 16 sample emoji are one string in the app, in the script that cut the sample fonts, and on the page
         String script = src("tools/make-emoji-specimens.sh"), page = src("assets/index.html");

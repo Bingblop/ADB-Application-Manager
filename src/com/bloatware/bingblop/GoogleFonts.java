@@ -721,7 +721,8 @@ public final class GoogleFonts {
 
     /**
      * A family's details (fonts.google.com/metadata/fonts/&lt;family&gt;, with or without its ")]}'" line). gf_unknown for Google's
-     * not-found answer (an "er" array), gf_bad_answer for anything else that is not a family's details.
+     * not-found answer (an "er" array with status 404: [["er",null,null,null,null,404,...],...]), gf_bad_answer for anything else that is
+     * not a family's details, an "er" array with another status (a 503, a 429) among them: that is no answer about the family.
      */
     public static Info info(String familyDetailJson) throws GfException {
         String s = stripXssi(familyDetailJson).trim();
@@ -729,7 +730,17 @@ public final class GoogleFonts {
         try {
             root = new JSONObject(s);
         } catch (Exception e) {
-            if (s.startsWith("[") && s.contains("\"er\"")) throw new GfException("gf_unknown");
+            if (s.startsWith("[") && s.contains("\"er\"")) {
+                boolean notFound = false;
+                try {
+                    JSONArray env = new JSONArray(s);
+                    for (int i = 0; i < env.length() && !notFound; i++) {
+                        JSONArray row = env.optJSONArray(i);
+                        notFound = row != null && "er".equals(row.opt(0)) && row.optInt(5, 0) == 404;
+                    }
+                } catch (Exception notAnArray) {}
+                if (notFound) throw new GfException("gf_unknown");
+            }
             throw new GfException("gf_bad_answer");
         }
         if (!(root.opt("family") instanceof String)) throw new GfException("gf_bad_answer");
