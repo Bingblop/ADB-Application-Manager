@@ -15,7 +15,8 @@
 // as the screen setting (Affichage). Text typed in the list's preview field, or in the tester, just before the view changes does not drop the other view's
 // previews. A newer list in which a family's styles or axes changed drops the faces asked of the old one (and the answers still on their way) and asks
 // again, also while the family's page is shown. With a keyboard (switch access, TalkBack), a card opens its page with the focus on the Back arrow, and
-// Back (the arrow, Android's, a tap outside) hands the focus to that card again, the list where it was.
+// Back (the arrow, Android's, a tap outside) hands the focus to that card again, the list where it was. Text typed in the tester keeps the list's
+// "No preview" marks (a card's preview does not depend on it): offline, Back still lands on the card the page was opened from.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the details and previews answer when the script says; dropFaces, badFaces: a 'styles' answer
 // without some faces); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
@@ -249,6 +250,38 @@ const detail = (page) => page.evaluate((wsrc) => {
     await page.evaluate(() => backNavigate()); await page.waitForTimeout(150);
     const st2 = await page.evaluate(() => document.getElementById('gfSheet').classList.contains('show'));
     check('10. Back: the list, then closed', st1[0] && st1[1] === 'Google Fonts' && !st2, JSON.stringify([st1, st2]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // offline (no card has a preview): a family opened far down the list, a letter typed in its tester, then Back. The cards' "No preview" does not
+  // depend on the tester's text, so it stays: the list is as tall as it was and Back lands on that card, not on cards waiting again at full height
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, previewFail: CAT.families.map(e => e.f) } });
+    await page.click('#gfMoreBtn'); await page.waitForTimeout(150);
+    const pvs = () => page.evaluate(() => { const p = [...document.querySelectorAll('#gfList .gf-pv')]; return { n: p.length, failed: p.filter(x => x.classList.contains('gf-failed')).length, wait: p.filter(x => x.classList.contains('gf-wait')).length }; });
+    // down and up again until every card failed (a card scrolled past before its turn is asked for when it is in view again)
+    for (let i = 0, dy = 300; i < 120 && (await pvs()).failed < 60; i++) {
+      dy = await page.evaluate((dy) => { const sc = document.getElementById('gfScroll'); if (dy > 0 && sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1) dy = -300; else if (dy < 0 && sc.scrollTop <= 0) dy = 300; sc.scrollTop += dy; return dy; }, dy);
+      await page.waitForTimeout(120);
+    }
+    const all = await pvs();
+    // the 55th card about 450 px below the scroller's top
+    const off = (f) => page.evaluate((f) => { const c = [...document.querySelectorAll('#gfList .gf-card')].find(x => x.dataset.f === f), sc = document.getElementById('gfScroll'); return Math.round(c.getBoundingClientRect().top - sc.getBoundingClientRect().top); }, f);
+    const f = await page.evaluate(() => { const c = document.querySelectorAll('#gfList .gf-card')[54], sc = document.getElementById('gfScroll'); sc.scrollTop += c.getBoundingClientRect().top - sc.getBoundingClientRect().top - 450; return c.dataset.f; });
+    await page.waitForTimeout(300);
+    const off0 = await off(f), h = await page.evaluate(() => document.getElementById('gfScroll').clientHeight);
+    await page.click('#gfList .gf-card[data-f="' + f + '"]'); await page.waitForTimeout(200);
+    await page.fill('#gfDText', 'x');
+    await page.waitForTimeout(700);
+    const asked = () => page.evaluate(() => __fmk.gfPreviews.filter(p => p.mode === 'card').length);
+    const n0 = await asked();
+    await page.evaluate(() => gfBackStep()); await page.waitForTimeout(400);
+    const off1 = await off(f), now = await pvs(), n1 = await asked();
+    const foc = await page.evaluate(() => { const a = document.activeElement, sc = document.getElementById('gfScroll').getBoundingClientRect(), r = a.getBoundingClientRect(); return { f: (a.dataset || {}).f || a.tagName, in: r.top >= sc.top && r.bottom <= sc.bottom }; });
+    check('5b. offline, ' + f + ' (the 55th card) opened from far down the list, a letter typed in its tester, Back: that card where it was', all.failed === 60 && Math.abs(off0 - 450) <= 2
+      && Math.abs(off1 - off0) <= 2 && off1 < h, JSON.stringify([all, off0, off1, h]));
+    check('   every card still says "No preview" (none waiting), and none was asked for again', now.n === 60 && now.failed === 60 && !now.wait && n1 === n0, JSON.stringify([now, n0, n1]));
+    check('   the focus on that card, in view', foc.f === f && foc.in, JSON.stringify(foc));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

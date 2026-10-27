@@ -46787,7 +46787,14 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfDTextInput(v) {
             gf.dText = String(v || '');
             clearTimeout(gf.td);
-            gf.td = setTimeout(() => { gfNewGen(); gfRenderTester(true); }, 400);
+            gf.td = setTimeout(() => {
+                // a card's preview (the list's, the page's head) does not depend on the tester's text: its "No preview" stays, so Back draws those cards
+                // at their short height and lands where it left (gf.listTop); gfClose and a new list text (gfRetext) still clear them
+                const keep = Object.keys(gf.asked).filter(k => gf.asked[k] === 'failed' && gfKeyParts(k).m === 'card');
+                gfNewGen();
+                keep.forEach(k => { gf.asked[k] = 'failed'; });
+                gfRenderTester(true);
+            }, 400);
         }
         function gfDSizeInput(v) {
             gf.dSize = Math.max(14, Math.min(96, +v || 40));

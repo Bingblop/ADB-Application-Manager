@@ -46,6 +46,10 @@ ok   9. Nabla (colour): meta says Colour; a note that Make a font needs a plain 
 ok      Material Symbols (symbols, no category): the symbol note; the meta starts with its designer
 ok   10. Back: the list, then closed
 ok      no page errors
+ok   5b. offline, Noto Sans Armenian (the 55th card) opened from far down the list, a letter typed in its tester, Back: that card where it was
+ok      every card still says "No preview" (none waiting), and none was asked for again
+ok      the focus on that card, in view
+ok      no page errors
 ok   11. Cairo in an English page: the tester line right to left (dir="auto"), as its style rows
 ok      Latin typed into the tester: left to right
 ok   12. Cairo's axes: "Slant, Weight" in the meta line and on the sliders
