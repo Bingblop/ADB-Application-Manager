@@ -1,6 +1,6 @@
 // v7.18.0 Google Fonts, the sheet: the Custom Fonts tab's top card has a search-field button "Search Google Fonts" with the count of families, and
 // Make a font's empty Regular slot a "Find one on Google Fonts" link; both open the sheet #gfSheet. Its bar has the title, Close and the search; the
-// list view has the category, language and sort selects, the Variable and Downloaded chips (aria-pressed), the status line ("64 families · updated
+// list view has the category, language and sort selects, the Variable and Downloaded chips (aria-pressed), the status line ("List updated
 // Oct 1, 2026 · Refresh"), the count, 30 cards and "Show N more · M left", and the credit. The search ignores case and accents, looks at the name and
 // the designers, every word must match, and waits 120 ms; the sorts are Popular, Trending, Newest and Name (A–Z); an unknown subset is shown
 // title-cased ("Canadian Aboriginal"); no match shows an empty state whose "Clear filters" brings every family back. No list on the phone: the sheet
@@ -67,7 +67,7 @@ const wide = (page) => page.evaluate(() => {
     await page.waitForTimeout(300);
     let s = await sheet(page);
     check('2. the sheet opens on the list: title "Google Fonts", search shown, no Back', s.open && s.title === 'Google Fonts' && s.search && !s.back && s.list && !s.detail, JSON.stringify(s));
-    check('   status: "64 families · updated Oct 1, 2026 · Refresh"', s.status === '64 families · updated Oct 1, 2026 · Refresh', s.status);
+    check('   status: "List updated Oct 1, 2026 · Refresh"', s.status === 'List updated Oct 1, 2026 · Refresh', s.status);
     check('   a fresh list is not asked for again', !s.calls.length, s.calls.join(','));
     check('   count "64 families", 30 cards, "Show 30 more · 34 left"', s.count === '64 families' && s.cards.length === 30 && s.more === 'Show 30 more · 34 left', JSON.stringify([s.count, s.cards.length, s.more]));
     check('   Popular first: Roboto, Open Sans, Google Sans, Inter, Montserrat', s.cards.slice(0, 5).join(',') === 'Roboto,Open Sans,Google Sans,Inter,Montserrat', s.cards.slice(0, 5).join(','));
@@ -80,7 +80,7 @@ const wide = (page) => page.evaluate(() => {
         ph: [document.getElementById('gfSearch').placeholder, document.getElementById('gfText').placeholder].join(' | ') };
     });
     check('3. a card is one button: Lato "Sans serif · Łukasz Dziedzic · 10 styles", Downloaded', bits.lato && bits.lato.tag === 'BUTTON' && bits.lato.meta === 'Sans serif · Łukasz Dziedzic · 10 styles' && bits.lato.badges.join(',') === 'Downloaded' && bits.lato.noTr === 'no', JSON.stringify(bits.lato));
-    check('   Roboto "Sans serif · Christian Robertson (+2) · Variable", Variable and Downloaded', bits.roboto && bits.roboto.meta === 'Sans serif · Christian Robertson (+2) · Variable' && bits.roboto.badges.join(',') === 'Variable,Downloaded', JSON.stringify(bits.roboto));
+    check('   Roboto "Sans serif · Christian Robertson (+2) · 18 styles", Variable and Downloaded', bits.roboto && bits.roboto.meta === 'Sans serif · Christian Robertson (+2) · 18 styles' && bits.roboto.badges.join(',') === 'Variable,Downloaded', JSON.stringify(bits.roboto));
     check('   the credit names Google Fonts and the licences', bits.credit === 'Fonts and their list come from Google Fonts (fonts.google.com). Each family is free to use under its own licence, shown with it.', bits.credit);
     check('   the chips are buttons, not pressed', bits.aria === 'BUTTON:false,BUTTON:false', bits.aria);
     check('   the preview size: 14-72, 28', bits.size === '14,72,28,28', bits.size);
@@ -192,12 +192,12 @@ const wide = (page) => page.evaluate(() => {
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(200);
     s = await sheet(page);
     e = await page.evaluate(() => document.getElementById('gfOpenCount').textContent);
-    check('   the list comes: status, 30 cards, the button counts 64', s.status === '64 families · updated Oct 1, 2026 · Refresh' && s.cards.length === 30 && e === '64 families', JSON.stringify([s.status, s.cards.length, e]));
+    check('   the list comes: status, 30 cards, the button counts 64', s.status === 'List updated Oct 1, 2026 · Refresh' && s.cards.length === 30 && e === '64 families', JSON.stringify([s.status, s.cards.length, e]));
     await page.click('#gfRefreshBtn'); await page.waitForTimeout(100);
     s = await sheet(page);
-    check('   Refresh: gfontsRefresh true, "Updating the list…" while the list stays', s.calls.slice(-1)[0] === 'gfontsRefresh:true' && s.status === '64 families · updated Oct 1, 2026 · Updating the list…' && s.cards.length === 30, JSON.stringify([s.calls, s.status]));
+    check('   Refresh: gfontsRefresh true, "Updating the list…" while the list stays', s.calls.slice(-1)[0] === 'gfontsRefresh:true' && s.status === 'List updated Oct 1, 2026 · Updating the list…' && s.cards.length === 30, JSON.stringify([s.calls, s.status]));
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
-    check('   and back to Refresh', (await sheet(page)).status === '64 families · updated Oct 1, 2026 · Refresh');
+    check('   and back to Refresh', (await sheet(page)).status === 'List updated Oct 1, 2026 · Refresh');
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -225,7 +225,7 @@ const wide = (page) => page.evaluate(() => {
     const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, stale: true, hold: true, refreshError: { code: 'gf_bad_answer', error: 'Google Fonts sent an answer the app cannot read.' } } });
     await page.click('#gfOpenBtn'); await page.waitForTimeout(100);
     let s = await sheet(page);
-    check('15. a list older than 7 days: in use (30 cards) while it updates (gfontsRefresh false)', s.cards.length === 30 && s.calls.join(',') === 'gfontsRefresh:false' && s.status === '64 families · updated Oct 1, 2026 · Updating the list…', JSON.stringify([s.cards.length, s.calls, s.status]));
+    check('15. a list older than 7 days: in use (30 cards) while it updates (gfontsRefresh false)', s.cards.length === 30 && s.calls.join(',') === 'gfontsRefresh:false' && s.status === 'List updated Oct 1, 2026 · Updating the list…', JSON.stringify([s.cards.length, s.calls, s.status]));
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     s = await sheet(page);
     const st = await page.evaluate(() => ({ err: (document.querySelector('#gfStatus .fnt-err .is-err') || {}).textContent, retry: !!document.getElementById('gfRetryBtn'), refresh: !!document.getElementById('gfRefreshBtn') }));
@@ -234,7 +234,7 @@ const wide = (page) => page.evaluate(() => {
     await page.waitForTimeout(50);
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     s = await sheet(page);
-    check('   Retry: updated, the reason gone', s.status === '64 families · updated Oct 1, 2026 · Refresh' && s.calls.slice(-1)[0] === 'gfontsRefresh:true', JSON.stringify([s.status, s.calls]));
+    check('   Retry: updated, the reason gone', s.status === 'List updated Oct 1, 2026 · Refresh' && s.calls.slice(-1)[0] === 'gfontsRefresh:true', JSON.stringify([s.status, s.calls]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

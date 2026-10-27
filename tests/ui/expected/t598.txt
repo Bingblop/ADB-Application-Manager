@@ -2,12 +2,12 @@ ok   1. the top card: "Search Google Fonts" with the count of families
 ok      Make a font: "Find one on Google Fonts" under the empty Regular slot (not inside its row)
 ok      still one primary button in the tab
 ok   2. the sheet opens on the list: title "Google Fonts", search shown, no Back
-ok      status: "64 families · updated Oct 1, 2026 · Refresh"
+ok      status: "List updated Oct 1, 2026 · Refresh"
 ok      a fresh list is not asked for again
 ok      count "64 families", 30 cards, "Show 30 more · 34 left"
 ok      Popular first: Roboto, Open Sans, Google Sans, Inter, Montserrat
 ok   3. a card is one button: Lato "Sans serif · Łukasz Dziedzic · 10 styles", Downloaded
-ok      Roboto "Sans serif · Christian Robertson (+2) · Variable", Variable and Downloaded
+ok      Roboto "Sans serif · Christian Robertson (+2) · 18 styles", Variable and Downloaded
 ok      the credit names Google Fonts and the licences
 ok      the chips are buttons, not pressed
 ok      the preview size: 14-72, 28

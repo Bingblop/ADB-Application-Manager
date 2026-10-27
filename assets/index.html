@@ -8189,6 +8189,8 @@
                 <div id="gfDetail" style="display:none;">
                     <div class="gf-dhead gf-wait" id="gfDHead" translate="no"></div>
                     <div class="gf-meta" id="gfDMeta" translate="no"></div>
+                    <!-- Download and Use come first: a family can have 18 style rows below -->
+                    <div class="fnt-sec" id="gfGet"></div>
                     <div class="fnt-sec">
                         <label class="fnt-lab" for="gfDText">Type tester</label>
                         <input type="text" class="list-search" id="gfDText" maxlength="200" placeholder="Type something to preview" autocomplete="off" spellcheck="false" oninput="gfDTextInput(this.value)">
@@ -8200,7 +8202,6 @@
                         <div class="fnt-lab">Styles</div>
                         <div id="gfStyles"></div>
                     </div>
-                    <div class="fnt-sec" id="gfGet"></div>
                     <div class="fnt-sec" id="gfAbout"></div>
                 </div>
             </div>
@@ -46253,7 +46254,8 @@ Type any command above (e.g. pm list packages -d)</div>
                     : emptyStateHtml({ key: 'gf-nolist', icon: err ? 'alert' : 'search', title: 'The list of fonts is not on this phone yet.', hint: err, actions: [{ label: 'Retry', onclick: 'gfRefresh(true)', primary: true }] });
                 return;
             }
-            const line = escapeHtml(gfFamText(D.families.length)) + ' · ' + escapeHtml(txF('updated {0}', gfWhen(D.at))) + ' · '
+            // the count is the line under the filters (gfCount), so this line says only how fresh the list is
+            const line = escapeHtml(txF('List updated {0}', gfWhen(D.at))) + ' · '
                 + (gf.refreshing ? escapeHtml(txT('Updating the list…')) : '<button type="button" class="batch-tool-link" id="gfRefreshBtn" onclick="gfRefresh(true)">Refresh</button>');
             el.innerHTML = '<div>' + line + '</div>'
                 + (err && !gf.refreshing ? '<div class="fnt-err"><span class="is-err">' + escapeHtml(err) + '</span> <button type="button" class="batch-tool-link" id="gfRetryBtn" onclick="gfRefresh(true)">Retry</button></div>' : '');
@@ -46321,7 +46323,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // one tap target: the name, a line about it, its badges and the preview line in its own font
         function gfCardHtml(e) {
             const vf = (e.x || []).length > 0, text = gfCardText(e);
-            const meta = [gfCatName(e.c), gfDesigners(e.d), vf ? txT('Variable') : gfStylesText(e)].filter(Boolean).join(' · ');
+            const meta = [gfCatName(e.c), gfDesigners(e.d), gfStylesText(e)].filter(Boolean).join(' · ');
             const badge = (t, cls) => '<span class="uad-badge' + (cls ? ' ' + cls : '') + '">' + escapeHtml(t) + '</span>';
             const badges = (vf ? badge(txT('Variable')) : '') + (e.col ? badge(txT('Colour')) : '') + (gf.dls[e.f] ? badge(txT('Downloaded'), 'is-dl') : '');
             return '<button type="button" class="gf-card" data-f="' + escapeHtml(e.f) + '" onclick="gfShow(' + jsArg(e.f) + ')">'
