@@ -17,7 +17,8 @@
 // The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
 // results, and the sheet's handle pulls it up to the whole screen (down once: its size again; down again: the usual step back). The Help Guide
 // says what the page shows: its examples of the count are ones the page can show, its privacy row sends the typed preview text, not the search
-// words (but the previews of the families a search finds), its browser row has Open on fonts.google.com, and a network failure is quoted with its reason.
+// words (but the previews of the families a search finds), its privacy summary counts scrolling and typing on the page among what starts a contact,
+// its browser row has Open on fonts.google.com, and a network failure is quoted with its reason.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf); the list: fixtures/gfonts-catalog.json (64 real families).
 const fs = require('fs');
 const path = require('path');
@@ -468,6 +469,11 @@ const wide = (page) => page.evaluate(() => {
       && /What you type in Search fonts or designers, and the filters, are not sent, but the families they bring onto the screen have their previews asked for by name/.test(row)
       && !/stay on the phone/.test(row) && !/Your search words/.test(row), row);
     check('   the fonts page says the same of the search', /what you type in Search fonts or designers is not sent, but the families it finds ask for their previews by name/.test(fg) && !/Search fonts or designers stays on the phone/.test(fg), fg.slice(0, 300));
+    // the summary above the table: every contact starts with something you do, and on the Google Fonts page that includes scrolling and typing (the
+    // previews of the families on the screen), as the row says
+    const short = sec('privacy').split(/The keys the app makes/)[0];
+    check('   the privacy summary names the Google Fonts page\'s scrolling and typing among what starts a contact, not only a tab, a button or a chat message',
+      /Every contact below starts when you open a tab, press a button or send a chat message/.test(short) && /Google Fonts page[^.]*scroll[^.]*type/.test(short), short.slice(-420));
     const brow = (sec('privacy').split(/(?=Your web browser, or this phone's store app)/)[1] || '').split(/The app only opens the address/)[0];
     check('   the privacy browser row names Open on fonts.google.com', /Open on fonts\.google\.com/.test(brow), brow);
     // a network failure always carries its reason (FNT_SAID 'network'): "The download failed (...). Check ..."; the plain FNT_ERR sentence is never shown
