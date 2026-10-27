@@ -1,12 +1,12 @@
-<!-- Custom Fonts (v7.17.0): the tab, making a font, variable fonts, the emoji fonts, My fonts and Samsung's Font style, the font changer, the system emoji swap, and every way back. -->
+<!-- Custom Fonts (v7.17.0, Google Fonts and the emoji samples v7.18.0): the tab, making a font, variable fonts, finding a font on Google Fonts, the emoji fonts, My fonts and Samsung's Font style, the font changer, the system emoji swap, and every way back. -->
 
 <section id="tab-fonts" data-title="Custom Fonts" data-group="The tabs">
-  <p class="hg-lead">Make your own font for a Samsung phone from a font file (.ttf or .otf): a Regular, a Bold if you have one, and colour emoji inside if you like. The app turns it into a Samsung font package that you can install, and with Root, or with Shizuku running as the Android system user, it can put the font on the phone directly. The tab also downloads five emoji fonts, and with root it can use one as the phone's own emoji until the next restart.</p>
+  <p class="hg-lead">Make your own font for a Samsung phone from a font file (.ttf or .otf): a Regular, a Bold if you have one, and colour emoji inside if you like. The app turns it into a Samsung font package that you can install, and with Root, or with Shizuku running as the Android system user, it can put the font on the phone directly. The tab also finds and downloads fonts from Google Fonts, shows and downloads five emoji fonts, and with root it can use one as the phone's own emoji until the next restart.</p>
   <p><b>Where to find it:</b> the tab named <b>Custom Fonts</b> (two lines on the tab bar, <b>Fonts</b> on the bottom bar, with an "Aa" icon), after <b>Root Features</b> and right before <b>About</b>. It is on out of the box but not pinned to the bottom bar, so it waits under <b>More</b>. If it is missing, it was switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
 
   <h4>Before you start</h4>
   <ul>
-    <li><b>Making a font needs nothing special:</b> no working mode, no internet, any phone. The work is done on the phone.</li>
+    <li><b>Making a font needs nothing special:</b> no working mode, no internet, any phone. The work is done on the phone. Only the Google Fonts page, the emoji font downloads and the iOS emoji sample need an internet connection.</li>
     <li><b>Installing or applying it needs a Samsung phone.</b> Samsung phones change their font through Samsung's font system, FlipFont (made by Monotype), and that is what these packages are for. On another make the tab still builds fonts and can export them, and My fonts says "Font packages work only on Samsung phones. You can still export them."</li>
     <li><b>A font file you are allowed to use.</b> A font is someone's work and has a licence. Many free fonts allow changing them (the SIL Open Font License, for one). A font whose maker forbids it carries a mark, and the app then warns: "This font's maker does not allow it to be embedded or changed ("restricted license" in the font). Use it only if its license lets you."</li>
     <li><b>The Font changer</b> (putting the font on the phone directly) needs the <a href="#mode-root">Root</a> working mode with <code>su</code> granted, or <a href="#mode-shizuku">Shizuku</a> running as the Android system user (UID 1000) or as root (UID 0). The system user is Android's own system account: more privileged than the shell user, but not root. Shizuku as the shell user (UID 2000), Wireless Debugging and ADB over TCP cannot do it: Android does not let the shell user write the phone's font folder.</li>
@@ -18,9 +18,9 @@
   <table class="hg-table">
     <thead><tr><th>Card</th><th>What it does</th></tr></thead>
     <tbody>
-      <tr><td><b>Custom Fonts</b></td><td>The top card. It says what the tab is for, and that the <b>Font</b> option in this app's <a href="#prefs">Settings</a> changes only this app's own text, not the phone's.</td></tr>
+      <tr><td><b>Custom Fonts</b></td><td>The top card. It says what the tab is for, and that the <b>Font</b> option in this app's <a href="#prefs">Settings</a> changes only this app's own text, not the phone's. Its <b>Search Google Fonts</b> button opens a page over the tab to browse, try and download the fonts of Google Fonts. See <a href="#fonts-google">Finding a font on Google Fonts</a>.</td></tr>
       <tr><td><b>Make a font</b></td><td>Choose the <b>Regular</b> file, a <b>Bold</b> (none, the same variable font at another weight, or another file), the <b>Emoji</b> (none, a downloaded emoji font, or a file of your own) and a <b>Name</b>, then <b>Build font</b>. A preview shows the font as you go. See <a href="#fonts-make">Making a font</a> and <a href="#fonts-variable">Variable fonts</a>.</td></tr>
-      <tr><td><b>Emoji fonts</b></td><td>Five emoji fonts to download, each with its format, size, licence and a <b>Source</b> link. See <a href="#fonts-emoji">Emoji fonts</a>.</td></tr>
+      <tr><td><b>Emoji fonts</b></td><td>Five emoji fonts to download, each with its format, size, licence, a <b>Source</b> link and a sample of sixteen emoji in that font. See <a href="#fonts-emoji">Emoji fonts</a>.</td></tr>
       <tr><td><b>My fonts</b></td><td>Every font made on this phone, each drawn in itself, with <b>Install</b>, <b>Apply</b>, <b>Export</b>, <b>Delete</b> and <b>Make again</b> (build it anew, keeping its package, so it installs as an update). See <a href="#fonts-library">My fonts and Samsung's Font style</a>.</td></tr>
       <tr><td><b>Font changer</b></td><td>The phone's font now, and <b>Reset to Default</b>. <b>Apply</b> on a My fonts row puts that font on the phone. Root, or the system user through Shizuku. See <a href="#fonts-changer">The font changer</a>.</td></tr>
       <tr><td><b>System emoji</b></td><td>A downloaded emoji font as the phone's emoji until the next restart, with <b>Undo</b> and <b>Soft reboot</b>. Root only. See <a href="#fonts-system-emoji">System emoji</a>.</td></tr>
@@ -35,11 +35,11 @@
   <ul>
     <li>The font files you choose are read on the phone and never uploaded. The app works on its own copy; your original file is not changed.</li>
     <li>The fonts you make stay in the app's private storage until you delete them, or until you save a copy yourself with <b>Export</b>.</li>
-    <li>The tab goes online only when you tap <b>Download</b> on an emoji font. Each one comes from a single address written into the app (on GitHub), and the app keeps the file only if its size and SHA-256 checksum are exactly the ones written into the app with it. The <b>License</b> and <b>Source</b> links open in your browser. See <a href="#privacy">Privacy</a>.</li>
+    <li>The tab goes online only when you ask it to. <b>Download</b> on an emoji font fetches it from a single address written into the app (on GitHub), and the app keeps the file only if its size and SHA-256 checksum are exactly the ones written into the app with it. <b>Show these emoji</b> on the iOS row reads about 0.3 MB of that same file. The Google Fonts page talks to Google Fonts only: the list of families, the previews, a family's details and the families you download. The <b>License</b>, <b>Source</b> and <b>Open on fonts.google.com</b> links open in your browser. See <a href="#privacy">Privacy</a>.</li>
   </ul>
 
-  <div class="hg-note"><b>Honest status.</b> This tab is new in version 7.17.0. Its font engine was checked on a computer, against widely used font tools, but nothing on this tab has been tried on a phone yet: not a package in Samsung's Font style, not the Font changer and not the System emoji swap. If something does not work on your phone, please say so with <b>Report a bug or idea</b> in the About tab.</div>
-  <p>Next: <a href="#fonts-make">Making a font</a>, <a href="#fonts-variable">Variable fonts</a>, <a href="#fonts-emoji">Emoji fonts</a>, <a href="#fonts-library">My fonts and Samsung's Font style</a>, <a href="#fonts-changer">The font changer</a>, <a href="#fonts-system-emoji">System emoji</a>, <a href="#fonts-undo">Undoing what it changed</a>, and the recipe <a href="#recipe-custom-font">Use your own font on a Samsung phone</a>.</p>
+  <div class="hg-note"><b>Honest status.</b> This tab is new in version 7.17.0, and its Google Fonts page and emoji samples in 7.18.0. Its font engine was checked on a computer, against widely used font tools, and the Google Fonts page against Google's real answers, but nothing on this tab has been tried on a phone yet: not a package in Samsung's Font style, not the Font changer, not the System emoji swap and not the Google Fonts page. If something does not work on your phone, please say so with <b>Report a bug or idea</b> in the About tab.</div>
+  <p>Next: <a href="#fonts-make">Making a font</a>, <a href="#fonts-variable">Variable fonts</a>, <a href="#fonts-google">Finding a font on Google Fonts</a>, <a href="#fonts-emoji">Emoji fonts</a>, <a href="#fonts-library">My fonts and Samsung's Font style</a>, <a href="#fonts-changer">The font changer</a>, <a href="#fonts-system-emoji">System emoji</a>, <a href="#fonts-undo">Undoing what it changed</a>, and the recipe <a href="#recipe-custom-font">Use your own font on a Samsung phone</a>.</p>
 </section>
 
 <section id="fonts-make" data-title="Custom Fonts: making a font" data-group="The tabs">
@@ -47,7 +47,7 @@
 
   <h4>Before you start</h4>
   <ul>
-    <li>Put the font file on the phone: a <code>.ttf</code> or <code>.otf</code> file, for example in Downloads. A font collection (<code>.ttc</code>, several fonts in one file) and a web font (<code>.woff</code>, <code>.woff2</code>) are refused.</li>
+    <li>Put the font file on the phone: a <code>.ttf</code> or <code>.otf</code> file, for example in Downloads. Or take a family from Google Fonts: the link <b>Find one on Google Fonts</b> under the Regular row opens the Google Fonts page, whose <b>Use in Make a font</b> fills the card for you (<a href="#fonts-google">Finding a font on Google Fonts</a>). A font collection (<code>.ttc</code>, several fonts in one file) and a web font (<code>.woff</code>, <code>.woff2</code>) are refused.</li>
     <li>For Regular, choose the upright (not italic) file of the family. The Regular is what the phone draws all ordinary text with, so an italic one would slant everything.</li>
     <li>If the family has a separate Bold file, have it ready too. A variable font has its Bold inside: see <a href="#fonts-variable">Variable fonts</a>.</li>
   </ul>
@@ -136,6 +136,75 @@
   <div class="hg-note"><b>Tip.</b> A real Bold from the same variable font nearly always looks better than the thickened Regular Android makes without one. Keep the two at least about 200 apart on the Weight axis, so bold text stands out.</div>
 </section>
 
+<section id="fonts-google" data-title="Custom Fonts: finding a font on Google Fonts" data-group="The tabs">
+  <p class="hg-lead">Google Fonts has about two thousand font families that are free to use. <b>Search Google Fonts</b> opens a page over the tab where you can browse them, see each one drawn in its own letters, download a family to the phone and hand it to <b>Make a font</b>. The rest of the tab stays as it is underneath.</p>
+
+  <h4>Where to find it</h4>
+  <ul>
+    <li>The <b>Search Google Fonts</b> button on the top card of the tab (<b>Custom Fonts</b>). Once the list is on the phone, the button also shows how many families it has, such as "1,950 families".</li>
+    <li>On the <b>Make a font</b> card, while no Regular file is chosen, the link <b>Find one on Google Fonts</b> under the Regular row.</li>
+  </ul>
+  <p>The page slides up over the tab. <b>Close</b> (the X) closes it. Android's Back button, or a tap above the page, goes back one step: from a family's page to the list, and from the list to the tab.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li><b>An internet connection.</b> The list, the previews and the downloads come from Google Fonts. Fonts you already downloaded stay on the phone and work without one.</li>
+    <li><b>No working mode, and no Google account.</b> The app reads the same public addresses the Google Fonts website uses. It needs no key and sends nothing about you or your phone.</li>
+  </ul>
+
+  <h4>The list</h4>
+  <ol class="hg-steps">
+    <li>The first time, the page says "Getting the list of fonts from Google Fonts…" and then shows it. The app keeps the list on the phone. When the list is over a week old, the app uses it and gets a new one in the background. The line "List updated Oct 1, 2026 · Refresh" (with the date of your list) says how old it is. <b>Refresh</b> gets a new one now.</li>
+    <li>Type in <b>Search fonts or designers</b>. Letter case and accents do not count, and every word you type must match the family's name or one of its designers.</li>
+    <li>Narrow the list with <b>All categories</b> (Sans serif, Serif, Display, Handwriting, Monospace) and <b>All languages</b> (the scripts and languages a family covers). Sort it by <b>Popular</b>, <b>Trending</b>, <b>Newest</b> or <b>Name (A–Z)</b>. The <b>Variable</b> and <b>Downloaded</b> chips show only variable families, or only the ones on this phone. The line above the list counts what is shown, such as "64 families" or "12 of 1,950".</li>
+    <li>Each card shows the family's name, its category, its designer and how many styles it has. It can have the tags <b>VARIABLE</b>, <b>COLOUR</b> (the family draws in colour) and <b>DOWNLOADED</b>. Under that, a line of text is drawn in the family's own font. The list shows 30 cards at a time, and <b>Show 30 more</b> at the bottom (with how many are left) adds more.</li>
+    <li>To see your own words in every font, type them in <b>Type something to preview</b>. The <b>Size</b> slider sets how large the previews are. Families for another script, such as Arabic or Japanese, show a sample in their own script until you type.</li>
+  </ol>
+  <p>The previews come only for the cards on the screen, and a few below them. Each is a small piece of the font, with just the letters it needs. While a preview is on its way, its line stays blank, so you never see the text in the wrong font. If Google Fonts sends none, the text shows in the app's own font with "No preview" after it, and the card still works. Previews are kept for a while (up to 24 MB), so the list scrolls quickly the next time.</p>
+
+  <h4>A family's page</h4>
+  <p>Tap a card. The family's page opens with its name at the top, drawn in its own font, and a line with its category, designers, the number of styles and, for a variable family, its axes (for example "Variable: Width, Weight").</p>
+  <ul>
+    <li><b>Font files</b> comes first: <b>Download</b>, and once the family is on the phone, what to do with it (below).</li>
+    <li><b>Type tester</b>: your own text, its <b>Size</b> (14 to 96), and one slider per axis for a variable family (<b>Weight</b>, <b>Width</b> and the family's own axes). The large line below follows the sliders as you move them.</li>
+    <li><b>Styles</b>: one line per style the family has, such as "Thin 100", "Regular 400" or "Bold Italic 700", each drawn in that style.</li>
+    <li><b>About</b>: what Google Fonts says about the family, its <b>Licence</b> (with <b>Licence text</b> to read it in full), its designers, when it was added and last updated, and <b>Open on fonts.google.com</b>, which opens the family's page in your browser.</li>
+  </ul>
+  <p>A family that draws in colour, or a symbol family, gets a note: "This family has colour glyphs. Make a font needs a plain text font, so this one may not work there." or "This is a symbol family. Make a font needs a plain text font, so this one may not work there."</p>
+
+  <h4>Downloading a family</h4>
+  <ol class="hg-steps">
+    <li>On the family's page, tap <b>Download</b>. Under it, "2 font files" says how many files will come. For a variable family the app takes only its variable files (usually one upright and one italic), because they hold every weight. For any other family it takes every style.</li>
+    <li>A bar shows the progress ("File 1 of 2 · 120 KB of 410 KB"). <b>Cancel</b> stops it and keeps nothing. You can go back to the list or close the page while it downloads. When it is done, a message says "Roboto downloaded" (with the family's name).</li>
+    <li>The app checks every file before it keeps the family. It must come from Google's font server (<code>fonts.gstatic.com</code>), have a plain font file name (<code>.ttf</code> or <code>.otf</code>), be at most 64 MB (160 MB for the whole family), and really be a font. The family's licence file is kept with it. The app notes each file's SHA-256 checksum and checks it again when it uses or saves the file, so a file that changed on the phone is noticed.</li>
+  </ol>
+  <p>The page then says "Downloaded · 2 files · 410 KB" and offers:</p>
+  <ul>
+    <li><b>Use in Make a font</b>: closes the page and puts the family into the <b>Make a font</b> card, as if you had chosen the files yourself. A variable family goes in as the Regular, and Make a font then offers its own Bold at another weight (<a href="#fonts-variable">Variable fonts</a>). For any other family, choose the files first under <b>Regular</b> and <b>Bold</b> on the page. The app picks the 400 upright file and the 700 upright one for you when the family has them, and Bold can be <b>None</b>. While a font is being made, or a file chooser is open, the button waits, and the page says why.</li>
+    <li><b>Save to phone</b>: saves the family as a <code>.zip</code> (its font files and its licence) wherever you choose, for use in other apps.</li>
+    <li><b>Delete</b>: removes the family from the app at once, without asking, because downloading it again takes a moment. Fonts you already made from it keep their own copy.</li>
+  </ul>
+
+  <h4>The licence, and the Reserved Font Name</h4>
+  <p>Most Google Fonts families are under the SIL Open Font License (OFL). A few are under the Apache License or the Ubuntu Font Licence. All of them let you use the font and make changed copies of it. A font made on this tab is a changed copy (fixed at one weight, renamed, sometimes with emoji inside). Some OFL fonts keep their name for the original only, which the licence calls a <b>Reserved Font Name</b>. When the family has one, its page says, for example, "&quot;Lato&quot; is a Reserved Font Name: a font made from this family must have another name.". After <b>Use in Make a font</b>, the <b>Name</b> box is left empty instead of being filled with that name. If you type a name that holds it, the box warns: "Lato's licence keeps the name &quot;Lato&quot; for the original font. A font made from it is a changed copy, so give it another name." This is only a warning: <b>Build font</b> stays on, and choosing the name is up to you.</p>
+
+  <h4>If it says...</h4>
+  <table class="hg-table">
+    <thead><tr><th>Message</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td>"The list of fonts is not on this phone yet."</td><td>The first list could not be fetched, usually because there is no connection. The reason is under it. Tap <b>Retry</b>.</td></tr>
+      <tr><td>"No fonts match."</td><td>Nothing fits your words and filters together. Try other words, or tap <b>Clear filters</b>.</td></tr>
+      <tr><td>"The download failed. Check the connection and try again."</td><td>Google Fonts could not be reached. Try again with a connection.</td></tr>
+      <tr><td>"Google Fonts sent an answer the app cannot read. Try again later."</td><td>The answer was cut short, or Google Fonts changed how it answers. If it lasts, an app update may be needed.</td></tr>
+      <tr><td>"This family is not in the Google Fonts list. Update the list and try again."</td><td>The family left Google Fonts or was renamed after your list was made. <b>Refresh</b> the list.</td></tr>
+      <tr><td>"Google Fonts lists no font files for this family."</td><td>Google Fonts offers no <code>.ttf</code> or <code>.otf</code> file the app can take for it.</td></tr>
+      <tr><td>"This family is larger than the app downloads (160 MB or 64 files)."</td><td>A very large family, usually one for Chinese, Japanese or Korean with many weights. Download it from fonts.google.com in your browser if you want it.</td></tr>
+      <tr><td>"Google Fonts sent a file that is not a font, so the family was not kept."</td><td>A file was not a font the app can read. Nothing was kept. Try again later.</td></tr>
+      <tr><td>"This family's files changed on the phone. Delete it and download it again."</td><td>A downloaded file no longer matches what the app kept. <b>Delete</b> the family and download it again.</td></tr>
+    </tbody>
+  </table>
+</section>
+
 <section id="fonts-emoji" data-title="Custom Fonts: emoji fonts, and emoji inside your font" data-group="The tabs">
   <p class="hg-lead">The <b>Emoji fonts</b> card downloads five emoji fonts. A downloaded one can go inside a font you make, so that apps drawing text with the phone's font show those emoji; with root, one can also be the phone's own emoji until the next restart (<a href="#fonts-system-emoji">System emoji</a>).</p>
 
@@ -151,6 +220,14 @@
     </tbody>
   </table>
   <p>Each row shows the name, a line with the version, the format, the size and <b>Downloaded</b> once it is on the phone, and a button: <b>Download</b>, <b>Cancel</b> while it downloads, <b>Delete</b> afterwards. Under it are the licence's name and two links, <b>License</b> and <b>Source</b>, which open in your browser. The iOS row says "Apple's emoji art from a third-party build. Used only as the phone's system emoji with root, until the next restart; never inside a font." On a phone older than Android 13, the Noto Color Emoji and Blobmoji rows say "Needs Android 13 to show inside a font." and are not offered under <b>Emoji</b> in Make a font; the OpenMoji row shows its COLRv0 build, which is the one downloaded there.</p>
+
+  <h4>What each emoji font looks like</h4>
+  <p>Under each row are the same sixteen emoji (a grinning face, tears of joy, hearts, a thumbs up, a party popper, a dog, a unicorn, a slice of pizza, a rocket, a rainbow and a few more), drawn by that font, so you can compare them before you download anything.</p>
+  <ul>
+    <li><b>Noto Color Emoji, Twemoji, Blobmoji and OpenMoji</b>: the app carries a small copy of each, cut down to those sixteen emoji, so their samples show at once, with no download and no connection. A row stays empty until its font is loaded; it never shows the phone's own emoji in its place. Noto Color Emoji and Blobmoji are COLRv1, which Android System WebView draws from version 98: with an older WebView their rows say "This phone's WebView is too old to draw these emoji."</li>
+    <li><b>iOS emoji</b>: Apple's art cannot ship with the app, so the row says "Reads about 0.3 MB of the iOS emoji file." (or "Read from the downloaded file." once you downloaded it) and offers <b>Show these emoji</b>. Tap it and the app reads only the parts of the file it needs for the sixteen pictures, from the same one address the <b>Download</b> uses, or from the downloaded file with no connection at all. "Reading the iOS emoji…" shows meanwhile. The pictures are kept by the app, so they show at once next time.</li>
+  </ul>
+  <p>If the iOS file at its address is not the one the app expects, the row says "The iOS emoji file at its address is not the expected one, so its sample was not read. Update the app."; if the sixteen pictures cannot be found in it, "The sample could not be read from the emoji font." Neither affects the download.</p>
 
   <h4>Downloading</h4>
   <ol class="hg-steps">
