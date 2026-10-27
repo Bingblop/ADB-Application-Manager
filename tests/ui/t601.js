@@ -7,7 +7,8 @@
 // downloaded. ..."; a cancel says nothing), and its page says why when opened again; one the app refuses (busy: already downloading,
 // downloading, being saved) says the app's sentence. Delete (gfontsDelete, no question first) goes back to Download with a toast. Save to phone (gfontsSave) waits for
 // Android's save screen ("Saving…"; Delete, another save and My fonts' Export wait too), then a toast with the file's name; closing the screen
-// says nothing, a failure says why (the app's "The font family could not be saved: ..." as the page's sentence). The list follows a Delete or a
+// says nothing, a failure says why (the app's "The font family could not be saved: ..." as the page's sentence), in a toast ("Lato was not saved.
+// ...") when it comes after the page was left or the sheet closed. The list follows a Delete or a
 // download made on a family's page, or one that finishes while the list shows (the Downloaded filter, the count, the badges). A downloaded family the
 // refreshed list no longer has (renamed or removed on Google Fonts) keeps a card ("No longer on Google Fonts") and a page with Use, Save and Delete;
 // the search button counts it as the sheet does, and its Delete asks first (it cannot be downloaded again; after it the focus is on the list, not
@@ -219,6 +220,47 @@ const kb = n => (n * 1024);
     await page.click('#gfSaveBtn'); await page.waitForTimeout(150);
     const g = await get(page);
     check('   a failed save: the page\'s sentence', g.msg === 'There is not enough free space on this phone.' && g.save === 'Save to phone', JSON.stringify(g));
+    check('   its page shows it: no toast says it again', !/was not saved/.test(g.toast), g.toast);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a save that fails after its page was left (Back, another family's page) or the sheet closed: a toast says so, as a finished save does, and the
+  // family's page says why when opened again; a closed save screen still says nothing
+  {
+    const NS = 'There is not enough free space on this phone.';
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato', 'Roboto'], saveError: { code: 'no_space', error: 'There is not enough free space.' } }, holdSave: true });
+    const said = () => page.evaluate(() => ({ toast: document.getElementById('toastMsg').textContent, msg: (gf.msg.Lato || {}).text || '', saving: gf.saving }));
+    const saveThen = async (leave) => {
+      await showFam(page, 'Lato');
+      await page.click('#gfSaveBtn'); await page.waitForTimeout(100);
+      await page.evaluate(() => { document.getElementById('toastMsg').innerText = ''; });
+      await leave();
+      await page.evaluate(() => __fmk.save()); await page.waitForTimeout(150);
+      return said();
+    };
+    let s = await saveThen(() => page.evaluate(() => gfBackToList()));
+    check('10b. failed after Back to the list: a toast "Lato was not saved. ..." with the reason', s.toast === 'Lato was not saved. ' + NS && s.msg === NS && !s.saving, JSON.stringify(s));
+    await showFam(page, 'Lato');
+    let g = await get(page);
+    check('   Lato\'s page opened again says why, Save to phone on', g.msg === NS && g.save === 'Save to phone', JSON.stringify(g));
+    s = await saveThen(() => page.evaluate(() => gfClose()));
+    check('   failed after the sheet closed: the same toast, the reason kept', s.toast === 'Lato was not saved. ' + NS && s.msg === NS, JSON.stringify(s));
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(200);
+    s = await saveThen(() => showFam(page, 'Roboto'));
+    g = await get(page);
+    check('   failed while Roboto\'s page shows: the same toast; Roboto\'s Save to phone on again, no word of Lato\'s on its page', s.toast === 'Lato was not saved. ' + NS && g.save === 'Save to phone' && !g.msg
+      && (await page.evaluate(() => gf.fam)) === 'Roboto', JSON.stringify([s, g]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato'], saveError: { code: 'cancelled', error: 'Cancelled.' } }, holdSave: true });
+    await showFam(page, 'Lato');
+    await page.click('#gfSaveBtn'); await page.waitForTimeout(100);
+    await page.evaluate(() => { document.getElementById('toastMsg').innerText = ''; gfBackToList(); });
+    await page.evaluate(() => __fmk.save()); await page.waitForTimeout(150);
+    const c = await page.evaluate(() => ({ toast: document.getElementById('toastMsg').textContent, msg: gf.msg.Lato || null }));
+    check('   the save screen closed after Back: nothing said', !c.toast && !c.msg, JSON.stringify(c));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

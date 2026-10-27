@@ -36,6 +36,14 @@ ok      no page errors
 ok   10. the save screen closed: nothing said, Save to phone again
 ok      no page errors
 ok      a failed save: the page's sentence
+ok      its page shows it: no toast says it again
+ok      no page errors
+ok   10b. failed after Back to the list: a toast "Lato was not saved. ..." with the reason
+ok      Lato's page opened again says why, Save to phone on
+ok      failed after the sheet closed: the same toast, the reason kept
+ok      failed while Roboto's page shows: the same toast; Roboto's Save to phone on again, no word of Lato's on its page
+ok      no page errors
+ok      the save screen closed after Back: nothing said
 ok      no page errors
 ok      the app's "The font family could not be saved: ..." is the page's sentence (not "Something went wrong")
 ok      no page errors

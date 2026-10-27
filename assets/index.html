@@ -46902,11 +46902,15 @@ Type any command above (e.g. pm list packages -d)</div>
             fntRenderLib();
         }
         window.onGfSaved = function (family, json) {
-            const r = fntJson(json);
+            const r = fntJson(json), shown = gf.open && gf.view === 'detail' && gf.fam === family;
             gf.saving = '';
             if (r.ok) { showToast(r.name ? txF('Saved {0}', r.name) : txT('Saved')); delete gf.msg[family]; }
-            else if (r.code !== 'cancelled') gf.msg[family] = { text: fntErrText(r), err: true };
-            if (gf.open && gf.view === 'detail') gfRenderGet();
+            else if (r.code !== 'cancelled') {
+                gf.msg[family] = { text: fntErrText(r), err: true };
+                // its page, when it shows, says why under its buttons (#gfMsg); left or closed meanwhile, a failure is said as a finished save is (as onGfDone)
+                if (!shown) showToast(txF('{0} was not saved. {1}', family, gf.msg[family].text));
+            }
+            if (gf.open && gf.view === 'detail') gfRenderGet();               // any family's page: Save to phone waited for this one (gf.saving)
             fntRenderLib();
         };
         // no question first, as an emoji font's Delete: the family is downloaded again in a moment. One no longer on Google Fonts cannot be, so it asks
