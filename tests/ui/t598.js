@@ -12,7 +12,8 @@
 // (the tab shown again reads it for the button's count, and the sheet shows it fresh, with no busy sentence or Retry). Back (backNavigate) and a tap outside
 // step from a family's page to the list, then close; a field of the sheet that kept the focus (the keyboard already down) loses it then, so the
 // bottom bar comes back. A keyboard's focus survives the list drawn again: on the same card when a new list comes, on the first card the last
-// Show more brought. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
+// Show more brought; Refresh or a Retry pressed with it leaves it on the status line ("Updating the list…") until Refresh, or the Retry of a
+// second failure, is back. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
 // 360 px, in the light theme and right-to-left.
 // The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
 // results, and the sheet's handle pulls it up to the whole screen (down once: its size again; down again: the usual step back). The Help Guide
@@ -51,6 +52,12 @@ const sheet = (page) => page.evaluate(() => {
     cards: [...document.querySelectorAll('#gfList .gf-card')].map(c => c.dataset.f), empty: t('gfList'),
     calls: __fmk.calls.filter(c => /^gfontsRefresh/.test(c)),
   };
+});
+// where a keyboard's (TalkBack's) focus is: the element's id (its tag without one; 'BODY': lost behind the sheet), its words, and whether it is a
+// control inside the status line
+const foc = (page) => page.evaluate(() => {
+  const a = document.activeElement, st = document.getElementById('gfStatus');
+  return { id: a ? a.id || a.tagName : '', text: a ? a.textContent.replace(/\s+/g, ' ').trim() : '', inStatus: !!a && a !== st && st.contains(a) };
 });
 // the search as typed: the list waits 120 ms
 const search = async (page, q) => {
@@ -293,6 +300,14 @@ const wide = (page) => page.evaluate(() => {
     check('   and back to Refresh', (await sheet(page)).status === 'List updated Oct 1, 2026 · Refresh');
     const kf = await page.evaluate(() => { const a = document.activeElement; return a && a.classList.contains('gf-card') && document.getElementById('gfList').contains(a) ? a.dataset.f : (a ? a.id || a.tagName : ''); });
     check('   the focus on Lato\'s card stays there when the new list redraws the cards', kf === 'Lato', kf);
+    // a keyboard on Refresh: it turns into "Updating the list…", so the status line takes the focus (and reads it), not the body behind the sheet;
+    // Refresh has it again once the list came
+    await page.focus('#gfRefreshBtn'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+    const r1 = await foc(page);
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    const r2 = await foc(page);
+    check('13b. Refresh with the keyboard: the focus on the status line ("Updating the list…") while it updates, then on Refresh again', r1.id === 'gfStatus' && /· Updating the list…$/.test(r1.text)
+      && r2.id === 'gfRefreshBtn', JSON.stringify([r1, r2]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -312,6 +327,23 @@ const wide = (page) => page.evaluate(() => {
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     s = await sheet(page);
     check('   and the list comes', s.cards.length === 30 && s.count === '64 families', JSON.stringify([s.cards.length, s.count]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the same with a keyboard: the empty state's Retry turns into "Getting the list…", which takes the focus; a second failure puts it on the new
+  // Retry, the list once it came on Refresh
+  {
+    const { ctx, page, errors } = await open(b, { gf: { remote: CAT, hold: true, refreshError: { code: 'network', error: 'The download failed: timeout' } } });
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(100);
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    const retry = async () => { await page.evaluate(() => document.querySelector('#gfStatus button').focus()); await page.keyboard.press('Enter'); await page.waitForTimeout(100); return foc(page); };
+    const answer = async () => { await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150); return foc(page); };
+    const f1 = await retry(), f2 = await answer();
+    check('14d. the empty state\'s Retry with the keyboard: the focus on the status line ("Getting the list…"), then on the new Retry when it fails again', f1.id === 'gfStatus'
+      && f1.text === 'Getting the list of fonts from Google Fonts…' && f2.id === 'BUTTON' && f2.text === 'Retry' && f2.inStatus, JSON.stringify([f1, f2]));
+    await page.evaluate(() => { __fmk.gfRefreshError = null; });
+    const f3 = await retry(), f4 = await answer();
+    check('   Retry again: the status line, then Refresh once the list came', f3.id === 'gfStatus' && f4.id === 'gfRefreshBtn' && (await sheet(page)).cards.length === 30, JSON.stringify([f3, f4]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -367,6 +399,13 @@ const wide = (page) => page.evaluate(() => {
     s = await sheet(page);
     const st = await page.evaluate(() => ({ err: (document.querySelector('#gfStatus .fnt-err .is-err') || {}).textContent, retry: !!document.getElementById('gfRetryBtn'), refresh: !!document.getElementById('gfRefreshBtn') }));
     check('   the update fails: the reason in the page\'s words, Retry; the list stays', st.err === 'Google Fonts sent an answer the app cannot read. Try again later.' && st.retry && st.refresh && s.cards.length === 30, JSON.stringify([st, s.cards.length]));
+    // a keyboard on that Retry: the status line holds the focus while it updates, and the Retry of a second failure gets it back
+    await page.focus('#gfRetryBtn'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+    const k1 = await foc(page);
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    const k2 = await foc(page);
+    check('   its Retry with the keyboard: the focus on the status line while it updates, then on Retry when it fails again', k1.id === 'gfStatus' && /· Updating the list…$/.test(k1.text)
+      && k2.id === 'gfRetryBtn', JSON.stringify([k1, k2]));
     await page.evaluate(() => { __fmk.gfRefreshError = null; document.getElementById('gfRetryBtn').click(); });
     await page.waitForTimeout(50);
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);

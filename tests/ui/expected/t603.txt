@@ -32,6 +32,9 @@ ok      no page errors
 ok   7d. the other window's read was kept, this phone is offline: Show these emoji shows the kept pictures, no error
 ok      answered from the kept pictures, not read again
 ok      no page errors
+ok   7e. Show these emoji with the keyboard: the focus on "Reading the iOS emoji…" (also when the list is drawn again meanwhile), then on the button again when it fails
+ok      again: "Reading the iOS emoji…", then the sixteen pictures, read as "Sample of iOS emoji"
+ok      no page errors
 ok   8. Chrome 97: Noto and Blobmoji (COLRv1) say the WebView is too old, and are not read
 ok      Twemoji (COLRv0) is drawn
 ok   9. no font for OpenMoji: no strip, nothing said
