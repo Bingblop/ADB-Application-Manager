@@ -5,7 +5,10 @@
 // preview). New tester text waits 400 ms and keeps the faces shown until the new ones come. About: the details are asked once (gfontsInfo), with a
 // line while they come; the description shows three lines and More, then the licence's name and its text under <details>, the designers, the dates
 // and "Open on fonts.google.com". A failure says why with Retry. A colour family and a symbol family say Make a font needs a plain text font. Back
-// and a tap outside go back to the list where it was, then close; what the page asked for is dropped once it is left.
+// and a tap outside go back to the list where it was, then close; what the page asked for is dropped once it is left. The axes are named as Make a
+// font names them (its five in the page's words, the others as the list has them); the tester line takes its direction from its text (dir="auto");
+// a style past the 18 the 'styles' preview carries says "No preview" instead of showing another weight. Text typed in the list's preview field, or
+// in the tester, just before the view changes does not drop the other view's previews.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the details and previews answer when the script says); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -183,13 +186,85 @@ const detail = (page) => page.evaluate((wsrc) => {
     await showFam(page, 'Material Symbols Outlined', 'material');
     d = await detail(page);
     const note2 = await page.evaluate(() => (document.getElementById('gfPlainNote') || {}).textContent);
-    check('   Material Symbols (symbols, no category): the symbol note; the meta starts with its designer', note2 === 'This is a symbol family. Make a font needs a plain text font, so this one may not work there.' && /^Google · 7 styles · Variable: Optical Size, Weight, Fill, Grade$/.test(d.meta), JSON.stringify([note2, d.meta]));
+    check('   Material Symbols (symbols, no category): the symbol note; the meta starts with its designer', note2 === 'This is a symbol family. Make a font needs a plain text font, so this one may not work there.' && /^Google · 7 styles · Variable: Optical size, Weight, Fill, Grade$/.test(d.meta), JSON.stringify([note2, d.meta]));
     // Back steps: the family, the list, closed; a tap outside does the same
     await page.evaluate(() => backNavigate()); await page.waitForTimeout(150);
     const st1 = await page.evaluate(() => [document.getElementById('gfSheet').classList.contains('show'), document.getElementById('gfTitle').textContent]);
     await page.evaluate(() => backNavigate()); await page.waitForTimeout(150);
     const st2 = await page.evaluate(() => document.getElementById('gfSheet').classList.contains('show'));
     check('10. Back: the list, then closed', st1[0] && st1[1] === 'Google Fonts' && !st2, JSON.stringify([st1, st2]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, hold: true } });
+    await drain(page);
+    // the tester line's direction: Cairo's Arabic sample right to left in an English (left-to-right) page, as its style rows
+    await showFam(page, 'Cairo');
+    await drain(page);
+    const dir = () => page.evaluate(() => { const l = document.getElementById('gfDLine'), r = document.querySelector('#gfStyles .gf-style-pv'); return { attr: l.getAttribute('dir'), line: getComputedStyle(l).direction, row: getComputedStyle(r).direction, text: l.textContent, page: getComputedStyle(document.body).direction }; });
+    let dr = await dir();
+    check('11. Cairo in an English page: the tester line right to left (dir="auto"), as its style rows', dr.page === 'ltr' && dr.attr === 'auto' && dr.line === 'rtl' && dr.row === 'rtl' && dr.text === 'أنا قادر على أكل الزجاج و هذا لا يؤلمني.', JSON.stringify(dr));
+    await page.fill('#gfDText', 'Latin words');
+    await page.waitForTimeout(550);
+    dr = await dir();
+    check('   Latin typed into the tester: left to right', dr.line === 'ltr' && dr.text === 'Latin words', JSON.stringify(dr));
+    // the axes named as Make a font names them: the page's words for its five (translated), Google's name for the others (data)
+    let d = await detail(page);
+    check('12. Cairo\'s axes: "Slant, Weight" in the meta line and on the sliders', /· Variable: Slant, Weight$/.test(d.meta) && d.axes.map(a => a.split(':')[0]).join('|') === 'Slant|Weight', JSON.stringify([d.meta, d.axes]));
+    await page.evaluate(() => I18N.set('de'));
+    await page.waitForTimeout(900);
+    d = await detail(page);
+    check('   in German: the meta line and the sliders say "Neigung, Stärke"', /Neigung, Stärke$/.test(d.meta) && d.axes.map(a => a.split(':')[0]).join('|') === 'Neigung|Stärke', JSON.stringify([d.meta, d.axes]));
+    await page.evaluate(() => gfBackToList());
+    await showFam(page, 'Material Symbols Outlined', 'material');
+    d = await detail(page);
+    const keep = await page.evaluate(() => [...document.querySelectorAll('#gfDAxes label')].map(l => l.textContent + (l.querySelector('[translate="no"]') ? '(data)' : '')).join('|'));
+    check('   Material Symbols in German: "Optische Größe, Stärke", then Google\'s Fill and Grade, kept as data', /Optische Größe, Stärke, Fill, Grade$/.test(d.meta) && keep === 'Optische Größe|Stärke|Fill(data)|Grade(data)', JSON.stringify([d.meta, keep]));
+    await page.evaluate(() => I18N.set('en'));
+    await page.waitForTimeout(900);
+    d = await detail(page);
+    check('   back in English', /· Variable: Optical size, Weight, Fill, Grade$/.test(d.meta) && d.axes.map(a => a.split(':')[0]).join('|') === 'Optical size|Weight|Fill|Grade', JSON.stringify([d.meta, d.axes]));
+    // a family with more styles than the 'styles' preview carries (18): those rows say "No preview", never another weight under their name
+    await page.evaluate(() => gfBackToList());
+    await drain(page);
+    await showFam(page, 'DM Sans');
+    await drain(page);
+    const dm = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('#gfStyles .gf-style')].map(r => { const pv = r.querySelector('.gf-style-pv'); return { name: r.querySelector('.gf-style-name').textContent, key: pv.dataset.pvk || '', ff: pv.style.fontFamily, w: pv.style.fontWeight, failed: pv.classList.contains('gf-failed'), wait: pv.classList.contains('gf-wait'), nopv: (pv.querySelector('.gf-nopv') || {}).textContent || '' }; });
+      const rec = gf.faces.get('DM Sans|styles|The quick brown fox jumps over the lazy dog.');
+      return { rows, faces: rec ? rec.list.length : 0, asked: __fmk.gfPreviews.filter(p => p.family === 'DM Sans' && p.mode === 'styles').length, meta: document.getElementById('gfDMeta').textContent };
+    });
+    check('13. DM Sans: 20 rows ("20 styles"), the first 18 drawn in the styles face (18 faces), each in its weight', dm.rows.length === 20 && /· 20 styles ·/.test(dm.meta) && dm.faces === 18 && dm.asked === 1
+      && dm.rows.slice(0, 18).every(r => /gfpv\d+/.test(r.ff) && !r.wait && !r.failed && r.key), JSON.stringify([dm.rows.length, dm.faces, dm.asked, dm.rows.slice(0, 18).filter(r => !/gfpv/.test(r.ff))]));
+    check('   "Weight 1000" and "Weight 1000 Italic": "No preview", nothing asked for them', dm.rows.slice(18).map(r => r.name).join('|') === 'Weight 1000|Weight 1000 Italic'
+      && dm.rows.slice(18).every(r => r.failed && !r.wait && !r.key && !r.ff && r.nopv === 'No preview'), JSON.stringify(dm.rows.slice(18)));
+    await page.evaluate(() => { gfBackToList(); const s = document.getElementById('gfSearch'); s.value = ''; s.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.waitForTimeout(250);
+    await drain(page);
+    // text typed in the list's preview field, and a card tapped before its 400 ms: the family's page still gets its previews
+    await page.evaluate(() => { const t = document.getElementById('gfText'); t.value = 'Hello there'; t.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('#gfList .gf-card[data-f="Lato"]').click(); });
+    await page.waitForTimeout(600);
+    await drain(page);
+    d = await detail(page);
+    check('14. a card tapped just after typing in the list: the page\'s head, tester and styles drawn (in the new text)', d.title === 'Lato' && !d.head.wait && /gfpv\d+/.test(d.head.ff) && !d.line.wait && /gfpv\d+/.test(d.line.ff) && d.line.text === 'Hello there'
+      && d.styles.length === 10 && d.styles.every(r => !r.wait && /gfpv\d+/.test(r.ff)), JSON.stringify([d.head, d.line, d.styles.filter(r => r.wait).length]));
+    await page.evaluate(() => gfBackToList());
+    await page.waitForTimeout(300);
+    await drain(page);
+    const cardsIn = () => page.evaluate(() => { const sc = document.getElementById('gfScroll').getBoundingClientRect(); return [...document.querySelectorAll('#gfList .gf-pv')].filter(p => { const r = p.getBoundingClientRect(); return r.bottom > sc.top && r.top < sc.bottom; }).map(p => ({ f: p.closest('.gf-card').dataset.f, wait: p.classList.contains('gf-wait'), text: p.textContent })); });
+    let cv = await cardsIn();
+    check('   Back: the cards in the new text, drawn', cv.length >= 3 && cv.every(c => !c.wait && c.text === 'Hello there'), JSON.stringify(cv));
+    // a family opened from far down the list, text typed in its tester and Back before 400 ms: the cards that come back into view are drawn
+    await page.evaluate(() => { const sc = document.getElementById('gfScroll'); sc.scrollTop = 2000; const top = sc.getBoundingClientRect().top; [...document.querySelectorAll('#gfList .gf-card')].find(c => c.getBoundingClientRect().top > top + 150).click(); });
+    await page.waitForTimeout(300);
+    await drain(page);
+    await page.evaluate(() => { const t = document.getElementById('gfDText'); t.value = 'Sphinx'; t.dispatchEvent(new Event('input', { bubbles: true })); gfBackStep(); });
+    await page.waitForTimeout(600);
+    await drain(page);
+    await drain(page);
+    cv = await cardsIn();
+    check('15. text typed in the tester, then Back at once: the cards in view are drawn', cv.length >= 3 && cv.every(c => !c.wait), JSON.stringify(cv));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

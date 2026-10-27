@@ -8198,7 +8198,7 @@
                         <input type="text" class="list-search" id="gfDText" maxlength="200" placeholder="Type something to preview" autocomplete="off" spellcheck="false" oninput="gfDTextInput(this.value)">
                         <div class="fnt-axis"><div class="fnt-axis-head"><label for="gfDSize">Size</label><b id="gfDSizeV" translate="no">40</b></div><input type="range" id="gfDSize" min="14" max="96" step="1" value="40" oninput="gfDSizeInput(this.value)"></div>
                         <div id="gfDAxes"></div>
-                        <div class="font-sample gf-tester"><div class="gf-tline gf-wait" id="gfDLine" translate="no"></div></div>
+                        <div class="font-sample gf-tester"><div class="gf-tline gf-wait" id="gfDLine" translate="no" dir="auto"></div></div>
                     </div>
                     <div class="fnt-sec">
                         <div class="fnt-lab">Styles</div>
@@ -44930,12 +44930,13 @@ Type any command above (e.g. pm list packages -d)</div>
         // asked by the cards in view, at most GF_INFLIGHT at a time, once per (family, mode, text) and generation; their faces kept by that key, the oldest
         // removed past GF_FACES
         const GF_PAGE = 30, GF_INFLIGHT = 6, GF_FACES = 150;
+        const GF_STYLES = 18;                                                 // GoogleFonts.MAX_STYLES: the 'styles' preview carries a family's first 18 styles
         const GF_FALLBACK = 'var(--ui-font, var(--font-sans))';             // what a preview face does not draw comes in the app's font
         const gf = {
             data: null, by: new Map(), fold: new Map(), refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
             dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null,
-            text: '', gen: 0, seq: 0, inflight: {}, queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null,
+            text: '', gen: 0, seq: 0, inflight: {}, late: {}, queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null,
             open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, tq: 0, tt: 0, td: 0
         };
         const FNT_STAGES = ['read', 'instance', 'convert', 'emoji', 'package', 'sign', 'save'];
@@ -46108,7 +46109,6 @@ Type any command above (e.g. pm list packages -d)</div>
         // (gfontsPreview: a family cut down to the text it is to show) and is loaded with FontFace: the page itself opens nothing on the network. Family
         // names, designers, file names and the sample texts are data (translate="no"); the words around them are put together with txT / txF.
         const GF_CATS = { sans: 'Sans serif', serif: 'Serif', display: 'Display', hand: 'Handwriting', mono: 'Monospace' };
-        const GF_WEIGHTS = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
         // a subset by its name for a person; one the table does not know is shown title-cased ("canadian-aboriginal": Canadian Aboriginal)
         const GF_SUBSETS = {
             latin: 'Latin', 'latin-ext': 'Latin Extended', cyrillic: 'Cyrillic', 'cyrillic-ext': 'Cyrillic Extended', greek: 'Greek', 'greek-ext': 'Greek Extended',
@@ -46164,9 +46164,13 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function gfSubsetName(s) { return GF_SUBSETS[s] ? txT(GF_SUBSETS[s]) : String(s).split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
         function gfCatName(c) { return GF_CATS[c] ? txT(GF_CATS[c]) : ''; }
+        // an axis' name as Make a font says it: the five the app knows in the page's words, any other one Google's name for it (data)
+        function gfAxisName(tag) { tag = String(tag); return FNT_AXIS[tag] ? txT(FNT_AXIS[tag]) : ((gf.data && gf.data.axes && gf.data.axes[tag]) || tag); }
+        // a weight's name, each a txT call of its own so that tests/i18n/extract.js lists it ("ExtraLight" looks like data to it otherwise)
+        function gfWeightName(n) { return ({ 100: txT('Thin'), 200: txT('ExtraLight'), 300: txT('Light'), 400: txT('Regular'), 500: txT('Medium'), 600: txT('SemiBold'), 700: txT('Bold'), 800: txT('ExtraBold'), 900: txT('Black') })[n] || ''; }
         function gfStyleName(w) {
-            const n = parseInt(w, 10) || 400, it = /i$/.test(String(w));
-            return (GF_WEIGHTS[n] ? txT(GF_WEIGHTS[n]) + ' ' + n : txF('Weight {0}', n)) + (it ? ' ' + txT('Italic') : '');
+            const n = parseInt(w, 10) || 400, it = /i$/.test(String(w)), wn = gfWeightName(n);
+            return (wn ? wn + ' ' + n : txF('Weight {0}', n)) + (it ? ' ' + txT('Italic') : '');
         }
         function gfStylesText(e) { const n = (e.w || []).length; return n === 1 ? txT('1 style') : txF('{0} styles', n); }
         function gfDesigners(d) { d = Array.isArray(d) ? d : []; return !d.length ? '' : d.length === 1 ? d[0] : d[0] + ' (+' + (d.length - 1) + ')'; }
@@ -46369,7 +46373,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // ---- the previews: asked by what is in view, at most GF_INFLIGHT at a time; their faces kept by family|mode|text ----
-        function gfNewGen() { gf.gen++; gf.asked = {}; gf.queue = []; }
+        function gfNewGen() { gf.gen++; gf.asked = {}; gf.queue = []; gf.late = {}; }
         function gfObserve() {
             const els = document.querySelectorAll('#gfList .gf-pv');
             els.forEach(el => gfApplyEl(el));
@@ -46399,7 +46403,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function gfPump() {
             const now = Date.now();
-            Object.keys(gf.inflight).forEach(id => { if (now - gf.inflight[id].t > 30000) delete gf.inflight[id]; });     // an answer that never came
+            // slow to answer (Java's queue, then css2 and up to 18 faces at up to 45 s a fetch): no longer counted, its answer still used when it comes
+            Object.keys(gf.inflight).forEach(id => { if (now - gf.inflight[id].t > 30000) { gf.late[id] = gf.inflight[id]; delete gf.inflight[id]; } });
             while (Object.keys(gf.inflight).length < GF_INFLIGHT && gf.queue.length) {
                 const it = gf.queue.shift();
                 if (!gfWanted(it)) { if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; continue; }
@@ -46410,9 +46415,9 @@ Type any command above (e.g. pm list packages -d)</div>
             }
         }
         window.onGfPreview = function (reqId, json) {
-            const it = gf.inflight[reqId];
+            const it = gf.inflight[reqId] || gf.late[reqId];
             if (!it) return;
-            delete gf.inflight[reqId];
+            delete gf.inflight[reqId]; delete gf.late[reqId];
             const r = fntJson(json), here = () => it.gen === gf.gen && gfElsFor(it.key).length > 0;
             // an answer of an older generation, or for a card that is no longer in the list, is dropped
             if (!here()) { if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; gfPump(); return; }
@@ -46487,6 +46492,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const sc = document.getElementById('gfScroll');
             if (gf.view === 'list' && sc) gf.listTop = sc.scrollTop;
             haptic();
+            clearTimeout(gf.tt);                                             // the list's new text (gf.text) is drawn on Back; its timer must not drop this page's previews
             gf.view = 'detail'; gf.fam = f; gf.descOpen = false;
             gf.dText = gf.text.trim() ? gf.text : gfSample(e);
             gf.dSize = 40;
@@ -46499,6 +46505,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function gfBackToList() {
             if (gf.view !== 'detail') return;
+            clearTimeout(gf.td);                                             // the tester's new text must not drop the list's previews
             gfDetailForget();
             gf.view = 'list'; gf.fam = '';
             gfApplyView();
@@ -46521,7 +46528,7 @@ Type any command above (e.g. pm list packages -d)</div>
             head.style.fontFamily = '';
             head.dataset.pvw = '1';
             head.dataset.pvk = gfKey(e.f, 'card', e.f);
-            const axes = (e.x || []).map(a => (gf.data && gf.data.axes && gf.data.axes[a[0]]) || String(a[0]));
+            const axes = (e.x || []).filter(Array.isArray).map(a => gfAxisName(a[0]));
             document.getElementById('gfDMeta').textContent = [gfCatName(e.c), (e.d || []).join(', '), gfStylesText(e), axes.length ? txF('Variable: {0}', axes.join(', ')) : '', e.col ? txT('Colour') : ''].filter(Boolean).join(' · ');
             const t = document.getElementById('gfDText');
             if (t.value !== gf.dText) t.value = gf.dText;
@@ -46532,12 +46539,13 @@ Type any command above (e.g. pm list packages -d)</div>
             gfRenderGet();
             gfRenderAbout();
         }
-        // one slider per axis (its name from the list's axis names), from the axis' default; they drive font-variation-settings on the tester line
+        // one slider per axis, from the axis' default; they drive font-variation-settings on the tester line. Named as Make a font names them (fntVarHtml): the
+        // page's word for the five it knows (translated where it is shown), else the list's name for it, kept as data
         function gfAxesHtml(e) {
             return (e.x || []).filter(Array.isArray).map(a => {
                 const tag = String(a[0]), id = 'gfAx_' + fntSafe(tag), v = gf.axes[tag] !== undefined ? gf.axes[tag] : +a[3];
-                const name = (gf.data && gf.data.axes && gf.data.axes[tag]) || tag;
-                return '<div class="fnt-axis"><div class="fnt-axis-head"><label for="' + id + '">' + escapeHtml(name) + '</label><b id="' + id + 'v" translate="no">' + fntNum(v) + '</b></div>'
+                const name = FNT_AXIS[tag] ? escapeHtml(FNT_AXIS[tag]) : '<span translate="no">' + escapeHtml(gfAxisName(tag)) + '</span>';
+                return '<div class="fnt-axis"><div class="fnt-axis-head"><label for="' + id + '">' + name + '</label><b id="' + id + 'v" translate="no">' + fntNum(v) + '</b></div>'
                     + '<input type="range" id="' + id + '" min="' + (+a[1]) + '" max="' + (+a[2]) + '" step="' + fntStep({ min: a[1], max: a[2] }) + '" value="' + (+v) + '" oninput="gfAxisInput(' + jsArg(tag) + ', this)"></div>';
             }).join('');
         }
@@ -46559,8 +46567,10 @@ Type any command above (e.g. pm list packages -d)</div>
             const sk = gfKey(e.f, 'styles', text), had = keep ? [...box.querySelectorAll('.gf-style-pv')].map(x => x.style.fontFamily) : [];
             box.innerHTML = (e.w || []).map((w, i) => {
                 const n = parseInt(w, 10) || 400, it = /i$/.test(String(w)), ff = had[i] ? ' font-family:' + escapeHtml(had[i]) + ';' : '';
-                return '<div class="gf-style"><div class="gf-style-name" translate="no">' + escapeHtml(gfStyleName(w)) + '</div>'
-                    + '<div class="gf-style-pv' + (ff ? '' : ' gf-wait') + '" translate="no" dir="auto" data-pvk="' + escapeHtml(sk) + '" style="font-weight:' + n + '; font-style:' + (it ? 'italic' : 'normal') + ';' + ff + '">' + escapeHtml(text) + '</div></div>';
+                const head = '<div class="gf-style"><div class="gf-style-name" translate="no">' + escapeHtml(gfStyleName(w)) + '</div>';
+                // past the styles the preview carries, a row would show the nearest weight it has under another style's name: "No preview" instead
+                if (i >= GF_STYLES) return head + '<div class="gf-style-pv gf-failed" translate="no" dir="auto">' + escapeHtml(text) + '<span class="gf-nopv">' + escapeHtml(txT('No preview')) + '</span></div></div>';
+                return head + '<div class="gf-style-pv' + (ff ? '' : ' gf-wait') + '" translate="no" dir="auto" data-pvk="' + escapeHtml(sk) + '" style="font-weight:' + n + '; font-style:' + (it ? 'italic' : 'normal') + ';' + ff + '">' + escapeHtml(text) + '</div></div>';
             }).join('');
             ['gfDHead', 'gfDLine'].forEach(id => gfAskEl(document.getElementById(id)));
             box.querySelectorAll('.gf-style-pv').forEach(gfAskEl);
@@ -46777,7 +46787,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : '';
             h += row('Licence', lic)
                 + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"><summary>Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
-                + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row('Added', gfDate(e.a)) + row('Updated', gfDate(e.m))
+                + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Updated', gfDate(e.m))
                 + '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>';
             box.innerHTML = h;
             // More only when the description runs past its three lines

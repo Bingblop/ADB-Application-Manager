@@ -41,4 +41,16 @@ ok   9. Nabla (colour): meta says Colour; a note that Make a font needs a plain 
 ok      Material Symbols (symbols, no category): the symbol note; the meta starts with its designer
 ok   10. Back: the list, then closed
 ok      no page errors
+ok   11. Cairo in an English page: the tester line right to left (dir="auto"), as its style rows
+ok      Latin typed into the tester: left to right
+ok   12. Cairo's axes: "Slant, Weight" in the meta line and on the sliders
+ok      in German: the meta line and the sliders say "Neigung, Stärke"
+ok      Material Symbols in German: "Optische Größe, Stärke", then Google's Fill and Grade, kept as data
+ok      back in English
+ok   13. DM Sans: 20 rows ("20 styles"), the first 18 drawn in the styles face (18 faces), each in its weight
+ok      "Weight 1000" and "Weight 1000 Italic": "No preview", nothing asked for them
+ok   14. a card tapped just after typing in the list: the page's head, tester and styles drawn (in the new text)
+ok      Back: the cards in the new text, drawn
+ok   15. text typed in the tester, then Back at once: the cards in view are drawn
+ok      no page errors
 all passed
