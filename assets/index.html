@@ -46881,8 +46881,10 @@ Type any command above (e.g. pm list packages -d)</div>
             if (gf.open && gf.view === 'detail' && gf.fam === f) { gfRenderGet(); gfRenderAbout(); }
         }
         window.onGfInfo = function (family, json) {
-            const r = fntJson(json);
-            gf.info[family] = r.ok ? r : { err: fntErrText(r) };
+            const r = fntJson(json), cur = gf.info[family] || {};
+            // the newer list's details not to be had (no connection right after the list, too many requests): the older list's stay shown, still
+            // stale, so the page opened again asks once more. Details on screen a moment ago are not traded for an error
+            gf.info[family] = r.ok ? r : cur.ok && cur.refreshing ? Object.assign({}, cur, { refreshing: false, stale: true }) : { err: fntErrText(r) };
             if (gf.open && gf.view === 'detail' && gf.fam === family) { gfRenderGet(); gfRenderAbout(); }
         };
         function gfFiles(f) { const d = gf.dls[f]; return d && Array.isArray(d.files) ? d.files.filter(x => x && typeof x.name === 'string' && x.name) : []; }

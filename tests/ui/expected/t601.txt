@@ -105,7 +105,10 @@ ok      Retry: About holds the focus (read: "Getting the details from Google Fon
 ok      they fail again: the focus on the new Retry
 ok      Retry, and the details come: About, then its first control (More, Lato's description is long)
 ok      More: the whole description, More gone, the focus on the description it opened
+ok      a newer list, its details still on their way: About keeps the older ones (no "Getting the details…"), the focus on the description
 ok      a newer list draws About again: the focus stays on the description (still open)
 ok      and on Licence text
+ok      a newer list whose details cannot be had: About keeps the older ones (no reason, no Retry), the focus on Licence text
+ok      Lato opened again: About shows them at once and asks once more; the newer ones come
 ok      no page errors
 all passed
