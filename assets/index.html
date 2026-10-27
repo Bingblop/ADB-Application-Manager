@@ -46852,12 +46852,12 @@ Type any command above (e.g. pm list packages -d)</div>
             gf.useSel[gf.fam] = { reg: r ? r.value : '', bold: b ? b.value : '' };
             gfUseState();
         }
-        // Use in Make a font waits, as a file chooser does, while a font is being made, a file chooser is open, or the files of a family used before are
-        // still being read (the picking gate: 'gf' until each gfontsUse answer came)
+        // Use in Make a font waits, as a file chooser does, while a font is being made or the picking gate is shut. Android's chooser covers the page
+        // while it is open (startActivityForResult), so the gate a user meets here is always a read: a chosen file still being copied and read on
+        // fontExec (fmkPickResult) until onFontMakerPicked, or the files of a family used before ('gf' until each gfontsUse answer came)
         function gfUseBlocked() {
             if (fnt.building) return txT('A font is being made. Wait for it to finish, or cancel it.');
-            if (fnt.picking === 'gf') return txT('The files you chose are still being read. Wait a moment.');
-            if (fnt.picking) return txT('The file chooser is already open.');
+            if (fnt.picking) return txT('The files you chose are still being read. Wait a moment.');
             return '';
         }
         function gfUseState() {

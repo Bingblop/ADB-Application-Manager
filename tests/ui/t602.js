@@ -6,8 +6,8 @@
 // The Name is filled in from the family unless it holds one of its Reserved Font Names (Lato): then it stays empty, and a Name that holds one (any
 // case) shows the licence note under the field while Build stays usable; a Regular chosen from a file clears the Regular's names, but a Bold from
 // the family keeps its own while Bold is that file (the note shows with Bold "From a file", not with None). The family's page says
-// its Reserved Font Names. Use waits, with the reason, while a font is being made, the file chooser is open, or the files of a family used just
-// before are still being read (the sheet opened again at once); a file the app refuses says why in
+// its Reserved Font Names. Use waits, with the reason, while a font is being made, a file chosen in Make a font is still being read (the chooser
+// has closed: it covers the page while open), or the files of a family used just before are (the sheet opened again at once); a file the app refuses says why in
 // the Regular slot. The family's files take the slots: a refused one leaves its slot empty (Build waits), never with a file chosen before from
 // another font, and a refused Regular takes the Reserved Font Names of that earlier font with it. A family under the Ubuntu Font Licence (Ubuntu)
 // says so on its page; its own name is not filled in and warns in the Name like a Reserved Font Name, but "Ubuntu derivative <a name>" is allowed
@@ -143,13 +143,14 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     await showFam(page, 'Molle');
     const mo = await page.evaluate(() => [document.getElementById('gfUseReg').value, document.getElementById('gfUseBold').value]);
     check('   Molle (italic only): Regular Molle-Italic.ttf, Bold None', mo.join(',') === 'Molle-Italic.ttf,', mo.join(','));
-    // the file chooser open: Use waits
+    // a file chosen and still being read: Android's chooser covers the page while it is open, so the page can only be seen once it closed and the
+    // app copies and reads the file (until onFontMakerPicked, which the mock sends a moment later): Use waits, saying so, never that a chooser is open
     await page.evaluate(() => gfClose());
-    const pick = await page.evaluate(() => { fntPick('bold'); gfOpen(); gfShow('Lato'); const b = document.getElementById('gfUseBtn'), w = document.getElementById('gfUseWhy'); return { d: b.disabled, why: w.style.display !== 'none' ? w.textContent : '' }; });
-    check('10. the file chooser open: Use waits, saying why', pick.d && pick.why === 'The file chooser is already open.', JSON.stringify(pick));
+    const pick = await page.evaluate(() => { fntPick('bold'); gfOpen(); gfShow('Lato'); const b = document.getElementById('gfUseBtn'), w = document.getElementById('gfUseWhy'); return { picking: fnt.picking, d: b.disabled, why: w.style.display !== 'none' ? w.textContent : '' }; });
+    check('10. a chosen file still being read (the chooser has closed): Use waits, saying why', pick.picking === 'bold' && pick.d && pick.why === 'The files you chose are still being read. Wait a moment.', JSON.stringify(pick));
     await page.waitForTimeout(300);
     u = await useState(page);
-    check('   the chooser answered: Use is usable again', u.disabled === false && !u.why, JSON.stringify(u));
+    check('   the file read (onFontMakerPicked came): Use is usable again, no reason shown', u.disabled === false && !u.why, JSON.stringify(u));
     // a Regular chosen from a file: the reserved names go
     await page.evaluate(() => gfClose());
     await page.fill('#fntName', 'My Lato');
