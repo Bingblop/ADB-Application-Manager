@@ -14,7 +14,8 @@
 // below itself, so the marks past it show, and the row stays as it was. In French the category menu says Display as the category, not
 // as the screen setting (Affichage). Text typed in the list's preview field, or in the tester, just before the view changes does not drop the other view's
 // previews. A newer list in which a family's styles or axes changed drops the faces asked of the old one (and the answers still on their way) and asks
-// again, also while the family's page is shown. With a keyboard (switch access, TalkBack), Enter on Show more keeps the focus on Show more, a card
+// again, also while the family's page is shown; the family's details asked of the old list (its files, its Reserved Font Names) are asked again
+// too, by the page shown and by a page opened later. With a keyboard (switch access, TalkBack), Enter on Show more keeps the focus on Show more, a card
 // opens its page with the focus on the Back arrow, and
 // Back (the arrow, Android's, a tap outside) hands the focus to that card again, the list where it was. Text typed in the tester keeps the list's
 // "No preview" marks (a card's preview does not depend on it): offline, Back still lands on the card the page was opened from.
@@ -381,8 +382,9 @@ const detail = (page) => page.evaluate((wsrc) => {
   }
   {
     // a newer list in which a family's styles or axes changed: what was asked of the old list is dropped and asked again, never drawn under the new
-    // list's sliders and style rows (R2-01). The first refresh: Lato turned variable (Weight 100-900, nine styles), Heebo gained Optical size; the
-    // second: Poppins turned variable while its previews were on their way
+    // list's sliders and style rows (R2-01). The first refresh: Lato turned variable (Weight 100-900, nine styles) and lost its Reserved Font Name,
+    // Heebo gained Optical size; the second: Poppins turned variable while its previews were on their way. The details answered under the old list
+    // are asked again (R7-02)
     const vary = (cat, f, w, x) => { const c = JSON.parse(JSON.stringify(cat)), e = c.families.find(e => e.f === f); e.w = w; e.x = x; return c; };
     const W9 = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
     const R1 = vary(vary(CAT, 'Lato', W9, [['wght', 100, 900, 400]]), 'Heebo', W9, [['opsz', 8, 72, 14], ['wght', 100, 900, 400]]);
@@ -408,6 +410,14 @@ const detail = (page) => page.evaluate((wsrc) => {
     await drain(page);
     const l0 = await fam('Lato');
     check('16. before: Lato\'s and Heebo\'s faces loaded, Roboto\'s card too', l0.keys.length === 4 && h0.keys.length === 4 && l0.roboto && l0.axes.join() === '400', JSON.stringify([l0.keys, h0.keys, l0.roboto, l0.axes]));
+    // the Get section's file count and Reserved Font Name notes, a wait for the details, the details asked, and whether Lato's first file is variable
+    const gt = () => page.evaluate(() => ({ n: (document.getElementById('gfFileCount') || {}).textContent || '', rfn: [...document.querySelectorAll('#gfGet .gf-rfn')].map(x => x.textContent),
+      wait: !!document.getElementById('gfInfoWait'), asked: __fmk.calls.filter(c => /^gfontsInfo:/.test(c)), vf: !!(((gf.info.Lato || {}).files || [])[0] || {}).variable }));
+    await page.evaluate(() => __fmk.gfStepAll());                    // Heebo's and Lato's details, under the old list
+    await page.waitForTimeout(150);
+    const g0 = await gt();
+    check('   Lato\'s details: "10 font files", "Lato" a Reserved Font Name', g0.n === '10 font files' && g0.rfn.length === 1 && /^"Lato" is a Reserved Font Name/.test(g0.rfn[0]) && !g0.wait && !g0.vf, JSON.stringify(g0));
+    await page.evaluate(() => { __fmk.gfReserved = {}; });           // the new list's Lato has none
     await refresh();
     const l1 = await fam('Lato'), h1 = await fam('Heebo');
     let d = await detail(page);
@@ -417,6 +427,8 @@ const detail = (page) => page.evaluate((wsrc) => {
     check('   the page is the new list\'s: a Weight slider at 400, nine style rows, waiting for their faces', /· 9 styles · Variable: Weight$/.test(d.meta) && d.axes.join(' | ') === 'Weight:gfAx_wght:100:900:400:400'
       && d.styles.map(r => r.name).join(',') === 'Thin 100,ExtraLight 200,Light 300,Regular 400,Medium 500,SemiBold 600,Bold 700,ExtraBold 800,Black 900' && d.line.wait && /"wght" 400/.test(d.line.fvs), JSON.stringify([d.meta, d.axes, d.line]));
     check('   …and its previews asked again (head, tester, styles)', l1.pending === 'axes,card,styles' && n(l1.asked, 'axes') === 2 && n(l1.asked, 'styles') === 2, JSON.stringify([l1.pending, l1.asked]));
+    const g1 = await gt();
+    check('   …and its details asked again: "1 font file" (its variable one), no Reserved Font Name any more', n(g1.asked, 'gfontsInfo:Lato') === 2 && g1.n === '1 font file' && g1.vf && !g1.rfn.length && !g1.wait, JSON.stringify(g1));
     await drain(page);
     const l2 = await fam('Lato');
     d = await detail(page);
@@ -427,6 +439,7 @@ const detail = (page) => page.evaluate((wsrc) => {
     const h2 = await fam('Heebo');
     d = await detail(page);
     check('   Heebo opened after the update: asked again, two sliders (Optical size, Weight)', /^axes,card(,card)?,styles$/.test(h2.pending) && n(h2.asked, 'axes') === 2 && d.axes.map(a => a.split(':')[0]).join('|') === 'Optical size|Weight', JSON.stringify([h2.pending, h2.asked, d.axes]));
+    check('   …its details too (answered under the old list)', n(d.calls, 'gfontsInfo:Heebo') === 2, JSON.stringify(d.calls));
     await drain(page);
     // the previews of a family asked of the list before, answered after a newer one changed it, are dropped: the new ones are drawn, nothing leaks
     await page.evaluate(() => gfBackToList());

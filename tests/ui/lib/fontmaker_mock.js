@@ -28,7 +28,8 @@
 // (/mnt/project-files/plans/google-fonts-v7.18.0.md). opts.gf:
 //   catalog: the compact list on the phone at the start (default none: at 0); stale: it is older than 7 days; remote: what a refresh brings (default the
 //   catalog; __fmk.gfRemote instead when it is set); refreshError: { code, error } a refresh ends with (also __fmk.gfRefreshError); downloads: families
-//   on the phone at the start; reserved: { family: [names] } (default { Lato: ['Lato'] }); previewError: families answered gf_no_preview; previewFail:
+//   on the phone at the start; reserved: { family: [names] } (default { Lato: ['Lato'] }; also __fmk.gfReserved: a family's details answered before keep
+//   theirs until a new list, as the app keeps them); previewError: families answered gf_no_preview; previewFail:
 //   families answered with a network error; emojiFace: families answered with faces that draw the sixteen sample emoji and no letter (opts.b64.emoji:
 //   a cut-down emoji font, as Google's answer for an emoji family asked for letters holds no letter either); dropFaces: { family: ['700', '900i'] }:
 //   styles a 'styles' answer leaves out (as the app skips a face lost to a 429 or 503, one past 2 MB and those past 8 MB); badFaces: the same, faces
@@ -165,9 +166,13 @@ exports.initScript = function (opts) {
   let gfCat = JSON.parse(J(G.catalog || { v: 1, at: 0, axes: {}, families: [] }));
   let gfStale = !!G.stale, gfRefreshJob = null, appleJob = null;
   const gfIsStale = () => gfCat.at > 0 && (gfStale || Date.now() < gfCat.at || Date.now() - gfCat.at > 7 * day);
-  const gfInfoJobs = {};
-  // a refresh's new list on the phone (the remote one)
-  const gfGot = () => { gfCat = JSON.parse(J(st.gfRemote || G.remote || G.catalog || { v: 1, at: 0, axes: {}, families: [] })); if (!gfCat.at) gfCat.at = Date.now(); gfStale = false; };
+  // the details answered, by family, kept as the app's gfInfos keeps them: answered again from here (an error is not kept) until a new list
+  const gfInfoJobs = {}, gfInfoKept = {};
+  // a refresh's new list on the phone (the remote one); the details kept go with the old list, as gfCatalogJob clears gfInfos
+  const gfGot = () => {
+    gfCat = JSON.parse(J(st.gfRemote || G.remote || G.catalog || { v: 1, at: 0, axes: {}, families: [] })); if (!gfCat.at) gfCat.at = Date.now(); gfStale = false;
+    Object.keys(gfInfoKept).forEach(k => { delete gfInfoKept[k]; });
+  };
   st.gfOtherWindowDone = () => { gfGot(); st.gfOtherWindow = false; };
   const gfFam = (f) => gfCat.families.find(e => e.f === f) || null;
   const GF_W = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
@@ -185,7 +190,7 @@ exports.initScript = function (opts) {
       return { name: F + '-' + (it ? (n === 400 ? 'Italic' : nm + 'Italic') : nm) + '.ttf', variable: false, italic: it, weight: n, size: 120 * 1024 + i * 7 * 1024 };
     });
   };
-  const gfReserved = (f) => ((G.reserved || { Lato: ['Lato'] })[f] || []).slice();
+  const gfReserved = (f) => ((st.gfReserved || G.reserved || { Lato: ['Lato'] })[f] || []).slice();
   const gfLicense = (f) => {
     const r = gfReserved(f), q = r.map(x => '"' + x + '"').join(' and ');
     if (f === 'Roboto') return { kind: 'apache2', name: 'Apache License 2.0', text: 'Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/' };
@@ -480,10 +485,12 @@ exports.initScript = function (opts) {
       const j = gfInfoJobs[family] = job();
       gfRun([() => {
         delete gfInfoJobs[family];
+        if (gfInfoKept[family]) { window.onGfInfo(family, J(gfInfoKept[family])); return; }
         if (st.gfInfoError) { window.onGfInfo(family, J(Object.assign({ ok: false }, st.gfInfoError))); return; }
         const lic = gfLicense(family);
-        window.onGfInfo(family, J({ ok: true, family, description: gfDesc(e), license: lic.kind, licenseName: lic.name, licenseText: lic.text, reserved: gfReserved(family),
-          designers: e.d.slice(), files: gfFilesOf(e).map(x => ({ name: x.name, variable: x.variable, italic: x.italic })) }));
+        gfInfoKept[family] = { ok: true, family, description: gfDesc(e), license: lic.kind, licenseName: lic.name, licenseText: lic.text, reserved: gfReserved(family),
+          designers: e.d.slice(), files: gfFilesOf(e).map(x => ({ name: x.name, variable: x.variable, italic: x.italic })) };
+        window.onGfInfo(family, J(gfInfoKept[family]));
       }]);
       return J({ ok: true, job: j });
     },
@@ -578,7 +585,7 @@ exports.initScript = function (opts) {
   st.kv = Object.assign({}, opts.kv || {});
   st.statusFails = opts.statusFails || 0;
   st.buildError = opts.buildError || null; st.buildWarnings = opts.buildWarnings || null; st.downloadError = opts.downloadError || {};
-  st.gfRemote = null; st.gfRefreshError = G.refreshError || null; st.gfInfoError = G.infoError || null; st.gfDownloadError = G.downloadError || {};
+  st.gfRemote = null; st.gfReserved = null; st.gfRefreshError = G.refreshError || null; st.gfInfoError = G.infoError || null; st.gfDownloadError = G.downloadError || {};
   st.specimenError = G.specimenError || null; st.appleCached = !!G.appleCached; st.gfSaving = ''; st.gfOtherWindow = !!G.otherWindow;
   st.gfDl = gfDl;
   Object.keys(opts.refuse || {}).forEach(m => { b[m] = function () { st.calls.push(m + ':' + [].join.call(arguments, ',')); return J(Object.assign({ ok: false }, opts.refuse[m])); }; });

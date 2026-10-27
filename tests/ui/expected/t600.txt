@@ -66,12 +66,15 @@ ok      Back: the cards in the new text, drawn
 ok   15. text typed in the tester, then Back at once: the cards in view are drawn
 ok      no page errors
 ok   16. before: Lato's and Heebo's faces loaded, Roboto's card too
+ok      Lato's details: "10 font files", "Lato" a Reserved Font Name
 ok      a newer list with Lato variable, its page shown: the old faces are gone (the page and document.fonts)
 ok      …Heebo's too (it gained an axis), Roboto's (unchanged) kept; the face count right
 ok      the page is the new list's: a Weight slider at 400, nine style rows, waiting for their faces
 ok      …and its previews asked again (head, tester, styles)
+ok      …and its details asked again: "1 font file" (its variable one), no Reserved Font Name any more
 ok      drawn in the new faces: the tester's covers Weight 100-900, each style row in one
 ok      Heebo opened after the update: asked again, two sliders (Optical size, Weight)
+ok      …its details too (answered under the old list)
 ok   17. Poppins' previews on their way when a newer list made it variable: asked again
 ok      the old answers dropped: the tester's face covers Weight 100-900, nine rows drawn, the face count right
 ok      no page errors

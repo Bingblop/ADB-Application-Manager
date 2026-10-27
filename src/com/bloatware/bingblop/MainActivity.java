@@ -6792,7 +6792,8 @@ public class MainActivity extends Activity {
     private String fmkPickSlot, fmkExportId;     // what the open file chooser / "save as" is for, one at a time (guarded by fmkLock)
     private String gfSaveFamily;                 // the Google Fonts family the open "save as" is for: one save screen for both (guarded by fmkLock)
     // The Google Fonts list belongs to the process: read from catalog.json once, replaced whole by a refresh (guarded by gfLock), with its
-    // families by name; and the details of the last 24 families asked for (gfontsInfo), least recently asked first.
+    // families by name; and the details of the last 24 families asked for (gfontsInfo), least recently asked first, until a refresh replaces the
+    // list (Google may have changed a family's files, its licence or its Reserved Font Names since).
     private static final String GF_CATALOG = "catalog.json";
     private static final java.util.regex.Pattern GF_REQ_ID = java.util.regex.Pattern.compile("[A-Za-z0-9_-]{1,24}");
     private static final Object gfLock = new Object();
@@ -8186,6 +8187,9 @@ public class MainActivity extends Activity {
             synchronized (gfLock) {
                 gfCatalogRead = true;
                 gfSetCatalog(cat);
+                // v7.18.0 (R7-02): the details asked of the old list are fetched again (a family turned variable, dropped its Reserved Font Name).
+                // A details job running across this may put its answer back: it was just fetched from Google
+                gfInfos.clear();
             }
             res = new JSONObject().put("ok", true).put("at", at).put("count", count);
         } catch (Throwable t) {
@@ -8258,8 +8262,8 @@ public class MainActivity extends Activity {
 
     /**
      * A family's details (gfontsInfo): its download list (the files, the licence and its Reserved Font Names) and its details page (the
-     * description, the designers), kept for the 24 families last asked for. Google has no details page for some families it serves (the
-     * Material Symbols ones answer 404): the list's facts and the catalog's designers are then the answer.
+     * description, the designers), kept for the 24 families last asked for until a new list (gfCatalogJob). Google has no details page for
+     * some families it serves (the Material Symbols ones answer 404): the list's facts and the catalog's designers are then the answer.
      * window.onGfInfo(family, {ok, family, description, license, licenseName, licenseText, reserved, designers, files} | {ok:false, code, error}).
      */
     private void gfInfoJob(FontLibrary.Jobs.Job job, String family, JSONObject entry) {
