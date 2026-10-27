@@ -46368,6 +46368,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfListCame() {
             gf.refreshErr = '';
             const chg = gfLoadCat();
+            // a newer list may come with a family's new files, licence or Reserved Font Names, and Java has dropped the details it kept too: the
+            // details follow the list, as the previews do (gfForgetChanged). One still on its way is kept, and is Google's answer of now
+            Object.keys(gf.info).forEach(f => { if (!(gf.info[f] || {}).asking) delete gf.info[f]; });
             if (!gf.open) return;
             gfBuildLangs();
             // the family whose page is open left the new list (renamed or removed) and is not on the phone: its page has nothing left to show, so back
@@ -46378,6 +46381,9 @@ Type any command above (e.g. pm list packages -d)</div>
             // the family's page shown and its styles or axes changed: its sliders and style rows are the new list's, from the axes' defaults, and its
             // previews asked again; else only its Download and About parts
             if (chg && chg.has(gf.fam)) { gf.axes = gfAxesStart(gf.by.get(gf.fam)); gfRenderDetail(); } else { gfRenderGet(); gfRenderAbout(); }
+            // its details asked again (Get and About say they are coming); a gone family's never are (gfShow)
+            const e = gf.by.get(gf.fam);
+            if (e && !e.gone) gfAskInfo(gf.fam, false);
         }
         function gfRenderStatus() {
             const el = document.getElementById('gfStatus');
