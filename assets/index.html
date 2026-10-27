@@ -8035,9 +8035,11 @@
                 .gf-badges .uad-badge { margin: 0; color: var(--accent); }
                 .gf-badges .uad-badge.is-dl { color: var(--status-running); }
                 /* the clip the ellipsis needs (overflow: hidden) is vertical too: .6em of room above and below the 1.35 line keeps the marks that reach past
-                   it (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts, a script face's swashes), and the margins take that room back, so nothing moves.
-                   In em, the element's own size: it cancels at every size the slider gives (14-72) and for .gf-failed too (.5em still cut Nastaliq's dots) */
-                .gf-pv { margin-block: calc(var(--space-2) - .6em) -.6em; padding-block: .6em; font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                   it (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts, a script face's swashes). In em, the element's own size, at every size the
+                   slider gives (14-72) and for .gf-failed too (.5em still cut Nastaliq's dots). The top margin takes its room back, so the line stays where
+                   it was; the bottom margin takes back only what the card's own padding holds, so the room stays inside the card (the card grows by the
+                   rest past 20 px): past its border it took the taps in the gap between cards and drew the marks over the next card (v7.18.0) */
+                .gf-pv { margin-block: calc(var(--space-2) - .6em) calc(-1 * min(.6em, var(--space-4))); padding-block: .6em; font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 .gf-pv.gf-wait { visibility: hidden; }
                 .gf-pv.gf-failed { font-size: var(--fs-item); font-weight: var(--fw-bold); color: var(--text-muted); }
                 .gf-nopv { font-size: var(--fs-pill); font-weight: var(--fw-medium); margin-inline-start: var(--space-2); }

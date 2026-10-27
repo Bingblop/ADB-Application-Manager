@@ -3,7 +3,7 @@ ok      in the card mode, with the sample text
 ok      a card waits with its text in the app font (translate="no")
 ok   2. answered: every card in view asked once, none past it, never more than 6 on their way
 ok      the card is drawn in its face (gfpv<n>)
-ok      the drawn lines (28 px) clip .55em or more above and below the line, so marks past it show; the cards and the lines where they were
+ok      the drawn lines (28 px) clip .55em or more above and below the line, so marks past it show, inside their cards; the lines where they were
 ok      one face per card in document.fonts
 ok   3. scrolled: the cards now in view ask, the ones drawn before do not
 ok      scrolled back: nothing asked again
@@ -15,7 +15,9 @@ ok   5. answers of an older text are dropped: no face made of them
 ok      the new text's answers draw the cards in view
 ok      never more than 6 on their way
 ok   6. the size slider: 50, every line at 50 px
-ok      at 72 px the room above and below grows with the line; the cards and the lines where they were
+ok      at 50 px a tap in the gap between two cards opens neither (it lands on the list); one on the first card's line opens that card
+ok      at 72 px the room above and below grows with the line, inside the card, which grows by what its padding cannot hold; the lines where they were
+ok      at 72 px too, a tap in the gap lands on the list, one on the line opens the card
 ok   7. a search took the cards out: their answers are dropped
 ok      the one card left asks and is drawn
 ok   8. closed with previews on their way: no face made of them
