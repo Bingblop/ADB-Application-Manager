@@ -109,7 +109,14 @@ ok      a newer list, its details still on their way: About keeps the older ones
 ok      a newer list draws About again: the focus stays on the description (still open)
 ok      and on Licence text, opened: it stays open
 ok      a newer list whose details cannot be had: About keeps the older ones (no reason, no Retry), the focus on Licence text (still open)
+ok      a newer list whose details are refused at once (busy): About keeps the older ones (no reason, no Retry), the focus on Licence text
 ok      Lato opened again: About shows them at once and asks once more; the newer ones come
 ok      a family's page opened again starts with its Licence text closed, as its description
+ok      no page errors
+ok   19. Licence text opened, Tab: the focus on the text itself (it scrolls: a keyboard can read all of it), with no name in place of the text
+ok      a newer list draws About again: the focus stays on the text, read to where it was
+ok      Back, Lato again, then Inter again (their details came before): each page's Licence text closed, and opened at its top, not where the last page left it
+ok      a slider moved (wght), and a newer list changes Cairo's styles: the sliders from the defaults, the focus still on wght
+ok      one more that leaves Cairo with no axes: no sliders, the focus on the size slider
 ok      no page errors
 all passed

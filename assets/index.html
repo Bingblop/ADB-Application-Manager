@@ -46817,7 +46817,13 @@ Type any command above (e.g. pm list packages -d)</div>
             if (t.value !== gf.dText) t.value = gf.dText;
             document.getElementById('gfDSize').value = String(gf.dSize);
             document.getElementById('gfDSizeV').textContent = String(gf.dSize);
-            document.getElementById('gfDAxes').innerHTML = gfAxesHtml(e);
+            // the sliders drawn again (a newer list, a new language): a focus on one stays on it (the same axis), else on the first, else on the size
+            const axBox = document.getElementById('gfDAxes'), ae = document.activeElement, axId = ae && ae !== axBox && axBox.contains(ae) ? ae.id || '' : null;
+            axBox.innerHTML = gfAxesHtml(e);
+            if (axId !== null) {
+                const to = (axId && document.getElementById(axId)) || axBox.querySelector('input') || document.getElementById('gfDSize');
+                if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
+            }
             gfRenderTester(false);
             gfRenderGet();
             gfRenderAbout();
@@ -46883,9 +46889,11 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfAskInfo(f, again) {
             const cur = gf.info[f];
             if (cur && (cur.asking || cur.refreshing || (cur.ok && !again && !cur.stale))) return;
-            const r = fntCall('gfontsInfo', [f], true);
-            // details of an older list (stale, gfListCame) stay shown while the newer list's come: refreshing, not asking
-            gf.info[f] = !r ? { err: '' } : !r.ok ? { err: fntErrText(r, 'Could not start') } : cur && cur.ok && cur.stale ? Object.assign({}, cur, { stale: false, refreshing: true }) : { asking: true };
+            const keep = !!(cur && cur.ok && cur.stale), r = fntCall('gfontsInfo', [f], true);
+            // details of an older list (stale, gfListCame) stay shown while the newer list's come: refreshing, not asking. Refused at once (another window
+            // is getting them, no bridge), they stay as they are, still stale, as when the newer ones cannot be had (onGfInfo)
+            gf.info[f] = !r || !r.ok ? (keep ? cur : !r ? { err: '' } : { err: fntErrText(r, 'Could not start') })
+                : keep ? Object.assign({}, cur, { stale: false, refreshing: true }) : { asking: true };
             if (gf.open && gf.view === 'detail' && gf.fam === f) { gfRenderGet(); gfRenderAbout(); }
         }
         window.onGfInfo = function (family, json) {
@@ -47131,11 +47139,15 @@ Type any command above (e.g. pm list packages -d)</div>
             // gone family has no page on fonts.google.com to open
             const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : String((gf.dls[f] || {}).licenseName || '');
             h += row('Licence', lic)
-                + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"' + (gf.licOpen ? ' open' : '') + ' ontoggle="gfLicToggle(this)"><summary id="gfLicSum">Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
+                + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"' + (gf.licOpen ? ' open' : '') + ' ontoggle="gfLicToggle(this)"><summary id="gfLicSum">Licence text</summary><pre id="gfLicText" tabindex="0" translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
                 + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Last updated', gfDate(e.m))
                 + (e.gone ? '' : '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>');
-            const k = gfFocusNote(box);
+            // the Licence text scrolls on its own (a keyboard reaches it: tabindex; no name of its own, so a screen reader reads the text itself): a
+            // redraw keeps where it was read to while it stays open. A page opened (gfShow closes it) starts at the top, whatever the page left kept
+            const k = gfFocusNote(box), lp = gf.licOpen ? document.getElementById('gfLicText') : null, top = lp ? lp.scrollTop : 0;
             box.innerHTML = h;
+            const lp2 = document.getElementById('gfLicText');
+            if (lp2 && top) lp2.scrollTop = top;
             // More only when the description runs past its three lines
             const desc = document.getElementById('gfDesc'), more = document.getElementById('gfDescMore');
             if (desc && more && !gf.descOpen && desc.scrollHeight > desc.clientHeight + 1) more.style.display = '';

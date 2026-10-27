@@ -33,7 +33,8 @@
 //   families answered with a network error; emojiFace: families answered with faces that draw the sixteen sample emoji and no letter (opts.b64.emoji:
 //   a cut-down emoji font, as Google's answer for an emoji family asked for letters holds no letter either); dropFaces: { family: ['700', '900i'] }:
 //   styles a 'styles' answer leaves out (as the app skips a face lost to a 429 or 503, one past 2 MB and those past 8 MB); badFaces: the same, faces
-//   answered with bytes that are no font (their FontFace does not load); infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError:
+//   answered with bytes that are no font (their FontFace does not load); infoError: { code, error } every family's details end with (also __fmk.gfInfoError); licenceLines: n lines
+//   added to an OFL family's Licence text (a long one, which scrolls); downloadError:
 //   { family: { code, error } }; useError: { code, error, slot? } gfontsUse answers with (only that slot's when slot is set); saveError: { code, error }
 //   the save ends with ('cancelled' too); specimenError: { code, error } the iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept
 //   from an earlier read (also __fmk.appleCached: emojiSpecimenCached gives them, and emojiSpecimenFetch's job answers with them, from 'cache', before
@@ -195,7 +196,8 @@ exports.initScript = function (opts) {
     const r = gfReserved(f), q = r.map(x => '"' + x + '"').join(' and ');
     if (f === 'Roboto') return { kind: 'apache2', name: 'Apache License 2.0', text: 'Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/' };
     if (/^Ubuntu/.test(f)) return { kind: 'ufl', name: 'Ubuntu Font Licence 1.0', text: 'Copyright 2010,2011 Canonical Ltd.\n\nThis Font Software is licensed under the Ubuntu Font Licence, Version 1.0.\nhttps://ubuntu.com/legal/font-licence\n\nUBUNTU FONT LICENCE Version 1.0' };
-    return { kind: 'ofl', name: 'SIL Open Font License 1.1', text: 'Copyright 2010-2014 The ' + f + ' Project Authors' + (r.length ? ', with Reserved Font Name' + (r.length > 1 ? 's ' : ' ') + q : '') + '.\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.\nThis license is copied below, and is also available with a FAQ at:\nhttps://openfontlicense.org' };
+    return { kind: 'ofl', name: 'SIL Open Font License 1.1', text: 'Copyright 2010-2014 The ' + f + ' Project Authors' + (r.length ? ', with Reserved Font Name' + (r.length > 1 ? 's ' : ' ') + q : '') + '.\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.\nThis license is copied below, and is also available with a FAQ at:\nhttps://openfontlicense.org'
+      + Array.from({ length: G.licenceLines || 0 }, (x, i) => '\nLicence line ' + (i + 1)).join('') };
   };
   const gfDesc = (e) => e.f === 'Lato'
     ? 'Lato is a sans serif typeface family started in the summer of 2010 by Warsaw-based designer Łukasz Dziedzic ("Lato" means "Summer" in Polish).\nIn December 2010 the Lato family was published under the Open Font License by his foundry tyPoland, with support from Google.\n\nIn the last ten or so years, during which Łukasz has been designing type, most of his projects were rooted in a particular design task that he needed to solve. With Lato, it was no different. Originally, the family was conceived as a set of corporate fonts for a large client, who in the end decided to go in different stylistic direction, so the family became available for a public release.'

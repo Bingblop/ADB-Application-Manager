@@ -19,7 +19,8 @@
 // a card keeps it when a download that ended while the list shows draws the list again. In About it stays on Open on fonts.google.com when the
 // details come, on About itself ("Getting the details…") after Retry until the reason (Retry again) or the details (More) come, on the
 // description that More opened, and on it or Licence text (which stays open) when a newer list draws About again (the older list's details stay
-// shown until the newer ones come, and stay when those cannot be had).
+// shown until the newer ones come, and stay when those cannot be had or are refused at once). A long Licence text takes the focus itself (Tab),
+// and keeps it and the place it was read to through such a redraw; a slider keeps it when a newer list draws the sliders again.
 // The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone, and its
 // undo table has a row for a downloaded family (Delete on its page). Without
 // a family's details, About's Licence is its download's: it comes with a download made on the family's page and goes with a Delete there. A
@@ -576,6 +577,15 @@ const kb = n => (n * 1024);
     check('   a newer list whose details cannot be had: About keeps the older ones (no reason, no Retry), the focus on Licence text (still open)', f.id === 'gfLicSum'
       && mid[1] === 'gfDesc,gfDescMore,gfLic' && mid[2] && await licOpen(), JSON.stringify(mid));
     await page.evaluate(() => { __fmk.gfInfoError = null; });
+    // refused at once (another window of the app is getting them: busy): the same, the older ones stay (still stale), no reason or Retry. Set once
+    // the refresh has started, which another window's would refuse too
+    await page.evaluate(() => gfRefresh(true));
+    await page.evaluate(() => { __fmk.gfOtherWindow = true; });
+    f = await answer();
+    mid = [f, (await about(page)).extra.join(','), await page.evaluate(() => { const I = gf.info.Lato || {}; return [!!I.ok, !!I.stale, !!I.err]; })];
+    check('   a newer list whose details are refused at once (busy): About keeps the older ones (no reason, no Retry), the focus on Licence text', f.id === 'gfLicSum'
+      && mid[1] === 'gfDesc,gfDescMore,gfLic' && mid[2].join(',') === 'true,true,false' && await licOpen(), JSON.stringify(mid));
+    await page.evaluate(() => { __fmk.gfOtherWindow = false; });
     n0 = await asked();
     await showFam(page, 'Lato');
     mid = [(await about(page)).extra.join(','), await asked() - n0, await licOpen()];
@@ -583,6 +593,54 @@ const kb = n => (n * 1024);
     check('   Lato opened again: About shows them at once and asks once more; the newer ones come', mid[0] === 'gfDesc,gfDescMore,gfLic' && mid[1] === 1
       && await page.evaluate(() => { const I = gf.info.Lato || {}; return I.ok && !I.stale && !I.refreshing; }), JSON.stringify([mid, f]));
     check('   a family\'s page opened again starts with its Licence text closed, as its description', !mid[2] && !await licOpen(), JSON.stringify(mid));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // 19. A long Licence text scrolls on its own: a keyboard reaches it (Tab after Licence text), and a newer list drawing About again keeps the focus
+  // on it and where it was read to. A slider of the page (a variable family's axis) keeps the focus when the newer list changes the family's
+  // styles (the sliders drawn again from the axes' defaults); one that no longer has axes gives it to the size slider
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, hold: true, licenceLines: 90 } });
+    const fo = () => page.evaluate(() => { const a = document.activeElement; return a ? a.id || a.tagName : ''; });
+    const answer = async () => { await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150); return fo(); };
+    const newer = async () => { await page.evaluate(() => gfRefresh(true)); return answer(); };
+    await showFam(page, 'Lato');
+    await answer();
+    await page.focus('#gfLicSum'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+    await page.keyboard.press('Tab'); await page.waitForTimeout(100);
+    let f = await fo();
+    // no name of its own (aria-labelledby would make TalkBack read "Licence text" in its place on Android): the licence itself is read
+    const lic = await page.evaluate(() => { const p = document.getElementById('gfLicText'); p.scrollTop = 150; return { room: p.scrollHeight - p.clientHeight, top: p.scrollTop, named: p.hasAttribute('aria-labelledby') || p.hasAttribute('aria-label') }; });
+    check('19. Licence text opened, Tab: the focus on the text itself (it scrolls: a keyboard can read all of it), with no name in place of the text', f === 'gfLicText'
+      && lic.room > 150 && lic.top === 150 && !lic.named, JSON.stringify([f, lic]));
+    f = await newer();
+    const top = await page.evaluate(() => { const p = document.getElementById('gfLicText'); return p ? p.scrollTop : -1; });
+    check('   a newer list draws About again: the focus stays on the text, read to where it was', f === 'gfLicText' && Math.abs(top - 150) <= 1, JSON.stringify([f, top]));
+    // Back, another family whose details came before (About drawn at once), and Lato again: each page's Licence text starts closed and at its top
+    const licTop = async () => { await page.click('#gfLicSum'); await page.waitForTimeout(100); return page.evaluate(() => document.getElementById('gfLicText').scrollTop); };
+    await showFam(page, 'Inter'); await answer(); await page.evaluate(() => gfBackToList());
+    await showFam(page, 'Lato');
+    const shut = await page.evaluate(() => !document.getElementById('gfLic').open);
+    const t1 = await licTop();
+    await page.evaluate(() => { document.getElementById('gfLicText').scrollTop = 300; });
+    await showFam(page, 'Inter');
+    const t2 = await licTop();
+    check('   Back, Lato again, then Inter again (their details came before): each page\'s Licence text closed, and opened at its top, not where the last page left it', shut && t1 === 0 && t2 === 0, JSON.stringify([shut, t1, t2]));
+    // Cairo: wght 200-1000 from 400, and slnt
+    await showFam(page, 'Cairo');
+    await answer();
+    await page.focus('#gfAx_wght'); await page.keyboard.press('ArrowRight'); await page.waitForTimeout(100);
+    const moved = await page.evaluate(() => document.getElementById('gfAx_wght').value);
+    const cat2 = JSON.parse(JSON.stringify(CAT)); cat2.families.find(e => e.f === 'Cairo').w.push('200i');
+    await page.evaluate((c) => { __fmk.gfRemote = c; }, cat2);
+    f = await newer();
+    const ax = await page.evaluate(() => ({ v: (document.getElementById('gfAx_wght') || {}).value, n: document.querySelectorAll('#gfDAxes input').length }));
+    check('   a slider moved (wght), and a newer list changes Cairo\'s styles: the sliders from the defaults, the focus still on wght', moved !== '400' && f === 'gfAx_wght'
+      && ax.v === '400' && ax.n === 2, JSON.stringify([moved, f, ax]));
+    const cat3 = JSON.parse(JSON.stringify(cat2)); cat3.families.find(e => e.f === 'Cairo').x = [];
+    await page.evaluate((c) => { __fmk.gfRemote = c; }, cat3);
+    f = await newer();
+    check('   one more that leaves Cairo with no axes: no sliders, the focus on the size slider', f === 'gfDSize' && !(await page.evaluate(() => document.querySelectorAll('#gfDAxes input').length)), f);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
