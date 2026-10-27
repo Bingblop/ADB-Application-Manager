@@ -5,7 +5,8 @@
 // ("Reads about 0.3 MB of the iOS emoji file.", or "Read from the downloaded file." when the iOS emoji are on the phone) and "Show these emoji"
 // (emojiSpecimenFetch), "Reading the iOS emoji…" while it runs, then sixteen 28 px pictures (alt: the emoji), kept for the next render and on a
 // fresh page. A failure, and another window of the app reading them (busy), says why in the page's words with the button again; that sentence goes
-// once the iOS emoji are downloaded or deleted (the next read is another file). An older app build shows no strip. The row's Download stays its
+// once the iOS emoji are downloaded or deleted (the next read is another file). Pictures kept since the page asked (that other window's read) are
+// the read's answer (from 'cache', as fmkSpecimenJob does), so a page offline by then still shows them. An older app build shows no strip. The row's Download stays its
 // first button; nothing is wider than the screen at 360 px. The licences travel with the
 // samples: assets/emoji/OFL.txt holds the full SIL Open Font License 1.1 with the copyright lines of noto.ttf and blobmoji.ttf (OFL condition 2),
 // assets/emoji/NOTICE.txt points to it, and the root NOTICE lists the four fonts with their licences (ASCII, the iOS emoji never shipped).
@@ -141,6 +142,24 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     await page.click('#fntEmoShow'); await page.waitForTimeout(200);
     s = await strips(page);
     check('   once it ended, the button reads them here', s.apple.pv && s.apple.pv.nImg === 16 && !s.apple.err && (await calls(page, '^emojiSpecimenFetch:')).length === 2, JSON.stringify(s.apple));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // that other window's read was kept (specimen/apple.json) after this page asked for the kept pictures, and this phone is offline now: the read
+  // answers with the kept pictures instead of reading the web again (R4-12)
+  {
+    const { ctx, page, errors } = await open(b, { gf: { otherWindow: true } });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    await page.evaluate(() => {
+      __fmk.gfOtherWindow = false; __fmk.appleCached = true; __fmk.specimenError = { code: 'network', error: 'The download failed: Unable to resolve host' };
+      const on = window.onEmojiSpecimen; window.__emoFrom = [];
+      window.onEmojiSpecimen = function (id, json) { __emoFrom.push(JSON.parse(json).from); return on.apply(this, arguments); };
+    });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    const s = await strips(page), from = await page.evaluate(() => __emoFrom.join(','));
+    check('7c. the other window\'s read was kept, this phone is offline: Show these emoji shows the kept pictures, no error', s.apple.pv && s.apple.pv.nImg === 16 && !s.apple.err
+      && s.apple.show === '' && (await calls(page, '^emojiSpecimenFetch:')).length === 2, JSON.stringify(s.apple));
+    check('   answered from the kept pictures, not read again', from === 'cache', from);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

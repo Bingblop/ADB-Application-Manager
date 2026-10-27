@@ -1259,6 +1259,12 @@ public class FontLibraryTest {
         String spec = body(ma, "private void fmkSpecimenJob(");
         is("the iOS sample reads the kept file, else ranges", spec.contains("FontLibrary.keptBuild(item, kept) == null") && spec.contains("new FmkRanges(job, item)")
                 && spec.contains("EmojiSpecimen.cacheJson(images, item.sha256)"), true);
+        // …once: a sample kept in specimen/apple.json is the answer before anything is read, also when it was kept after this page asked
+        // emojiSpecimenCached (another window's read), so a phone offline by then still shows it (R4-12)
+        int cached = spec.indexOf("List<EmojiSpecimen.Image> images = EmojiSpecimen.readCache(cache, item.sha256);"), kept = spec.indexOf("if (images != null && !images.isEmpty()) {");
+        is("…a kept sample is the answer, before the file or the ranges are read", cached > 0 && kept > cached && kept < spec.indexOf("new FmkRanges(job, item)")
+                && kept < spec.indexOf("new java.io.RandomAccessFile(kept, \"r\")") && spec.contains("File kept = d.emojiFile(item.id), cache = new File(d.specimen, item.id + \".json\");")
+                && spec.contains(".put(\"images\", fmkImagesJson(images)).put(\"from\", \"cache\");") && spec.contains("FontLibrary.writeAtomic(cache, EmojiSpecimen.cacheJson(images, item.sha256)"), true);
         String ranges = body(ma, "private final class FmkRanges");
         is("…each range checked to be that part of the pinned file, uncompressed, its hops disconnectable", ranges.contains("EmojiSpecimen.checkPart(code, c.getHeaderField(\"Content-Range\"), offset, length, item.size)")
                 && ranges.contains("hdr.put(\"Accept-Encoding\", \"identity\")") && ranges.contains("fmkConns.put(job.id, hop)") && ranges.contains("this.at = item.url;"), true);

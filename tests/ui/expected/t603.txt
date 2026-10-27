@@ -25,6 +25,9 @@ ok      no page errors
 ok   7b. another window is reading the iOS emoji: its sentence and the button again
 ok      once it ended, the button reads them here
 ok      no page errors
+ok   7c. the other window's read was kept, this phone is offline: Show these emoji shows the kept pictures, no error
+ok      answered from the kept pictures, not read again
+ok      no page errors
 ok   7c. offline, Show: the network sentence; the iOS emoji not on the phone
 ok      then downloaded: that sentence gone, "Read from the downloaded file." and the button
 ok      the file not read, then Delete: that sentence gone, "Reads about 0.3 MB of the iOS emoji file."

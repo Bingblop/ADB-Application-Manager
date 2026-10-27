@@ -8507,35 +8507,41 @@ public class MainActivity extends Activity {
      * Reads the iOS emoji sample (emojiSpecimenFetch): the 16 pictures of EmojiSpecimen.SAMPLE out of the iOS emoji font's CBDT table, from
      * the downloaded file when it is kept (FontLibrary.keptBuild: its exact size; it was checked by SHA-256 when it was downloaded, and only
      * pictures are read from it), else by HTTP ranges from the pinned address (FmkRanges: about 0.3 MB in 20 requests). The sample is kept in
-     * specimen/apple.json, so it is read once. window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"} | {ok:false, code, error}).
+     * specimen/apple.json, so it is read once: a sample kept there is the answer (from:"cache"; another window of the app may have read it
+     * since this page asked emojiSpecimenCached). window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"|"cache"} | {ok:false,
+     * code, error}).
      */
     private void fmkSpecimenJob(final FontLibrary.Jobs.Job job, EmojiCatalog.Item item) {
         FontLibrary.Dirs d = fmkDirs();
-        File kept = d.emojiFile(item.id);
+        File kept = d.emojiFile(item.id), cache = new File(d.specimen, item.id + ".json");
         boolean web = FontLibrary.keptBuild(item, kept) == null;
         java.io.RandomAccessFile raf = null;
         JSONObject res;
         try {
-            List<EmojiSpecimen.Image> images;
-            if (web) {
-                images = EmojiSpecimen.read(new FmkRanges(job, item), item.size);
+            List<EmojiSpecimen.Image> images = EmojiSpecimen.readCache(cache, item.sha256);
+            if (images != null && !images.isEmpty()) {                 // v7.18.0 (R4-12): read once, also when this page asked before it was kept
+                res = new JSONObject().put("ok", true).put("images", fmkImagesJson(images)).put("from", "cache");
             } else {
-                final java.io.RandomAccessFile file = raf = new java.io.RandomAccessFile(kept, "r");
-                images = EmojiSpecimen.read(new EmojiSpecimen.Source() {
-                    @Override
-                    public byte[] read(long offset, int length) throws IOException {
-                        if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
-                        byte[] b = new byte[length];
-                        file.seek(offset);
-                        file.readFully(b);
-                        return b;
-                    }
-                }, item.size);
+                if (web) {
+                    images = EmojiSpecimen.read(new FmkRanges(job, item), item.size);
+                } else {
+                    final java.io.RandomAccessFile file = raf = new java.io.RandomAccessFile(kept, "r");
+                    images = EmojiSpecimen.read(new EmojiSpecimen.Source() {
+                        @Override
+                        public byte[] read(long offset, int length) throws IOException {
+                            if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                            byte[] b = new byte[length];
+                            file.seek(offset);
+                            file.readFully(b);
+                            return b;
+                        }
+                    }, item.size);
+                }
+                try {
+                    FontLibrary.writeAtomic(cache, EmojiSpecimen.cacheJson(images, item.sha256).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                } catch (IOException notKept) {}                        // read again next time
+                res = new JSONObject().put("ok", true).put("images", fmkImagesJson(images)).put("from", web ? "web" : "file");
             }
-            try {
-                FontLibrary.writeAtomic(new File(d.specimen, item.id + ".json"), EmojiSpecimen.cacheJson(images, item.sha256).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            } catch (IOException notKept) {}                            // read again next time
-            res = new JSONObject().put("ok", true).put("images", fmkImagesJson(images)).put("from", web ? "web" : "file");
         } catch (Throwable t) {
             res = web || t instanceof EmojiSpecimen.SpecimenException || gfStopped(job) ? gfError(t, job)
                     : FontLibrary.error("unreadable", "The app could not read that file: " + errMsg(t));
@@ -15182,8 +15188,9 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Reads the iOS emoji sample (apple only) from the downloaded file or by HTTP ranges. Answer {ok, job} (the running one's when this
-         * window asked for it already; busy while another window's runs); then window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"}).
+         * Reads the iOS emoji sample (apple only) from the downloaded file or by HTTP ranges, unless it is kept (specimen/apple.json). Answer
+         * {ok, job} (the running one's when this window asked for it already; busy while another window's runs); then
+         * window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"|"cache"}).
          */
         @JavascriptInterface
         public String emojiSpecimenFetch(String id) {
