@@ -7,7 +7,8 @@
 // fresh page. A failure, and another window of the app reading them (busy), says why in the page's words with the button again; that sentence goes
 // once the iOS emoji are downloaded or deleted (the next read is another file). Pictures kept since the page asked (that other window's read) are
 // the read's answer (from 'cache', as fmkSpecimenJob does), so a page offline by then still shows them. Show these emoji pressed with a keyboard
-// leaves the focus on "Reading the iOS emoji…", then on the pictures or the button again. An older app build shows no strip. The row's Download stays its
+// leaves the focus on "Reading the iOS emoji…", then on the pictures or the button again; one on another row's control (its Download, Cancel or
+// Delete, License or Source) stays there when the list is drawn again (the pictures came, a download). An older app build shows no strip. The row's Download stays its
 // first button; nothing is wider than the screen at 360 px. The licences travel with the
 // samples: assets/emoji/OFL.txt holds the full SIL Open Font License 1.1 with the copyright lines of noto.ttf and blobmoji.ttf (OFL condition 2),
 // assets/emoji/NOTICE.txt points to it (and to Twemoji-LICENSE.md, the release's licences of Twemoji: its art CC-BY-4.0, its font build
@@ -190,7 +191,7 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
   }
   // with a keyboard (switch access, TalkBack): Show these emoji turns into "Reading the iOS emoji…", which takes the focus (and is read), also
   // through a redraw of the list meanwhile; a failure gives it to the button again, the pictures to their strip (one image, read by its label);
-  // never the body
+  // never the body. A focus on another row's control stays on it through the redraws
   {
     const { ctx, page, errors } = await open(b, { gf: { hold: true, specimenError: { code: 'network', error: 'The download failed: Unable to resolve host' } } });
     const fo = () => page.evaluate(() => { const a = document.activeElement; return { id: a ? a.id || a.tagName : '', text: a ? a.textContent.trim() : '', label: a ? a.getAttribute('aria-label') || '' : '' }; });
@@ -206,6 +207,27 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     const f4 = await fo(), f5 = await answer();
     check('   again: "Reading the iOS emoji…", then the sixteen pictures, read as "Sample of iOS emoji"', f4.id === 'fntEmoSay_apple' && f5.id === 'fntEmoPv_apple' && f5.label === 'Sample of iOS emoji'
       && (await strips(page)).apple.pv.nImg === 16, JSON.stringify([f4, f5]));
+    // the read under way, the focus goes on to another row's control (Blobmoji's Download, Noto's Source, the iOS row's License): the answer draws
+    // the list again, and the focus stays on that control
+    const other = async (sel, i) => {
+      await page.evaluate(() => { fnt.emoApple.images = null; fnt.emoApple.asked = true; fntRenderEmoji(); });         // the button again
+      await page.focus('#fntEmoShow'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+      const said = (await fo()).id;
+      await page.evaluate(([sel, i]) => document.querySelectorAll(sel)[i].focus(), [sel, i]);
+      const f = await answer();
+      return { said, f: f.id + ':' + f.text.slice(0, 40), same: await page.evaluate(([sel, i]) => document.activeElement === document.querySelectorAll(sel)[i], [sel, i]), n: ((await strips(page)).apple.pv || {}).nImg };
+    };
+    let o = await other('#fntEmo_blobmoji .op-mode-btn', 0);
+    check('   the focus on Blobmoji\'s Download while they are read: there still when the pictures come, not the body', o.said === 'fntEmoSay_apple' && o.same && o.f === 'BUTTON:Download' && o.n === 16, JSON.stringify(o));
+    o = await other('#fntEmo_noto .fnt-links a', 1);
+    check('   on Noto\'s Source: there still', o.same && o.f === 'A:Source' && o.n === 16, JSON.stringify(o));
+    o = await other('#fntEmo_apple .fnt-links a', 0);
+    check('   on the iOS row\'s License: there still', o.same && o.f === 'A:License' && o.n === 16, JSON.stringify(o));
+    // a row's own button pressed with the keyboard: Download turns into Cancel, then Delete once downloaded, in the same place, which keeps the focus
+    const dl = await page.evaluate(() => { const b = document.querySelector('#fntEmo_blobmoji .op-mode-btn'); b.focus(); b.click(); const a = document.activeElement; return (a.closest('.fnt-emo') || {}).id + ':' + a.textContent.trim().slice(0, 40); });
+    await page.waitForTimeout(300);
+    const done = await page.evaluate(() => { const a = document.activeElement; return (a.closest('.fnt-emo') || {}).id + ':' + a.textContent.trim().slice(0, 40); });
+    check('   Blobmoji\'s Download pressed: the focus on its Cancel, then on its Delete', dl === 'fntEmo_blobmoji:Cancel' && done === 'fntEmo_blobmoji:Delete', JSON.stringify([dl, done]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

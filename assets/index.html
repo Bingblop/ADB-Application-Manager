@@ -45701,8 +45701,16 @@ Type any command above (e.g. pm list packages -d)</div>
             // (another row's download) keeps it there
             const ae = document.activeElement, A = fnt.emoApple;
             const ios = !!ae && (ae.id === 'fntEmoShow' || (A.focusWait && (ae.id === 'fntEmoSay_apple' || ae.id === 'fntEmoPv_apple')));
+            // v7.18.0: a focus on another control of the list (a row's Download, Cancel or Delete, its License or Source) stays on it through the
+            // redraw, such as the iOS sample's answer: the row's button (its three words share one place), else its link by place, not by its words
+            const row = !ios && ae && ae !== list && list.contains(ae) ? ae.closest('.fnt-emo') : null;
+            const keep = row && row.id ? { row: row.id, link: [...row.querySelectorAll('.fnt-links a')].indexOf(ae) } : null;
             list.innerHTML = (C.items || []).map(fntEmoRow).join('') || '<div class="list-empty">Nothing to download.</div>';
             fntEmoFacesLoad();
+            if (keep) {
+                const r = document.getElementById(keep.row), to = r && ((keep.link >= 0 && r.querySelectorAll('.fnt-links a')[keep.link]) || r.querySelector('.op-mode-btn'));
+                if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
+            }
             if (!ios) return;
             const btn = document.getElementById('fntEmoShow'), to = btn || document.getElementById('fntEmoPv_apple') || document.getElementById('fntEmoSay_apple');
             A.focusWait = !!to && to !== btn;
