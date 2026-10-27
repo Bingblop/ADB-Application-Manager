@@ -46187,15 +46187,14 @@ Type any command above (e.g. pm list packages -d)</div>
         // a family with no main script whose subsets leave Latin out has no Latin letters: Latin would come only in the app's font, shown as its look. It
         // takes the sample of what its subsets name (Noto Color Emoji and Noto Emoji: emoji; Chenla and Siemreap: khmer; Noto Serif Myanmar: myanmar),
         // else '' (Noto Sans Lycian), which is "No preview" without asking (gfAskEl). No subsets listed (Playwrite, the math families): Latin
-        const GF_SUBSET_SCRIPT = { khmer: 'Khmr', myanmar: 'Mymr' };
+        const GF_SUBSET_SAMPLE = { khmer: GF_SAMPLES.Khmr, myanmar: GF_SAMPLES.Mymr };   // the samples themselves: a script code here would read as page text (i18n/extract.js)
         function gfSample(e) {
             const k = (e && e.k) || '';
             if (k && k !== 'Latn') return GF_SAMPLES[k] || e.f;
             const s = e && Array.isArray(e.s) ? e.s : [];
             if (k || !s.length || s.indexOf('latin') >= 0) return GF_LATIN;
             if (s.indexOf('emoji') >= 0) return FNT_EMO_SAMPLE;          // the emoji fonts' sample itself, never a second copy of it (t78: written once)
-            const sc = s.map(x => GF_SUBSET_SCRIPT[x]).find(Boolean);
-            return sc ? GF_SAMPLES[sc] : '';
+            return s.map(x => GF_SUBSET_SAMPLE[x]).find(Boolean) || '';
         }
         function gfCardText(e) { return gf.text.trim() ? gf.text : gfSample(e); }
         function gfDShown(e) { return gf.dText.trim() ? gf.dText : gfSample(e); }
