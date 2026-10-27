@@ -44933,7 +44933,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const GF_STYLES = 18;                                                 // GoogleFonts.MAX_STYLES: the 'styles' preview carries a family's first 18 styles
         const GF_FALLBACK = 'var(--ui-font, var(--font-sans))';             // what a preview face does not draw comes in the app's font
         const gf = {
-            data: null, by: new Map(), fold: new Map(), refreshing: false, refreshErr: '',
+            data: null, by: new Map(), fold: new Map(), gone: [], refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
             dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null,
             text: '', gen: 0, seq: 0, inflight: {}, late: {}, queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null,
@@ -45053,6 +45053,7 @@ Type any command above (e.g. pm list packages -d)</div>
             ['busy', /^The phone is still busy with the last change/, 'The phone is still busy with the last change. Wait for it to finish.'],
             ['failed', /^The font could not be made: (.+)$/, m => txF('The font could not be made: {0}', m[1])],
             ['failed', /^The font package could not be saved: (.+)$/, m => txF('The font package could not be saved: {0}', m[1])],
+            ['failed', /^The font family could not be saved: (.+)$/, m => txF('The font family could not be saved: {0}', m[1])],
             ['failed', /^The font could not be installed: (.+)$/, m => txF('The font could not be installed: {0}', m[1])],
             ['failed', /^The font could not be uninstalled: (.+)$/, m => txF('The font could not be uninstalled: {0}', m[1])],
             ['failed', /^The font could not be applied: (.+)$/, m => txF('The font could not be applied: {0}', m[1])],
@@ -46187,11 +46188,24 @@ Type any command above (e.g. pm list packages -d)</div>
             gf.data = { at: r.ok ? +r.at || 0 : 0, stale: !!r.stale, axes: r.ok && r.axes && typeof r.axes === 'object' ? r.axes : {}, families: fams, err: r.ok ? '' : fntErrText(r) };
             gf.by = new Map(fams.map(e => [e.f, e]));
             gf.fold = new Map(fams.map(e => [e.f, gfFold(e.f + ' ' + (Array.isArray(e.d) ? e.d.join(' ') : ''))]));
+            gfSyncGone();
         }
         function gfLoadDls() {
             const r = fntCall('gfontsDownloads', [], true);
             gf.dls = {};
             if (r && r.ok && Array.isArray(r.families)) r.families.forEach(x => { if (x && typeof x.family === 'string') gf.dls[x.family] = x; });
+            gfSyncGone();
+        }
+        // a downloaded family the list no longer has (renamed or removed on Google Fonts): a short entry of its own (gone), so that its card and page still
+        // offer Use, Save to phone and Delete. Its styles come from its files; it stays out of gf.data.families (the count of the list, its languages)
+        function gfSyncGone() {
+            gf.gone.forEach(e => { if (gf.by.get(e.f) === e) { gf.by.delete(e.f); gf.fold.delete(e.f); } });
+            gf.gone = !gf.data ? [] : Object.keys(gf.dls).filter(f => !gf.by.has(f)).map(f => {
+                const w = [...new Set(gfFiles(f).map(x => (x.variable ? 400 : +x.weight || 400) + (x.italic ? 'i' : '')))];
+                w.sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || a.length - b.length);
+                return { f: f, c: '', d: [], w: w.length ? w : ['400'], x: [], s: [], gone: true };
+            });
+            gf.gone.forEach(e => { gf.by.set(e.f, e); gf.fold.set(e.f, gfFold(e.f)); });
         }
         function gfRenderEntry() {
             const btn = document.getElementById('gfOpenBtn'), n = document.getElementById('gfOpenCount');
@@ -46280,7 +46294,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfFilter(reset) {
             const v = id => (document.getElementById(id) || {}).value || '';
             const words = gfFold(v('gfSearch')).split(/\s+/).filter(Boolean), cat = v('gfCat'), lang = v('gfLang'), sort = v('gfSort') || 'pop';
-            const L = ((gf.data && gf.data.families) || []).filter(e => (!cat || e.c === cat) && (!lang || (e.s || []).indexOf(lang) >= 0)
+            const L = ((gf.data && gf.data.families) || []).concat(gf.gone).filter(e => (!cat || e.c === cat) && (!lang || (e.s || []).indexOf(lang) >= 0)
                 && (!gf.onlyVar || (e.x || []).length > 0) && (!gf.onlyDl || !!gf.dls[e.f])
                 && (!words.length || words.every(w => (gf.fold.get(e.f) || '').indexOf(w) >= 0)));
             const rank = x => (+x > 0 ? +x : Infinity), byName = (a, b) => a.f.localeCompare(b.f, 'en', { sensitivity: 'base' });
@@ -46322,7 +46336,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!box) return;
             if (gf.io) gf.io.disconnect();
             if (!gfHasList()) { box.innerHTML = ''; more.innerHTML = ''; cnt.textContent = ''; return; }
-            const L = gf.list, total = gf.data.families.length, n = Math.min(gf.shown, L.length), left = L.length - n;
+            const L = gf.list, total = gf.data.families.length + gf.gone.length, n = Math.min(gf.shown, L.length), left = L.length - n;
             cnt.textContent = L.length === total ? gfFamText(total) : txF('{0} of {1}', fntInt(L.length), fntInt(total));
             if (!L.length) {
                 box.innerHTML = emptyStateHtml({ key: 'gf-none', icon: 'search', title: 'No fonts match.', hint: 'Try other words, or clear the filters.', actions: [{ label: 'Clear filters', onclick: 'gfClearFilters()' }] });
@@ -46338,7 +46352,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const vf = (e.x || []).length > 0, text = gfCardText(e);
             const meta = [gfCatName(e.c), gfDesigners(e.d), gfStylesText(e)].filter(Boolean).join(' · ');
             const badge = (t, cls) => '<span class="uad-badge' + (cls ? ' ' + cls : '') + '">' + escapeHtml(t) + '</span>';
-            const badges = (vf ? badge(txT('Variable')) : '') + (e.col ? badge(txT('Colour')) : '') + (gf.dls[e.f] ? badge(txT('Downloaded'), 'is-dl') : '');
+            const badges = (vf ? badge(txT('Variable')) : '') + (e.col ? badge(txT('Colour')) : '') + (gf.dls[e.f] ? badge(txT('Downloaded'), 'is-dl') : '')
+                + (e.gone ? badge(txT('No longer on Google Fonts'), 'is-gone') : '');
             return '<button type="button" class="gf-card" data-f="' + escapeHtml(e.f) + '" onclick="gfShow(' + jsArg(e.f) + ')">'
                 + '<span class="gf-name" translate="no">' + escapeHtml(e.f) + '</span>'
                 + '<span class="gf-meta" translate="no">' + escapeHtml(meta) + '</span>'
@@ -46394,6 +46409,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (rec) { gf.faces.delete(key); gf.faces.set(key, rec); gfApplyEl(el); return; }
             if (gf.asked[key] === 'failed') { gfApplyEl(el); return; }
             if (gf.asked[key]) return;
+            const g = gf.by.get(gfKeyParts(key).f);
+            if (g && g.gone) { gf.asked[key] = 'failed'; gfApplyEl(el); return; }        // a family no longer on Google Fonts has no preview to ask for
             gf.asked[key] = true;
             gf.queue.push(Object.assign(gfKeyParts(key), { key: key, gen: gf.gen }));
         }
@@ -46501,7 +46518,7 @@ Type any command above (e.g. pm list packages -d)</div>
             gfApplyView();
             gfRenderDetail();
             if (sc) sc.scrollTop = 0;
-            gfAskInfo(f, false);
+            if (!e.gone) gfAskInfo(f, false);                                // Google Fonts no longer knows a gone family: its details would only say so
         }
         function gfBackToList() {
             if (gf.view !== 'detail') return;
@@ -46509,7 +46526,7 @@ Type any command above (e.g. pm list packages -d)</div>
             gfDetailForget();
             gf.view = 'list'; gf.fam = '';
             gfApplyView();
-            gfRenderList();                                                  // a download made on the page shows on its card
+            gfFilter(false);                                                 // a download or a Delete made on the page shows in the list (its badge, the Downloaded filter, the count)
             const sc = document.getElementById('gfScroll');
             if (sc) sc.scrollTop = gf.listTop;
         }
@@ -46666,6 +46683,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     + '<button type="button" class="mode-action-btn" id="gfDelBtn" onclick="gfDelete()"' + (saving ? ' disabled' : '') + '>Delete</button></div>'
                     + '<div class="fnt-note" id="gfUseWhy" style="display:none;"></div>';
             }
+            if (e.gone) h += '<div class="fnt-note" id="gfGoneNote">This family is no longer on Google Fonts. Its downloaded files still work here.</div>';
             // a colour or symbol family goes through the same checks as any file (FontInspect warns); a Reserved Font Name is said before a font is made
             if (e.col || e.sym) h += '<div class="fnt-note" id="gfPlainNote">' + (e.col ? 'This family has colour glyphs. Make a font needs a plain text font, so this one may not work there.'
                 : 'This is a symbol family. Make a font needs a plain text font, so this one may not work there.') + '</div>';
@@ -46712,6 +46730,7 @@ Type any command above (e.g. pm list packages -d)</div>
             else if (r.code !== 'cancelled') gf.dlErr[family] = fntErrText(r);
             gfLoadDls();
             if (gf.open && gf.view === 'detail' && gf.fam === family) gfRenderGet();
+            else if (gf.open && gf.view === 'list' && r.ok) gfFilter(false);         // finished while the list shows: its badge, the Downloaded filter, the count
         };
         // the family's files into Make a font's slots, as a chosen file would come (onFontMakerPicked); the sheet closes on Make a font
         function gfUse() {
@@ -46770,7 +46789,7 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             delete gf.msg[f]; delete gf.useSel[f];
             gfLoadDls();
-            gfRenderGet();
+            if (gf.by.has(f)) gfRenderGet(); else gfBackToList();          // a family no longer on Google Fonts is gone with its files: back to the list
             showToast(txF('Deleted {0}', f));
         }
         function gfRenderAbout() {
@@ -46784,11 +46803,12 @@ Type any command above (e.g. pm list packages -d)</div>
             if (ok && I.description) h += '<div class="gf-desc' + (gf.descOpen ? '' : ' gf-clamp') + '" id="gfDesc" translate="no" dir="auto">' + escapeHtml(I.description) + '</div>'
                 + '<button type="button" class="batch-tool-link" id="gfDescMore" onclick="gfDescMore()" style="display:none;">More</button>';
             const designers = ok && Array.isArray(I.designers) && I.designers.length ? I.designers : (e.d || []);
-            const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : '';
+            // a gone family: its licence as its download recorded it, and no page on fonts.google.com to open
+            const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : e.gone ? String((gf.dls[f] || {}).licenseName || '') : '';
             h += row('Licence', lic)
                 + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"><summary>Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
                 + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Updated', gfDate(e.m))
-                + '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>';
+                + (e.gone ? '' : '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>');
             box.innerHTML = h;
             // More only when the description runs past its three lines
             const desc = document.getElementById('gfDesc'), more = document.getElementById('gfDescMore');

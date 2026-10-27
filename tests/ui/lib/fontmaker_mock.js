@@ -183,8 +183,9 @@ exports.initScript = function (opts) {
     const files = gfFilesOf(e), lic = gfLicense(e.f);
     return { family: e.f, at: Date.now(), size: files.reduce((s, x) => s + x.size, 0), license: lic.kind, licenseName: lic.name, reserved: gfReserved(e.f), files };
   };
-  const gfDl = {};
-  (G.downloads || []).forEach((f, i) => { const e = gfFam(f) || ((G.remote || {}).families || []).find(x => x.f === f); if (e) { gfDl[f] = gfRow(e); gfDl[f].at = now - i * day; } });
+  // the downloads, and the list entry each was made from: like the app's meta.json, a download stays usable when a later list no longer has its family
+  const gfDl = {}, gfDlOf = {};
+  (G.downloads || []).forEach((f, i) => { const e = gfFam(f) || ((G.remote || {}).families || []).find(x => x.f === f); if (e) { gfDl[f] = gfRow(e); gfDl[f].at = now - i * day; gfDlOf[f] = e; } });
   const gfJobs = {};
   // what FontInspect says of a family's file (the fixture fonts stand in for it)
   const gfInfoOf = (e, fi) => {
@@ -484,7 +485,7 @@ exports.initScript = function (opts) {
         if (!d || d.cancelled) { window.onGfDone(family, J({ ok: false, code: 'cancelled', error: 'The download was cancelled.' })); return; }
         const err = (st.gfDownloadError || {})[family];
         if (err) { window.onGfDone(family, J(Object.assign({ ok: false }, err))); return; }
-        gfDl[family] = gfRow(e);
+        gfDl[family] = gfRow(e); gfDlOf[family] = e;
         window.onGfDone(family, J({ ok: true, entry: gfDl[family] }));
       });
       gfRun(ev);
@@ -496,14 +497,15 @@ exports.initScript = function (opts) {
       if (gfJobs[family]) return J({ ok: false, code: 'busy', error: 'This font family is downloading. Cancel it first.' });
       if (st.gfSaving === family) return J({ ok: false, code: 'busy', error: 'This font family is being saved. Wait for it to finish.' });
       if (!gfDl[family]) return J({ ok: false, code: 'gf_not_downloaded', error: 'Download this family first.' });
-      delete gfDl[family];
+      delete gfDl[family]; delete gfDlOf[family];
       return J({ ok: true });
     },
     gfontsUse(family, fileName, slot) {
       st.calls.push('gfontsUse:' + family + ':' + fileName + ':' + slot);
       if (st.pickOpen) return J({ ok: false, code: 'busy', error: 'The file chooser is already open.' });
       if (slot !== 'regular' && slot !== 'bold') return J({ ok: false, code: 'bad_request', error: 'The request could not be read.' });
-      const row = gfDl[family], e = gfFam(family);
+      // the download alone (its meta.json), as the app: a family the list no longer has is still used
+      const row = gfDl[family], e = gfDlOf[family];
       if (!row || !e) return J({ ok: false, code: 'gf_not_downloaded', error: 'Download this family first.' });
       const fi = row.files.find(x => x.name === fileName);
       if (!fi) return J({ ok: false, code: 'gf_bad_file', error: "That file is not part of this family's download." });

@@ -27,6 +27,22 @@ ok   10. the save screen closed: nothing said, Save to phone again
 ok      no page errors
 ok      a failed save: the page's sentence
 ok      no page errors
+ok      the app's "The font family could not be saved: ..." is the page's sentence (not "Something went wrong")
+ok      no page errors
+ok   12. Downloaded: Roboto and Lato, "2 of 64"
+ok      Lato deleted on its page, then Back: Roboto alone, "1 of 64"
+ok      its download started, Back while it runs: still Roboto alone
+ok      it finishes while the list shows: Lato is back, Downloaded, "2 of 64"
+ok      without the filter: Inter's card gets Downloaded when its download finishes
+ok      no page errors
+ok   13. Lato left the list but is on the phone: under Downloaded, its card says so
+ok      its page: Downloaded with Use in Make a font, Save to phone and Delete, and a note that it left Google Fonts
+ok      its details and previews are not asked for (Google Fonts no longer knows it): "No preview", no error
+ok      About: its licence as the download has it, no link to fonts.google.com
+ok      Save to phone: gfontsSave, saved
+ok      Use in Make a font: its Regular and Bold go into Make a font
+ok      Delete: gfontsDelete, back to the list, its card gone ("No fonts match.", "0 of 63")
+ok      no page errors
 ok   11. busy: "This font family is already downloading."
 ok      "This font family is being saved. Wait for it to finish."
 ok      "The save screen is already open."
