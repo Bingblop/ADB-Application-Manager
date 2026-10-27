@@ -25,6 +25,13 @@ ok   10. Noto Sans JP (Jpan): the Japanese sample, asked with it
 ok      Cairo (Arab): the Arabic sample, its direction from the text (dir="auto")
 ok      Sunflower (Hang, no sample in the table): its own name
 ok      no script: Latin
+ok      Noto Color Emoji (no script, emoji only): the emoji fonts' sixteen, asked with them
+ok      Chenla (no script, khmer only): the Khmer sample, asked with it
+ok      Noto Sans Lycian (no script, lycian only: no sample): its name and "No preview", nothing asked
+ok      Playwrite US Trad (no script, no subsets listed): Latin
+ok      gfSample: Noto Serif Myanmar Myanmar, Siemreap Khmer, Noto Emoji the emoji, Libertinus Math and Lato Latin, Noto Sans Khmer its script; an empty text keeps its key
+ok      its page: the tester starts with the sixteen, and its line and style row ask with them
+ok      Noto Sans Lycian's page: the tester empty, its line and style row "No preview", only its heading asked
 ok      no page errors
 ok   11. 64 cards in view: 64 faces, never more than 6 asked at a time
 ok      three texts later: at most 150 faces kept, the oldest taken out of document.fonts
@@ -36,5 +43,13 @@ ok      a late failure says "No preview"
 ok      the slow ones stopped counting (5 of them), and none is left once all came
 ok      Roboto's page, its previews late: the head, the tester line and all 18 style rows drawn
 ok      Back and Roboto again: drawn at once, nothing asked again
+ok      no page errors
+ok   13. Inter answered with a face that draws none of the Latin sample: its name in the app font and "No preview"
+ok      that face is not kept (gf.faces, document.fonts), the others are drawn
+ok      scrolled away and back: not asked again
+ok      Noto Color Emoji, the same face: its sixteen emoji are drawn in it
+ok      its page: the heading (its name) "No preview" in the app font
+ok      the tester line and its style row (the emoji) drawn in the face
+ok      "Hello" typed: Noto Color Emoji "No preview", Noto Sans drawn
 ok      no page errors
 all passed

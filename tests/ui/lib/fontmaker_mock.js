@@ -7,7 +7,8 @@
 //   await page.addInitScript(fmk.initScript, { mode: 'system', b64: { vf, regular, bold }, ... });
 // opts.mode: 'root' (Root with su) | 'system' (Shizuku as UID 1000) | 'uid0' (Shizuku as UID 0) | 'shell' (Shizuku as UID 2000) | 'none' (no working mode)
 // opts.samsung (true), opts.oneUi ('8.5'), opts.appliesSelfSigned (false), opts.sdk (36), opts.dark (true), opts.userId (0)
-// opts.b64: { vf, regular, bold }: base64 of the fixture fonts the previews load (the script reads them from tests/ui/fixtures)
+// opts.b64: { vf, regular, bold }: base64 of the fixture fonts the previews load (the script reads them from tests/ui/fixtures); emoji: the faces of
+//   opts.gf.emojiFace
 // opts.picks: { regular, bold, emoji }: what the file chooser hands back for a slot: 'vf' | 'vfWidth' (variable, no Weight axis) | 'static' | 'cff' | 'colr' |
 //   'colr1' (COLRv1) | 'colrCff' (COLR with PostScript outlines: refused in the emoji slot, emoji_outlines) | 'cbdt' | an error code ('cancelled', 'woff' ...);
 //   a font without Latin letters carries the bridge's no-Latin warning in the Regular and Bold slots, never in the emoji slot (as fmkCopyPick drops it)
@@ -28,7 +29,8 @@
 //   catalog: the compact list on the phone at the start (default none: at 0); stale: it is older than 7 days; remote: what a refresh brings (default the
 //   catalog; __fmk.gfRemote instead when it is set); refreshError: { code, error } a refresh ends with (also __fmk.gfRefreshError); downloads: families
 //   on the phone at the start; reserved: { family: [names] } (default { Lato: ['Lato'] }); previewError: families answered gf_no_preview; previewFail:
-//   families answered with a network error; infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError:
+//   families answered with a network error; emojiFace: families answered with faces that draw the sixteen sample emoji and no letter (opts.b64.emoji:
+//   a cut-down emoji font, as Google's answer for an emoji family asked for letters holds no letter either); infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError:
 //   { family: { code, error } }; useError: { code, error, slot? } gfontsUse answers with (only that slot's when slot is set); saveError: { code, error }
 //   the save ends with ('cancelled' too); specimenError: { code, error } the iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept
 //   from an earlier read; hold: the preview answers wait for __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh,
@@ -454,7 +456,9 @@ exports.initScript = function (opts) {
         st.gfOut--;
         if ((G.previewError || []).indexOf(family) >= 0) { window.onGfPreview(reqId, J({ ok: false, code: 'gf_no_preview', error: 'Google Fonts sent no preview for this family.' })); return; }
         if ((G.previewFail || []).indexOf(family) >= 0) { window.onGfPreview(reqId, J({ ok: false, code: 'network', error: 'The download failed: timeout' })); return; }
-        window.onGfPreview(reqId, J({ ok: true, family, mode, faces: gfFaces(e, mode) }));
+        const faces = gfFaces(e, mode);
+        if ((G.emojiFace || []).indexOf(family) >= 0) faces.forEach(x => { x.b64 = b64.emoji || ''; });
+        window.onGfPreview(reqId, J({ ok: true, family, mode, faces }));
       };
       if (G.hold) pvq.push({ reqId, family, mode, text, run: answer }); else setTimeout(answer, delay);
       return J({ ok: true });

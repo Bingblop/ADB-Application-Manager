@@ -44940,7 +44940,7 @@ Type any command above (e.g. pm list packages -d)</div>
             data: null, by: new Map(), fold: new Map(), gone: [], refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
             dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null,
-            text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null,
+            text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null, cv: null,
             open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, tq: 0, tt: 0, td: 0
         };
         const FNT_STAGES = ['read', 'instance', 'convert', 'emoji', 'package', 'sign', 'save'];
@@ -46150,7 +46150,8 @@ Type any command above (e.g. pm list packages -d)</div>
             sinhala: 'Sinhala', tamil: 'Tamil', telugu: 'Telugu', armenian: 'Armenian', georgian: 'Georgian', ethiopic: 'Ethiopic', math: 'Math', symbols: 'Symbols',
             emoji: 'Emoji', music: 'Music'
         };
-        // the sample of a family's main script (primaryScript): data, never translated. Latin for none; a script not in the table shows the family's name
+        // the sample of a family's main script (primaryScript): data, never translated. Latin for none (but see gfSample); a script not in the table shows
+        // the family's name
         const GF_LATIN = 'The quick brown fox jumps over the lazy dog.';
         const GF_SAMPLES = {
             Arab: 'أنا قادر على أكل الزجاج و هذا لا يؤلمني.',
@@ -46181,7 +46182,19 @@ Type any command above (e.g. pm list packages -d)</div>
             Thai: 'ฉันกินกระจกได้ แต่มันไม่ทำให้ฉันเจ็บ',
             Tibt: 'ཤེལ་སྒོ་ཟ་ནས་ང་ན་གི་མ་རེད།'
         };
-        function gfSample(e) { const k = (e && e.k) || ''; return !k || k === 'Latn' ? GF_LATIN : GF_SAMPLES[k] || e.f; }
+        // a family with no main script whose subsets leave Latin out has no Latin letters: Latin would come only in the app's font, shown as its look. It
+        // takes the sample of what its subsets name (Noto Color Emoji and Noto Emoji: emoji; Chenla and Siemreap: khmer; Noto Serif Myanmar: myanmar),
+        // else '' (Noto Sans Lycian), which is "No preview" without asking (gfAskEl). No subsets listed (Playwrite, the math families): Latin
+        const GF_SUBSET_SCRIPT = { khmer: 'Khmr', myanmar: 'Mymr' };
+        function gfSample(e) {
+            const k = (e && e.k) || '';
+            if (k && k !== 'Latn') return GF_SAMPLES[k] || e.f;
+            const s = e && Array.isArray(e.s) ? e.s : [];
+            if (k || !s.length || s.indexOf('latin') >= 0) return GF_LATIN;
+            if (s.indexOf('emoji') >= 0) return FNT_EMO_SAMPLE;          // the emoji fonts' sample itself, never a second copy of it (t78: written once)
+            const sc = s.map(x => GF_SUBSET_SCRIPT[x]).find(Boolean);
+            return sc ? GF_SAMPLES[sc] : '';
+        }
         function gfCardText(e) { return gf.text.trim() ? gf.text : gfSample(e); }
         function gfDShown(e) { return gf.dText.trim() ? gf.dText : gfSample(e); }
         // the search text of a family (its name and designers): letter case and accents aside
@@ -46481,8 +46494,9 @@ Type any command above (e.g. pm list packages -d)</div>
             if (rec) { gf.faces.delete(key); gf.faces.set(key, rec); gfApplyEl(el); return; }
             if (gf.asked[key] === 'failed') { gfApplyEl(el); return; }
             if (gf.asked[key]) return;
-            const g = gf.by.get(gfKeyParts(key).f);
+            const p = gfKeyParts(key), g = gf.by.get(p.f);
             if (g && g.gone) { gf.asked[key] = 'failed'; gfApplyEl(el); return; }        // a family no longer on Google Fonts has no preview to ask for
+            if (!p.text.trim()) { gf.asked[key] = 'failed'; gfApplyEl(el); return; }     // nor one with no sample it could draw ('', gfSample)
             gf.asked[key] = true;
             gf.queue.push(Object.assign(gfKeyParts(key), { key: key, gen: gf.gen }));
         }
@@ -46519,6 +46533,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 list = list.filter(Boolean);
                 if (!here()) { list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} }); if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; return; }
                 if (!list.length) { gf.asked[it.key] = 'failed'; gfShowKey(it.key); return; }
+                if (gfDrawsNone(name, it.text)) { list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} }); gf.asked[it.key] = 'failed'; gfShowKey(it.key); return; }
                 gf.faces.set(it.key, { name: name, list: list, style: gfDesc(faces[0]) });
                 gf.nFaces += list.length;
                 gfTrim(it.key);
@@ -46534,6 +46549,20 @@ Type any command above (e.g. pm list packages -d)</div>
             if (/^\d{1,4}( \d{1,4})?$/.test(String(x.weight || ''))) d.weight = String(x.weight);
             if (/^\d{1,3}(\.\d+)?%( \d{1,3}(\.\d+)?%)?$/.test(String(x.stretch || ''))) d.stretch = String(x.stretch);
             return d;
+        }
+        // a face that draws none of a Latin text's letters and digits is no preview: they would all come in the app's font, shown as the family's look
+        // (asked for Latin, Google answers an emoji or a Khmer family with a face that holds the space alone). Told on a canvas: a letter the face has is
+        // as wide whatever follows it in the font list; one it lacks takes the width of each fallback. A text with letters of another script, symbols or
+        // emoji is not judged: the fallbacks can all be one font for those, which tells nothing
+        function gfDrawsNone(name, text) {
+            const t = String(text || '');
+            if (/[^\p{Script=Latin}\p{Script=Inherited}\x20-\x7E\p{P}\p{Z}\p{Cc}\p{Cf}]/u.test(t)) return false;
+            const cs = [...new Set(Array.from(t).filter(c => /[\p{Script=Latin}0-9]/u.test(c)))].slice(0, 40);
+            let x = null;
+            try { x = (gf.cv || (gf.cv = document.createElement('canvas'))).getContext('2d'); } catch (e) {}
+            if (!cs.length || !x) return false;
+            const w = (c, fb) => { x.font = "100px '" + name + "', " + fb; return x.measureText(c).width; };
+            return !cs.some(c => { const a = w(c, 'serif'); return a === w(c, 'monospace') && a === w(c, 'sans-serif'); });
         }
         // past GF_FACES faces the oldest in use go (document.fonts.delete); an element in view that had one asks for it again
         function gfTrim(keep) {
