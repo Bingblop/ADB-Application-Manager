@@ -493,7 +493,8 @@ const wide = (page) => page.evaluate(() => {
   }
   // the Help Guide (assets/guide.js): the count line's examples are what gfRenderList writes (the whole list, or "x of y"); the privacy row says the
   // text typed to preview goes to Google Fonts, and that the search words are not sent but the families they bring onto the screen ask for their
-  // previews by name; its browser row names Open on fonts.google.com; the network failure is quoted as the page says it (the reason in brackets)
+  // previews by name; its browser row names Open on fonts.google.com, its emoji row GitHub's file server; the network failure is quoted as the page
+  // says it (the reason in brackets)
   {
     const gsb = { window: {} }; require('vm').runInNewContext(fs.readFileSync(path.join(REPO, 'assets', 'guide.js'), 'utf8'), gsb);
     const flat = t => String(t || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
@@ -515,6 +516,10 @@ const wide = (page) => page.evaluate(() => {
       /Every contact below starts when you open a tab, press a button or send a chat message/.test(short) && /Google Fonts page[^.]*scroll[^.]*type/.test(short), short.slice(-420));
     const brow = (sec('privacy').split(/(?=Your web browser, or this phone's store app)/)[1] || '').split(/The app only opens the address/)[0];
     check('   the privacy browser row names Open on fonts.google.com', /Open on fonts\.google\.com/.test(brow), brow);
+    // the emoji row: github.com passes the Twemoji and iOS release files on to its file server, which Show these emoji then asks for its other parts
+    // (FmkRanges keeps the address it was passed on to), so that server is named too
+    const erow = (sec('privacy').split(/(?=GitHub \(raw\.githubusercontent\.com, and github\.com for the Twemoji)/)[1] || '').split(/(?=Google Fonts \(fonts\.google\.com)/)[0];
+    check('   the privacy emoji row names GitHub\'s file server, where Show these emoji reads most of its parts', /release-assets\.githubusercontent\.com/.test(erow) && /Show these emoji asks that server directly/.test(erow), erow);
     // a network failure always carries its reason (FNT_SAID 'network'): "The download failed (...). Check ..."; the plain FNT_ERR sentence is never shown
     const net = ['fonts-google', 'fonts-emoji'].map(sec);
     check('   the fonts pages quote the network failure with its reason in brackets, as the page shows it', net.every(t => t.includes('"The download failed (...). Check the connection and try again."') && !/The download failed\. Check the connection/.test(t)), JSON.stringify(net.map(t => (/[^.]*The download failed[^"]*"/.exec(t) || [''])[0])));
