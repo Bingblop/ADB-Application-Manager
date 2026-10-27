@@ -8006,6 +8006,7 @@
                 .gf-open-lab { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
                 .gf-open-n { flex: 0 0 auto; font-size: var(--fs-pkg); font-weight: var(--fw-bold); }
                 .gf-sheet { max-width: 760px; height: 85vh; padding: 0 var(--space-5) var(--space-6); }      /* as tall as a sheet may be (85%, the Help Guide alone takes more), whatever the list holds */
+                .gf-sheet.sheet-expanded { height: calc(100vh - 14px); }      /* pulled up by its handle: the whole screen, like the list editor (a fixed height would keep it at 85%) */
                 .gf-bar { position: sticky; top: 0; z-index: 5; background: var(--bg-sheet); margin: 0 calc(-1 * var(--space-5)) var(--space-2); padding: var(--space-4) var(--space-5) var(--space-3); border-bottom: 1px solid var(--border-glass); }
                 .gf-bar-row { display: flex; align-items: center; gap: var(--space-3h); }
                 .gf-title { flex: 1 1 auto; min-width: 0; font-size: 18px; font-weight: var(--fw-black); letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -8016,6 +8017,7 @@
                 [dir="rtl"] .gf-back svg { transform: scaleX(-1); }
                 #gfSearch { display: block; width: 100%; margin-top: var(--space-3); }
                 #gfListView .chip-row { margin: var(--space-3) 0 0; }
+                #gfListView .filter-chip:not(.active) { background: transparent; }          /* a <button> chip: without this the browser's grey button fill shows (as .sdb-filters does); :not(.active) keeps .filter-chip.active's fill */
                 .gf-pvctl { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-4); margin: var(--space-3) 0; }
                 .gf-pvctl > .list-search { flex: 1 1 200px; }
                 .gf-pvctl > .fnt-axis { flex: 1 1 140px; margin-top: 0; }
@@ -8029,7 +8031,7 @@
                 .gf-card > span { display: block; }
                 .gf-name { font-size: var(--fs-item); font-weight: var(--fw-bold); overflow-wrap: anywhere; }
                 .gf-meta { font-size: var(--fs-pill); font-weight: var(--fw-medium); line-height: 1.4; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
-                .gf-badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
+                .gf-card > .gf-badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }      /* over .gf-card > span's block, so the gap applies */
                 .gf-badges .uad-badge { margin: 0; color: var(--accent); }
                 .gf-badges .uad-badge.is-dl { color: var(--status-running); }
                 .gf-pv { margin-top: var(--space-2); font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -46284,6 +46286,13 @@ Type any command above (e.g. pm list packages -d)</div>
             gf.list = L;
             if (reset) gf.shown = GF_PAGE;
             gfRenderList();
+            // a new search, filter or sort starts at its first cards (a list update and Show more keep the place): a sheet scrolled past the list's top goes
+            // back to the top; a search that lands while a family's page is open does so on Back
+            if (reset) {
+                const sc = document.getElementById('gfScroll'), box = document.getElementById('gfList'), bar = document.querySelector('#gfSheet .gf-bar');
+                if (gf.view !== 'list') gf.listTop = 0;
+                else if (sc && box && bar && box.getBoundingClientRect().top < bar.getBoundingClientRect().bottom) sc.scrollTop = 0;
+            }
         }
         function gfSearchInput() { clearTimeout(gf.tq); gf.tq = setTimeout(() => gfFilter(true), 120); }
         function gfChip(which) {

@@ -10,10 +10,13 @@ ok   3. a card is one button: Lato "Sans serif · Łukasz Dziedzic · 10 styles"
 ok      Roboto "Sans serif · Christian Robertson (+2) · 18 styles", Variable and Downloaded
 ok      the credit names Google Fonts and the licences
 ok      the chips are buttons, not pressed
+ok      the chips are outlined, not filled (no grey button fill)
+ok      Roboto's badges are a row 4 px apart
 ok      the preview size: 14-72, 28
 ok      placeholders
 ok   4. Show more: 60 cards, "Show 4 more · 4 left"
 ok      then all 64, no more button; the family without popularity comes last
+ok      a new search far down the list starts at the top: Open Sans in view under the bar
 ok   5. Trending: Noto Sans Georgian, Arimo, Rajdhani
 ok      Newest: Arimo, Google Sans, Roboto Mono
 ok      Name (A–Z): Abhaya Libre, Arimo, Bebas Neue
@@ -27,6 +30,7 @@ ok      languages: All languages first, then the subsets by name
 ok      Canadian Aboriginal: Google Sans
 ok      Japanese: Noto Sans JP
 ok   8. Variable: only variable families (45), the chip pressed
+ok      the pressed chip has the app's pressed fill, the other none
 ok      and Downloaded: Roboto
 ok      Downloaded alone: Roboto and Lato
 ok   9. no match: "No fonts match." with Clear filters, "0 of 64", no more button
@@ -39,6 +43,10 @@ ok      a tap outside the sheet: from the family to the list
 ok      and then closed
 ok      Close shuts the sheet from a family's page
 ok      opened again: the list, at the top
+ok      the handle pulled up: the sheet takes the whole screen
+ok      pulled down once: its size again, still open on the list
+ok      from a family's page: up, down, down again goes back to the list
+ok      and down from the list closes the sheet
 ok   12. dark, 412 px: nothing wider than the screen
 ok      no page errors
 ok   13. no list yet: the button shows without a count
@@ -58,10 +66,12 @@ ok      no page errors
 ok   16. an older build: no button, no link; the Regular row as before
 ok      no page errors
 ok   17. light-360: the list, nothing wider than the screen
+ok      the chips are outlined, not filled
 ok      a family's page, nothing wider than the screen
 ok      the light theme: a light sheet
 ok      no page errors
 ok   17. dark-360-rtl: the list, nothing wider than the screen
+ok      the chips are outlined, not filled
 ok      a family's page, nothing wider than the screen
 ok      right to left: the Back arrow points the other way
 ok      no page errors
