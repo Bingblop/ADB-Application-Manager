@@ -4,7 +4,8 @@
 // those for a card a search took out of the list, are dropped (no face is made of them). The size slider sets the lines' size. A family that has no
 // preview (gf_no_preview) or whose preview failed shows its name in the app's font with "No preview", and is not asked again until the text changes.
 // The sample follows the family's main script (Japanese for Noto Sans JP, Arabic for Cairo) and a script the page has no sample of shows the family's
-// name (Sunflower, Hangul). Past 150 faces the oldest are taken out of document.fonts. Closing the sheet drops what is still on its way.
+// name (Sunflower, Hangul). Past 150 faces the oldest are taken out of document.fonts. Closing the sheet drops what is still on its way. A preview
+// that has not answered in 30 s stops counting toward the 6, and its answer is still drawn when it comes (on the cards and on a family's page).
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: previews answer when the script says); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -185,6 +186,48 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
     check('   three texts later: at most 150 faces kept, the oldest taken out of document.fonts', counts.n <= 150 && s.docFaces <= 150 && s.docFaces === counts.n && !s.keys.some(k => /\|The quick/.test(k) && k.split('|')[0] === 'Roboto'), JSON.stringify([counts.n, s.docFaces]));
     check('   every card still drawn in its newest face', counts.drawn === 64, counts.drawn);
     check('   never more than 6 asked at a time', s.max <= 6, s.max);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // answers that come after the page's 30 s cutoff (the app's own timeouts are longer): still drawn
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, hold: true, previewFail: ['Inter'] } }, 1400);
+    const first = await page.evaluate(() => __fmk.gfPending().map(p => p.family));
+    const later = async () => { await page.evaluate(() => { const D = window.__realNow || Date.now; window.__realNow = D; Date.now = () => D() + 31000; }); };
+    const now = async () => { await page.evaluate(() => { if (window.__realNow) Date.now = window.__realNow; }); };
+    await later();                                                          // the page's clock 31 s on: the next answer's pump finds the others slow
+    await page.evaluate(() => __fmk.gfAnswer(1));
+    await page.waitForTimeout(250);
+    const mid = await page.evaluate(() => ({ late: Object.keys(gf.late || {}).length, inflight: Object.keys(gf.inflight).length }));
+    await drain(page);
+    const cs = [];
+    for (const f of first) cs.push(Object.assign({ f }, await card(page, f)));
+    const late0 = await page.evaluate(() => Object.keys(gf.late || {}).length);
+    check('12. answers after 30 s: every card first asked is drawn in its face', first.length === 6 && first.includes('Inter') && cs.filter(c => c.f !== 'Inter').every(c => !c.wait && /gfpv\d+/.test(c.ff)), JSON.stringify(cs));
+    check('   a late failure says "No preview"', cs.filter(c => c.f === 'Inter').every(c => c.failed && !c.wait && c.nopv === 'No preview'), JSON.stringify(cs.filter(c => c.f === 'Inter')));
+    check('   the slow ones stopped counting (5 of them), and none is left once all came', mid.late === 5 && late0 === 0, JSON.stringify([mid, late0]));
+    // a family's page whose previews come late
+    await now();
+    await page.evaluate(() => gfShow('Roboto'));
+    await page.waitForTimeout(250);
+    const asked = await page.evaluate(() => __fmk.gfPending().filter(p => p.family === 'Roboto').map(p => p.mode).sort().join(','));
+    await later();
+    await page.evaluate(() => __fmk.gfAnswer(1));
+    await page.waitForTimeout(250);
+    await drain(page);
+    const fam = () => page.evaluate(() => {
+      const one = (el) => ({ wait: el.classList.contains('gf-wait'), ff: el.style.fontFamily });
+      return { head: one(document.getElementById('gfDHead')), line: one(document.getElementById('gfDLine')), styles: [...document.querySelectorAll('#gfStyles .gf-style-pv')].map(one) };
+    });
+    let d = await fam();
+    const ok = (x) => !x.wait && /gfpv\d+/.test(x.ff);
+    check('   Roboto\'s page, its previews late: the head, the tester line and all 18 style rows drawn', asked === 'axes,card,styles' && ok(d.head) && ok(d.line) && d.styles.length === 18 && d.styles.every(ok), JSON.stringify([asked, d.head, d.line, d.styles.filter(x => !ok(x)).length]));
+    await now();
+    const n0 = await page.evaluate(() => __fmk.gfPreviews.filter(p => p.family === 'Roboto').length);
+    await page.evaluate(() => { gfBackToList(); gfShow('Roboto'); });
+    await page.waitForTimeout(250);
+    d = await fam();
+    check('   Back and Roboto again: drawn at once, nothing asked again', ok(d.head) && ok(d.line) && d.styles.every(ok) && (await page.evaluate(() => __fmk.gfPreviews.filter(p => p.family === 'Roboto').length)) === n0, JSON.stringify([d.head, d.line, n0]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

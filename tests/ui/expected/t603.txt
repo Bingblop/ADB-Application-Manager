@@ -31,4 +31,9 @@ ok   9. no font for OpenMoji: no strip, nothing said
 ok      no page errors
 ok   10. an older build: no strip, no note, no button; the rows as before
 ok      no page errors
+ok   11. assets/emoji/OFL.txt: the full SIL Open Font License 1.1, in ASCII
+ok      its head names noto.ttf and blobmoji.ttf as Modified Versions, each with "Copyright 2022 Google Inc."
+ok      assets/emoji/NOTICE.txt: the Noto and Blobmoji rows point to OFL.txt, the other two do not
+ok      the root NOTICE lists the four sample fonts with their licences, OFL.txt named, the iOS emoji never shipped
+ok      the root NOTICE is ASCII
 all passed

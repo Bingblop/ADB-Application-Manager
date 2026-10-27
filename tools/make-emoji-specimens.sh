@@ -7,7 +7,9 @@
 #   tools/make-emoji-specimens.sh [repository root]      (needs curl, unzip, sha256sum and python3 with fontTools: pip install fonttools)
 #
 # Run it again when an emoji font in EmojiCatalog changes, and commit what it writes. The licences of the cut-down copies are the fonts'
-# own (assets/emoji/NOTICE.txt): OFL-1.1 for Noto Color Emoji and Blobmoji, CC-BY-4.0 for Twemoji's art, CC-BY-SA-4.0 for OpenMoji.
+# own (assets/emoji/NOTICE.txt): OFL-1.1 for Noto Color Emoji and Blobmoji, CC-BY-4.0 for Twemoji's art, CC-BY-SA-4.0 for OpenMoji. The
+# OFL travels with its copies as text (condition 2): assets/emoji/OFL.txt holds it with their copyright lines, so when a new tag of
+# Noto Color Emoji or Blobmoji changes the copyright line, change it there and in NOTICE.txt too. The root NOTICE lists the four fonts.
 set -euo pipefail
 
 root="${1:-.}"

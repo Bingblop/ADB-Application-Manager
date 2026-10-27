@@ -31,4 +31,10 @@ ok      three texts later: at most 150 faces kept, the oldest taken out of docum
 ok      every card still drawn in its newest face
 ok      never more than 6 asked at a time
 ok      no page errors
+ok   12. answers after 30 s: every card first asked is drawn in its face
+ok      a late failure says "No preview"
+ok      the slow ones stopped counting (5 of them), and none is left once all came
+ok      Roboto's page, its previews late: the head, the tester line and all 18 style rows drawn
+ok      Back and Roboto again: drawn at once, nothing asked again
+ok      no page errors
 all passed

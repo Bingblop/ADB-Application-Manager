@@ -8006,6 +8006,7 @@
                 .gf-open-lab { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
                 .gf-open-n { flex: 0 0 auto; font-size: var(--fs-pkg); font-weight: var(--fw-bold); }
                 .gf-sheet { max-width: 760px; height: 85vh; padding: 0 var(--space-5) var(--space-6); }      /* as tall as a sheet may be (85%, the Help Guide alone takes more), whatever the list holds */
+                .gf-sheet.sheet-expanded { height: calc(100vh - 14px); }      /* pulled up by its handle: the whole screen, like the list editor (a fixed height would keep it at 85%) */
                 .gf-bar { position: sticky; top: 0; z-index: 5; background: var(--bg-sheet); margin: 0 calc(-1 * var(--space-5)) var(--space-2); padding: var(--space-4) var(--space-5) var(--space-3); border-bottom: 1px solid var(--border-glass); }
                 .gf-bar-row { display: flex; align-items: center; gap: var(--space-3h); }
                 .gf-title { flex: 1 1 auto; min-width: 0; font-size: 18px; font-weight: var(--fw-black); letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -8016,6 +8017,7 @@
                 [dir="rtl"] .gf-back svg { transform: scaleX(-1); }
                 #gfSearch { display: block; width: 100%; margin-top: var(--space-3); }
                 #gfListView .chip-row { margin: var(--space-3) 0 0; }
+                #gfListView .filter-chip:not(.active) { background: transparent; }          /* a <button> chip: without this the browser's grey button fill shows (as .sdb-filters does); :not(.active) keeps .filter-chip.active's fill */
                 .gf-pvctl { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-4); margin: var(--space-3) 0; }
                 .gf-pvctl > .list-search { flex: 1 1 200px; }
                 .gf-pvctl > .fnt-axis { flex: 1 1 140px; margin-top: 0; }
@@ -8029,7 +8031,7 @@
                 .gf-card > span { display: block; }
                 .gf-name { font-size: var(--fs-item); font-weight: var(--fw-bold); overflow-wrap: anywhere; }
                 .gf-meta { font-size: var(--fs-pill); font-weight: var(--fw-medium); line-height: 1.4; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
-                .gf-badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
+                .gf-card > .gf-badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }      /* over .gf-card > span's block, so the gap applies */
                 .gf-badges .uad-badge { margin: 0; color: var(--accent); }
                 .gf-badges .uad-badge.is-dl { color: var(--status-running); }
                 .gf-pv { margin-top: var(--space-2); font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -8196,7 +8198,7 @@
                         <input type="text" class="list-search" id="gfDText" maxlength="200" placeholder="Type something to preview" autocomplete="off" spellcheck="false" oninput="gfDTextInput(this.value)">
                         <div class="fnt-axis"><div class="fnt-axis-head"><label for="gfDSize">Size</label><b id="gfDSizeV" translate="no">40</b></div><input type="range" id="gfDSize" min="14" max="96" step="1" value="40" oninput="gfDSizeInput(this.value)"></div>
                         <div id="gfDAxes"></div>
-                        <div class="font-sample gf-tester"><div class="gf-tline gf-wait" id="gfDLine" translate="no"></div></div>
+                        <div class="font-sample gf-tester"><div class="gf-tline gf-wait" id="gfDLine" translate="no" dir="auto"></div></div>
                     </div>
                     <div class="fnt-sec">
                         <div class="fnt-lab">Styles</div>
@@ -44921,6 +44923,7 @@ Type any command above (e.g. pm list packages -d)</div>
             sys: null, sysBusy: false, sysRb: null, sysErr: '', sysStatusErr: '', sysStale: false,
             faces: { regular: null, bold: null }, faceSeq: 0, libFaces: {},
             reserved: [], reservedFamily: '',                                // v7.18.0: the Reserved Font Names of the Google Fonts family in the Regular slot
+            reservedUfl: false,                                              // that family is under the Ubuntu Font Licence: its own name is kept the same way
             emoFaces: {},                                                    // v7.18.0: the emoji samples' faces by catalog id ({ family, face } or { failed })
             emoApple: { images: null, asked: false, busy: false, err: '' }   // the iOS sample: its pictures once read, asked once per showing
         };
@@ -44928,12 +44931,13 @@ Type any command above (e.g. pm list packages -d)</div>
         // asked by the cards in view, at most GF_INFLIGHT at a time, once per (family, mode, text) and generation; their faces kept by that key, the oldest
         // removed past GF_FACES
         const GF_PAGE = 30, GF_INFLIGHT = 6, GF_FACES = 150;
+        const GF_STYLES = 18;                                                 // GoogleFonts.MAX_STYLES: the 'styles' preview carries a family's first 18 styles
         const GF_FALLBACK = 'var(--ui-font, var(--font-sans))';             // what a preview face does not draw comes in the app's font
         const gf = {
-            data: null, by: new Map(), fold: new Map(), refreshing: false, refreshErr: '',
+            data: null, by: new Map(), fold: new Map(), gone: [], refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
             dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null,
-            text: '', gen: 0, seq: 0, inflight: {}, queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null,
+            text: '', gen: 0, seq: 0, inflight: {}, late: {}, queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null,
             open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, tq: 0, tt: 0, td: 0
         };
         const FNT_STAGES = ['read', 'instance', 'convert', 'emoji', 'package', 'sign', 'save'];
@@ -45053,6 +45057,7 @@ Type any command above (e.g. pm list packages -d)</div>
             ['busy', /^The phone is still busy with the last change/, 'The phone is still busy with the last change. Wait for it to finish.'],
             ['failed', /^The font could not be made: (.+)$/, m => txF('The font could not be made: {0}', m[1])],
             ['failed', /^The font package could not be saved: (.+)$/, m => txF('The font package could not be saved: {0}', m[1])],
+            ['failed', /^The font family could not be saved: (.+)$/, m => txF('The font family could not be saved: {0}', m[1])],
             ['failed', /^The font could not be installed: (.+)$/, m => txF('The font could not be installed: {0}', m[1])],
             ['failed', /^The font could not be uninstalled: (.+)$/, m => txF('The font could not be uninstalled: {0}', m[1])],
             ['failed', /^The font could not be applied: (.+)$/, m => txF('The font could not be applied: {0}', m[1])],
@@ -45390,9 +45395,10 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             if (gf.open && gf.view === 'detail') gfUseState();               // Use in Make a font waits for a build and a file chooser too
         }
-        // the first Reserved Font Name the text holds (letter case aside), or ''
+        // the first Reserved Font Name the text holds (letter case aside), or ''. Under the Ubuntu Font Licence "<family> derivative <a name>" is allowed
         function fntReservedHit(name) {
-            const n = String(name || '').toLowerCase();
+            const n = String(name || '').toLowerCase().trim(), drv = / derivative \S/.exec(n);
+            if (drv && fnt.reservedUfl && n.slice(0, drv.index) === fnt.reservedFamily.trim().toLowerCase()) return '';
             return n ? (fnt.reserved || []).find(r => r && n.indexOf(String(r).toLowerCase()) >= 0) || '' : '';
         }
         // making a font of My fonts again: it keeps its package and gets the next version, so it installs over the one on the phone
@@ -45500,6 +45506,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 const g = r.gf && typeof r.gf === 'object' ? r.gf : null;
                 fnt.reserved = g && Array.isArray(g.reserved) ? g.reserved.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim()) : [];
                 fnt.reservedFamily = g ? String(g.family || '') : '';
+                // the Ubuntu Font Licence (its download's licence kind) has no Reserved Font Name line, but a changed copy must not keep the family's name
+                // either, unless it is "<family> derivative <a name>" (UFL 1.0, condition 2): the name is held like one
+                const fam = fnt.reservedFamily.trim();
+                fnt.reservedUfl = !!fam && (gf.dls[fnt.reservedFamily] || {}).license === 'ufl';
+                if (fnt.reservedUfl && !fnt.reserved.some(x => x.toLowerCase() === fam.toLowerCase())) fnt.reserved.push(fam);
                 if (!fnt.nameTouched) { const cand = String(info.family || String(r.fileName || '').replace(/\.[^.]+$/, '')).slice(0, 40); fnt.name = fntReservedHit(cand) ? '' : cand; }
                 fntLoadFace('regular');
             } else if (slot === 'bold') {
@@ -46109,7 +46120,6 @@ Type any command above (e.g. pm list packages -d)</div>
         // (gfontsPreview: a family cut down to the text it is to show) and is loaded with FontFace: the page itself opens nothing on the network. Family
         // names, designers, file names and the sample texts are data (translate="no"); the words around them are put together with txT / txF.
         const GF_CATS = { sans: 'Sans serif', serif: 'Serif', display: 'Display', hand: 'Handwriting', mono: 'Monospace' };
-        const GF_WEIGHTS = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
         // a subset by its name for a person; one the table does not know is shown title-cased ("canadian-aboriginal": Canadian Aboriginal)
         const GF_SUBSETS = {
             latin: 'Latin', 'latin-ext': 'Latin Extended', cyrillic: 'Cyrillic', 'cyrillic-ext': 'Cyrillic Extended', greek: 'Greek', 'greek-ext': 'Greek Extended',
@@ -46165,9 +46175,13 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function gfSubsetName(s) { return GF_SUBSETS[s] ? txT(GF_SUBSETS[s]) : String(s).split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
         function gfCatName(c) { return GF_CATS[c] ? txT(GF_CATS[c]) : ''; }
+        // an axis' name as Make a font says it: the five the app knows in the page's words, any other one Google's name for it (data)
+        function gfAxisName(tag) { tag = String(tag); return FNT_AXIS[tag] ? txT(FNT_AXIS[tag]) : ((gf.data && gf.data.axes && gf.data.axes[tag]) || tag); }
+        // a weight's name, each a txT call of its own so that tests/i18n/extract.js lists it ("ExtraLight" looks like data to it otherwise)
+        function gfWeightName(n) { return ({ 100: txT('Thin'), 200: txT('ExtraLight'), 300: txT('Light'), 400: txT('Regular'), 500: txT('Medium'), 600: txT('SemiBold'), 700: txT('Bold'), 800: txT('ExtraBold'), 900: txT('Black') })[n] || ''; }
         function gfStyleName(w) {
-            const n = parseInt(w, 10) || 400, it = /i$/.test(String(w));
-            return (GF_WEIGHTS[n] ? txT(GF_WEIGHTS[n]) + ' ' + n : txF('Weight {0}', n)) + (it ? ' ' + txT('Italic') : '');
+            const n = parseInt(w, 10) || 400, it = /i$/.test(String(w)), wn = gfWeightName(n);
+            return (wn ? wn + ' ' + n : txF('Weight {0}', n)) + (it ? ' ' + txT('Italic') : '');
         }
         function gfStylesText(e) { const n = (e.w || []).length; return n === 1 ? txT('1 style') : txF('{0} styles', n); }
         function gfDesigners(d) { d = Array.isArray(d) ? d : []; return !d.length ? '' : d.length === 1 ? d[0] : d[0] + ' (+' + (d.length - 1) + ')'; }
@@ -46184,11 +46198,24 @@ Type any command above (e.g. pm list packages -d)</div>
             gf.data = { at: r.ok ? +r.at || 0 : 0, stale: !!r.stale, axes: r.ok && r.axes && typeof r.axes === 'object' ? r.axes : {}, families: fams, err: r.ok ? '' : fntErrText(r) };
             gf.by = new Map(fams.map(e => [e.f, e]));
             gf.fold = new Map(fams.map(e => [e.f, gfFold(e.f + ' ' + (Array.isArray(e.d) ? e.d.join(' ') : ''))]));
+            gfSyncGone();
         }
         function gfLoadDls() {
             const r = fntCall('gfontsDownloads', [], true);
             gf.dls = {};
             if (r && r.ok && Array.isArray(r.families)) r.families.forEach(x => { if (x && typeof x.family === 'string') gf.dls[x.family] = x; });
+            gfSyncGone();
+        }
+        // a downloaded family the list no longer has (renamed or removed on Google Fonts): a short entry of its own (gone), so that its card and page still
+        // offer Use, Save to phone and Delete. Its styles come from its files; it stays out of gf.data.families (the count of the list, its languages)
+        function gfSyncGone() {
+            gf.gone.forEach(e => { if (gf.by.get(e.f) === e) { gf.by.delete(e.f); gf.fold.delete(e.f); } });
+            gf.gone = !gf.data ? [] : Object.keys(gf.dls).filter(f => !gf.by.has(f)).map(f => {
+                const w = [...new Set(gfFiles(f).map(x => (x.variable ? 400 : +x.weight || 400) + (x.italic ? 'i' : '')))];
+                w.sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || a.length - b.length);
+                return { f: f, c: '', d: [], w: w.length ? w : ['400'], x: [], s: [], gone: true };
+            });
+            gf.gone.forEach(e => { gf.by.set(e.f, e); gf.fold.set(e.f, gfFold(e.f)); });
         }
         function gfRenderEntry() {
             const btn = document.getElementById('gfOpenBtn'), n = document.getElementById('gfOpenCount');
@@ -46277,7 +46304,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfFilter(reset) {
             const v = id => (document.getElementById(id) || {}).value || '';
             const words = gfFold(v('gfSearch')).split(/\s+/).filter(Boolean), cat = v('gfCat'), lang = v('gfLang'), sort = v('gfSort') || 'pop';
-            const L = ((gf.data && gf.data.families) || []).filter(e => (!cat || e.c === cat) && (!lang || (e.s || []).indexOf(lang) >= 0)
+            const L = ((gf.data && gf.data.families) || []).concat(gf.gone).filter(e => (!cat || e.c === cat) && (!lang || (e.s || []).indexOf(lang) >= 0)
                 && (!gf.onlyVar || (e.x || []).length > 0) && (!gf.onlyDl || !!gf.dls[e.f])
                 && (!words.length || words.every(w => (gf.fold.get(e.f) || '').indexOf(w) >= 0)));
             const rank = x => (+x > 0 ? +x : Infinity), byName = (a, b) => a.f.localeCompare(b.f, 'en', { sensitivity: 'base' });
@@ -46287,6 +46314,13 @@ Type any command above (e.g. pm list packages -d)</div>
             gf.list = L;
             if (reset) gf.shown = GF_PAGE;
             gfRenderList();
+            // a new search, filter or sort starts at its first cards (a list update and Show more keep the place): a sheet scrolled past the list's top goes
+            // back to the top; a search that lands while a family's page is open does so on Back
+            if (reset) {
+                const sc = document.getElementById('gfScroll'), box = document.getElementById('gfList'), bar = document.querySelector('#gfSheet .gf-bar');
+                if (gf.view !== 'list') gf.listTop = 0;
+                else if (sc && box && bar && box.getBoundingClientRect().top < bar.getBoundingClientRect().bottom) sc.scrollTop = 0;
+            }
         }
         function gfSearchInput() { clearTimeout(gf.tq); gf.tq = setTimeout(() => gfFilter(true), 120); }
         function gfChip(which) {
@@ -46312,7 +46346,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!box) return;
             if (gf.io) gf.io.disconnect();
             if (!gfHasList()) { box.innerHTML = ''; more.innerHTML = ''; cnt.textContent = ''; return; }
-            const L = gf.list, total = gf.data.families.length, n = Math.min(gf.shown, L.length), left = L.length - n;
+            const L = gf.list, total = gf.data.families.length + gf.gone.length, n = Math.min(gf.shown, L.length), left = L.length - n;
             cnt.textContent = L.length === total ? gfFamText(total) : txF('{0} of {1}', fntInt(L.length), fntInt(total));
             if (!L.length) {
                 box.innerHTML = emptyStateHtml({ key: 'gf-none', icon: 'search', title: 'No fonts match.', hint: 'Try other words, or clear the filters.', actions: [{ label: 'Clear filters', onclick: 'gfClearFilters()' }] });
@@ -46328,7 +46362,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const vf = (e.x || []).length > 0, text = gfCardText(e);
             const meta = [gfCatName(e.c), gfDesigners(e.d), gfStylesText(e)].filter(Boolean).join(' · ');
             const badge = (t, cls) => '<span class="uad-badge' + (cls ? ' ' + cls : '') + '">' + escapeHtml(t) + '</span>';
-            const badges = (vf ? badge(txT('Variable')) : '') + (e.col ? badge(txT('Colour')) : '') + (gf.dls[e.f] ? badge(txT('Downloaded'), 'is-dl') : '');
+            const badges = (vf ? badge(txT('Variable')) : '') + (e.col ? badge(txT('Colour')) : '') + (gf.dls[e.f] ? badge(txT('Downloaded'), 'is-dl') : '')
+                + (e.gone ? badge(txT('No longer on Google Fonts'), 'is-gone') : '');
             return '<button type="button" class="gf-card" data-f="' + escapeHtml(e.f) + '" onclick="gfShow(' + jsArg(e.f) + ')">'
                 + '<span class="gf-name" translate="no">' + escapeHtml(e.f) + '</span>'
                 + '<span class="gf-meta" translate="no">' + escapeHtml(meta) + '</span>'
@@ -46363,7 +46398,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // ---- the previews: asked by what is in view, at most GF_INFLIGHT at a time; their faces kept by family|mode|text ----
-        function gfNewGen() { gf.gen++; gf.asked = {}; gf.queue = []; }
+        function gfNewGen() { gf.gen++; gf.asked = {}; gf.queue = []; gf.late = {}; }
         function gfObserve() {
             const els = document.querySelectorAll('#gfList .gf-pv');
             els.forEach(el => gfApplyEl(el));
@@ -46384,6 +46419,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (rec) { gf.faces.delete(key); gf.faces.set(key, rec); gfApplyEl(el); return; }
             if (gf.asked[key] === 'failed') { gfApplyEl(el); return; }
             if (gf.asked[key]) return;
+            const g = gf.by.get(gfKeyParts(key).f);
+            if (g && g.gone) { gf.asked[key] = 'failed'; gfApplyEl(el); return; }        // a family no longer on Google Fonts has no preview to ask for
             gf.asked[key] = true;
             gf.queue.push(Object.assign(gfKeyParts(key), { key: key, gen: gf.gen }));
         }
@@ -46393,7 +46430,8 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function gfPump() {
             const now = Date.now();
-            Object.keys(gf.inflight).forEach(id => { if (now - gf.inflight[id].t > 30000) delete gf.inflight[id]; });     // an answer that never came
+            // slow to answer (Java's queue, then css2 and up to 18 faces at up to 45 s a fetch): no longer counted, its answer still used when it comes
+            Object.keys(gf.inflight).forEach(id => { if (now - gf.inflight[id].t > 30000) { gf.late[id] = gf.inflight[id]; delete gf.inflight[id]; } });
             while (Object.keys(gf.inflight).length < GF_INFLIGHT && gf.queue.length) {
                 const it = gf.queue.shift();
                 if (!gfWanted(it)) { if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; continue; }
@@ -46404,9 +46442,9 @@ Type any command above (e.g. pm list packages -d)</div>
             }
         }
         window.onGfPreview = function (reqId, json) {
-            const it = gf.inflight[reqId];
+            const it = gf.inflight[reqId] || gf.late[reqId];
             if (!it) return;
-            delete gf.inflight[reqId];
+            delete gf.inflight[reqId]; delete gf.late[reqId];
             const r = fntJson(json), here = () => it.gen === gf.gen && gfElsFor(it.key).length > 0;
             // an answer of an older generation, or for a card that is no longer in the list, is dropped
             if (!here()) { if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; gfPump(); return; }
@@ -46481,6 +46519,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const sc = document.getElementById('gfScroll');
             if (gf.view === 'list' && sc) gf.listTop = sc.scrollTop;
             haptic();
+            clearTimeout(gf.tt);                                             // the list's new text (gf.text) is drawn on Back; its timer must not drop this page's previews
             gf.view = 'detail'; gf.fam = f; gf.descOpen = false;
             gf.dText = gf.text.trim() ? gf.text : gfSample(e);
             gf.dSize = 40;
@@ -46489,14 +46528,15 @@ Type any command above (e.g. pm list packages -d)</div>
             gfApplyView();
             gfRenderDetail();
             if (sc) sc.scrollTop = 0;
-            gfAskInfo(f, false);
+            if (!e.gone) gfAskInfo(f, false);                                // Google Fonts no longer knows a gone family: its details would only say so
         }
         function gfBackToList() {
             if (gf.view !== 'detail') return;
+            clearTimeout(gf.td);                                             // the tester's new text must not drop the list's previews
             gfDetailForget();
             gf.view = 'list'; gf.fam = '';
             gfApplyView();
-            gfRenderList();                                                  // a download made on the page shows on its card
+            gfFilter(false);                                                 // a download or a Delete made on the page shows in the list (its badge, the Downloaded filter, the count)
             const sc = document.getElementById('gfScroll');
             if (sc) sc.scrollTop = gf.listTop;
         }
@@ -46515,7 +46555,7 @@ Type any command above (e.g. pm list packages -d)</div>
             head.style.fontFamily = '';
             head.dataset.pvw = '1';
             head.dataset.pvk = gfKey(e.f, 'card', e.f);
-            const axes = (e.x || []).map(a => (gf.data && gf.data.axes && gf.data.axes[a[0]]) || String(a[0]));
+            const axes = (e.x || []).filter(Array.isArray).map(a => gfAxisName(a[0]));
             document.getElementById('gfDMeta').textContent = [gfCatName(e.c), (e.d || []).join(', '), gfStylesText(e), axes.length ? txF('Variable: {0}', axes.join(', ')) : '', e.col ? txT('Colour') : ''].filter(Boolean).join(' · ');
             const t = document.getElementById('gfDText');
             if (t.value !== gf.dText) t.value = gf.dText;
@@ -46526,12 +46566,13 @@ Type any command above (e.g. pm list packages -d)</div>
             gfRenderGet();
             gfRenderAbout();
         }
-        // one slider per axis (its name from the list's axis names), from the axis' default; they drive font-variation-settings on the tester line
+        // one slider per axis, from the axis' default; they drive font-variation-settings on the tester line. Named as Make a font names them (fntVarHtml): the
+        // page's word for the five it knows (translated where it is shown), else the list's name for it, kept as data
         function gfAxesHtml(e) {
             return (e.x || []).filter(Array.isArray).map(a => {
                 const tag = String(a[0]), id = 'gfAx_' + fntSafe(tag), v = gf.axes[tag] !== undefined ? gf.axes[tag] : +a[3];
-                const name = (gf.data && gf.data.axes && gf.data.axes[tag]) || tag;
-                return '<div class="fnt-axis"><div class="fnt-axis-head"><label for="' + id + '">' + escapeHtml(name) + '</label><b id="' + id + 'v" translate="no">' + fntNum(v) + '</b></div>'
+                const name = FNT_AXIS[tag] ? escapeHtml(FNT_AXIS[tag]) : '<span translate="no">' + escapeHtml(gfAxisName(tag)) + '</span>';
+                return '<div class="fnt-axis"><div class="fnt-axis-head"><label for="' + id + '">' + name + '</label><b id="' + id + 'v" translate="no">' + fntNum(v) + '</b></div>'
                     + '<input type="range" id="' + id + '" min="' + (+a[1]) + '" max="' + (+a[2]) + '" step="' + fntStep({ min: a[1], max: a[2] }) + '" value="' + (+v) + '" oninput="gfAxisInput(' + jsArg(tag) + ', this)"></div>';
             }).join('');
         }
@@ -46553,8 +46594,10 @@ Type any command above (e.g. pm list packages -d)</div>
             const sk = gfKey(e.f, 'styles', text), had = keep ? [...box.querySelectorAll('.gf-style-pv')].map(x => x.style.fontFamily) : [];
             box.innerHTML = (e.w || []).map((w, i) => {
                 const n = parseInt(w, 10) || 400, it = /i$/.test(String(w)), ff = had[i] ? ' font-family:' + escapeHtml(had[i]) + ';' : '';
-                return '<div class="gf-style"><div class="gf-style-name" translate="no">' + escapeHtml(gfStyleName(w)) + '</div>'
-                    + '<div class="gf-style-pv' + (ff ? '' : ' gf-wait') + '" translate="no" dir="auto" data-pvk="' + escapeHtml(sk) + '" style="font-weight:' + n + '; font-style:' + (it ? 'italic' : 'normal') + ';' + ff + '">' + escapeHtml(text) + '</div></div>';
+                const head = '<div class="gf-style"><div class="gf-style-name" translate="no">' + escapeHtml(gfStyleName(w)) + '</div>';
+                // past the styles the preview carries, a row would show the nearest weight it has under another style's name: "No preview" instead
+                if (i >= GF_STYLES) return head + '<div class="gf-style-pv gf-failed" translate="no" dir="auto">' + escapeHtml(text) + '<span class="gf-nopv">' + escapeHtml(txT('No preview')) + '</span></div></div>';
+                return head + '<div class="gf-style-pv' + (ff ? '' : ' gf-wait') + '" translate="no" dir="auto" data-pvk="' + escapeHtml(sk) + '" style="font-weight:' + n + '; font-style:' + (it ? 'italic' : 'normal') + ';' + ff + '">' + escapeHtml(text) + '</div></div>';
             }).join('');
             ['gfDHead', 'gfDLine'].forEach(id => gfAskEl(document.getElementById(id)));
             box.querySelectorAll('.gf-style-pv').forEach(gfAskEl);
@@ -46650,11 +46693,15 @@ Type any command above (e.g. pm list packages -d)</div>
                     + '<button type="button" class="mode-action-btn" id="gfDelBtn" onclick="gfDelete()"' + (saving ? ' disabled' : '') + '>Delete</button></div>'
                     + '<div class="fnt-note" id="gfUseWhy" style="display:none;"></div>';
             }
+            if (e.gone) h += '<div class="fnt-note" id="gfGoneNote">This family is no longer on Google Fonts. Its downloaded files still work here.</div>';
             // a colour or symbol family goes through the same checks as any file (FontInspect warns); a Reserved Font Name is said before a font is made
             if (e.col || e.sym) h += '<div class="fnt-note" id="gfPlainNote">' + (e.col ? 'This family has colour glyphs. Make a font needs a plain text font, so this one may not work there.'
                 : 'This is a symbol family. Make a font needs a plain text font, so this one may not work there.') + '</div>';
             const res = (d && Array.isArray(d.reserved) ? d.reserved : I.ok && Array.isArray(I.reserved) ? I.reserved : []).filter(x => typeof x === 'string' && x.trim());
             res.forEach(n => { h += '<div class="fnt-note gf-rfn" translate="no">' + escapeHtml(txF('"{0}" is a Reserved Font Name: a font made from this family must have another name.', n.trim())) + '</div>'; });
+            // the Ubuntu Font Licence keeps the family's own name for the original (condition 2), with no Reserved Font Name line to say so
+            if ((d ? d.license : I.ok ? I.license : '') === 'ufl') h += '<div class="fnt-note gf-rfn" id="gfUflNote" translate="no">'
+                + escapeHtml(txF('{0} is under the Ubuntu Font Licence: a font made from this family must have another name, or "{1} derivative" and a name of your own.', f, f)) + '</div>';
             if (err) h += '<div class="fnt-err" id="gfDlErr"><span class="is-err">' + escapeHtml(err) + '</span></div>';
             if (msg) h += '<div class="fnt-err" id="gfMsg">' + (msg.err ? '<span class="is-err">' + escapeHtml(msg.text) + '</span>' : escapeHtml(msg.text)) + '</div>';
             box.innerHTML = h;
@@ -46696,6 +46743,7 @@ Type any command above (e.g. pm list packages -d)</div>
             else if (r.code !== 'cancelled') gf.dlErr[family] = fntErrText(r);
             gfLoadDls();
             if (gf.open && gf.view === 'detail' && gf.fam === family) gfRenderGet();
+            else if (gf.open && gf.view === 'list' && r.ok) gfFilter(false);         // finished while the list shows: its badge, the Downloaded filter, the count
         };
         // the family's files into Make a font's slots, as a chosen file would come (onFontMakerPicked); the sheet closes on Make a font
         function gfUse() {
@@ -46709,10 +46757,13 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             delete gf.msg[f];
             const wait = { regular: true };
+            // the family's files take the slots: a failed answer leaves its slot empty (Build waits), never with a file chosen before from another font
             fnt.pickErr.regular = '';
+            fnt.pick.regular = null; fnt.reserved = []; fnt.reservedFamily = ''; fnt.reservedUfl = false;
             // Bold: the chosen file; none (Android makes bold from the Regular, or Make a font offers a variable font's own Bold instance)
             fnt.boldMode = 'none'; fnt.boldTouched = false;
             if (ch.bold) {
+                fnt.pick.bold = null;
                 const r2 = fntCall('gfontsUse', [f, ch.bold, 'bold']);
                 fnt.boldMode = 'file'; fnt.boldTouched = true;
                 if (r2 && r2.ok) { wait.bold = true; fnt.pickErr.bold = ''; } else fnt.pickErr.bold = r2 ? fntErrText(r2, 'Could not start') : '';
@@ -46754,7 +46805,7 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             delete gf.msg[f]; delete gf.useSel[f];
             gfLoadDls();
-            gfRenderGet();
+            if (gf.by.has(f)) gfRenderGet(); else gfBackToList();          // a family no longer on Google Fonts is gone with its files: back to the list
             showToast(txF('Deleted {0}', f));
         }
         function gfRenderAbout() {
@@ -46768,11 +46819,12 @@ Type any command above (e.g. pm list packages -d)</div>
             if (ok && I.description) h += '<div class="gf-desc' + (gf.descOpen ? '' : ' gf-clamp') + '" id="gfDesc" translate="no" dir="auto">' + escapeHtml(I.description) + '</div>'
                 + '<button type="button" class="batch-tool-link" id="gfDescMore" onclick="gfDescMore()" style="display:none;">More</button>';
             const designers = ok && Array.isArray(I.designers) && I.designers.length ? I.designers : (e.d || []);
-            const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : '';
+            // a gone family: its licence as its download recorded it, and no page on fonts.google.com to open
+            const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : e.gone ? String((gf.dls[f] || {}).licenseName || '') : '';
             h += row('Licence', lic)
                 + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"><summary>Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
-                + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row('Added', gfDate(e.a)) + row('Updated', gfDate(e.m))
-                + '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>';
+                + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Updated', gfDate(e.m))
+                + (e.gone ? '' : '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>');
             box.innerHTML = h;
             // More only when the description runs past its three lines
             const desc = document.getElementById('gfDesc'), more = document.getElementById('gfDescMore');

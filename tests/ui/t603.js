@@ -5,7 +5,9 @@
 // ("Reads about 0.3 MB of the iOS emoji file.", or "Read from the downloaded file." when the iOS emoji are on the phone) and "Show these emoji"
 // (emojiSpecimenFetch), "Reading the iOS emoji…" while it runs, then sixteen 28 px pictures (alt: the emoji), kept for the next render and on a
 // fresh page. A failure, and another window of the app reading them (busy), says why in the page's words with the button again. An older app
-// build shows no strip. The row's Download stays its first button; nothing is wider than the screen at 360 px.
+// build shows no strip. The row's Download stays its first button; nothing is wider than the screen at 360 px. The licences travel with the
+// samples: assets/emoji/OFL.txt holds the full SIL Open Font License 1.1 with the copyright lines of noto.ttf and blobmoji.ttf (OFL condition 2),
+// assets/emoji/NOTICE.txt points to it, and the root NOTICE lists the four fonts with their licences (ASCII, the iOS emoji never shipped).
 // Mock bridge: lib/fontmaker_mock.js (opts.emoB64: assets/emoji/<id>.ttf; opts.gf: hold, specimenError, appleCached, otherWindow).
 const fs = require('fs');
 const path = require('path');
@@ -162,6 +164,25 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     check('10. an older build: no strip, no note, no button; the rows as before', Object.keys(s).length === 5 && !any.length && s.noto.first === 'Download', JSON.stringify([Object.keys(s), any]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
+  }
+  // the licences that travel with the samples (read from the files: the app ships assets/ as it is)
+  {
+    const read = (...p) => { try { return fs.readFileSync(path.join(REPO, ...p), 'utf8'); } catch (e) { return ''; } };
+    const ofl = read('assets', 'emoji', 'OFL.txt'), note = read('assets', 'emoji', 'NOTICE.txt'), root = read('NOTICE');
+    const ascii = t => !/[^\x00-\x7f]/.test(t);
+    const body = ['SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007', 'PREAMBLE', 'DEFINITIONS', 'PERMISSION & CONDITIONS', '5) The Font Software, modified or unmodified',
+      'TERMINATION', 'DISCLAIMER', 'OTHER DEALINGS IN THE FONT SOFTWARE.'].filter(x => ofl.indexOf(x) < 0);
+    check('11. assets/emoji/OFL.txt: the full SIL Open Font License 1.1, in ASCII', ofl.length > 4000 && !body.length && ascii(ofl), JSON.stringify([ofl.length, body]));
+    const hdr = ofl.split('-----------------------------------------------------------')[0];
+    check('   its head names noto.ttf and blobmoji.ttf as Modified Versions, each with "Copyright 2022 Google Inc."', /Modified Versions/.test(hdr)
+      && /noto\.ttf \(made from Noto Color Emoji[^\n]*\):\nCopyright 2022 Google Inc\./.test(hdr) && /blobmoji\.ttf \(made from Blobmoji[^\n]*\):\nCopyright 2022 Google Inc\./.test(hdr), hdr);
+    const rows = id => (note.split(/\n(?=\S)/).find(x => x.indexOf(id + '.ttf ') === 0) || '');
+    check('   assets/emoji/NOTICE.txt: the Noto and Blobmoji rows point to OFL.txt, the other two do not', /OFL\.txt in this folder/.test(rows('noto')) && /OFL\.txt in this folder/.test(rows('blobmoji'))
+      && !/OFL\.txt/.test(rows('twemoji')) && !/OFL\.txt/.test(rows('openmoji')), JSON.stringify(IDS.map(rows)));
+    const sec = (root.split(/\n(?=Custom Fonts tab: the emoji samples\n-+\n)/)[1] || '').split(/\n\n(?=\S[^\n]*\n-+\n)/)[0];
+    const lic = [['Noto Color Emoji', 'OFL-1.1'], ['Twemoji', 'CC-BY-4.0'], ['Blobmoji', 'OFL-1.1'], ['OpenMoji', 'CC-BY-SA-4.0']].filter(([f, l]) => !new RegExp('\\* ' + f + ' \\([^\\n]*\\) - ' + l + ' -\\s').test(sec));
+    check('   the root NOTICE lists the four sample fonts with their licences, OFL.txt named, the iOS emoji never shipped', sec && !lic.length && /assets\/emoji\/OFL\.txt/.test(sec) && /iOS-style emoji are never shipped/.test(sec), JSON.stringify([lic, sec.slice(0, 200)]));
+    check('   the root NOTICE is ASCII', ascii(root));
   }
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');

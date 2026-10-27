@@ -5,7 +5,10 @@
 // The Name is filled in from the family unless it holds one of its Reserved Font Names (Lato): then it stays empty, and a Name that holds one (any
 // case) shows the licence note under the field while Build stays usable; a Regular chosen from a file clears the names. The family's page says
 // its Reserved Font Names. Use waits, with the reason, while a font is being made or the file chooser is open; a file the app refuses says why in
-// the Regular slot.
+// the Regular slot. The family's files take the slots: a refused one leaves its slot empty (Build waits), never with a file chosen before from
+// another font, and a refused Regular takes the Reserved Font Names of that earlier font with it. A family under the Ubuntu Font Licence (Ubuntu)
+// says so on its page; its own name is not filled in and warns in the Name like a Reserved Font Name, but "Ubuntu derivative <a name>" is allowed
+// (UFL 1.0, condition 2), and only for such a family.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf; opts.hold holds the build); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -148,6 +151,76 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     const m = await make(page);
     check('12. the file changed on the phone: the Regular slot says why; the gate open again; nothing chosen', m.regErr === "This family's files changed on the phone. Delete it and download it again." && m.regMsg === m.regErr && m.picking === '' && !m.reg, JSON.stringify(m));
     check('   the link is back', m.link, JSON.stringify(m));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the family's files take the slots: one the app refuses leaves its slot empty, never with the file chosen before
+  {
+    const CHANGED = "This family's files changed on the phone. Delete it and download it again.";
+    const slots = (page) => page.evaluate(() => ({ boldErr: fnt.pickErr.bold, reserved: fnt.reserved.join(','), family: fnt.reservedFamily }));
+    let { ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato'], useError: { slot: 'bold', code: 'gf_changed', error: CHANGED } }, picks: { bold: 'vf' } });
+    await page.evaluate(() => fntPick('regular')); await page.waitForTimeout(400);
+    await page.evaluate(() => { fntBoldChange('file'); fntPick('bold'); }); await page.waitForTimeout(400);
+    await page.fill('#fntName', 'Summer Sans');
+    let m = await make(page);
+    check('13. a Regular and a Bold chosen from files first (InterVariable.ttf both): Build usable', m.reg === 'InterVariable.ttf' && m.bold === 'InterVariable.ttf' && m.boldMode === 'file' && m.build, JSON.stringify(m));
+    await showFam(page, 'Lato');
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    m = await make(page);
+    let s2 = await slots(page);
+    check('   Lato\'s Bold refused: the Bold slot says why and holds nothing (not the file chosen before); Build waits', m.reg === 'Lato-Regular.ttf' && m.bold === '' && m.boldMode === 'file' && s2.boldErr === CHANGED && !m.build, JSON.stringify([m, s2]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+    ({ ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato'], useError: { slot: 'regular', code: 'gf_changed', error: CHANGED } } }));
+    await page.evaluate(() => fntPick('regular')); await page.waitForTimeout(400);
+    await page.fill('#fntName', 'Summer Sans');
+    m = await make(page);
+    check('14. a Regular chosen from a file first (InterVariable.ttf): Build usable', m.reg === 'InterVariable.ttf' && m.build, JSON.stringify(m));
+    await showFam(page, 'Lato');
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    m = await make(page);
+    s2 = await slots(page);
+    check('   Lato\'s Regular refused: the Regular slot says why and holds nothing; Build waits', m.reg === '' && m.regErr === CHANGED && m.regMsg === CHANGED && !m.build && m.picking === '', JSON.stringify(m));
+    check('   its Bold still comes (Lato-Bold.ttf); no Reserved Font Names are left over', m.bold === 'Lato-Bold.ttf' && m.boldMode === 'file' && s2.reserved === '' && s2.family === '', JSON.stringify([m, s2]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the Ubuntu Font Licence: the family's own name, or "<family> derivative <a name>"
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Ubuntu', 'Lato', 'Roboto'] } });
+    const UNOTE = 'Ubuntu\'s licence keeps the name "Ubuntu" for the original font. A font made from it is a changed copy, so give it another name.';
+    await showFam(page, 'Ubuntu');
+    const notes = await page.evaluate(() => ({ ufl: (document.getElementById('gfUflNote') || {}).textContent || '', rfn: [...document.querySelectorAll('#gfGet .gf-rfn')].length }));
+    check('15. Ubuntu\'s page: it is under the Ubuntu Font Licence, another name or "Ubuntu derivative" and a name of one\'s own', notes.ufl === 'Ubuntu is under the Ubuntu Font Licence: a font made from this family must have another name, or "Ubuntu derivative" and a name of your own.' && notes.rfn === 1, JSON.stringify(notes));
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    let m = await make(page);
+    check('   Use: the Regular is Ubuntu-Regular.ttf; the Name is not filled in with "Ubuntu"', m.reg === 'Ubuntu-Regular.ttf' && m.name === '' && !m.msg && !m.build, JSON.stringify(m));
+    await page.fill('#fntName', 'Ubuntu Foo');
+    m = await make(page);
+    check('   "Ubuntu Foo": the licence note; Build stays usable', m.msg === UNOTE && m.build, JSON.stringify(m));
+    await page.fill('#fntName', 'Ubuntu derivative');
+    check('   "Ubuntu derivative" with no name of one\'s own: the note', (await make(page)).msg === UNOTE);
+    for (const n of ['Ubuntu derivative Mine', 'ubuntu Derivative Mine']) {
+      await page.fill('#fntName', n);
+      m = await make(page);
+      check('   "' + n + '": no note', !m.msg && m.build, JSON.stringify(m));
+    }
+    await page.evaluate(() => { fnt.nameTouched = false; fnt.name = ''; document.getElementById('fntName').value = ''; });
+    await showFam(page, 'Lato');
+    check('16. Lato (OFL) has no Ubuntu Font Licence note', !(await page.evaluate(() => !!document.getElementById('gfUflNote'))));
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    await page.fill('#fntName', 'Lato derivative Mine');
+    check('   "Lato derivative Mine": the Reserved Font Name note (the derivative form is the Ubuntu Font Licence\'s alone)', (await make(page)).msg === NOTE);
+    await page.evaluate(() => { fnt.nameTouched = false; fnt.name = ''; document.getElementById('fntName').value = ''; });
+    await showFam(page, 'Roboto');
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(900);
+    m = await make(page);
+    check('   Roboto (Apache): the Name "Roboto", no note', m.name === 'Roboto' && !m.msg && m.build, JSON.stringify(m));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

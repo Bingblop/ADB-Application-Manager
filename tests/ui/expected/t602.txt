@@ -28,4 +28,21 @@ ok      no page errors
 ok   12. the file changed on the phone: the Regular slot says why; the gate open again; nothing chosen
 ok      the link is back
 ok      no page errors
+ok   13. a Regular and a Bold chosen from files first (InterVariable.ttf both): Build usable
+ok      Lato's Bold refused: the Bold slot says why and holds nothing (not the file chosen before); Build waits
+ok      no page errors
+ok   14. a Regular chosen from a file first (InterVariable.ttf): Build usable
+ok      Lato's Regular refused: the Regular slot says why and holds nothing; Build waits
+ok      its Bold still comes (Lato-Bold.ttf); no Reserved Font Names are left over
+ok      no page errors
+ok   15. Ubuntu's page: it is under the Ubuntu Font Licence, another name or "Ubuntu derivative" and a name of one's own
+ok      Use: the Regular is Ubuntu-Regular.ttf; the Name is not filled in with "Ubuntu"
+ok      "Ubuntu Foo": the licence note; Build stays usable
+ok      "Ubuntu derivative" with no name of one's own: the note
+ok      "Ubuntu derivative Mine": no note
+ok      "ubuntu Derivative Mine": no note
+ok   16. Lato (OFL) has no Ubuntu Font Licence note
+ok      "Lato derivative Mine": the Reserved Font Name note (the derivative form is the Ubuntu Font Licence's alone)
+ok      Roboto (Apache): the Name "Roboto", no note
+ok      no page errors
 all passed

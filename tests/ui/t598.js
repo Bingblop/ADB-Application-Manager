@@ -8,6 +8,8 @@
 // state with Retry. A stale list stays in use while it updates, and a failed update says why beside Retry. Back (backNavigate) and a tap outside
 // step from a family's page to the list, then close. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
 // 360 px, in the light theme and right-to-left.
+// The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
+// results, and the sheet's handle pulls it up to the whole screen (down once: its size again; down again: the usual step back).
 // Mock bridge: lib/fontmaker_mock.js (opts.gf); the list: fixtures/gfonts-catalog.json (64 real families).
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -78,12 +80,16 @@ const wide = (page) => page.evaluate(() => {
       return { lato: card('Lato'), roboto: card('Roboto'), cairo: card('Cairo'), credit: document.querySelector('#gfListView .uad-credit').textContent.trim(),
         aria: [...document.querySelectorAll('#gfChipVar, #gfChipDl')].map(c => c.tagName + ':' + c.getAttribute('aria-pressed')).join(','),
         size: [document.getElementById('gfSize').min, document.getElementById('gfSize').max, document.getElementById('gfSize').value, document.getElementById('gfSizeV').textContent].join(','),
-        ph: [document.getElementById('gfSearch').placeholder, document.getElementById('gfText').placeholder].join(' | ') };
+        ph: [document.getElementById('gfSearch').placeholder, document.getElementById('gfText').placeholder].join(' | '),
+        rgap: (rb => { const bs = rb.querySelectorAll('.uad-badge'); return { disp: getComputedStyle(rb).display, gap: Math.round(bs[1].getBoundingClientRect().left - bs[0].getBoundingClientRect().right) }; })(document.querySelector('#gfList .gf-card[data-f="Roboto"] .gf-badges')),
+        chipBg: [...document.querySelectorAll('#gfChipVar, #gfChipDl')].map(c => getComputedStyle(c).backgroundColor).join(',') };
     });
     check('3. a card is one button: Lato "Sans serif · Łukasz Dziedzic · 10 styles", Downloaded', bits.lato && bits.lato.tag === 'BUTTON' && bits.lato.meta === 'Sans serif · Łukasz Dziedzic · 10 styles' && bits.lato.badges.join(',') === 'Downloaded' && bits.lato.noTr === 'no', JSON.stringify(bits.lato));
     check('   Roboto "Sans serif · Christian Robertson (+2) · 18 styles", Variable and Downloaded', bits.roboto && bits.roboto.meta === 'Sans serif · Christian Robertson (+2) · 18 styles' && bits.roboto.badges.join(',') === 'Variable,Downloaded', JSON.stringify(bits.roboto));
     check('   the credit names Google Fonts and the licences', bits.credit === 'Fonts and their list come from Google Fonts (fonts.google.com). Each family is free to use under its own licence, shown with it.', bits.credit);
     check('   the chips are buttons, not pressed', bits.aria === 'BUTTON:false,BUTTON:false', bits.aria);
+    check('   the chips are outlined, not filled (no grey button fill)', bits.chipBg === 'rgba(0, 0, 0, 0),rgba(0, 0, 0, 0)', bits.chipBg);
+    check('   Roboto\'s badges are a row 4 px apart', bits.rgap.disp === 'flex' && bits.rgap.gap === 4, JSON.stringify(bits.rgap));
     check('   the preview size: 14-72, 28', bits.size === '14,72,28,28', bits.size);
     check('   placeholders', bits.ph === 'Search fonts or designers | Type something to preview', bits.ph);
     // Show more
@@ -93,6 +99,15 @@ const wide = (page) => page.evaluate(() => {
     await page.click('#gfMoreBtn'); await page.waitForTimeout(100);
     s = await sheet(page);
     check('   then all 64, no more button; the family without popularity comes last', s.cards.length === 64 && s.more === '' && s.cards[63] === 'Material Symbols Outlined', JSON.stringify([s.cards.length, s.more, s.cards[63]]));
+    // a search typed far down the list starts at the top of its results (the search field is in the sticky bar)
+    const from = await page.evaluate(() => { const sc = document.getElementById('gfScroll'); sc.scrollTop = sc.scrollHeight; return sc.scrollTop; });
+    await search(page, 'sans');
+    const sr = await page.evaluate(() => {
+      const sc = document.getElementById('gfScroll'), first = document.querySelector('#gfList .gf-card'), bar = document.querySelector('#gfSheet .gf-bar').getBoundingClientRect(), r = first.getBoundingClientRect();
+      return { top: sc.scrollTop, first: first.dataset.f, inView: r.top >= bar.bottom - 0.5 && r.top < sc.getBoundingClientRect().bottom };
+    });
+    check('   a new search far down the list starts at the top: Open Sans in view under the bar', from > 2000 && sr.top === 0 && sr.first === 'Open Sans' && sr.inView, JSON.stringify([from, sr]));
+    await search(page, '');
     // sorts
     const firsts = {};
     for (const v of ['trend', 'new', 'name', 'pop']) { await pick(page, 'gfSort', v); firsts[v] = (await sheet(page)).cards.slice(0, 3).join(','); }
@@ -133,6 +148,12 @@ const wide = (page) => page.evaluate(() => {
     const nVar = CAT.families.filter(e => (e.x || []).length).length;
     const ap = () => page.evaluate(() => [...document.querySelectorAll('#gfChipVar, #gfChipDl')].map(c => c.getAttribute('aria-pressed') + (c.classList.contains('active') ? '+' : '')).join(','));
     check('8. Variable: only variable families (' + nVar + '), the chip pressed', s.count === nVar + ' of 64' && (await ap()) === 'true+,false', JSON.stringify([s.count, await ap()]));
+    const pbg = await page.evaluate(() => {
+      const t = document.createElement('button'); t.className = 'filter-chip active'; document.body.appendChild(t);
+      const want = getComputedStyle(t).backgroundColor; t.remove();
+      return { on: getComputedStyle(document.getElementById('gfChipVar')).backgroundColor, want, off: getComputedStyle(document.getElementById('gfChipDl')).backgroundColor };
+    });
+    check('   the pressed chip has the app\'s pressed fill, the other none', pbg.on === pbg.want && pbg.on !== 'rgba(0, 0, 0, 0)' && pbg.off === 'rgba(0, 0, 0, 0)', JSON.stringify(pbg));
     await page.click('#gfChipDl'); await page.waitForTimeout(100);
     s = await sheet(page);
     check('   and Downloaded: Roboto', s.cards.join(',') === 'Roboto' && (await ap()) === 'true+,true+', JSON.stringify([s.cards, await ap()]));
@@ -176,6 +197,24 @@ const wide = (page) => page.evaluate(() => {
     await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
     s = await sheet(page);
     check('   opened again: the list, at the top', s.open && s.list && !s.detail && (await page.evaluate(() => document.getElementById('gfScroll').scrollTop)) === 0, JSON.stringify(s));
+    // the handle: pulled up, the whole screen; down once, its size again; down again, the usual step back (the list closes, a family's page goes back to the list)
+    const hold = () => page.evaluate(() => { const r = document.getElementById('gfScroll').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 6 }; });
+    const drag = async (dy) => { const p = await hold(); await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.move(p.x, p.y + dy / 2, { steps: 4 }); await page.mouse.move(p.x, p.y + dy, { steps: 4 }); await page.mouse.up(); await page.waitForTimeout(350); };
+    const tall = () => page.evaluate(() => { const sc = document.getElementById('gfScroll'); return { h: Math.round(sc.getBoundingClientRect().height), full: innerHeight - 14, part: Math.round(innerHeight * 0.85), up: sc.classList.contains('sheet-expanded'), open: document.getElementById('gfSheet').classList.contains('show'), view: gf.view }; });
+    const h0 = await tall();
+    await drag(-140);
+    const h1 = await tall();
+    check('   the handle pulled up: the sheet takes the whole screen', h0.h === h0.part && h1.up && Math.abs(h1.h - h1.full) <= 2, JSON.stringify([h0, h1]));
+    await drag(140);
+    const h2 = await tall();
+    check('   pulled down once: its size again, still open on the list', !h2.up && h2.h === h2.part && h2.open && h2.view === 'list', JSON.stringify(h2));
+    await page.click('#gfList .gf-card[data-f="Roboto"]'); await page.waitForTimeout(150);
+    await drag(-140); await drag(140); await drag(140);
+    const h3 = await tall();
+    check('   from a family\'s page: up, down, down again goes back to the list', !h3.up && h3.open && h3.view === 'list', JSON.stringify(h3));
+    await drag(140);
+    check('   and down from the list closes the sheet', !(await tall()).open);
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
     const w = await wide(page);
     check('12. dark, 412 px: nothing wider than the screen', w.scrollW <= w.cw && w.sheetW <= w.sheetCw && !w.out.length, JSON.stringify(w));
     await page.screenshot({ path: 'list-412.png' });
@@ -275,6 +314,8 @@ const wide = (page) => page.evaluate(() => {
     let w = await wide(page);
     const name = (dark ? 'dark' : 'light') + '-360' + (rtl ? '-rtl' : '');
     check('17. ' + name + ': the list, nothing wider than the screen', w.scrollW <= w.cw && w.sheetW <= w.sheetCw && !w.out.length, JSON.stringify(w));
+    const cbg = await page.evaluate(() => [...document.querySelectorAll('#gfChipVar, #gfChipDl')].map(c => getComputedStyle(c).backgroundColor).join(','));
+    check('   the chips are outlined, not filled', cbg === 'rgba(0, 0, 0, 0),rgba(0, 0, 0, 0)', cbg);
     await page.screenshot({ path: name + '-list.png' });
     await page.click('#gfList .gf-card[data-f="Lato"]'); await page.waitForTimeout(300);
     w = await wide(page);
