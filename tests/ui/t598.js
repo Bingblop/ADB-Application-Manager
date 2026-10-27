@@ -10,7 +10,8 @@
 // while the page stays open is updated the next time the sheet opens; one another window of the app got meanwhile (gfontsRefresh answers fresh) is
 // read again, its date and count shown, without the busy sentence; so is one another window got while this one had none and the sheet was closed
 // (the tab shown again reads it for the button's count, and the sheet shows it fresh, with no busy sentence or Retry). Back (backNavigate) and a tap outside
-// step from a family's page to the list, then close. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
+// step from a family's page to the list, then close; a field of the sheet that kept the focus (the keyboard already down) loses it then, so the
+// bottom bar comes back. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
 // 360 px, in the light theme and right-to-left.
 // The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
 // results, and the sheet's handle pulls it up to the whole screen (down once: its size again; down again: the usual step back). The Help Guide
@@ -196,9 +197,12 @@ const wide = (page) => page.evaluate(() => {
     await page.evaluate(() => backNavigate()); await page.waitForTimeout(150);
     s = await sheet(page);
     check('   Back: the list again, still open', s.open && s.list && !s.detail && s.title === 'Google Fonts' && s.search && !s.back, JSON.stringify(s));
+    await page.focus('#gfSearch');                                    // the keyboard went down with the first Back, the field kept the focus
     await page.evaluate(() => backNavigate()); await page.waitForTimeout(150);
     s = await sheet(page);
     check('   Back again: the sheet closes, the tab stays', !s.open && (await page.evaluate(() => currentViewName())) === 'fonts', JSON.stringify(s));
+    check('   the focus does not stay in the closed sheet (its search field would keep the bottom bar away)', await page.evaluate(() => !document.getElementById('gfSheet').contains(document.activeElement)),
+      await page.evaluate(() => document.activeElement.id || document.activeElement.tagName));
     await page.click('#gfFindLink'); await page.waitForTimeout(200);
     s = await sheet(page);
     check('11. the Make a font link opens the sheet on the list', s.open && s.list && s.cards.length === 30, JSON.stringify([s.open, s.cards.length]));
@@ -236,6 +240,31 @@ const wide = (page) => page.evaluate(() => {
     const w = await wide(page);
     check('12. dark, 412 px: nothing wider than the screen', w.scrollW <= w.cw && w.sheetW <= w.sheetCw && !w.out.length, JSON.stringify(w));
     await page.screenshot({ path: 'list-412.png' });
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the bottom bar (the default navigation): Back closes the sheet while its search or preview-text field still has the focus (the keyboard went down
+  // with the Back before): the focus leaves the sheet and the bar comes back
+  {
+    const ctx = await b.newContext({ viewport: { width: 412, height: 900 } });
+    const page = await ctx.newPage();
+    page.bottomNav = true;
+    const errors = []; page.on('pageerror', e => errors.push(e.message));
+    await page.addInitScript(fmk.initScript, { b64: FONTS, gf: { catalog: CAT } });
+    await page.goto(PAGE); await page.waitForTimeout(800);
+    await page.evaluate(() => switchView('fonts')); await page.waitForTimeout(400);
+    const bar = () => page.evaluate(() => ({ away: document.documentElement.classList.contains('bnav-away'), off: document.getElementById('bnav').classList.contains('bnav-off'),
+      open: document.getElementById('gfSheet').classList.contains('show'), focus: document.getElementById('gfSheet').contains(document.activeElement) ? document.activeElement.id : '' }));
+    const b0 = await bar(), got = [];
+    for (const sel of ['#gfSearch', '#gfText']) {
+      await page.click('#gfOpenBtn'); await page.waitForTimeout(200);
+      await page.focus(sel); await page.keyboard.type('lato'); await page.waitForTimeout(200);
+      const typing = await bar();
+      await page.evaluate(() => backNavigate()); await page.waitForTimeout(400);
+      got.push([sel, typing, await bar()]);
+    }
+    check('10b. the bottom bar: Back with the search or preview field focused closes the sheet, the focus leaves it and the bar comes back', !b0.away && !b0.off
+      && got.every(([, t, a]) => t.away && t.open && !a.open && !a.focus && !a.away && !a.off), JSON.stringify([b0, got]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

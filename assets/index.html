@@ -46329,6 +46329,10 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfClose() {
             const sh = document.getElementById('gfSheet');
             if (sh) sh.classList.remove('show');
+            // the sheet hides by its opacity, so a field of it (the search, the preview text, the tester) keeps the focus after Back took the keyboard
+            // down: it would keep the bottom bar away (bnavTextFocus) and take a hardware keyboard's typing
+            const ae = document.activeElement;
+            if (sh && ae && ae !== document.body && sh.contains(ae)) try { ae.blur(); } catch (e) {}
             if (gf.view === 'detail') gfDetailForget();
             gf.open = false; gf.view = 'list'; gf.fam = '';
             clearTimeout(gf.tq); clearTimeout(gf.tt); clearTimeout(gf.td);

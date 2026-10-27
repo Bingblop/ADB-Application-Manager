@@ -42,6 +42,7 @@ ok      Clear filters: every family again, search and chips cleared (the sort ke
 ok   10. a card opens the family: title Lato (translate="no"), Back shown, no search
 ok      Back: the list again, still open
 ok      Back again: the sheet closes, the tab stays
+ok      the focus does not stay in the closed sheet (its search field would keep the bottom bar away)
 ok   11. the Make a font link opens the sheet on the list
 ok      a tap outside the sheet: from the family to the list
 ok      and then closed
@@ -52,6 +53,8 @@ ok      pulled down once: its size again, still open on the list
 ok      from a family's page: up, down, down again goes back to the list
 ok      and down from the list closes the sheet
 ok   12. dark, 412 px: nothing wider than the screen
+ok      no page errors
+ok   10b. the bottom bar: Back with the search or preview field focused closes the sheet, the focus leaves it and the bar comes back
 ok      no page errors
 ok   13. no list yet: the button shows without a count
 ok      opening asks for it (gfontsRefresh false) and says so; no cards, no count
