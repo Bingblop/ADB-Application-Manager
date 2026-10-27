@@ -2,12 +2,15 @@
 // (gfontsDownload) shows the page's progress bar, open-ended with "Starting…", then "File 1 of 2 · 150 KB of 300 KB" with the bar at its share of
 // all files, and Cancel. Done: a toast, "Downloaded · 2 files · 621 KB", Use in Make a font (the one primary), Save to phone and Delete, and the card
 // gets its Downloaded badge. Cancel (gfontsCancel) says "Cancelling…", ignores later progress and goes back to Download without an error. A failed
-// download says why in the page's words (gf_not_a_font) beside Download; one the app refuses (busy: already downloading, downloading, being saved)
-// says the app's sentence. Delete (gfontsDelete, no question first) goes back to Download with a toast. Save to phone (gfontsSave) waits for
+// download says why in the page's words (gf_not_a_font) beside Download; one that fails after its page was left or the sheet closed says so in a
+// toast ("Inter was not downloaded. ..."; a cancel says nothing), and its page says why when opened again; one the app refuses (busy: already
+// downloading, downloading, being saved) says the app's sentence. Delete (gfontsDelete, no question first) goes back to Download with a toast. Save to phone (gfontsSave) waits for
 // Android's save screen ("Saving…"; Delete, another save and My fonts' Export wait too), then a toast with the file's name; closing the screen
 // says nothing, a failure says why (the app's "The font family could not be saved: ..." as the page's sentence). The list follows a Delete or a
 // download made on a family's page, or one that finishes while the list shows (the Downloaded filter, the count, the badges). A downloaded family the
-// refreshed list no longer has (renamed or removed on Google Fonts) keeps a card ("No longer on Google Fonts") and a page with Use, Save and Delete.
+// refreshed list no longer has (renamed or removed on Google Fonts) keeps a card ("No longer on Google Fonts") and a page with Use, Save and Delete;
+// the search button counts it as the sheet does, and its Delete asks first (it cannot be downloaded again). A refreshed list that drops the family
+// whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the jobs move when the script says; opts.holdSave); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -18,7 +21,7 @@ const b64 = f => fs.readFileSync(fixture(f)).toString('base64');
 const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Regular.ttf'), bold: b64('Fixture-Boxes-Bold.ttf') };
 const CAT = JSON.parse(fs.readFileSync(fixture('gfonts-catalog.json'), 'utf8'));
 
-async function open(b, opts) {
+async function open(b, opts, stay) {
   const ctx = await b.newContext({ viewport: { width: 412, height: 900 } });
   const page = await ctx.newPage();
   const errors = []; page.on('pageerror', e => errors.push(e.message));
@@ -27,6 +30,7 @@ async function open(b, opts) {
   await page.waitForTimeout(500);
   await page.evaluate(() => switchView('fonts'));
   await page.waitForTimeout(400);
+  if (stay) return { ctx, page, errors };                           // the tab only: the sheet stays closed
   await page.click('#gfOpenBtn');
   await page.waitForTimeout(300);
   return { ctx, page, errors };
@@ -109,12 +113,49 @@ const kb = n => (n * 1024);
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     g = await get(page);
     check('6. a failed download: the page\'s sentence, Download again', g.err === 'Google Fonts sent a file that is not a font, so the family was not kept.' && g.dl === 'Download*' && !g.prog, JSON.stringify(g));
+    check('   its page shows it: no toast says it again', !/was not downloaded/.test(g.toast), g.toast);
     await page.evaluate(() => { __fmk.gfDownloadError = { Inter: { code: 'network', error: 'The download failed: Connection reset' } }; });
     await page.click('#gfDlBtn');
     g = await get(page);
     check('   Download again: the error goes', !g.err && g.prog, JSON.stringify(g));
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
-    check('   a network failure: "The download failed (Connection reset). Check the connection and try again."', (await get(page)).err === 'The download failed (Connection reset). Check the connection and try again.');
+    g = await get(page);
+    check('   a network failure: "The download failed (Connection reset). Check the connection and try again."', g.err === 'The download failed (Connection reset). Check the connection and try again.' && !/was not downloaded/.test(g.toast), JSON.stringify(g));
+    // a download that fails once its page was left (Back to the list) or the sheet closed: a toast says so, as one that finishes does; the page says why
+    const NET = 'The download failed (Connection reset). Check the connection and try again.';
+    const noToast = () => page.evaluate(() => { document.getElementById('toastMsg').innerText = ''; });
+    await noToast();
+    await page.click('#gfDlBtn');
+    await step(page, 1);
+    await page.evaluate(() => gfBackToList()); await page.waitForTimeout(100);
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    g = await get(page);
+    const interBadge = () => page.evaluate(() => [...document.querySelectorAll('#gfList .gf-card[data-f="Inter"] .uad-badge')].map(x => x.textContent).join(','));
+    check('6b. failed after Back to the list: a toast "Inter was not downloaded. ..." with the reason; its card is not Downloaded', g.toast === 'Inter was not downloaded. ' + NET && (await interBadge()) === 'Variable', JSON.stringify([g.toast, await interBadge()]));
+    await page.click('#gfList .gf-card[data-f="Inter"]'); await page.waitForTimeout(150);
+    g = await get(page);
+    check('   its page opened again says why, with Download', g.err === NET && g.dl === 'Download*' && !g.prog, JSON.stringify(g));
+    await noToast();
+    await page.click('#gfDlBtn');
+    await step(page, 1);
+    await page.evaluate(() => gfClose()); await page.waitForTimeout(100);
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    const closed = await page.evaluate(() => ({ toast: document.getElementById('toastMsg').textContent, err: gf.dlErr.Inter || '', open: gf.open }));
+    check('   failed after the sheet closed: the same toast, and the reason kept for its page', !closed.open && closed.toast === 'Inter was not downloaded. ' + NET && closed.err === NET, JSON.stringify(closed));
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(200);
+    await showFam(page, 'Inter');
+    g = await get(page);
+    check('   the sheet and its page opened again: the reason, Download', g.err === NET && g.dl === 'Download*', JSON.stringify(g));
+    await noToast();
+    await page.click('#gfDlBtn');
+    await step(page, 1);
+    await page.click('#gfCancelBtn');
+    await page.evaluate(() => gfClose()); await page.waitForTimeout(100);
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    const cxl = await page.evaluate(() => ({ toast: document.getElementById('toastMsg').textContent, err: gf.dlErr.Inter || '' }));
+    check('   cancelled, then the sheet closed: no toast, no error', cxl.toast === '' && cxl.err === '', JSON.stringify(cxl));
+    await page.evaluate(() => { __fmk.gfDownloadError = {}; });
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(200);
     // Delete
     await showFam(page, 'Lato');
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(100);
@@ -133,7 +174,8 @@ const kb = n => (n * 1024);
     check('   saved: a toast with the file\'s name; the buttons back', g.toast === 'Saved Lato.zip' && g.save === 'Save to phone' && g.del === 'Delete' && (await exp()).every(x => !x), JSON.stringify([g, await exp()]));
     await page.click('#gfDelBtn');
     g = await get(page);
-    check('9. Delete: gfontsDelete, at once (no question), a toast, Download again', (await calls(page, '^gfontsDelete:')).join(',') === 'gfontsDelete:Lato' && g.toast === 'Deleted Lato' && g.dl === 'Download*' && !g.have, JSON.stringify(g));
+    const asked = await page.evaluate(() => document.getElementById('mpAskModal').classList.contains('show'));
+    check('9. Delete: gfontsDelete, at once (no question), a toast, Download again', (await calls(page, '^gfontsDelete:')).join(',') === 'gfontsDelete:Lato' && g.toast === 'Deleted Lato' && g.dl === 'Download*' && !g.have && !asked, JSON.stringify([g, asked]));
     await page.evaluate(() => gfBackToList()); await page.waitForTimeout(100);
     const badge2 = await page.evaluate(() => [...document.querySelectorAll('#gfList .gf-card[data-f="Lato"] .uad-badge')].map(x => x.textContent).join(','));
     check('   its card has no Downloaded badge any more', badge2 === '', badge2);
@@ -212,9 +254,12 @@ const kb = n => (n * 1024);
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(200);       // the stale list's refresh comes: Lato is not in it
     const n0 = await page.evaluate(() => __fmk.calls.length);
     const inList = await page.evaluate(() => gf.data.families.some(e => e.f === 'Lato'));
+    const counts = () => page.evaluate(() => ({ btn: document.getElementById('gfOpenCount').textContent, sheet: document.getElementById('gfCount').textContent }));
+    const c0 = await counts();
+    check('13. the new list has 63 families and Lato is on the phone: the search button counts 64, as the sheet does', c0.btn === '64 families' && c0.sheet === '64 families', JSON.stringify(c0));
     await page.click('#gfChipDl'); await page.waitForTimeout(100);
     const l = await page.evaluate(() => ({ cards: [...document.querySelectorAll('#gfList .gf-card')].map(c => c.dataset.f + ':' + [...c.querySelectorAll('.uad-badge')].map(x => x.textContent).join(',')), count: document.getElementById('gfCount').textContent }));
-    check('13. Lato left the list but is on the phone: under Downloaded, its card says so', !inList && l.cards.join('|') === 'Lato:Downloaded,No longer on Google Fonts' && l.count === '1 of 64', JSON.stringify([inList, l]));
+    check('   Lato left the list but is on the phone: under Downloaded, its card says so', !inList && l.cards.join('|') === 'Lato:Downloaded,No longer on Google Fonts' && l.count === '1 of 64', JSON.stringify([inList, l]));
     await page.click('#gfList .gf-card[data-f="Lato"]'); await page.waitForTimeout(200);
     let g = await get(page);
     const pg = await page.evaluate((n0) => ({ title: document.getElementById('gfTitle').textContent, detail: getComputedStyle(document.getElementById('gfDetail')).display !== 'none', note: (document.getElementById('gfGoneNote') || {}).textContent || '',
@@ -234,11 +279,75 @@ const kb = n => (n * 1024);
       && use.toast === 'Lato is in Make a font' && !use.open, JSON.stringify(use));
     await page.click('#gfOpenBtn'); await page.waitForTimeout(200);
     await page.click('#gfList .gf-card[data-f="Lato"]'); await page.waitForTimeout(150);
+    // it cannot be downloaded again: Delete asks first (My fonts' question, over the sheet)
+    const ask = () => page.evaluate(() => {
+      const m = document.getElementById('mpAskModal'), hit = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+      return { show: m.classList.contains('show'), top: !!hit && !!hit.closest('#mpAskModal'), title: document.getElementById('mpAskTitle').textContent, text: document.getElementById('mpAskText').textContent,
+        ok: document.getElementById('mpAskOk').textContent, calls: __fmk.calls.filter(c => /^gfontsDelete:/.test(c)), view: gf.view, fam: gf.fam, dl: !!gf.dls.Lato };
+    });
     await page.click('#gfDelBtn'); await page.waitForTimeout(150);
+    let q = await ask();
+    check('   Delete asks first, over the sheet: "Delete Lato?", it cannot be downloaded again; nothing deleted yet', q.show && q.top && q.title === 'Delete Lato?' && q.ok === 'Delete' && !q.calls.length
+      && q.text === 'This family is no longer on Google Fonts, so it cannot be downloaded again. Save to phone first to keep a copy.', JSON.stringify(q));
+    await page.click('#mpAskNo'); await page.waitForTimeout(150);
+    q = await ask();
+    check('   Cancel: nothing deleted, its page stays', !q.show && !q.calls.length && q.view === 'detail' && q.fam === 'Lato' && q.dl, JSON.stringify(q));
+    await page.click('#gfDelBtn'); await page.waitForTimeout(150);
+    await page.click('#mpAskOk'); await page.waitForTimeout(150);
     const del = await page.evaluate(() => ({ calls: __fmk.calls.filter(c => /^gfontsDelete:/.test(c)), view: gf.view, list: getComputedStyle(document.getElementById('gfListView')).display !== 'none', title: document.getElementById('gfTitle').textContent,
       cards: document.querySelectorAll('#gfList .gf-card').length, empty: document.getElementById('gfList').textContent.replace(/\s+/g, ' ').trim(), count: document.getElementById('gfCount').textContent, toast: document.getElementById('toast').textContent.trim(), lato: gf.by.has('Lato') }));
     check('   Delete: gfontsDelete, back to the list, its card gone ("No fonts match.", "0 of 63")', del.calls.join(',') === 'gfontsDelete:Lato' && del.view === 'list' && del.list && del.title === 'Google Fonts' && !del.cards && /^No fonts match\./.test(del.empty)
       && del.count === '0 of 63' && del.toast === 'Deleted Lato' && !del.lato, JSON.stringify(del));
+    await page.evaluate(() => gfClose()); await page.waitForTimeout(100);
+    const c1 = await counts();
+    check('   the search button counts 63 again', c1.btn === '63 families', JSON.stringify(c1));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the tab shown with a list on the phone that no longer has a downloaded family: the search button counts it from the start
+  {
+    const REMOTE = Object.assign({}, CAT, { families: CAT.families.filter(e => e.f !== 'Lato') });
+    const { ctx, page, errors } = await open(b, { gf: { catalog: REMOTE, remote: CAT, downloads: ['Lato'] } }, true);
+    const btn = await page.evaluate(() => document.getElementById('gfOpenCount').textContent);
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(300);
+    const sheet = await page.evaluate(() => document.getElementById('gfCount').textContent);
+    check('13b. the tab shown, 63 families listed and Lato on the phone: the button says "64 families", as the sheet', btn === '64 families' && sheet === '64 families', JSON.stringify([btn, sheet]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a refreshed list that drops the family whose page is open: back to the list when it is not on the phone (its page has nothing left to show)
+  {
+    const REMOTE = Object.assign({}, CAT, { families: CAT.families.filter(e => e.f !== 'Arimo') });
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, stale: true, remote: REMOTE, hold: true } });
+    await page.click('#gfList .gf-card[data-f="Arimo"]'); await page.waitForTimeout(200);
+    const view = () => page.evaluate(() => ({ view: gf.view, title: document.getElementById('gfTitle').textContent, list: getComputedStyle(document.getElementById('gfListView')).display !== 'none',
+      detail: getComputedStyle(document.getElementById('gfDetail')).display !== 'none', arimo: !!document.querySelector('#gfList .gf-card[data-f="Arimo"]'), count: document.getElementById('gfCount').textContent,
+      info: __fmk.calls.filter(c => /^gfontsInfo:/.test(c)) }));
+    let v = await view();
+    check('14. Arimo\'s page open while the stale list updates (its details asked)', v.view === 'detail' && v.title === 'Arimo' && v.detail && v.info.join(',') === 'gfontsInfo:Arimo', JSON.stringify(v));
+    await step(page, 1);
+    v = await view();
+    check('   the new list has no Arimo: back to the list, its card gone, "63 families"', v.view === 'list' && v.title === 'Google Fonts' && v.list && !v.detail && !v.arimo && v.count === '63 families', JSON.stringify(v));
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    v = await view();
+    check('   its details answer late: the list stays', v.view === 'list' && v.list && !v.detail, JSON.stringify(v));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the same with a family on the phone: its page stays, and says at once that it left Google Fonts (its note; no link to fonts.google.com)
+  {
+    const REMOTE = Object.assign({}, CAT, { families: CAT.families.filter(e => e.f !== 'Lato') });
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, remote: REMOTE, downloads: ['Lato'], hold: true } });
+    await page.click('#gfList .gf-card[data-f="Lato"]'); await page.waitForTimeout(200);
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);          // its details first: the link to fonts.google.com
+    const pg = () => page.evaluate(() => ({ view: gf.view, title: document.getElementById('gfTitle').textContent, note: (document.getElementById('gfGoneNote') || {}).textContent || '', site: !!document.getElementById('gfOpenSite'),
+      btns: ['gfUseBtn', 'gfSaveBtn', 'gfDelBtn'].filter(id => !!document.getElementById(id)).length }));
+    let p = await pg();
+    check('15. Lato\'s page (on the phone), its details came: the link, no note', p.view === 'detail' && p.site && !p.note, JSON.stringify(p));
+    await page.evaluate(() => gfRefresh(true)); await page.waitForTimeout(50);
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    p = await pg();
+    check('   Refresh brings a list without Lato: the page stays, with the note, without the link; Use, Save and Delete', p.view === 'detail' && p.title === 'Lato' && p.note === 'This family is no longer on Google Fonts. Its downloaded files still work here.' && !p.site && p.btns === 3, JSON.stringify(p));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

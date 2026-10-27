@@ -5,7 +5,9 @@
 // the designers, every word must match, and waits 120 ms; the sorts are Popular, Trending, Newest and Name (A–Z); an unknown subset is shown
 // title-cased ("Canadian Aboriginal"); no match shows an empty state whose "Clear filters" brings every family back. No list on the phone: the sheet
 // asks for one (gfontsRefresh), says it is getting it, then shows it; a failure, and another window of the app getting it (busy), is an empty
-// state with Retry. A stale list stays in use while it updates, and a failed update says why beside Retry. Back (backNavigate) and a tap outside
+// state with Retry. A stale list stays in use while it updates, and a failed update says why beside Retry. A list that grows older than 7 days
+// while the page stays open is updated the next time the sheet opens; one another window of the app got meanwhile (gfontsRefresh answers fresh) is
+// read again, its date and count shown, without the busy sentence. Back (backNavigate) and a tap outside
 // step from a family's page to the list, then close. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
 // 360 px, in the light theme and right-to-left.
 // The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
@@ -294,6 +296,49 @@ const wide = (page) => page.evaluate(() => {
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     s = await sheet(page);
     check('   Retry: updated, the reason gone', s.status === 'List updated Oct 1, 2026 · Refresh' && s.calls.slice(-1)[0] === 'gfontsRefresh:true', JSON.stringify([s.status, s.calls]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a list that grows older than 7 days while the page stays open (gfontsCatalog's stale was false when it was read): updated on the next open
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, remote: Object.assign({}, CAT, { at: 0 }), hold: true } });
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    let s = await sheet(page);
+    check('15b. a list 2 days old: not asked for again', !s.calls.length && s.status === 'List updated Oct 1, 2026 · Refresh', JSON.stringify([s.calls, s.status]));
+    await page.evaluate(() => gfClose());
+    await page.evaluate(() => { const D = Date.now; Date.now = () => D() + 6 * 864e5; });   // 6 days on: the same list is now 8 days old
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    s = await sheet(page);
+    check('   6 days later, the page still open: asked for (gfontsRefresh false), in use while it updates', s.calls.join(',') === 'gfontsRefresh:false' && s.status === 'List updated Oct 1, 2026 · Updating the list…' && s.cards.length === 30, JSON.stringify([s.calls, s.status, s.cards.length]));
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    s = await sheet(page);
+    check('   the new list: "List updated Oct 9, 2026"', s.status === 'List updated Oct 9, 2026 · Refresh', s.status);
+    await page.evaluate(() => gfClose());
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    check('   opened again: not asked for again', (await sheet(page)).calls.join(',') === 'gfontsRefresh:false');
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // another window of the app gets the list while this one has a stale one: this window's ask is answered busy (that job's answer goes to that window
+  // only); on the next open the bridge answers fresh, and the page reads the new list: its date, its count, no busy sentence
+  {
+    const REMOTE = Object.assign({}, CAT, { at: 0, families: CAT.families.filter(e => e.f !== 'Arimo') });
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, stale: true, remote: REMOTE, otherWindow: true, hold: true } });
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    let s = await sheet(page);
+    check('15c. a stale list, another window getting the list: its sentence and Retry; the list in use', s.calls.join(',') === 'gfontsRefresh:false' && /Another window of the app is getting the list of fonts\. Try again in a moment\./.test(s.status)
+      && (await page.evaluate(() => !!document.getElementById('gfRetryBtn'))) && s.cards.length === 30, JSON.stringify([s.calls, s.status]));
+    await page.evaluate(() => { gfClose(); __fmk.gfOtherWindowDone(); __fmk.calls.length = 0; });
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    s = await sheet(page);
+    const now = await page.evaluate(() => ({ calls: __fmk.calls.filter(c => /^gfonts(Refresh|Catalog)/.test(c)).join(','), btn: document.getElementById('gfOpenCount').textContent, err: !!document.querySelector('#gfStatus .fnt-err'),
+      retry: !!document.getElementById('gfRetryBtn'), arimo: !!document.querySelector('#gfList .gf-card[data-f="Arimo"]') }));
+    check('   its list is on the phone: opened again, the bridge says fresh and the page reads it (no job)', now.calls === 'gfontsRefresh:false,gfontsCatalog' && !(await page.evaluate(() => gf.refreshing)), JSON.stringify(now));
+    check('   "List updated Oct 3, 2026 · Refresh", no busy sentence, no Retry', s.status === 'List updated Oct 3, 2026 · Refresh' && !now.err && !now.retry, JSON.stringify([s.status, now]));
+    check('   the new list\'s count on the button and the sheet: "63 families"; Arimo gone', now.btn === '63 families' && s.count === '63 families' && !now.arimo, JSON.stringify([now, s.count]));
+    await page.evaluate(() => { gfClose(); __fmk.calls.length = 0; });
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    check('   opened once more: not asked for again', !(await sheet(page)).calls.length);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
