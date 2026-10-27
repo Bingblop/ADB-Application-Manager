@@ -5640,7 +5640,10 @@ x: {
 "Updating the list…": "一覧を更新中…",
 "Use in Make a font": "「フォントを作る」で使う",
 "Variable": "可変",
-"Vietnamese": "ベトナム語"
+"Vietnamese": "ベトナム語",
+"About this family": "このファミリーについて",
+"Display [font category]": "ディスプレイ",
+"Light [font weight]": "ライト"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6876,5 +6879,6 @@ p: [
 ["{0} styles", "{0} スタイル"],
 ["{0} was not downloaded. {1}", "{0} をダウンロードできませんでした。{1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "{0} のライセンスでは、「{1}」という名前は元のフォント専用です。これを元に作るフォントは改変版なので、別の名前を付けてください。"],
+["{0} was not saved. {1}", "{0} を保存できませんでした。{1}"],
 ]
 };

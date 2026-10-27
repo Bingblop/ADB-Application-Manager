@@ -5640,7 +5640,10 @@ x: {
 "Updating the list…": "جارٍ تحديث القائمة…",
 "Use in Make a font": "استخدام في «إنشاء خط»",
 "Variable": "متغيّر",
-"Vietnamese": "الفيتنامية"
+"Vietnamese": "الفيتنامية",
+"About this family": "حول هذه العائلة",
+"Display [font category]": "للعناوين",
+"Light [font weight]": "خفيف"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6876,5 +6879,6 @@ p: [
 ["{0} styles", "الأنماط: {0}"],
 ["{0} was not downloaded. {1}", "لم يتم تنزيل {0}. {1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "يحجز ترخيص {0} الاسم «{1}» للخط الأصلي. الخط المصنوع منه نسخة معدّلة، لذا أعطه اسمًا آخر."],
+["{0} was not saved. {1}", "لم يتم حفظ {0}. {1}"],
 ]
 };

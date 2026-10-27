@@ -5640,7 +5640,10 @@ x: {
 "Updating the list…": "正在更新列表…",
 "Use in Make a font": "在“制作字体”中使用",
 "Variable": "可变",
-"Vietnamese": "越南文"
+"Vietnamese": "越南文",
+"About this family": "关于此字体系列",
+"Display [font category]": "展示体",
+"Light [font weight]": "细体"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6876,5 +6879,6 @@ p: [
 ["{0} styles", "{0} 种样式"],
 ["{0} was not downloaded. {1}", "未能下载 {0}。{1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "{0} 的许可证将名称“{1}”保留给原始字体。用它制作的字体是修改后的副本，因此请为其另取名称。"],
+["{0} was not saved. {1}", "未能保存 {0}。{1}"],
 ]
 };

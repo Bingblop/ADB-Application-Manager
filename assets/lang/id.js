@@ -5640,7 +5640,10 @@ x: {
 "Updating the list…": "Memperbarui daftar…",
 "Use in Make a font": "Pakai di “Buat font”",
 "Variable": "Variabel",
-"Vietnamese": "Vietnam"
+"Vietnamese": "Vietnam",
+"About this family": "Tentang keluarga font ini",
+"Display [font category]": "Display",
+"Light [font weight]": "Ringan"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6876,5 +6879,6 @@ p: [
 ["{0} styles", "{0} gaya"],
 ["{0} was not downloaded. {1}", "{0} tidak diunduh. {1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "Lisensi {0} mencadangkan nama “{1}” untuk font aslinya. Font yang dibuat darinya adalah salinan yang diubah, jadi beri nama lain."],
+["{0} was not saved. {1}", "{0} tidak disimpan. {1}"],
 ]
 };

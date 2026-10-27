@@ -235,6 +235,11 @@ const detail = (page) => page.evaluate((wsrc) => {
     await page.waitForTimeout(900);
     d = await detail(page);
     check('   in German: the meta line and the sliders say "Neigung, Stärke"', /Neigung, Stärke$/.test(d.meta) && d.axes.map(a => a.split(':')[0]).join('|') === 'Neigung|Stärke', JSON.stringify([d.meta, d.axes]));
+    // words that other screens translate in another sense have keys of their own (txC): the weight is not the theme's "Hell", the category not the screen's
+    const de = await page.evaluate(() => ({ w: gfStyleName('300i'), theme: txT('Light'), cat: gfCatName('display'), catKey: (window.__LANGS.de.x || {})['Display [font category]'],
+      about: (document.querySelector('#gfAbout .fnt-lab') || {}).textContent, upd: txT('Last updated') }));
+    check('   in German: weight 300 is "Leicht 300 Kursiv" (not the theme\'s "' + de.theme + '"), the category Display its own word, About "Über diese Familie"',
+      de.w === 'Leicht 300 Kursiv' && de.theme !== 'Leicht' && de.cat === de.catKey && !!de.catKey && de.about === 'Über diese Familie' && de.upd === 'Zuletzt aktualisiert', JSON.stringify(de));
     await page.evaluate(() => gfBackToList());
     await showFam(page, 'Material Symbols Outlined', 'material');
     d = await detail(page);
@@ -244,6 +249,8 @@ const detail = (page) => page.evaluate((wsrc) => {
     await page.waitForTimeout(900);
     d = await detail(page);
     check('   back in English', /· Variable: Optical size, Weight, Fill, Grade$/.test(d.meta) && d.axes.map(a => a.split(':')[0]).join('|') === 'Optical size|Weight|Fill|Grade', JSON.stringify([d.meta, d.axes]));
+    const en = await page.evaluate(() => [gfStyleName(300), gfCatName('display'), gfCatName('serif')].join('|'));
+    check('   in English the bracketed keys show the word alone: "Light 300", "Display"', en === 'Light 300|Display|Serif', en);
     // a family with more styles than the 'styles' preview carries (18): those rows say "No preview", never another weight under their name
     await page.evaluate(() => gfBackToList());
     await drain(page);

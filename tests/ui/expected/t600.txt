@@ -48,8 +48,10 @@ ok   11. Cairo in an English page: the tester line right to left (dir="auto"), a
 ok      Latin typed into the tester: left to right
 ok   12. Cairo's axes: "Slant, Weight" in the meta line and on the sliders
 ok      in German: the meta line and the sliders say "Neigung, Stärke"
+ok      in German: weight 300 is "Leicht 300 Kursiv" (not the theme's "Hell"), the category Display its own word, About "Über diese Familie"
 ok      Material Symbols in German: "Optische Größe, Stärke", then Google's Fill and Grade, kept as data
 ok      back in English
+ok      in English the bracketed keys show the word alone: "Light 300", "Display"
 ok   13. DM Sans: 20 rows ("20 styles"), the first 18 drawn in the styles face (18 faces), each in its weight
 ok      "Weight 1000" and "Weight 1000 Italic": "No preview", nothing asked for them
 ok   14. a card tapped just after typing in the list: the page's head, tester and styles drawn (in the new text)

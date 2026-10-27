@@ -5640,7 +5640,10 @@ x: {
 "Updating the list…": "Atualizando a lista…",
 "Use in Make a font": "Usar em “Criar uma fonte”",
 "Variable": "Variável",
-"Vietnamese": "Vietnamita"
+"Vietnamese": "Vietnamita",
+"About this family": "Sobre esta família",
+"Display [font category]": "Decorativa",
+"Light [font weight]": "Leve"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6876,5 +6879,6 @@ p: [
 ["{0} styles", "{0} estilos"],
 ["{0} was not downloaded. {1}", "{0} não foi baixada. {1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "A licença de {0} reserva o nome “{1}” para a fonte original. Uma fonte criada a partir dela é uma cópia modificada, então dê outro nome a ela."],
+["{0} was not saved. {1}", "{0} não foi salva. {1}"],
 ]
 };
