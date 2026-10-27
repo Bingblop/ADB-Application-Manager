@@ -10,7 +10,8 @@ blobmoji.ttf (made from Blobmoji, DavidBerdik/blobmoji2, tag blobmoji-17r1, a fo
 Copyright 2022 Google Inc.
 
 Noto is a trademark of Google Inc. The other two samples here are not under this licence: twemoji.ttf is under Creative Commons
-Attribution 4.0 and openmoji.ttf under Creative Commons Attribution-ShareAlike 4.0 (see NOTICE.txt).
+Attribution 4.0 (its art) and the Apache License 2.0 (its font build, Copyright 2016-2018, Mozilla Foundation; both texts in
+Twemoji-LICENSE.md in this folder), and openmoji.ttf under Creative Commons Attribution-ShareAlike 4.0 (see NOTICE.txt).
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is copied below, and is also available with a
 FAQ at: https://openfontlicense.org

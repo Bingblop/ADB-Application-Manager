@@ -32,6 +32,9 @@ ok      no page errors
 ok   7d. the other window's read was kept, this phone is offline: Show these emoji shows the kept pictures, no error
 ok      answered from the kept pictures, not read again
 ok      no page errors
+ok   7e. Show these emoji with the keyboard: the focus on "Reading the iOS emoji…" (also when the list is drawn again meanwhile), then on the button again when it fails
+ok      again: "Reading the iOS emoji…", then the sixteen pictures, read as "Sample of iOS emoji"
+ok      no page errors
 ok   8. Chrome 97: Noto and Blobmoji (COLRv1) say the WebView is too old, and are not read
 ok      Twemoji (COLRv0) is drawn
 ok   9. no font for OpenMoji: no strip, nothing said
@@ -40,6 +43,7 @@ ok   10. an older build: no strip, no note, no button; the rows as before
 ok      no page errors
 ok   11. assets/emoji/OFL.txt: the full SIL Open Font License 1.1, in ASCII
 ok      its head names noto.ttf and blobmoji.ttf as Modified Versions, each with "Copyright 2022 Google Inc."
+ok      its head gives twemoji.ttf both its licences (art CC-BY-4.0, font build Apache-2.0, Mozilla) and points to Twemoji-LICENSE.md
 ok      assets/emoji/NOTICE.txt: the Noto and Blobmoji rows point to OFL.txt, the other two do not
 ok      the root NOTICE lists the four sample fonts with their licences, OFL.txt named, the iOS emoji never shipped
 ok      Twemoji: assets/emoji/Twemoji-LICENSE.md, its release's own, with Mozilla's copyright and Apache-2.0 for the font build, CC-BY-4.0 for the art

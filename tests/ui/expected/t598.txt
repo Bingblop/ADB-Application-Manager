@@ -63,10 +63,14 @@ ok      the list comes: status, 30 cards, the button counts 64
 ok      Refresh: gfontsRefresh true, "Updating the list…" while the list stays
 ok      and back to Refresh
 ok      the focus on Lato's card stays there when the new list redraws the cards
+ok   13b. Refresh with the keyboard: the focus on the status line ("Updating the list…") while it updates, then on Refresh again
 ok      no page errors
 ok   14. a failed first list: "The list of fonts is not on this phone yet.", the reason, Retry
 ok      Retry asks again (gfontsRefresh true)
 ok      and the list comes
+ok      no page errors
+ok   14d. the empty state's Retry with the keyboard: the focus on the status line ("Getting the list…"), then on the new Retry when it fails again
+ok      Retry again: the status line, then Refresh once the list came
 ok      no page errors
 ok   14b. another window is getting the list: its sentence and Retry, not "Getting the list…"
 ok      once it ended, Retry asks again and this window gets the list
@@ -81,6 +85,7 @@ ok      its 30 cards, "64 families" on the sheet and the button
 ok      no page errors
 ok   15. a list older than 7 days: in use (30 cards) while it updates (gfontsRefresh false)
 ok      the update fails: the reason in the page's words, Retry; the list stays
+ok      its Retry with the keyboard: the focus on the status line while it updates, then on Retry when it fails again
 ok      Retry: updated, the reason gone
 ok      no page errors
 ok   15b. a list 2 days old: not asked for again
@@ -112,4 +117,5 @@ ok      the fonts page says the same of the search
 ok      the privacy summary names the Google Fonts page's scrolling and typing among what starts a contact, not only a tab, a button or a chat message
 ok      the privacy browser row names Open on fonts.google.com
 ok      the fonts pages quote the network failure with its reason in brackets, as the page shows it
+ok      the iOS emoji warning names Show these emoji as well as Download, and does not say only Download fetches Apple's art
 all passed

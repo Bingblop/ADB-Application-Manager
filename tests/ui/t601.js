@@ -16,7 +16,9 @@
 // whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts. With a keyboard
 // (switch access, TalkBack) the focus is not lost when the section is drawn again: it stays on the same control (the details came, the first
 // progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font);
-// a card keeps it when a download that ended while the list shows draws the list again.
+// a card keeps it when a download that ended while the list shows draws the list again. In About it stays on Open on fonts.google.com when the
+// details come, on About itself ("Getting the details…") after Retry until the reason (Retry again) or the details (More) come, on the
+// description that More opened, and on it or Licence text when a newer list draws About again.
 // The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone, and its
 // undo table has a row for a downloaded family (Delete on its page). Without
 // a family's details, About's Licence is its download's: it comes with a download made on the family's page and goes with a Delete there. A
@@ -519,6 +521,41 @@ const kb = n => (n * 1024);
     await page.click('#gfDelBtn'); await page.waitForTimeout(150);
     a = await aboutLic();
     check('   deleted there: Download, and the Licence row goes', a.dl && !a.rows.length, JSON.stringify(a));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // About with a keyboard (switch access, TalkBack): a focus in it is not lost to the body behind the sheet when it is drawn again. The details that
+  // come unasked leave it on Open on fonts.google.com; Retry turns into "Getting the details…", which About holds (and reads) until the reason
+  // comes (Retry again) or the details (the first control: More); More goes once pressed, the description it opened has it; a newer list keeps
+  // it on the description, or on Licence text
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, hold: true, infoError: { code: 'network', error: 'The download failed: timeout' } } });
+    const fo = () => page.evaluate(() => { const a = document.activeElement; return { id: a ? a.id || a.tagName : '', text: a ? a.textContent.replace(/\s+/g, ' ').trim().slice(0, 80) : '' }; });
+    const enter = async (id) => { await page.focus('#' + id); await page.keyboard.press('Enter'); await page.waitForTimeout(100); return fo(); };
+    const answer = async () => { await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150); return fo(); };
+    await showFam(page, 'Lato');
+    await page.focus('#gfOpenSite');
+    let f = await answer();
+    check('18. a keyboard on Open on fonts.google.com while the details come (here their reason): About drawn again, the focus stays on the link', f.id === 'gfOpenSite'
+      && (await about(page)).extra.join(',') === 'gfInfoErr,gfInfoRetry', JSON.stringify([f, await about(page)]));
+    f = await enter('gfInfoRetry');
+    check('   Retry: About holds the focus (read: "Getting the details from Google Fonts…"), not the body', f.id === 'gfAbout' && /Getting the details from Google Fonts…/.test(f.text), JSON.stringify(f));
+    f = await answer();
+    check('   they fail again: the focus on the new Retry', f.id === 'gfInfoRetry', JSON.stringify(f));
+    await page.evaluate(() => { __fmk.gfInfoError = null; });
+    const f1 = await enter('gfInfoRetry'), f2 = await answer();
+    check('   Retry, and the details come: About, then its first control (More, Lato\'s description is long)', f1.id === 'gfAbout' && f2.id === 'gfDescMore'
+      && (await about(page)).extra.join(',') === 'gfDesc,gfDescMore,gfLic', JSON.stringify([f1, f2, await about(page)]));
+    f = await enter('gfDescMore');
+    const desc = await page.evaluate(() => ({ open: !document.getElementById('gfDesc').classList.contains('gf-clamp'), more: getComputedStyle(document.getElementById('gfDescMore')).display }));
+    check('   More: the whole description, More gone, the focus on the description it opened', f.id === 'gfDesc' && desc.open && desc.more === 'none', JSON.stringify([f, desc]));
+    // a newer list while the page shows: gfListCame draws About again
+    const newer = async () => { await page.evaluate(() => gfRefresh(true)); return answer(); };
+    f = await newer();
+    check('   a newer list draws About again: the focus stays on the description (still open)', f.id === 'gfDesc' && await page.evaluate(() => !document.getElementById('gfDesc').classList.contains('gf-clamp')), JSON.stringify(f));
+    await page.focus('#gfLic > summary');
+    f = await newer();
+    check('   and on Licence text', f.id === 'gfLicSum', JSON.stringify(f));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

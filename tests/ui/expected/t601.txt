@@ -100,4 +100,12 @@ ok   17. Lato, not on the phone, its details not to be had: the reason and Retry
 ok      downloaded on its page: "Licence SIL Open Font License 1.1" from the download (no Licence text); the reason and Retry stay
 ok      deleted there: Download, and the Licence row goes
 ok      no page errors
+ok   18. a keyboard on Open on fonts.google.com while the details come (here their reason): About drawn again, the focus stays on the link
+ok      Retry: About holds the focus (read: "Getting the details from Google Fonts…"), not the body
+ok      they fail again: the focus on the new Retry
+ok      Retry, and the details come: About, then its first control (More, Lato's description is long)
+ok      More: the whole description, More gone, the focus on the description it opened
+ok      a newer list draws About again: the focus stays on the description (still open)
+ok      and on Licence text
+ok      no page errors
 all passed

@@ -8035,9 +8035,11 @@
                 .gf-badges .uad-badge { margin: 0; color: var(--accent); }
                 .gf-badges .uad-badge.is-dl { color: var(--status-running); }
                 /* the clip the ellipsis needs (overflow: hidden) is vertical too: .6em of room above and below the 1.35 line keeps the marks that reach past
-                   it (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts, a script face's swashes), and the margins take that room back, so nothing moves.
-                   In em, the element's own size: it cancels at every size the slider gives (14-72) and for .gf-failed too (.5em still cut Nastaliq's dots) */
-                .gf-pv { margin-block: calc(var(--space-2) - .6em) -.6em; padding-block: .6em; font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                   it (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts, a script face's swashes). In em, the element's own size, at every size the
+                   slider gives (14-72) and for .gf-failed too (.5em still cut Nastaliq's dots). The top margin takes its room back, so the line stays where
+                   it was; the bottom margin takes back only what the card's own padding holds, so the room stays inside the card (the card grows by the
+                   rest past 20 px): past its border it took the taps in the gap between cards and drew the marks over the next card (v7.18.0) */
+                .gf-pv { margin-block: calc(var(--space-2) - .6em) calc(-1 * min(.6em, var(--space-4))); padding-block: .6em; font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 .gf-pv.gf-wait { visibility: hidden; }
                 .gf-pv.gf-failed { font-size: var(--fs-item); font-weight: var(--fw-bold); color: var(--text-muted); }
                 .gf-nopv { font-size: var(--fs-pill); font-weight: var(--fw-medium); margin-inline-start: var(--space-2); }
@@ -44934,7 +44936,8 @@ Type any command above (e.g. pm list packages -d)</div>
             reservedUfl: false,                                              // that family is under the Ubuntu Font Licence: its own name is kept the same way
             reservedBold: { names: [], family: '', ufl: false },             // the same for the family whose file is in the Bold slot (fntGfReserved)
             emoFaces: {},                                                    // v7.18.0: the emoji samples' faces by catalog id ({ family, face } or { failed })
-            emoApple: { images: null, asked: false, busy: false, err: '' }   // the iOS sample: its pictures once read, asked once per showing
+            emoApple: { images: null, asked: false, busy: false, err: '', focusWait: false }   // the iOS sample: its pictures once read, asked once per showing
+                                                                             // (focusWait: its line or strip holds a keyboard's focus, fntRenderEmoji)
         };
         // v7.18.0 Google Fonts (#gfSheet): the list on the phone (gfontsCatalog), the filters, the downloads, a family's page, and the previews (gfontsPreview):
         // asked by the cards in view, at most GF_INFLIGHT at a time, once per (family, mode, text) and generation; their faces kept by that key, the oldest
@@ -45693,8 +45696,18 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!C) { list.innerHTML = '<div class="list-empty">Needs the app build</div>'; return; }
             if (C.error) { errNote(list, C.error); return; }
             fntEmoAppleCached();
+            // v7.18.0: Show these emoji pressed with a keyboard (TalkBack) turns into "Reading the iOS emoji…": that line takes the focus (read out),
+            // then the sixteen pictures (one image, read by its label) or the button again after a failure, never the body; a redraw meanwhile
+            // (another row's download) keeps it there
+            const ae = document.activeElement, A = fnt.emoApple;
+            const ios = !!ae && (ae.id === 'fntEmoShow' || (A.focusWait && (ae.id === 'fntEmoSay_apple' || ae.id === 'fntEmoPv_apple')));
             list.innerHTML = (C.items || []).map(fntEmoRow).join('') || '<div class="list-empty">Nothing to download.</div>';
             fntEmoFacesLoad();
+            if (!ios) return;
+            const btn = document.getElementById('fntEmoShow'), to = btn || document.getElementById('fntEmoPv_apple') || document.getElementById('fntEmoSay_apple');
+            A.focusWait = !!to && to !== btn;
+            if (A.focusWait) to.tabIndex = -1;
+            if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
         }
 
         // ---- v7.18.0: the sixteen sample emoji under each row of Emoji fonts ----
@@ -46385,20 +46398,46 @@ Type any command above (e.g. pm list packages -d)</div>
             const e = gf.by.get(gf.fam);
             if (e && !e.gone) gfAskInfo(gf.fam, false);
         }
+        // v7.18.0: a section drawn again (the status line, About) must not drop a keyboard's, switch access' or TalkBack's focus to the body behind
+        // the sheet (the rule gfRenderGet follows). gfFocusNote, before the write, notes the control that has it (by id); gfFocusBack, after it,
+        // gives it to that control when it is still there and usable, else to the first of alt there. With none (Refresh turned into "Updating the
+        // list…", Retry into "Getting the details…") the section itself takes it (tabindex -1), so its sentence is read, and the next redraw hands
+        // it on to the control once it is back
+        function gfFocusNote(box) {
+            const ae = document.activeElement;
+            if (ae && ae !== box && box.contains(ae)) return { id: ae.id || '' };
+            if (ae === box && box._gfPend) return box._gfPend;
+            box._gfPend = null; box.removeAttribute('tabindex');               // the focus went on meanwhile: the section is no stop of its own
+            return null;
+        }
+        function gfFocusBack(box, k, alt) {
+            if (!k) return;
+            const ok = el => !!el && box.contains(el) && !el.disabled && (el.tabIndex >= 0 || el.hasAttribute('tabindex')) && el.getClientRects().length > 0;
+            const to = [k.id ? document.getElementById(k.id) : null].concat(alt.map(sel => box.querySelector(sel))).find(ok);
+            box._gfPend = to ? null : { id: k.id };
+            if (to) box.removeAttribute('tabindex'); else box.tabIndex = -1;
+            try { (to || box).focus({ preventScroll: true }); } catch (err) {}
+        }
         function gfRenderStatus() {
             const el = document.getElementById('gfStatus');
             if (!el) return;
             const D = gf.data, err = gf.refreshErr || (D && D.err) || '';
+            let h;
             if (!gfHasList()) {
-                el.innerHTML = gf.refreshing ? '<div class="gf-getting">Getting the list of fonts from Google Fonts…</div>'
+                h = gf.refreshing ? '<div class="gf-getting">Getting the list of fonts from Google Fonts…</div>'
                     : emptyStateHtml({ key: 'gf-nolist', icon: err ? 'alert' : 'search', title: 'The list of fonts is not on this phone yet.', hint: err, actions: [{ label: 'Retry', onclick: 'gfRefresh(true)', primary: true }] });
-                return;
+            } else {
+                // the count is the line under the filters (gfCount), so this line says only how fresh the list is
+                const line = escapeHtml(txF('List updated {0}', gfWhen(D.at))) + ' · '
+                    + (gf.refreshing ? escapeHtml(txT('Updating the list…')) : '<button type="button" class="batch-tool-link" id="gfRefreshBtn" onclick="gfRefresh(true)">Refresh</button>');
+                h = '<div>' + line + '</div>'
+                    + (err && !gf.refreshing ? '<div class="fnt-err"><span class="is-err">' + escapeHtml(err) + '</span> <button type="button" class="batch-tool-link" id="gfRetryBtn" onclick="gfRefresh(true)">Retry</button></div>' : '');
             }
-            // the count is the line under the filters (gfCount), so this line says only how fresh the list is
-            const line = escapeHtml(txF('List updated {0}', gfWhen(D.at))) + ' · '
-                + (gf.refreshing ? escapeHtml(txT('Updating the list…')) : '<button type="button" class="batch-tool-link" id="gfRefreshBtn" onclick="gfRefresh(true)">Refresh</button>');
-            el.innerHTML = '<div>' + line + '</div>'
-                + (err && !gf.refreshing ? '<div class="fnt-err"><span class="is-err">' + escapeHtml(err) + '</span> <button type="button" class="batch-tool-link" id="gfRetryBtn" onclick="gfRefresh(true)">Retry</button></div>' : '');
+            // Refresh or a Retry pressed: the line holds the focus while it gets the list, then Retry (failed again) or Refresh has it (the empty
+            // state's Retry has no id: 'button')
+            const k = gfFocusNote(el);
+            el.innerHTML = h;
+            gfFocusBack(el, k, ['#gfRetryBtn', '#gfRefreshBtn', 'button']);
         }
 
         // ---- the list: search, filters, sort, 30 cards at a time ----
@@ -47067,25 +47106,32 @@ Type any command above (e.g. pm list packages -d)</div>
             let h = '<div class="fnt-lab">About this family</div>';
             if (I.asking) h += '<div class="fnt-note" id="gfInfoWait">Getting the details from Google Fonts…</div>';
             else if (I.err) h += '<div class="fnt-err" id="gfInfoErr"><span class="is-err">' + escapeHtml(I.err) + '</span></div><button type="button" class="batch-tool-link" id="gfInfoRetry" onclick="gfAskInfo(' + jsArg(f) + ', true)">Retry</button>';
-            if (ok && I.description) h += '<div class="gf-desc' + (gf.descOpen ? '' : ' gf-clamp') + '" id="gfDesc" translate="no" dir="auto">' + escapeHtml(I.description) + '</div>'
+            // opened by More, the description may hold the focus More had (gfDescMore): it stays able to after a redraw
+            if (ok && I.description) h += '<div class="gf-desc' + (gf.descOpen ? '' : ' gf-clamp') + '" id="gfDesc"' + (gf.descOpen ? ' tabindex="-1"' : '') + ' translate="no" dir="auto">' + escapeHtml(I.description) + '</div>'
                 + '<button type="button" class="batch-tool-link" id="gfDescMore" onclick="gfDescMore()" style="display:none;">More</button>';
             const designers = ok && Array.isArray(I.designers) && I.designers.length ? I.designers : (e.d || []);
             // without the details (a gone family has none; no connection, or still on their way): the licence as the family's download recorded it. A
             // gone family has no page on fonts.google.com to open
             const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : String((gf.dls[f] || {}).licenseName || '');
             h += row('Licence', lic)
-                + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"><summary>Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
+                + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"><summary id="gfLicSum">Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
                 + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Last updated', gfDate(e.m))
                 + (e.gone ? '' : '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>');
+            const k = gfFocusNote(box);
             box.innerHTML = h;
             // More only when the description runs past its three lines
             const desc = document.getElementById('gfDesc'), more = document.getElementById('gfDescMore');
             if (desc && more && !gf.descOpen && desc.scrollHeight > desc.clientHeight + 1) more.style.display = '';
+            // a focus in About (the details came unasked, a download or a Delete, a newer list) stays on its control (the link, Licence text), else
+            // goes to Retry or the first control; Retry pressed, About holds it (read: "Getting the details…") until the details or the reason come
+            gfFocusBack(box, k, I.asking ? [] : ['#gfInfoRetry', '#gfDescMore', '#gfLicSum', '#gfOpenSite']);
         }
         function gfDescMore() {
             gf.descOpen = true;
             const desc = document.getElementById('gfDesc'), more = document.getElementById('gfDescMore');
-            if (desc) desc.classList.remove('gf-clamp');
+            if (desc) { desc.classList.remove('gf-clamp'); desc.tabIndex = -1; }
+            // More goes once pressed: its focus goes to the description it opened (read from its start), not to the body behind the sheet
+            if (desc && more && more.contains(document.activeElement)) try { desc.focus({ preventScroll: true }); } catch (err) {}
             if (more) more.style.display = 'none';
         }
         // the page drawn again (a new language): the list's words and the family's page

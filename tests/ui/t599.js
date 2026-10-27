@@ -13,7 +13,8 @@
 // (a card that kept one of them for a new text then waits, blank, for its own).
 // Closing the sheet drops what is still on its way. A preview that has not answered in 30 s stops counting toward the 6, and its answer is still
 // drawn when it comes (on the cards and on a family's page). A line clips (for its ellipsis) .6em above and below itself, so the marks past it show
-// (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts), at every size and for "No preview" too, and the card and its line stay where they were.
+// (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts), at every size and for "No preview" too; the line stays where it was, and the room stays
+// inside its card (which grows by what of it the card's padding cannot hold), so a tap in the gap between two cards opens neither.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: previews answer when the script says; opts.gf.emojiFace: faces of assets/emoji/twemoji.ttf);
 // the list: fixtures/gfonts-catalog.json, and three families of the live list with no main script (as fetched 2026-10-27).
 const fs = require('fs');
@@ -70,25 +71,47 @@ const drain = async (page) => { for (let i = 0; i < 40; i++) { const n = await p
 const typeText = async (page, t, wait) => { await page.evaluate((t) => { const el = document.getElementById('gfText'); el.value = t; el.dispatchEvent(new Event('input', { bubbles: true })); }, t); if (wait !== false) await page.waitForTimeout(500); };
 const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = document.querySelector('#gfList .gf-card[data-f="' + f + '"]'), sc = document.getElementById('gfScroll'); sc.scrollTop += c.getBoundingClientRect().top - sc.getBoundingClientRect().top - 60; }, f); await page.waitForTimeout(250); };
 // a one-line preview clips at its padding box (overflow: hidden, for the ellipsis), above and below too: it needs room there for the marks past its
-// 1.35 line (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts; at least .55em), while the line and its card or row stay where they were without
-// that room (the rule before it, put on the element for a moment). What is wrong, by element; n: how many were looked at
+// 1.35 line (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts; at least .55em), while the line stays where it was without that room (the rule
+// before it, put on the element for a moment). A card's room below ends inside the card (its border): the card grows by what of it its own padding
+// cannot hold, so the room never reaches the gap between cards, where it took the taps and drew the marks over the next card. What is wrong, by
+// element; n: how many were looked at
 const room = (page, sel) => page.evaluate((sel) => {
   const els = [...document.querySelectorAll(sel)], near = (a, b) => Math.abs(a - b) <= 0.5;
   const bad = els.map(el => {
     const box = el.closest('.gf-card, .gf-style'), cs = getComputedStyle(el), fs = parseFloat(cs.fontSize);
-    const at = () => { const c = getComputedStyle(el), r = el.getBoundingClientRect(), b = box.getBoundingClientRect(), pt = parseFloat(c.paddingTop), pb = parseFloat(c.paddingBottom); return { pt, pb, line: r.height - pt - pb, top: r.top + pt - b.top, h: b.height }; };
-    const now = at();
-    el.style.setProperty('padding-block', '0'); el.style.setProperty('margin-block', el.classList.contains('gf-pv') ? 'var(--space-2) 0' : '0');
+    const at = () => { const c = getComputedStyle(el), r = el.getBoundingClientRect(), b = box.getBoundingClientRect(), pt = parseFloat(c.paddingTop), pb = parseFloat(c.paddingBottom); return { pt, pb, line: r.height - pt - pb, top: r.top + pt - b.top, h: b.height, below: r.bottom - b.bottom }; };
+    const now = at(), card = el.classList.contains('gf-pv'), bs = getComputedStyle(box);
+    el.style.setProperty('padding-block', '0'); el.style.setProperty('margin-block', card ? 'var(--space-2) 0' : '0');
     const was = at();
     el.style.removeProperty('padding-block'); el.style.removeProperty('margin-block');
-    const why = [];
+    const why = [], grow = card ? Math.max(0, 0.6 * fs - parseFloat(bs.paddingBottom)) : 0;
     if (cs.overflowY !== 'visible' && !(now.pt >= 0.55 * fs && now.pb >= 0.55 * fs)) why.push('room above/below ' + now.pt + '/' + now.pb + ' px at ' + fs + ' px');
     if (!near(now.line, 1.35 * fs)) why.push('line ' + now.line + ' px, not ' + 1.35 * fs);
-    if (!near(now.h, was.h) || !near(now.top, was.top)) why.push('moved: height ' + now.h + ' (was ' + was.h + '), line at ' + now.top + ' (was ' + was.top + ')');
+    if (!near(now.h, was.h + grow) || !near(now.top, was.top)) why.push('moved: height ' + now.h + ' (was ' + was.h + ', + ' + grow + '), line at ' + now.top + ' (was ' + was.top + ')');
+    if (card && now.below > -parseFloat(bs.borderBottomWidth) + 0.5) why.push('its room ends ' + now.below + ' px past the card\'s bottom, past its border');
     return why.length ? (box.dataset.f || box.querySelector('.gf-style-name').textContent) + ': ' + why.join('; ') : '';
   }).filter(Boolean);
   return { n: els.length, bad };
 }, sel);
+// a tap in the gap between the first two cards lands on the list, not on the card above; one on the middle of the first card's line still is that
+// card's. What elementFromPoint gives at both points (a card's family, else the element's id), and the families a click at each would open
+// (gfShow stubbed meanwhile, so nothing opens)
+const gapTap = async (page) => {
+  const pt = await page.evaluate(() => {
+    const [c1, c2] = document.querySelectorAll('#gfList .gf-card'), bar = document.querySelector('#gfSheet .gf-bar').getBoundingClientRect(), sc = document.getElementById('gfScroll').getBoundingClientRect();
+    const r1 = c1.getBoundingClientRect(), r2 = c2.getBoundingClientRect(), pv = c1.querySelector('.gf-pv').getBoundingClientRect();
+    const x = (r1.left + r1.right) / 2, gy = (r1.bottom + r2.top) / 2, ly = (pv.top + pv.bottom) / 2;
+    const at = (y) => { const e = document.elementFromPoint(x, y), c = e && e.closest('.gf-card'); return c ? c.dataset.f : e ? e.id || e.tagName : ''; };
+    return { f1: c1.dataset.f, x, gy, ly, gapPx: r2.top - r1.bottom, inView: ly > bar.bottom && gy < sc.bottom, gap: at(gy), line: at(ly) };
+  });
+  await page.evaluate(() => { window.__gfShowWas = window.gfShow; window.__shown = []; window.gfShow = f => { window.__shown.push(f); }; });
+  await page.mouse.click(pt.x, pt.gy);
+  pt.gapOpens = await page.evaluate(() => window.__shown.splice(0));
+  await page.mouse.click(pt.x, pt.ly);
+  pt.lineOpens = await page.evaluate(() => { window.gfShow = window.__gfShowWas; const s = window.__shown.splice(0); if (document.activeElement) document.activeElement.blur(); return s; });
+  return pt;
+};
+const gapOk = (g) => g.inView && g.gapPx > 0 && g.gap === 'gfList' && !g.gapOpens.length && g.line === g.f1 && g.lineOpens.join() === g.f1;
 
 (async () => {
   const b = await chromium.launch();
@@ -107,7 +130,7 @@ const room = (page, sel) => page.evaluate((sel) => {
     const r1 = await card(page, 'Roboto');
     check('   the card is drawn in its face (gfpv<n>)', !r1.wait && /^['"]?gfpv\d+['"]?, /.test(r1.ff) && r1.text === LATIN, JSON.stringify(r1));
     let rm = await room(page, '#gfList .gf-pv:not(.gf-wait)');
-    check('   the drawn lines (28 px) clip .55em or more above and below the line, so marks past it show; the cards and the lines where they were', rm.n >= 6 && !rm.bad.length, JSON.stringify(rm));
+    check('   the drawn lines (28 px) clip .55em or more above and below the line, so marks past it show, inside their cards; the lines where they were', rm.n >= 6 && !rm.bad.length, JSON.stringify(rm));
     check('   one face per card in document.fonts', s.docFaces === asked1.length && s.keys.length === asked1.length, JSON.stringify([s.docFaces, s.keys.length]));
     // scroll: the cards that come into view ask then
     const n1 = s.asked.length;
@@ -162,10 +185,14 @@ const room = (page, sel) => page.evaluate((sel) => {
     await page.waitForTimeout(100);
     const sz = await page.evaluate(() => ({ lab: document.getElementById('gfSizeV').textContent, v: document.getElementById('gfList').style.getPropertyValue('--gf-pv') }));
     check('6. the size slider: 50, every line at 50 px', sz.lab === '50' && sz.v.trim() === '50px' && (await card(page, 'Roboto')).size === '50px', JSON.stringify([sz, (await card(page, 'Roboto')).size]));
+    let gt = await gapTap(page);
+    check('   at 50 px a tap in the gap between two cards opens neither (it lands on the list); one on the first card\'s line opens that card', gapOk(gt), JSON.stringify(gt));
     await page.evaluate(() => { const r = document.getElementById('gfSize'); r.value = '72'; r.dispatchEvent(new Event('input', { bubbles: true })); });
     await page.waitForTimeout(100);
     rm = await room(page, '#gfList .gf-pv:not(.gf-wait)');
-    check('   at 72 px the room above and below grows with the line; the cards and the lines where they were', rm.n >= 1 && !rm.bad.length, JSON.stringify(rm));
+    check('   at 72 px the room above and below grows with the line, inside the card, which grows by what its padding cannot hold; the lines where they were', rm.n >= 1 && !rm.bad.length, JSON.stringify(rm));
+    gt = await gapTap(page);
+    check('   at 72 px too, a tap in the gap lands on the list, one on the line opens the card', gapOk(gt), JSON.stringify(gt));
     await page.evaluate(() => { const r = document.getElementById('gfSize'); r.value = '50'; r.dispatchEvent(new Event('input', { bubbles: true })); });
     await page.waitForTimeout(100);
     // a card a search takes out of the list: its answer is dropped

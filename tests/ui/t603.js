@@ -6,7 +6,8 @@
 // (emojiSpecimenFetch), "Reading the iOS emoji…" while it runs, then sixteen 28 px pictures (alt: the emoji), kept for the next render and on a
 // fresh page. A failure, and another window of the app reading them (busy), says why in the page's words with the button again; that sentence goes
 // once the iOS emoji are downloaded or deleted (the next read is another file). Pictures kept since the page asked (that other window's read) are
-// the read's answer (from 'cache', as fmkSpecimenJob does), so a page offline by then still shows them. An older app build shows no strip. The row's Download stays its
+// the read's answer (from 'cache', as fmkSpecimenJob does), so a page offline by then still shows them. Show these emoji pressed with a keyboard
+// leaves the focus on "Reading the iOS emoji…", then on the pictures or the button again. An older app build shows no strip. The row's Download stays its
 // first button; nothing is wider than the screen at 360 px. The licences travel with the
 // samples: assets/emoji/OFL.txt holds the full SIL Open Font License 1.1 with the copyright lines of noto.ttf and blobmoji.ttf (OFL condition 2),
 // assets/emoji/NOTICE.txt points to it (and to Twemoji-LICENSE.md, the release's licences of Twemoji: its art CC-BY-4.0, its font build
@@ -187,6 +188,27 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
+  // with a keyboard (switch access, TalkBack): Show these emoji turns into "Reading the iOS emoji…", which takes the focus (and is read), also
+  // through a redraw of the list meanwhile; a failure gives it to the button again, the pictures to their strip (one image, read by its label);
+  // never the body
+  {
+    const { ctx, page, errors } = await open(b, { gf: { hold: true, specimenError: { code: 'network', error: 'The download failed: Unable to resolve host' } } });
+    const fo = () => page.evaluate(() => { const a = document.activeElement; return { id: a ? a.id || a.tagName : '', text: a ? a.textContent.trim() : '', label: a ? a.getAttribute('aria-label') || '' : '' }; });
+    const answer = async () => { await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150); return fo(); };
+    await page.focus('#fntEmoShow'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+    const f1 = await fo();
+    await page.evaluate(() => fntRenderEmoji());
+    const f2 = await fo(), f3 = await answer();
+    check('7e. Show these emoji with the keyboard: the focus on "Reading the iOS emoji…" (also when the list is drawn again meanwhile), then on the button again when it fails',
+      f1.id === 'fntEmoSay_apple' && f1.text === 'Reading the iOS emoji…' && f2.id === 'fntEmoSay_apple' && f3.id === 'fntEmoShow' && /^The download failed/.test((await strips(page)).apple.err), JSON.stringify([f1, f2, f3]));
+    await page.evaluate(() => { __fmk.specimenError = null; });
+    await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+    const f4 = await fo(), f5 = await answer();
+    check('   again: "Reading the iOS emoji…", then the sixteen pictures, read as "Sample of iOS emoji"', f4.id === 'fntEmoSay_apple' && f5.id === 'fntEmoPv_apple' && f5.label === 'Sample of iOS emoji'
+      && (await strips(page)).apple.pv.nImg === 16, JSON.stringify([f4, f5]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
   // a WebView older than Chrome 98; a font the app does not have
   {
     const emo = Object.assign({}, EMO); delete emo.openmoji;
@@ -220,6 +242,10 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     const hdr = ofl.split('-----------------------------------------------------------')[0];
     check('   its head names noto.ttf and blobmoji.ttf as Modified Versions, each with "Copyright 2022 Google Inc."', /Modified Versions/.test(hdr)
       && /noto\.ttf \(made from Noto Color Emoji[^\n]*\):\nCopyright 2022 Google Inc\./.test(hdr) && /blobmoji\.ttf \(made from Blobmoji[^\n]*\):\nCopyright 2022 Google Inc\./.test(hdr), hdr);
+    // the file that travels with the samples says of twemoji.ttf what NOTICE.txt says: its art CC-BY-4.0, its font build Mozilla's under Apache-2.0
+    const h1 = hdr.replace(/\s+/g, ' ');
+    check('   its head gives twemoji.ttf both its licences (art CC-BY-4.0, font build Apache-2.0, Mozilla) and points to Twemoji-LICENSE.md', /twemoji\.ttf is under Creative Commons Attribution 4\.0/.test(h1)
+      && /Apache License 2\.0/.test(h1) && /Copyright 2016-2018, Mozilla Foundation/.test(h1) && /Twemoji-LICENSE\.md/.test(h1), h1);
     const rows = id => (note.split(/\n(?=\S)/).find(x => x.indexOf(id + '.ttf ') === 0) || '');
     check('   assets/emoji/NOTICE.txt: the Noto and Blobmoji rows point to OFL.txt, the other two do not', /OFL\.txt in this folder/.test(rows('noto')) && /OFL\.txt in this folder/.test(rows('blobmoji'))
       && !/OFL\.txt/.test(rows('twemoji')) && !/OFL\.txt/.test(rows('openmoji')), JSON.stringify(IDS.map(rows)));
