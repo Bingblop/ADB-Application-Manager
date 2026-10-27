@@ -55,6 +55,7 @@ ok      Use in Make a font: its Regular and Bold go into Make a font
 ok      Delete asks first, over the sheet: "Delete Lato?", it cannot be downloaded again; nothing deleted yet
 ok      Cancel: nothing deleted, its page stays
 ok      Delete: gfontsDelete, back to the list, its card gone ("No fonts match.", "0 of 63")
+ok      the focus on the empty list's Clear filters (its card is gone), not left on the closed question
 ok      the search button counts 63 again
 ok      no page errors
 ok   13b. the tab shown, 63 families listed and Lato on the phone: the button says "64 families", as the sheet

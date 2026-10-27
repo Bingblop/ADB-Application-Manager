@@ -46611,7 +46611,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfShow(f) {
             const e = gf.by.get(f);
             if (!e) return;
-            const sc = document.getElementById('gfScroll');
+            const sc = document.getElementById('gfScroll'), lv = document.getElementById('gfListView');
+            const fromList = gf.view === 'list' && !!lv && lv.contains(document.activeElement);
             if (gf.view === 'list' && sc) gf.listTop = sc.scrollTop;
             haptic();
             clearTimeout(gf.tt);                                             // the list's new text (gf.text) is drawn on Back; its timer must not drop this page's previews
@@ -46623,11 +46624,19 @@ Type any command above (e.g. pm list packages -d)</div>
             gfRenderDetail();
             if (sc) sc.scrollTop = 0;
             if (!e.gone) gfAskInfo(f, false);                                // Google Fonts no longer knows a gone family: its details would only say so
+            // the card that was tapped is hidden now: the focus goes to the Back arrow (as sheetFullOpen), never left on the page's body
+            const bk = document.getElementById('gfBack');
+            if (fromList && bk) try { bk.focus({ preventScroll: true }); } catch (err) {}
         }
         // the type tester's axis values to start with: each axis at its default
         function gfAxesStart(e) { const ax = {}; ((e && e.x) || []).forEach(a => { if (Array.isArray(a)) ax[String(a[0])] = +a[3]; }); return ax; }
         function gfBackToList() {
             if (gf.view !== 'detail') return;
+            // the focus on the page (its Back arrow, a field of it), on a question that closed (a gone family's Delete) or already lost to the body: it goes
+            // back to the family's card, so a keyboard, switch access or TalkBack goes on from where it was. Not to the search field: a field given the
+            // focus can raise the soft keyboard
+            const from = gf.fam, ae = document.activeElement, sh = document.getElementById('gfSheet'), lv = document.getElementById('gfListView');
+            const refocus = !ae || ae === document.body || (!!sh && sh.contains(ae) && !(lv && lv.contains(ae))) || !!(ae.closest && ae.closest('.modal-overlay:not(.show)'));
             clearTimeout(gf.td);                                             // the tester's new text must not drop the list's previews
             gfDetailForget();
             gf.view = 'list'; gf.fam = '';
@@ -46635,6 +46644,11 @@ Type any command above (e.g. pm list packages -d)</div>
             gfFilter(false);                                                 // a download or a Delete made on the page shows in the list (its badge, the Downloaded filter, the count)
             const sc = document.getElementById('gfScroll');
             if (sc) sc.scrollTop = gf.listTop;
+            if (!refocus) return;
+            // its card (dataset.f compared, a family's name is never put into a selector); one no longer listed (a gone family deleted, a newer list without
+            // it): the first card, or the empty state's Clear filters; else the bar's Close
+            const to = [...document.querySelectorAll('#gfList .gf-card')].find(c => c.dataset.f === from) || document.querySelector('#gfList button') || document.querySelector('#gfSheet .gf-bar .sheet-close');
+            if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
         }
         // the family's page asks for nothing more once it is left
         function gfDetailForget() {

@@ -10,7 +10,8 @@
 // says nothing, a failure says why (the app's "The font family could not be saved: ..." as the page's sentence). The list follows a Delete or a
 // download made on a family's page, or one that finishes while the list shows (the Downloaded filter, the count, the badges). A downloaded family the
 // refreshed list no longer has (renamed or removed on Google Fonts) keeps a card ("No longer on Google Fonts") and a page with Use, Save and Delete;
-// the search button counts it as the sheet does, and its Delete asks first (it cannot be downloaded again). A refreshed list that drops the family
+// the search button counts it as the sheet does, and its Delete asks first (it cannot be downloaded again; after it the focus is on the list, not
+// on the closed question). A refreshed list that drops the family
 // whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the jobs move when the script says; opts.holdSave); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
@@ -313,6 +314,8 @@ const kb = n => (n * 1024);
       cards: document.querySelectorAll('#gfList .gf-card').length, empty: document.getElementById('gfList').textContent.replace(/\s+/g, ' ').trim(), count: document.getElementById('gfCount').textContent, toast: document.getElementById('toast').textContent.trim(), lato: gf.by.has('Lato') }));
     check('   Delete: gfontsDelete, back to the list, its card gone ("No fonts match.", "0 of 63")', del.calls.join(',') === 'gfontsDelete:Lato' && del.view === 'list' && del.list && del.title === 'Google Fonts' && !del.cards && /^No fonts match\./.test(del.empty)
       && del.count === '0 of 63' && del.toast === 'Deleted Lato' && !del.lato, JSON.stringify(del));
+    const fo = await page.evaluate(() => { const a = document.activeElement; return { text: a.textContent.trim(), inList: !!a.closest('#gfList') }; });
+    check('   the focus on the empty list\'s Clear filters (its card is gone), not left on the closed question', fo.text === 'Clear filters' && fo.inList, JSON.stringify(fo));
     await page.evaluate(() => gfClose()); await page.waitForTimeout(100);
     const c1 = await counts();
     check('   the search button counts 63 again', c1.btn === '63 families', JSON.stringify(c1));
