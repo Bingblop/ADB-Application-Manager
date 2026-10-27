@@ -220,6 +220,10 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     const hdr = ofl.split('-----------------------------------------------------------')[0];
     check('   its head names noto.ttf and blobmoji.ttf as Modified Versions, each with "Copyright 2022 Google Inc."', /Modified Versions/.test(hdr)
       && /noto\.ttf \(made from Noto Color Emoji[^\n]*\):\nCopyright 2022 Google Inc\./.test(hdr) && /blobmoji\.ttf \(made from Blobmoji[^\n]*\):\nCopyright 2022 Google Inc\./.test(hdr), hdr);
+    // the file that travels with the samples says of twemoji.ttf what NOTICE.txt says: its art CC-BY-4.0, its font build Mozilla's under Apache-2.0
+    const h1 = hdr.replace(/\s+/g, ' ');
+    check('   its head gives twemoji.ttf both its licences (art CC-BY-4.0, font build Apache-2.0, Mozilla) and points to Twemoji-LICENSE.md', /twemoji\.ttf is under Creative Commons Attribution 4\.0/.test(h1)
+      && /Apache License 2\.0/.test(h1) && /Copyright 2016-2018, Mozilla Foundation/.test(h1) && /Twemoji-LICENSE\.md/.test(h1), h1);
     const rows = id => (note.split(/\n(?=\S)/).find(x => x.indexOf(id + '.ttf ') === 0) || '');
     check('   assets/emoji/NOTICE.txt: the Noto and Blobmoji rows point to OFL.txt, the other two do not', /OFL\.txt in this folder/.test(rows('noto')) && /OFL\.txt in this folder/.test(rows('blobmoji'))
       && !/OFL\.txt/.test(rows('twemoji')) && !/OFL\.txt/.test(rows('openmoji')), JSON.stringify(IDS.map(rows)));
