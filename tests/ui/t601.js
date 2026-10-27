@@ -17,7 +17,8 @@
 // (switch access, TalkBack) the focus is not lost when the section is drawn again: it stays on the same control (the details came, the first
 // progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font).
 // The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone. Without
-// a family's details, About's Licence is its download's: it comes with a download made on the family's page and goes with a Delete there.
+// a family's details, About's Licence is its download's: it comes with a download made on the family's page and goes with a Delete there. A
+// family that left Google Fonts shows no details in About (no description, Licence text, reason or Retry), even ones that came before it left.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the jobs move when the script says; opts.holdSave); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const path = require('path');
@@ -65,6 +66,9 @@ const get = (page) => page.evaluate(() => {
   };
 });
 const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new RegExp(src).test(c)), re);
+// the family's About: its rows, and which of the details' parts (description, Licence text) or their wait, reason and Retry are there
+const about = (page) => page.evaluate(() => ({ rows: [...document.querySelectorAll('#gfAbout .fnt-now')].map(r => [...r.children].map(c => c.textContent.trim()).join(' ')).join(' | '),
+  extra: ['gfDesc', 'gfDescMore', 'gfLic', 'gfInfoWait', 'gfInfoErr', 'gfInfoRetry'].filter(id => !!document.getElementById(id)) }));
 // where the focus is (a keyboard, switch access, TalkBack): the focused element's id, or its tag when it has none ('BODY': lost)
 const focused = (page) => page.evaluate(() => { const a = document.activeElement; return a ? a.id || a.tagName : ''; });
 const kb = n => (n * 1024);
@@ -420,11 +424,33 @@ const kb = n => (n * 1024);
     const pg = () => page.evaluate(() => ({ view: gf.view, title: document.getElementById('gfTitle').textContent, note: (document.getElementById('gfGoneNote') || {}).textContent || '', site: !!document.getElementById('gfOpenSite'),
       btns: ['gfUseBtn', 'gfSaveBtn', 'gfDelBtn'].filter(id => !!document.getElementById(id)).length }));
     let p = await pg();
-    check('15. Lato\'s page (on the phone), its details came: the link, no note', p.view === 'detail' && p.site && !p.note, JSON.stringify(p));
+    const a0 = await about(page);
+    check('15. Lato\'s page (on the phone), its details came: the link, no note; About with its description and Licence text', p.view === 'detail' && p.site && !p.note && a0.extra.join(',') === 'gfDesc,gfDescMore,gfLic', JSON.stringify([p, a0]));
     await page.evaluate(() => gfRefresh(true)); await page.waitForTimeout(50);
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     p = await pg();
     check('   Refresh brings a list without Lato: the page stays, with the note, without the link; Use, Save and Delete', p.view === 'detail' && p.title === 'Lato' && p.note === 'This family is no longer on Google Fonts. Its downloaded files still work here.' && !p.site && p.btns === 3, JSON.stringify(p));
+    const a = await about(page);
+    check('   About: only the licence its download recorded; the details from before it left (description, Licence text, designer) are not shown', a.rows === 'Licence SIL Open Font License 1.1' && !a.extra.length, JSON.stringify([a, a0]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a family's details asked while it was listed, answered (an error) once a refreshed list no longer has it: its page, and its page opened again, show
+  // only the licence its download recorded (no reason, no Retry: Google Fonts no longer knows it)
+  {
+    const REMOTE = Object.assign({}, CAT, { families: CAT.families.filter(e => e.f !== 'Lato') });
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, stale: true, remote: REMOTE, downloads: ['Lato'], hold: true,
+      infoError: { code: 'gf_unknown', error: 'This family is not in the Google Fonts list. Update the list and try again.' } } });
+    await page.click('#gfList .gf-card[data-f="Lato"]'); await page.waitForTimeout(200);
+    const asked = await calls(page, '^gfontsInfo:');
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(200);           // the refresh (no Lato) and the details' error
+    const note = () => page.evaluate(() => (document.getElementById('gfGoneNote') || {}).textContent || '');
+    let a = await about(page), n = await note();
+    check('15b. Lato\'s details asked, then the list without it and their error: the note; About only the licence, no reason or Retry', asked.join(',') === 'gfontsInfo:Lato' && !!n && a.rows === 'Licence SIL Open Font License 1.1' && !a.extra.length, JSON.stringify([asked, n, a]));
+    await page.evaluate(() => gfBackToList()); await page.waitForTimeout(150);
+    await showFam(page, 'Lato');
+    a = await about(page); n = await note();
+    check('   its page opened again: the same (the error from before it left is not shown)', !!n && a.rows === 'Licence SIL Open Font License 1.1' && !a.extra.length, JSON.stringify([n, a]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -462,18 +488,18 @@ const kb = n => (n * 1024);
   // with a Delete there, without opening the page again
   {
     const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, hold: true, infoError: { code: 'network', error: 'The download failed: timeout' } } });
-    const about = () => page.evaluate(() => ({ rows: [...document.querySelectorAll('#gfAbout .fnt-now')].map(r => [...r.children].map(c => c.textContent.trim()).join(' ')).filter(t => /^Licence /.test(t)),
+    const aboutLic = () => page.evaluate(() => ({ rows: [...document.querySelectorAll('#gfAbout .fnt-now')].map(r => [...r.children].map(c => c.textContent.trim()).join(' ')).filter(t => /^Licence /.test(t)),
       err: !!document.getElementById('gfInfoErr'), retry: !!document.getElementById('gfInfoRetry'), lic: !!document.getElementById('gfLic'), dl: !!document.getElementById('gfDlBtn') }));
     await showFam(page, 'Lato');
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
-    let a = await about();
+    let a = await aboutLic();
     check('17. Lato, not on the phone, its details not to be had: the reason and Retry, no Licence row', a.err && a.retry && !a.rows.length && a.dl, JSON.stringify(a));
     await page.click('#gfDlBtn');
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
-    a = await about();
+    a = await aboutLic();
     check('   downloaded on its page: "Licence SIL Open Font License 1.1" from the download (no Licence text); the reason and Retry stay', a.rows.join('|') === 'Licence SIL Open Font License 1.1' && !a.lic && a.err && a.retry, JSON.stringify(a));
     await page.click('#gfDelBtn'); await page.waitForTimeout(150);
-    a = await about();
+    a = await aboutLic();
     check('   deleted there: Download, and the Licence row goes', a.dl && !a.rows.length, JSON.stringify(a));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();

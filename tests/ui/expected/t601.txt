@@ -80,8 +80,12 @@ ok   14. Arimo's page open while the stale list updates (its details asked)
 ok      the new list has no Arimo: back to the list, its card gone, "63 families"
 ok      its details answer late: the list stays
 ok      no page errors
-ok   15. Lato's page (on the phone), its details came: the link, no note
+ok   15. Lato's page (on the phone), its details came: the link, no note; About with its description and Licence text
 ok      Refresh brings a list without Lato: the page stays, with the note, without the link; Use, Save and Delete
+ok      About: only the licence its download recorded; the details from before it left (description, Licence text, designer) are not shown
+ok      no page errors
+ok   15b. Lato's details asked, then the list without it and their error: the note; About only the licence, no reason or Retry
+ok      its page opened again: the same (the error from before it left is not shown)
 ok      no page errors
 ok   11. busy: "This font family is already downloading."
 ok      "This font family is being saved. Wait for it to finish."

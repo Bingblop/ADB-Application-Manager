@@ -47028,7 +47028,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfRenderAbout() {
             const box = document.getElementById('gfAbout'), f = gf.fam, e = gf.by.get(f);
             if (!box || !e) return;
-            const I = gf.info[f] || {}, ok = !!I.ok;
+            // a gone family's details are never asked (gfShow), and an answer, an error or a wait from before it left the list is not shown either: Google
+            // Fonts no longer offers it, so its page has only what its download recorded
+            const I = (!e.gone && gf.info[f]) || {}, ok = !!I.ok;
             const row = (label, value) => value ? '<div class="fnt-now"><span>' + label + '</span><b translate="no">' + escapeHtml(value) + '</b></div>' : '';
             let h = '<div class="fnt-lab">About this family</div>';
             if (I.asking) h += '<div class="fnt-note" id="gfInfoWait">Getting the details from Google Fonts…</div>';
