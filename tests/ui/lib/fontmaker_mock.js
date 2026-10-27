@@ -29,9 +29,10 @@
 //   catalog); refreshError: { code, error } a refresh ends with (also __fmk.gfRefreshError); downloads: families on the phone at the start;
 //   reserved: { family: [names] } (default { Lato: ['Lato'] }); previewError: families answered gf_no_preview; previewFail: families answered with a
 //   network error; infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError: { family: { code, error } };
-//   useError: { code, error } gfontsUse answers with; saveError: { code, error } the save ends with ('cancelled' too); specimenError: { code, error } the
-//   iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept from an earlier read; hold: the preview answers wait for
-//   __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh, details, download, iOS read) for __fmk.gfStep(n) / gfStepAll()
+//   useError: { code, error, slot? } gfontsUse answers with (only that slot's when slot is set); saveError: { code, error } the save ends with
+//   ('cancelled' too); specimenError: { code, error } the iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept
+//   from an earlier read; hold: the preview answers wait for __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh,
+//   details, download, iOS read) for __fmk.gfStep(n) / gfStepAll()
 // opts.emoB64: { noto, twemoji, blobmoji, openmoji }: base64 of assets/emoji/<id>.ttf (emojiSpecimenFont answers "" for an id without one)
 // __fmk.gfPreviews: every preview asked ({ reqId, family, mode, text }); gfOut / gfOutMax: the previews asked and not answered, now and at most
 exports.initScript = function (opts) {
@@ -174,6 +175,7 @@ exports.initScript = function (opts) {
   const gfLicense = (f) => {
     const r = gfReserved(f), q = r.map(x => '"' + x + '"').join(' and ');
     if (f === 'Roboto') return { kind: 'apache2', name: 'Apache License 2.0', text: 'Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/' };
+    if (/^Ubuntu/.test(f)) return { kind: 'ufl', name: 'Ubuntu Font Licence 1.0', text: 'Copyright 2010,2011 Canonical Ltd.\n\nThis Font Software is licensed under the Ubuntu Font Licence, Version 1.0.\nhttps://ubuntu.com/legal/font-licence\n\nUBUNTU FONT LICENCE Version 1.0' };
     return { kind: 'ofl', name: 'SIL Open Font License 1.1', text: 'Copyright 2010-2014 The ' + f + ' Project Authors' + (r.length ? ', with Reserved Font Name' + (r.length > 1 ? 's ' : ' ') + q : '') + '.\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.\nThis license is copied below, and is also available with a FAQ at:\nhttps://openfontlicense.org' };
   };
   const gfDesc = (e) => e.f === 'Lato'
@@ -510,7 +512,7 @@ exports.initScript = function (opts) {
       const fi = row.files.find(x => x.name === fileName);
       if (!fi) return J({ ok: false, code: 'gf_bad_file', error: "That file is not part of this family's download." });
       setTimeout(() => {
-        if (G.useError) { window.onFontMakerPicked(slot, J(Object.assign({ ok: false }, G.useError))); return; }
+        if (G.useError && (!G.useError.slot || G.useError.slot === slot)) { const x = Object.assign({ ok: false }, G.useError); delete x.slot; window.onFontMakerPicked(slot, J(x)); return; }
         const token = 'tok-gf-' + slot + '-' + (++seq), info = gfInfoOf(e, fi);
         tokens[token] = { fileName: fi.name, size: fi.size, preview: fi.variable ? 'vf' : fi.weight >= 600 ? 'bold' : 'regular', info };
         window.onFontMakerPicked(slot, J({ ok: true, token, fileName: fi.name, size: fi.size, info, gf: { family, reserved: gfReserved(family) } }));

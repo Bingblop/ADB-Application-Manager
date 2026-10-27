@@ -44923,6 +44923,7 @@ Type any command above (e.g. pm list packages -d)</div>
             sys: null, sysBusy: false, sysRb: null, sysErr: '', sysStatusErr: '', sysStale: false,
             faces: { regular: null, bold: null }, faceSeq: 0, libFaces: {},
             reserved: [], reservedFamily: '',                                // v7.18.0: the Reserved Font Names of the Google Fonts family in the Regular slot
+            reservedUfl: false,                                              // that family is under the Ubuntu Font Licence: its own name is kept the same way
             emoFaces: {},                                                    // v7.18.0: the emoji samples' faces by catalog id ({ family, face } or { failed })
             emoApple: { images: null, asked: false, busy: false, err: '' }   // the iOS sample: its pictures once read, asked once per showing
         };
@@ -45391,9 +45392,10 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             if (gf.open && gf.view === 'detail') gfUseState();               // Use in Make a font waits for a build and a file chooser too
         }
-        // the first Reserved Font Name the text holds (letter case aside), or ''
+        // the first Reserved Font Name the text holds (letter case aside), or ''. Under the Ubuntu Font Licence "<family> derivative <a name>" is allowed
         function fntReservedHit(name) {
-            const n = String(name || '').toLowerCase();
+            const n = String(name || '').toLowerCase().trim(), drv = / derivative \S/.exec(n);
+            if (drv && fnt.reservedUfl && n.slice(0, drv.index) === fnt.reservedFamily.trim().toLowerCase()) return '';
             return n ? (fnt.reserved || []).find(r => r && n.indexOf(String(r).toLowerCase()) >= 0) || '' : '';
         }
         // making a font of My fonts again: it keeps its package and gets the next version, so it installs over the one on the phone
@@ -45501,6 +45503,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 const g = r.gf && typeof r.gf === 'object' ? r.gf : null;
                 fnt.reserved = g && Array.isArray(g.reserved) ? g.reserved.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim()) : [];
                 fnt.reservedFamily = g ? String(g.family || '') : '';
+                // the Ubuntu Font Licence (its download's licence kind) has no Reserved Font Name line, but a changed copy must not keep the family's name
+                // either, unless it is "<family> derivative <a name>" (UFL 1.0, condition 2): the name is held like one
+                const fam = fnt.reservedFamily.trim();
+                fnt.reservedUfl = !!fam && (gf.dls[fnt.reservedFamily] || {}).license === 'ufl';
+                if (fnt.reservedUfl && !fnt.reserved.some(x => x.toLowerCase() === fam.toLowerCase())) fnt.reserved.push(fam);
                 if (!fnt.nameTouched) { const cand = String(info.family || String(r.fileName || '').replace(/\.[^.]+$/, '')).slice(0, 40); fnt.name = fntReservedHit(cand) ? '' : cand; }
                 fntLoadFace('regular');
             } else if (slot === 'bold') {
@@ -46689,6 +46696,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 : 'This is a symbol family. Make a font needs a plain text font, so this one may not work there.') + '</div>';
             const res = (d && Array.isArray(d.reserved) ? d.reserved : I.ok && Array.isArray(I.reserved) ? I.reserved : []).filter(x => typeof x === 'string' && x.trim());
             res.forEach(n => { h += '<div class="fnt-note gf-rfn" translate="no">' + escapeHtml(txF('"{0}" is a Reserved Font Name: a font made from this family must have another name.', n.trim())) + '</div>'; });
+            // the Ubuntu Font Licence keeps the family's own name for the original (condition 2), with no Reserved Font Name line to say so
+            if ((d ? d.license : I.ok ? I.license : '') === 'ufl') h += '<div class="fnt-note gf-rfn" id="gfUflNote" translate="no">'
+                + escapeHtml(txF('{0} is under the Ubuntu Font Licence: a font made from this family must have another name, or "{1} derivative" and a name of your own.', f, f)) + '</div>';
             if (err) h += '<div class="fnt-err" id="gfDlErr"><span class="is-err">' + escapeHtml(err) + '</span></div>';
             if (msg) h += '<div class="fnt-err" id="gfMsg">' + (msg.err ? '<span class="is-err">' + escapeHtml(msg.text) + '</span>' : escapeHtml(msg.text)) + '</div>';
             box.innerHTML = h;
@@ -46744,10 +46754,13 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             delete gf.msg[f];
             const wait = { regular: true };
+            // the family's files take the slots: a failed answer leaves its slot empty (Build waits), never with a file chosen before from another font
             fnt.pickErr.regular = '';
+            fnt.pick.regular = null; fnt.reserved = []; fnt.reservedFamily = ''; fnt.reservedUfl = false;
             // Bold: the chosen file; none (Android makes bold from the Regular, or Make a font offers a variable font's own Bold instance)
             fnt.boldMode = 'none'; fnt.boldTouched = false;
             if (ch.bold) {
+                fnt.pick.bold = null;
                 const r2 = fntCall('gfontsUse', [f, ch.bold, 'bold']);
                 fnt.boldMode = 'file'; fnt.boldTouched = true;
                 if (r2 && r2.ok) { wait.bold = true; fnt.pickErr.bold = ''; } else fnt.pickErr.bold = r2 ? fntErrText(r2, 'Could not start') : '';
