@@ -698,6 +698,49 @@ public final class GoogleFonts {
         return i;
     }
 
+    /**
+     * The bytes read so far of a download's answer as it came over the network (v7.18.0, R4-02). A font file is asked for as gzip, so its
+     * Content-Length is of the compressed bytes: the progress counts those here, under the GZIPInputStream that unzips them, while the cap,
+     * the SHA-256 and the size are of the unzipped file.
+     */
+    static final class CountingInput extends java.io.FilterInputStream {
+        private long count;
+
+        CountingInput(java.io.InputStream in) { super(in); }
+
+        long count() { return count; }
+
+        @Override
+        public int read() throws IOException {
+            int b = in.read();
+            if (b >= 0) count++;
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int r = in.read(b, off, len);
+            if (r > 0) count += r;
+            return r;
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            long s = in.skip(n);
+            if (s > 0) count += s;
+            return s;
+        }
+
+        @Override
+        public boolean markSupported() { return false; }                   // a reset would count bytes twice
+
+        @Override
+        public synchronized void mark(int limit) {}
+
+        @Override
+        public synchronized void reset() throws IOException { throw new IOException("mark/reset not supported"); }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // A family's details
     // ---------------------------------------------------------------------------------------------

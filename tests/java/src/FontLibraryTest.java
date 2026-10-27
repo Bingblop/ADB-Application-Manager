@@ -1171,6 +1171,10 @@ public class FontLibraryTest {
                 && open.contains("GoogleFonts.allowed(hop.getURL().toString())") && open.contains("new HttpSafe.Hops()"), true);
         is("…css2 with Chrome's user agent, every other request with the app's", open.contains("chrome ? GoogleFonts.CHROME_UA : GoogleFonts.APP_UA"), true);
         is("…and a job's hops can be disconnected by Cancel", open.contains("fmkConns.put(job.id, hop)") && open.indexOf("fmkConns.put(job.id, hop)") < open.indexOf("if (gfStopped(job))"), true);
+        // a download's font file asks for gzip itself: Android then keeps its Content-Length (it drops that header from an answer it unzips for
+        // the caller), so the progress has a total (R4-02); every other request is as before
+        is("only a download's font file asks for gzip itself", open.contains("if (gzip) hdr.put(\"Accept-Encoding\", \"gzip\");")
+                && body(ma, "private GfAnswer gfGet(").contains("gfOpen(url, chrome, job, hops, false)"), true);
         int chrome = 0, requests = 0;
         for (String line : ma.split("\n")) {
             if (!line.contains("gfGet(") && !line.contains("gfOpen(")) continue;
@@ -1187,6 +1191,10 @@ public class FontLibraryTest {
         is("…each file capped, hashed, flushed and read by FontInspect", fetch.contains("if (n > cap) throw new GoogleFonts.GfException(\"gf_too_big\")")
                 && fetch.contains("md.update(buf, 0, r)") && fetch.contains("out.getFD().sync()") && fetch.contains("throw new GoogleFonts.GfException(\"gf_not_a_font\")"), true);
         is("…the family capped at 160 MB", dl.contains("Math.min(GoogleFonts.MAX_FILE, left)"), true);
+        is("…each file asked for as gzip and unzipped here, its progress the bytes on the network against their Content-Length", fetch.contains("gfOpen(ref.url, false, job, hops, true)")
+                && fetch.contains("boolean gz = enc.equals(\"gzip\");") && fetch.contains("if (!gz && !enc.isEmpty() && !enc.equals(\"identity\")) throw new GoogleFonts.GfException(\"gf_bad_answer\");")
+                && fetch.contains("if (gz) in = new java.util.zip.GZIPInputStream(wire, 65536);") && fetch.contains("gfProgress(family, index, count, wire.count(), total)")
+                && fetch.contains("if (!gz && total > cap) throw new GoogleFonts.GfException(\"gf_too_big\")") && !fetch.contains("gfProgress(family, index, count, n, total)"), true);
         // a failure on the phone's own storage (the .part folder not made, the rename refused) is a full phone or its own sentence, never "check the
         // connection" (R2-03): no plain IOException of the job reaches downloadError, and gfError reads GfLocal before it
         String ge = body(ma, "private JSONObject gfError(");

@@ -8034,13 +8034,15 @@ public class MainActivity extends Activity {
      * Opens a Google Fonts address through HttpSafe. Each hop must be a Google Fonts one: a redirect anywhere else is refused before it
      * connects. css2 gets the Chrome user agent (it serves TrueType to anything it does not know), every other request the app's. A job's
      * hops are kept in fmkConns (Cancel and the window closing disconnect them), a preview's in gfPreviewConns and {@code hops}; gfClose
-     * drops them.
+     * drops them. {@code gzip}: a download's font file (gfFetchFont) asks for gzip itself, so Android leaves the answer as it came, with its
+     * Content-Length (it drops that header from an answer it unzips for the caller), and the caller unzips it.
      */
-    private java.net.HttpURLConnection gfOpen(String url, boolean chrome, final FontLibrary.Jobs.Job job, final List<java.net.HttpURLConnection> hops)
-            throws IOException, GoogleFonts.GfException {
+    private java.net.HttpURLConnection gfOpen(String url, boolean chrome, final FontLibrary.Jobs.Job job, final List<java.net.HttpURLConnection> hops,
+            boolean gzip) throws IOException, GoogleFonts.GfException {
         if (!GoogleFonts.allowed(url)) throw new GoogleFonts.GfException("gf_bad_answer");
         java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
         hdr.put("User-Agent", chrome ? GoogleFonts.CHROME_UA : GoogleFonts.APP_UA);
+        if (gzip) hdr.put("Accept-Encoding", "gzip");                   // v7.18.0 (R4-02): the file's size reaches the progress
         java.net.HttpURLConnection c = HttpSafe.open(url, 15000, 30000, hdr, new HttpSafe.Hops() {
             @Override
             public void opened(java.net.HttpURLConnection hop) throws IOException {
@@ -8072,7 +8074,7 @@ public class MainActivity extends Activity {
         List<java.net.HttpURLConnection> hops = new ArrayList<java.net.HttpURLConnection>();
         java.net.HttpURLConnection c = null;
         try {
-            c = gfOpen(url, chrome, job, hops);
+            c = gfOpen(url, chrome, job, hops, false);
             int code = c.getResponseCode();
             InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
             if (in == null) return new GfAnswer(code, new byte[0]);
@@ -8274,8 +8276,9 @@ public class MainActivity extends Activity {
      * with its SHA-256, at most 64 MB a file and 160 MB in all (gf_too_big), and read by FontInspect (gf_not_a_font); then the licence file
      * and meta.json, each flushed to the disk, and the folder renamed into place (GoogleFonts.commitDownload: a family downloaded again
      * replaces the one there). A download that does not end so leaves nothing: its .part folder is deleted (and swept in the next process if
-     * this one ends first). window.onGfProgress(family, fileIndex, fileCount, done, total) for each file (its bytes; total 0 when Google does
-     * not say), then window.onGfDone(family, {ok, entry: its gfontsDownloads row} | {ok:false, code, error}).
+     * this one ends first). window.onGfProgress(family, fileIndex, fileCount, done, total) for each file (its bytes as they come over the network:
+     * gzip, whose Content-Length Google sends; total 0 when Google does not say), then window.onGfDone(family, {ok, entry: its gfontsDownloads
+     * row} | {ok:false, code, error}).
      */
     private void gfDownloadJob(FontLibrary.Jobs.Job job, String family) {
         FontLibrary.Dirs d = fmkDirs();
@@ -8321,7 +8324,11 @@ public class MainActivity extends Activity {
         notifyJs("window.onGfDone && window.onGfDone(" + JSONObject.quote(family) + ", " + JSONObject.quote(res.toString()) + ")");
     }
 
-    /** One font file of a download, into {@code part}: streamed with its SHA-256 and flushed, then read by FontInspect for meta.json. */
+    /**
+     * One font file of a download, into {@code part}: streamed with its SHA-256 and flushed, then read by FontInspect for meta.json. It is asked
+     * for as gzip (gfOpen): the progress is of the bytes on the network against their Content-Length (GoogleFonts.CountingInput), the cap,
+     * the SHA-256 and the size of the file as it is unzipped.
+     */
     private GoogleFonts.MetaFile gfFetchFont(FontLibrary.Jobs.Job job, String family, GoogleFonts.FileRef ref, File part, int index, int count, long cap,
             FontLibrary.Throttle throttle) throws Exception {
         File dest = new File(part, ref.name);
@@ -8330,16 +8337,21 @@ public class MainActivity extends Activity {
         long n = 0;
         String sha;
         try {
-            c = gfOpen(ref.url, false, job, hops);
+            c = gfOpen(ref.url, false, job, hops, true);
             int code = c.getResponseCode();
             if (code != 200) throw new GfHttp(code);
+            String enc = c.getContentEncoding() == null ? "" : c.getContentEncoding().trim().toLowerCase(java.util.Locale.ROOT);
+            boolean gz = enc.equals("gzip");
+            if (!gz && !enc.isEmpty() && !enc.equals("identity")) throw new GoogleFonts.GfException("gf_bad_answer");
             long total = Math.max(0, c.getContentLengthLong());
-            if (total > cap) throw new GoogleFonts.GfException("gf_too_big");
+            if (!gz && total > cap) throw new GoogleFonts.GfException("gf_too_big");     // a gzip answer's length is not the file's: n is checked below
             gfProgress(family, index, count, 0, total);
             throttle.due("file " + index, 0, total, android.os.SystemClock.elapsedRealtime());
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            InputStream in = c.getInputStream();
+            GoogleFonts.CountingInput wire = new GoogleFonts.CountingInput(c.getInputStream());
+            InputStream in = wire;
             try {
+                if (gz) in = new java.util.zip.GZIPInputStream(wire, 65536);     // a cut or broken stream is an IOException: "The download failed"
                 FileOutputStream out = new FileOutputStream(dest);
                 try {
                     byte[] buf = new byte[65536];
@@ -8350,7 +8362,7 @@ public class MainActivity extends Activity {
                         if (n > cap) throw new GoogleFonts.GfException("gf_too_big");
                         md.update(buf, 0, r);
                         out.write(buf, 0, r);
-                        if (throttle.due("file " + index, n, total, android.os.SystemClock.elapsedRealtime())) gfProgress(family, index, count, n, total);
+                        if (throttle.due("file " + index, wire.count(), total, android.os.SystemClock.elapsedRealtime())) gfProgress(family, index, count, wire.count(), total);
                     }
                     out.getFD().sync();
                 } finally {

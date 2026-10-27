@@ -48,6 +48,7 @@ public class GoogleFontsTest {
             sweep();
             previewCache();
             bridgeParts();
+            countingInput();
             fuzz(20261026L, 1500);
         } finally {
             FontLibrary.deleteTree(tmp);
@@ -1095,6 +1096,71 @@ public class GoogleFontsTest {
             }
         }
         return b.toString();
+    }
+
+    /**
+     * A download's font file is asked for as gzip, so its Content-Length reaches the progress on the phone (R4-02; Android drops it from an
+     * answer it unzips itself, which the JDK cannot show): GoogleFonts.CountingInput under a GZIPInputStream counts the bytes on the network
+     * up to that length, and what is written, hashed and capped is the file itself.
+     */
+    static void countingInput() throws Exception {
+        byte[] font = Files.readAllBytes(new File(fix.getParentFile(), "emojimerge/Lato-sub.ttf").toPath());
+        java.io.ByteArrayOutputStream z = new java.io.ByteArrayOutputStream();
+        java.util.zip.GZIPOutputStream gzOut = new java.util.zip.GZIPOutputStream(z);
+        gzOut.write(font);
+        gzOut.close();
+        final byte[] onWire = z.toByteArray();
+        check("the fixture font is smaller as gzip (" + onWire.length + " of " + font.length + " bytes)", onWire.length < font.length);
+        // the network gives a few bytes at a time
+        GoogleFonts.CountingInput wire = new GoogleFonts.CountingInput(new java.io.ByteArrayInputStream(onWire) {
+            @Override
+            public synchronized int read(byte[] b, int off, int len) { return super.read(b, off, Math.min(len, 1000)); }
+        });
+        java.io.InputStream in = new java.util.zip.GZIPInputStream(wire, 65536);
+        java.io.ByteArrayOutputStream file = new java.io.ByteArrayOutputStream();
+        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+        byte[] buf = new byte[65536];
+        long n = 0, last = 0;
+        boolean within = true, forward = true;
+        int r;
+        while ((r = in.read(buf)) > 0) {
+            n += r;
+            md.update(buf, 0, r);
+            file.write(buf, 0, r);
+            if (wire.count() > onWire.length) within = false;
+            if (wire.count() < last) forward = false;
+            last = wire.count();
+        }
+        in.close();
+        check("the unzipped bytes are the font file", Arrays.equals(file.toByteArray(), font));
+        eq("…n is its size", n, (long) font.length);
+        eq("…its SHA-256", FontLibrary.hex(md.digest()), FontLibrary.sha256(font));
+        eq("the bytes counted at the end are the gzip answer's length (its Content-Length)", wire.count(), (long) onWire.length);
+        check("…never more than that while it is read, never going back", within && forward);
+
+        GoogleFonts.CountingInput plain = new GoogleFonts.CountingInput(new java.io.ByteArrayInputStream(new byte[100]));
+        plain.read();
+        plain.skip(9);
+        plain.read(new byte[50]);
+        eq("read(), skip() and read(buf) are counted", plain.count(), 60L);
+        while (plain.read(buf) > 0) {}
+        eq("…up to the end and not past it", plain.count(), 100L);
+        check("…and no mark / reset, which would count bytes twice", !plain.markSupported());
+
+        // a gzip answer cut short, or one that is not gzip: an IOException, so "The download failed" (gfError's network branch)
+        for (final byte[] bad : new byte[][] { Arrays.copyOf(onWire, onWire.length / 2), Arrays.copyOf(onWire, 5), Arrays.copyOf(font, 4096) }) {
+            String got;
+            try {
+                java.io.InputStream g = new java.util.zip.GZIPInputStream(new GoogleFonts.CountingInput(new java.io.ByteArrayInputStream(bad)), 65536);
+                while (g.read(buf) > 0) {}
+                got = "none";
+            } catch (java.io.IOException e) {
+                got = "IOException";
+            } catch (Throwable t) {
+                got = "threw " + t;
+            }
+            eq("a broken gzip answer of " + bad.length + " bytes is an IOException", got, "IOException");
+        }
     }
 
     static void fuzz(long seed, int rounds) throws Exception {
