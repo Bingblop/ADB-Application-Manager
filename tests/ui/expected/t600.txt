@@ -16,8 +16,9 @@ ok      "Open on fonts.google.com"
 ok      More: the whole description, More gone
 ok      the site opens through the app (openUrl), the family with + for spaces
 ok      the licence text opens
+ok   3b. new tester text whose letters the sample all has ("quick brown fox"): the tester and the rows show it in the faces they had
 ok   4. new tester text: asked after 400 ms (axes and styles, the head unchanged)
-ok      meanwhile the tester and the rows show the new text in the faces they had
+ok      meanwhile ("S" is in none of the faces shown) the tester and the rows have the new text, blank (gf-wait, no font)
 ok      then their new faces
 ok      size 72: the tester line at 72 px
 ok   5. Back: the list, scrolled where it was
@@ -50,6 +51,7 @@ ok   12. Cairo's axes: "Slant, Weight" in the meta line and on the sliders
 ok      in German: the meta line and the sliders say "Neigung, Stärke"
 ok      in German: weight 300 is "Leicht 300 Kursiv" (not the theme's "Hell"), the category Display its own word, About "Über diese Familie"
 ok      Material Symbols in German: "Optische Größe, Stärke", then Google's Fill and Grade, kept as data
+ok      in French: the category menu says "Display" (the category), not "Affichage" (the screen setting), as the cards do
 ok      back in English
 ok      in English the bracketed keys show the word alone: "Light 300", "Display"
 ok   13. DM Sans: 20 rows ("20 styles"), the first 18 drawn in the styles face (18 faces), each in its weight
@@ -74,5 +76,15 @@ ok      one Tab on: the next card, not the bar
 ok      from the tester field, Android Back: the focus on that card again
 ok      the focus lost on the page, then a tap outside: that card again
 ok      opened while nothing in the list had the focus: the Back arrow is not given it
+ok      no page errors
+ok   19. Lato's styles answer without Bold 700 (not sent) and Black 900 Italic (no font): 8 faces kept; those two rows "No preview", in no face
+ok      the other 8 rows drawn in the styles face, each in its own weight and style
+ok      new tester text: those two blank until the answer, the others in the faces they had (which hold its letters)
+ok      answered without them again: "No preview" again, the others drawn in their own weight and style
+ok      a later answer with its face: Bold 700 drawn in 700 upright again
+ok   20. Lato downloaded, its details not to be had: the reason and Retry, and "Licence SIL Open Font License 1.1" from its download (no licence text)
+ok      Retry: the details' licence, with its text
+ok   21. Inter's tester line "No preview", then new text: blank (gf-wait) until its answer, not the text bare in the app's font
+ok      then "No preview" again
 ok      no page errors
 all passed

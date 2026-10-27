@@ -42,5 +42,6 @@ ok   11. assets/emoji/OFL.txt: the full SIL Open Font License 1.1, in ASCII
 ok      its head names noto.ttf and blobmoji.ttf as Modified Versions, each with "Copyright 2022 Google Inc."
 ok      assets/emoji/NOTICE.txt: the Noto and Blobmoji rows point to OFL.txt, the other two do not
 ok      the root NOTICE lists the four sample fonts with their licences, OFL.txt named, the iOS emoji never shipped
+ok      …their sample read from the downloaded copy, else by HTTP range from the pinned address of the third-party build
 ok      the root NOTICE is ASCII
 all passed

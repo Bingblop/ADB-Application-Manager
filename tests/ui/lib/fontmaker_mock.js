@@ -30,7 +30,9 @@
 //   catalog; __fmk.gfRemote instead when it is set); refreshError: { code, error } a refresh ends with (also __fmk.gfRefreshError); downloads: families
 //   on the phone at the start; reserved: { family: [names] } (default { Lato: ['Lato'] }); previewError: families answered gf_no_preview; previewFail:
 //   families answered with a network error; emojiFace: families answered with faces that draw the sixteen sample emoji and no letter (opts.b64.emoji:
-//   a cut-down emoji font, as Google's answer for an emoji family asked for letters holds no letter either); infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError:
+//   a cut-down emoji font, as Google's answer for an emoji family asked for letters holds no letter either); dropFaces: { family: ['700', '900i'] }:
+//   styles a 'styles' answer leaves out (as the app skips a face lost to a 429 or 503, one past 2 MB and those past 8 MB); badFaces: the same, faces
+//   answered with bytes that are no font (their FontFace does not load); infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError:
 //   { family: { code, error } }; useError: { code, error, slot? } gfontsUse answers with (only that slot's when slot is set); saveError: { code, error }
 //   the save ends with ('cancelled' too); specimenError: { code, error } the iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept
 //   from an earlier read (also __fmk.appleCached: emojiSpecimenCached gives them, and emojiSpecimenFetch's job answers with them, from 'cache', before
@@ -457,8 +459,13 @@ exports.initScript = function (opts) {
         st.gfOut--;
         if ((G.previewError || []).indexOf(family) >= 0) { window.onGfPreview(reqId, J({ ok: false, code: 'gf_no_preview', error: 'Google Fonts sent no preview for this family.' })); return; }
         if ((G.previewFail || []).indexOf(family) >= 0) { window.onGfPreview(reqId, J({ ok: false, code: 'network', error: 'The download failed: timeout' })); return; }
-        const faces = gfFaces(e, mode);
+        let faces = gfFaces(e, mode);
         if ((G.emojiFace || []).indexOf(family) >= 0) faces.forEach(x => { x.b64 = b64.emoji || ''; });
+        if (mode === 'styles') {
+          const sty = x => parseInt(x.weight, 10) + (x.style === 'italic' ? 'i' : ''), drop = (G.dropFaces || {})[family] || [], bad = (G.badFaces || {})[family] || [];
+          faces = faces.filter(x => drop.indexOf(sty(x)) < 0);
+          faces.forEach(x => { if (bad.indexOf(sty(x)) >= 0) x.b64 = 'AAAAAAAA'; });
+        }
         window.onGfPreview(reqId, J({ ok: true, family, mode, faces }));
       };
       if (G.hold) pvq.push({ reqId, family, mode, text, run: answer }); else setTimeout(answer, delay);

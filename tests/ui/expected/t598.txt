@@ -67,6 +67,13 @@ ok   14b. another window is getting the list: its sentence and Retry, not "Getti
 ok      once it ended, Retry asks again and this window gets the list
 ok      and the list comes
 ok      no page errors
+ok   14c. the tab shown again after another window got the list: "List updated Oct 1, 2026 · Refresh", no busy sentence, no Retry, nothing asked
+ok      its 30 cards, "64 families" on the sheet and the button
+ok      the tab shown again read the list (gfontsCatalog): the button counted 64 before the sheet opened
+ok      no page errors
+ok   14c. the sheet opened again at once after another window got the list: "List updated Oct 1, 2026 · Refresh", no busy sentence, no Retry, nothing asked
+ok      its 30 cards, "64 families" on the sheet and the button
+ok      no page errors
 ok   15. a list older than 7 days: in use (30 cards) while it updates (gfontsRefresh false)
 ok      the update fails: the reason in the page's words, Retry; the list stays
 ok      Retry: updated, the reason gone
@@ -95,5 +102,8 @@ ok      a family's page, nothing wider than the screen
 ok      right to left: the Back arrow points the other way
 ok      no page errors
 ok   18. the guide's count examples are ones the page shows for a list of 1,950
-ok      the privacy row: the text typed in Type something to preview and Type tester goes out; the search words stay
+ok      the privacy row: the typed preview text goes out; the search words are not sent, but the families they find ask for their previews by name
+ok      the fonts page says the same of the search
+ok      the privacy browser row names Open on fonts.google.com
+ok      the fonts pages quote the network failure with its reason in brackets, as the page shows it
 all passed

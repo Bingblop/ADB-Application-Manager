@@ -9,7 +9,8 @@
 // the read's answer (from 'cache', as fmkSpecimenJob does), so a page offline by then still shows them. An older app build shows no strip. The row's Download stays its
 // first button; nothing is wider than the screen at 360 px. The licences travel with the
 // samples: assets/emoji/OFL.txt holds the full SIL Open Font License 1.1 with the copyright lines of noto.ttf and blobmoji.ttf (OFL condition 2),
-// assets/emoji/NOTICE.txt points to it, and the root NOTICE lists the four fonts with their licences (ASCII, the iOS emoji never shipped).
+// assets/emoji/NOTICE.txt points to it, and the root NOTICE lists the four fonts with their licences (ASCII, the iOS emoji never shipped, their
+// sample read from the downloaded copy, else by HTTP range from the pinned address).
 // Mock bridge: lib/fontmaker_mock.js (opts.emoB64: assets/emoji/<id>.ttf; opts.gf: hold, specimenError, appleCached, otherWindow).
 const fs = require('fs');
 const path = require('path');
@@ -224,6 +225,10 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     const sec = (root.split(/\n(?=Custom Fonts tab: the emoji samples\n-+\n)/)[1] || '').split(/\n\n(?=\S[^\n]*\n-+\n)/)[0];
     const lic = [['Noto Color Emoji', 'OFL-1.1'], ['Twemoji', 'CC-BY-4.0'], ['Blobmoji', 'OFL-1.1'], ['OpenMoji', 'CC-BY-SA-4.0']].filter(([f, l]) => !new RegExp('\\* ' + f + ' \\([^\\n]*\\) - ' + l + ' -\\s').test(sec));
     check('   the root NOTICE lists the four sample fonts with their licences, OFL.txt named, the iOS emoji never shipped', sec && !lic.length && /assets\/emoji\/OFL\.txt/.test(sec) && /iOS-style emoji are never shipped/.test(sec), JSON.stringify([lic, sec.slice(0, 200)]));
+    // both ways the app reads the iOS sample (fmkSpecimenJob): the downloaded file, else a few parts of Apple's file by HTTP range from its pinned address
+    const ios = sec.replace(/\s+/g, ' ');
+    check('   …their sample read from the downloaded copy, else by HTTP range from the pinned address of the third-party build', /from the downloaded copy/.test(ios) && /about 0\.3 MB of it by HTTP range from its pinned address/.test(ios)
+      && /samuelngs\/apple-emoji-ttf/.test(ios) && !/reads their sample from the downloaded file when asked/.test(ios), ios.slice(-600));
     check('   the root NOTICE is ASCII', ascii(root));
   }
   await b.close();

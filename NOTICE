@@ -74,7 +74,10 @@ each keeps its own copyright and licence, listed in assets/emoji/NOTICE.txt:
 * OpenMoji (HfG Schwaebisch Gmuend; hfg-gmuend/openmoji) - CC-BY-SA-4.0 - https://github.com/hfg-gmuend/openmoji - assets/emoji/openmoji.ttf,
   shared under the same licence (https://creativecommons.org/licenses/by-sa/4.0/).
 The cut-down copies are changed only by leaving the other glyphs out. The full emoji fonts are downloaded at run time when chosen and are not
-shipped. The iOS-style emoji are never shipped: they are Apple's art, and the app reads their sample from the downloaded file when asked.
+shipped. The iOS-style emoji are never shipped: they are Apple's art, from a third-party build (samuelngs/apple-emoji-ttf, the file the iOS
+emoji download comes from). When asked, the app reads their sixteen sample pictures from that file: from the downloaded copy when it is on the
+phone, else about 0.3 MB of it by HTTP range from its pinned address on GitHub. It keeps those pictures on the phone, in
+files/fontmaker/specimen/apple.json.
 
 Other components
 ----------------

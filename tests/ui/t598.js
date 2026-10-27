@@ -8,12 +8,14 @@
 // asks for one (gfontsRefresh), says it is getting it, then shows it; a failure, and another window of the app getting it (busy), is an empty
 // state with Retry. A stale list stays in use while it updates, and a failed update says why beside Retry. A list that grows older than 7 days
 // while the page stays open is updated the next time the sheet opens; one another window of the app got meanwhile (gfontsRefresh answers fresh) is
-// read again, its date and count shown, without the busy sentence. Back (backNavigate) and a tap outside
+// read again, its date and count shown, without the busy sentence; so is one another window got while this one had none and the sheet was closed
+// (the tab shown again reads it for the button's count, and the sheet shows it fresh, with no busy sentence or Retry). Back (backNavigate) and a tap outside
 // step from a family's page to the list, then close. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
 // 360 px, in the light theme and right-to-left.
 // The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
 // results, and the sheet's handle pulls it up to the whole screen (down once: its size again; down again: the usual step back). The Help Guide
-// says what the page shows: its examples of the count are ones the page can show, and its privacy row sends the typed preview text, not the search.
+// says what the page shows: its examples of the count are ones the page can show, its privacy row sends the typed preview text, not the search
+// words (but the previews of the families a search finds), its browser row has Open on fonts.google.com, and a network failure is quoted with its reason.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf); the list: fixtures/gfonts-catalog.json (64 real families).
 const fs = require('fs');
 const path = require('path');
@@ -295,6 +297,29 @@ const wide = (page) => page.evaluate(() => {
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
+  // the same, but the sheet closed and that other window's list came meanwhile (no onGfCatalog here): the tab shown again reads it (the button's count),
+  // and the sheet opened again shows it, fresh, without the busy sentence or Retry, and asks for nothing; also when it is opened again at once
+  for (const via of ['the tab shown again', 'the sheet opened again at once']) {
+    const { ctx, page, errors } = await open(b, { gf: { remote: CAT, hold: true, otherWindow: true } });
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    const busy = /Another window of the app is getting the list of fonts\./.test((await sheet(page)).status) && (await page.evaluate(() => !!document.querySelector('#gfStatus button')));
+    await page.evaluate(() => { gfClose(); __fmk.gfOtherWindowDone(); __fmk.calls.length = 0; });
+    let btn = null;
+    if (via === 'the tab shown again') {
+      await page.evaluate(() => switchView('apps')); await page.waitForTimeout(200);
+      await page.evaluate(() => switchView('fonts')); await page.waitForTimeout(300);
+      btn = await page.evaluate(() => ({ n: document.getElementById('gfOpenCount').textContent, read: __fmk.calls.includes('gfontsCatalog') }));
+    }
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    const s = await sheet(page);
+    const st = await page.evaluate(() => ({ err: !!document.querySelector('#gfStatus .fnt-err'), retry: !!document.getElementById('gfRetryBtn'), btn: document.getElementById('gfOpenCount').textContent }));
+    check('14c. ' + via + ' after another window got the list: "List updated Oct 1, 2026 · Refresh", no busy sentence, no Retry, nothing asked', busy && s.status === 'List updated Oct 1, 2026 · Refresh'
+      && !st.err && !st.retry && !s.calls.length, JSON.stringify([busy, s.status, st, s.calls]));
+    check('   its 30 cards, "64 families" on the sheet and the button', s.cards.length === 30 && s.count === '64 families' && st.btn === '64 families', JSON.stringify([s.cards.length, s.count, st.btn]));
+    if (btn) check('   the tab shown again read the list (gfontsCatalog): the button counted 64 before the sheet opened', btn.read && btn.n === '64 families', JSON.stringify(btn));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
   // a stale list: used while it updates; a failed update says why, with Retry
   {
     const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, stale: true, hold: true, refreshError: { code: 'gf_bad_answer', error: 'Google Fonts sent an answer the app cannot read.' } } });
@@ -390,8 +415,9 @@ const wide = (page) => page.evaluate(() => {
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
-  // the Help Guide (assets/guide.js): the count line's examples are what gfRenderList writes (the whole list, or "x of y"), and the privacy row says the
-  // text typed to preview goes to Google Fonts while the search words stay on the phone
+  // the Help Guide (assets/guide.js): the count line's examples are what gfRenderList writes (the whole list, or "x of y"); the privacy row says the
+  // text typed to preview goes to Google Fonts, and that the search words are not sent but the families they bring onto the screen ask for their
+  // previews by name; its browser row names Open on fonts.google.com; the network failure is quoted as the page says it (the reason in brackets)
   {
     const gsb = { window: {} }; require('vm').runInNewContext(fs.readFileSync(path.join(REPO, 'assets', 'guide.js'), 'utf8'), gsb);
     const flat = t => String(t || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
@@ -401,8 +427,16 @@ const wide = (page) => page.evaluate(() => {
     const total = '1,950', pageCan = q => q === total + ' families' || new RegExp('^\\d[\\d,]* of ' + total + '$').test(q);
     check('18. the guide\'s count examples are ones the page shows for a list of ' + total, ex.length === 2 && ex.every(pageCan) && fg.includes('Search Google Fonts') && fg.includes('"' + total + ' families"'), JSON.stringify(ex));
     const row = (sec('privacy').split(/(?=Google Fonts \(fonts\.google\.com)/)[1] || '').split(/(?=GitHub's gist)/)[0];
-    check('   the privacy row: the text typed in Type something to preview and Type tester goes out; the search words stay',
-      /Type something to preview/.test(row) && /Type tester/.test(row) && /What you type in Search fonts or designers, and the filters, stay on the phone/.test(row) && !/Your search words/.test(row), row);
+    check('   the privacy row: the typed preview text goes out; the search words are not sent, but the families they find ask for their previews by name',
+      /Type something to preview/.test(row) && /Type tester/.test(row) && /after you scroll, search, change a filter or the sort, or tap Show 30 more/.test(row)
+      && /What you type in Search fonts or designers, and the filters, are not sent, but the families they bring onto the screen have their previews asked for by name/.test(row)
+      && !/stay on the phone/.test(row) && !/Your search words/.test(row), row);
+    check('   the fonts page says the same of the search', /what you type in Search fonts or designers is not sent, but the families it finds ask for their previews by name/.test(fg) && !/Search fonts or designers stays on the phone/.test(fg), fg.slice(0, 300));
+    const brow = (sec('privacy').split(/(?=Your web browser, or this phone's store app)/)[1] || '').split(/The app only opens the address/)[0];
+    check('   the privacy browser row names Open on fonts.google.com', /Open on fonts\.google\.com/.test(brow), brow);
+    // a network failure always carries its reason (FNT_SAID 'network'): "The download failed (...). Check ..."; the plain FNT_ERR sentence is never shown
+    const net = ['fonts-google', 'fonts-emoji'].map(sec);
+    check('   the fonts pages quote the network failure with its reason in brackets, as the page shows it', net.every(t => t.includes('"The download failed (...). Check the connection and try again."') && !/The download failed\. Check the connection/.test(t)), JSON.stringify(net.map(t => (/[^.]*The download failed[^"]*"/.exec(t) || [''])[0])));
   }
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');
