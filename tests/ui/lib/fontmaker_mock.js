@@ -34,7 +34,9 @@
 //   from an earlier read; hold: the preview answers wait for __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh,
 //   details, download, iOS read) for __fmk.gfStep(n) / gfStepAll(); otherWindow: another window of the app is getting the list, a family's details
 //   and the iOS emoji (also __fmk.gfOtherWindow): gfontsRefresh, gfontsInfo and emojiSpecimenFetch answer busy, as the bridge does when the running
-//   job is not this window's (a second ask of this window joins its own)
+//   job is not this window's (a second ask of this window joins its own); __fmk.gfOtherWindowDone(): that window's refresh ended (the list on the phone
+//   is the remote one, and only that window was told: no onGfCatalog here). The list is stale, as GoogleFonts.isStale says, when opts.gf.stale is set
+//   or its time is more than 7 days before the page's clock (Date.now, which a script may move)
 // opts.emoB64: { noto, twemoji, blobmoji, openmoji }: base64 of assets/emoji/<id>.ttf (emojiSpecimenFont answers "" for an id without one)
 // __fmk.gfPreviews: every preview asked ({ reqId, family, mode, text }); gfOut / gfOutMax: the previews asked and not answered, now and at most
 exports.initScript = function (opts) {
@@ -157,7 +159,11 @@ exports.initScript = function (opts) {
   st.gfPreviews = []; st.gfOut = 0; st.gfOutMax = 0;
   let gfCat = JSON.parse(J(G.catalog || { v: 1, at: 0, axes: {}, families: [] }));
   let gfStale = !!G.stale, gfRefreshJob = null, appleJob = null;
+  const gfIsStale = () => gfCat.at > 0 && (gfStale || Date.now() < gfCat.at || Date.now() - gfCat.at > 7 * day);
   const gfInfoJobs = {};
+  // a refresh's new list on the phone (the remote one)
+  const gfGot = () => { gfCat = JSON.parse(J(st.gfRemote || G.remote || G.catalog || { v: 1, at: 0, axes: {}, families: [] })); if (!gfCat.at) gfCat.at = Date.now(); gfStale = false; };
+  st.gfOtherWindowDone = () => { gfGot(); st.gfOtherWindow = false; };
   const gfFam = (f) => gfCat.families.find(e => e.f === f) || null;
   const GF_W = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
   // the files of a family's download, as GoogleFonts.plan keeps them: a variable family's top-level variable files (tags in ASCII order), else its static files
@@ -422,19 +428,17 @@ exports.initScript = function (opts) {
     softRestart() { st.calls.push('softRestart'); return uid0() ? J({ ok: true }) : J({ ok: false, code: 'locked', error: 'Needs Root.' }); },
 
     // ---- v7.18.0 Google Fonts ----
-    gfontsCatalog() { st.calls.push('gfontsCatalog'); return J(Object.assign({ ok: true, stale: gfStale && gfCat.at > 0, count: gfCat.families.length }, gfCat)); },
+    gfontsCatalog() { st.calls.push('gfontsCatalog'); return J(Object.assign({ ok: true, stale: gfIsStale(), count: gfCat.families.length }, gfCat)); },
     gfontsRefresh(force) {
       st.calls.push('gfontsRefresh:' + force);
       if (gfRefreshJob) return J({ ok: true, job: gfRefreshJob });
-      if (!force && gfCat.at > 0 && !gfStale) return J({ ok: true, fresh: true });
+      if (!force && gfCat.at > 0 && !gfIsStale()) return J({ ok: true, fresh: true });
       if (st.gfOtherWindow) return J({ ok: false, code: 'busy', error: 'Another window of the app is getting the list of fonts. Try again in a moment.' });
       const j = gfRefreshJob = job();
       gfRun([() => {
         gfRefreshJob = null;
         if (st.gfRefreshError) { window.onGfCatalog(J(Object.assign({ ok: false }, st.gfRefreshError))); return; }
-        gfCat = JSON.parse(J(st.gfRemote || G.remote || G.catalog || { v: 1, at: 0, axes: {}, families: [] }));
-        if (!gfCat.at) gfCat.at = Date.now();
-        gfStale = false;
+        gfGot();
         window.onGfCatalog(J({ ok: true, at: gfCat.at, count: gfCat.families.length }));
       }]);
       return J({ ok: true, job: j });

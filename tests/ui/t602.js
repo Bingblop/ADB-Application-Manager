@@ -3,12 +3,13 @@
 // family with one weight, 700 only, has no Bold by default; an italic-only one uses its italic) and hands both. The sheet closes, Make a font scrolls
 // into view and a toast says "Roboto is in Make a font"; until the files are read the file chooser gate is shut (Choose waits, no Google Fonts link).
 // The Name is filled in from the family unless it holds one of its Reserved Font Names (Lato): then it stays empty, and a Name that holds one (any
-// case) shows the licence note under the field while Build stays usable; a Regular chosen from a file clears the names. The family's page says
+// case) shows the licence note under the field while Build stays usable; a Regular chosen from a file clears the Regular's names, but a Bold from
+// the family keeps its own while Bold is that file (the note shows with Bold "From a file", not with None). The family's page says
 // its Reserved Font Names. Use waits, with the reason, while a font is being made or the file chooser is open; a file the app refuses says why in
 // the Regular slot. The family's files take the slots: a refused one leaves its slot empty (Build waits), never with a file chosen before from
 // another font, and a refused Regular takes the Reserved Font Names of that earlier font with it. A family under the Ubuntu Font Licence (Ubuntu)
 // says so on its page; its own name is not filled in and warns in the Name like a Reserved Font Name, but "Ubuntu derivative <a name>" is allowed
-// (UFL 1.0, condition 2), and only for such a family.
+// (UFL 1.0, condition 2), and only for such a family. In Arabic both licence notes read right to left, even when they start with the family's name.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf; opts.hold holds the build); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -139,6 +140,25 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     await page.waitForTimeout(400);
     m = await make(page);
     check('   a Regular chosen from a file: the note goes (the family\'s names no longer apply)', m.reg === 'InterVariable.ttf' && !m.msg && m.name === 'My Lato', JSON.stringify(m));
+    // Lato's Regular and Bold, then another Regular from a file: the Bold is still Lato's, so its names still count while Bold is that file
+    await showFam(page, 'Lato');
+    await page.selectOption('#gfUseReg', 'Lato-Regular.ttf');
+    await page.selectOption('#gfUseBold', 'Lato-Bold.ttf');
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    await page.click('#fntPick_regular');
+    await page.waitForTimeout(400);
+    await page.fill('#fntName', 'Lato Rounded');
+    m = await make(page);
+    check('11b. Lato\'s Bold kept, a Regular from a file: "Lato Rounded" still has the note (the Bold is Lato\'s); Build usable', m.reg === 'InterVariable.ttf' && m.bold === 'Lato-Bold.ttf' && m.boldMode === 'file' && m.msg === NOTE && m.build, JSON.stringify(m));
+    await page.evaluate(() => fntBoldChange('none'));
+    check('   Bold None (Android makes it from the Regular): no note', !(await make(page)).msg);
+    await page.evaluate(() => fntBoldChange('file'));
+    check('   Bold "From a file" again: the note', (await make(page)).msg === NOTE);
+    await page.evaluate(() => { __fmk.picks.bold = 'staticBold'; fntPick('bold'); });
+    await page.waitForTimeout(400);
+    m = await make(page);
+    check('   a Bold chosen from a file (the same Lato-Bold.ttf, not from Google Fonts): no note', m.bold === 'Lato-Bold.ttf' && m.boldMode === 'file' && !m.msg, JSON.stringify(m));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -157,7 +177,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
   // the family's files take the slots: one the app refuses leaves its slot empty, never with the file chosen before
   {
     const CHANGED = "This family's files changed on the phone. Delete it and download it again.";
-    const slots = (page) => page.evaluate(() => ({ boldErr: fnt.pickErr.bold, reserved: fnt.reserved.join(','), family: fnt.reservedFamily }));
+    const slots = (page) => page.evaluate(() => ({ boldErr: fnt.pickErr.bold, reserved: fnt.reserved.join(','), family: fnt.reservedFamily, boldReserved: fnt.reservedBold.names.join(','), boldFamily: fnt.reservedBold.family }));
     let { ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato'], useError: { slot: 'bold', code: 'gf_changed', error: CHANGED } }, picks: { bold: 'vf' } });
     await page.evaluate(() => fntPick('regular')); await page.waitForTimeout(400);
     await page.evaluate(() => { fntBoldChange('file'); fntPick('bold'); }); await page.waitForTimeout(400);
@@ -170,6 +190,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     m = await make(page);
     let s2 = await slots(page);
     check('   Lato\'s Bold refused: the Bold slot says why and holds nothing (not the file chosen before); Build waits', m.reg === 'Lato-Regular.ttf' && m.bold === '' && m.boldMode === 'file' && s2.boldErr === CHANGED && !m.build, JSON.stringify([m, s2]));
+    check('   the Regular\'s names are Lato\'s, the empty Bold slot has none', s2.reserved === 'Lato' && s2.family === 'Lato' && s2.boldReserved === '' && s2.boldFamily === '', JSON.stringify(s2));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
     ({ ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato'], useError: { slot: 'regular', code: 'gf_changed', error: CHANGED } } }));
@@ -183,7 +204,10 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     m = await make(page);
     s2 = await slots(page);
     check('   Lato\'s Regular refused: the Regular slot says why and holds nothing; Build waits', m.reg === '' && m.regErr === CHANGED && m.regMsg === CHANGED && !m.build && m.picking === '', JSON.stringify(m));
-    check('   its Bold still comes (Lato-Bold.ttf); no Reserved Font Names are left over', m.bold === 'Lato-Bold.ttf' && m.boldMode === 'file' && s2.reserved === '' && s2.family === '', JSON.stringify([m, s2]));
+    check('   its Bold still comes (Lato-Bold.ttf); the empty Regular slot has no Reserved Font Names, the Bold has Lato\'s', m.bold === 'Lato-Bold.ttf' && m.boldMode === 'file' && s2.reserved === '' && s2.family === ''
+      && s2.boldReserved === 'Lato' && s2.boldFamily === 'Lato', JSON.stringify([m, s2]));
+    await page.fill('#fntName', 'My Lato');
+    check('   "My Lato": the note, for the Bold', (await make(page)).msg === NOTE);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -221,6 +245,28 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     await page.waitForTimeout(900);
     m = await make(page);
     check('   Roboto (Apache): the Name "Roboto", no note', m.name === 'Roboto' && !m.msg && m.build, JSON.stringify(m));
+    // Arabic: a licence note is a sentence of the page (txF) inside translate="no", and must run right to left even when it starts with the name
+    const rfns = () => page.evaluate(() => [...document.querySelectorAll('#gfGet .gf-rfn')].map(el => {
+      const cs = getComputedStyle(el), r = el.getBoundingClientRect(), rg = document.createRange(), tn = el.firstChild;
+      rg.setStart(tn, 0); rg.setEnd(tn, 1);
+      const c = rg.getBoundingClientRect();
+      return { id: el.id, text: el.textContent, dir: cs.direction, bidi: cs.unicodeBidi, ar: /[\u0600-\u06ff]/.test(el.textContent), right: Math.round(r.right - parseFloat(cs.paddingRight) - c.right) };
+    }));
+    await page.evaluate(async () => {
+      await LANG_ENGINE.set('ar');                                     // the dictionary, with the two notes as ar.js writes such a sentence: the name first
+      const P = window.__LANGS.ar.p, put = (k, v) => { for (let i = P.length - 1; i >= 0; i--) if (P[i][0] === k) P.splice(i, 1); P.push([k, v]); };
+      put('"{0}" is a Reserved Font Name: a font made from this family must have another name.', '«{0}» اسم خط محجوز: يجب أن يحمل الخط المصنوع من هذه العائلة اسمًا آخر.');
+      put('{0} is under the Ubuntu Font Licence: a font made from this family must have another name, or "{1} derivative" and a name of your own.', '«{0}» تحت رخصة خطوط أوبونتو: يجب أن يحمل الخط المصنوع من هذه العائلة اسمًا آخر، أو «{1} derivative» واسمًا من اختيارك.');
+      await LANG_ENGINE.set('ar');
+    });
+    await page.waitForTimeout(400);
+    for (const f of ['Ubuntu', 'Lato']) {
+      await showFam(page, f);
+      const n = await rfns();
+      check((f === 'Ubuntu' ? '17. Arabic, ' : '   ') + f + ': its note in Arabic, starting with the name, runs right to left from the right edge', n.length === 1 && n.every(x => x.ar && x.dir === 'rtl' && x.bidi !== 'plaintext' && Math.abs(x.right) <= 2), JSON.stringify(n));
+    }
+    await page.screenshot({ path: 'notes-ar.png' });
+    await page.evaluate(() => LANG_ENGINE.set('en')); await page.waitForTimeout(300);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

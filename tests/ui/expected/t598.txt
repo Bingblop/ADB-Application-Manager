@@ -67,6 +67,17 @@ ok   15. a list older than 7 days: in use (30 cards) while it updates (gfontsRef
 ok      the update fails: the reason in the page's words, Retry; the list stays
 ok      Retry: updated, the reason gone
 ok      no page errors
+ok   15b. a list 2 days old: not asked for again
+ok      6 days later, the page still open: asked for (gfontsRefresh false), in use while it updates
+ok      the new list: "List updated Oct 9, 2026"
+ok      opened again: not asked for again
+ok      no page errors
+ok   15c. a stale list, another window getting the list: its sentence and Retry; the list in use
+ok      its list is on the phone: opened again, the bridge says fresh and the page reads it (no job)
+ok      "List updated Oct 3, 2026 · Refresh", no busy sentence, no Retry
+ok      the new list's count on the button and the sheet: "63 families"; Arimo gone
+ok      opened once more: not asked for again
+ok      no page errors
 ok   16. an older build: no button, no link; the Regular row as before
 ok      no page errors
 ok   17. light-360: the list, nothing wider than the screen

@@ -8054,6 +8054,8 @@
                 #gfGet .fnt-field { margin-top: var(--space-3); }
                 #gfGet .mode-btn-row { margin-top: var(--space-3); }
                 #gfGet .mode-action-btn { flex: 1 1 auto; justify-content: center; min-height: var(--ctl-h); }
+                /* a licence note is a sentence of the page (txF), kept from the i18n walker by translate="no": it reads in the page's direction even when it starts with the family's name */
+                html[dir="rtl"] #gfGet .gf-rfn { unicode-bidi: isolate; }
                 .gf-desc { font-size: var(--fs-body); line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
                 .gf-desc.gf-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
                 .gf-lic { margin-top: var(--space-3); }
@@ -44924,6 +44926,7 @@ Type any command above (e.g. pm list packages -d)</div>
             faces: { regular: null, bold: null }, faceSeq: 0, libFaces: {},
             reserved: [], reservedFamily: '',                                // v7.18.0: the Reserved Font Names of the Google Fonts family in the Regular slot
             reservedUfl: false,                                              // that family is under the Ubuntu Font Licence: its own name is kept the same way
+            reservedBold: { names: [], family: '', ufl: false },             // the same for the family whose file is in the Bold slot (fntGfReserved)
             emoFaces: {},                                                    // v7.18.0: the emoji samples' faces by catalog id ({ family, face } or { failed })
             emoApple: { images: null, asked: false, busy: false, err: '' }   // the iOS sample: its pictures once read, asked once per showing
         };
@@ -45206,6 +45209,7 @@ Type any command above (e.g. pm list packages -d)</div>
             fntLoadCat();
             fnt.emoApple.asked = false;                                      // the iOS sample is looked for again (emojiSpecimenCached)
             if (!gf.data) gfLoadCat();                                       // the Google Fonts list on the phone, for the count on the search button
+            gfLoadDls();                                                     // and the downloads: a family the list no longer has counts there too (gfSyncGone)
             fnt.modeKey = fntModeKey();
             fntForget();                                                     // asked again each time: another app may have changed the font meanwhile
             fntRenderAll();
@@ -45392,18 +45396,36 @@ Type any command above (e.g. pm list packages -d)</div>
             if (nm) nm.disabled = fnt.building;
             if (hint) {
                 // v7.18.0: a name that holds a Reserved Font Name of the Google Fonts family in use is a warning only (Build stays as it is)
-                const bad = fnt.name !== '' && !fntNameShows(fnt.name), hit = bad ? '' : fntReservedHit(fnt.name);
+                const bad = fnt.name !== '' && !fntNameShows(fnt.name), hit = bad ? null : fntReservedHit(fnt.name);
                 hint.textContent = bad ? 'The name needs at least one letter, digit or sign that can be seen.'
-                    : hit ? txF('{0}\'s licence keeps the name "{1}" for the original font. A font made from it is a changed copy, so give it another name.', fnt.reservedFamily, hit) : '';
+                    : hit ? txF('{0}\'s licence keeps the name "{1}" for the original font. A font made from it is a changed copy, so give it another name.', hit.family, hit.name) : '';
                 hint.style.display = bad || hit ? '' : 'none';
             }
             if (gf.open && gf.view === 'detail') gfUseState();               // Use in Make a font waits for a build and a file chooser too
         }
-        // the first Reserved Font Name the text holds (letter case aside), or ''. Under the Ubuntu Font Licence "<family> derivative <a name>" is allowed
+        // the first Reserved Font Name the text holds (letter case aside), with its family, or null: the Regular's family's, and the Bold's while the Bold is
+        // that file (a Bold made from the Regular is the Regular's). Under the Ubuntu Font Licence "<family> derivative <a name>" is allowed
         function fntReservedHit(name) {
             const n = String(name || '').toLowerCase().trim(), drv = / derivative \S/.exec(n);
-            if (drv && fnt.reservedUfl && n.slice(0, drv.index) === fnt.reservedFamily.trim().toLowerCase()) return '';
-            return n ? (fnt.reserved || []).find(r => r && n.indexOf(String(r).toLowerCase()) >= 0) || '' : '';
+            if (!n) return null;
+            const sets = [{ names: fnt.reserved, family: fnt.reservedFamily, ufl: fnt.reservedUfl }];
+            if (fnt.boldMode === 'file' && fnt.pick.bold) sets.push(fnt.reservedBold);
+            for (const s of sets) {
+                if (drv && s.ufl && n.slice(0, drv.index) === String(s.family || '').trim().toLowerCase()) continue;
+                const hit = (s.names || []).find(r => r && n.indexOf(String(r).toLowerCase()) >= 0);
+                if (hit) return { name: hit, family: s.family };
+            }
+            return null;
+        }
+        // a Google Fonts family's Reserved Font Names, from a slot's answer (r.gf, gfontsUse); a file from the file chooser has none. The Ubuntu Font Licence
+        // (its download's licence kind) has no Reserved Font Name line, but a changed copy must not keep the family's name either, unless it is
+        // "<family> derivative <a name>" (UFL 1.0, condition 2): the name is held like one
+        function fntGfReserved(r) {
+            const g = r && r.gf && typeof r.gf === 'object' ? r.gf : null;
+            const names = g && Array.isArray(g.reserved) ? g.reserved.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim()) : [];
+            const family = g ? String(g.family || '') : '', fam = family.trim(), ufl = !!fam && (gf.dls[family] || {}).license === 'ufl';
+            if (ufl && !names.some(x => x.toLowerCase() === fam.toLowerCase())) names.push(fam);
+            return { names: names, family: family, ufl: ufl };
         }
         // making a font of My fonts again: it keeps its package and gets the next version, so it installs over the one on the phone
         function fntRenderRemake() {
@@ -45507,18 +45529,13 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if (fnt.boldMode === 'instance' && !fnt.boldTouched && !fntHeavier(info)) fnt.boldMode = 'none';
                 if (fnt.boldMode === 'instance' && info.variable) fnt.coords.bold = Object.assign(fntDefaults(info), info.guessBold || {});
                 // a Google Fonts family's Reserved Font Names (r.gf): a name holding one is not filled in, and the Name field warns while it holds one
-                const g = r.gf && typeof r.gf === 'object' ? r.gf : null;
-                fnt.reserved = g && Array.isArray(g.reserved) ? g.reserved.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim()) : [];
-                fnt.reservedFamily = g ? String(g.family || '') : '';
-                // the Ubuntu Font Licence (its download's licence kind) has no Reserved Font Name line, but a changed copy must not keep the family's name
-                // either, unless it is "<family> derivative <a name>" (UFL 1.0, condition 2): the name is held like one
-                const fam = fnt.reservedFamily.trim();
-                fnt.reservedUfl = !!fam && (gf.dls[fnt.reservedFamily] || {}).license === 'ufl';
-                if (fnt.reservedUfl && !fnt.reserved.some(x => x.toLowerCase() === fam.toLowerCase())) fnt.reserved.push(fam);
+                const g = fntGfReserved(r);
+                fnt.reserved = g.names; fnt.reservedFamily = g.family; fnt.reservedUfl = g.ufl;
                 if (!fnt.nameTouched) { const cand = String(info.family || String(r.fileName || '').replace(/\.[^.]+$/, '')).slice(0, 40); fnt.name = fntReservedHit(cand) ? '' : cand; }
                 fntLoadFace('regular');
             } else if (slot === 'bold') {
                 fnt.coords.bold = info.variable ? Object.assign(fntDefaults(info), info.guessBold || {}) : {};
+                fnt.reservedBold = fntGfReserved(r);                         // a Bold from a family with them warns too (while Bold is that file)
                 fntLoadFace('bold');
             }
             fntRenderMake();
@@ -46170,6 +46187,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // the search text of a family (its name and designers): letter case and accents aside
         function gfFold(s) { return String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase(); }
         function gfHasList() { return !!(gf.data && gf.data.at > 0 && gf.data.families.length); }
+        // older than 7 days now (GoogleFonts.isStale): gfontsCatalog's stale is Java's word when the list was read, which a page kept open for days outlives
+        function gfOld() { const at = gf.data.at, now = Date.now(); return !!gf.data.stale || now < at || now - at > 7 * 864e5; }
         function gfWhen(ms) { try { return new Date(ms).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric' }); } catch (e) { return ''; } }
         // a date of the list (YYYY-MM-DD), as a day in the app's language
         function gfDate(s) {
@@ -46232,9 +46251,11 @@ Type any command above (e.g. pm list packages -d)</div>
             gf.dls = {};
             if (r && r.ok && Array.isArray(r.families)) r.families.forEach(x => { if (x && typeof x.family === 'string') gf.dls[x.family] = x; });
             gfSyncGone();
+            gfRenderEntry();                                                 // a Delete or a download can add or take away a gone family: the button's count follows
         }
         // a downloaded family the list no longer has (renamed or removed on Google Fonts): a short entry of its own (gone), so that its card and page still
-        // offer Use, Save to phone and Delete. Its styles come from its files; it stays out of gf.data.families (the count of the list, its languages)
+        // offer Use, Save to phone and Delete. Its styles come from its files; it stays out of gf.data.families (the languages menu), but both counts, the
+        // search button's (gfRenderEntry) and the sheet's (gfRenderList), add gf.gone
         function gfSyncGone() {
             gf.gone.forEach(e => { if (gf.by.get(e.f) === e) { gf.by.delete(e.f); gf.fold.delete(e.f); } });
             gf.gone = !gf.data ? [] : Object.keys(gf.dls).filter(f => !gf.by.has(f)).map(f => {
@@ -46249,7 +46270,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!btn) return;
             const on = fntHas('gfontsCatalog');
             btn.style.display = on ? '' : 'none';
-            if (n) n.textContent = on && gfHasList() ? gfFamText(gf.data.families.length) : '';
+            if (n) n.textContent = on && gfHasList() ? gfFamText(gf.data.families.length + gf.gone.length) : '';
         }
         function gfOpen() {
             if (!fntHas('gfontsCatalog')) { showToast('Needs the app build'); return; }
@@ -46264,8 +46285,8 @@ Type any command above (e.g. pm list packages -d)</div>
             gfFilter(true);
             const sc = document.getElementById('gfScroll');
             if (sc) sc.scrollTop = 0;
-            // no list yet, or one older than 7 days: asked for (a list on the phone stays in use meanwhile)
-            if (!gfHasList() || gf.data.stale) gfRefresh(false); else gfRenderStatus();
+            // no list yet, or one older than 7 days: asked for (a list on the phone stays in use meanwhile; Java answers fresh when it has a newer one)
+            if (!gfHasList() || gfOld()) gfRefresh(false); else gfRenderStatus();
         }
         function gfClose() {
             const sh = document.getElementById('gfSheet');
@@ -46291,23 +46312,31 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!r) return;
             if (!r.ok) gf.refreshErr = fntErrText(r, 'Could not start');
             else if (!r.fresh) { gf.refreshing = true; gf.refreshErr = ''; }
+            else { gfListCame(); gfRenderEntry(); }                          // the list on the phone is younger than a week: another window of the app got it
             gfRenderStatus();
         }
         window.onGfCatalog = function (json) {
             const r = fntJson(json);
-            let chg = new Set();
             gf.refreshing = false;
-            if (r.ok) { gf.refreshErr = ''; chg = gfLoadCat(); } else if (r.code !== 'cancelled') gf.refreshErr = fntErrText(r);
+            if (r.ok) gfListCame(); else if (r.code !== 'cancelled') gf.refreshErr = fntErrText(r);
             gfRenderEntry();
-            if (!gf.open) return;
-            if (r.ok) {
-                gfBuildLangs();
-                gfFilter(false);                                             // the cards in view ask again for what gfForgetChanged dropped
-                // the family's page shown: its sliders and style rows are the new list's, from the axes' defaults, and its previews asked again
-                if (gf.view === 'detail' && chg.has(gf.fam)) { gf.axes = gfAxesStart(gf.by.get(gf.fam)); gfRenderDetail(); }
-            }
-            gfRenderStatus();
+            if (gf.open) gfRenderStatus();
         };
+        // a new list on the phone (this window's refresh, or another window's): read again, and the sheet drawn from it where it is open
+        function gfListCame() {
+            gf.refreshErr = '';
+            const chg = gfLoadCat();
+            if (!gf.open) return;
+            gfBuildLangs();
+            // the family whose page is open left the new list (renamed or removed) and is not on the phone: its page has nothing left to show, so back
+            // to the list, as Delete does for a family no longer on Google Fonts. One on the phone stays, and says now that it left (its note, no link)
+            if (gf.view === 'detail' && !gf.by.has(gf.fam)) { gfBackToList(); return; }
+            gfFilter(false);                                                 // the cards in view ask again for what gfForgetChanged dropped
+            if (gf.view !== 'detail') return;
+            // the family's page shown and its styles or axes changed: its sliders and style rows are the new list's, from the axes' defaults, and its
+            // previews asked again; else only its Download and About parts
+            if (chg && chg.has(gf.fam)) { gf.axes = gfAxesStart(gf.by.get(gf.fam)); gfRenderDetail(); } else { gfRenderGet(); gfRenderAbout(); }
+        }
         function gfRenderStatus() {
             const el = document.getElementById('gfStatus');
             if (!el) return;
@@ -46773,12 +46802,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (txt) txt.textContent = gfDlText(d);
         };
         window.onGfDone = function (family, json) {
-            const r = fntJson(json);
+            const r = fntJson(json), shown = gf.open && gf.view === 'detail' && gf.fam === family;
             delete gf.dl[family];
             if (r.ok) { showToast(txF('{0} downloaded', family)); delete gf.dlErr[family]; }
-            else if (r.code !== 'cancelled') gf.dlErr[family] = fntErrText(r);
+            else if (r.code !== 'cancelled') {
+                gf.dlErr[family] = fntErrText(r);
+                // its page, when it shows, says why beside Download (#gfDlErr); left or closed meanwhile, a failure is said as a finished one is
+                if (!shown) showToast(txF('{0} was not downloaded. {1}', family, gf.dlErr[family]));
+            }
             gfLoadDls();
-            if (gf.open && gf.view === 'detail' && gf.fam === family) gfRenderGet();
+            if (shown) gfRenderGet();
             else if (gf.open && gf.view === 'list' && r.ok) gfFilter(false);         // finished while the list shows: its badge, the Downloaded filter, the count
         };
         // the family's files into Make a font's slots, as a chosen file would come (onFontMakerPicked); the sheet closes on Make a font
@@ -46799,7 +46832,7 @@ Type any command above (e.g. pm list packages -d)</div>
             // Bold: the chosen file; none (Android makes bold from the Regular, or Make a font offers a variable font's own Bold instance)
             fnt.boldMode = 'none'; fnt.boldTouched = false;
             if (ch.bold) {
-                fnt.pick.bold = null;
+                fnt.pick.bold = null; fnt.reservedBold = { names: [], family: '', ufl: false };
                 const r2 = fntCall('gfontsUse', [f, ch.bold, 'bold']);
                 fnt.boldMode = 'file'; fnt.boldTouched = true;
                 if (r2 && r2.ok) { wait.bold = true; fnt.pickErr.bold = ''; } else fnt.pickErr.bold = r2 ? fntErrText(r2, 'Could not start') : '';
@@ -46831,10 +46864,15 @@ Type any command above (e.g. pm list packages -d)</div>
             if (gf.open && gf.view === 'detail') gfRenderGet();
             fntRenderLib();
         };
-        // no question first, as an emoji font's Delete: the family is downloaded again in a moment
-        function gfDelete() {
-            const f = gf.fam;
+        // no question first, as an emoji font's Delete: the family is downloaded again in a moment. One no longer on Google Fonts cannot be, so it asks
+        // first, as My fonts' Delete does
+        async function gfDelete() {
+            const f = gf.fam, e = gf.by.get(f);
             if (!gf.dls[f] || gf.saving === f) return;
+            if (e && e.gone) {
+                if (!await mpAsk({ title: txF('Delete {0}?', f), text: txT('This family is no longer on Google Fonts, so it cannot be downloaded again. Save to phone first to keep a copy.'), ok: txT('Delete'), danger: true })) return;
+                if (!gf.dls[f] || gf.saving === f) return;                   // as before the question: still on the phone, not being saved
+            }
             const r = fntCall('gfontsDelete', [f]);
             if (!r) return;
             if (!r.ok) { gf.msg[f] = { text: fntErrText(r), err: true }; gfRenderGet(); return; }
