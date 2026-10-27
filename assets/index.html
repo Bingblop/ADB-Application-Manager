@@ -45211,7 +45211,7 @@ Type any command above (e.g. pm list packages -d)</div>
             fntLoadLib();
             fntLoadCat();
             fnt.emoApple.asked = false;                                      // the iOS sample is looked for again (emojiSpecimenCached)
-            if (!gf.data) gfLoadCat();                                       // the Google Fonts list on the phone, for the count on the search button
+            if (!gfHasList()) gfLoadCat();                                   // the Google Fonts list on the phone (one another window got too), for the count
             gfLoadDls();                                                     // and the downloads: a family the list no longer has counts there too (gfSyncGone)
             fnt.modeKey = fntModeKey();
             fntForget();                                                     // asked again each time: another app may have changed the font meanwhile
@@ -46238,11 +46238,13 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfLoadCat() {
             const r = fntCall('gfontsCatalog', [], true);
             if (!r) { gf.data = null; return new Set(); }
-            const old = gf.by;
+            const old = gf.by, had = gfHasList();
             const fams = r.ok && Array.isArray(r.families) ? r.families.filter(e => e && typeof e.f === 'string' && e.f) : [];
             gf.data = { at: r.ok ? +r.at || 0 : 0, stale: !!r.stale, axes: r.ok && r.axes && typeof r.axes === 'object' ? r.axes : {}, families: fams, err: r.ok ? '' : fntErrText(r) };
             gf.by = new Map(fams.map(e => [e.f, e]));
             gf.fold = new Map(fams.map(e => [e.f, gfFold(e.f + ' ' + (Array.isArray(e.d) ? e.d.join(' ') : ''))]));
+            // a first list read (one another window of the app got while this one had none): the error of getting one ("busy", a failed fetch) is moot
+            if (!had && gfHasList()) gf.refreshErr = '';
             gfSyncGone();
             return gfForgetChanged(old);
         }

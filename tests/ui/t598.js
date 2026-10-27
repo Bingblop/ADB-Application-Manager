@@ -8,7 +8,8 @@
 // asks for one (gfontsRefresh), says it is getting it, then shows it; a failure, and another window of the app getting it (busy), is an empty
 // state with Retry. A stale list stays in use while it updates, and a failed update says why beside Retry. A list that grows older than 7 days
 // while the page stays open is updated the next time the sheet opens; one another window of the app got meanwhile (gfontsRefresh answers fresh) is
-// read again, its date and count shown, without the busy sentence. Back (backNavigate) and a tap outside
+// read again, its date and count shown, without the busy sentence; so is one another window got while this one had none and the sheet was closed
+// (the tab shown again reads it for the button's count, and the sheet shows it fresh, with no busy sentence or Retry). Back (backNavigate) and a tap outside
 // step from a family's page to the list, then close. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
 // 360 px, in the light theme and right-to-left.
 // The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
@@ -292,6 +293,29 @@ const wide = (page) => page.evaluate(() => {
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     s = await sheet(page);
     check('   and the list comes', s.cards.length === 30 && s.count === '64 families', JSON.stringify([s.cards.length, s.count]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the same, but the sheet closed and that other window's list came meanwhile (no onGfCatalog here): the tab shown again reads it (the button's count),
+  // and the sheet opened again shows it, fresh, without the busy sentence or Retry, and asks for nothing; also when it is opened again at once
+  for (const via of ['the tab shown again', 'the sheet opened again at once']) {
+    const { ctx, page, errors } = await open(b, { gf: { remote: CAT, hold: true, otherWindow: true } });
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    const busy = /Another window of the app is getting the list of fonts\./.test((await sheet(page)).status) && (await page.evaluate(() => !!document.querySelector('#gfStatus button')));
+    await page.evaluate(() => { gfClose(); __fmk.gfOtherWindowDone(); __fmk.calls.length = 0; });
+    let btn = null;
+    if (via === 'the tab shown again') {
+      await page.evaluate(() => switchView('apps')); await page.waitForTimeout(200);
+      await page.evaluate(() => switchView('fonts')); await page.waitForTimeout(300);
+      btn = await page.evaluate(() => ({ n: document.getElementById('gfOpenCount').textContent, read: __fmk.calls.includes('gfontsCatalog') }));
+    }
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    const s = await sheet(page);
+    const st = await page.evaluate(() => ({ err: !!document.querySelector('#gfStatus .fnt-err'), retry: !!document.getElementById('gfRetryBtn'), btn: document.getElementById('gfOpenCount').textContent }));
+    check('14c. ' + via + ' after another window got the list: "List updated Oct 1, 2026 · Refresh", no busy sentence, no Retry, nothing asked', busy && s.status === 'List updated Oct 1, 2026 · Refresh'
+      && !st.err && !st.retry && !s.calls.length, JSON.stringify([busy, s.status, st, s.calls]));
+    check('   its 30 cards, "64 families" on the sheet and the button', s.cards.length === 30 && s.count === '64 families' && st.btn === '64 families', JSON.stringify([s.cards.length, s.count, st.btn]));
+    if (btn) check('   the tab shown again read the list (gfontsCatalog): the button counted 64 before the sheet opened', btn.read && btn.n === '64 families', JSON.stringify(btn));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

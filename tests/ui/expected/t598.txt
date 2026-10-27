@@ -67,6 +67,13 @@ ok   14b. another window is getting the list: its sentence and Retry, not "Getti
 ok      once it ended, Retry asks again and this window gets the list
 ok      and the list comes
 ok      no page errors
+ok   14c. the tab shown again after another window got the list: "List updated Oct 1, 2026 · Refresh", no busy sentence, no Retry, nothing asked
+ok      its 30 cards, "64 families" on the sheet and the button
+ok      the tab shown again read the list (gfontsCatalog): the button counted 64 before the sheet opened
+ok      no page errors
+ok   14c. the sheet opened again at once after another window got the list: "List updated Oct 1, 2026 · Refresh", no busy sentence, no Retry, nothing asked
+ok      its 30 cards, "64 families" on the sheet and the button
+ok      no page errors
 ok   15. a list older than 7 days: in use (30 cards) while it updates (gfontsRefresh false)
 ok      the update fails: the reason in the page's words, Retry; the list stays
 ok      Retry: updated, the reason gone
