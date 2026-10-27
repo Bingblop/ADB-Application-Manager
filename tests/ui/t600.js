@@ -4,8 +4,9 @@
 // 'axes' preview); the Styles list has a row per style ("Thin 100", "Thin 100 Italic", ...; "Weight N" for the others) in that style (the 'styles'
 // preview). New tester text waits 400 ms and keeps the faces shown until the new ones come. About: the details are asked once (gfontsInfo), with a
 // line while they come; the description shows three lines and More, then the licence's name and its text under <details>, the designers, the dates
-// and "Open on fonts.google.com". A failure says why with Retry. A colour family and a symbol family say Make a font needs a plain text font. Back
-// and a tap outside go back to the list where it was, then close; what the page asked for is dropped once it is left.
+// and "Open on fonts.google.com". A failure, and another window of the app getting them (busy), says why with Retry. A colour family and a symbol
+// family say Make a font needs a plain text font. Back and a tap outside go back to the list where it was, then close; what the page asked for is
+// dropped once it is left.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the details and previews answer when the script says); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -161,6 +162,22 @@ const detail = (page) => page.evaluate((wsrc) => {
     await page.waitForTimeout(150);
     d = await detail(page);
     check('   then the details, and "2 font files" under Download', /Licence SIL Open Font License 1\.1/.test(d.about) && (await page.evaluate(() => (document.getElementById('gfFileCount') || {}).textContent)) === '2 font files', d.about);
+    // another window of the app is getting a family's details: the bridge answers busy (that job's answer goes to that window only), so the page
+    // says so with Retry instead of "Getting the details…" for good
+    await page.evaluate(() => { __fmk.gfOtherWindow = true; gfBackToList(); });
+    await showFam(page, 'Montserrat');
+    d = await detail(page);
+    const ow = await page.evaluate(() => ({ err: (document.querySelector('#gfInfoErr .is-err') || {}).textContent, retry: !!document.getElementById('gfInfoRetry'), dl: !!document.getElementById('gfDlBtn') }));
+    check('7b. another window is getting the details: its sentence and Retry, not "Getting the details…"', ow.err === 'Another window of the app is getting the details of this family. Try again in a moment.'
+      && ow.retry && ow.dl && !/Getting the details/.test(d.about) && d.calls.filter(c => c === 'gfontsInfo:Montserrat').length === 1, JSON.stringify([ow, d.about, d.calls]));
+    await page.evaluate(() => { __fmk.gfOtherWindow = false; });
+    await page.click('#gfInfoRetry');
+    d = await detail(page);
+    check('   once it ended, Retry asks again', d.calls.filter(c => c === 'gfontsInfo:Montserrat').length === 2 && /Getting the details from Google Fonts…/.test(d.about), JSON.stringify(d.calls));
+    await page.evaluate(() => __fmk.gfStepAll());
+    await page.waitForTimeout(150);
+    d = await detail(page);
+    check('   and the details come', /Licence SIL Open Font License 1\.1/.test(d.about), d.about);
     // leaving the page drops what it asked for
     await page.evaluate(() => gfBackToList());
     await drain(page);

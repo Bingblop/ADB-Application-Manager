@@ -4,9 +4,10 @@
 // Oct 1, 2026 · Refresh"), the count, 30 cards and "Show N more · M left", and the credit. The search ignores case and accents, looks at the name and
 // the designers, every word must match, and waits 120 ms; the sorts are Popular, Trending, Newest and Name (A–Z); an unknown subset is shown
 // title-cased ("Canadian Aboriginal"); no match shows an empty state whose "Clear filters" brings every family back. No list on the phone: the sheet
-// asks for one (gfontsRefresh), says it is getting it, then shows it; a failure is an empty state with Retry. A stale list stays in use while it
-// updates, and a failed update says why beside Retry. Back (backNavigate) and a tap outside step from a family's page to the list, then close. An
-// older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at 360 px, in the light theme and right-to-left.
+// asks for one (gfontsRefresh), says it is getting it, then shows it; a failure, and another window of the app getting it (busy), is an empty
+// state with Retry. A stale list stays in use while it updates, and a failed update says why beside Retry. Back (backNavigate) and a tap outside
+// step from a family's page to the list, then close. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
+// 360 px, in the light theme and right-to-left.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf); the list: fixtures/gfonts-catalog.json (64 real families).
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -214,6 +215,25 @@ const wide = (page) => page.evaluate(() => {
     await page.waitForTimeout(100);
     s = await sheet(page);
     check('   Retry asks again (gfontsRefresh true)', s.calls.join(',') === 'gfontsRefresh:false,gfontsRefresh:true' && s.status === 'Getting the list of fonts from Google Fonts…', JSON.stringify([s.calls, s.status]));
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    s = await sheet(page);
+    check('   and the list comes', s.cards.length === 30 && s.count === '64 families', JSON.stringify([s.cards.length, s.count]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // no list, and another window of the app is getting it: the bridge answers busy (that job's answer goes to that window only); the sheet says so
+  // with Retry instead of waiting for an answer that never comes, and Retry asks again
+  {
+    const { ctx, page, errors } = await open(b, { gf: { remote: CAT, hold: true, otherWindow: true } });
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(150);
+    let s = await sheet(page);
+    const btns = () => page.evaluate(() => [...document.querySelectorAll('#gfStatus button')].map(x => x.textContent.trim()));
+    check('14b. another window is getting the list: its sentence and Retry, not "Getting the list…"', s.calls.join(',') === 'gfontsRefresh:false' && /The list of fonts is not on this phone yet\./.test(s.status)
+      && /Another window of the app is getting the list of fonts\. Try again in a moment\./.test(s.status) && !/Getting the list/.test(s.status) && (await btns()).join(',') === 'Retry', JSON.stringify([s.status, s.calls, await btns()]));
+    await page.evaluate(() => { __fmk.gfOtherWindow = false; [...document.querySelectorAll('#gfStatus button')].find(x => x.textContent.trim() === 'Retry').click(); });
+    await page.waitForTimeout(100);
+    s = await sheet(page);
+    check('   once it ended, Retry asks again and this window gets the list', s.calls.join(',') === 'gfontsRefresh:false,gfontsRefresh:true' && s.status === 'Getting the list of fonts from Google Fonts…', JSON.stringify([s.calls, s.status]));
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     s = await sheet(page);
     check('   and the list comes', s.cards.length === 30 && s.count === '64 families', JSON.stringify([s.cards.length, s.count]));

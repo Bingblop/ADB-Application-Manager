@@ -547,6 +547,19 @@ public class FontLibraryTest {
         is("…and not the other window's, or one with no window", b1.cancelled() || any.cancelled(), false);
         eq("no window: nothing", w.cancelAll(null).size(), 0);
 
+        // a second ask joins only a job its own window started and did not cancel: a job's answer goes to its window only (R1-06)
+        FontLibrary.Jobs g = new FontLibrary.Jobs();
+        FontLibrary.Jobs.Job cat = g.startFor(win1, null, "gfcat", "only");
+        is("a window joins its own running job", g.joinable(win1, "gfcat", "only") == cat, true);
+        eq("another window does not join it", g.joinable(win2, "gfcat", "only"), null);
+        eq("…and cannot start a second (the bridge answers busy)", g.startFor(win2, null, "gfcat", "only"), null);
+        eq("no window joins nothing", g.joinable(null, "gfcat", "only"), null);
+        eq("nothing to join of another key", g.joinable(win1, "gfcat", "other"), null);
+        g.cancelAll(win1);
+        is("a cancelled job is not joined, not even by its window, though it runs until it ends", g.joinable(win1, "gfcat", "only") == null && g.running("gfcat", "only") == cat, true);
+        g.finish(cat);
+        is("once it ended another window starts its own", g.startFor(win2, null, "gfcat", "only") != null, true);
+
         // a font made again and its install, apply or save exclude each other, in one step ((b), (c))
         String id = "aaaaaaaaaaa1";
         FontLibrary.Jobs x = new FontLibrary.Jobs();
@@ -1193,6 +1206,15 @@ public class FontLibraryTest {
         is("only the iOS emoji are read by ranges", body(ma, "public String emojiSpecimenFetch(").contains("\"apple\".equals(id) ? EmojiCatalog.byId(id) : null"), true);
         is("the sample fonts are only the four in assets/emoji", body(ma, "public String emojiSpecimenFont(").contains("!EmojiSpecimen.SPECIMEN_IDS.contains(id)")
                 && body(ma, "public String emojiSpecimenFont(").contains("getAssets().open(\"emoji/\" + id + \".ttf\")"), true);
+        // a second ask joins only this window's running job: another window's answers busy, so no page waits for a callback that goes to
+        // another window (R1-06); the join and the start are one step under fmkJobs
+        for (String[] m : new String[][] { { "gfontsRefresh(", "\"gfcat\", \"only\"" }, { "gfontsInfo(", "\"gfinfo\", family" }, { "emojiSpecimenFetch(", "\"emospec\", item.id" } }) {
+            String b = body(ma, "public String " + m[0]), join = "fmkJobs.joinable(MainActivity.this, " + m[1] + ")", start = "fmkJobs.startFor(MainActivity.this, null, " + m[1] + ")";
+            List<int[]> locked = lockedRegions(b, "fmkJobs");
+            int j = b.indexOf(join), s = b.indexOf(start), busy = b.indexOf("if (job == null) return fmkErr(\"busy\", ");
+            is(m[0] + " joins only this window's running job, in one step with the start; another window's answers busy", j >= 0 && s > j && !b.contains("fmkJobs.running(")
+                    && locked.size() == 1 && locked.get(0)[0] < j && s < locked.get(0)[1] && busy > s && busy < b.indexOf("fontExec.submit("), true);
+        }
         // a preview that lost a face to an HTTP status or an empty answer is shown but not cached for 30 days; one left out for its size still is (R1-08)
         String pv = body(ma, "private String gfPreview(");
         Matcher lost = Pattern.compile("if \\(w\\.status != 200 \\|\\| w\\.body\\.length == 0\\) \\{ (\\w+) = true; continue; \\}").matcher(pv);
@@ -1205,7 +1227,6 @@ public class FontLibraryTest {
         String ij = body(ma, "private void gfInfoJob(");
         is("a family's details: a 5xx or a 429 is asked again, not kept as no details", ij.contains("if (!\"gf_unknown\".equals(e.code) || a.status != 404) {")
                 && ij.indexOf("info = null;") > ij.indexOf("a.status != 404") && ij.contains("if (a.status != 200) throw new GfHttp(a.status);"), true);
-
 
         // the 16 sample emoji are one string in the app, in the script that cut the sample fonts, and on the page
         String script = src("tools/make-emoji-specimens.sh"), page = src("assets/index.html");

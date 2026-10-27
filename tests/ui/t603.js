@@ -4,9 +4,9 @@
 // old to draw them, and are not loaded. The iOS emoji: the pictures the app kept are asked at render (emojiSpecimenCached); without them a note
 // ("Reads about 0.3 MB of the iOS emoji file.", or "Read from the downloaded file." when the iOS emoji are on the phone) and "Show these emoji"
 // (emojiSpecimenFetch), "Reading the iOS emoji…" while it runs, then sixteen 28 px pictures (alt: the emoji), kept for the next render and on a
-// fresh page. A failure says why in the page's words with the button again. An older app build shows no strip. The row's Download stays its first
-// button; nothing is wider than the screen at 360 px.
-// Mock bridge: lib/fontmaker_mock.js (opts.emoB64: assets/emoji/<id>.ttf; opts.gf: hold, specimenError, appleCached).
+// fresh page. A failure, and another window of the app reading them (busy), says why in the page's words with the button again. An older app
+// build shows no strip. The row's Download stays its first button; nothing is wider than the screen at 360 px.
+// Mock bridge: lib/fontmaker_mock.js (opts.emoB64: assets/emoji/<id>.ttf; opts.gf: hold, specimenError, appleCached, otherWindow).
 const fs = require('fs');
 const path = require('path');
 const { chromium, PAGE, REPO, fixture } = require('./lib/pw');
@@ -123,6 +123,21 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     await page.evaluate(() => { fnt.emoApple.images = null; fnt.emoApple.busy = true; onEmojiSpecimen('apple', JSON.stringify({ ok: true, images: [{ cp: 0x1F600, b64: 'not base64!' }] })); });
     s = await strips(page);
     check('   an answer without a usable picture: "The sample could not be read from the emoji font."', s.apple.err === 'The sample could not be read from the emoji font.' && s.apple.show === 'Show these emoji', JSON.stringify(s.apple));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // another window of the app is reading the iOS emoji: the bridge answers busy (that read's answer goes to that window only), so the strip says so
+  // with the button again instead of "Reading the iOS emoji…" for good
+  {
+    const { ctx, page, errors } = await open(b, { gf: { otherWindow: true } });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    let s = await strips(page);
+    check('7b. another window is reading the iOS emoji: its sentence and the button again', s.apple.err === 'Another window of the app is reading the iOS emoji. Try again in a moment.' && s.apple.show === 'Show these emoji'
+      && !s.apple.pv && !/Reading the iOS emoji/.test(s.apple.say) && (await calls(page, '^emojiSpecimenFetch:')).length === 1, JSON.stringify(s.apple));
+    await page.evaluate(() => { __fmk.gfOtherWindow = false; });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    s = await strips(page);
+    check('   once it ended, the button reads them here', s.apple.pv && s.apple.pv.nImg === 16 && !s.apple.err && (await calls(page, '^emojiSpecimenFetch:')).length === 2, JSON.stringify(s.apple));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

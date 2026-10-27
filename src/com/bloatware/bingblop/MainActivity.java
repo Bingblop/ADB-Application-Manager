@@ -14858,8 +14858,9 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Gets the list again: {ok, job} (the running one's when it is already being got), or {ok, fresh:true} without {@code force} while the
-         * one on the phone is younger than 7 days. Then window.onGfCatalog({ok, at, count}); the page then asks gfontsCatalog().
+         * Gets the list again: {ok, job} (the running one's when this window asked for it already; busy while another window's runs), or {ok,
+         * fresh:true} without {@code force} while the one on the phone is younger than 7 days. Then window.onGfCatalog({ok, at, count}); the
+         * page then asks gfontsCatalog().
          */
         @JavascriptInterface
         public String gfontsRefresh(boolean force) {
@@ -14872,11 +14873,13 @@ public class MainActivity extends Activity {
                 }
             }
             final FontLibrary.Jobs.Job job;
-            synchronized (fmkJobs) {                                    // a second ask waits for the same answer
-                FontLibrary.Jobs.Job running = fmkJobs.running("gfcat", "only");
-                if (running != null) return fmkOk("job", running.id);
+            synchronized (fmkJobs) {                                    // a second ask of this window waits for the same answer
+                FontLibrary.Jobs.Job mine = fmkJobs.joinable(MainActivity.this, "gfcat", "only");
+                if (mine != null) return fmkOk("job", mine.id);
                 job = fmkJobs.startFor(MainActivity.this, null, "gfcat", "only");
             }
+            // another window's job answers only that window (or ends cancelled with it): this one is told, and can ask again
+            if (job == null) return fmkErr("busy", "Another window of the app is getting the list of fonts. Try again in a moment.");
             try {
                 fontExec.submit(new Runnable() {
                     @Override
@@ -14917,8 +14920,8 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * A family's details: {ok, job} (the running one's when they are already being got); then window.onGfInfo(family, {ok, family,
-         * description, license, licenseName, licenseText, reserved, designers, files:[{name, variable, italic}]}).
+         * A family's details: {ok, job} (the running one's when this window asked for them already; busy while another window's runs); then
+         * window.onGfInfo(family, {ok, family, description, license, licenseName, licenseText, reserved, designers, files:[{name, variable, italic}]}).
          */
         @JavascriptInterface
         public String gfontsInfo(final String family) {
@@ -14927,10 +14930,11 @@ public class MainActivity extends Activity {
             if (entry == null) return fmkErr("gf_unknown", GoogleFonts.E_UNKNOWN);
             final FontLibrary.Jobs.Job job;
             synchronized (fmkJobs) {
-                FontLibrary.Jobs.Job running = fmkJobs.running("gfinfo", family);
-                if (running != null) return fmkOk("job", running.id);
+                FontLibrary.Jobs.Job mine = fmkJobs.joinable(MainActivity.this, "gfinfo", family);
+                if (mine != null) return fmkOk("job", mine.id);
                 job = fmkJobs.startFor(MainActivity.this, null, "gfinfo", family);
             }
+            if (job == null) return fmkErr("busy", "Another window of the app is getting the details of this family. Try again in a moment.");
             try {
                 fontExec.submit(new Runnable() {
                     @Override
@@ -15127,8 +15131,8 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Reads the iOS emoji sample (apple only) from the downloaded file or by HTTP ranges. Answer {ok, job} (the running one's when it is
-         * already being read); then window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"}).
+         * Reads the iOS emoji sample (apple only) from the downloaded file or by HTTP ranges. Answer {ok, job} (the running one's when this
+         * window asked for it already; busy while another window's runs); then window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"}).
          */
         @JavascriptInterface
         public String emojiSpecimenFetch(String id) {
@@ -15136,10 +15140,11 @@ public class MainActivity extends Activity {
             if (item == null) return fmkErr("unknown", "There is no such emoji font.");
             final FontLibrary.Jobs.Job job;
             synchronized (fmkJobs) {
-                FontLibrary.Jobs.Job running = fmkJobs.running("emospec", item.id);
-                if (running != null) return fmkOk("job", running.id);
+                FontLibrary.Jobs.Job mine = fmkJobs.joinable(MainActivity.this, "emospec", item.id);
+                if (mine != null) return fmkOk("job", mine.id);
                 job = fmkJobs.startFor(MainActivity.this, null, "emospec", item.id);
             }
+            if (job == null) return fmkErr("busy", "Another window of the app is reading the iOS emoji. Try again in a moment.");
             try {
                 fontExec.submit(new Runnable() {
                     @Override
