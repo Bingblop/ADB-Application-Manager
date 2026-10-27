@@ -46463,7 +46463,8 @@ Type any command above (e.g. pm list packages -d)</div>
             clearTimeout(gf.tt);
             gf.tt = setTimeout(gfRetext, 400);
         }
-        // the cards take the new text: each one in view asks again (a new generation), and keeps the face it has until the new one comes
+        // the cards take the new text: each one in view asks again (a new generation), and keeps the face it has until the new one comes only when that
+        // face was made for every character of the new text; else it waits, blank (gfHold)
         function gfRetext() {
             gfNewGen();
             document.querySelectorAll('#gfList .gf-card').forEach(card => {
@@ -46472,8 +46473,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const text = gfCardText(e);
                 pv.dataset.pvk = gfKey(e.f, 'card', text);
                 if (gfApplyEl(pv)) return;
-                pv.textContent = text;
-                pv.classList.remove('gf-failed');
+                gfHold(pv, text, true);
                 if (pv._gfVis) gfAskEl(pv);
             });
             gfPump();
@@ -46576,7 +46576,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const w = (c, fb) => { x.font = "100px '" + name + "', " + fb; return x.measureText(c).width; };
             return !cs.some(c => { const a = w(c, 'serif'); return a === w(c, 'monospace') && a === w(c, 'sans-serif'); });
         }
-        // past GF_FACES faces the oldest in use go (document.fonts.delete); an element in view that had one asks for it again
+        // past GF_FACES faces the oldest in use go (document.fonts.delete); an element in view that had one asks for it again. One that kept that face
+        // for a new text (gfHold) waits, blank, for its own
         function gfTrim(keep) {
             for (const [k, rec] of gf.faces) {
                 if (gf.nFaces <= GF_FACES) break;
@@ -46585,7 +46586,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 gf.nFaces -= rec.list.length;
                 gf.faces.delete(k);
                 if (gf.asked[k] === true) delete gf.asked[k];
-                gfElsFor(k).forEach(el => {
+                [...document.querySelectorAll('#gfSheet [data-pvk]')].filter(el => el.dataset.pvk === k || gfFaceName(el) === rec.name).forEach(el => {
                     el.style.fontFamily = '';
                     el.classList.add('gf-wait');
                     if (el.classList.contains('gf-pv') ? el._gfVis : gf.view === 'detail') gfAskEl(el);
@@ -46593,27 +46594,68 @@ Type any command above (e.g. pm list packages -d)</div>
             }
         }
         function gfShowKey(key) { gfElsFor(key).forEach(gfApplyEl); }
-        // draws what is known of an element's preview: its face, or its failure (the family's name in the app's font, and "No preview"); false while it waits
-        function gfApplyEl(el) {
-            const key = el.dataset.pvk;
-            if (!key) return false;
-            const rec = gf.faces.get(key), parts = gfKeyParts(key);
-            if (rec) {
-                if (el.classList.contains('gf-failed') || el.textContent !== parts.text) { el.textContent = parts.text; el.classList.remove('gf-failed'); }
-                el.style.fontFamily = "'" + rec.name + "', " + GF_FALLBACK;
-                if (el.dataset.pvw) {
-                    const w = /^\d+$/.test(rec.style.weight || '') ? rec.style.weight : '';
-                    el.style.fontWeight = w; el.style.fontStyle = rec.style.style || '';
-                }
-                el.classList.remove('gf-wait');
-                return true;
+        // the preview face an element is drawn in (gfpv<n>), '' for none
+        function gfFaceName(el) { const m = /^['"]?(gfpv\d+)['"]?(,|$)/.exec(el.style.fontFamily || ''); return m ? m[1] : ''; }
+        // whether the face an element shows draws all of a new text: a css2 text= face holds the characters of the text it was made for alone, and a
+        // character it lacks would come in the app's font, shown as the family's look. A face no longer kept (gfTrim) draws nothing
+        function gfKeeps(el, text) {
+            const name = gfFaceName(el);
+            if (!name || el.classList.contains('gf-failed')) return false;
+            for (const [k, rec] of gf.faces) {
+                if (rec.name !== name) continue;
+                const had = gfKeyParts(k).text;
+                return Array.from(String(text)).every(c => /\s/.test(c) || had.indexOf(c) >= 0);
             }
-            if (gf.asked[key] !== 'failed') return false;
+            return false;
+        }
+        // an element moved to a key with no face yet: its new text, in the face it shows only when that face draws all of it (keep), else blank (gf-wait,
+        // never the app's font as the family's look; a failed one too) until its own face comes
+        function gfHold(el, text, keep) {
+            const k = !!keep && gfKeeps(el, text);
+            el.textContent = text;
+            el.classList.remove('gf-failed');
+            if (!k) { el.style.fontFamily = ''; el.classList.add('gf-wait'); }
+        }
+        // whether a preview's faces hold a style ("700", "700i"): a FontFace's weight is "700" or a range "100 900" ("normal" when the answer gave none),
+        // its style "normal" or "italic"
+        function gfHasStyle(rec, s) {
+            const n = parseInt(s, 10) || 400, it = /i$/.test(String(s));
+            return rec.list.some(fc => {
+                const w = String(fc.weight || '400').replace('normal', '400').replace('bold', '700').split(' ').map(Number);
+                return (String(fc.style) === 'italic') === it && n >= w[0] && n <= (w.length > 1 ? w[1] : w[0]);
+            });
+        }
+        // the family's name (a card, the heading) or the line's text in the app's font, and "No preview"
+        function gfDrawFailed(el, parts) {
             el.textContent = el.classList.contains('gf-pv') ? parts.f : parts.text;
             el.insertAdjacentHTML('beforeend', '<span class="gf-nopv">' + escapeHtml(txT('No preview')) + '</span>');
             el.style.fontFamily = ''; el.style.fontWeight = ''; el.style.fontStyle = '';
             el.classList.remove('gf-wait');
             el.classList.add('gf-failed');
+        }
+        // draws what is known of an element's preview: its face, or its failure (the family's name in the app's font, and "No preview"); false while it waits
+        function gfApplyEl(el) {
+            const key = el.dataset.pvk;
+            if (!key) return false;
+            const rec = gf.faces.get(key), parts = gfKeyParts(key), sty = el.dataset.pvs || '';
+            if (rec) {
+                // a style row whose own face is not in the answer ('styles' leaves out a face lost to a 429 or a 503, one past 2 MB and those past 8 MB;
+                // one that does not load is dropped): "No preview", never the nearest weight that came under its name. The key stays asked: the
+                // other rows have theirs
+                if (sty && !gfHasStyle(rec, sty)) { gfDrawFailed(el, parts); return true; }
+                if (el.classList.contains('gf-failed') || el.textContent !== parts.text) { el.textContent = parts.text; el.classList.remove('gf-failed'); }
+                el.style.fontFamily = "'" + rec.name + "', " + GF_FALLBACK;
+                if (el.dataset.pvw) {
+                    const w = /^\d+$/.test(rec.style.weight || '') ? rec.style.weight : '';
+                    el.style.fontWeight = w; el.style.fontStyle = rec.style.style || '';
+                } else if (sty) {                                            // a style row: its own weight and style again (a failure cleared them)
+                    el.style.fontWeight = String(parseInt(sty, 10)); el.style.fontStyle = /i$/.test(sty) ? 'italic' : 'normal';
+                }
+                el.classList.remove('gf-wait');
+                return true;
+            }
+            if (gf.asked[key] !== 'failed') return false;
+            gfDrawFailed(el, parts);
             return true;
         }
 
@@ -46702,7 +46744,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (lab) lab.textContent = fntNum(el.value);
             if (line) line.style.fontVariationSettings = fntFvs(gf.axes);
         }
-        // the tester line (the 'axes' preview) and one row per style (the 'styles' preview); keep: a new text keeps the faces shown until the new ones come
+        // the tester line (the 'axes' preview) and one row per style (the 'styles' preview); keep: a new text keeps the faces shown until the new ones
+        // come, where they draw all of it (gfKeeps), else that line waits, blank
         function gfRenderTester(keep) {
             const e = gf.by.get(gf.fam), line = document.getElementById('gfDLine'), box = document.getElementById('gfStyles');
             if (!e || !line || !box) return;
@@ -46710,14 +46753,15 @@ Type any command above (e.g. pm list packages -d)</div>
             line.dataset.pvk = gfKey(e.f, 'axes', text);
             line.style.fontSize = gf.dSize + 'px';
             line.style.fontVariationSettings = fntFvs(gf.axes);
-            if (!gfApplyEl(line)) { line.textContent = text; line.classList.remove('gf-failed'); if (!keep) { line.style.fontFamily = ''; line.classList.add('gf-wait'); } }
-            const sk = gfKey(e.f, 'styles', text), had = keep ? [...box.querySelectorAll('.gf-style-pv')].map(x => x.style.fontFamily) : [];
+            if (!gfApplyEl(line)) gfHold(line, text, keep);
+            const sk = gfKey(e.f, 'styles', text), had = keep ? [...box.querySelectorAll('.gf-style-pv')].map(x => gfKeeps(x, text) ? x.style.fontFamily : '') : [];
             box.innerHTML = (e.w || []).map((w, i) => {
                 const n = parseInt(w, 10) || 400, it = /i$/.test(String(w)), ff = had[i] ? ' font-family:' + escapeHtml(had[i]) + ';' : '';
                 const head = '<div class="gf-style"><div class="gf-style-name" translate="no">' + escapeHtml(gfStyleName(w)) + '</div>';
                 // past the styles the preview carries, a row would show the nearest weight it has under another style's name: "No preview" instead
                 if (i >= GF_STYLES) return head + '<div class="gf-style-pv gf-failed" translate="no" dir="auto">' + escapeHtml(text) + '<span class="gf-nopv">' + escapeHtml(txT('No preview')) + '</span></div></div>';
-                return head + '<div class="gf-style-pv' + (ff ? '' : ' gf-wait') + '" translate="no" dir="auto" data-pvk="' + escapeHtml(sk) + '" style="font-weight:' + n + '; font-style:' + (it ? 'italic' : 'normal') + ';' + ff + '">' + escapeHtml(text) + '</div></div>';
+                // data-pvs: the row's own style, which its face must hold (gfApplyEl) and which a failure's cleared weight comes back from
+                return head + '<div class="gf-style-pv' + (ff ? '' : ' gf-wait') + '" translate="no" dir="auto" data-pvk="' + escapeHtml(sk) + '" data-pvs="' + n + (it ? 'i' : '') + '" style="font-weight:' + n + '; font-style:' + (it ? 'italic' : 'normal') + ';' + ff + '">' + escapeHtml(text) + '</div></div>';
             }).join('');
             ['gfDHead', 'gfDLine'].forEach(id => gfAskEl(document.getElementById(id)));
             box.querySelectorAll('.gf-style-pv').forEach(gfAskEl);
@@ -46954,8 +46998,9 @@ Type any command above (e.g. pm list packages -d)</div>
             if (ok && I.description) h += '<div class="gf-desc' + (gf.descOpen ? '' : ' gf-clamp') + '" id="gfDesc" translate="no" dir="auto">' + escapeHtml(I.description) + '</div>'
                 + '<button type="button" class="batch-tool-link" id="gfDescMore" onclick="gfDescMore()" style="display:none;">More</button>';
             const designers = ok && Array.isArray(I.designers) && I.designers.length ? I.designers : (e.d || []);
-            // a gone family: its licence as its download recorded it, and no page on fonts.google.com to open
-            const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : e.gone ? String((gf.dls[f] || {}).licenseName || '') : '';
+            // without the details (a gone family has none; no connection, or still on their way): the licence as the family's download recorded it. A
+            // gone family has no page on fonts.google.com to open
+            const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : String((gf.dls[f] || {}).licenseName || '');
             h += row('Licence', lic)
                 + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"><summary>Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
                 + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Last updated', gfDate(e.m))

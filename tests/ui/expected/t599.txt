@@ -6,8 +6,10 @@ ok      the card is drawn in its face (gfpv<n>)
 ok      one face per card in document.fonts
 ok   3. scrolled: the cards now in view ask, the ones drawn before do not
 ok      scrolled back: nothing asked again
+ok   3b. "The lazy dog" (all of it in the sample): a card shows it at once in the face it had, until its new one comes
+ok      then in its own
 ok   4. typing waits 400 ms; then the cards in view ask for the last text only
-ok      a card shows the new text at once, in the face it had until its new one comes
+ok      "Hello" ("H" is not in the face shown): the card has the new text at once, blank (gf-wait) until its face comes, never in the app's font
 ok   5. answers of an older text are dropped: no face made of them
 ok      the new text's answers draw the cards in view
 ok      never more than 6 on their way
@@ -51,5 +53,15 @@ ok      Noto Color Emoji, the same face: its sixteen emoji are drawn in it
 ok      its page: the heading (its name) "No preview" in the app font
 ok      the tester line and its style row (the emoji) drawn in the face
 ok      "Hello" typed: Noto Color Emoji "No preview", Noto Sans drawn
+ok      no page errors
+ok   14. a failed card ("RobotoNo preview"), then "Hello": blank (gf-wait, no font) while its preview is asked
+ok      it fails again: "RobotoNo preview"
+ok      a card keeping its face for "The lazy dog", that face taken out: blank (gf-wait, no font) until its own comes
+ok      then drawn in its own
+ok      no page errors
+ok   15. Noto Color Emoji drawn in its emoji face, then "Hello": blank (gf-wait, no font) until its answer
+ok      then "No preview" (its face draws no letter)
+ok      its page, the tester line and the style row in the emoji face, then "Hello" in the tester: both blank (gf-wait, no font) until their answers
+ok      then "No preview"
 ok      no page errors
 all passed

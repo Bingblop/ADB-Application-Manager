@@ -1,13 +1,16 @@
 // v7.18.0 Google Fonts, the cards' previews: only the cards in view (and 300 px past it) ask for theirs (gfontsPreview, 'card'), at most 6 at a time;
 // each answer is loaded as a FontFace named gfpv<n> and the card's line is drawn in it. A card scrolled into view asks then; one already drawn does
 // not ask again. Text typed in the preview field waits 400 ms, then the cards in view ask for it (a new generation): the answers of the old one, and
-// those for a card a search took out of the list, are dropped (no face is made of them). The size slider sets the lines' size. A family that has no
+// those for a card a search took out of the list, are dropped (no face is made of them). Meanwhile a card shows the new text in the face it had only
+// when that face holds every letter of it (a css2 text= face holds those of its own text alone); else, and a card that had failed, it is blank until
+// its answer, never the text in the app's font (so too a family's tester line and style rows). The size slider sets the lines' size. A family that has no
 // preview (gf_no_preview) or whose preview failed shows its name in the app's font with "No preview", and is not asked again until the text changes.
 // The sample follows the family's main script (Japanese for Noto Sans JP, Arabic for Cairo) and a script the page has no sample of shows the family's
 // name (Sunflower, Hangul). A family with no main script whose subsets leave Latin out takes their sample: the emoji fonts' sixteen emoji for Noto
 // Color Emoji (on its page too), Khmer for Chenla; one with none the page has (Noto Sans Lycian) shows "No preview" without asking; no subsets
 // listed (Playwrite) is Latin. A face that draws none of a Latin text's letters (Google's answer for an emoji family asked for letters) is no
-// preview, and is not kept: a card's sample, a family page's heading, a typed text. Past 150 faces the oldest are taken out of document.fonts.
+// preview, and is not kept: a card's sample, a family page's heading, a typed text. Past 150 faces the oldest are taken out of document.fonts
+// (a card that kept one of them for a new text then waits, blank, for its own).
 // Closing the sheet drops what is still on its way. A preview that has not answered in 30 s stops counting toward the 6, and its answer is still
 // drawn when it comes (on the cards and on a family's page).
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: previews answer when the script says; opts.gf.emojiFace: faces of assets/emoji/twemoji.ttf);
@@ -58,7 +61,7 @@ const card = (page, f) => page.evaluate((f) => {
   if (!c) return null;
   const pv = c.querySelector('.gf-pv');
   return { text: pv.textContent, ff: pv.style.fontFamily, wait: pv.classList.contains('gf-wait'), failed: pv.classList.contains('gf-failed'), nopv: (pv.querySelector('.gf-nopv') || {}).textContent || '',
-    key: pv.dataset.pvk, size: getComputedStyle(pv).fontSize, noTr: pv.getAttribute('translate') };
+    key: pv.dataset.pvk, size: getComputedStyle(pv).fontSize, noTr: pv.getAttribute('translate'), vis: getComputedStyle(pv).visibility };
 }, f);
 // answer every preview on its way, and the ones asked after those, until none is left
 const drain = async (page) => { for (let i = 0; i < 40; i++) { const n = await page.evaluate(() => __fmk.gfPending().length); if (!n) break; await page.evaluate(() => __fmk.gfAnswerAll()); await page.waitForTimeout(120); } await page.waitForTimeout(150); };
@@ -94,6 +97,15 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
     await page.evaluate(() => { document.getElementById('gfScroll').scrollTop = 0; });
     await page.waitForTimeout(250);
     check('   scrolled back: nothing asked again', (await state(page)).asked.length === s.asked.length);
+    // a new text whose every letter the sample has (a css2 text= face holds those of its own text alone): the cards keep their faces until the new ones come
+    const rL = await card(page, 'Roboto');
+    await typeText(page, 'The lazy dog');
+    const rK = await card(page, 'Roboto');
+    check('3b. "The lazy dog" (all of it in the sample): a card shows it at once in the face it had, until its new one comes', rK.text === 'The lazy dog' && !rK.wait && rK.ff === rL.ff && /gfpv/.test(rK.ff) && rK.vis === 'visible'
+      && (await state(page)).pending.includes('Roboto'), JSON.stringify([rL.ff, rK]));
+    await drain(page);
+    const rK2 = await card(page, 'Roboto');
+    check('   then in its own', rK2.text === 'The lazy dog' && !rK2.wait && /gfpv/.test(rK2.ff) && rK2.ff !== rL.ff, JSON.stringify(rK2));
     // a new text: 400 ms, a new generation; the old generation's answers are dropped
     await page.evaluate(() => { document.getElementById('gfScroll').scrollTop = 0; });
     await page.waitForTimeout(200);
@@ -107,7 +119,7 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
     const hello = s.asked.slice(n2).filter(a => /\|Hello$/.test(a)).map(a => a.split('|')[0]);
     check('4. typing waits 400 ms; then the cards in view ask for the last text only', right === n2 && hello.length === Math.min(6, v.length) && hello.every(f => v.includes(f)) && !s.asked.slice(n2).some(a => /Hamburgefonstiv/.test(a)), JSON.stringify([right, n2, hello, v]));
     const rH = await card(page, hello[0]);
-    check('   a card shows the new text at once, in the face it had until its new one comes', rH.text === 'Hello' && /gfpv/.test(rH.ff), JSON.stringify(rH));
+    check('   "Hello" ("H" is not in the face shown): the card has the new text at once, blank (gf-wait) until its face comes, never in the app\'s font', rH.text === 'Hello' && rH.wait && rH.ff === '' && rH.vis === 'hidden', JSON.stringify(rH));
     // another text before those answers come: they come for a text no card shows any more
     const before = s.keys.length;
     await typeText(page, 'Hey');
@@ -307,6 +319,69 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
     await page.waitForTimeout(600);
     const emoH = await card(page, 'Noto Color Emoji'), sans = await card(page, 'Noto Sans');
     check('   "Hello" typed: Noto Color Emoji "No preview", Noto Sans drawn', emoH.failed && emoH.text === 'Noto Color EmojiNo preview' && !sans.failed && /gfpv/.test(sans.ff) && sans.text === 'Hello', JSON.stringify([emoH, sans]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a new text while its answers are on their way: a line whose face lacks a letter of it, or that had failed, is blank (gf-wait) until its answer,
+  // never the text in the app's font shown as the family's look
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, hold: true, previewFail: ['Roboto'] } }, 1400);
+    await drain(page);
+    const r0 = await card(page, 'Roboto');
+    await typeText(page, 'Hello');
+    const r1 = await card(page, 'Roboto'), asked = await page.evaluate(() => __fmk.gfPending().some(p => p.family === 'Roboto' && p.text === 'Hello'));
+    check('14. a failed card ("RobotoNo preview"), then "Hello": blank (gf-wait, no font) while its preview is asked', r0.text === 'RobotoNo preview' && r0.failed
+      && r1.text === 'Hello' && r1.wait && !r1.failed && r1.ff === '' && r1.vis === 'hidden' && asked, JSON.stringify([r0, r1, asked]));
+    await drain(page);
+    const r2 = await card(page, 'Roboto');
+    check('   it fails again: "RobotoNo preview"', r2.text === 'RobotoNo preview' && r2.failed && !r2.wait, JSON.stringify(r2));
+    // a face kept for a new text, then taken out of document.fonts (past 150 faces, gfTrim): the card waits, blank, for its own, never left in a face
+    // that is gone (the app's font)
+    await typeText(page, '');
+    await typeText(page, 'The lazy dog');
+    const tr = await page.evaluate(() => {
+      const pv = [...document.querySelectorAll('#gfList .gf-card')].find(c => c.dataset.f !== 'Roboto').querySelector('.gf-pv'), one = () => ({ text: pv.textContent, ff: pv.style.fontFamily, wait: pv.classList.contains('gf-wait') });
+      const kept = one();
+      gf.nFaces += 1000; gfTrim(''); gf.nFaces -= 1000;
+      return { kept, after: one(), faces: gf.faces.size, n: gf.nFaces };
+    });
+    check('   a card keeping its face for "The lazy dog", that face taken out: blank (gf-wait, no font) until its own comes', !tr.kept.wait && /gfpv/.test(tr.kept.ff) && tr.kept.text === 'The lazy dog'
+      && tr.after.wait && tr.after.ff === '' && tr.after.text === 'The lazy dog' && !tr.faces && !tr.n, JSON.stringify(tr));
+    await drain(page);
+    const r3 = await card(page, await page.evaluate(() => [...document.querySelectorAll('#gfList .gf-card')].find(c => c.dataset.f !== 'Roboto').dataset.f));
+    check('   then drawn in its own', !r3.wait && /gfpv/.test(r3.ff) && r3.text === 'The lazy dog', JSON.stringify(r3));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    const { ctx, page, errors } = await open(b, { b64: Object.assign({ emoji: EMOJI }, FONTS), gf: { catalog: CAT, hold: true, emojiFace: ['Noto Color Emoji'] } });
+    await drain(page);
+    await page.evaluate(() => { const s = document.getElementById('gfSearch'); s.value = 'noto color emoji'; s.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.waitForTimeout(400);
+    await drain(page);
+    const e0 = await card(page, 'Noto Color Emoji');
+    await typeText(page, 'Hello');
+    const e1 = await card(page, 'Noto Color Emoji');
+    check('15. Noto Color Emoji drawn in its emoji face, then "Hello": blank (gf-wait, no font) until its answer', !e0.wait && /gfpv/.test(e0.ff) && e1.text === 'Hello' && e1.wait && e1.ff === '' && e1.vis === 'hidden', JSON.stringify([e0, e1]));
+    await drain(page);
+    const e2 = await card(page, 'Noto Color Emoji');
+    check('   then "No preview" (its face draws no letter)', e2.failed && e2.text === 'Noto Color EmojiNo preview', JSON.stringify(e2));
+    // its page: the tester line and the style row drawn with the emoji, then "Hello" typed into the tester
+    await typeText(page, '');
+    await page.click('#gfList .gf-card[data-f="Noto Color Emoji"]');
+    await page.waitForTimeout(300);
+    await drain(page);
+    const lines = () => page.evaluate(() => [document.getElementById('gfDLine')].concat([...document.querySelectorAll('#gfStyles .gf-style-pv')]).map(el => ({ text: el.textContent, ff: el.style.fontFamily,
+      wait: el.classList.contains('gf-wait'), failed: el.classList.contains('gf-failed'), vis: getComputedStyle(el).visibility })));
+    const d0 = await lines();
+    await page.fill('#gfDText', 'Hello');
+    await page.waitForTimeout(550);
+    const d1 = await lines();
+    check('   its page, the tester line and the style row in the emoji face, then "Hello" in the tester: both blank (gf-wait, no font) until their answers',
+      d0.length === 2 && d0.every(x => !x.wait && /gfpv/.test(x.ff)) && d1.every(x => x.text === 'Hello' && x.wait && x.ff === '' && x.vis === 'hidden'), JSON.stringify([d0, d1]));
+    await drain(page);
+    const d2 = await lines();
+    check('   then "No preview"', d2.every(x => x.failed && x.text === 'HelloNo preview'), JSON.stringify(d2));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

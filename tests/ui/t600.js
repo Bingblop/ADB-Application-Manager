@@ -2,17 +2,21 @@
 // card preview of its name) with a line of category, designers, styles, the variable axes and Colour. The type tester starts with the sample, its size
 // 14-96 (40), one slider per axis (named from the list, starting at the axis' default) that drives font-variation-settings on the tester line (the
 // 'axes' preview); the Styles list has a row per style ("Thin 100", "Thin 100 Italic", ...; "Weight N" for the others) in that style (the 'styles'
-// preview). New tester text waits 400 ms and keeps the faces shown until the new ones come. About: the details are asked once (gfontsInfo), with a
+// preview). New tester text waits 400 ms; meanwhile the lines keep the faces shown only where those hold every letter of it (a css2 text= face holds
+// those of its own text alone), else, and a line that had failed, they are blank until theirs come. About: the details are asked once (gfontsInfo), with a
 // line while they come; the description shows three lines and More, then the licence's name and its text under <details>, the designers, the dates
-// and "Open on fonts.google.com". A failure, and another window of the app getting them (busy), says why with Retry. A colour family and a symbol
+// and "Open on fonts.google.com". A failure, and another window of the app getting them (busy), says why with Retry; a downloaded family still shows
+// the licence its download recorded. A colour family and a symbol
 // family say Make a font needs a plain text font. Back and a tap outside go back to the list where it was, then close; what the page asked for is
 // dropped once it is left. The axes are named as Make a font names them (its five in the page's words, the others as the list has them); the
-// tester line takes its direction from its text (dir="auto"); a style past the 18 the 'styles' preview carries says "No preview" instead of
-// showing another weight. Text typed in the list's preview field, or in the tester, just before the view changes does not drop the other view's
+// tester line takes its direction from its text (dir="auto"); a style past the 18 the 'styles' preview carries, and one whose face its answer left
+// out (lost, too big, not a font), says "No preview" instead of showing another weight. In French the category menu says Display as the category, not
+// as the screen setting (Affichage). Text typed in the list's preview field, or in the tester, just before the view changes does not drop the other view's
 // previews. A newer list in which a family's styles or axes changed drops the faces asked of the old one (and the answers still on their way) and asks
 // again, also while the family's page is shown. With a keyboard (switch access, TalkBack), a card opens its page with the focus on the Back arrow, and
 // Back (the arrow, Android's, a tap outside) hands the focus to that card again, the list where it was.
-// Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the details and previews answer when the script says); the list: fixtures/gfonts-catalog.json.
+// Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the details and previews answer when the script says; dropFaces, badFaces: a 'styles' answer
+// without some faces); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -103,7 +107,16 @@ const detail = (page) => page.evaluate((wsrc) => {
     check('   the site opens through the app (openUrl), the family with + for spaces', (await page.evaluate(() => __fmk.calls.filter(c => /^openUrl:/.test(c)).pop())) === 'openUrl:https://fonts.google.com/specimen/Lato');
     await page.evaluate(() => { document.getElementById('gfLic').open = true; });
     check('   the licence text opens', await page.evaluate(() => document.querySelector('#gfLic pre').getBoundingClientRect().height > 20));
-    // the tester: new text after 400 ms, the faces kept meanwhile; the size
+    // the tester: new text after 400 ms; meanwhile the faces shown are kept where they hold every letter of it (a css2 text= face holds those of its own
+    // text alone), else the lines are blank until theirs come; the size
+    const ff00 = d.line.ff, rf00 = d.styles.map(s => s.ff);
+    await page.fill('#gfDText', 'quick brown fox');
+    await page.waitForTimeout(550);
+    d = await detail(page);
+    check('3b. new tester text whose letters the sample all has ("quick brown fox"): the tester and the rows show it in the faces they had', d.line.text === 'quick brown fox' && d.line.ff === ff00 && !d.line.wait
+      && d.styles.every((s, i) => s.text === 'quick brown fox' && s.ff === rf00[i] && /gfpv/.test(s.ff) && !s.wait), JSON.stringify([d.line, d.styles[0]]));
+    await drain(page);
+    d = await detail(page);
     const n0 = d.asked.length, ff0 = d.line.ff;
     await page.fill('#gfDText', 'Sphinx of black quartz');
     const right = (await detail(page)).asked.length;
@@ -111,10 +124,11 @@ const detail = (page) => page.evaluate((wsrc) => {
     d = await detail(page);
     const nw = d.asked.slice(n0);
     check('4. new tester text: asked after 400 ms (axes and styles, the head unchanged)', right === n0 && nw.sort().join(' / ') === ['Lato|axes|Sphinx of black quartz', 'Lato|styles|Sphinx of black quartz'].sort().join(' / '), JSON.stringify([right, n0, nw]));
-    check('   meanwhile the tester and the rows show the new text in the faces they had', d.line.text === 'Sphinx of black quartz' && d.line.ff === ff0 && d.styles.every(s => s.text === 'Sphinx of black quartz' && /gfpv/.test(s.ff)), JSON.stringify([d.line, d.styles[0]]));
+    check('   meanwhile ("S" is in none of the faces shown) the tester and the rows have the new text, blank (gf-wait, no font)', d.line.text === 'Sphinx of black quartz' && d.line.wait && d.line.ff === ''
+      && d.styles.every(s => s.text === 'Sphinx of black quartz' && s.wait && s.ff === ''), JSON.stringify([d.line, d.styles[0]]));
     await drain(page);
     d = await detail(page);
-    check('   then their new faces', d.line.ff !== ff0 && /gfpv/.test(d.line.ff) && !d.line.wait, JSON.stringify(d.line));
+    check('   then their new faces', d.line.ff !== ff0 && /gfpv/.test(d.line.ff) && !d.line.wait && d.styles.every(s => !s.wait && /gfpv/.test(s.ff)), JSON.stringify(d.line));
     await page.evaluate(() => { const r = document.getElementById('gfDSize'); r.value = '72'; r.dispatchEvent(new Event('input', { bubbles: true })); });
     d = await detail(page);
     check('   size 72: the tester line at 72 px', d.dsize === '14,96,72,72' && d.line.size === '72px', JSON.stringify([d.dsize, d.line.size]));
@@ -399,6 +413,76 @@ const detail = (page) => page.evaluate((wsrc) => {
     await page.waitForTimeout(200);
     a = await at();
     check('   opened while nothing in the list had the focus: the Back arrow is not given it', a.view === 'detail' && a.id !== 'gfBack', JSON.stringify(a));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a 'styles' answer without some of its faces (the app leaves out one lost to a 429 or 503, one past 2 MB and those past 8 MB; one that does not
+  // load is dropped): those rows say "No preview", never the nearest weight that came under their name. A downloaded family whose details cannot be
+  // had (no connection): its licence as its download recorded it. A failed tester line, then new text: blank until its answer
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato'], hold: true, previewError: ['Inter'], dropFaces: { Lato: ['700'] }, badFaces: { Lato: ['900i'] },
+      infoError: { code: 'network', error: 'The download failed: timeout' } } });
+    await drain(page);
+    await showFam(page, 'Lato');
+    await drain(page);
+    const rows = () => page.evaluate(() => [...document.querySelectorAll('#gfStyles .gf-style')].map(r => { const pv = r.querySelector('.gf-style-pv'); return { name: r.querySelector('.gf-style-name').textContent,
+      ff: pv.style.fontFamily, w: pv.style.fontWeight + (pv.style.fontStyle === 'italic' ? 'i' : ''), failed: pv.classList.contains('gf-failed'), wait: pv.classList.contains('gf-wait'), text: pv.textContent,
+      nopv: (pv.querySelector('.gf-nopv') || {}).textContent || '' }; }));
+    const lost = ['Bold 700', 'Black 900 Italic'], split = rs => [rs.filter(r => lost.includes(r.name)), rs.filter(r => !lost.includes(r.name))];
+    let [miss, drawn] = split(await rows());
+    const nf = await page.evaluate(() => { const r = gf.faces.get('Lato|styles|' + GF_LATIN); return r ? r.list.length : 0; });
+    check('19. Lato\'s styles answer without Bold 700 (not sent) and Black 900 Italic (no font): 8 faces kept; those two rows "No preview", in no face', nf === 8 && miss.length === 2
+      && miss.every(r => r.failed && !r.wait && !r.ff && r.nopv === 'No preview'), JSON.stringify([nf, miss]));
+    check('   the other 8 rows drawn in the styles face, each in its own weight and style', drawn.length === 8 && drawn.every(r => !r.failed && !r.wait && /gfpv\d+/.test(r.ff))
+      && drawn.map(r => r.w).join(',') === '100,100i,300,300i,400,400i,700i,900', JSON.stringify(drawn));
+    await page.fill('#gfDText', 'quick brown fox');
+    await page.waitForTimeout(550);
+    [miss, drawn] = split(await rows());
+    check('   new tester text: those two blank until the answer, the others in the faces they had (which hold its letters)', miss.every(r => r.wait && !r.ff && r.text === 'quick brown fox')
+      && drawn.every(r => !r.wait && /gfpv\d+/.test(r.ff) && r.text === 'quick brown fox'), JSON.stringify([miss, drawn[0]]));
+    await drain(page);
+    [miss, drawn] = split(await rows());
+    check('   answered without them again: "No preview" again, the others drawn in their own weight and style', miss.every(r => r.failed && !r.wait && !r.ff && r.nopv === 'No preview')
+      && drawn.every(r => !r.failed && !r.wait && /gfpv\d+/.test(r.ff)) && drawn.map(r => r.w).join(',') === '100,100i,300,300i,400,400i,700i,900', JSON.stringify([miss, drawn]));
+    // a later answer for the same text that has its face (asked again after gfTrim): drawn in its own weight again, which "No preview" had cleared
+    const back = await page.evaluate(() => {
+      const rec = gf.faces.get('Lato|styles|quick brown fox'), row = [...document.querySelectorAll('#gfStyles .gf-style')].find(r => r.querySelector('.gf-style-name').textContent === 'Bold 700').querySelector('.gf-style-pv');
+      const was = { w: row.style.fontWeight, failed: row.classList.contains('gf-failed') };
+      rec.list.push(new FontFace(rec.name, 'local(x)', { weight: '700' }));
+      gfApplyEl(row);
+      rec.list.pop();
+      return { was, ff: row.style.fontFamily, w: row.style.fontWeight, it: row.style.fontStyle, failed: row.classList.contains('gf-failed'), text: row.textContent };
+    });
+    check('   a later answer with its face: Bold 700 drawn in 700 upright again', back.was.failed && back.was.w === '' && /gfpv\d+/.test(back.ff) && back.w === '700' && back.it === 'normal' && !back.failed
+      && back.text === 'quick brown fox', JSON.stringify(back));
+    // its details fail (no connection): the licence its download recorded, with no licence text
+    await page.evaluate(() => __fmk.gfStepAll());
+    await page.waitForTimeout(150);
+    let d = await detail(page);
+    let ab = await page.evaluate(() => ({ err: (document.querySelector('#gfInfoErr .is-err') || {}).textContent, retry: !!document.getElementById('gfInfoRetry'), lic: !!document.getElementById('gfLic') }));
+    check('20. Lato downloaded, its details not to be had: the reason and Retry, and "Licence SIL Open Font License 1.1" from its download (no licence text)', ab.err === 'The download failed (timeout). Check the connection and try again.'
+      && ab.retry && !ab.lic && /Licence SIL Open Font License 1\.1/.test(d.about), JSON.stringify([ab, d.about]));
+    await page.evaluate(() => { __fmk.gfInfoError = null; });
+    await page.click('#gfInfoRetry');
+    await page.evaluate(() => __fmk.gfStepAll());
+    await page.waitForTimeout(150);
+    d = await detail(page);
+    ab = await page.evaluate(() => ({ err: !!document.getElementById('gfInfoErr'), lic: !!document.getElementById('gfLic') }));
+    check('   Retry: the details\' licence, with its text', !ab.err && ab.lic && /Licence SIL Open Font License 1\.1/.test(d.about), JSON.stringify([ab, d.about]));
+    // Inter (no preview): its tester line "No preview", then new text
+    await page.evaluate(() => gfBackToList());
+    await showFam(page, 'Inter');
+    await drain(page);
+    const tl = () => page.evaluate(() => { const l = document.getElementById('gfDLine'); return { text: l.textContent, ff: l.style.fontFamily, wait: l.classList.contains('gf-wait'), failed: l.classList.contains('gf-failed'), vis: getComputedStyle(l).visibility }; });
+    const t0 = await tl();
+    await page.fill('#gfDText', 'Hello');
+    await page.waitForTimeout(550);
+    const t1 = await tl();
+    check('21. Inter\'s tester line "No preview", then new text: blank (gf-wait) until its answer, not the text bare in the app\'s font', t0.failed && t0.text === LATIN + 'No preview'
+      && t1.text === 'Hello' && t1.wait && !t1.failed && t1.ff === '' && t1.vis === 'hidden', JSON.stringify([t0, t1]));
+    await drain(page);
+    const t2 = await tl();
+    check('   then "No preview" again', t2.failed && !t2.wait && t2.text === 'HelloNo preview', JSON.stringify(t2));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
