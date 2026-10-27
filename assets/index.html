@@ -46451,17 +46451,32 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfRenderList() {
             const box = document.getElementById('gfList'), more = document.getElementById('gfMore'), cnt = document.getElementById('gfCount');
             if (!box) return;
+            // a redraw (a download that ended or a newer list while the list shows, Show more, Clear filters) must not drop a keyboard's or TalkBack's
+            // focus from the cards or Show more to the body behind the sheet: the same family's card (dataset.f compared, a family's name is never put
+            // into a selector), else the new Show more or the first card it brought, the first card, the empty state's Clear filters, the bar's Close
+            // (as gfBackToList). A focus elsewhere (the search, a chip, the family's page that gfBackToList leaves) stays where it is
+            const ae = document.activeElement, inBox = !!ae && ae !== box && box.contains(ae), inMore = !!ae && !!more && more.contains(ae);
+            const fc = inBox && ae.closest ? ae.closest('.gf-card') : null, keepF = fc ? fc.dataset.f : null, had = box.querySelectorAll('.gf-card').length;
+            const refocus = () => {
+                if (!inBox && !inMore) return;
+                const cards = [...box.querySelectorAll('.gf-card')];
+                const to = (keepF !== null && cards.find(c => c.dataset.f === keepF)) || (inMore && (document.getElementById('gfMoreBtn') || cards[had])) || cards[0]
+                    || box.querySelector('button') || document.querySelector('#gfSheet .gf-bar .sheet-close');
+                if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
+            };
             if (gf.io) gf.io.disconnect();
-            if (!gfHasList()) { box.innerHTML = ''; more.innerHTML = ''; cnt.textContent = ''; return; }
+            if (!gfHasList()) { box.innerHTML = ''; more.innerHTML = ''; cnt.textContent = ''; refocus(); return; }
             const L = gf.list, total = gf.data.families.length + gf.gone.length, n = Math.min(gf.shown, L.length), left = L.length - n;
             cnt.textContent = L.length === total ? gfFamText(total) : txF('{0} of {1}', fntInt(L.length), fntInt(total));
             if (!L.length) {
                 box.innerHTML = emptyStateHtml({ key: 'gf-none', icon: 'search', title: 'No fonts match.', hint: 'Try other words, or clear the filters.', actions: [{ label: 'Clear filters', onclick: 'gfClearFilters()' }] });
                 more.innerHTML = '';
+                refocus();
                 return;
             }
             box.innerHTML = L.slice(0, n).map(gfCardHtml).join('');
             more.innerHTML = left > 0 ? `<button type="button" class="batch-tool-link" id="gfMoreBtn" onclick="gfMore()">Show ${Math.min(GF_PAGE, left)} more · ${left} left</button>` : '';
+            refocus();
             gfObserve();
         }
         // one tap target: the name, a line about it, its badges and the preview line in its own font

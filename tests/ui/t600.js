@@ -14,7 +14,8 @@
 // below itself, so the marks past it show, and the row stays as it was. In French the category menu says Display as the category, not
 // as the screen setting (Affichage). Text typed in the list's preview field, or in the tester, just before the view changes does not drop the other view's
 // previews. A newer list in which a family's styles or axes changed drops the faces asked of the old one (and the answers still on their way) and asks
-// again, also while the family's page is shown. With a keyboard (switch access, TalkBack), a card opens its page with the focus on the Back arrow, and
+// again, also while the family's page is shown. With a keyboard (switch access, TalkBack), Enter on Show more keeps the focus on Show more, a card
+// opens its page with the focus on the Back arrow, and
 // Back (the arrow, Android's, a tap outside) hands the focus to that card again, the list where it was. Text typed in the tester keeps the list's
 // "No preview" marks (a card's preview does not depend on it): offline, Back still lands on the card the page was opened from.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the details and previews answer when the script says; dropFaces, badFaces: a 'styles' answer
@@ -448,6 +449,8 @@ const detail = (page) => page.evaluate((wsrc) => {
   {
     const { ctx, page, errors } = await open(b, { gf: { catalog: CAT } });
     await page.focus('#gfMoreBtn'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
+    const mf = await page.evaluate(() => { const a = document.activeElement; return [a.id || a.tagName, a.id === 'gfMoreBtn' ? a.textContent.trim() : '', document.querySelectorAll('#gfList .gf-card').length]; });
+    check('17b. Enter on Show 30 more: 60 cards, the focus on Show more again (now "Show 4 more · 4 left"), not lost to the page', mf.join('|') === 'gfMoreBtn|Show 4 more · 4 left|60', mf.join('|'));
     const f = await page.evaluate(() => document.querySelectorAll('#gfList .gf-card')[44].dataset.f), next = await page.evaluate(() => document.querySelectorAll('#gfList .gf-card')[45].dataset.f);
     await page.evaluate((f) => [...document.querySelectorAll('#gfList .gf-card')].find(c => c.dataset.f === f).focus(), f);
     await page.waitForTimeout(150);

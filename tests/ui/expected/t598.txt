@@ -16,6 +16,7 @@ ok      the preview size: 14-72, 28
 ok      placeholders
 ok   4. Show more: 60 cards, "Show 4 more · 4 left"
 ok      then all 64, no more button; the family without popularity comes last
+ok      the button that had the focus is gone: it is on the first card it brought (Buda), not lost to the page
 ok      a new search far down the list starts at the top: Open Sans in view under the bar
 ok   5. Trending: Noto Sans Georgian, Arimo, Rajdhani
 ok      Newest: Arimo, Google Sans, Roboto Mono
@@ -61,6 +62,7 @@ ok      opening asks for it (gfontsRefresh false) and says so; no cards, no coun
 ok      the list comes: status, 30 cards, the button counts 64
 ok      Refresh: gfontsRefresh true, "Updating the list…" while the list stays
 ok      and back to Refresh
+ok      the focus on Lato's card stays there when the new list redraws the cards
 ok      no page errors
 ok   14. a failed first list: "The list of fonts is not on this phone yet.", the reason, Retry
 ok      Retry asks again (gfontsRefresh true)

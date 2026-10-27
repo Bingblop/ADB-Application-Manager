@@ -59,7 +59,9 @@ ok   12. Downloaded: Roboto and Lato, "2 of 64"
 ok      Lato deleted on its page, then Back: Roboto alone, "1 of 64"
 ok      its download started, Back while it runs: still Roboto alone
 ok      it finishes while the list shows: Lato is back, Downloaded, "2 of 64"
+ok      a keyboard's focus on Roboto's card stays there when Lato's download finishes (not lost to the page)
 ok      without the filter: Inter's card gets Downloaded when its download finishes
+ok      the focus on Lato's card stays there, the list scrolled where it was
 ok      no page errors
 ok   13. the new list has 63 families and Lato is on the phone: the search button counts 64, as the sheet does
 ok      Lato left the list but is on the phone: under Downloaded, its card says so

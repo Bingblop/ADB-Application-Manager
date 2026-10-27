@@ -75,6 +75,7 @@ ok      Heebo opened after the update: asked again, two sliders (Optical size, W
 ok   17. Poppins' previews on their way when a newer list made it variable: asked again
 ok      the old answers dropped: the tester's face covers Weight 100-900, nine rows drawn, the face count right
 ok      no page errors
+ok   17b. Enter on Show 30 more: 60 cards, the focus on Show more again (now "Show 4 more · 4 left"), not lost to the page
 ok   18. Enter on the 45th card (Hind Siliguri): its page, at the top, the focus on the Back arrow
 ok      Enter on Back: the list where it was, the focus on that card
 ok      one Tab on: the next card, not the bar

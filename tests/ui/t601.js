@@ -15,7 +15,8 @@
 // on the closed question). A refreshed list that drops the family
 // whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts. With a keyboard
 // (switch access, TalkBack) the focus is not lost when the section is drawn again: it stays on the same control (the details came, the first
-// progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font).
+// progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font);
+// a card keeps it when a download that ended while the list shows draws the list again.
 // The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone. Without
 // a family's details, About's Licence is its download's: it comes with a download made on the family's page and goes with a Delete there. A
 // family that left Google Fonts shows no details in About (no description, Licence text, reason or Retry), even ones that came before it left.
@@ -313,16 +314,27 @@ const kb = n => (n * 1024);
     await page.evaluate(() => gfBackToList()); await page.waitForTimeout(150);
     l = await list();
     check('   its download started, Back while it runs: still Roboto alone', l.cards === 'Roboto' && l.count === '1 of 64', JSON.stringify(l));
+    // a keyboard's (TalkBack's) focus on a card when the list is drawn again for a download that ended: on that card still, the list where it was
+    const kf = () => page.evaluate(() => { const a = document.activeElement; return { f: a && a.classList.contains('gf-card') && document.getElementById('gfList').contains(a) ? a.dataset.f : (a ? a.id || a.tagName : ''), top: document.getElementById('gfScroll').scrollTop }; });
+    await page.focus('#gfList .gf-card[data-f="Roboto"]');
+    const k0 = await kf();
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     l = await list();
     check('   it finishes while the list shows: Lato is back, Downloaded, "2 of 64"', l.cards === 'Roboto,Lato' && l.count === '2 of 64' && l.badges.Lato === 'Downloaded', JSON.stringify(l));
+    const k1 = await kf();
+    check('   a keyboard\'s focus on Roboto\'s card stays there when Lato\'s download finishes (not lost to the page)', k0.f === 'Roboto' && k1.f === 'Roboto' && k1.top === k0.top, JSON.stringify([k0, k1]));
     await page.click('#gfChipDl'); await page.waitForTimeout(100);
     await page.evaluate(() => { gfShow('Inter'); }); await page.waitForTimeout(150);
     await page.click('#gfDlBtn');
     await page.evaluate(() => gfBackToList()); await page.waitForTimeout(150);
+    await page.evaluate(() => { document.getElementById('gfScroll').scrollTop = 600; }); await page.waitForTimeout(100);
+    await page.focus('#gfList .gf-card[data-f="Lato"]');
+    const k2 = await kf();
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     l = await list();
     check('   without the filter: Inter\'s card gets Downloaded when its download finishes', l.badges.Inter === 'Variable,Downloaded' && l.count === '64 families', JSON.stringify([l.badges.Inter, l.count]));
+    const k3 = await kf();
+    check('   the focus on Lato\'s card stays there, the list scrolled where it was', k2.f === 'Lato' && k3.f === 'Lato' && k3.top === k2.top && k2.top > 0, JSON.stringify([k2, k3]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

@@ -11,7 +11,8 @@
 // read again, its date and count shown, without the busy sentence; so is one another window got while this one had none and the sheet was closed
 // (the tab shown again reads it for the button's count, and the sheet shows it fresh, with no busy sentence or Retry). Back (backNavigate) and a tap outside
 // step from a family's page to the list, then close; a field of the sheet that kept the focus (the keyboard already down) loses it then, so the
-// bottom bar comes back. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
+// bottom bar comes back. A keyboard's focus survives the list drawn again: on the same card when a new list comes, on the first card the last
+// Show more brought. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
 // 360 px, in the light theme and right-to-left.
 // The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
 // results, and the sheet's handle pulls it up to the whole screen (down once: its size again; down again: the usual step back). The Help Guide
@@ -107,6 +108,8 @@ const wide = (page) => page.evaluate(() => {
     await page.click('#gfMoreBtn'); await page.waitForTimeout(100);
     s = await sheet(page);
     check('   then all 64, no more button; the family without popularity comes last', s.cards.length === 64 && s.more === '' && s.cards[63] === 'Material Symbols Outlined', JSON.stringify([s.cards.length, s.more, s.cards[63]]));
+    const mf = await page.evaluate(() => { const a = document.activeElement; return a && a.classList.contains('gf-card') ? a.dataset.f : (a ? a.id || a.tagName : ''); });
+    check('   the button that had the focus is gone: it is on the first card it brought (' + s.cards[60] + '), not lost to the page', mf === s.cards[60], mf);
     // a search typed far down the list starts at the top of its results (the search field is in the sticky bar)
     const from = await page.evaluate(() => { const sc = document.getElementById('gfScroll'); sc.scrollTop = sc.scrollHeight; return sc.scrollTop; });
     await search(page, 'sans');
@@ -283,8 +286,12 @@ const wide = (page) => page.evaluate(() => {
     await page.click('#gfRefreshBtn'); await page.waitForTimeout(100);
     s = await sheet(page);
     check('   Refresh: gfontsRefresh true, "Updating the list…" while the list stays', s.calls.slice(-1)[0] === 'gfontsRefresh:true' && s.status === 'List updated Oct 1, 2026 · Updating the list…' && s.cards.length === 30, JSON.stringify([s.calls, s.status]));
+    // a keyboard (TalkBack) on a card when the new list comes and the cards are drawn again: the focus stays on that card
+    await page.focus('#gfList .gf-card[data-f="Lato"]');
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     check('   and back to Refresh', (await sheet(page)).status === 'List updated Oct 1, 2026 · Refresh');
+    const kf = await page.evaluate(() => { const a = document.activeElement; return a && a.classList.contains('gf-card') && document.getElementById('gfList').contains(a) ? a.dataset.f : (a ? a.id || a.tagName : ''); });
+    check('   the focus on Lato\'s card stays there when the new list redraws the cards', kf === 'Lato', kf);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
