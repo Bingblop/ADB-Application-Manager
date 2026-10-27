@@ -44,7 +44,8 @@ import java.util.regex.Pattern;
  * <li>{@link #info}: a family's description (as plain text), licence and designers.</li>
  * <li>{@link #metaJson} / {@link #readMeta} / {@link #sweep}: a downloaded family's folder files/fontmaker/gfonts/fam/&lt;slug&gt;/ and
  * its meta.json; {@link #downloadsRow} is the page's row for it.</li>
- * <li>The preview cache in cache/fontmaker/gfpv/ ({@link #previewKey}, {@link #readCached}, {@link #trimCache}).</li>
+ * <li>The preview cache in cache/fontmaker/gfpv/ ({@link #previewFile}, {@link #readCached}, {@link #trimCache}), each answer named by the css2
+ * request it stands for.</li>
  * </ul>
  * Every refusal is a {@link GfException} whose code and sentence are the page's (design section 5.1).
  */
@@ -782,19 +783,43 @@ public final class GoogleFonts {
                 .put("reserved", new JSONArray(plan.reserved)).put("designers", designers).put("files", files);
     }
 
-    private static final Pattern BREAK = Pattern.compile("<br\\s*/?>|</p\\s*>", Pattern.CASE_INSENSITIVE);
+    // a line break, and the start and end of a block (a paragraph, a list and its items, a heading...): the \b keeps <pre>, <link>, <track> out
+    private static final Pattern BREAK = Pattern.compile("</?(?:br|p|div|ul|ol|li|dt|dd|h[1-6]|blockquote|tr|hr)\\b[^>]*>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ITEM = Pattern.compile("<li\\b[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern TAG = Pattern.compile("<[^>]*>?");
-    private static final Pattern ENTITY = Pattern.compile("&(#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|amp|lt|gt|quot|apos|nbsp);");
+    private static final Pattern ENTITY = Pattern.compile("&(#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,7});");
+    /**
+     * The named entities a description is written with, as text: HTML 4's Latin-1 ones (iexcl to yuml) and its typographic ones (dashes,
+     * quotes, the ellipsis...). copy, reg and trade are written "(c)", "(R)" and "(tm)", as MorpheHelper writes them (their symbols can show as
+     * emoji).
+     */
+    private static final Map<String, String> NAMED = new HashMap<String, String>();
+    static {
+        String[] latin1 = ("iexcl cent pound curren yen brvbar sect uml copy ordf laquo not shy reg macr deg plusmn sup2 sup3 acute micro para middot"
+                + " cedil sup1 ordm raquo frac14 frac12 frac34 iquest Agrave Aacute Acirc Atilde Auml Aring AElig Ccedil Egrave Eacute Ecirc Euml Igrave"
+                + " Iacute Icirc Iuml ETH Ntilde Ograve Oacute Ocirc Otilde Ouml times Oslash Ugrave Uacute Ucirc Uuml Yacute THORN szlig agrave aacute"
+                + " acirc atilde auml aring aelig ccedil egrave eacute ecirc euml igrave iacute icirc iuml eth ntilde ograve oacute ocirc otilde ouml"
+                + " divide oslash ugrave uacute ucirc uuml yacute thorn yuml").split(" ");
+        for (int i = 0; i < latin1.length; i++) NAMED.put(latin1[i], String.valueOf((char) (0xa1 + i)));            // U+00A1 to U+00FF, in order
+        String[] more = { "OElig", "\u0152", "oelig", "\u0153", "Scaron", "\u0160", "scaron", "\u0161", "Yuml", "\u0178", "fnof", "\u0192",
+                "circ", "\u02c6", "tilde", "\u02dc", "ensp", "\u2002", "emsp", "\u2003", "thinsp", "\u2009", "ndash", "\u2013", "mdash", "\u2014",
+                "lsquo", "\u2018", "rsquo", "\u2019", "sbquo", "\u201a", "ldquo", "\u201c", "rdquo", "\u201d", "bdquo", "\u201e", "dagger", "\u2020",
+                "Dagger", "\u2021", "bull", "\u2022", "hellip", "\u2026", "permil", "\u2030", "prime", "\u2032", "Prime", "\u2033", "lsaquo", "\u2039",
+                "rsaquo", "\u203a", "euro", "\u20ac", "copy", "(c)", "reg", "(R)", "trade", "(tm)" };
+        for (int i = 0; i < more.length; i += 2) NAMED.put(more[i], more[i + 1]);
+    }
 
     /**
-     * HTML as plain text: a paragraph's end and a line break are a new line, every other tag goes, the entities amp lt gt quot apos nbsp
-     * and numeric ones are decoded, runs of spaces are one, each line is trimmed and empty lines dropped; at most {@code max} characters
-     * (never half of a pair of surrogates).
+     * HTML as plain text: a line break, and the start and end of a block (a paragraph, a list, a heading, a quote) are a new line, a list item
+     * starts with a bullet, every other tag goes, the entities amp lt gt quot apos nbsp, HTML 4's Latin-1 and typographic ones and numeric
+     * ones are decoded (an unknown name is left as it is), runs of spaces are one, each line is trimmed and empty lines dropped; at most {@code max}
+     * characters (never half of a pair of surrogates).
      */
     public static String plainText(String html, int max) {
         if (html == null || html.isEmpty()) return "";
         String s = html.length() > 4 * MAX_DESCRIPTION + 65536 ? html.substring(0, 4 * MAX_DESCRIPTION + 65536) : html;
         s = s.replace("\r\n", " ").replace('\r', ' ').replace('\n', ' ');
+        s = ITEM.matcher(s).replaceAll("\n\u2022 ");
         s = BREAK.matcher(s).replaceAll("\n");
         s = TAG.matcher(s).replaceAll("");
         Matcher m = ENTITY.matcher(s);
@@ -804,7 +829,7 @@ public final class GoogleFonts {
         StringBuilder out = new StringBuilder();
         for (String line : b.toString().split("\n")) {
             String l = line.replaceAll("[\\s\\u00a0]+", " ").trim();
-            if (l.isEmpty()) continue;
+            if (l.isEmpty() || l.equals("\u2022")) continue;                        // an empty line, an empty list item
             if (out.length() > 0) out.append('\n');
             out.append(l);
         }
@@ -818,6 +843,10 @@ public final class GoogleFonts {
         if ("quot".equals(name)) return "\"";
         if ("apos".equals(name)) return "'";
         if ("nbsp".equals(name)) return " ";
+        if (name.charAt(0) != '#') {
+            String v = NAMED.get(name);
+            return v == null ? whole : v;
+        }
         int cp;
         try {
             cp = name.startsWith("#x") || name.startsWith("#X") ? Integer.parseInt(name.substring(2), 16) : Integer.parseInt(name.substring(1));
@@ -1077,11 +1106,20 @@ public final class GoogleFonts {
     // The preview cache
     // ---------------------------------------------------------------------------------------------
 
-    /** A preview's cache file name: the SHA-256 of family, mode and the asked characters ({@link #uniqueText}), one per line. */
-    public static String previewKey(String family, String mode, String text) {
+    /**
+     * A preview's cache file in {@code dir}: named by {@link #previewKey} of the family, the mode and the css2 address the preview is fetched
+     * from ({@link #css2Url}). The address carries the styles or axes asked for (from the entry's w and x) and the characters, so a family whose
+     * styles or axes changed in a newer list is asked for again instead of being drawn with the faces it had.
+     */
+    public static File previewFile(File dir, JSONObject entry, String mode, String text) {
+        return new File(dir, previewKey(entry.optString("f"), mode, css2Url(entry, mode, text)) + ".json");
+    }
+
+    /** A preview's cache file name: the SHA-256 of family, mode and the css2 address, one per line. */
+    public static String previewKey(String family, String mode, String css2Url) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            return FontLibrary.hex(md.digest((family + "\n" + mode + "\n" + text).getBytes(StandardCharsets.UTF_8)));
+            return FontLibrary.hex(md.digest((family + "\n" + mode + "\n" + css2Url).getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             throw new IllegalStateException("SHA-256 is always present", e);
         }

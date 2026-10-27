@@ -653,6 +653,14 @@ public class FontLibraryTest {
         JSONObject net = FontLibrary.downloadError(0, "Read timed out");
         is("a timeout is the network", net.optString("code").equals("network") && net.optString("error").equals("The download failed: Read timed out") && !net.has("status"), true);
         eq("no detail", FontLibrary.downloadError(0, null).optString("error"), "The download failed: no answer");
+        // a folder not made or a rename refused on the phone's storage gives no errno: a full phone or its own sentence, never the network (R2-03)
+        String folder = "The app could not make the family's folder.";
+        JSONObject noRoom = FontLibrary.localError(folder, 0);
+        is("a local failure with no room is no_space", noRoom.optString("code").equals("no_space") && noRoom.optString("error").equals("There is not enough free space on this phone."), true);
+        eq("…under 16 MB free too", FontLibrary.localError(folder, (16L << 20) - 1).optString("code"), "no_space");
+        JSONObject local = FontLibrary.localError(folder, 16L << 20);
+        is("16 MB free: failed, its sentence unchanged", local.optString("code").equals("failed") && local.optString("error").equals(folder) && !local.optBoolean("ok", true), true);
+        eq("…no sentence", FontLibrary.localError(null, 1L << 30).optString("error"), "Something went wrong.");
 
         eq("COLRv1 inside a font needs Android 13", FontLibrary.minApiForEmoji("COLRv1"), 33);
         eq("COLRv0 from Android 8", FontLibrary.minApiForEmoji("COLRv0"), 26);
@@ -1179,6 +1187,36 @@ public class FontLibraryTest {
         is("…each file capped, hashed, flushed and read by FontInspect", fetch.contains("if (n > cap) throw new GoogleFonts.GfException(\"gf_too_big\")")
                 && fetch.contains("md.update(buf, 0, r)") && fetch.contains("out.getFD().sync()") && fetch.contains("throw new GoogleFonts.GfException(\"gf_not_a_font\")"), true);
         is("…the family capped at 160 MB", dl.contains("Math.min(GoogleFonts.MAX_FILE, left)"), true);
+        // a failure on the phone's own storage (the .part folder not made, the rename refused) is a full phone or its own sentence, never "check the
+        // connection" (R2-03): no plain IOException of the job reaches downloadError, and gfError reads GfLocal before it
+        String ge = body(ma, "private JSONObject gfError(");
+        is("a download's local failures are GfLocal", !dl.contains("new IOException(") && dl.contains("if (!part.mkdirs()) throw new GfLocal(\"")
+                && Pattern.compile("try \\{\\s*dest = GoogleFonts\\.commitDownload\\(d\\.gfFamilies, family\\);\\s*\\} catch \\(IOException e\\) \\{\\s*throw new GfLocal\\(errMsg\\(e\\)\\);").matcher(dl).find()
+                && dl.indexOf("GoogleFonts.commitDownload(") == dl.lastIndexOf("GoogleFonts.commitDownload("), true);
+        is("…said by FontLibrary.localError (a full phone, else failed) before downloadError", ge.contains("if (t instanceof GfLocal) return FontLibrary.localError(t.getMessage(), getFilesDir().getUsableSpace());")
+                && ge.indexOf("t instanceof GfLocal") < ge.indexOf("FontLibrary.downloadError("), true);
+        // …and the page shows each of their sentences as itself, translated: the first FNT_SAID row of failed that matches it says the same words
+        String gpage = src("assets/index.html"), gfj = src("src/com/bloatware/bingblop/GoogleFonts.java");
+        int s1 = gpage == null ? -1 : gpage.indexOf("const FNT_SAID = ["), s2 = s1 < 0 ? -1 : gpage.indexOf("\n        ];", s1);
+        List<String[]> failedRows = new ArrayList<String[]>();
+        Matcher fr = Pattern.compile("\\['failed', /((?:[^/\\\\\\n]|\\\\.)*)/, ([^\\n]*?)\\],?\\n").matcher(s1 >= 0 && s2 > s1 ? gpage.substring(s1, s2 + 1) : "");
+        while (fr.find()) {
+            Matcher lit = Pattern.compile("^(?:'((?:[^'\\\\]|\\\\.)*)'|\"((?:[^\"\\\\]|\\\\.)*)\")$").matcher(fr.group(2));
+            failedRows.add(new String[] { fr.group(1), lit.matches() ? (lit.group(1) != null ? lit.group(1) : lit.group(2)) : null });
+        }
+        is("the page's failed rows are found", failedRows.size() >= 20, true);
+        List<String> local = new ArrayList<String>();
+        Matcher gl = Pattern.compile("new GfLocal\\(\"((?:[^\"\\\\]|\\\\.)*)\"\\)").matcher(ma);
+        while (gl.find()) local.add(gl.group(1));
+        Matcher cm = Pattern.compile("throw new IOException\\(\"((?:[^\"\\\\]|\\\\.)*)\"\\)").matcher(body(gfj == null ? "" : gfj, "public static File commitDownload("));
+        int nCommit = 0;
+        while (cm.find()) { local.add(cm.group(1)); nCommit++; }
+        is("the local failures' sentences are found (" + local.size() + ")", local.size() >= 3 && nCommit == 2, true);
+        for (String said : local) {
+            String shown = "(no row)";
+            for (String[] r : failedRows) if (Pattern.compile(r[0]).matcher(said).find()) { shown = r[1]; break; }
+            is("the page shows the local failure \"" + said + "\" as itself", said.replace("\\'", "'").equals(shown == null ? null : shown.replace("\\'", "'")), true);
+        }
         is("the folders are swept once per process", body(ma, "private FontLibrary.Dirs fmkDirs()").contains("GoogleFonts.sweep(d.gfFamilies)"), true);
         // Use: the file chooser's copy, with the file checked against meta.json; Save and Delete wait for each other and for a download
         String pick = body(ma, "private JSONObject fmkCopyPick(");
@@ -1223,6 +1261,10 @@ public class FontLibraryTest {
         is("a preview that lost a face to an HTTP error is not cached", flag != null && pv.contains("boolean " + flag + " = false;") && g >= 0 && write > g
                 && write < g + body(pv.substring(g), guard).length() && pv.indexOf("GoogleFonts.writeWhole(") == write && pv.lastIndexOf("GoogleFonts.writeWhole(") == write, true);
         is("…a face too big for the cap is left out without that", Pattern.compile("catch \\(GoogleFonts\\.GfException tooBig\\) \\{\\s*continue;\\s*\\}").matcher(pv).find(), true);
+        // a cached preview is named by the css2 request it stands for (the entry's styles and axes, the characters), so a family whose styles or
+        // axes changed in a newer list is fetched again, never drawn with the old faces for 30 days (R2-01)
+        is("a preview's cache file is GoogleFonts.previewFile of the very request fetched", pv.contains("cached = GoogleFonts.previewFile(dir, entry, mode, text);")
+                && pv.contains("gfGet(GoogleFonts.css2Url(entry, mode, text), true,") && !pv.contains("previewKey(") && !pv.contains("uniqueText("), true);
         // "no details page" is kept for the process only when Google's envelope and the HTTP status both say 404 (R1-09)
         String ij = body(ma, "private void gfInfoJob(");
         is("a family's details: a 5xx or a 429 is asked again, not kept as no details", ij.contains("if (!\"gf_unknown\".equals(e.code) || a.status != 404) {")

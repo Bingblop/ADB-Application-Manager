@@ -9,7 +9,8 @@
 // dropped once it is left. The axes are named as Make a font names them (its five in the page's words, the others as the list has them); the
 // tester line takes its direction from its text (dir="auto"); a style past the 18 the 'styles' preview carries says "No preview" instead of
 // showing another weight. Text typed in the list's preview field, or in the tester, just before the view changes does not drop the other view's
-// previews.
+// previews. A newer list in which a family's styles or axes changed drops the faces asked of the old one (and the answers still on their way) and asks
+// again, also while the family's page is shown.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the details and previews answer when the script says); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -282,6 +283,72 @@ const detail = (page) => page.evaluate((wsrc) => {
     await drain(page);
     cv = await cardsIn();
     check('15. text typed in the tester, then Back at once: the cards in view are drawn', cv.length >= 3 && cv.every(c => !c.wait), JSON.stringify(cv));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  {
+    // a newer list in which a family's styles or axes changed: what was asked of the old list is dropped and asked again, never drawn under the new
+    // list's sliders and style rows (R2-01). The first refresh: Lato turned variable (Weight 100-900, nine styles), Heebo gained Optical size; the
+    // second: Poppins turned variable while its previews were on their way
+    const vary = (cat, f, w, x) => { const c = JSON.parse(JSON.stringify(cat)), e = c.families.find(e => e.f === f); e.w = w; e.x = x; return c; };
+    const W9 = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
+    const R1 = vary(vary(CAT, 'Lato', W9, [['wght', 100, 900, 400]]), 'Heebo', W9, [['opsz', 8, 72, 14], ['wght', 100, 900, 400]]);
+    const R2 = vary(R1, 'Poppins', W9, [['wght', 100, 900, 400]]);
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, remote: R1, hold: true } });
+    await drain(page);
+    // a family's faces (and the weights its 'axes' face covers), what it asked and what is still on its way; the faces counted three ways
+    const fam = (f) => page.evaluate(([f, latin]) => {
+      const keys = [...gf.faces.keys()].filter(k => k.startsWith(f + '|')), ax = keys.find(k => gfKeyParts(k).m === 'axes');
+      const gfpv = [...document.fonts].map(x => x.family.replace(/^"|"$/g, '')).filter(n => /^gfpv\d+$/.test(n));
+      return { keys, names: keys.map(k => gf.faces.get(k).name), loaded: gfpv, axes: ax ? gf.faces.get(ax).list.map(x => x.weight) : [],
+        asked: __fmk.gfPreviews.filter(p => p.family === f).map(p => p.mode), pending: __fmk.gfPending().filter(p => p.family === f).map(p => p.mode).sort().join(','),
+        counts: [gf.nFaces, [...gf.faces.values()].reduce((n, r) => n + r.list.length, 0), gfpv.length], roboto: gf.faces.has('Roboto|card|' + latin) };
+    }, [f, LATIN]);
+    const refresh = async () => { await page.evaluate(() => { gfRefresh(true); __fmk.gfStepAll(); }); await page.waitForTimeout(250); };
+    const n = (a, m) => a.filter(x => x === m).length;
+    await showFam(page, 'Heebo');
+    await drain(page);
+    const h0 = await fam('Heebo');
+    await page.evaluate(() => gfBackToList());
+    await drain(page);
+    await showFam(page, 'Lato');
+    await drain(page);
+    const l0 = await fam('Lato');
+    check('16. before: Lato\'s and Heebo\'s faces loaded, Roboto\'s card too', l0.keys.length === 4 && h0.keys.length === 4 && l0.roboto && l0.axes.join() === '400', JSON.stringify([l0.keys, h0.keys, l0.roboto, l0.axes]));
+    await refresh();
+    const l1 = await fam('Lato'), h1 = await fam('Heebo');
+    let d = await detail(page);
+    check('   a newer list with Lato variable, its page shown: the old faces are gone (the page and document.fonts)', !l1.keys.length && l0.names.every(x => !l1.loaded.includes(x)), JSON.stringify([l1.keys, l0.names, l1.loaded]));
+    check('   …Heebo\'s too (it gained an axis), Roboto\'s (unchanged) kept; the face count right', !h1.keys.length && h0.names.every(x => !h1.loaded.includes(x)) && l1.roboto
+      && l1.counts[0] === l1.counts[1] && l1.counts[1] === l1.counts[2], JSON.stringify([h1.keys, h1.loaded, l1.roboto, l1.counts]));
+    check('   the page is the new list\'s: a Weight slider at 400, nine style rows, waiting for their faces', /· 9 styles · Variable: Weight$/.test(d.meta) && d.axes.join(' | ') === 'Weight:gfAx_wght:100:900:400:400'
+      && d.styles.map(r => r.name).join(',') === 'Thin 100,ExtraLight 200,Light 300,Regular 400,Medium 500,SemiBold 600,Bold 700,ExtraBold 800,Black 900' && d.line.wait && /"wght" 400/.test(d.line.fvs), JSON.stringify([d.meta, d.axes, d.line]));
+    check('   …and its previews asked again (head, tester, styles)', l1.pending === 'axes,card,styles' && n(l1.asked, 'axes') === 2 && n(l1.asked, 'styles') === 2, JSON.stringify([l1.pending, l1.asked]));
+    await drain(page);
+    const l2 = await fam('Lato');
+    d = await detail(page);
+    check('   drawn in the new faces: the tester\'s covers Weight 100-900, each style row in one', l2.axes.join() === '100 900' && !d.line.wait && /gfpv\d+/.test(d.line.ff) && !l0.names.some(x => d.line.ff.includes("'" + x + "'"))
+      && d.styles.length === 9 && d.styles.every(r => !r.wait && /gfpv\d+/.test(r.ff)), JSON.stringify([l2.axes, d.line, d.styles.filter(r => r.wait).length]));
+    await page.evaluate(() => gfBackToList());
+    await showFam(page, 'Heebo');
+    const h2 = await fam('Heebo');
+    d = await detail(page);
+    check('   Heebo opened after the update: asked again, two sliders (Optical size, Weight)', /^axes,card(,card)?,styles$/.test(h2.pending) && n(h2.asked, 'axes') === 2 && d.axes.map(a => a.split(':')[0]).join('|') === 'Optical size|Weight', JSON.stringify([h2.pending, h2.asked, d.axes]));
+    await drain(page);
+    // the previews of a family asked of the list before, answered after a newer one changed it, are dropped: the new ones are drawn, nothing leaks
+    await page.evaluate(() => gfBackToList());
+    await drain(page);
+    await showFam(page, 'Poppins');
+    const p0 = await fam('Poppins');
+    await page.evaluate((r) => { __fmk.gfRemote = r; }, R2);
+    await refresh();
+    const p1 = await fam('Poppins');
+    await drain(page);
+    const p2 = await fam('Poppins');
+    d = await detail(page);
+    check('17. Poppins\' previews on their way when a newer list made it variable: asked again', p0.pending === 'axes,card,styles' && p1.pending === 'axes,axes,card,card,styles,styles' && n(p2.asked, 'axes') === 2, JSON.stringify([p0.pending, p1.pending, p2.asked]));
+    check('   the old answers dropped: the tester\'s face covers Weight 100-900, nine rows drawn, the face count right', p2.axes.join() === '100 900' && d.axes.join(' | ') === 'Weight:gfAx_wght:100:900:400:400'
+      && d.styles.length === 9 && d.styles.every(r => !r.wait && /gfpv\d+/.test(r.ff)) && p2.counts[0] === p2.counts[1] && p2.counts[1] === p2.counts[2], JSON.stringify([p2.axes, d.axes, p2.counts]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

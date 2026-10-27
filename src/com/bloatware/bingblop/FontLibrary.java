@@ -907,6 +907,16 @@ public final class FontLibrary {
         return error("network", "The download failed: " + (d.isEmpty() ? "no answer" : d));
     }
 
+    /**
+     * The answer for a download that failed on the phone's own storage where no errno says why (a folder that was not made, a rename that was
+     * refused): "no_space" when less than 16 MB is free ({@code usableBytes}, of a folder that exists), else "failed" with {@code detail}.
+     * Never "network": nothing went wrong with the connection.
+     */
+    public static JSONObject localError(String detail, long usableBytes) {
+        if (usableBytes < (16L << 20)) return error("no_space", "There is not enough free space on this phone.");
+        return error("failed", detail);
+    }
+
     /** The Android API level a merged emoji font of this colour format needs to be drawn: COLRv1 from Android 13 (API 33), COLRv0 from 8. */
     public static int minApiForEmoji(String color) {
         return "COLRv1".equals(color) ? 33 : 26;

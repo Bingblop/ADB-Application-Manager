@@ -26,11 +26,11 @@
 // v7.18.0: Google Fonts (gfonts*) and the emoji samples (emojiSpecimen*), with the shapes of section 5 of the Google Fonts design
 // (/mnt/project-files/plans/google-fonts-v7.18.0.md). opts.gf:
 //   catalog: the compact list on the phone at the start (default none: at 0); stale: it is older than 7 days; remote: what a refresh brings (default the
-//   catalog); refreshError: { code, error } a refresh ends with (also __fmk.gfRefreshError); downloads: families on the phone at the start;
-//   reserved: { family: [names] } (default { Lato: ['Lato'] }); previewError: families answered gf_no_preview; previewFail: families answered with a
-//   network error; infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError: { family: { code, error } };
-//   useError: { code, error, slot? } gfontsUse answers with (only that slot's when slot is set); saveError: { code, error } the save ends with
-//   ('cancelled' too); specimenError: { code, error } the iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept
+//   catalog; __fmk.gfRemote instead when it is set); refreshError: { code, error } a refresh ends with (also __fmk.gfRefreshError); downloads: families
+//   on the phone at the start; reserved: { family: [names] } (default { Lato: ['Lato'] }); previewError: families answered gf_no_preview; previewFail:
+//   families answered with a network error; infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError:
+//   { family: { code, error } }; useError: { code, error, slot? } gfontsUse answers with (only that slot's when slot is set); saveError: { code, error }
+//   the save ends with ('cancelled' too); specimenError: { code, error } the iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept
 //   from an earlier read; hold: the preview answers wait for __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh,
 //   details, download, iOS read) for __fmk.gfStep(n) / gfStepAll(); otherWindow: another window of the app is getting the list, a family's details
 //   and the iOS emoji (also __fmk.gfOtherWindow): gfontsRefresh, gfontsInfo and emojiSpecimenFetch answer busy, as the bridge does when the running
@@ -432,7 +432,7 @@ exports.initScript = function (opts) {
       gfRun([() => {
         gfRefreshJob = null;
         if (st.gfRefreshError) { window.onGfCatalog(J(Object.assign({ ok: false }, st.gfRefreshError))); return; }
-        gfCat = JSON.parse(J(G.remote || G.catalog || { v: 1, at: 0, axes: {}, families: [] }));
+        gfCat = JSON.parse(J(st.gfRemote || G.remote || G.catalog || { v: 1, at: 0, axes: {}, families: [] }));
         if (!gfCat.at) gfCat.at = Date.now();
         gfStale = false;
         window.onGfCatalog(J({ ok: true, at: gfCat.at, count: gfCat.families.length }));
@@ -560,7 +560,7 @@ exports.initScript = function (opts) {
   st.kv = Object.assign({}, opts.kv || {});
   st.statusFails = opts.statusFails || 0;
   st.buildError = opts.buildError || null; st.buildWarnings = opts.buildWarnings || null; st.downloadError = opts.downloadError || {};
-  st.gfRefreshError = G.refreshError || null; st.gfInfoError = G.infoError || null; st.gfDownloadError = G.downloadError || {};
+  st.gfRemote = null; st.gfRefreshError = G.refreshError || null; st.gfInfoError = G.infoError || null; st.gfDownloadError = G.downloadError || {};
   st.specimenError = G.specimenError || null; st.appleCached = !!G.appleCached; st.gfSaving = ''; st.gfOtherWindow = !!G.otherWindow;
   st.gfDl = gfDl;
   Object.keys(opts.refuse || {}).forEach(m => { b[m] = function () { st.calls.push(m + ':' + [].join.call(arguments, ',')); return J(Object.assign({ ok: false }, opts.refuse[m])); }; });

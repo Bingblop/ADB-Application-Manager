@@ -569,6 +569,12 @@ public class GoogleFontsTest {
         check("Roboto bold as text", i.description.contains("\nUpdated July 2020: Upgraded"));
         i = GoogleFonts.info(read("detail/noto-sans-jp.json"));
         check("Noto Sans JP em as text", i.description.contains("design for the Japanese language") && i.designers.contains("Google"));
+        // a list's items on lines of their own, and named entities as text (R2-02)
+        i = GoogleFonts.info(read("detail/caladea.json"));
+        eq("Caladea's list", i.description.substring(i.description.indexOf("\nCaladea has")), "\nCaladea has the following differences:\n\u2022 More condensed width\n\u2022 New metrics"
+                + "\n\u2022 4 styles. Regular, Bold, Italic, and Bold Italic\n\u2022 Character set expanded to WGL (418 glyphs)\nTo contribute, see github.com/huertatipografica/Caladea.");
+        i = GoogleFonts.info(read("detail/neuton.json"));
+        check("Neuton's dashes", i.description.contains("Two italics \u2014 one will be called \"italic\", and the other \"cursive\" \u2014 are uncommon") && !i.description.contains("&"));
         eq("Google's not-found answer", code(() -> GoogleFonts.info(read("detail/nonexistent-family-x.json"))), "gf_unknown");
         eq("a family the metadata does not have", code(() -> GoogleFonts.info(read("detail/material-symbols-outlined.json"))), "gf_unknown");
         // the envelope carries its own status: only 404 is "no details page", anything else is no answer about the family (R1-09)
@@ -599,13 +605,27 @@ public class GoogleFontsTest {
         eq("tags", GoogleFonts.plainText("<a href=\"x\">link</a> and <b>bold</b><script>s</script>", 100), "link and bolds");
         eq("an unclosed tag", GoogleFonts.plainText("text <img src=x onerror=alert(1)", 100), "text");
         eq("entities", GoogleFonts.plainText("&amp;&lt;b&gt;&quot;&apos;&nbsp;x &#65;&#x42;&#x1F600;", 100), "&<b>\"' x AB\ud83d\ude00");
-        eq("not entities", GoogleFonts.plainText("&copy; &#0; &#xD800; &#99999999; &amp", 100), "&copy; &#0; &#xD800; &#99999999; &amp");
+        eq("not entities", GoogleFonts.plainText("&notaname; &#0; &#xD800; &#99999999; &amp", 100), "&notaname; &#0; &#xD800; &#99999999; &amp");
         eq("an entity does not make a tag", GoogleFonts.plainText("&lt;script&gt;", 100), "<script>");
         eq("spaces", GoogleFonts.plainText("  a \t\n b  ", 100), "a b");
         eq("empty lines dropped", GoogleFonts.plainText("<p></p><p> </p><p>x</p>", 100), "x");
         eq("max", GoogleFonts.plainText("abcdef", 3), "abc");
         eq("max never splits a pair", GoogleFonts.plainText("ab\ud83d\ude00", 3), "ab");
         eq("null", GoogleFonts.plainText(null, 10), "");
+        // a list's items each on a line of their own, with a bullet, and the named entities a description is written with (R2-02)
+        eq("a list (Caladea's markup)", GoogleFonts.plainText("<p>Caladea has the following differences:</p>\n<ul>\n <li>More condensed width</li>\n <li>New metrics</li>\n</ul>\n"
+                + "<p>To contribute, see <a href=\"x\">github.com/x</a>.</p>", 300), "Caladea has the following differences:\n\u2022 More condensed width\n\u2022 New metrics\nTo contribute, see github.com/x.");
+        eq("an ordered list, an item with attributes, an empty item", GoogleFonts.plainText("<OL><li class=\"a\">One<LI>Two</li><li> </li></ol>after", 100), "\u2022 One\n\u2022 Two\nafter");
+        eq("blocks", GoogleFonts.plainText("intro<p>para</p><div>div</div><h2>head</h2>x<blockquote>quote</blockquote><dl><dt>term<dd>def</dl><hr>end", 200),
+                "intro\npara\ndiv\nhead\nx\nquote\nterm\ndef\nend");
+        eq("tags that are not blocks", GoogleFonts.plainText("a<link rel=x>b<u>c</u><object>d</object><pre>e</pre><track>f<param>g<olx>h<bdo>i", 100), "abcdefghi");
+        eq("named entities", GoogleFonts.plainText("Two italics &mdash; one &ndash; Jim&eacute;nez &Eacute; &hellip; &rsquo;quoted&rsquo; &ldquo;x&rdquo; &bull; &euro;5", 200),
+                "Two italics \u2014 one \u2013 Jim\u00e9nez \u00c9 \u2026 \u2019quoted\u2019 \u201cx\u201d \u2022 \u20ac5");
+        eq("Latin-1 by name, in code point order", GoogleFonts.plainText("&iexcl;&cent;&deg;&iquest;&Agrave;&times;&szlig;&agrave;&divide;&thorn;&yuml;&shy;", 100),
+                "\u00a1\u00a2\u00b0\u00bf\u00c0\u00d7\u00df\u00e0\u00f7\u00fe\u00ff\u00ad");
+        eq("copy, reg, trade as text", GoogleFonts.plainText("&copy; 2020 X&reg; Y&trade;", 100), "(c) 2020 X(R) Y(tm)");
+        eq("names are case-sensitive, unknown ones stay", GoogleFonts.plainText("&EACUTE; &eacutex; &Mdash; &x;", 100), "&EACUTE; &eacutex; &Mdash; &x;");
+        eq("decoded once", GoogleFonts.plainText("&amp;eacute; &amp;lt;", 100), "&eacute; &lt;");
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -743,10 +763,35 @@ public class GoogleFontsTest {
         check("key is 64 hex", k.matches("[0-9a-f]{64}"));
         eq("key is stable", GoogleFonts.previewKey("Roboto", "card", "Robt Aa"), k);
         check("key depends on the mode", !k.equals(GoogleFonts.previewKey("Roboto", "styles", "Robt Aa")));
-        check("key depends on the text", !k.equals(GoogleFonts.previewKey("Roboto", "card", "Robt A")));
+        check("key depends on the address", !k.equals(GoogleFonts.previewKey("Roboto", "card", "Robt A")));
         check("fields do not run together", !GoogleFonts.previewKey("Ab", "card", "c").equals(GoogleFonts.previewKey("A", "bcard", "c")));
 
+        // a cached answer is named by the css2 request it stands for: a family that turned variable, or gained an axis, in a newer list is asked
+        // for again, never drawn with the faces of the old request (R2-01)
         File dir = new File(tmp, "gfpv");
+        JSONObject st = new JSONObject("{\"f\":\"Roboto\",\"w\":[\"400\",\"700\"]}");
+        JSONObject va = new JSONObject("{\"f\":\"Roboto\",\"w\":[\"100\",\"200\",\"300\",\"400\",\"500\",\"600\",\"700\",\"800\",\"900\"],\"x\":[[\"wght\",100,900,400]]}");
+        JSONObject vo = new JSONObject(va.toString());
+        vo.getJSONArray("x").put(new JSONArray("[\"opsz\",14,32,14]"));
+        JSONObject sx = new JSONObject(st.toString()).put("x", new JSONArray("[[\"wght\",100,900,400]]"));
+        String t = "Robt Aa";
+        for (String m : new String[] { "card", "styles", "axes" }) {
+            File a = GoogleFonts.previewFile(dir, st, m, t);
+            eq("previewFile " + m + ": in the folder, 64 hex", a.getParentFile().equals(dir) && a.getName().matches("[0-9a-f]{64}\\.json"), true);
+            eq("previewFile " + m + ": the same entry, mode and text, the same file", GoogleFonts.previewFile(dir, new JSONObject(st.toString()), m, t), a);
+            eq("previewFile " + m + ": the key of the family, the mode and the css2 address", a.getName(), GoogleFonts.previewKey("Roboto", m, GoogleFonts.css2Url(st, m, t)) + ".json");
+            check("previewFile " + m + ": another text, another file", !a.equals(GoogleFonts.previewFile(dir, st, m, "Robt A")));
+        }
+        check("static 400/700 and variable 100-900: the styles differ", !GoogleFonts.previewFile(dir, st, "styles", t).equals(GoogleFonts.previewFile(dir, va, "styles", t)));
+        check("…and the axes", !GoogleFonts.previewFile(dir, st, "axes", t).equals(GoogleFonts.previewFile(dir, va, "axes", t)));
+        check("the same styles, an axis added: the axes differ", !GoogleFonts.previewFile(dir, st, "axes", t).equals(GoogleFonts.previewFile(dir, sx, "axes", t)));
+        check("an axis added to a variable family (opsz): the axes differ", !GoogleFonts.previewFile(dir, va, "axes", t).equals(GoogleFonts.previewFile(dir, vo, "axes", t)));
+        check("card and axes of a static family: two files (the same request)", GoogleFonts.css2Url(st, "card", t).equals(GoogleFonts.css2Url(st, "axes", t))
+                && !GoogleFonts.previewFile(dir, st, "card", t).equals(GoogleFonts.previewFile(dir, st, "axes", t)));
+        check("card and styles: two files", !GoogleFonts.previewFile(dir, st, "card", t).equals(GoogleFonts.previewFile(dir, st, "styles", t)));
+        check("no text: the family name's, as css2Url asks", GoogleFonts.previewFile(dir, st, "card", "").equals(GoogleFonts.previewFile(dir, st, "card", "Roboto Aa")));
+        eq("previewFile of a name that is not a family: css2Url's refusal", code(() -> GoogleFonts.previewFile(dir, new JSONObject().put("f", "../x"), "card", t)), "threw java.lang.IllegalArgumentException: not a family");
+
         File f = new File(dir, k + ".json");
         String answer = "{\"ok\":true,\"family\":\"Roboto\",\"mode\":\"card\",\"faces\":[{\"style\":\"normal\",\"weight\":\"400\",\"stretch\":\"\",\"b64\":\"d09GMg==\"}]}";
         GoogleFonts.writeWhole(f, answer.getBytes(StandardCharsets.UTF_8));

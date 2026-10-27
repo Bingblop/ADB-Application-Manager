@@ -8020,6 +8020,11 @@ public class MainActivity extends Activity {
         GfHttp(int status) { super("the server answered HTTP " + status); this.status = status; }
     }
 
+    /** A download that failed on the phone's own storage (a folder, a rename): FontLibrary.localError says it (no_space or failed), never network. */
+    private static final class GfLocal extends IOException {
+        GfLocal(String message) { super(message); }
+    }
+
     /** A job that was cancelled, or (a preview, which is no job) the window closing. */
     private boolean gfStopped(FontLibrary.Jobs.Job job) {
         return activityDestroyed || (job != null && job.cancelled());
@@ -8094,13 +8099,15 @@ public class MainActivity extends Activity {
 
     /**
      * What a Google Fonts request (or the iOS emoji sample) that failed answers: its own code (GfException, SpecimenException), cancelled,
-     * no_memory, else FontLibrary.downloadError: the HTTP status, a full phone, or the network.
+     * no_memory, a failure on the phone's storage (GfLocal: FontLibrary.localError, a full phone or failed), else FontLibrary.downloadError:
+     * the HTTP status, a full phone, or the network.
      */
     private JSONObject gfError(Throwable t, FontLibrary.Jobs.Job job) {
         if (t instanceof GoogleFonts.GfException) return FontLibrary.error(((GoogleFonts.GfException) t).code, t.getMessage());
         if (t instanceof EmojiSpecimen.SpecimenException) return FontLibrary.error(((EmojiSpecimen.SpecimenException) t).code, t.getMessage());
         if (gfStopped(job) || t instanceof EmojiCatalog.VerifyException) return FontLibrary.error("cancelled", "The download was cancelled.");
         if (t instanceof OutOfMemoryError) return FontLibrary.error("no_memory", FMK_NO_MEMORY);
+        if (t instanceof GfLocal) return FontLibrary.localError(t.getMessage(), getFilesDir().getUsableSpace());    // files/ always exists
         return FontLibrary.downloadError(t instanceof GfHttp ? ((GfHttp) t).status : 0, errMsg(t));
     }
 
@@ -8160,16 +8167,15 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * A preview (gfontsPreview), as the answer's JSON: from the cache (cache/fontmaker/gfpv/, 30 days), else the css2 answer for the family and
-     * the characters, and each face it names (a woff2 on fonts.gstatic.com): a face over 2 MB is left out, and so are the faces after 8 MB in
-     * all. {ok, family, mode, faces:[{style, weight, stretch, b64}]} is cached, and the cache trimmed to 24 MB, oldest first. An answer that
-     * lost a face to an HTTP status other than 200 or an empty body is returned but not cached.
+     * A preview (gfontsPreview), as the answer's JSON: from the cache (cache/fontmaker/gfpv/, 30 days; GoogleFonts.previewFile names an answer by
+     * its css2 address, so a family whose styles or axes changed is fetched again), else the css2 answer for the family and the characters, and
+     * each face it names (a woff2 on fonts.gstatic.com): a face over 2 MB is left out, and so are the faces after 8 MB in all.
+     * {ok, family, mode, faces:[{style, weight, stretch, b64}]} is cached, and the cache trimmed to 24 MB, oldest first. An answer that lost a
+     * face to an HTTP status other than 200 or an empty body is returned but not cached.
      */
     private String gfPreview(JSONObject entry, String family, String mode, String text) {
         try {
-            String chars = GoogleFonts.uniqueText(text, family);
-            File dir = fmkDirs().gfPreviews;
-            File cached = new File(dir, GoogleFonts.previewKey(family, mode, chars) + ".json");
+            File dir = fmkDirs().gfPreviews, cached = GoogleFonts.previewFile(dir, entry, mode, text);     // named by the css2 address fetched below
             String hit = GoogleFonts.readCached(cached, System.currentTimeMillis(), GoogleFonts.PREVIEW_CACHE_MS);
             if (hit != null) return hit;
             GfAnswer css = gfGet(GoogleFonts.css2Url(entry, mode, text), true, GoogleFonts.MAX_CSS, "gf_no_preview", null);
@@ -8280,7 +8286,7 @@ public class MainActivity extends Activity {
         try {
             GoogleFonts.Plan plan = gfPlan(family, job);
             FontLibrary.deleteTree(part);
-            if (!part.mkdirs()) throw new IOException("The app could not make the family's folder.");
+            if (!part.mkdirs()) throw new GfLocal("The app could not make the family's folder.");
             List<GoogleFonts.MetaFile> files = new ArrayList<GoogleFonts.MetaFile>();
             long left = GoogleFonts.MAX_FAMILY;
             for (int i = 0; i < plan.files.size(); i++) {
@@ -8293,7 +8299,12 @@ public class MainActivity extends Activity {
                     plan.reserved, files).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
             FontLibrary.syncDir(part);
             if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
-            File dest = GoogleFonts.commitDownload(d.gfFamilies, family);
+            File dest;
+            try {
+                dest = GoogleFonts.commitDownload(d.gfFamilies, family);
+            } catch (IOException e) {
+                throw new GfLocal(errMsg(e));                           // a rename on the phone: its sentence, not "check the connection"
+            }
             placed = true;
             JSONObject meta = GoogleFonts.readMeta(dest);
             if (meta == null) {                                         // what FontInspect read did not make a meta.json readMeta takes
