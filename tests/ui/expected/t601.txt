@@ -36,6 +36,14 @@ ok      no page errors
 ok   10. the save screen closed: nothing said, Save to phone again
 ok      no page errors
 ok      a failed save: the page's sentence
+ok      its page shows it: no toast says it again
+ok      no page errors
+ok   10b. failed after Back to the list: a toast "Lato was not saved. ..." with the reason
+ok      Lato's page opened again says why, Save to phone on
+ok      failed after the sheet closed: the same toast, the reason kept
+ok      failed while Roboto's page shows: the same toast; Roboto's Save to phone on again, no word of Lato's on its page
+ok      no page errors
+ok      the save screen closed after Back: nothing said
 ok      no page errors
 ok      the app's "The font family could not be saved: ..." is the page's sentence (not "Something went wrong")
 ok      no page errors
@@ -55,6 +63,7 @@ ok      Use in Make a font: its Regular and Bold go into Make a font
 ok      Delete asks first, over the sheet: "Delete Lato?", it cannot be downloaded again; nothing deleted yet
 ok      Cancel: nothing deleted, its page stays
 ok      Delete: gfontsDelete, back to the list, its card gone ("No fonts match.", "0 of 63")
+ok      the focus on the empty list's Clear filters (its card is gone), not left on the closed question
 ok      the search button counts 63 again
 ok      no page errors
 ok   13b. the tab shown, 63 families listed and Lato on the phone: the button says "64 families", as the sheet

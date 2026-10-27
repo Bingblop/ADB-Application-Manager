@@ -149,18 +149,18 @@
   <h4>Before you start</h4>
   <ul>
     <li><b>An internet connection.</b> The list, the previews and the downloads come from Google Fonts. Fonts you already downloaded stay on the phone and work without one.</li>
-    <li><b>No working mode, and no Google account.</b> The app reads the same public addresses the Google Fonts website uses. It needs no key and sends nothing about you or your phone.</li>
+    <li><b>No working mode, and no Google account.</b> The app reads the same public addresses the Google Fonts website uses. It needs no key and sends nothing about your phone. What you type to preview goes to Google Fonts with the previews (<a href="#privacy">Privacy</a>).</li>
   </ul>
 
   <h4>The list</h4>
   <ol class="hg-steps">
     <li>The first time, the page says "Getting the list of fonts from Google Fonts…" and then shows it. The app keeps the list on the phone. When the list is over a week old, the app uses it and gets a new one in the background. The line "List updated Oct 1, 2026 · Refresh" (with the date of your list) says how old it is. <b>Refresh</b> gets a new one now.</li>
     <li>Type in <b>Search fonts or designers</b>. Letter case and accents do not count, and every word you type must match the family's name or one of its designers.</li>
-    <li>Narrow the list with <b>All categories</b> (Sans serif, Serif, Display, Handwriting, Monospace) and <b>All languages</b> (the scripts and languages a family covers). Sort it by <b>Popular</b>, <b>Trending</b>, <b>Newest</b> or <b>Name (A–Z)</b>. The <b>Variable</b> and <b>Downloaded</b> chips show only variable families, or only the ones on this phone. The line above the list counts what is shown, such as "64 families" or "12 of 1,950".</li>
+    <li>Narrow the list with <b>All categories</b> (Sans serif, Serif, Display, Handwriting, Monospace) and <b>All languages</b> (the scripts and languages a family covers). Sort it by <b>Popular</b>, <b>Trending</b>, <b>Newest</b> or <b>Name (A–Z)</b>. The <b>Variable</b> and <b>Downloaded</b> chips show only variable families, or only the ones on this phone. The line above the list counts what is shown: "1,950 families" (with the number of your list) when nothing narrows it, or "12 of 1,950" when a search, a menu or a chip does.</li>
     <li>Each card shows the family's name, its category, its designer and how many styles it has. It can have the tags <b>VARIABLE</b>, <b>COLOUR</b> (the family draws in colour), <b>DOWNLOADED</b> and <b>NO LONGER ON GOOGLE FONTS</b> (see "A family that left Google Fonts" below). Under that, a line of text is drawn in the family's own font. The list shows 30 cards at a time, and <b>Show 30 more</b> at the bottom (with how many are left) adds more.</li>
-    <li>To see your own words in every font, type them in <b>Type something to preview</b>. The <b>Size</b> slider sets how large the previews are. Families for another script, such as Arabic or Japanese, show a sample in their own script until you type.</li>
+    <li>To see your own words in every font, type them in <b>Type something to preview</b>. The <b>Size</b> slider sets how large the previews are. Families for another script, such as Arabic or Japanese, show a sample in their own script until you type, and the emoji families show emoji. The letters you type go to Google Fonts with each preview, so that it can send them in each family's font; what you type in <b>Search fonts or designers</b> stays on the phone.</li>
   </ol>
-  <p>The previews come only for the cards on the screen, and a few below them. Each is a small piece of the font, with just the letters it needs. While a preview is on its way, its line stays blank, so you never see the text in the wrong font. If Google Fonts sends none, the card shows the family's name in the app's own font with "No preview" after it, and the card still works. Previews are kept for a while (up to 24 MB), so the list scrolls quickly the next time.</p>
+  <p>The previews come only for the cards on the screen, and a few below them. Each is a small piece of the font, with just the letters it needs. While a preview is on its way, its line stays blank, so you never see the text in the wrong font. If Google Fonts sends none, or the preview draws none of the letters (your words in an emoji family, for example), the card shows the family's name in the app's own font with "No preview" after it, and the card still works. So does a family with no Latin letters and no sample of its own script. Previews are kept for a while (up to 24 MB), so the list scrolls quickly the next time.</p>
 
   <h4>A family's page</h4>
   <p>Tap a card. The family's page opens with its name at the top, drawn in its own font, and a line with its category, designers, the number of styles and, for a variable family, its axes (for example "Variable: Width, Weight").</p>
@@ -170,7 +170,7 @@
     <li><b>Styles</b>: one line per style the family has, such as "Thin 100", "Regular 400" or "Bold 700 Italic", each drawn in that style. A family with more than 18 styles shows "No preview" on the lines past the eighteenth.</li>
     <li><b>About this family</b>: what Google Fonts says about the family, its <b>Licence</b> (with <b>Licence text</b> to read it in full), its designers, when it was added and last updated, and <b>Open on fonts.google.com</b>, which opens the family's page in your browser.</li>
   </ul>
-  <p>A line of the page whose preview does not come shows its text (the family's name at the top, your text below) in the app's own font with "No preview" after it.</p>
+  <p>A line of the page whose preview does not come, or draws none of its letters, shows its text (the family's name at the top, your text below) in the app's own font with "No preview" after it.</p>
   <p>A family that draws in colour, or a symbol family, gets a note: "This family has colour glyphs. Make a font needs a plain text font, so this one may not work there." or "This is a symbol family. Make a font needs a plain text font, so this one may not work there."</p>
 
   <h4>Downloading a family</h4>
@@ -182,7 +182,7 @@
   <p>The page then says "Downloaded · 2 files · 410 KB" and offers:</p>
   <ul>
     <li><b>Use in Make a font</b>: closes the page and puts the family into the <b>Make a font</b> card, as if you had chosen the files yourself. A variable family goes in as the Regular, and Make a font then offers its own Bold at another weight (<a href="#fonts-variable">Variable fonts</a>). For any other family, choose the files first under <b>Regular</b> and <b>Bold</b> on the page. The app picks the 400 upright file and the 700 upright one for you when the family has them, and Bold can be <b>None</b>. While a font is being made, or a file chooser is open, the button waits, and the page says why.</li>
-    <li><b>Save to phone</b>: saves the family as a <code>.zip</code> (its font files and its licence) wherever you choose, for use in other apps.</li>
+    <li><b>Save to phone</b>: saves the family as a <code>.zip</code> (its font files and its licence) wherever you choose, for use in other apps. If the save fails after you left the family's page, a message says "Lato was not saved." (with the family's name) and why, and the family's page says why again when you open it.</li>
     <li><b>Delete</b>: removes the family from the app at once, without asking, because downloading it again takes a moment. Fonts you already made from it keep their own copy. A family marked <b>No longer on Google Fonts</b> cannot be downloaded again, so for it <b>Delete</b> asks first ("Delete Lato?", with the family's name): tap <b>Save to phone</b> before, if you want to keep a copy.</li>
   </ul>
 

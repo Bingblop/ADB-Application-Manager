@@ -44943,7 +44943,7 @@ Type any command above (e.g. pm list packages -d)</div>
             data: null, by: new Map(), fold: new Map(), gone: [], refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
             dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null,
-            text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null,
+            text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null, cv: null,
             open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, tq: 0, tt: 0, td: 0
         };
         const FNT_STAGES = ['read', 'instance', 'convert', 'emoji', 'package', 'sign', 'save'];
@@ -45788,6 +45788,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!r.ok) { fnt.emoErr[id] = fntErrText(r); fntRenderEmoji(); return; }
             haptic();
             delete fnt.emoErr[id];
+            if (id === 'apple') fnt.emoApple.err = '';                      // the iOS sample is read from the web again: a failed read of the file no longer applies
             fntLoadCat();
             fntRenderEmoji();
             fntRenderEmojiSel();
@@ -45809,6 +45810,7 @@ Type any command above (e.g. pm list packages -d)</div>
         window.onEmojiDone = function (id, json) {
             const r = fntJson(json), it = ((fnt.cat && fnt.cat.items) || []).find(x => x.id === id);
             delete fnt.dl[id];
+            if (r.ok && id === 'apple') fnt.emoApple.err = '';               // the iOS sample is read from the file now: an earlier read's failure no longer applies
             if (r.ok) showToast(txF('{0} downloaded', it ? it.name : id));
             else if (r.code !== 'cancelled') fnt.emoErr[id] = fntErrText(r);
             fntLoadCat();
@@ -46153,7 +46155,8 @@ Type any command above (e.g. pm list packages -d)</div>
             sinhala: 'Sinhala', tamil: 'Tamil', telugu: 'Telugu', armenian: 'Armenian', georgian: 'Georgian', ethiopic: 'Ethiopic', math: 'Math', symbols: 'Symbols',
             emoji: 'Emoji', music: 'Music'
         };
-        // the sample of a family's main script (primaryScript): data, never translated. Latin for none; a script not in the table shows the family's name
+        // the sample of a family's main script (primaryScript): data, never translated. Latin for none (but see gfSample); a script not in the table shows
+        // the family's name
         const GF_LATIN = 'The quick brown fox jumps over the lazy dog.';
         const GF_SAMPLES = {
             Arab: 'أنا قادر على أكل الزجاج و هذا لا يؤلمني.',
@@ -46184,11 +46187,24 @@ Type any command above (e.g. pm list packages -d)</div>
             Thai: 'ฉันกินกระจกได้ แต่มันไม่ทำให้ฉันเจ็บ',
             Tibt: 'ཤེལ་སྒོ་ཟ་ནས་ང་ན་གི་མ་རེད།'
         };
-        function gfSample(e) { const k = (e && e.k) || ''; return !k || k === 'Latn' ? GF_LATIN : GF_SAMPLES[k] || e.f; }
+        // a family with no main script whose subsets leave Latin out has no Latin letters: Latin would come only in the app's font, shown as its look. It
+        // takes the sample of what its subsets name (Noto Color Emoji and Noto Emoji: emoji; Chenla and Siemreap: khmer; Noto Serif Myanmar: myanmar),
+        // else '' (Noto Sans Lycian), which is "No preview" without asking (gfAskEl). No subsets listed (Playwrite, the math families): Latin
+        const GF_SUBSET_SAMPLE = { khmer: GF_SAMPLES.Khmr, myanmar: GF_SAMPLES.Mymr };   // the samples themselves: a script code here would read as page text (i18n/extract.js)
+        function gfSample(e) {
+            const k = (e && e.k) || '';
+            if (k && k !== 'Latn') return GF_SAMPLES[k] || e.f;
+            const s = e && Array.isArray(e.s) ? e.s : [];
+            if (k || !s.length || s.indexOf('latin') >= 0) return GF_LATIN;
+            if (s.indexOf('emoji') >= 0) return FNT_EMO_SAMPLE;          // the emoji fonts' sample itself, never a second copy of it (t78: written once)
+            return s.map(x => GF_SUBSET_SAMPLE[x]).find(Boolean) || '';
+        }
         function gfCardText(e) { return gf.text.trim() ? gf.text : gfSample(e); }
         function gfDShown(e) { return gf.dText.trim() ? gf.dText : gfSample(e); }
-        // the search text of a family (its name and designers): letter case and accents aside
-        function gfFold(s) { return String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase(); }
+        // the search text of a family (its name and designers): letter case and accents aside, and the letters NFD does not take apart as their plain
+        // ones ("lukasz" finds Łukasz Dziedzic, "sorensen" Claus Eggers Sørensen, "griesshammer" Grießhammer)
+        const GF_FOLD = { 'ł': 'l', 'đ': 'd', 'ð': 'd', 'ø': 'o', 'ı': 'i', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'þ': 'th' };
+        function gfFold(s) { return String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[łđðøıßæœþ]/g, c => GF_FOLD[c]); }
         function gfHasList() { return !!(gf.data && gf.data.at > 0 && gf.data.families.length); }
         // older than 7 days now (GoogleFonts.isStale): gfontsCatalog's stale is Java's word when the list was read, which a page kept open for days outlives
         function gfOld() { const at = gf.data.at, now = Date.now(); return !!gf.data.stale || now < at || now - at > 7 * 864e5; }
@@ -46486,8 +46502,9 @@ Type any command above (e.g. pm list packages -d)</div>
             if (rec) { gf.faces.delete(key); gf.faces.set(key, rec); gfApplyEl(el); return; }
             if (gf.asked[key] === 'failed') { gfApplyEl(el); return; }
             if (gf.asked[key]) return;
-            const g = gf.by.get(gfKeyParts(key).f);
+            const p = gfKeyParts(key), g = gf.by.get(p.f);
             if (g && g.gone) { gf.asked[key] = 'failed'; gfApplyEl(el); return; }        // a family no longer on Google Fonts has no preview to ask for
+            if (!p.text.trim()) { gf.asked[key] = 'failed'; gfApplyEl(el); return; }     // nor one with no sample it could draw ('', gfSample)
             gf.asked[key] = true;
             gf.queue.push(Object.assign(gfKeyParts(key), { key: key, gen: gf.gen }));
         }
@@ -46524,6 +46541,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 list = list.filter(Boolean);
                 if (!here()) { list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} }); if (it.gen === gf.gen && gf.asked[it.key] === true) delete gf.asked[it.key]; return; }
                 if (!list.length) { gf.asked[it.key] = 'failed'; gfShowKey(it.key); return; }
+                if (gfDrawsNone(name, it.text)) { list.forEach(fc => { try { document.fonts.delete(fc); } catch (e) {} }); gf.asked[it.key] = 'failed'; gfShowKey(it.key); return; }
                 gf.faces.set(it.key, { name: name, list: list, style: gfDesc(faces[0]) });
                 gf.nFaces += list.length;
                 gfTrim(it.key);
@@ -46539,6 +46557,20 @@ Type any command above (e.g. pm list packages -d)</div>
             if (/^\d{1,4}( \d{1,4})?$/.test(String(x.weight || ''))) d.weight = String(x.weight);
             if (/^\d{1,3}(\.\d+)?%( \d{1,3}(\.\d+)?%)?$/.test(String(x.stretch || ''))) d.stretch = String(x.stretch);
             return d;
+        }
+        // a face that draws none of a Latin text's letters and digits is no preview: they would all come in the app's font, shown as the family's look
+        // (asked for Latin, Google answers an emoji or a Khmer family with a face that holds the space alone). Told on a canvas: a letter the face has is
+        // as wide whatever follows it in the font list; one it lacks takes the width of each fallback. A text with letters of another script, symbols or
+        // emoji is not judged: the fallbacks can all be one font for those, which tells nothing
+        function gfDrawsNone(name, text) {
+            const t = String(text || '');
+            if (/[^\p{Script=Latin}\p{Script=Inherited}\x20-\x7E\p{P}\p{Z}\p{Cc}\p{Cf}]/u.test(t)) return false;
+            const cs = [...new Set(Array.from(t).filter(c => /[\p{Script=Latin}0-9]/u.test(c)))].slice(0, 40);
+            let x = null;
+            try { x = (gf.cv || (gf.cv = document.createElement('canvas'))).getContext('2d'); } catch (e) {}
+            if (!cs.length || !x) return false;
+            const w = (c, fb) => { x.font = "100px '" + name + "', " + fb; return x.measureText(c).width; };
+            return !cs.some(c => { const a = w(c, 'serif'); return a === w(c, 'monospace') && a === w(c, 'sans-serif'); });
         }
         // past GF_FACES faces the oldest in use go (document.fonts.delete); an element in view that had one asks for it again
         function gfTrim(keep) {
@@ -46585,7 +46617,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function gfShow(f) {
             const e = gf.by.get(f);
             if (!e) return;
-            const sc = document.getElementById('gfScroll');
+            const sc = document.getElementById('gfScroll'), lv = document.getElementById('gfListView');
+            const fromList = gf.view === 'list' && !!lv && lv.contains(document.activeElement);
             if (gf.view === 'list' && sc) gf.listTop = sc.scrollTop;
             haptic();
             clearTimeout(gf.tt);                                             // the list's new text (gf.text) is drawn on Back; its timer must not drop this page's previews
@@ -46597,11 +46630,19 @@ Type any command above (e.g. pm list packages -d)</div>
             gfRenderDetail();
             if (sc) sc.scrollTop = 0;
             if (!e.gone) gfAskInfo(f, false);                                // Google Fonts no longer knows a gone family: its details would only say so
+            // the card that was tapped is hidden now: the focus goes to the Back arrow (as sheetFullOpen), never left on the page's body
+            const bk = document.getElementById('gfBack');
+            if (fromList && bk) try { bk.focus({ preventScroll: true }); } catch (err) {}
         }
         // the type tester's axis values to start with: each axis at its default
         function gfAxesStart(e) { const ax = {}; ((e && e.x) || []).forEach(a => { if (Array.isArray(a)) ax[String(a[0])] = +a[3]; }); return ax; }
         function gfBackToList() {
             if (gf.view !== 'detail') return;
+            // the focus on the page (its Back arrow, a field of it), on a question that closed (a gone family's Delete) or already lost to the body: it goes
+            // back to the family's card, so a keyboard, switch access or TalkBack goes on from where it was. Not to the search field: a field given the
+            // focus can raise the soft keyboard
+            const from = gf.fam, ae = document.activeElement, sh = document.getElementById('gfSheet'), lv = document.getElementById('gfListView');
+            const refocus = !ae || ae === document.body || (!!sh && sh.contains(ae) && !(lv && lv.contains(ae))) || !!(ae.closest && ae.closest('.modal-overlay:not(.show)'));
             clearTimeout(gf.td);                                             // the tester's new text must not drop the list's previews
             gfDetailForget();
             gf.view = 'list'; gf.fam = '';
@@ -46609,6 +46650,11 @@ Type any command above (e.g. pm list packages -d)</div>
             gfFilter(false);                                                 // a download or a Delete made on the page shows in the list (its badge, the Downloaded filter, the count)
             const sc = document.getElementById('gfScroll');
             if (sc) sc.scrollTop = gf.listTop;
+            if (!refocus) return;
+            // its card (dataset.f compared, a family's name is never put into a selector); one no longer listed (a gone family deleted, a newer list without
+            // it): the first card, or the empty state's Clear filters; else the bar's Close
+            const to = [...document.querySelectorAll('#gfList .gf-card')].find(c => c.dataset.f === from) || document.querySelector('#gfList button') || document.querySelector('#gfSheet .gf-bar .sheet-close');
+            if (to) try { to.focus({ preventScroll: true }); } catch (err) {}
         }
         // the family's page asks for nothing more once it is left
         function gfDetailForget() {
@@ -46862,11 +46908,15 @@ Type any command above (e.g. pm list packages -d)</div>
             fntRenderLib();
         }
         window.onGfSaved = function (family, json) {
-            const r = fntJson(json);
+            const r = fntJson(json), shown = gf.open && gf.view === 'detail' && gf.fam === family;
             gf.saving = '';
             if (r.ok) { showToast(r.name ? txF('Saved {0}', r.name) : txT('Saved')); delete gf.msg[family]; }
-            else if (r.code !== 'cancelled') gf.msg[family] = { text: fntErrText(r), err: true };
-            if (gf.open && gf.view === 'detail') gfRenderGet();
+            else if (r.code !== 'cancelled') {
+                gf.msg[family] = { text: fntErrText(r), err: true };
+                // its page, when it shows, says why under its buttons (#gfMsg); left or closed meanwhile, a failure is said as a finished save is (as onGfDone)
+                if (!shown) showToast(txF('{0} was not saved. {1}', family, gf.msg[family].text));
+            }
+            if (gf.open && gf.view === 'detail') gfRenderGet();               // any family's page: Save to phone waited for this one (gf.saving)
             fntRenderLib();
         };
         // no question first, as an emoji font's Delete: the family is downloaded again in a moment. One no longer on Google Fonts cannot be, so it asks

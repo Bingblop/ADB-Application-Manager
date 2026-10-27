@@ -6655,6 +6655,7 @@
 {"k":"{0} was cancelled","ctx":"built by the code of: sd done"},
 {"k":"{0} was not downloaded. {1}","ctx":"built by the code of: on gf done"},
 {"k":"{0} was not on the phone when it was to be put in place.","ctx":"built by the code of: top level"},
+{"k":"{0} was not saved. {1}","ctx":"built by the code of: on gf saved"},
 {"k":"{0} was saved, but it is not an app file (unknown). Choose another download in the browser.","ctx":"built by the code of: mp hbevent"},
 {"k":"{0} was saved, but it is not an app file ({1}). Choose another download in the browser.","ctx":"built by the code of: mp hbevent"},
 {"k":"{0} was saved, but it is not an app file.","ctx":"built by the code of: us browse done"},

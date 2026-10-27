@@ -24,10 +24,10 @@ if (fs.existsSync(tmp)) {
   check('texts of txT/txF with a ">" in them ("Settings > Battery") are listed', gt >= 2, String(gt));
   // v7.18.0: words the page says only through a literal txT call, which the extractor would otherwise take for data ("Added" for a hex colour, "ExtraLight"),
   // and the sentences of the Google Fonts fixes (a family no longer on Google Fonts and its Delete, a failed family save, the Ubuntu Font Licence, a download
-  // that failed while its page was not shown)
+  // or a save that failed while its page was not shown)
   const gfWords = ['x Added', 'x ExtraLight', 'x SemiBold', 'x ExtraBold', 'x No longer on Google Fonts', 'x This family is no longer on Google Fonts. Its downloaded files still work here.',
     'p The font family could not be saved: {0}', 'p {0} is under the Ubuntu Font Licence: a font made from this family must have another name, or "{1} derivative" and a name of your own.',
-    'p {0} was not downloaded. {1}', 'x This family is no longer on Google Fonts, so it cannot be downloaded again. Save to phone first to keep a copy.'].filter(k => !now.has(k));
+    'p {0} was not downloaded. {1}', 'p {0} was not saved. {1}', 'x This family is no longer on Google Fonts, so it cannot be downloaded again. Save to phone first to keep a copy.'].filter(k => !now.has(k));
   check('the Google Fonts weight names, the About label "Added" and the new Google Fonts sentences are listed', !gfWords.length, JSON.stringify(gfWords));
   fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
 }

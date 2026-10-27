@@ -10,7 +10,8 @@
 // tester line takes its direction from its text (dir="auto"); a style past the 18 the 'styles' preview carries says "No preview" instead of
 // showing another weight. Text typed in the list's preview field, or in the tester, just before the view changes does not drop the other view's
 // previews. A newer list in which a family's styles or axes changed drops the faces asked of the old one (and the answers still on their way) and asks
-// again, also while the family's page is shown.
+// again, also while the family's page is shown. With a keyboard (switch access, TalkBack), a card opens its page with the focus on the Back arrow, and
+// Back (the arrow, Android's, a tap outside) hands the focus to that card again, the list where it was.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the details and previews answer when the script says); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
@@ -349,6 +350,41 @@ const detail = (page) => page.evaluate((wsrc) => {
     check('17. Poppins\' previews on their way when a newer list made it variable: asked again', p0.pending === 'axes,card,styles' && p1.pending === 'axes,axes,card,card,styles,styles' && n(p2.asked, 'axes') === 2, JSON.stringify([p0.pending, p1.pending, p2.asked]));
     check('   the old answers dropped: the tester\'s face covers Weight 100-900, nine rows drawn, the face count right', p2.axes.join() === '100 900' && d.axes.join(' | ') === 'Weight:gfAx_wght:100:900:400:400'
       && d.styles.length === 9 && d.styles.every(r => !r.wait && /gfpv\d+/.test(r.ff)) && p2.counts[0] === p2.counts[1] && p2.counts[1] === p2.counts[2], JSON.stringify([p2.axes, d.axes, p2.counts]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // a keyboard (switch access, TalkBack): a card far down opens its page with the focus on the Back arrow, and every way back hands it to that card
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT } });
+    await page.focus('#gfMoreBtn'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
+    const f = await page.evaluate(() => document.querySelectorAll('#gfList .gf-card')[44].dataset.f), next = await page.evaluate(() => document.querySelectorAll('#gfList .gf-card')[45].dataset.f);
+    await page.evaluate((f) => [...document.querySelectorAll('#gfList .gf-card')].find(c => c.dataset.f === f).focus(), f);
+    await page.waitForTimeout(150);
+    const top0 = await page.evaluate(() => document.getElementById('gfScroll').scrollTop);
+    const at = () => page.evaluate(() => { const a = document.activeElement; return { id: a.id, tag: a.tagName, f: (a.dataset || {}).f || '', top: document.getElementById('gfScroll').scrollTop, view: gf.view }; });
+    await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+    let a = await at();
+    check('18. Enter on the 45th card (' + f + '): its page, at the top, the focus on the Back arrow', a.view === 'detail' && a.id === 'gfBack' && a.top === 0 && top0 > 1000, JSON.stringify([a, top0]));
+    await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+    a = await at();
+    check('   Enter on Back: the list where it was, the focus on that card', a.view === 'list' && a.tag === 'BUTTON' && a.f === f && Math.abs(a.top - top0) < 2, JSON.stringify([a, top0]));
+    await page.keyboard.press('Tab'); await page.waitForTimeout(100);
+    a = await at();
+    check('   one Tab on: the next card, not the bar', a.f === next, JSON.stringify([a, next]));
+    await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+    await page.focus('#gfDText');
+    await page.evaluate(() => backNavigate()); await page.waitForTimeout(250);
+    a = await at();
+    check('   from the tester field, Android Back: the focus on that card again', a.view === 'list' && a.f === f && Math.abs(a.top - top0) < 2, JSON.stringify(a));
+    await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+    await page.evaluate(() => { document.activeElement.blur(); gfBackStep(); }); await page.waitForTimeout(250);
+    a = await at();
+    check('   the focus lost on the page, then a tap outside: that card again', a.view === 'list' && a.f === f, JSON.stringify(a));
+    // opened while nothing in the list had the focus: none is moved
+    await page.evaluate(() => { document.activeElement.blur(); gfShow('Lato'); });
+    await page.waitForTimeout(200);
+    a = await at();
+    check('   opened while nothing in the list had the focus: the Back arrow is not given it', a.view === 'detail' && a.id !== 'gfBack', JSON.stringify(a));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

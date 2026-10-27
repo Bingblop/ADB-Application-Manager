@@ -66,4 +66,11 @@ ok      Heebo opened after the update: asked again, two sliders (Optical size, W
 ok   17. Poppins' previews on their way when a newer list made it variable: asked again
 ok      the old answers dropped: the tester's face covers Weight 100-900, nine rows drawn, the face count right
 ok      no page errors
+ok   18. Enter on the 45th card (Hind Siliguri): its page, at the top, the focus on the Back arrow
+ok      Enter on Back: the list where it was, the focus on that card
+ok      one Tab on: the next card, not the bar
+ok      from the tester field, Android Back: the focus on that card again
+ok      the focus lost on the page, then a tap outside: that card again
+ok      opened while nothing in the list had the focus: the Back arrow is not given it
+ok      no page errors
 all passed

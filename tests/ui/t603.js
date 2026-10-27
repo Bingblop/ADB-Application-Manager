@@ -4,8 +4,9 @@
 // old to draw them, and are not loaded. The iOS emoji: the pictures the app kept are asked at render (emojiSpecimenCached); without them a note
 // ("Reads about 0.3 MB of the iOS emoji file.", or "Read from the downloaded file." when the iOS emoji are on the phone) and "Show these emoji"
 // (emojiSpecimenFetch), "Reading the iOS emoji…" while it runs, then sixteen 28 px pictures (alt: the emoji), kept for the next render and on a
-// fresh page. A failure, and another window of the app reading them (busy), says why in the page's words with the button again. An older app
-// build shows no strip. The row's Download stays its first button; nothing is wider than the screen at 360 px. The licences travel with the
+// fresh page. A failure, and another window of the app reading them (busy), says why in the page's words with the button again; that sentence goes
+// once the iOS emoji are downloaded or deleted (the next read is another file). An older app build shows no strip. The row's Download stays its
+// first button; nothing is wider than the screen at 360 px. The licences travel with the
 // samples: assets/emoji/OFL.txt holds the full SIL Open Font License 1.1 with the copyright lines of noto.ttf and blobmoji.ttf (OFL condition 2),
 // assets/emoji/NOTICE.txt points to it, and the root NOTICE lists the four fonts with their licences (ASCII, the iOS emoji never shipped).
 // Mock bridge: lib/fontmaker_mock.js (opts.emoB64: assets/emoji/<id>.ttf; opts.gf: hold, specimenError, appleCached, otherWindow).
@@ -140,6 +141,28 @@ const calls = (page, re) => page.evaluate((src) => __fmk.calls.filter(c => new R
     await page.click('#fntEmoShow'); await page.waitForTimeout(200);
     s = await strips(page);
     check('   once it ended, the button reads them here', s.apple.pv && s.apple.pv.nImg === 16 && !s.apple.err && (await calls(page, '^emojiSpecimenFetch:')).length === 2, JSON.stringify(s.apple));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // an earlier read's failure does not stay under the iOS row once what is read changed: the iOS emoji downloaded (the file is read now), or deleted
+  // (the web again)
+  {
+    const { ctx, page, errors } = await open(b, { gf: { specimenError: { code: 'network', error: 'The download failed: Unable to resolve host' } } });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    let s = await strips(page);
+    check('7c. offline, Show: the network sentence; the iOS emoji not on the phone', /^The download failed/.test(s.apple.err) && s.apple.first === 'Download', JSON.stringify(s.apple));
+    await page.evaluate(() => { __fmk.specimenError = null; });
+    await page.click('#fntEmo_apple .op-mode-btn');
+    await page.waitForFunction(() => !fnt.dl.apple, null, { timeout: 5000 }); await page.waitForTimeout(150);
+    s = await strips(page);
+    check('   then downloaded: that sentence gone, "Read from the downloaded file." and the button', s.apple.first === 'Delete' && !s.apple.err && s.apple.say === 'Read from the downloaded file.' && s.apple.show === 'Show these emoji' && !s.apple.pv, JSON.stringify(s.apple));
+    await page.evaluate(() => { __fmk.specimenError = { code: 'unreadable', error: 'The app could not read that file: x' }; });
+    await page.click('#fntEmoShow'); await page.waitForTimeout(200);
+    const readErr = (await strips(page)).apple.err;
+    await page.evaluate(() => { __fmk.specimenError = null; });
+    await page.click('#fntEmo_apple .op-mode-btn'); await page.waitForTimeout(200);
+    s = await strips(page);
+    check('   the file not read, then Delete: that sentence gone, "Reads about 0.3 MB of the iOS emoji file."', !!readErr && s.apple.first === 'Download' && !s.apple.err && s.apple.say === 'Reads about 0.3 MB of the iOS emoji file.', JSON.stringify([readErr, s.apple]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

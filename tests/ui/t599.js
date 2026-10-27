@@ -4,17 +4,31 @@
 // those for a card a search took out of the list, are dropped (no face is made of them). The size slider sets the lines' size. A family that has no
 // preview (gf_no_preview) or whose preview failed shows its name in the app's font with "No preview", and is not asked again until the text changes.
 // The sample follows the family's main script (Japanese for Noto Sans JP, Arabic for Cairo) and a script the page has no sample of shows the family's
-// name (Sunflower, Hangul). Past 150 faces the oldest are taken out of document.fonts. Closing the sheet drops what is still on its way. A preview
-// that has not answered in 30 s stops counting toward the 6, and its answer is still drawn when it comes (on the cards and on a family's page).
-// Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: previews answer when the script says); the list: fixtures/gfonts-catalog.json.
+// name (Sunflower, Hangul). A family with no main script whose subsets leave Latin out takes their sample: the emoji fonts' sixteen emoji for Noto
+// Color Emoji (on its page too), Khmer for Chenla; one with none the page has (Noto Sans Lycian) shows "No preview" without asking; no subsets
+// listed (Playwrite) is Latin. A face that draws none of a Latin text's letters (Google's answer for an emoji family asked for letters) is no
+// preview, and is not kept: a card's sample, a family page's heading, a typed text. Past 150 faces the oldest are taken out of document.fonts.
+// Closing the sheet drops what is still on its way. A preview that has not answered in 30 s stops counting toward the 6, and its answer is still
+// drawn when it comes (on the cards and on a family's page).
+// Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: previews answer when the script says; opts.gf.emojiFace: faces of assets/emoji/twemoji.ttf);
+// the list: fixtures/gfonts-catalog.json, and three families of the live list with no main script (as fetched 2026-10-27).
 const fs = require('fs');
-const { chromium, PAGE, fixture } = require('./lib/pw');
+const path = require('path');
+const { chromium, PAGE, REPO, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok ? '' : ': ' + (extra === undefined ? ok : extra))); }
 const b64 = f => fs.readFileSync(fixture(f)).toString('base64');
 const FONTS = { vf: b64('Fixture-Boxes-VF.ttf'), regular: b64('Fixture-Boxes-Regular.ttf'), bold: b64('Fixture-Boxes-Bold.ttf') };
 const CAT = JSON.parse(fs.readFileSync(fixture('gfonts-catalog.json'), 'utf8'));
+// no main script (k ""): Khmer only, Lycian only, no subsets listed (compact entries of the live list, 2026-10-27)
+const NOSCRIPT = [
+  { f: 'Chenla', c: 'display', d: ['Danh Hong'], p: 1623, t: 66, a: '2011-03-02', m: '2022-09-21', s: ['khmer'], w: ['400'], x: [], k: '' },
+  { f: 'Noto Sans Lycian', c: 'sans', d: ['Google'], p: 1953, t: 242, a: '2020-11-19', m: '2025-09-08', s: ['lycian'], w: ['400'], x: [], k: '', noto: 1 },
+  { f: 'Playwrite US Trad', c: 'hand', d: ['TypeTogether', 'Veronika Burian', 'José Scaglione'], p: 1168, t: 1548, a: '2024-05-29', m: '2025-09-04', s: [], w: ['100', '200', '300', '400'], x: [['wght', 100, 400, 400]], k: '' },
+];
+const CAT2 = Object.assign({}, CAT, { families: CAT.families.concat(NOSCRIPT) });
+const EMOJI = fs.readFileSync(path.join(REPO, 'assets', 'emoji', 'twemoji.ttf')).toString('base64');   // sixteen emoji, no letter
 const LATIN = 'The quick brown fox jumps over the lazy dog.';
 
 async function open(b, opts, height) {
@@ -141,7 +155,7 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
   }
   // no preview, a failed one; the samples by script
   {
-    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, previewError: ['Inter'], previewFail: ['Open Sans'] } });
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT2, previewError: ['Inter'], previewFail: ['Open Sans'] } });
     await page.waitForTimeout(600);
     const inter = await card(page, 'Inter'), os = await card(page, 'Open Sans'), rob = await card(page, 'Roboto');
     check('9. no preview (gf_no_preview): the name in the app font and "No preview"', inter.failed && !inter.wait && inter.ff === '' && inter.text === 'InterNo preview' && inter.nopv === 'No preview', JSON.stringify(inter));
@@ -170,6 +184,32 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
     check('   Cairo (Arab): the Arabic sample, its direction from the text (dir="auto")', ar.text === 'أنا قادر على أكل الزجاج و هذا لا يؤلمني.' && ar.asked === ar.text && ar.dir === 'auto', JSON.stringify(ar));
     check('   Sunflower (Hang, no sample in the table): its own name', sun.text === 'Sunflower' && sun.asked === 'Sunflower', JSON.stringify(sun));
     check('   no script: Latin', mat.text === LATIN, JSON.stringify(mat));
+    // no main script, and subsets without Latin: what they name (the samples read from the page: no emoji written here)
+    const S = await page.evaluate(() => ({ emo: FNT_EMO_SAMPLE, khmr: GF_SAMPLES.Khmr }));
+    const emo = await samp('noto color emoji', 'Noto Color Emoji'), ch = await samp('chenla', 'Chenla'), ly = await samp('lycian', 'Noto Sans Lycian'), pw = await samp('playwrite', 'Playwrite US Trad');
+    check('   Noto Color Emoji (no script, emoji only): the emoji fonts\' sixteen, asked with them', emo.text === S.emo && emo.asked === S.emo, JSON.stringify(emo));
+    check('   Chenla (no script, khmer only): the Khmer sample, asked with it', ch.text === S.khmr && ch.asked === S.khmr, JSON.stringify(ch));
+    check('   Noto Sans Lycian (no script, lycian only: no sample): its name and "No preview", nothing asked', ly.text === 'Noto Sans LycianNo preview' && ly.asked === undefined, JSON.stringify(ly));
+    check('   Playwrite US Trad (no script, no subsets listed): Latin', pw.text === LATIN && pw.asked === LATIN, JSON.stringify(pw));
+    const unit = await page.evaluate(() => [gfSample({ f: 'Noto Serif Myanmar', k: '', s: ['myanmar'] }) === GF_SAMPLES.Mymr, gfSample({ f: 'Siemreap', k: '', s: ['khmer'] }) === GF_SAMPLES.Khmr,
+      gfSample({ f: 'Noto Emoji', k: '', s: ['emoji'] }) === FNT_EMO_SAMPLE, gfSample({ f: 'Libertinus Math', k: '', s: [] }) === GF_LATIN, gfSample({ f: 'Noto Sans Khmer', k: 'Khmr', s: ['khmer', 'latin'] }) === GF_SAMPLES.Khmr,
+      gfSample({ f: 'Lato', k: '', s: ['latin', 'latin-ext'] }) === GF_LATIN, gfKeyParts(gfKey('Noto Sans Lycian', 'card', '')).text === '']);
+    check('   gfSample: Noto Serif Myanmar Myanmar, Siemreap Khmer, Noto Emoji the emoji, Libertinus Math and Lato Latin, Noto Sans Khmer its script; an empty text keeps its key', unit.every(Boolean), JSON.stringify(unit));
+    // Noto Color Emoji's page: the tester starts with the emoji, and its line and style rows ask with them
+    await samp('noto color emoji', 'Noto Color Emoji');
+    await page.click('#gfList .gf-card[data-f="Noto Color Emoji"]');
+    await page.waitForTimeout(800);
+    const det = await page.evaluate(() => ({ t: document.getElementById('gfDText').value, asked: __fmk.gfPreviews.filter(p => p.family === 'Noto Color Emoji' && p.mode !== 'card').map(p => p.mode + '|' + p.text) }));
+    check('   its page: the tester starts with the sixteen, and its line and style row ask with them', det.t === S.emo && det.asked.sort().join(' / ') === 'axes|' + S.emo + ' / styles|' + S.emo, JSON.stringify(det));
+    await page.evaluate(() => gfBackToList());
+    await page.waitForTimeout(200);
+    // Noto Sans Lycian's page: nothing to draw, nothing asked but its heading
+    await samp('lycian', 'Noto Sans Lycian');
+    await page.click('#gfList .gf-card[data-f="Noto Sans Lycian"]');
+    await page.waitForTimeout(800);
+    const lyd = await page.evaluate(() => ({ t: document.getElementById('gfDText').value, line: document.getElementById('gfDLine').textContent, rows: [...document.querySelectorAll('#gfStyles .gf-style-pv')].map(x => x.textContent),
+      asked: __fmk.gfPreviews.filter(p => p.family === 'Noto Sans Lycian').map(p => p.mode + '|' + p.text) }));
+    check('   Noto Sans Lycian\'s page: the tester empty, its line and style row "No preview", only its heading asked', lyd.t === '' && lyd.line === 'No preview' && lyd.rows.join() === 'No preview' && lyd.asked.join() === 'card|Noto Sans Lycian', JSON.stringify(lyd));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -228,6 +268,45 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
     await page.waitForTimeout(250);
     d = await fam();
     check('   Back and Roboto again: drawn at once, nothing asked again', ok(d.head) && ok(d.line) && d.styles.every(ok) && (await page.evaluate(() => __fmk.gfPreviews.filter(p => p.family === 'Roboto').length)) === n0, JSON.stringify([d.head, d.line, n0]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // faces that draw the emoji and no letter (Google's answer for an emoji family asked for letters holds the space alone): a Latin text in them is no
+  // preview, an emoji text is drawn
+  {
+    const { ctx, page, errors } = await open(b, { b64: Object.assign({ emoji: EMOJI }, FONTS), gf: { catalog: CAT, emojiFace: ['Inter', 'Noto Color Emoji'] } });
+    await page.waitForTimeout(600);
+    const ES = await page.evaluate(() => FNT_EMO_SAMPLE);
+    const inter = await card(page, 'Inter'), rob = await card(page, 'Roboto');
+    const kept = await page.evaluate(() => ({ inter: [...gf.faces.keys()].filter(k => /^Inter\|/.test(k)), n: gf.nFaces, doc: [...document.fonts].filter(f => /^gfpv\d+$/.test(f.family)).length, asked: gf.asked['Inter|card|' + GF_LATIN] }));
+    check('13. Inter answered with a face that draws none of the Latin sample: its name in the app font and "No preview"', inter.failed && !inter.wait && inter.ff === '' && inter.text === 'InterNo preview' && inter.nopv === 'No preview', JSON.stringify(inter));
+    check('   that face is not kept (gf.faces, document.fonts), the others are drawn', !kept.inter.length && kept.doc === kept.n && kept.asked === 'failed' && !rob.failed && /gfpv/.test(rob.ff), JSON.stringify([kept, rob]));
+    const n0 = await page.evaluate(() => __fmk.gfPreviews.filter(p => p.family === 'Inter').length);
+    await page.evaluate(() => { document.getElementById('gfScroll').scrollTop = 4000; });
+    await page.waitForTimeout(400);
+    await page.evaluate(() => { document.getElementById('gfScroll').scrollTop = 0; });
+    await page.waitForTimeout(400);
+    check('   scrolled away and back: not asked again', (await page.evaluate(() => __fmk.gfPreviews.filter(p => p.family === 'Inter').length)) === n0 && n0 === 1, n0);
+    const search = async (q) => { await page.evaluate((q) => { const s = document.getElementById('gfSearch'); s.value = q; s.dispatchEvent(new Event('input', { bubbles: true })); }, q); await page.waitForTimeout(800); };
+    await search('noto color emoji');
+    const emo = await card(page, 'Noto Color Emoji');
+    check('   Noto Color Emoji, the same face: its sixteen emoji are drawn in it', !emo.failed && !emo.wait && /gfpv/.test(emo.ff) && emo.text === ES, JSON.stringify(emo));
+    // its page: the heading is its name in letters (no preview); the tester line and the style row, the emoji, are drawn
+    await page.click('#gfList .gf-card[data-f="Noto Color Emoji"]');
+    await page.waitForTimeout(800);
+    const one = (el) => ({ text: el.textContent, wait: el.classList.contains('gf-wait'), failed: el.classList.contains('gf-failed'), ff: el.style.fontFamily });
+    const fam = await page.evaluate((src) => { const one = new Function('el', 'return (' + src + ')(el)'); return { head: one(document.getElementById('gfDHead')), line: one(document.getElementById('gfDLine')),
+      rows: [...document.querySelectorAll('#gfStyles .gf-style-pv')].map(one) }; }, one.toString());
+    check('   its page: the heading (its name) "No preview" in the app font', fam.head.failed && fam.head.text === 'Noto Color EmojiNo preview' && fam.head.ff === '', JSON.stringify(fam.head));
+    check('   the tester line and its style row (the emoji) drawn in the face', !fam.line.failed && /gfpv/.test(fam.line.ff) && fam.line.text === ES && fam.rows.length === 1 && !fam.rows[0].failed && /gfpv/.test(fam.rows[0].ff) && fam.rows[0].text === ES, JSON.stringify([fam.line, fam.rows]));
+    await page.evaluate(() => gfBackToList());
+    await page.waitForTimeout(200);
+    // a typed Latin text: the emoji family has no preview of it, a Latin family draws it
+    await search('noto');
+    await typeText(page, 'Hello');
+    await page.waitForTimeout(600);
+    const emoH = await card(page, 'Noto Color Emoji'), sans = await card(page, 'Noto Sans');
+    check('   "Hello" typed: Noto Color Emoji "No preview", Noto Sans drawn', emoH.failed && emoH.text === 'Noto Color EmojiNo preview' && !sans.failed && /gfpv/.test(sans.ff) && sans.text === 'Hello', JSON.stringify([emoH, sans]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
