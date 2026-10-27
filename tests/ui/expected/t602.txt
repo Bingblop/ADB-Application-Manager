@@ -1,5 +1,6 @@
 ok   1. Roboto (variable, on the phone): Use in Make a font, nothing to choose
 ok      Use: the sheet closes; until the file is read the chooser gate is shut (Choose waits, no link)
+ok      no toast yet: it waits for the file to be read
 ok      reopened on Lato before the file is read: Use waits, saying the files are still being read (no file chooser is open)
 ok      gfontsUse: only the Regular, the upright variable file
 ok      a toast: "Roboto is in Make a font"; Make a font scrolled into view
@@ -31,14 +32,17 @@ ok      Bold "From a file" again: the note
 ok      a Bold chosen from a file (the same Lato-Bold.ttf, not from Google Fonts): no note
 ok      no page errors
 ok   12. the file changed on the phone: the Regular slot says why; the gate open again; nothing chosen
+ok      no "Roboto is in Make a font" toast: the slot's reason is the only word
 ok      the link is back
 ok      no page errors
 ok   13. a Regular and a Bold chosen from files first (InterVariable.ttf both): Build usable
 ok      Lato's Bold refused: the Bold slot says why and holds nothing (not the file chosen before); Build waits
+ok      no "Lato is in Make a font" toast (its Bold is not)
 ok      the Regular's names are Lato's, the empty Bold slot has none
 ok      no page errors
 ok   14. a Regular chosen from a file first (InterVariable.ttf): Build usable
 ok      Lato's Regular refused: the Regular slot says why and holds nothing; Build waits
+ok      no "Lato is in Make a font" toast (its Regular is not)
 ok      its Bold still comes (Lato-Bold.ttf); the empty Regular slot has no Reserved Font Names, the Bold has Lato's
 ok      "My Lato": the note, for the Bold
 ok      no page errors

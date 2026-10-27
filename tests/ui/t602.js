@@ -1,7 +1,8 @@
 // v7.18.0 Google Fonts, Use in Make a font: a downloaded variable family (Roboto) hands its upright variable file to the Regular slot (gfontsUse) and
 // Make a font offers its own Bold instance; a static family (Lato) offers a Regular and a Bold choice (by default its 400 and 700 upright files; a
 // family with one weight, 700 only, has no Bold by default; an italic-only one uses its italic) and hands both. The sheet closes, Make a font scrolls
-// into view and a toast says "Roboto is in Make a font"; until the files are read the file chooser gate is shut (Choose waits, no Google Fonts link).
+// into view and, once the files are read, a toast says "Roboto is in Make a font" (none when one is refused: its slot says why); until then the
+// file chooser gate is shut (Choose waits, no Google Fonts link).
 // The Name is filled in from the family unless it holds one of its Reserved Font Names (Lato): then it stays empty, and a Name that holds one (any
 // case) shows the licence note under the field while Build stays usable; a Regular chosen from a file clears the Regular's names, but a Bold from
 // the family keeps its own while Bold is that file (the note shows with Bold "From a file", not with None). The family's page says
@@ -65,7 +66,8 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     // the sheet opened again on another family before the file is read (the answer comes on a timer: one evaluate, so it cannot come in between)
     const now = await page.evaluate(() => {
       gfUse();
-      const o = { picking: fnt.picking, choose: document.getElementById('fntPick_regular').disabled, link: !!document.getElementById('gfFindLink'), sheet: document.getElementById('gfSheet').classList.contains('show') };
+      const o = { picking: fnt.picking, choose: document.getElementById('fntPick_regular').disabled, link: !!document.getElementById('gfFindLink'), sheet: document.getElementById('gfSheet').classList.contains('show'),
+        toast: document.getElementById('toast').classList.contains('show') ? document.getElementById('toastMsg').innerText : '' };
       gfOpen(); gfShow('Lato');
       const b = document.getElementById('gfUseBtn'), w = document.getElementById('gfUseWhy');
       o.again = { picking: fnt.picking, d: b.disabled, why: w.style.display !== 'none' ? w.textContent : '' };
@@ -73,6 +75,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
       return o;
     });
     check('   Use: the sheet closes; until the file is read the chooser gate is shut (Choose waits, no link)', now.picking === 'gf' && now.choose && !now.link && !now.sheet, JSON.stringify(now));
+    check('   no toast yet: it waits for the file to be read', !now.toast, now.toast);
     check('   reopened on Lato before the file is read: Use waits, saying the files are still being read (no file chooser is open)', now.again.picking === 'gf' && now.again.d
       && now.again.why === 'The files you chose are still being read. Wait a moment.', JSON.stringify(now.again));
     check('   gfontsUse: only the Regular, the upright variable file', (await useCalls(page)).join(',') === 'gfontsUse:Roboto:Roboto-VariableFont_wdth,wght.ttf:regular', (await useCalls(page)).join(','));
@@ -185,6 +188,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     await page.waitForTimeout(400);
     const m = await make(page);
     check('12. the file changed on the phone: the Regular slot says why; the gate open again; nothing chosen', m.regErr === "This family's files changed on the phone. Delete it and download it again." && m.regMsg === m.regErr && m.picking === '' && !m.reg, JSON.stringify(m));
+    check('   no "Roboto is in Make a font" toast: the slot\'s reason is the only word', m.toast !== 'Roboto is in Make a font', m.toast);
     check('   the link is back', m.link, JSON.stringify(m));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
@@ -205,6 +209,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     m = await make(page);
     let s2 = await slots(page);
     check('   Lato\'s Bold refused: the Bold slot says why and holds nothing (not the file chosen before); Build waits', m.reg === 'Lato-Regular.ttf' && m.bold === '' && m.boldMode === 'file' && s2.boldErr === CHANGED && !m.build, JSON.stringify([m, s2]));
+    check('   no "Lato is in Make a font" toast (its Bold is not)', m.toast !== 'Lato is in Make a font', m.toast);
     check('   the Regular\'s names are Lato\'s, the empty Bold slot has none', s2.reserved === 'Lato' && s2.family === 'Lato' && s2.boldReserved === '' && s2.boldFamily === '', JSON.stringify(s2));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
@@ -219,6 +224,7 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     m = await make(page);
     s2 = await slots(page);
     check('   Lato\'s Regular refused: the Regular slot says why and holds nothing; Build waits', m.reg === '' && m.regErr === CHANGED && m.regMsg === CHANGED && !m.build && m.picking === '', JSON.stringify(m));
+    check('   no "Lato is in Make a font" toast (its Regular is not)', m.toast !== 'Lato is in Make a font', m.toast);
     check('   its Bold still comes (Lato-Bold.ttf); the empty Regular slot has no Reserved Font Names, the Bold has Lato\'s', m.bold === 'Lato-Bold.ttf' && m.boldMode === 'file' && s2.reserved === '' && s2.family === ''
       && s2.boldReserved === 'Lato' && s2.boldFamily === 'Lato', JSON.stringify([m, s2]));
     await page.fill('#fntName', 'My Lato');

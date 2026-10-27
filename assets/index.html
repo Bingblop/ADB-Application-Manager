@@ -44945,7 +44945,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const gf = {
             data: null, by: new Map(), fold: new Map(), gone: [], refreshing: false, refreshErr: '',
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
-            dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null, getFocus: null,
+            dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null, useFam: '', useOk: false, getFocus: null,
             text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null, cv: null,
             open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, tq: 0, tt: 0, td: 0
         };
@@ -45515,9 +45515,18 @@ Type any command above (e.g. pm list packages -d)</div>
         window.onFontMakerPicked = function (slot, json) {
             if (!(slot in fnt.pick)) return;
             if (fnt.picking === slot) fnt.picking = '';
-            // a Google Fonts family's files (gfontsUse) answer here too: the gate stays shut until each slot asked for has answered
-            if (fnt.picking === 'gf' && gf.useWait) { delete gf.useWait[slot]; if (!Object.keys(gf.useWait).length) { fnt.picking = ''; gf.useWait = null; } }
             const r = fntJson(json);
+            // a Google Fonts family's files (gfontsUse) answer here too: the gate stays shut until each slot asked for has answered, and only then, when
+            // every one was read, a toast says the family is in Make a font (a refused one says why in its slot, and nothing more)
+            if (fnt.picking === 'gf' && gf.useWait) {
+                delete gf.useWait[slot];
+                if (!r.ok) gf.useOk = false;
+                if (!Object.keys(gf.useWait).length) {
+                    fnt.picking = ''; gf.useWait = null;
+                    if (gf.useOk && gf.useFam) showToast(txF('{0} is in Make a font', gf.useFam));
+                    gf.useFam = ''; gf.useOk = false;
+                }
+            }
             if (!r.ok) {                                                     // a file that cannot be used keeps the one chosen before
                 if (r.code !== 'cancelled') fnt.pickErr[slot] = fntErrText(r);
                 fntRenderMake();
@@ -46940,7 +46949,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (shown) { gfRenderGet(); if (!(gf.info[family] || {}).ok) gfRenderAbout(); }
             else if (gf.open && gf.view === 'list' && r.ok) gfFilter(false);         // finished while the list shows: its badge, the Downloaded filter, the count
         };
-        // the family's files into Make a font's slots, as a chosen file would come (onFontMakerPicked); the sheet closes on Make a font
+        // the family's files into Make a font's slots, as a chosen file would come (onFontMakerPicked); the sheet closes on Make a font, and a toast
+        // says the family is in it once its files are read
         function gfUse() {
             const f = gf.fam;
             if (!gf.dls[f] || gfUseBlocked()) { gfUseState(); return; }
@@ -46957,19 +46967,21 @@ Type any command above (e.g. pm list packages -d)</div>
             fnt.pick.regular = null; fnt.reserved = []; fnt.reservedFamily = ''; fnt.reservedUfl = false;
             // Bold: the chosen file; none (Android makes bold from the Regular, or Make a font offers a variable font's own Bold instance)
             fnt.boldMode = 'none'; fnt.boldTouched = false;
+            let boldOk = true;
             if (ch.bold) {
                 fnt.pick.bold = null; fnt.reservedBold = { names: [], family: '', ufl: false };
                 const r2 = fntCall('gfontsUse', [f, ch.bold, 'bold']);
                 fnt.boldMode = 'file'; fnt.boldTouched = true;
-                if (r2 && r2.ok) { wait.bold = true; fnt.pickErr.bold = ''; } else fnt.pickErr.bold = r2 ? fntErrText(r2, 'Could not start') : '';
+                boldOk = !!(r2 && r2.ok);
+                if (boldOk) { wait.bold = true; fnt.pickErr.bold = ''; } else fnt.pickErr.bold = r2 ? fntErrText(r2, 'Could not start') : '';
             }
             fnt.picking = 'gf';
             gf.useWait = wait;
+            gf.useFam = f; gf.useOk = boldOk;                                // the toast once the files are read (onFontMakerPicked)
             gfClose();
             fntRenderMake();
             const card = document.getElementById('fntMakeCard');
             if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
-            showToast(txF('{0} is in Make a font', f));
         }
         function gfSave() {
             const f = gf.fam;
