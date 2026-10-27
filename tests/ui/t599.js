@@ -12,7 +12,8 @@
 // preview, and is not kept: a card's sample, a family page's heading, a typed text. Past 150 faces the oldest are taken out of document.fonts
 // (a card that kept one of them for a new text then waits, blank, for its own).
 // Closing the sheet drops what is still on its way. A preview that has not answered in 30 s stops counting toward the 6, and its answer is still
-// drawn when it comes (on the cards and on a family's page).
+// drawn when it comes (on the cards and on a family's page). A line clips (for its ellipsis) .6em above and below itself, so the marks past it show
+// (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts), at every size and for "No preview" too, and the card and its line stay where they were.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: previews answer when the script says; opts.gf.emojiFace: faces of assets/emoji/twemoji.ttf);
 // the list: fixtures/gfonts-catalog.json, and three families of the live list with no main script (as fetched 2026-10-27).
 const fs = require('fs');
@@ -68,6 +69,26 @@ const drain = async (page) => { for (let i = 0; i < 40; i++) { const n = await p
 // text typed in the preview field (the cards wait 400 ms for it)
 const typeText = async (page, t, wait) => { await page.evaluate((t) => { const el = document.getElementById('gfText'); el.value = t; el.dispatchEvent(new Event('input', { bubbles: true })); }, t); if (wait !== false) await page.waitForTimeout(500); };
 const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = document.querySelector('#gfList .gf-card[data-f="' + f + '"]'), sc = document.getElementById('gfScroll'); sc.scrollTop += c.getBoundingClientRect().top - sc.getBoundingClientRect().top - 60; }, f); await page.waitForTimeout(250); };
+// a one-line preview clips at its padding box (overflow: hidden, for the ellipsis), above and below too: it needs room there for the marks past its
+// 1.35 line (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts; at least .55em), while the line and its card or row stay where they were without
+// that room (the rule before it, put on the element for a moment). What is wrong, by element; n: how many were looked at
+const room = (page, sel) => page.evaluate((sel) => {
+  const els = [...document.querySelectorAll(sel)], near = (a, b) => Math.abs(a - b) <= 0.5;
+  const bad = els.map(el => {
+    const box = el.closest('.gf-card, .gf-style'), cs = getComputedStyle(el), fs = parseFloat(cs.fontSize);
+    const at = () => { const c = getComputedStyle(el), r = el.getBoundingClientRect(), b = box.getBoundingClientRect(), pt = parseFloat(c.paddingTop), pb = parseFloat(c.paddingBottom); return { pt, pb, line: r.height - pt - pb, top: r.top + pt - b.top, h: b.height }; };
+    const now = at();
+    el.style.setProperty('padding-block', '0'); el.style.setProperty('margin-block', el.classList.contains('gf-pv') ? 'var(--space-2) 0' : '0');
+    const was = at();
+    el.style.removeProperty('padding-block'); el.style.removeProperty('margin-block');
+    const why = [];
+    if (cs.overflowY !== 'visible' && !(now.pt >= 0.55 * fs && now.pb >= 0.55 * fs)) why.push('room above/below ' + now.pt + '/' + now.pb + ' px at ' + fs + ' px');
+    if (!near(now.line, 1.35 * fs)) why.push('line ' + now.line + ' px, not ' + 1.35 * fs);
+    if (!near(now.h, was.h) || !near(now.top, was.top)) why.push('moved: height ' + now.h + ' (was ' + was.h + '), line at ' + now.top + ' (was ' + was.top + ')');
+    return why.length ? (box.dataset.f || box.querySelector('.gf-style-name').textContent) + ': ' + why.join('; ') : '';
+  }).filter(Boolean);
+  return { n: els.length, bad };
+}, sel);
 
 (async () => {
   const b = await chromium.launch();
@@ -85,6 +106,8 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
     check('2. answered: every card in view asked once, none past it, never more than 6 on their way', v.every(f => asked1.filter(x => x === f).length === 1) && asked1.every(f => v.includes(f)) && s.max <= 6, JSON.stringify([asked1, v, s.max]));
     const r1 = await card(page, 'Roboto');
     check('   the card is drawn in its face (gfpv<n>)', !r1.wait && /^['"]?gfpv\d+['"]?, /.test(r1.ff) && r1.text === LATIN, JSON.stringify(r1));
+    let rm = await room(page, '#gfList .gf-pv:not(.gf-wait)');
+    check('   the drawn lines (28 px) clip .55em or more above and below the line, so marks past it show; the cards and the lines where they were', rm.n >= 6 && !rm.bad.length, JSON.stringify(rm));
     check('   one face per card in document.fonts', s.docFaces === asked1.length && s.keys.length === asked1.length, JSON.stringify([s.docFaces, s.keys.length]));
     // scroll: the cards that come into view ask then
     const n1 = s.asked.length;
@@ -139,6 +162,12 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
     await page.waitForTimeout(100);
     const sz = await page.evaluate(() => ({ lab: document.getElementById('gfSizeV').textContent, v: document.getElementById('gfList').style.getPropertyValue('--gf-pv') }));
     check('6. the size slider: 50, every line at 50 px', sz.lab === '50' && sz.v.trim() === '50px' && (await card(page, 'Roboto')).size === '50px', JSON.stringify([sz, (await card(page, 'Roboto')).size]));
+    await page.evaluate(() => { const r = document.getElementById('gfSize'); r.value = '72'; r.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.waitForTimeout(100);
+    rm = await room(page, '#gfList .gf-pv:not(.gf-wait)');
+    check('   at 72 px the room above and below grows with the line; the cards and the lines where they were', rm.n >= 1 && !rm.bad.length, JSON.stringify(rm));
+    await page.evaluate(() => { const r = document.getElementById('gfSize'); r.value = '50'; r.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.waitForTimeout(100);
     // a card a search takes out of the list: its answer is dropped
     await typeText(page, 'Abc');
     const gone = await page.evaluate(() => __fmk.gfPending().map(p => p.family));
@@ -172,6 +201,8 @@ const scrollTo = async (page, f) => { await page.evaluate((f) => { const c = doc
     const inter = await card(page, 'Inter'), os = await card(page, 'Open Sans'), rob = await card(page, 'Roboto');
     check('9. no preview (gf_no_preview): the name in the app font and "No preview"', inter.failed && !inter.wait && inter.ff === '' && inter.text === 'InterNo preview' && inter.nopv === 'No preview', JSON.stringify(inter));
     check('   a failed preview (network): the same', os.failed && os.text === 'Open SansNo preview', JSON.stringify(os));
+    const rmF = await room(page, '#gfList .gf-card[data-f="Inter"] .gf-pv, #gfList .gf-card[data-f="Open Sans"] .gf-pv');
+    check('   the room above and below follows the name\'s smaller size; the cards and the lines where they were', rmF.n === 2 && !rmF.bad.length, JSON.stringify(rmF));
     check('   the others are drawn', !rob.failed && /gfpv/.test(rob.ff), JSON.stringify(rob));
     const n0 = await page.evaluate(() => __fmk.gfPreviews.filter(p => p.family === 'Inter').length);
     await page.evaluate(() => { document.getElementById('gfScroll').scrollTop = 4000; });

@@ -10,7 +10,8 @@
 // family say Make a font needs a plain text font. Back and a tap outside go back to the list where it was, then close; what the page asked for is
 // dropped once it is left. The axes are named as Make a font names them (its five in the page's words, the others as the list has them); the
 // tester line takes its direction from its text (dir="auto"); a style past the 18 the 'styles' preview carries, and one whose face its answer left
-// out (lost, too big, not a font), says "No preview" instead of showing another weight. In French the category menu says Display as the category, not
+// out (lost, too big, not a font), says "No preview" instead of showing another weight. A style row's line clips (for its ellipsis) .6em above and
+// below itself, so the marks past it show, and the row stays as it was. In French the category menu says Display as the category, not
 // as the screen setting (Affichage). Text typed in the list's preview field, or in the tester, just before the view changes does not drop the other view's
 // previews. A newer list in which a family's styles or axes changed drops the faces asked of the old one (and the answers still on their way) and asks
 // again, also while the family's page is shown. With a keyboard (switch access, TalkBack), a card opens its page with the focus on the Back arrow, and
@@ -44,6 +45,26 @@ const drain = async (page) => { for (let i = 0; i < 40; i++) { const n = await p
 const showFam = async (page, f, q) => { await page.evaluate((q) => { const s = document.getElementById('gfSearch'); s.value = q; s.dispatchEvent(new Event('input', { bubbles: true })); }, q || f); await page.waitForTimeout(250); await page.click('#gfList .gf-card[data-f="' + f + '"]'); await page.waitForTimeout(200); };
 // a block's words as they read: its pieces one space apart (what is hidden left out)
 const words = (el) => { const out = []; const walk = (n) => { if (n.nodeType === 3) { out.push(n.textContent); return; } if (n.nodeType !== 1 || getComputedStyle(n).display === 'none') return; out.push(' '); n.childNodes.forEach(walk); out.push(' '); }; walk(el); return out.join('').replace(/\s+/g, ' ').trim(); };
+// a style row's line clips at its padding box (overflow: hidden, for the ellipsis), above and below too: it needs room there for the marks past its
+// 1.35 line (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts; at least .55em), while the line and its row stay where they were without that
+// room (the rule before it, put on the element for a moment). What is wrong, by row; n: how many were looked at
+const room = (page, sel) => page.evaluate((sel) => {
+  const els = [...document.querySelectorAll(sel)], near = (a, b) => Math.abs(a - b) <= 0.5;
+  const bad = els.map(el => {
+    const box = el.closest('.gf-style'), cs = getComputedStyle(el), fs = parseFloat(cs.fontSize);
+    const at = () => { const c = getComputedStyle(el), r = el.getBoundingClientRect(), b = box.getBoundingClientRect(), pt = parseFloat(c.paddingTop), pb = parseFloat(c.paddingBottom); return { pt, pb, line: r.height - pt - pb, top: r.top + pt - b.top, h: b.height }; };
+    const now = at();
+    el.style.setProperty('padding-block', '0'); el.style.setProperty('margin-block', '0');
+    const was = at();
+    el.style.removeProperty('padding-block'); el.style.removeProperty('margin-block');
+    const why = [];
+    if (cs.overflowY !== 'visible' && !(now.pt >= 0.55 * fs && now.pb >= 0.55 * fs)) why.push('room above/below ' + now.pt + '/' + now.pb + ' px at ' + fs + ' px');
+    if (!near(now.line, 1.35 * fs)) why.push('line ' + now.line + ' px, not ' + 1.35 * fs);
+    if (!near(now.h, was.h) || !near(now.top, was.top)) why.push('moved: height ' + now.h + ' (was ' + was.h + '), line at ' + now.top + ' (was ' + was.top + ')');
+    return why.length ? box.querySelector('.gf-style-name').textContent + ': ' + why.join('; ') : '';
+  }).filter(Boolean);
+  return { n: els.length, bad };
+}, sel);
 const detail = (page) => page.evaluate((wsrc) => {
   const words = eval(wsrc);
   const t = id => { const e = document.getElementById(id); return e ? e.textContent.replace(/\s+/g, ' ').trim() : null; };
@@ -86,6 +107,8 @@ const detail = (page) => page.evaluate((wsrc) => {
     check('2. drawn: the head and the tester in their faces, every style row too', !d.head.wait && /gfpv\d+/.test(d.head.ff) && !d.line.wait && /gfpv\d+/.test(d.line.ff) && d.styles.every(s => !s.wait && /gfpv\d+/.test(s.ff)), JSON.stringify([d.head, d.line, d.styles[0]]));
     check('   the head is big', d.head.size >= 28, d.head.size);
     check('   the styles preview: one face per style (10)', styleFaces === 10, styleFaces);
+    const rm = await room(page, '#gfStyles .gf-style-pv');
+    check('   each style row clips .55em or more above and below its line, so marks past it show; the rows and their lines where they were', rm.n === 10 && !rm.bad.length, JSON.stringify(rm));
     // the details come
     await page.evaluate(() => __fmk.gfStepAll());
     await page.waitForTimeout(200);

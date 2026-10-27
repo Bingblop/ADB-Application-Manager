@@ -8034,7 +8034,10 @@
                 .gf-card > .gf-badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }      /* over .gf-card > span's block, so the gap applies */
                 .gf-badges .uad-badge { margin: 0; color: var(--accent); }
                 .gf-badges .uad-badge.is-dl { color: var(--status-running); }
-                .gf-pv { margin-top: var(--space-2); font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                /* the clip the ellipsis needs (overflow: hidden) is vertical too: .6em of room above and below the 1.35 line keeps the marks that reach past
+                   it (Tibetan vowel signs, Nastaliq's dots, Khmer subscripts, a script face's swashes), and the margins take that room back, so nothing moves.
+                   In em, the element's own size: it cancels at every size the slider gives (14-72) and for .gf-failed too (.5em still cut Nastaliq's dots) */
+                .gf-pv { margin-block: calc(var(--space-2) - .6em) -.6em; padding-block: .6em; font-size: var(--gf-pv, 28px); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 .gf-pv.gf-wait { visibility: hidden; }
                 .gf-pv.gf-failed { font-size: var(--fs-item); font-weight: var(--fw-bold); color: var(--text-muted); }
                 .gf-nopv { font-size: var(--fs-pill); font-weight: var(--fw-medium); margin-inline-start: var(--space-2); }
@@ -8049,7 +8052,7 @@
                 .gf-style { padding: var(--space-3) 0; border-top: 1px solid var(--fill-2); }
                 .gf-style:first-child { border-top: 0; padding-top: 0; }
                 .gf-style-name { font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); }
-                .gf-style-pv { font-size: 24px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .gf-style-pv { padding-block: .6em; margin-block: -.6em; font-size: 24px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }      /* room for the marks past the line, as .gf-pv */
                 .gf-style-pv.gf-wait { visibility: hidden; }
                 #gfGet .fnt-field { margin-top: var(--space-3); }
                 #gfGet .mode-btn-row { margin-top: var(--space-3); }

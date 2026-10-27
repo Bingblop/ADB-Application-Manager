@@ -9,6 +9,7 @@ ok      asked: the head (card, the name), the tester (axes), the styles
 ok   2. drawn: the head and the tester in their faces, every style row too
 ok      the head is big
 ok      the styles preview: one face per style (10)
+ok      each style row clips .55em or more above and below its line, so marks past it show; the rows and their lines where they were
 ok   3. About: the description in three lines with More
 ok      the licence: "SIL Open Font License 1.1", its text under a closed <details>
 ok      designer, added, updated
