@@ -479,6 +479,10 @@ const wide = (page) => page.evaluate(() => {
     // a network failure always carries its reason (FNT_SAID 'network'): "The download failed (...). Check ..."; the plain FNT_ERR sentence is never shown
     const net = ['fonts-google', 'fonts-emoji'].map(sec);
     check('   the fonts pages quote the network failure with its reason in brackets, as the page shows it', net.every(t => t.includes('"The download failed (...). Check the connection and try again."') && !/The download failed\. Check the connection/.test(t)), JSON.stringify(net.map(t => (/[^.]*The download failed[^"]*"/.exec(t) || [''])[0])));
+    // Apple's art reaches the phone two ways (fmkSpecimenJob keeps the sixteen pictures read by Show these emoji): the iOS emoji warning names both
+    const warn = (/Careful\.[^]*?Do not pass the file on\./.exec(sec('fonts-emoji')) || [''])[0];
+    check('   the iOS emoji warning names Show these emoji as well as Download, and does not say only Download fetches Apple\'s art', /Show these emoji/.test(warn) && /Download/.test(warn)
+      && /until you clear its storage/.test(warn) && !/only when you tap Download/.test(warn), warn);
   }
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');
