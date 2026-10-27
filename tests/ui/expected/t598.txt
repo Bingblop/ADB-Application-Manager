@@ -24,6 +24,10 @@ ok      a new sort starts again at 30 cards
 ok   6. the search waits (120 ms) before the list changes
 ok      "ROBOTO slab": every word, any case: Roboto Slab, "1 of 64"
 ok      "adele" finds Buda by its designer Adèle Antignac (accents aside)
+ok      "lukasz dziedzic" finds Lato by Łukasz Dziedzic (ł as l)
+ok      "sorensen" finds Playfair Display by Claus Eggers Sørensen (ø as o)
+ok      "ŁUKASZ" still finds Lato
+ok      the other letters NFD leaves whole: ß ss, æ ae, ı i, ẞ ss, œ oe, þ th, đ d
 ok      "christian robertson": his four families
 ok   7. Monospace: four families
 ok      languages: All languages first, then the subsets by name

@@ -46197,8 +46197,10 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function gfCardText(e) { return gf.text.trim() ? gf.text : gfSample(e); }
         function gfDShown(e) { return gf.dText.trim() ? gf.dText : gfSample(e); }
-        // the search text of a family (its name and designers): letter case and accents aside
-        function gfFold(s) { return String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase(); }
+        // the search text of a family (its name and designers): letter case and accents aside, and the letters NFD does not take apart as their plain
+        // ones ("lukasz" finds Łukasz Dziedzic, "sorensen" Claus Eggers Sørensen, "griesshammer" Grießhammer)
+        const GF_FOLD = { 'ł': 'l', 'đ': 'd', 'ð': 'd', 'ø': 'o', 'ı': 'i', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'þ': 'th' };
+        function gfFold(s) { return String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[łđðøıßæœþ]/g, c => GF_FOLD[c]); }
         function gfHasList() { return !!(gf.data && gf.data.at > 0 && gf.data.families.length); }
         // older than 7 days now (GoogleFonts.isStale): gfontsCatalog's stale is Java's word when the list was read, which a page kept open for days outlives
         function gfOld() { const at = gf.data.at, now = Date.now(); return !!gf.data.stale || now < at || now - at > 7 * 864e5; }

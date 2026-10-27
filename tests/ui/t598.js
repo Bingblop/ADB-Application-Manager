@@ -1,9 +1,9 @@
 // v7.18.0 Google Fonts, the sheet: the Custom Fonts tab's top card has a search-field button "Search Google Fonts" with the count of families, and
 // Make a font's empty Regular slot a "Find one on Google Fonts" link; both open the sheet #gfSheet. Its bar has the title, Close and the search; the
 // list view has the category, language and sort selects, the Variable and Downloaded chips (aria-pressed), the status line ("List updated
-// Oct 1, 2026 · Refresh"), the count, 30 cards and "Show N more · M left", and the credit. The search ignores case and accents, looks at the name and
-// the designers, every word must match, and waits 120 ms; the sorts are Popular, Trending, Newest and Name (A–Z); an unknown subset is shown
-// title-cased ("Canadian Aboriginal"); no match shows an empty state whose "Clear filters" brings every family back. No list on the phone: the sheet
+// Oct 1, 2026 · Refresh"), the count, 30 cards and "Show N more · M left", and the credit. The search ignores case and accents (ł, ø, ß and the other
+// letters NFD leaves whole as their plain ones: "lukasz" finds Łukasz Dziedzic), looks at the name and the designers, every word must match, and
+// waits 120 ms; the sorts are Popular, Trending, Newest and Name (A–Z); an unknown subset is shown title-cased ("Canadian Aboriginal"); no match shows an empty state whose "Clear filters" brings every family back. No list on the phone: the sheet
 // asks for one (gfontsRefresh), says it is getting it, then shows it; a failure, and another window of the app getting it (busy), is an empty
 // state with Retry. A stale list stays in use while it updates, and a failed update says why beside Retry. A list that grows older than 7 days
 // while the page stays open is updated the next time the sheet opens; one another window of the app got meanwhile (gfontsRefresh answers fresh) is
@@ -125,6 +125,17 @@ const wide = (page) => page.evaluate(() => {
     await search(page, 'adele');
     s = await sheet(page);
     check('   "adele" finds Buda by its designer Adèle Antignac (accents aside)', s.cards.join(',') === 'Buda', s.cards.join(','));
+    await search(page, 'lukasz dziedzic');
+    s = await sheet(page);
+    check('   "lukasz dziedzic" finds Lato by Łukasz Dziedzic (ł as l)', s.cards.join(',') === 'Lato', s.cards.join(','));
+    await search(page, 'sorensen');
+    s = await sheet(page);
+    check('   "sorensen" finds Playfair Display by Claus Eggers Sørensen (ø as o)', s.cards.join(',') === 'Playfair Display', s.cards.join(','));
+    await search(page, 'ŁUKASZ');
+    s = await sheet(page);
+    check('   "ŁUKASZ" still finds Lato', s.cards.join(',') === 'Lato', s.cards.join(','));
+    const fold = await page.evaluate(() => ['Grießhammer', 'Bæck', 'Duru Sans ı', 'ẞ Œuvre Þorn Đorđe'].map(gfFold).join('|'));
+    check('   the other letters NFD leaves whole: ß ss, æ ae, ı i, ẞ ss, œ oe, þ th, đ d', fold === 'griesshammer|baeck|duru sans i|ss oeuvre thorn dorde', fold);
     await search(page, 'christian robertson');
     s = await sheet(page);
     check('   "christian robertson": his four families', s.cards.join(',') === 'Roboto,Roboto Mono,Roboto Condensed,Roboto Slab' && s.count === '4 of 64', JSON.stringify([s.cards, s.count]));
