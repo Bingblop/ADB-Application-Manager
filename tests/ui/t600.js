@@ -240,6 +240,20 @@ const detail = (page) => page.evaluate((wsrc) => {
     d = await detail(page);
     const keep = await page.evaluate(() => [...document.querySelectorAll('#gfDAxes label')].map(l => l.textContent + (l.querySelector('[translate="no"]') ? '(data)' : '')).join('|'));
     check('   Material Symbols in German: "Optische Größe, Stärke", then Google\'s Fill and Grade, kept as data', /Optische Größe, Stärke, Fill, Grade$/.test(d.meta) && keep === 'Optische Größe|Stärke|Fill(data)|Grade(data)', JSON.stringify([d.meta, keep]));
+    // French: the font category is "Display" there, the screen setting "Affichage" (the same English key): the menu's option is translate="no" and keeps
+    // the category's word, as the cards' meta line says it
+    await page.evaluate(() => I18N.set('fr'));
+    await page.waitForTimeout(900);
+    await page.evaluate(() => { gfBackToList(); const s = document.getElementById('gfSearch'); s.value = ''; s.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.waitForTimeout(300);
+    await page.selectOption('#gfCat', 'display');
+    await page.waitForTimeout(300);
+    const fr = await page.evaluate(() => ({ opt: document.querySelector('#gfCat option[value="display"]').textContent, cat: gfCatName('display'), screen: txT('Display'),
+      meta: (document.querySelector('#gfList .gf-card .gf-meta') || {}).textContent || '' }));
+    check('   in French: the category menu says "' + fr.cat + '" (the category), not "' + fr.screen + '" (the screen setting), as the cards do', fr.opt === fr.cat && fr.opt !== fr.screen && fr.meta.indexOf(fr.opt + ' · ') === 0, JSON.stringify(fr));
+    await page.selectOption('#gfCat', '');
+    await page.evaluate(() => gfShow('Material Symbols Outlined'));
+    await page.waitForTimeout(200);
     await page.evaluate(() => I18N.set('en'));
     await page.waitForTimeout(900);
     d = await detail(page);

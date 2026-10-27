@@ -74,3 +74,4 @@ ok      the focus lost on the page, then a tap outside: that card again
 ok      opened while nothing in the list had the focus: the Back arrow is not given it
 ok      no page errors
 all passed
+ok      in French: the category menu says "Display" (the category), not "Affichage" (the screen setting), as the cards do

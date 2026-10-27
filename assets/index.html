@@ -8164,7 +8164,7 @@
                             <option value="">All categories</option>
                             <option value="sans">Sans serif</option>
                             <option value="serif">Serif</option>
-                            <option value="display">Display</option>
+                            <option value="display" translate="no">Display</option>
                             <option value="hand">Handwriting</option>
                             <option value="mono">Monospace</option>
                         </select>
@@ -46378,7 +46378,9 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- the list: search, filters, sort, 30 cards at a time ----
         function gfBuildLangs() {
             const sel = document.getElementById('gfLang'), dOpt = document.querySelector('#gfCat option[value="display"]');
-            if (dOpt) dOpt.textContent = gfCatName('display');               // the markup's English "Display" would be translated as the screen setting
+            // the category's own word, here only: the option is translate="no", since its English "Display" is also the screen setting's key, which the
+            // page's walker would put over this text (fr "Affichage", id "Layar")
+            if (dOpt) dOpt.textContent = gfCatName('display');
             if (!sel) return;
             const keep = sel.value, have = new Set();
             ((gf.data && gf.data.families) || []).forEach(e => (Array.isArray(e.s) ? e.s : []).forEach(s => { if (typeof s === 'string' && s) have.add(s); }));
