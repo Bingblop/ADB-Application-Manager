@@ -29,6 +29,9 @@ ok   7c. offline, Show: the network sentence; the iOS emoji not on the phone
 ok      then downloaded: that sentence gone, "Read from the downloaded file." and the button
 ok      the file not read, then Delete: that sentence gone, "Reads about 0.3 MB of the iOS emoji file."
 ok      no page errors
+ok   7d. the other window's read was kept, this phone is offline: Show these emoji shows the kept pictures, no error
+ok      answered from the kept pictures, not read again
+ok      no page errors
 ok   8. Chrome 97: Noto and Blobmoji (COLRv1) say the WebView is too old, and are not read
 ok      Twemoji (COLRv0) is drawn
 ok   9. no font for OpenMoji: no strip, nothing said

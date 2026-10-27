@@ -33,7 +33,8 @@
 //   a cut-down emoji font, as Google's answer for an emoji family asked for letters holds no letter either); infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError:
 //   { family: { code, error } }; useError: { code, error, slot? } gfontsUse answers with (only that slot's when slot is set); saveError: { code, error }
 //   the save ends with ('cancelled' too); specimenError: { code, error } the iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept
-//   from an earlier read; hold: the preview answers wait for __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh,
+//   from an earlier read (also __fmk.appleCached: emojiSpecimenCached gives them, and emojiSpecimenFetch's job answers with them, from 'cache', before
+//   specimenError); hold: the preview answers wait for __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh,
 //   details, download, iOS read) for __fmk.gfStep(n) / gfStepAll(); otherWindow: another window of the app is getting the list, a family's details
 //   and the iOS emoji (also __fmk.gfOtherWindow): gfontsRefresh, gfontsInfo and emojiSpecimenFetch answer busy, as the bridge does when the running
 //   job is not this window's (a second ask of this window joins its own); __fmk.gfOtherWindowDone(): that window's refresh ended (the list on the phone
@@ -558,6 +559,8 @@ exports.initScript = function (opts) {
       const j = appleJob = job();
       gfRun([() => {
         appleJob = null;
+        // as fmkSpecimenJob: pictures kept (specimen/apple.json, maybe by another window since the page asked) are the answer, nothing is read
+        if (st.appleCached) { window.onEmojiSpecimen('apple', J({ ok: true, images: APPLE, from: 'cache' })); return; }
         if (st.specimenError) { window.onEmojiSpecimen('apple', J(Object.assign({ ok: false }, st.specimenError))); return; }
         st.appleCached = true;
         window.onEmojiSpecimen('apple', J({ ok: true, images: APPLE, from: downloaded.has('apple') ? 'file' : 'web' }));

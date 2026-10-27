@@ -1102,6 +1102,8 @@ public class FontLibraryTest {
         is("…and a save of a font being made again", export.contains("fmkJobs.inUse(\"make:\" + id)"), true);
         is("the open save screen's font is kept when Android ends the process", body(ma, "protected void onSaveInstanceState(").contains("outState.putString(STATE_FMK_EXPORT, fmkExportId)")
                 && body(ma, "protected void onCreate(").contains("savedInstanceState.getString(STATE_FMK_EXPORT)"), true);
+        is("…and its answer waits for the page of a window Android made again (R4-03)", body(ma, "private void fmkExported(").contains("notifyJsWhenReady(\"window.onFontMakerExported && window.onFontMakerExported(")
+                && !body(ma, "private void fmkExported(").contains("notifyJs(\""), true);
         String exResult = body(ma, "private void fmkExportResult(");
         is("a save with no font waiting deletes the empty file", exResult.indexOf("if (uri != null) fmkDropDocument(uri)") > 0
                 && exResult.indexOf("if (uri != null) fmkDropDocument(uri)") < exResult.indexOf("fontExec.submit("), true);
@@ -1165,12 +1167,27 @@ public class FontLibraryTest {
                 && body(ma, "protected void onSaveInstanceState(").contains("outState.putString(STATE_GF_SAVE, gfSaveFamily)")
                 && body(ma, "protected void onCreate(").contains("savedInstanceState.getString(STATE_GF_SAVE)")
                 && body(ma, "protected void onCreate(").contains("if (GoogleFonts.isFamily(gfSave))"), true);
+        // …and its answer, which comes (onActivityResult) before that window's page has loaded, waits for onPageFinished: nothing sends it
+        // again (R4-03). pageReady is read on the UI thread, after the check that the window is still there
+        String whenReady = body(ma, "private void notifyJsWhenReady("), runAt = "public void run()", gone = "if (activityDestroyed || webView == null) return;",
+                wait = "if (!pageReady) { pendingPageScripts.add(script); return; }";
+        is("a family save's answer that comes before the page has loaded waits for it", body(ma, "private void gfSaved(").contains("notifyJsWhenReady(\"window.onGfSaved && window.onGfSaved(")
+                && !body(ma, "private void gfSaved(").contains("notifyJs(\"") && whenReady.indexOf(runAt) > 0 && whenReady.indexOf(gone) > whenReady.indexOf(runAt)
+                && whenReady.indexOf(wait) > whenReady.indexOf(gone) && whenReady.indexOf("webView.evaluateJavascript(script, null);") > whenReady.indexOf(wait), true);
+        String waited = body(ma, "private void deliverPendingPageScripts(");
+        is("…and is run, in order, once the page has finished loading", ma.contains("deliverPendingQuickOpen();\n                deliverPendingPageScripts();")
+                && waited.contains("if (!pageReady || pendingPageScripts.isEmpty()) return;") && waited.indexOf("pendingPageScripts.clear();") < waited.indexOf("for (String script : scripts) notifyJs(script);")
+                && ma.contains("private final List<String> pendingPageScripts = new ArrayList<String>();"), true);
         // every Google Fonts address, at every hop, is a Google Fonts one; css2 with Chrome's user agent, the rest with the app's
         String open = body(ma, "private java.net.HttpURLConnection gfOpen(");
         is("each hop of a Google Fonts request is checked before it connects", open.contains("if (!GoogleFonts.allowed(url))")
                 && open.contains("GoogleFonts.allowed(hop.getURL().toString())") && open.contains("new HttpSafe.Hops()"), true);
         is("…css2 with Chrome's user agent, every other request with the app's", open.contains("chrome ? GoogleFonts.CHROME_UA : GoogleFonts.APP_UA"), true);
         is("…and a job's hops can be disconnected by Cancel", open.contains("fmkConns.put(job.id, hop)") && open.indexOf("fmkConns.put(job.id, hop)") < open.indexOf("if (gfStopped(job))"), true);
+        // a download's font file asks for gzip itself: Android then keeps its Content-Length (it drops that header from an answer it unzips for
+        // the caller), so the progress has a total (R4-02); every other request is as before
+        is("only a download's font file asks for gzip itself", open.contains("if (gzip) hdr.put(\"Accept-Encoding\", \"gzip\");")
+                && body(ma, "private GfAnswer gfGet(").contains("gfOpen(url, chrome, job, hops, false)"), true);
         int chrome = 0, requests = 0;
         for (String line : ma.split("\n")) {
             if (!line.contains("gfGet(") && !line.contains("gfOpen(")) continue;
@@ -1187,6 +1204,10 @@ public class FontLibraryTest {
         is("…each file capped, hashed, flushed and read by FontInspect", fetch.contains("if (n > cap) throw new GoogleFonts.GfException(\"gf_too_big\")")
                 && fetch.contains("md.update(buf, 0, r)") && fetch.contains("out.getFD().sync()") && fetch.contains("throw new GoogleFonts.GfException(\"gf_not_a_font\")"), true);
         is("…the family capped at 160 MB", dl.contains("Math.min(GoogleFonts.MAX_FILE, left)"), true);
+        is("…each file asked for as gzip and unzipped here, its progress the bytes on the network against their Content-Length", fetch.contains("gfOpen(ref.url, false, job, hops, true)")
+                && fetch.contains("boolean gz = enc.equals(\"gzip\");") && fetch.contains("if (!gz && !enc.isEmpty() && !enc.equals(\"identity\")) throw new GoogleFonts.GfException(\"gf_bad_answer\");")
+                && fetch.contains("if (gz) in = new java.util.zip.GZIPInputStream(wire, 65536);") && fetch.contains("gfProgress(family, index, count, wire.count(), total)")
+                && fetch.contains("if (!gz && total > cap) throw new GoogleFonts.GfException(\"gf_too_big\")") && !fetch.contains("gfProgress(family, index, count, n, total)"), true);
         // a failure on the phone's own storage (the .part folder not made, the rename refused) is a full phone or its own sentence, never "check the
         // connection" (R2-03): no plain IOException of the job reaches downloadError, and gfError reads GfLocal before it
         String ge = body(ma, "private JSONObject gfError(");
@@ -1238,6 +1259,12 @@ public class FontLibraryTest {
         String spec = body(ma, "private void fmkSpecimenJob(");
         is("the iOS sample reads the kept file, else ranges", spec.contains("FontLibrary.keptBuild(item, kept) == null") && spec.contains("new FmkRanges(job, item)")
                 && spec.contains("EmojiSpecimen.cacheJson(images, item.sha256)"), true);
+        // …once: a sample kept in specimen/apple.json is the answer before anything is read, also when it was kept after this page asked
+        // emojiSpecimenCached (another window's read), so a phone offline by then still shows it (R4-12)
+        int cached = spec.indexOf("List<EmojiSpecimen.Image> images = EmojiSpecimen.readCache(cache, item.sha256);"), kept = spec.indexOf("if (images != null && !images.isEmpty()) {");
+        is("…a kept sample is the answer, before the file or the ranges are read", cached > 0 && kept > cached && kept < spec.indexOf("new FmkRanges(job, item)")
+                && kept < spec.indexOf("new java.io.RandomAccessFile(kept, \"r\")") && spec.contains("File kept = d.emojiFile(item.id), cache = new File(d.specimen, item.id + \".json\");")
+                && spec.contains(".put(\"images\", fmkImagesJson(images)).put(\"from\", \"cache\");") && spec.contains("FontLibrary.writeAtomic(cache, EmojiSpecimen.cacheJson(images, item.sha256)"), true);
         String ranges = body(ma, "private final class FmkRanges");
         is("…each range checked to be that part of the pinned file, uncompressed, its hops disconnectable", ranges.contains("EmojiSpecimen.checkPart(code, c.getHeaderField(\"Content-Range\"), offset, length, item.size)")
                 && ranges.contains("hdr.put(\"Accept-Encoding\", \"identity\")") && ranges.contains("fmkConns.put(job.id, hop)") && ranges.contains("this.at = item.url;"), true);
