@@ -35,6 +35,9 @@ ok   7. the details fail: the reason in the page's words and Retry; the designer
 ok      Download still there, without the number of files
 ok      Retry: asked again, "Getting the details…"
 ok      then the details, and "2 font files" under Download
+ok   7b. another window is getting the details: its sentence and Retry, not "Getting the details…"
+ok      once it ended, Retry asks again
+ok      and the details come
 ok   8. a family's page left before its previews came: dropped
 ok      its details came meanwhile: shown at once, not asked again
 ok   9. Nabla (colour): meta says Colour; a note that Make a font needs a plain text font

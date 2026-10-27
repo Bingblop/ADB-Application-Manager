@@ -31,7 +31,9 @@
 //   network error; infoError: { code, error } every family's details end with (also __fmk.gfInfoError); downloadError: { family: { code, error } };
 //   useError: { code, error } gfontsUse answers with; saveError: { code, error } the save ends with ('cancelled' too); specimenError: { code, error } the
 //   iOS read ends with (also __fmk.specimenError); appleCached: the iOS pictures are kept from an earlier read; hold: the preview answers wait for
-//   __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh, details, download, iOS read) for __fmk.gfStep(n) / gfStepAll()
+//   __fmk.gfAnswer(n) / gfAnswerAll() (pending: gfPending()), the other jobs (refresh, details, download, iOS read) for __fmk.gfStep(n) / gfStepAll();
+//   otherWindow: another window of the app is getting the list, a family's details and the iOS emoji (also __fmk.gfOtherWindow): gfontsRefresh,
+//   gfontsInfo and emojiSpecimenFetch answer busy, as the bridge does when the running job is not this window's (a second ask of this window joins its own)
 // opts.emoB64: { noto, twemoji, blobmoji, openmoji }: base64 of assets/emoji/<id>.ttf (emojiSpecimenFont answers "" for an id without one)
 // __fmk.gfPreviews: every preview asked ({ reqId, family, mode, text }); gfOut / gfOutMax: the previews asked and not answered, now and at most
 exports.initScript = function (opts) {
@@ -154,6 +156,7 @@ exports.initScript = function (opts) {
   st.gfPreviews = []; st.gfOut = 0; st.gfOutMax = 0;
   let gfCat = JSON.parse(J(G.catalog || { v: 1, at: 0, axes: {}, families: [] }));
   let gfStale = !!G.stale, gfRefreshJob = null, appleJob = null;
+  const gfInfoJobs = {};
   const gfFam = (f) => gfCat.families.find(e => e.f === f) || null;
   const GF_W = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
   // the files of a family's download, as GoogleFonts.plan keeps them: a variable family's top-level variable files (tags in ASCII order), else its static files
@@ -421,6 +424,7 @@ exports.initScript = function (opts) {
       st.calls.push('gfontsRefresh:' + force);
       if (gfRefreshJob) return J({ ok: true, job: gfRefreshJob });
       if (!force && gfCat.at > 0 && !gfStale) return J({ ok: true, fresh: true });
+      if (st.gfOtherWindow) return J({ ok: false, code: 'busy', error: 'Another window of the app is getting the list of fonts. Try again in a moment.' });
       const j = gfRefreshJob = job();
       gfRun([() => {
         gfRefreshJob = null;
@@ -452,8 +456,11 @@ exports.initScript = function (opts) {
       st.calls.push('gfontsInfo:' + family);
       const e = gfFam(family);
       if (!e) return J({ ok: false, code: 'gf_unknown', error: GF_UNKNOWN });
-      const j = job();
+      if (gfInfoJobs[family]) return J({ ok: true, job: gfInfoJobs[family] });
+      if (st.gfOtherWindow) return J({ ok: false, code: 'busy', error: 'Another window of the app is getting the details of this family. Try again in a moment.' });
+      const j = gfInfoJobs[family] = job();
       gfRun([() => {
+        delete gfInfoJobs[family];
         if (st.gfInfoError) { window.onGfInfo(family, J(Object.assign({ ok: false }, st.gfInfoError))); return; }
         const lic = gfLicense(family);
         window.onGfInfo(family, J({ ok: true, family, description: gfDesc(e), license: lic.kind, licenseName: lic.name, licenseText: lic.text, reserved: gfReserved(family),
@@ -535,6 +542,7 @@ exports.initScript = function (opts) {
       st.calls.push('emojiSpecimenFetch:' + id);
       if (id !== 'apple') return J({ ok: false, code: 'unknown', error: 'There is no such emoji font.' });
       if (appleJob) return J({ ok: true, job: appleJob });
+      if (st.gfOtherWindow) return J({ ok: false, code: 'busy', error: 'Another window of the app is reading the iOS emoji. Try again in a moment.' });
       const j = appleJob = job();
       gfRun([() => {
         appleJob = null;
@@ -549,7 +557,7 @@ exports.initScript = function (opts) {
   st.statusFails = opts.statusFails || 0;
   st.buildError = opts.buildError || null; st.buildWarnings = opts.buildWarnings || null; st.downloadError = opts.downloadError || {};
   st.gfRefreshError = G.refreshError || null; st.gfInfoError = G.infoError || null; st.gfDownloadError = G.downloadError || {};
-  st.specimenError = G.specimenError || null; st.appleCached = !!G.appleCached; st.gfSaving = '';
+  st.specimenError = G.specimenError || null; st.appleCached = !!G.appleCached; st.gfSaving = ''; st.gfOtherWindow = !!G.otherWindow;
   st.gfDl = gfDl;
   Object.keys(opts.refuse || {}).forEach(m => { b[m] = function () { st.calls.push(m + ':' + [].join.call(arguments, ',')); return J(Object.assign({ ok: false }, opts.refuse[m])); }; });
   missing.forEach(m => { delete b[m]; });

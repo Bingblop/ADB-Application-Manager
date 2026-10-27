@@ -745,6 +745,15 @@ public final class FontLibrary {
             return null;
         }
 
+        /**
+         * The running job of this kind and key when {@code owner} started it and it is not cancelled: a second ask from that window waits
+         * for its answer. Null when none runs, another window's runs (its answer goes only to that window) or a cancelled one has not ended.
+         */
+        public synchronized Job joinable(Object owner, String kind, String key) {
+            Job j = running(kind, key);
+            return j != null && owner != null && j.owner == owner && !j.cancelled() ? j : null;
+        }
+
         /** Cancel by job id; false when it is not running (finished already, or never was). */
         public synchronized boolean cancel(String id) {
             Job j = get(id);

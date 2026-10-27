@@ -51,6 +51,10 @@ ok   14. a failed first list: "The list of fonts is not on this phone yet.", the
 ok      Retry asks again (gfontsRefresh true)
 ok      and the list comes
 ok      no page errors
+ok   14b. another window is getting the list: its sentence and Retry, not "Getting the list…"
+ok      once it ended, Retry asks again and this window gets the list
+ok      and the list comes
+ok      no page errors
 ok   15. a list older than 7 days: in use (30 cards) while it updates (gfontsRefresh false)
 ok      the update fails: the reason in the page's words, Retry; the list stays
 ok      Retry: updated, the reason gone

@@ -507,6 +507,28 @@ public class GoogleFontsTest {
         eq("Inter, none", GoogleFonts.reservedNames(licence("inter")).toString(), "[]");
         eq("Apache text, none", GoogleFonts.reservedNames(licence("permanent-marker")).toString(), "[]");
         eq("Ubuntu Font Licence, none", GoogleFonts.reservedNames(licence("ubuntu")).toString(), "[]");
+        // how other live headers write it (R1-01): a colon, a comma or "is" after the phrase, a straight quote closed by a curly one, a name
+        // over a line break, <...>, a period inside the quotes, and the name before the phrase
+        eq("Orbitron, a colon", GoogleFonts.reservedNames(licence("orbitron")).toString(), "[Orbitron]");
+        eq("Chango, a comma", GoogleFonts.reservedNames(licence("chango")).toString(), "[Chango]");
+        eq("Julee, is", GoogleFonts.reservedNames(licence("julee")).toString(), "[Julee]");
+        eq("Encode Sans, \" closed by a curly quote", GoogleFonts.reservedNames(licence("encode-sans")).toString(), "[Encode Sans]");
+        eq("Homenaje, ' closed by a curly quote", GoogleFonts.reservedNames(licence("homenaje")).toString(), "[Homenaje]");
+        eq("Stint Ultra Expanded, over a line break", GoogleFonts.reservedNames(licence("stint-ultra-expanded")).toString(), "[Stint Ultra Expanded]");
+        eq("GFS Didot, <...>", GoogleFonts.reservedNames(licence("gfs-didot")).toString(), "[GFS Didot]");
+        eq("Numans, no trailing period", GoogleFonts.reservedNames(licence("numans")).toString(), "[Numans]");
+        eq("Jomolhari, the name before the phrase", GoogleFonts.reservedNames(licence("jomolhari")).toString(), "[Jomolhari]");
+        check("…those are the headers as sent", licence("orbitron").contains("Reserved Font Name: \"Orbitron\"") && licence("chango").contains("Reserved Font Names, \"Chango\"")
+                && licence("julee").contains("Reserved Font Name is \"Julee\"") && licence("encode-sans").contains("\"Encode Sans\u201d.")
+                && licence("homenaje").contains("'Homenaje\u2019.") && licence("stint-ultra-expanded").contains("\"Stint Ultra\r\nExpanded\"")
+                && licence("gfs-didot").contains("<GFS Didot>.") && licence("numans").contains("\"Numans.\"")
+                && licence("jomolhari").contains("\"Jomolhari\" is a Reserved Font Name for this Font Software."));
+        eq("a comma, single quotes", GoogleFonts.reservedNames("with Reserved Font Names, 'Passion'").toString(), "[Passion]");
+        eq("is", GoogleFonts.reservedNames("with Reserved Font Name is \"Kite\"").toString(), "[Kite]");
+        eq("a bare name that starts with Is", GoogleFonts.reservedNames("with Reserved Font Name Istok.").toString(), "[Istok]");
+        eq("the name before, not the words after", GoogleFonts.reservedNames("\"X\" is a Reserved Font Name for this Font Software.").toString(), "[X]");
+        eq("no name, no words", GoogleFonts.reservedNames("(with no Reserved Font Name for this Font Software)").toString(), "[]");
+        eq("names before and after, in order", GoogleFonts.reservedNames("\"A\" is a Reserved Font Name for this Font Software. Reserved Font Names: \"B\" and \u201cA\u201d").toString(), "[A, B]");
         String body = licence("lato");
         body = body.substring(body.indexOf("\r\n") + 2);
         check("the OFL's own text names \"Reserved Font Name\"", body.contains("\"Reserved Font Name\" refers to") && body.contains("Reserved Font\r\nName(s)"));
@@ -516,7 +538,9 @@ public class GoogleFontsTest {
         eq("twice, once", GoogleFonts.reservedNames("Reserved Font Name \"Lato\". Reserved Font Name \"Lato\".").toString(), "[Lato]");
         eq("trimmed", GoogleFonts.reservedNames("Reserved Font Name \" Lato \"").toString(), "[Lato]");
         eq("an unclosed quote", GoogleFonts.reservedNames("Reserved Font Name \"Lato").toString(), "[]");
-        eq("a quote across lines", GoogleFonts.reservedNames("Reserved Font Name \"La\nto\"").toString(), "[]");
+        eq("a quote over one line break", GoogleFonts.reservedNames("Reserved Font Name \"La\r\nto\"").toString(), "[La to]");
+        eq("a blank line ends a quote", GoogleFonts.reservedNames("Reserved Font Name \"La\r\n\r\nto\"").toString(), "[]");
+        eq("…and so does a blank \\n line", GoogleFonts.reservedNames("Reserved Font Name \"La\n\nto\"").toString(), "[]");
         eq("case", GoogleFonts.reservedNames("with RESERVED FONT NAME \"Big\"").toString(), "[Big]");
         eq("null", GoogleFonts.reservedNames(null).toString(), "[]");
         StringBuilder lots = new StringBuilder("Reserved Font Names ");
@@ -547,6 +571,15 @@ public class GoogleFontsTest {
         check("Noto Sans JP em as text", i.description.contains("design for the Japanese language") && i.designers.contains("Google"));
         eq("Google's not-found answer", code(() -> GoogleFonts.info(read("detail/nonexistent-family-x.json"))), "gf_unknown");
         eq("a family the metadata does not have", code(() -> GoogleFonts.info(read("detail/material-symbols-outlined.json"))), "gf_unknown");
+        // the envelope carries its own status: only 404 is "no details page", anything else is no answer about the family (R1-09)
+        eq("Google's 405 answer (to a POST) is not 'no details'", code(() -> GoogleFonts.info(read("detail/lato-post-405.json"))), "gf_bad_answer");
+        for (String[] e : new String[][] { { "503", "14" }, { "500", "13" }, { "429", "8" } })
+            eq("a " + e[0] + " in Google's envelope is not 'no details'", code(() -> GoogleFonts.info(")]}'\n\n[[\"er\",null,null,null,null," + e[0] + ",null,null,null," + e[1]
+                    + "],[\"di\",7],[\"af.httprm\",7,\"1\",0]]")), "gf_bad_answer");
+        eq("an er row cut short", code(() -> GoogleFonts.info("[[\"er\"]]")), "gf_bad_answer");
+        eq("an er row with no status", code(() -> GoogleFonts.info("[[\"er\",null,null,null,null,null],[\"di\",7]]")), "gf_bad_answer");
+        eq("an er that does not parse", code(() -> GoogleFonts.info("[[\"er\",null,null,null,null,404")), "gf_bad_answer");
+        eq("the 404 row anywhere in the envelope", code(() -> GoogleFonts.info("[[\"di\",7],[\"er\",null,null,null,null,404]]")), "gf_unknown");
         eq("not JSON", code(() -> GoogleFonts.info("<html>")), "gf_bad_answer");
         eq("no family", code(() -> GoogleFonts.info(")]}'\n{\"description\":\"x\"}")), "gf_bad_answer");
         eq("an array without er", code(() -> GoogleFonts.info("[[\"di\",7]]")), "gf_bad_answer");
