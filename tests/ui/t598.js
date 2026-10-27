@@ -3,7 +3,8 @@
 // list view has the category, language and sort selects, the Variable and Downloaded chips (aria-pressed), the status line ("List updated
 // Oct 1, 2026 · Refresh"), the count, 30 cards and "Show N more · M left", and the credit. The search ignores case and accents (ł, ø, ß and the other
 // letters NFD leaves whole as their plain ones: "lukasz" finds Łukasz Dziedzic), looks at the name and the designers, every word must match, and
-// waits 120 ms; the sorts are Popular, Trending, Newest and Name (A–Z); an unknown subset is shown title-cased ("Canadian Aboriginal"); no match shows an empty state whose "Clear filters" brings every family back. No list on the phone: the sheet
+// waits 120 ms; the sorts are Popular, Trending, Newest and Name (A–Z); an unknown subset is shown title-cased ("Canadian Aboriginal"); no match
+// shows an empty state whose "Clear filters" brings every family back. No list on the phone: the sheet
 // asks for one (gfontsRefresh), says it is getting it, then shows it; a failure, and another window of the app getting it (busy), is an empty
 // state with Retry. A stale list stays in use while it updates, and a failed update says why beside Retry. A list that grows older than 7 days
 // while the page stays open is updated the next time the sheet opens; one another window of the app got meanwhile (gfontsRefresh answers fresh) is
@@ -11,10 +12,12 @@
 // step from a family's page to the list, then close. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
 // 360 px, in the light theme and right-to-left.
 // The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
-// results, and the sheet's handle pulls it up to the whole screen (down once: its size again; down again: the usual step back).
+// results, and the sheet's handle pulls it up to the whole screen (down once: its size again; down again: the usual step back). The Help Guide
+// says what the page shows: its examples of the count are ones the page can show, and its privacy row sends the typed preview text, not the search.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf); the list: fixtures/gfonts-catalog.json (64 real families).
 const fs = require('fs');
-const { chromium, PAGE, fixture } = require('./lib/pw');
+const path = require('path');
+const { chromium, PAGE, REPO, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -386,6 +389,20 @@ const wide = (page) => page.evaluate(() => {
     await page.screenshot({ path: name + '-family.png' });
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
+  }
+  // the Help Guide (assets/guide.js): the count line's examples are what gfRenderList writes (the whole list, or "x of y"), and the privacy row says the
+  // text typed to preview goes to Google Fonts while the search words stay on the phone
+  {
+    const gsb = { window: {} }; require('vm').runInNewContext(fs.readFileSync(path.join(REPO, 'assets', 'guide.js'), 'utf8'), gsb);
+    const flat = t => String(t || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
+    const sec = id => flat((((gsb.window.HELP_GUIDE || {}).sections || []).find(x => x.id === id) || {}).html);
+    const fg = sec('fonts-google'), cnt = (/The line above the list counts what is shown[^.]*\./.exec(fg) || [''])[0];
+    const ex = (cnt.match(/"[^"]+"/g) || []).map(q => q.slice(1, -1));
+    const total = '1,950', pageCan = q => q === total + ' families' || new RegExp('^\\d[\\d,]* of ' + total + '$').test(q);
+    check('18. the guide\'s count examples are ones the page shows for a list of ' + total, ex.length === 2 && ex.every(pageCan) && fg.includes('Search Google Fonts') && fg.includes('"' + total + ' families"'), JSON.stringify(ex));
+    const row = (sec('privacy').split(/(?=Google Fonts \(fonts\.google\.com)/)[1] || '').split(/(?=GitHub's gist)/)[0];
+    check('   the privacy row: the text typed in Type something to preview and Type tester goes out; the search words stay',
+      /Type something to preview/.test(row) && /Type tester/.test(row) && /What you type in Search fonts or designers, and the filters, stay on the phone/.test(row) && !/Your search words/.test(row), row);
   }
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');

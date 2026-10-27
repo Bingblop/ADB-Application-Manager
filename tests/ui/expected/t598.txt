@@ -94,4 +94,6 @@ ok      the chips are outlined, not filled
 ok      a family's page, nothing wider than the screen
 ok      right to left: the Back arrow points the other way
 ok      no page errors
+ok   18. the guide's count examples are ones the page shows for a list of 1,950
+ok      the privacy row: the text typed in Type something to preview and Type tester goes out; the search words stay
 all passed
