@@ -116,6 +116,7 @@ ok      the privacy row: the typed preview text goes out; the search words are n
 ok      the fonts page says the same of the search
 ok      the privacy summary names the Google Fonts page's scrolling and typing among what starts a contact, not only a tab, a button or a chat message
 ok      the privacy browser row names Open on fonts.google.com
+ok      the privacy emoji row names GitHub's file server, where Show these emoji reads most of its parts
 ok      the fonts pages quote the network failure with its reason in brackets, as the page shows it
 ok      the iOS emoji warning names Show these emoji as well as Download, and does not say only Download fetches Apple's art
 all passed

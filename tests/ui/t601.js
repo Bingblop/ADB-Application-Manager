@@ -18,7 +18,8 @@
 // progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font);
 // a card keeps it when a download that ended while the list shows draws the list again. In About it stays on Open on fonts.google.com when the
 // details come, on About itself ("Getting the details…") after Retry until the reason (Retry again) or the details (More) come, on the
-// description that More opened, and on it or Licence text when a newer list draws About again.
+// description that More opened, and on it or Licence text (which stays open) when a newer list draws About again (the older list's details stay
+// shown until the newer ones come, and stay when those cannot be had).
 // The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone, and its
 // undo table has a row for a downloaded family (Delete on its page). Without
 // a family's details, About's Licence is its download's: it comes with a download made on the family's page and goes with a Delete there. A
@@ -527,7 +528,7 @@ const kb = n => (n * 1024);
   // About with a keyboard (switch access, TalkBack): a focus in it is not lost to the body behind the sheet when it is drawn again. The details that
   // come unasked leave it on Open on fonts.google.com; Retry turns into "Getting the details…", which About holds (and reads) until the reason
   // comes (Retry again) or the details (the first control: More); More goes once pressed, the description it opened has it; a newer list keeps
-  // it on the description, or on Licence text
+  // it on the description, or on Licence text, which stays open
   {
     const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, hold: true, infoError: { code: 'network', error: 'The download failed: timeout' } } });
     const fo = () => page.evaluate(() => { const a = document.activeElement; return { id: a ? a.id || a.tagName : '', text: a ? a.textContent.replace(/\s+/g, ' ').trim().slice(0, 80) : '' }; });
@@ -549,13 +550,39 @@ const kb = n => (n * 1024);
     f = await enter('gfDescMore');
     const desc = await page.evaluate(() => ({ open: !document.getElementById('gfDesc').classList.contains('gf-clamp'), more: getComputedStyle(document.getElementById('gfDescMore')).display }));
     check('   More: the whole description, More gone, the focus on the description it opened', f.id === 'gfDesc' && desc.open && desc.more === 'none', JSON.stringify([f, desc]));
-    // a newer list while the page shows: gfListCame draws About again
+    // a newer list while the page shows: gfListCame draws About again, and asks for its details again. The older list's stay shown until the
+    // newer ones come (no "Getting the details…"), so the description and Licence text are there for the focus all along
     const newer = async () => { await page.evaluate(() => gfRefresh(true)); return answer(); };
-    f = await newer();
+    const asked = () => page.evaluate(() => __fmk.calls.filter(c => c === 'gfontsInfo:Lato').length);
+    let n0 = await asked();
+    await page.evaluate(() => gfRefresh(true)); await step(page, 1);
+    let mid = [await fo(), (await about(page)).extra.join(','), await asked() - n0];
+    check('   a newer list, its details still on their way: About keeps the older ones (no "Getting the details…"), the focus on the description', mid[0].id === 'gfDesc'
+      && mid[1] === 'gfDesc,gfDescMore,gfLic' && mid[2] === 1, JSON.stringify(mid));
+    f = await answer();
     check('   a newer list draws About again: the focus stays on the description (still open)', f.id === 'gfDesc' && await page.evaluate(() => !document.getElementById('gfDesc').classList.contains('gf-clamp')), JSON.stringify(f));
-    await page.focus('#gfLic > summary');
+    // Licence text opened (Enter on it): the newer list, its details asked again and their answer draw About three times. It stays open, as the description
+    // does, and keeps the focus
+    const licOpen = () => page.evaluate(() => !!document.getElementById('gfLic') && document.getElementById('gfLic').open);
+    f = await enter('gfLicSum');
+    const opened = await licOpen();
     f = await newer();
-    check('   and on Licence text', f.id === 'gfLicSum', JSON.stringify(f));
+    check('   and on Licence text, opened: it stays open', opened && f.id === 'gfLicSum' && await licOpen(), JSON.stringify([opened, f]));
+    // the newer list's details cannot be had (no connection right after it): the older ones stay, with no reason or Retry, and the focus with
+    // them. They are still the older list's, so the page opened again asks once more
+    await page.evaluate(() => { __fmk.gfInfoError = { code: 'network', error: 'The download failed: timeout' }; });
+    f = await newer();
+    mid = [f, (await about(page)).extra.join(','), await page.evaluate(() => !!(gf.info.Lato || {}).stale)];
+    check('   a newer list whose details cannot be had: About keeps the older ones (no reason, no Retry), the focus on Licence text (still open)', f.id === 'gfLicSum'
+      && mid[1] === 'gfDesc,gfDescMore,gfLic' && mid[2] && await licOpen(), JSON.stringify(mid));
+    await page.evaluate(() => { __fmk.gfInfoError = null; });
+    n0 = await asked();
+    await showFam(page, 'Lato');
+    mid = [(await about(page)).extra.join(','), await asked() - n0, await licOpen()];
+    f = await answer();
+    check('   Lato opened again: About shows them at once and asks once more; the newer ones come', mid[0] === 'gfDesc,gfDescMore,gfLic' && mid[1] === 1
+      && await page.evaluate(() => { const I = gf.info.Lato || {}; return I.ok && !I.stale && !I.refreshing; }), JSON.stringify([mid, f]));
+    check('   a family\'s page opened again starts with its Licence text closed, as its description', !mid[2] && !await licOpen(), JSON.stringify(mid));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

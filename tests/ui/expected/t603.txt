@@ -34,6 +34,10 @@ ok      answered from the kept pictures, not read again
 ok      no page errors
 ok   7e. Show these emoji with the keyboard: the focus on "Reading the iOS emoji…" (also when the list is drawn again meanwhile), then on the button again when it fails
 ok      again: "Reading the iOS emoji…", then the sixteen pictures, read as "Sample of iOS emoji"
+ok      the focus on Blobmoji's Download while they are read: there still when the pictures come, not the body
+ok      on Noto's Source: there still
+ok      on the iOS row's License: there still
+ok      Blobmoji's Download pressed: the focus on its Cancel, then on its Delete
 ok      no page errors
 ok   8. Chrome 97: Noto and Blobmoji (COLRv1) say the WebView is too old, and are not read
 ok      Twemoji (COLRv0) is drawn
