@@ -20,7 +20,10 @@ families (Lato, Ubuntu), a colour font (Bungee Spice, Noto Color Emoji), an ital
 (UnifrakturCook), 300-only (Buda), weights 1 to 1000 (Sofia Sans), 13 axes with negative values (Roboto Flex), upper-case axes
 (Fraunces), a Japanese family (Noto Sans JP), symbols (Libre Barcode 128), the Apache licence (Permanent Marker), the Ubuntu Font
 Licence (Ubuntu) and the Reserved Font Name headers of Lato, Molle, Andika, Charis SIL, Gentium Book Plus (two names), Source
-Sans 3 (single quotes) and UnifrakturCook (no quotes).
+Sans 3 (single quotes) and UnifrakturCook (no quotes). Nine more lists are there for their headers only (fetched 2026-10-27): Orbitron
+(`Reserved Font Name: "Orbitron"`), Chango (`Reserved Font Names, "Chango"`), Julee (`Reserved Font Name is "Julee"`), Encode Sans
+and Homenaje (a straight quote closed by a curly one), Stint Ultra Expanded (the name over a line break), GFS Didot (`<GFS Didot>`),
+Numans (`"Numans."`) and Jomolhari (`"Jomolhari" is a Reserved Font Name for this Font Software.`).
 
 ## Licences
 

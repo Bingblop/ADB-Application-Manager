@@ -627,14 +627,23 @@ public final class GoogleFonts {
         return new Plan(files, licFile, licText, reservedNames(licText));
     }
 
-    private static final Pattern RESERVED = Pattern.compile("Reserved\\s+Font\\s+Names?(?=\\s)", Pattern.CASE_INSENSITIVE);
+    // the phrase, then a space, a comma or a colon ("Reserved Font Names, "Chango"", "Reserved Font Name: "Orbitron""); the OFL's own
+    // '"Reserved Font Name" refers to' and 'Reserved Font Name(s)' are not followed by one
+    private static final Pattern RESERVED = Pattern.compile("Reserved\\s+Font\\s+Names?(?=[\\s,:])", Pattern.CASE_INSENSITIVE);
     private static final Pattern BARE_NAME = Pattern.compile("([A-Za-z0-9][A-Za-z0-9 -]{0,62}[A-Za-z0-9]|[A-Za-z0-9])\\s*(?:[.,;]|\\r?\\n|$)");
+    // the quoted name just before the phrase: '"Jomolhari" is a Reserved Font Name for this Font Software.' (Jomolhari, Uchen)
+    private static final Pattern NAME_BEFORE = Pattern.compile("[\"'\u201c\u2018]([^\"'\u201c\u201d\u2018\u2019\\r\\n]{1,80})[\"'\u201d\u2019]\\s+(?:is|are)\\s+(?:an?\\s+|the\\s+)?$",
+            Pattern.CASE_INSENSITIVE);
 
     /**
-     * The Reserved Font Names of an OFL licence: every quoted name after "Reserved Font Name" or "Reserved Font Names" (double, single or
-     * curly quotes; "A" and "B", "A", "B" and "C"), trimmed, each once, in order. The licence's own text ("Reserved Font Name" refers to ...,
-     * the Reserved Font Name(s)) names none. A licence that writes one name without quotes ("with Reserved Font Name UnifrakturCook.") gives
-     * that name.
+     * The Reserved Font Names of an OFL licence, each once, in order. Every quoted name after "Reserved Font Name" or "Reserved Font Names"
+     * ("A" and "B", "A", "B" and "C", "A" &amp; "B"), the phrase also followed by a comma, a colon or "is" ('Reserved Font Names, "Chango"',
+     * 'Reserved Font Name: "Orbitron"', 'Reserved Font Name is "Julee"'). Quotes: double, single, curly, a straight one closed by a curly one
+     * (Encode Sans, Homenaje) and &lt;GFS Didot&gt;. A name may run over one line break ('"Stint Ultra\r\nExpanded"'), which becomes a space;
+     * a blank line ends it. Each name is trimmed and loses a trailing period ('"Numans."'). The quoted name of '"Jomolhari" is a Reserved
+     * Font Name' is taken too. A licence that writes one name without quotes ("with Reserved Font Name UnifrakturCook.") gives that name,
+     * but not the words that go on with the sentence ("... Reserved Font Name for this Font Software."). The licence's own text ("Reserved
+     * Font Name" refers to ..., the Reserved Font Name(s)) names none.
      */
     public static List<String> reservedNames(String licenseText) {
         List<String> out = new ArrayList<String>();
@@ -642,33 +651,45 @@ public final class GoogleFonts {
         String t = licenseText.length() > MAX_LICENSE ? licenseText.substring(0, MAX_LICENSE) : licenseText;
         Matcher m = RESERVED.matcher(t);
         while (m.find() && out.size() < 16) {
+            Matcher before = NAME_BEFORE.matcher(t);
+            before.region(Math.max(0, m.start() - 100), m.start());
+            if (before.find()) addName(out, before.group(1));
             int i = skipSpace(t, m.end());
+            if (i < t.length() && (t.charAt(i) == ',' || t.charAt(i) == ':')) i = skipSpace(t, i + 1);
+            else if (t.regionMatches(true, i, "is", 0, 2) && i + 2 < t.length() && Character.isWhitespace(t.charAt(i + 2))) i = skipSpace(t, i + 2);
             boolean any = false;
             while (i < t.length() && out.size() < 16) {
                 char open = t.charAt(i);
-                String close = open == '"' ? "\"" : open == '\'' ? "'" : open == '\u201c' ? "\u201d\"" : open == '\u2018' ? "\u2019'" : null;
+                String close = open == '"' ? "\"\u201d" : open == '\'' ? "'\u2019" : open == '\u201c' ? "\u201d\"" : open == '\u2018' ? "\u2019'"
+                        : open == '<' ? ">" : null;
                 if (close == null) break;
-                int end = i + 1;
-                while (end < t.length() && close.indexOf(t.charAt(end)) < 0 && t.charAt(end) != '\n' && end - i <= 80) end++;
+                int end = i + 1, breaks = 0;
+                while (end < t.length() && close.indexOf(t.charAt(end)) < 0 && end - i <= 80) {
+                    if (t.charAt(end) == '\n' && ++breaks > 1) break;
+                    end++;
+                }
                 if (end >= t.length() || close.indexOf(t.charAt(end)) < 0) break;
-                String name = t.substring(i + 1, end).trim();
-                if (!name.isEmpty() && !out.contains(name)) out.add(name);
+                addName(out, t.substring(i + 1, end));
                 any = true;
                 i = skipSpace(t, end + 1);
                 if (i < t.length() && t.charAt(i) == ',') i = skipSpace(t, i + 1);
                 if (t.startsWith("and", i) && i + 3 < t.length() && Character.isWhitespace(t.charAt(i + 3))) i = skipSpace(t, i + 3);
                 else if (i < t.length() && t.charAt(i) == '&') i = skipSpace(t, i + 1);
             }
-            if (!any && i < t.length() && Character.isLetterOrDigit(t.charAt(i))) {
+            if (!any && i < t.length() && Character.isLetterOrDigit(t.charAt(i)) && !Character.isLowerCase(t.charAt(i))) {
                 Matcher b = BARE_NAME.matcher(t);
                 b.region(i, Math.min(t.length(), i + 80));
-                if (b.lookingAt()) {
-                    String name = b.group(1).trim();
-                    if (!out.contains(name)) out.add(name);
-                }
+                if (b.lookingAt()) addName(out, b.group(1));
             }
         }
         return out;
+    }
+
+    /** One name: white space (a line break inside the quotes) as one space, trimmed, without a trailing period; at most 16 names. */
+    private static void addName(List<String> out, String raw) {
+        String name = raw.replaceAll("\\s+", " ").trim();
+        while (name.endsWith(".")) name = name.substring(0, name.length() - 1).trim();
+        if (!name.isEmpty() && !out.contains(name) && out.size() < 16) out.add(name);
     }
 
     private static int skipSpace(String t, int i) {
