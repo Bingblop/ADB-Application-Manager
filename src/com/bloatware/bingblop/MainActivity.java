@@ -72,6 +72,9 @@ public class MainActivity extends Activity {
     private String pendingInstallRef = null;
     // The Stop apps notification was tapped: the id of the quick list whose sheet the page opens once it is ready (takeQuickOpen).
     private String pendingQuickOpen = null;
+    // Answers that came before the page loaded (notifyJsWhenReady), run once it has: a save screen answered into a window Android made
+    // again (v7.18.0, R4-03). The UI thread's only.
+    private final List<String> pendingPageScripts = new ArrayList<String>();
     private Vibrator vibrator;
     private SharedPreferences prefs;
     private boolean buildChangedThisLaunch = false;
@@ -307,6 +310,7 @@ public class MainActivity extends Activity {
                 pageReady = true;
                 deliverPendingInstall();
                 deliverPendingQuickOpen();
+                deliverPendingPageScripts();
             }
 
             // The page holds a powerful bridge (shell, files, installs), so it never navigates away from the
@@ -728,6 +732,30 @@ public class MainActivity extends Activity {
                 }
             }
         });
+    }
+
+    /**
+     * Like {@link #notifyJs}, but an answer that comes before the page has loaded waits for onPageFinished: a save screen answered into a
+     * window Android made again (onCreate restores what it was for, onActivityResult comes before the page has its callbacks), whose answer
+     * nothing sends again.
+     */
+    private void notifyJsWhenReady(final String script) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (activityDestroyed || webView == null) return;
+                if (!pageReady) { pendingPageScripts.add(script); return; }     // pageReady is the UI thread's: read here, not where the answer was made
+                webView.evaluateJavascript(script, null);
+            }
+        });
+    }
+
+    /** Runs the answers that waited for the page (notifyJsWhenReady), in the order they came. */
+    private void deliverPendingPageScripts() {
+        if (!pageReady || pendingPageScripts.isEmpty()) return;
+        List<String> scripts = new ArrayList<String>(pendingPageScripts);
+        pendingPageScripts.clear();
+        for (String script : scripts) notifyJs(script);
     }
 
     // The mode probe is a few process spawns and a socket check, and the page asks for it on most view changes.
@@ -6877,7 +6905,7 @@ public class MainActivity extends Activity {
     }
 
     private void fmkExported(String id, JSONObject res) {
-        notifyJs("window.onFontMakerExported && window.onFontMakerExported(" + JSONObject.quote(id) + ", " + JSONObject.quote(res.toString()) + ")");
+        notifyJsWhenReady("window.onFontMakerExported && window.onFontMakerExported(" + JSONObject.quote(id) + ", " + JSONObject.quote(res.toString()) + ")");
     }
 
     /** The versionCode of an installed package, 0 when it is not installed. */
@@ -8388,7 +8416,7 @@ public class MainActivity extends Activity {
     }
 
     private void gfSaved(String family, JSONObject res) {
-        notifyJs("window.onGfSaved && window.onGfSaved(" + JSONObject.quote(family) + ", " + JSONObject.quote(res.toString()) + ")");
+        notifyJsWhenReady("window.onGfSaved && window.onGfSaved(" + JSONObject.quote(family) + ", " + JSONObject.quote(res.toString()) + ")");
     }
 
     /**

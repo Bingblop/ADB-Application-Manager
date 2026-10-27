@@ -1102,6 +1102,8 @@ public class FontLibraryTest {
         is("…and a save of a font being made again", export.contains("fmkJobs.inUse(\"make:\" + id)"), true);
         is("the open save screen's font is kept when Android ends the process", body(ma, "protected void onSaveInstanceState(").contains("outState.putString(STATE_FMK_EXPORT, fmkExportId)")
                 && body(ma, "protected void onCreate(").contains("savedInstanceState.getString(STATE_FMK_EXPORT)"), true);
+        is("…and its answer waits for the page of a window Android made again (R4-03)", body(ma, "private void fmkExported(").contains("notifyJsWhenReady(\"window.onFontMakerExported && window.onFontMakerExported(")
+                && !body(ma, "private void fmkExported(").contains("notifyJs(\""), true);
         String exResult = body(ma, "private void fmkExportResult(");
         is("a save with no font waiting deletes the empty file", exResult.indexOf("if (uri != null) fmkDropDocument(uri)") > 0
                 && exResult.indexOf("if (uri != null) fmkDropDocument(uri)") < exResult.indexOf("fontExec.submit("), true);
@@ -1165,6 +1167,17 @@ public class FontLibraryTest {
                 && body(ma, "protected void onSaveInstanceState(").contains("outState.putString(STATE_GF_SAVE, gfSaveFamily)")
                 && body(ma, "protected void onCreate(").contains("savedInstanceState.getString(STATE_GF_SAVE)")
                 && body(ma, "protected void onCreate(").contains("if (GoogleFonts.isFamily(gfSave))"), true);
+        // …and its answer, which comes (onActivityResult) before that window's page has loaded, waits for onPageFinished: nothing sends it
+        // again (R4-03). pageReady is read on the UI thread, after the check that the window is still there
+        String whenReady = body(ma, "private void notifyJsWhenReady("), runAt = "public void run()", gone = "if (activityDestroyed || webView == null) return;",
+                wait = "if (!pageReady) { pendingPageScripts.add(script); return; }";
+        is("a family save's answer that comes before the page has loaded waits for it", body(ma, "private void gfSaved(").contains("notifyJsWhenReady(\"window.onGfSaved && window.onGfSaved(")
+                && !body(ma, "private void gfSaved(").contains("notifyJs(\"") && whenReady.indexOf(runAt) > 0 && whenReady.indexOf(gone) > whenReady.indexOf(runAt)
+                && whenReady.indexOf(wait) > whenReady.indexOf(gone) && whenReady.indexOf("webView.evaluateJavascript(script, null);") > whenReady.indexOf(wait), true);
+        String waited = body(ma, "private void deliverPendingPageScripts(");
+        is("…and is run, in order, once the page has finished loading", ma.contains("deliverPendingQuickOpen();\n                deliverPendingPageScripts();")
+                && waited.contains("if (!pageReady || pendingPageScripts.isEmpty()) return;") && waited.indexOf("pendingPageScripts.clear();") < waited.indexOf("for (String script : scripts) notifyJs(script);")
+                && ma.contains("private final List<String> pendingPageScripts = new ArrayList<String>();"), true);
         // every Google Fonts address, at every hop, is a Google Fonts one; css2 with Chrome's user agent, the rest with the app's
         String open = body(ma, "private java.net.HttpURLConnection gfOpen(");
         is("each hop of a Google Fonts request is checked before it connects", open.contains("if (!GoogleFonts.allowed(url))")
