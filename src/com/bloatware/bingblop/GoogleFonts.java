@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
  * <li>{@link #plan}: which files of a family's download list the app downloads (the variable fonts when there are any, never a name
  * that is not a plain .ttf / .otf name, never an address outside fonts.gstatic.com), and its licence with its Reserved Font Names
  * ({@link #reservedNames}).</li>
- * <li>{@link #info}: a family's description (as plain text), licence and designers.</li>
+ * <li>{@link #info}: a family's description (as plain text; its "article" when "description" is empty), licence and designers.</li>
  * <li>{@link #metaJson} / {@link #readMeta} / {@link #sweep}: a downloaded family's folder files/fontmaker/gfonts/fam/&lt;slug&gt;/ and
  * its meta.json; {@link #downloadsRow} is the page's row for it.</li>
  * <li>The preview cache in cache/fontmaker/gfpv/ ({@link #previewFile}, {@link #readCached}, {@link #trimCache}), each answer named by the css2
@@ -721,7 +721,8 @@ public final class GoogleFonts {
     }
 
     /**
-     * A family's details (fonts.google.com/metadata/fonts/&lt;family&gt;, with or without its ")]}'" line). gf_unknown for Google's
+     * A family's details (fonts.google.com/metadata/fonts/&lt;family&gt;, with or without its ")]}'" line). The description is "description"
+     * as plain text, else (it is "" for the newer families) "article", its HTML paragraphs as plain text. gf_unknown for Google's
      * not-found answer (an "er" array with status 404: [["er",null,null,null,null,404,...],...]), gf_bad_answer for anything else that is
      * not a family's details, an "er" array with another status (a 503, a 429) among them: that is no answer about the family.
      */
@@ -758,7 +759,19 @@ public final class GoogleFonts {
             }
         }
         Object desc = root.opt("description");
-        return new Info(plainText(desc instanceof String ? (String) desc : "", MAX_DESCRIPTION), lic, designers);
+        String text = plainText(desc instanceof String ? (String) desc : "", MAX_DESCRIPTION);
+        if (text.isEmpty()) {
+            // the families added since 2023 (Google Sans, Geist...) send "description": "" and their About text as "article", an array of
+            // HTML strings (R3-01); an item that is not text is skipped, and the input stops where plainText stops reading anyway
+            JSONArray art = root.optJSONArray("article");
+            StringBuilder b = new StringBuilder();
+            for (int i = 0; art != null && i < art.length() && b.length() <= 4 * MAX_DESCRIPTION + 65536; i++) {
+                Object v = art.opt(i);
+                if (v instanceof String) b.append(b.length() > 0 ? "<p>" : "").append((String) v);
+            }
+            text = plainText(b.toString(), MAX_DESCRIPTION);
+        }
+        return new Info(text, lic, designers);
     }
 
     /**
@@ -783,8 +796,9 @@ public final class GoogleFonts {
                 .put("reserved", new JSONArray(plan.reserved)).put("designers", designers).put("files", files);
     }
 
-    // a line break, and the start and end of a block (a paragraph, a list and its items, a heading...): the \b keeps <pre>, <link>, <track> out
-    private static final Pattern BREAK = Pattern.compile("</?(?:br|p|div|ul|ol|li|dt|dd|h[1-6]|blockquote|tr|hr)\\b[^>]*>", Pattern.CASE_INSENSITIVE);
+    // a line break, and the start and end of a block (a paragraph, a list and its items, a heading, a figure and its caption as in Google
+    // Sans' article...): the \b keeps <pre>, <link>, <track> out
+    private static final Pattern BREAK = Pattern.compile("</?(?:br|p|div|ul|ol|li|dt|dd|h[1-6]|blockquote|tr|hr|figure|figcaption)\\b[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern ITEM = Pattern.compile("<li\\b[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern TAG = Pattern.compile("<[^>]*>?");
     private static final Pattern ENTITY = Pattern.compile("&(#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,7});");

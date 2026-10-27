@@ -575,6 +575,22 @@ public class GoogleFontsTest {
                 + "\n\u2022 4 styles. Regular, Bold, Italic, and Bold Italic\n\u2022 Character set expanded to WGL (418 glyphs)\nTo contribute, see github.com/huertatipografica/Caladea.");
         i = GoogleFonts.info(read("detail/neuton.json"));
         check("Neuton's dashes", i.description.contains("Two italics \u2014 one will be called \"italic\", and the other \"cursive\" \u2014 are uncommon") && !i.description.contains("&"));
+        // the newer families send "description": "" and their About text as "article", an array of HTML strings (R3-01)
+        i = GoogleFonts.info(read("detail/afacad.json"));
+        check("Afacad: an empty description, the article's text instead", i.description.startsWith("The \u2019Afacad typeface project\u2019 commenced in 2017")
+                && !i.description.contains("<") && i.description.split("\n").length == 3 && i.description.endsWith("\nTo contribute, please see github.com/Dicotype/Afacad."));
+        eq("Afacad's licence and designers", i.licenseName + " | " + i.designers, "SIL Open Font License 1.1 | [Kristian M\u00f6ller, Dicotype]");
+        eq("the description first, the article only when it has no text", GoogleFonts.info("{\"family\":\"X\",\"description\":\"<p>D</p>\",\"article\":[\"<p>A</p>\"]}").description, "D");
+        eq("a description of empty markup is no text", GoogleFonts.info("{\"family\":\"X\",\"description\":\"<p> </p>\",\"article\":[\"<p>A</p>\"]}").description, "A");
+        eq("article items, each a block", GoogleFonts.info("{\"family\":\"X\",\"description\":\"\",\"article\":[\"<p>A</p>\",\"B\",\"C\"]}").description, "A\nB\nC");
+        eq("article items that are not text skipped", GoogleFonts.info("{\"family\":\"X\",\"article\":[5,null,{\"p\":\"x\"},\"  \",\"<p>A</p>\",[\"y\"],\"B\"]}").description, "A\nB");
+        eq("article not an array", GoogleFonts.info("{\"family\":\"X\",\"description\":\"\",\"article\":\"<p>A</p>\"}").description, "");
+        eq("description not text, an article", GoogleFonts.info("{\"family\":\"X\",\"description\":5,\"article\":[\"A\"]}").description, "A");
+        eq("article capped", GoogleFonts.info(new JSONObject().put("family", "X").put("description", "").put("article", new JSONArray().put("<p>" + repeat("w ", 5000) + "</p>")).toString())
+                .description.length(), 4000);
+        JSONArray many = new JSONArray();
+        for (int k = 0; k < 100; k++) many.put("<p>" + repeat("w ", 5000) + "</p>");
+        eq("an article of many long items capped", GoogleFonts.info(new JSONObject().put("family", "X").put("article", many).toString()).description.length(), 4000);
         eq("Google's not-found answer", code(() -> GoogleFonts.info(read("detail/nonexistent-family-x.json"))), "gf_unknown");
         eq("a family the metadata does not have", code(() -> GoogleFonts.info(read("detail/material-symbols-outlined.json"))), "gf_unknown");
         // the envelope carries its own status: only 404 is "no details page", anything else is no answer about the family (R1-09)
@@ -626,6 +642,9 @@ public class GoogleFontsTest {
         eq("copy, reg, trade as text", GoogleFonts.plainText("&copy; 2020 X&reg; Y&trade;", 100), "(c) 2020 X(R) Y(tm)");
         eq("names are case-sensitive, unknown ones stay", GoogleFonts.plainText("&EACUTE; &eacutex; &Mdash; &x;", 100), "&EACUTE; &eacutex; &Mdash; &x;");
         eq("decoded once", GoogleFonts.plainText("&amp;eacute; &amp;lt;", 100), "&eacute; &lt;");
+        // a figure's caption on a line of its own (Google Sans' article: figures side by side in a div) (R3-01)
+        eq("figures and captions", GoogleFonts.plainText("<div><h2>Head</h2><p>Para</p></div> <figure><img src=\"a.svg\"> <figcaption> One </figcaption></figure>"
+                + " <figure><video src=\"b.mp4\"></video><figcaption>Two</figcaption></figure>after<figurex>x<figcaptions>y", 200), "Head\nPara\nOne\nTwo\nafterxy");
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -918,6 +937,9 @@ public class GoogleFontsTest {
         GoogleFonts.Plan bare = GoogleFonts.plan(noLic.toString());
         eq("no licence file: the details' licence", GoogleFonts.infoJson("Lato", bare, GoogleFonts.info(read("detail/permanent-marker.json")), null).getString("licenseName"), "Apache License 2.0");
         eq("no licence anywhere", GoogleFonts.infoJson("Lato", bare, null, null).getString("license") + "|" + GoogleFonts.infoJson("Lato", bare, null, null).getString("licenseText"), "|");
+        // a family whose description is empty and its text in "article" has its About text on the page (R3-01)
+        check("info: Afacad's article as the description", GoogleFonts.infoJson("Afacad", bare, GoogleFonts.info(read("detail/afacad.json")), null).getString("description")
+                .startsWith("The ’Afacad typeface project’"));
 
         // the downloads, newest first; only a whole family of the name asked for
         File fam = new File(tmp, "fam-rows");
@@ -1079,7 +1101,7 @@ public class GoogleFontsTest {
         Random r = new Random(seed);
         String catalog = read("catalog.json"), compacted = GoogleFonts.compact(catalog, 1).toString();
         String[] lists = { read("list/roboto.json"), read("list/lato.json"), read("list/andika.json"), read("list/unifrakturcook.json") };
-        String[] details = { read("detail/lato.json"), read("detail/ubuntu.json"), read("detail/nonexistent-family-x.json") };
+        String[] details = { read("detail/lato.json"), read("detail/ubuntu.json"), read("detail/nonexistent-family-x.json"), read("detail/afacad.json") };
         String[] css = { read("css2/lato_styles.css"), read("css2/robotoflex_axes.css"), read("css2/molle_card.css") };
         int bad = 0;
         for (int i = 0; i < rounds; i++) {
