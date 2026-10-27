@@ -44950,7 +44950,7 @@ Type any command above (e.g. pm list packages -d)</div>
             onlyVar: false, onlyDl: false, list: [], shown: GF_PAGE,
             dls: {}, dl: {}, dlErr: {}, msg: {}, info: {}, saving: '', useSel: {}, useWait: null, useFam: '', useOk: false, getFocus: null,
             text: '', gen: 0, seq: 0, inflight: {}, late: {}, loading: new Set(), queue: [], asked: {}, faces: new Map(), faceN: 0, nFaces: 0, io: null, cv: null,
-            open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, tq: 0, tt: 0, td: 0
+            open: false, view: 'list', fam: '', dText: '', dSize: 40, axes: {}, listTop: 0, descOpen: false, licOpen: false, tq: 0, tt: 0, td: 0
         };
         const FNT_STAGES = ['read', 'instance', 'convert', 'emoji', 'package', 'sign', 'save'];
         const FNT_STAGE_TEXT = { read: 'Reading the font files…', instance: 'Fixing the variable font at the chosen weight…', convert: 'Converting the outlines to TrueType…', emoji: 'Putting the emoji in…', package: 'Making the font package…', sign: 'Signing the package…', save: 'Saving…' };
@@ -46753,7 +46753,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (gf.view === 'list' && sc) gf.listTop = sc.scrollTop;
             haptic();
             clearTimeout(gf.tt);                                             // the list's new text (gf.text) is drawn on Back; its timer must not drop this page's previews
-            gf.view = 'detail'; gf.fam = f; gf.descOpen = false;
+            gf.view = 'detail'; gf.fam = f; gf.descOpen = false; gf.licOpen = false;
             gf.dText = gf.text.trim() ? gf.text : gfSample(e);
             gf.dSize = 40;
             gf.axes = gfAxesStart(e);
@@ -47114,7 +47114,8 @@ Type any command above (e.g. pm list packages -d)</div>
             let h = '<div class="fnt-lab">About this family</div>';
             if (I.asking) h += '<div class="fnt-note" id="gfInfoWait">Getting the details from Google Fonts…</div>';
             else if (I.err) h += '<div class="fnt-err" id="gfInfoErr"><span class="is-err">' + escapeHtml(I.err) + '</span></div><button type="button" class="batch-tool-link" id="gfInfoRetry" onclick="gfAskInfo(' + jsArg(f) + ', true)">Retry</button>';
-            // opened by More, the description may hold the focus More had (gfDescMore): it stays able to after a redraw
+            // opened by More, the description may hold the focus More had (gfDescMore): it stays able to after a redraw. Opened, the Licence text stays
+            // open when About is drawn again (a newer list, its details asked again), as the description does (gf.licOpen; a new family's page starts closed)
             if (ok && I.description) h += '<div class="gf-desc' + (gf.descOpen ? '' : ' gf-clamp') + '" id="gfDesc"' + (gf.descOpen ? ' tabindex="-1"' : '') + ' translate="no" dir="auto">' + escapeHtml(I.description) + '</div>'
                 + '<button type="button" class="batch-tool-link" id="gfDescMore" onclick="gfDescMore()" style="display:none;">More</button>';
             const designers = ok && Array.isArray(I.designers) && I.designers.length ? I.designers : (e.d || []);
@@ -47122,7 +47123,7 @@ Type any command above (e.g. pm list packages -d)</div>
             // gone family has no page on fonts.google.com to open
             const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : String((gf.dls[f] || {}).licenseName || '');
             h += row('Licence', lic)
-                + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"><summary id="gfLicSum">Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
+                + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"' + (gf.licOpen ? ' open' : '') + ' ontoggle="gfLicToggle(this)"><summary id="gfLicSum">Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
                 + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Last updated', gfDate(e.m))
                 + (e.gone ? '' : '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>');
             const k = gfFocusNote(box);
@@ -47134,6 +47135,8 @@ Type any command above (e.g. pm list packages -d)</div>
             // goes to Retry or the first control; Retry pressed, About holds it (read: "Getting the details…") until the details or the reason come
             gfFocusBack(box, k, I.asking ? [] : ['#gfInfoRetry', '#gfDescMore', '#gfLicSum', '#gfOpenSite']);
         }
+        // the Licence text opened or closed (a tap, Enter): kept for About's redraws. One already drawn over (a redraw before its toggle came) says nothing
+        function gfLicToggle(el) { if (el.isConnected) gf.licOpen = !!el.open; }
         function gfDescMore() {
             gf.descOpen = true;
             const desc = document.getElementById('gfDesc'), more = document.getElementById('gfDescMore');
