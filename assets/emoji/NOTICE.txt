@@ -5,12 +5,12 @@ tools/make-emoji-specimens.sh from the exact files the app downloads (the addres
 Each keeps its font's own copyright and licence:
 
 noto.ttf      Noto Color Emoji (googlefonts/noto-emoji, tag v2026-09-24-unicode18_0)
-              Copyright 2022 Google Inc. SIL Open Font License 1.1: https://openfontlicense.org
+              Copyright 2022 Google Inc. SIL Open Font License 1.1, full text in OFL.txt in this folder (https://openfontlicense.org)
 twemoji.ttf   Twemoji (SableClient/twemoji-font v1.0.4, the COLR build of jdecked/twemoji)
               Graphics (c) Twitter, Inc. and other contributors. Creative Commons Attribution 4.0:
               https://creativecommons.org/licenses/by/4.0/ (the copy is cut down to sixteen emoji)
 blobmoji.ttf  Blobmoji (DavidBerdik/blobmoji2, tag blobmoji-17r1, a fork of Noto Emoji with the blob art)
-              Copyright 2022 Google Inc. SIL Open Font License 1.1: https://openfontlicense.org
+              Copyright 2022 Google Inc. SIL Open Font License 1.1, full text in OFL.txt in this folder (https://openfontlicense.org)
 openmoji.ttf  OpenMoji (hfg-gmuend/openmoji 17.0.0, the COLRv0 build)
               OpenMoji (c) HfG Schwäbisch Gmünd. Creative Commons Attribution-ShareAlike 4.0:
               https://creativecommons.org/licenses/by-sa/4.0/ (the copy is cut down to sixteen emoji and shared under the same licence)
