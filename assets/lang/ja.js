@@ -5643,7 +5643,8 @@ x: {
 "Vietnamese": "ベトナム語",
 "About this family": "このファミリーについて",
 "Display [font category]": "ディスプレイ",
-"Light [font weight]": "ライト"
+"Light [font weight]": "ライト",
+"The files you chose are still being read. Wait a moment.": "選択したファイルをまだ読み込み中です。しばらくお待ちください。"
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6880,5 +6881,6 @@ p: [
 ["{0} was not downloaded. {1}", "{0} をダウンロードできませんでした。{1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "{0} のライセンスでは、「{1}」という名前は元のフォント専用です。これを元に作るフォントは改変版なので、別の名前を付けてください。"],
 ["{0} was not saved. {1}", "{0} を保存できませんでした。{1}"],
+
 ]
 };

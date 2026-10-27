@@ -5643,7 +5643,8 @@ x: {
 "Vietnamese": "Vietnamca",
 "About this family": "Bu yazı tipi ailesi hakkında",
 "Display [font category]": "Dekoratif",
-"Light [font weight]": "Açık"
+"Light [font weight]": "Açık",
+"The files you chose are still being read. Wait a moment.": "Seçtiğiniz dosyalar hâlâ okunuyor. Biraz bekleyin."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6880,5 +6881,6 @@ p: [
 ["{0} was not downloaded. {1}", "{0} indirilemedi. {1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "{0} ailesinin lisansı “{1}” adını özgün yazı tipine ayırır. Ondan yapılan bir yazı tipi değiştirilmiş bir kopyadır, bu yüzden ona başka bir ad verin."],
 ["{0} was not saved. {1}", "{0} kaydedilemedi. {1}"],
+
 ]
 };

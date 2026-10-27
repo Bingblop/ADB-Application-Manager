@@ -5643,7 +5643,8 @@ x: {
 "Vietnamese": "Vietnamita",
 "About this family": "Acerca de esta familia",
 "Display [font category]": "Decorativa",
-"Light [font weight]": "Ligera"
+"Light [font weight]": "Ligera",
+"The files you chose are still being read. Wait a moment.": "Todavía se están leyendo los archivos que elegiste. Espera un momento."
 },
 p: [
 ["Shizuku (UID {0})", "Shizuku (UID {0})"],
@@ -6880,5 +6881,6 @@ p: [
 ["{0} was not downloaded. {1}", "{0} no se descargó. {1}"],
 ["{0}'s licence keeps the name \"{1}\" for the original font. A font made from it is a changed copy, so give it another name.", "La licencia de {0} reserva el nombre «{1}» para la fuente original. Una fuente creada a partir de ella es una copia modificada, así que ponle otro nombre."],
 ["{0} was not saved. {1}", "{0} no se guardó. {1}"],
+
 ]
 };
