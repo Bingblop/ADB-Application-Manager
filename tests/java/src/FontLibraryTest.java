@@ -1193,6 +1193,14 @@ public class FontLibraryTest {
         is("only the iOS emoji are read by ranges", body(ma, "public String emojiSpecimenFetch(").contains("\"apple\".equals(id) ? EmojiCatalog.byId(id) : null"), true);
         is("the sample fonts are only the four in assets/emoji", body(ma, "public String emojiSpecimenFont(").contains("!EmojiSpecimen.SPECIMEN_IDS.contains(id)")
                 && body(ma, "public String emojiSpecimenFont(").contains("getAssets().open(\"emoji/\" + id + \".ttf\")"), true);
+        // a preview that lost a face to an HTTP status or an empty answer is shown but not cached for 30 days; one left out for its size still is (R1-08)
+        String pv = body(ma, "private String gfPreview(");
+        Matcher lost = Pattern.compile("if \\(w\\.status != 200 \\|\\| w\\.body\\.length == 0\\) \\{ (\\w+) = true; continue; \\}").matcher(pv);
+        String flag = lost.find() ? lost.group(1) : null, guard = "if (!" + flag + ") {";
+        int write = pv.indexOf("GoogleFonts.writeWhole(cached"), g = pv.indexOf(guard);
+        is("a preview that lost a face to an HTTP error is not cached", flag != null && pv.contains("boolean " + flag + " = false;") && g >= 0 && write > g
+                && write < g + body(pv.substring(g), guard).length() && pv.indexOf("GoogleFonts.writeWhole(") == write && pv.lastIndexOf("GoogleFonts.writeWhole(") == write, true);
+        is("…a face too big for the cap is left out without that", Pattern.compile("catch \\(GoogleFonts\\.GfException tooBig\\) \\{\\s*continue;\\s*\\}").matcher(pv).find(), true);
         // "no details page" is kept for the process only when Google's envelope and the HTTP status both say 404 (R1-09)
         String ij = body(ma, "private void gfInfoJob(");
         is("a family's details: a 5xx or a 429 is asked again, not kept as no details", ij.contains("if (!\"gf_unknown\".equals(e.code) || a.status != 404) {")

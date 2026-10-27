@@ -8162,7 +8162,8 @@ public class MainActivity extends Activity {
     /**
      * A preview (gfontsPreview), as the answer's JSON: from the cache (cache/fontmaker/gfpv/, 30 days), else the css2 answer for the family and
      * the characters, and each face it names (a woff2 on fonts.gstatic.com): a face over 2 MB is left out, and so are the faces after 8 MB in
-     * all. {ok, family, mode, faces:[{style, weight, stretch, b64}]} is cached, and the cache trimmed to 24 MB, oldest first.
+     * all. {ok, family, mode, faces:[{style, weight, stretch, b64}]} is cached, and the cache trimmed to 24 MB, oldest first. An answer that
+     * lost a face to an HTTP status other than 200 or an empty body is returned but not cached.
      */
     private String gfPreview(JSONObject entry, String family, String mode, String text) {
         try {
@@ -8176,6 +8177,7 @@ public class MainActivity extends Activity {
             if (css.status != 200) throw new GfHttp(css.status);
             JSONArray faces = new JSONArray();
             long total = 0;
+            boolean lostFace = false;
             for (GoogleFonts.Face f : GoogleFonts.parseCss(css.text())) {
                 GfAnswer w;
                 try {
@@ -8183,7 +8185,8 @@ public class MainActivity extends Activity {
                 } catch (GoogleFonts.GfException tooBig) {
                     continue;
                 }
-                if (w.status != 200 || w.body.length == 0) continue;
+                // a 503, a 429 or an empty answer may not happen next time: the faces that came are shown, but not kept for 30 days
+                if (w.status != 200 || w.body.length == 0) { lostFace = true; continue; }
                 if (total + w.body.length > GoogleFonts.MAX_PREVIEW) break;
                 total += w.body.length;
                 faces.put(new JSONObject().put("style", f.style).put("weight", f.weight).put("stretch", f.stretch)
@@ -8191,10 +8194,12 @@ public class MainActivity extends Activity {
             }
             if (faces.length() == 0) throw new GoogleFonts.GfException("gf_no_preview");
             String answer = new JSONObject().put("ok", true).put("family", family).put("mode", mode).put("faces", faces).toString();
-            try {
-                GoogleFonts.writeWhole(cached, answer.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                GoogleFonts.trimCache(dir, GoogleFonts.PREVIEW_CACHE_BYTES);
-            } catch (IOException notCached) {}
+            if (!lostFace) {
+                try {
+                    GoogleFonts.writeWhole(cached, answer.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    GoogleFonts.trimCache(dir, GoogleFonts.PREVIEW_CACHE_BYTES);
+                } catch (IOException notCached) {}
+            }
             return answer;
         } catch (Throwable t) {
             return gfError(t, null).toString();
