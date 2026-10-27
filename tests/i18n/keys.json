@@ -6511,7 +6511,7 @@
 {"k":"{0} in Termux, with your saved key","ctx":"built by the code of: tx cli turn"},
 {"k":"{0} in this list","ctx":"built by the code of: sd rev paint"},
 {"k":"{0} is a full-screen program: it needs a real terminal, so run it in Termux","ctx":"built by the code of: tx fullscreen hint"},
-{"k":"{0} is in Make a font","ctx":"built by the code of: gf use"},
+{"k":"{0} is in Make a font","ctx":"built by the code of: on font maker picked"},
 {"k":"{0} is installed with a different signing key, so Android refuses to update it.","ctx":"built by the code of: install uninstall ask"},
 {"k":"{0} is installed. Next: sign in (it opens in Termux), then chat here.","ctx":"built by the code of: tx install cli"},
 {"k":"{0} is made again in My fonts.","ctx":"built by the code of: on font maker built"},
