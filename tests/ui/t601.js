@@ -16,7 +16,8 @@
 // whose page is open goes back to the list, unless the family is on the phone: then its page stays and says it left Google Fonts. With a keyboard
 // (switch access, TalkBack) the focus is not lost when the section is drawn again: it stays on the same control (the details came, the first
 // progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font).
-// The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone.
+// The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone. Without
+// a family's details, About's Licence is its download's: it comes with a download made on the family's page and goes with a Delete there.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the jobs move when the script says; opts.holdSave); the list: fixtures/gfonts-catalog.json.
 const fs = require('fs');
 const path = require('path');
@@ -101,9 +102,11 @@ const kb = n => (n * 1024);
     await page.click('#gfList .gf-card[data-f="Roboto"]'); await page.waitForTimeout(150);
     g = await get(page);
     check('   left and opened again while it runs: the bar where it was', g.prog && /^File 2 of 2 · /.test(g.prog.txt) && g.cancel === 'Cancel', JSON.stringify(g.prog));
+    await page.evaluate(() => { document.getElementById('gfLic').open = true; });
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     g = await get(page);
     check('4. done: a toast, "Downloaded · 2 files · ' + fmt[3] + '"', g.toast === 'Roboto downloaded' && g.have === 'Downloaded · 2 files · ' + fmt[3] && !g.prog, JSON.stringify(g));
+    check('   About is not drawn again (its details came): the Licence text opened meanwhile stays open', await page.evaluate(() => !!document.getElementById('gfLic') && document.getElementById('gfLic').open));
     check('   a variable family: nothing to choose; Use in Make a font (the one primary), Save to phone, Delete', !g.selects && g.use === 'Use in Make a font*' && g.save === 'Save to phone' && g.del === 'Delete' && g.primaries === 1, JSON.stringify(g));
     await page.evaluate(() => gfBackToList()); await page.waitForTimeout(100);
     const badge = await page.evaluate(() => [...document.querySelectorAll('#gfList .gf-card[data-f="Roboto"] .uad-badge')].map(x => x.textContent).join(','));
@@ -454,6 +457,26 @@ const kb = n => (n * 1024);
     const html = (H.sections.find(x => x.id === 'fonts-google') || {}).html || '', said = (/File 1 of 2 · (\d+) KB of (\d+) KB"?: ([^)]*)\)/.exec(html) || []), have = /Downloaded · 2 files · (\d+) KB/.exec(html);
     check('16. the Help Guide: the progress sizes are a file\'s as it comes over the network, the "Downloaded" size the space on the phone (not their sum)', said.length && /over the network/.test(said[3]) && !/sizes are those of that file, and they start/.test(html)
       && !!have && +have[1] !== 2 * +said[2], JSON.stringify([said[3], have && have[0]]));
+  }
+  // a family whose details cannot be had (no connection): About's Licence is its download's, so it comes with a download made on its page and goes
+  // with a Delete there, without opening the page again
+  {
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, hold: true, infoError: { code: 'network', error: 'The download failed: timeout' } } });
+    const about = () => page.evaluate(() => ({ rows: [...document.querySelectorAll('#gfAbout .fnt-now')].map(r => [...r.children].map(c => c.textContent.trim()).join(' ')).filter(t => /^Licence /.test(t)),
+      err: !!document.getElementById('gfInfoErr'), retry: !!document.getElementById('gfInfoRetry'), lic: !!document.getElementById('gfLic'), dl: !!document.getElementById('gfDlBtn') }));
+    await showFam(page, 'Lato');
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    let a = await about();
+    check('17. Lato, not on the phone, its details not to be had: the reason and Retry, no Licence row', a.err && a.retry && !a.rows.length && a.dl, JSON.stringify(a));
+    await page.click('#gfDlBtn');
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    a = await about();
+    check('   downloaded on its page: "Licence SIL Open Font License 1.1" from the download (no Licence text); the reason and Retry stay', a.rows.join('|') === 'Licence SIL Open Font License 1.1' && !a.lic && a.err && a.retry, JSON.stringify(a));
+    await page.click('#gfDelBtn'); await page.waitForTimeout(150);
+    a = await about();
+    check('   deleted there: Download, and the Licence row goes', a.dl && !a.rows.length, JSON.stringify(a));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
   }
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'all passed');

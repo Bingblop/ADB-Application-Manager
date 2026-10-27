@@ -448,7 +448,8 @@ const detail = (page) => page.evaluate((wsrc) => {
   }
   // a 'styles' answer without some of its faces (the app leaves out one lost to a 429 or 503, one past 2 MB and those past 8 MB; one that does not
   // load is dropped): those rows say "No preview", never the nearest weight that came under their name. A downloaded family whose details cannot be
-  // had (no connection): its licence as its download recorded it. A failed tester line, then new text: blank until its answer
+  // had (no connection): its licence as its download recorded it, also when the download is deleted or made again on its page. A failed tester line,
+// then new text: blank until its answer
   {
     const { ctx, page, errors } = await open(b, { gf: { catalog: CAT, downloads: ['Lato'], hold: true, previewError: ['Inter'], dropFaces: { Lato: ['700'] }, badFaces: { Lato: ['900i'] },
       infoError: { code: 'network', error: 'The download failed: timeout' } } });
@@ -492,6 +493,16 @@ const detail = (page) => page.evaluate((wsrc) => {
     let ab = await page.evaluate(() => ({ err: (document.querySelector('#gfInfoErr .is-err') || {}).textContent, retry: !!document.getElementById('gfInfoRetry'), lic: !!document.getElementById('gfLic') }));
     check('20. Lato downloaded, its details not to be had: the reason and Retry, and "Licence SIL Open Font License 1.1" from its download (no licence text)', ab.err === 'The download failed (timeout). Check the connection and try again.'
       && ab.retry && !ab.lic && /Licence SIL Open Font License 1\.1/.test(d.about), JSON.stringify([ab, d.about]));
+    // its download deleted and made again on the page, the details still not to be had: About's Licence goes and comes with it, without opening the page again
+    await page.click('#gfDelBtn'); await page.waitForTimeout(200);
+    d = await detail(page);
+    check('   Delete on its page: the deleted download\'s Licence row goes with it; Download', !/Licence /.test(d.about) && /^Font files Download/.test(d.get), JSON.stringify([d.about, d.get]));
+    await page.click('#gfDlBtn');
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(200);
+    d = await detail(page);
+    ab = await page.evaluate(() => ({ err: !!document.getElementById('gfInfoErr'), retry: !!document.getElementById('gfInfoRetry'), lic: !!document.getElementById('gfLic') }));
+    check('   downloaded again on its page: "Licence SIL Open Font License 1.1" from the new download; the reason and Retry stay', /Licence SIL Open Font License 1\.1/.test(d.about) && ab.err && ab.retry && !ab.lic
+      && /^Font files Downloaded/.test(d.get), JSON.stringify([ab, d.about, d.get]));
     await page.evaluate(() => { __fmk.gfInfoError = null; });
     await page.click('#gfInfoRetry');
     await page.evaluate(() => __fmk.gfStepAll());

@@ -84,6 +84,8 @@ ok      new tester text: those two blank until the answer, the others in the fac
 ok      answered without them again: "No preview" again, the others drawn in their own weight and style
 ok      a later answer with its face: Bold 700 drawn in 700 upright again
 ok   20. Lato downloaded, its details not to be had: the reason and Retry, and "Licence SIL Open Font License 1.1" from its download (no licence text)
+ok      Delete on its page: the deleted download's Licence row goes with it; Download
+ok      downloaded again on its page: "Licence SIL Open Font License 1.1" from the new download; the reason and Retry stay
 ok      Retry: the details' licence, with its text
 ok   21. Inter's tester line "No preview", then new text: blank (gf-wait) until its answer, not the text bare in the app's font
 ok      then "No preview" again

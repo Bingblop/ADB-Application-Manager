@@ -46932,7 +46932,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!shown) showToast(txF('{0} was not downloaded. {1}', family, gf.dlErr[family]));
             }
             gfLoadDls();
-            if (shown) gfRenderGet();
+            // without the details About's Licence is the download's (gfRenderAbout): drawn again then, and only then (an open Licence text stays open)
+            if (shown) { gfRenderGet(); if (!(gf.info[family] || {}).ok) gfRenderAbout(); }
             else if (gf.open && gf.view === 'list' && r.ok) gfFilter(false);         // finished while the list shows: its badge, the Downloaded filter, the count
         };
         // the family's files into Make a font's slots, as a chosen file would come (onFontMakerPicked); the sheet closes on Make a font
@@ -47004,7 +47005,8 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             delete gf.msg[f]; delete gf.useSel[f];
             gfLoadDls();
-            if (gf.by.has(f)) gfRenderGet(); else gfBackToList();          // a family no longer on Google Fonts is gone with its files: back to the list
+            if (gf.by.has(f)) { gfRenderGet(); if (!(gf.info[f] || {}).ok) gfRenderAbout(); }          // About's Licence goes with the download, as in onGfDone
+            else gfBackToList();                                             // a family no longer on Google Fonts is gone with its files: back to the list
             showToast(txF('Deleted {0}', f));
         }
         function gfRenderAbout() {
