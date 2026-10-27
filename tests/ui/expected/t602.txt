@@ -1,5 +1,6 @@
 ok   1. Roboto (variable, on the phone): Use in Make a font, nothing to choose
 ok      Use: the sheet closes; until the file is read the chooser gate is shut (Choose waits, no link)
+ok      reopened on Lato before the file is read: Use waits, saying the files are still being read (no file chooser is open)
 ok      gfontsUse: only the Regular, the upright variable file
 ok      a toast: "Roboto is in Make a font"; Make a font scrolled into view
 ok   2. the Regular is Roboto's variable file; Bold: its own Bold instance

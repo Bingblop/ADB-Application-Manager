@@ -46763,9 +46763,11 @@ Type any command above (e.g. pm list packages -d)</div>
             gf.useSel[gf.fam] = { reg: r ? r.value : '', bold: b ? b.value : '' };
             gfUseState();
         }
-        // Use in Make a font waits, as a file chooser does, while a font is being made or a file chooser is open (the picking gate)
+        // Use in Make a font waits, as a file chooser does, while a font is being made, a file chooser is open, or the files of a family used before are
+        // still being read (the picking gate: 'gf' until each gfontsUse answer came)
         function gfUseBlocked() {
             if (fnt.building) return txT('A font is being made. Wait for it to finish, or cancel it.');
+            if (fnt.picking === 'gf') return txT('The files you chose are still being read. Wait a moment.');
             if (fnt.picking) return txT('The file chooser is already open.');
             return '';
         }

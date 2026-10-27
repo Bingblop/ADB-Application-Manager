@@ -5,7 +5,8 @@
 // The Name is filled in from the family unless it holds one of its Reserved Font Names (Lato): then it stays empty, and a Name that holds one (any
 // case) shows the licence note under the field while Build stays usable; a Regular chosen from a file clears the Regular's names, but a Bold from
 // the family keeps its own while Bold is that file (the note shows with Bold "From a file", not with None). The family's page says
-// its Reserved Font Names. Use waits, with the reason, while a font is being made or the file chooser is open; a file the app refuses says why in
+// its Reserved Font Names. Use waits, with the reason, while a font is being made, the file chooser is open, or the files of a family used just
+// before are still being read (the sheet opened again at once); a file the app refuses says why in
 // the Regular slot. The family's files take the slots: a refused one leaves its slot empty (Build waits), never with a file chosen before from
 // another font, and a refused Regular takes the Reserved Font Names of that earlier font with it. A family under the Ubuntu Font Licence (Ubuntu)
 // says so on its page; its own name is not filled in and warns in the Name like a Reserved Font Name, but "Ubuntu derivative <a name>" is allowed
@@ -58,8 +59,19 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     await showFam(page, 'Roboto');
     let u = await useState(page);
     check('1. Roboto (variable, on the phone): Use in Make a font, nothing to choose', u.disabled === false && !u.why && !(await page.evaluate(() => !!document.getElementById('gfUseReg'))), JSON.stringify(u));
-    const now = await page.evaluate(() => { gfUse(); return { picking: fnt.picking, choose: document.getElementById('fntPick_regular').disabled, link: !!document.getElementById('gfFindLink'), sheet: document.getElementById('gfSheet').classList.contains('show') }; });
+    // the sheet opened again on another family before the file is read (the answer comes on a timer: one evaluate, so it cannot come in between)
+    const now = await page.evaluate(() => {
+      gfUse();
+      const o = { picking: fnt.picking, choose: document.getElementById('fntPick_regular').disabled, link: !!document.getElementById('gfFindLink'), sheet: document.getElementById('gfSheet').classList.contains('show') };
+      gfOpen(); gfShow('Lato');
+      const b = document.getElementById('gfUseBtn'), w = document.getElementById('gfUseWhy');
+      o.again = { picking: fnt.picking, d: b.disabled, why: w.style.display !== 'none' ? w.textContent : '' };
+      gfClose();
+      return o;
+    });
     check('   Use: the sheet closes; until the file is read the chooser gate is shut (Choose waits, no link)', now.picking === 'gf' && now.choose && !now.link && !now.sheet, JSON.stringify(now));
+    check('   reopened on Lato before the file is read: Use waits, saying the files are still being read (no file chooser is open)', now.again.picking === 'gf' && now.again.d
+      && now.again.why === 'The files you chose are still being read. Wait a moment.', JSON.stringify(now.again));
     check('   gfontsUse: only the Regular, the upright variable file', (await useCalls(page)).join(',') === 'gfontsUse:Roboto:Roboto-VariableFont_wdth,wght.ttf:regular', (await useCalls(page)).join(','));
     await page.waitForTimeout(900);
     let m = await make(page);
