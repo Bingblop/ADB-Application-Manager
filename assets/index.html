@@ -45424,13 +45424,17 @@ Type any command above (e.g. pm list packages -d)</div>
             return null;
         }
         // a Google Fonts family's Reserved Font Names, from a slot's answer (r.gf, gfontsUse); a file from the file chooser has none. The Ubuntu Font Licence
-        // (its download's licence kind) has no Reserved Font Name line, but a changed copy must not keep the family's name either, unless it is
-        // "<family> derivative <a name>" (UFL 1.0, condition 2): the name is held like one
+        // (its download's licence kind) has no Reserved Font Name line, but a changed copy must not keep the family's name, nor a similar one, unless it
+        // is "<family> derivative <a name>" (UFL 1.0, condition 2): the name is held like one, and so are its leading words ("Ubuntu" for Ubuntu Mono,
+        // "Ubuntu Sans" and "Ubuntu" for Ubuntu Sans Mono), longest first so a name holding the whole one reports it
         function fntGfReserved(r) {
             const g = r && r.gf && typeof r.gf === 'object' ? r.gf : null;
             const names = g && Array.isArray(g.reserved) ? g.reserved.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim()) : [];
             const family = g ? String(g.family || '') : '', fam = family.trim(), ufl = !!fam && (gf.dls[family] || {}).license === 'ufl';
-            if (ufl && !names.some(x => x.toLowerCase() === fam.toLowerCase())) names.push(fam);
+            if (ufl) {
+                const w = fam.split(/\s+/);
+                for (let i = w.length; i >= 1; i--) { const x = w.slice(0, i).join(' '); if (!names.some(y => y.toLowerCase() === x.toLowerCase())) names.push(x); }
+            }
             return { names: names, family: family, ufl: ufl };
         }
         // making a font of My fonts again: it keeps its package and gets the next version, so it installs over the one on the phone

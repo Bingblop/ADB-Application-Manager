@@ -10,7 +10,8 @@
 // the Regular slot. The family's files take the slots: a refused one leaves its slot empty (Build waits), never with a file chosen before from
 // another font, and a refused Regular takes the Reserved Font Names of that earlier font with it. A family under the Ubuntu Font Licence (Ubuntu)
 // says so on its page; its own name is not filled in and warns in the Name like a Reserved Font Name, but "Ubuntu derivative <a name>" is allowed
-// (UFL 1.0, condition 2), and only for such a family. In Arabic both licence notes read right to left, even when they start with the family's name.
+// (UFL 1.0, condition 2), and only for such a family; for Ubuntu Mono or Ubuntu Sans Mono the shorter names they share ("Ubuntu", "Ubuntu Sans")
+// warn too, and the derivative form takes the whole name. In Arabic both licence notes read right to left, even when they start with the family's name.
 // The details of a downloaded family that come while its Regular is being chosen leave the section as it is (the select, the focus), so the file
 // chosen there is the one handed over.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf; opts.hold holds the build); the list: fixtures/gfonts-catalog.json.
@@ -281,6 +282,38 @@ const useState = (page) => page.evaluate(() => { const b = document.getElementBy
     }
     await page.screenshot({ path: 'notes-ar.png' });
     await page.evaluate(() => LANG_ENGINE.set('en')); await page.waitForTimeout(300);
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
+  // the Ubuntu Font Licence keeps similar names too (condition 2): for Ubuntu Mono the name "Ubuntu" it shares with the other Ubuntu families, for
+  // Ubuntu Sans Mono "Ubuntu Sans" and "Ubuntu"; the derivative form takes the whole family's name ("Ubuntu Mono derivative <a name>")
+  {
+    const UB = CAT.families.find(e => e.f === 'Ubuntu'), mono = f => Object.assign({}, UB, { f, c: 'mono', w: ['400', '400i', '700', '700i'] });
+    const CAT3 = Object.assign({}, CAT, { families: CAT.families.concat([mono('Ubuntu Mono'), mono('Ubuntu Sans Mono')]) });
+    const { ctx, page, errors } = await open(b, { gf: { catalog: CAT3, downloads: ['Ubuntu Mono', 'Ubuntu Sans Mono'] } });
+    const note = (f, n) => f + '\'s licence keeps the name "' + n + '" for the original font. A font made from it is a changed copy, so give it another name.';
+    const names = async (f, cases, ok) => {
+      for (const [n, held] of cases) {
+        await page.fill('#fntName', n);
+        const m = await make(page);
+        check('   "' + n + '": the note for "' + held + '"; Build stays usable', m.msg === note(f, held) && m.build, JSON.stringify(m));
+      }
+      await page.fill('#fntName', ok);
+      const m = await make(page);
+      check('   "' + ok + '": no note', !m.msg && m.build, JSON.stringify(m));
+    };
+    await showFam(page, 'Ubuntu Mono');
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    let m = await make(page);
+    check('15b. Ubuntu Mono (UFL): Use; the Name is not filled in', m.reg === 'UbuntuMono-Regular.ttf' && m.bold === 'UbuntuMono-Bold.ttf' && m.name === '' && !m.msg, JSON.stringify(m));
+    await names('Ubuntu Mono', [['Ubuntu', 'Ubuntu'], ['my ubuntu', 'Ubuntu'], ['Ubuntu derivative Mine', 'Ubuntu'], ['Ubuntu Mono Foo', 'Ubuntu Mono']], 'Ubuntu Mono derivative Mine');
+    await showFam(page, 'Ubuntu Sans Mono');
+    await page.click('#gfUseBtn');
+    await page.waitForTimeout(400);
+    m = await make(page);
+    check('   Ubuntu Sans Mono in Make a font', m.reg === 'UbuntuSansMono-Regular.ttf', JSON.stringify(m));
+    await names('Ubuntu Sans Mono', [['Ubuntu Sans', 'Ubuntu Sans'], ['Ubuntu', 'Ubuntu'], ['Ubuntu Sans Mono Bold', 'Ubuntu Sans Mono'], ['Ubuntu Sans derivative Mine', 'Ubuntu Sans']], 'Ubuntu Sans Mono derivative Mine');
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
