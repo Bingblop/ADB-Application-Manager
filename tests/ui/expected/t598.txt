@@ -16,6 +16,7 @@ ok      the preview size: 14-72, 28
 ok      placeholders
 ok   4. Show more: 60 cards, "Show 4 more · 4 left"
 ok      then all 64, no more button; the family without popularity comes last
+ok      the button that had the focus is gone: it is on the first card it brought (Buda), not lost to the page
 ok      a new search far down the list starts at the top: Open Sans in view under the bar
 ok   5. Trending: Noto Sans Georgian, Arimo, Rajdhani
 ok      Newest: Arimo, Google Sans, Roboto Mono
@@ -42,6 +43,7 @@ ok      Clear filters: every family again, search and chips cleared (the sort ke
 ok   10. a card opens the family: title Lato (translate="no"), Back shown, no search
 ok      Back: the list again, still open
 ok      Back again: the sheet closes, the tab stays
+ok      the focus does not stay in the closed sheet (its search field would keep the bottom bar away)
 ok   11. the Make a font link opens the sheet on the list
 ok      a tap outside the sheet: from the family to the list
 ok      and then closed
@@ -53,11 +55,14 @@ ok      from a family's page: up, down, down again goes back to the list
 ok      and down from the list closes the sheet
 ok   12. dark, 412 px: nothing wider than the screen
 ok      no page errors
+ok   10b. the bottom bar: Back with the search or preview field focused closes the sheet, the focus leaves it and the bar comes back
+ok      no page errors
 ok   13. no list yet: the button shows without a count
 ok      opening asks for it (gfontsRefresh false) and says so; no cards, no count
 ok      the list comes: status, 30 cards, the button counts 64
 ok      Refresh: gfontsRefresh true, "Updating the list…" while the list stays
 ok      and back to Refresh
+ok      the focus on Lato's card stays there when the new list redraws the cards
 ok      no page errors
 ok   14. a failed first list: "The list of fonts is not on this phone yet.", the reason, Retry
 ok      Retry asks again (gfontsRefresh true)
@@ -104,6 +109,7 @@ ok      no page errors
 ok   18. the guide's count examples are ones the page shows for a list of 1,950
 ok      the privacy row: the typed preview text goes out; the search words are not sent, but the families they find ask for their previews by name
 ok      the fonts page says the same of the search
+ok      the privacy summary names the Google Fonts page's scrolling and typing among what starts a contact, not only a tab, a button or a chat message
 ok      the privacy browser row names Open on fonts.google.com
 ok      the fonts pages quote the network failure with its reason in brackets, as the page shows it
 all passed

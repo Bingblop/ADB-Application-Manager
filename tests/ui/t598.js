@@ -10,12 +10,15 @@
 // while the page stays open is updated the next time the sheet opens; one another window of the app got meanwhile (gfontsRefresh answers fresh) is
 // read again, its date and count shown, without the busy sentence; so is one another window got while this one had none and the sheet was closed
 // (the tab shown again reads it for the button's count, and the sheet shows it fresh, with no busy sentence or Retry). Back (backNavigate) and a tap outside
-// step from a family's page to the list, then close. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
+// step from a family's page to the list, then close; a field of the sheet that kept the focus (the keyboard already down) loses it then, so the
+// bottom bar comes back. A keyboard's focus survives the list drawn again: on the same card when a new list comes, on the first card the last
+// Show more brought. An older app build (no gfontsCatalog) has no button and no link. No horizontal scroll at
 // 360 px, in the light theme and right-to-left.
 // The chips are outlined like the app's other chips (filled only when pressed), a card's badges stand apart, a new search starts at the top of its
 // results, and the sheet's handle pulls it up to the whole screen (down once: its size again; down again: the usual step back). The Help Guide
 // says what the page shows: its examples of the count are ones the page can show, its privacy row sends the typed preview text, not the search
-// words (but the previews of the families a search finds), its browser row has Open on fonts.google.com, and a network failure is quoted with its reason.
+// words (but the previews of the families a search finds), its privacy summary counts scrolling and typing on the page among what starts a contact,
+// its browser row has Open on fonts.google.com, and a network failure is quoted with its reason.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf); the list: fixtures/gfonts-catalog.json (64 real families).
 const fs = require('fs');
 const path = require('path');
@@ -106,6 +109,8 @@ const wide = (page) => page.evaluate(() => {
     await page.click('#gfMoreBtn'); await page.waitForTimeout(100);
     s = await sheet(page);
     check('   then all 64, no more button; the family without popularity comes last', s.cards.length === 64 && s.more === '' && s.cards[63] === 'Material Symbols Outlined', JSON.stringify([s.cards.length, s.more, s.cards[63]]));
+    const mf = await page.evaluate(() => { const a = document.activeElement; return a && a.classList.contains('gf-card') ? a.dataset.f : (a ? a.id || a.tagName : ''); });
+    check('   the button that had the focus is gone: it is on the first card it brought (' + s.cards[60] + '), not lost to the page', mf === s.cards[60], mf);
     // a search typed far down the list starts at the top of its results (the search field is in the sticky bar)
     const from = await page.evaluate(() => { const sc = document.getElementById('gfScroll'); sc.scrollTop = sc.scrollHeight; return sc.scrollTop; });
     await search(page, 'sans');
@@ -196,9 +201,12 @@ const wide = (page) => page.evaluate(() => {
     await page.evaluate(() => backNavigate()); await page.waitForTimeout(150);
     s = await sheet(page);
     check('   Back: the list again, still open', s.open && s.list && !s.detail && s.title === 'Google Fonts' && s.search && !s.back, JSON.stringify(s));
+    await page.focus('#gfSearch');                                    // the keyboard went down with the first Back, the field kept the focus
     await page.evaluate(() => backNavigate()); await page.waitForTimeout(150);
     s = await sheet(page);
     check('   Back again: the sheet closes, the tab stays', !s.open && (await page.evaluate(() => currentViewName())) === 'fonts', JSON.stringify(s));
+    check('   the focus does not stay in the closed sheet (its search field would keep the bottom bar away)', await page.evaluate(() => !document.getElementById('gfSheet').contains(document.activeElement)),
+      await page.evaluate(() => document.activeElement.id || document.activeElement.tagName));
     await page.click('#gfFindLink'); await page.waitForTimeout(200);
     s = await sheet(page);
     check('11. the Make a font link opens the sheet on the list', s.open && s.list && s.cards.length === 30, JSON.stringify([s.open, s.cards.length]));
@@ -239,6 +247,31 @@ const wide = (page) => page.evaluate(() => {
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
+  // the bottom bar (the default navigation): Back closes the sheet while its search or preview-text field still has the focus (the keyboard went down
+  // with the Back before): the focus leaves the sheet and the bar comes back
+  {
+    const ctx = await b.newContext({ viewport: { width: 412, height: 900 } });
+    const page = await ctx.newPage();
+    page.bottomNav = true;
+    const errors = []; page.on('pageerror', e => errors.push(e.message));
+    await page.addInitScript(fmk.initScript, { b64: FONTS, gf: { catalog: CAT } });
+    await page.goto(PAGE); await page.waitForTimeout(800);
+    await page.evaluate(() => switchView('fonts')); await page.waitForTimeout(400);
+    const bar = () => page.evaluate(() => ({ away: document.documentElement.classList.contains('bnav-away'), off: document.getElementById('bnav').classList.contains('bnav-off'),
+      open: document.getElementById('gfSheet').classList.contains('show'), focus: document.getElementById('gfSheet').contains(document.activeElement) ? document.activeElement.id : '' }));
+    const b0 = await bar(), got = [];
+    for (const sel of ['#gfSearch', '#gfText']) {
+      await page.click('#gfOpenBtn'); await page.waitForTimeout(200);
+      await page.focus(sel); await page.keyboard.type('lato'); await page.waitForTimeout(200);
+      const typing = await bar();
+      await page.evaluate(() => backNavigate()); await page.waitForTimeout(400);
+      got.push([sel, typing, await bar()]);
+    }
+    check('10b. the bottom bar: Back with the search or preview field focused closes the sheet, the focus leaves it and the bar comes back', !b0.away && !b0.off
+      && got.every(([, t, a]) => t.away && t.open && !a.open && !a.focus && !a.away && !a.off), JSON.stringify([b0, got]));
+    check('   no page errors', !errors.length, errors.join(' | '));
+    await ctx.close();
+  }
   // no list on the phone: asked for, "Getting the list…", then shown
   {
     const { ctx, page, errors } = await open(b, { gf: { remote: CAT, hold: true } });
@@ -254,8 +287,12 @@ const wide = (page) => page.evaluate(() => {
     await page.click('#gfRefreshBtn'); await page.waitForTimeout(100);
     s = await sheet(page);
     check('   Refresh: gfontsRefresh true, "Updating the list…" while the list stays', s.calls.slice(-1)[0] === 'gfontsRefresh:true' && s.status === 'List updated Oct 1, 2026 · Updating the list…' && s.cards.length === 30, JSON.stringify([s.calls, s.status]));
+    // a keyboard (TalkBack) on a card when the new list comes and the cards are drawn again: the focus stays on that card
+    await page.focus('#gfList .gf-card[data-f="Lato"]');
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     check('   and back to Refresh', (await sheet(page)).status === 'List updated Oct 1, 2026 · Refresh');
+    const kf = await page.evaluate(() => { const a = document.activeElement; return a && a.classList.contains('gf-card') && document.getElementById('gfList').contains(a) ? a.dataset.f : (a ? a.id || a.tagName : ''); });
+    check('   the focus on Lato\'s card stays there when the new list redraws the cards', kf === 'Lato', kf);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -432,6 +469,11 @@ const wide = (page) => page.evaluate(() => {
       && /What you type in Search fonts or designers, and the filters, are not sent, but the families they bring onto the screen have their previews asked for by name/.test(row)
       && !/stay on the phone/.test(row) && !/Your search words/.test(row), row);
     check('   the fonts page says the same of the search', /what you type in Search fonts or designers is not sent, but the families it finds ask for their previews by name/.test(fg) && !/Search fonts or designers stays on the phone/.test(fg), fg.slice(0, 300));
+    // the summary above the table: every contact starts with something you do, and on the Google Fonts page that includes scrolling and typing (the
+    // previews of the families on the screen), as the row says
+    const short = sec('privacy').split(/The keys the app makes/)[0];
+    check('   the privacy summary names the Google Fonts page\'s scrolling and typing among what starts a contact, not only a tab, a button or a chat message',
+      /Every contact below starts when you open a tab, press a button or send a chat message/.test(short) && /Google Fonts page[^.]*scroll[^.]*type/.test(short), short.slice(-420));
     const brow = (sec('privacy').split(/(?=Your web browser, or this phone's store app)/)[1] || '').split(/The app only opens the address/)[0];
     check('   the privacy browser row names Open on fonts.google.com', /Open on fonts\.google\.com/.test(brow), brow);
     // a network failure always carries its reason (FNT_SAID 'network'): "The download failed (...). Check ..."; the plain FNT_ERR sentence is never shown

@@ -22,8 +22,8 @@ ok   8. Regular Lato-Light.ttf, Bold None: only the Regular asked; Bold None
 ok      the family's page keeps that choice
 ok   9. UnifrakturCook (700 only): Regular its one file, Bold None (never the Regular's own file)
 ok      Molle (italic only): Regular Molle-Italic.ttf, Bold None
-ok   10. the file chooser open: Use waits, saying why
-ok      the chooser answered: Use is usable again
+ok   10. a chosen file still being read (the chooser has closed): Use waits, saying why
+ok      the file read (onFontMakerPicked came): Use is usable again, no reason shown
 ok   11. with Lato in the Regular slot, "My Lato" has the note
 ok      a Regular chosen from a file: the note goes (the family's names no longer apply)
 ok   11b. Lato's Bold kept, a Regular from a file: "Lato Rounded" still has the note (the Bold is Lato's); Build usable
