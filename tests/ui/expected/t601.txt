@@ -95,6 +95,7 @@ ok      "The save screen is already open."
 ok      "This font family is downloading. Cancel it first." is said as itself
 ok      no page errors
 ok   16. the Help Guide: the progress sizes are a file's as it comes over the network, the "Downloaded" size the space on the phone (not their sum)
+ok      the undo table has a row for a downloaded Google Fonts family: Delete on its page; a family no longer on Google Fonts asks first
 ok   17. Lato, not on the phone, its details not to be had: the reason and Retry, no Licence row
 ok      downloaded on its page: "Licence SIL Open Font License 1.1" from the download (no Licence text); the reason and Retry stay
 ok      deleted there: Download, and the Licence row goes

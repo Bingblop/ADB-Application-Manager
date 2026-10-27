@@ -17,7 +17,8 @@
 // (switch access, TalkBack) the focus is not lost when the section is drawn again: it stays on the same control (the details came, the first
 // progress), else goes to the next one (Download to Cancel, Cancel once cancelled and Delete to Download, Save to phone to Use in Make a font);
 // a card keeps it when a download that ended while the list shows draws the list again.
-// The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone. Without
+// The Help Guide says the progress sizes are a file's as it comes over the network (packed), not the space the family takes on the phone, and its
+// undo table has a row for a downloaded family (Delete on its page). Without
 // a family's details, About's Licence is its download's: it comes with a download made on the family's page and goes with a Delete there. A
 // family that left Google Fonts shows no details in About (no description, Licence text, reason or Retry), even ones that came before it left.
 // Mock bridge: lib/fontmaker_mock.js (opts.gf.hold: the jobs move when the script says; opts.holdSave); the list: fixtures/gfonts-catalog.json.
@@ -495,6 +496,11 @@ const kb = n => (n * 1024);
     const html = (H.sections.find(x => x.id === 'fonts-google') || {}).html || '', said = (/File 1 of 2 · (\d+) KB of (\d+) KB"?: ([^)]*)\)/.exec(html) || []), have = /Downloaded · 2 files · (\d+) KB/.exec(html);
     check('16. the Help Guide: the progress sizes are a file\'s as it comes over the network, the "Downloaded" size the space on the phone (not their sum)', said.length && /over the network/.test(said[3]) && !/sizes are those of that file, and they start/.test(html)
       && !!have && +have[1] !== 2 * +said[2], JSON.stringify([said[3], have && have[0]]));
+    // its undo table ("Every change this tab makes can be undone") has a row for a family downloaded here: Delete on its page, the question a family
+    // no longer on Google Fonts asks first
+    const undo = (H.sections.find(x => x.id === 'fonts-undo') || {}).html || '', urow = (/<tr><td>[^<]*(?:<a [^>]*>)?Google Fonts[\s\S]*?<\/tr>/.exec(undo) || [''])[0];
+    check('   the undo table has a row for a downloaded Google Fonts family: Delete on its page; a family no longer on Google Fonts asks first', /<b>Delete<\/b> on the family's page \(<b>Search Google Fonts<\/b>/.test(urow)
+      && /<b>No longer on Google Fonts<\/b> asks first/.test(urow) && /<b>Save to phone<\/b>/.test(urow), urow || undo.slice(0, 300));
   }
   // a family whose details cannot be had (no connection): About's Licence is its download's, so it comes with a download made on its page and goes
   // with a Delete there, without opening the page again
