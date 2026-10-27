@@ -46382,8 +46382,13 @@ Type any command above (e.g. pm list packages -d)</div>
             gf.refreshErr = '';
             const chg = gfLoadCat();
             // a newer list may come with a family's new files, licence or Reserved Font Names, and Java has dropped the details it kept too: the
-            // details follow the list, as the previews do (gfForgetChanged). One still on its way is kept, and is Google's answer of now
-            Object.keys(gf.info).forEach(f => { if (!(gf.info[f] || {}).asking) delete gf.info[f]; });
+            // details follow the list, as the previews do (gfForgetChanged). One still on its way is kept, and is Google's answer of now. The open
+            // family's stay shown, marked stale, until the newer ones come (gfAskInfo below): its page does not empty itself, and a focus in About stays
+            Object.keys(gf.info).forEach(f => {
+                const I = gf.info[f] || {};
+                if (I.asking || I.refreshing) return;
+                if (I.ok && gf.open && gf.view === 'detail' && f === gf.fam) gf.info[f] = Object.assign({}, I, { stale: true }); else delete gf.info[f];
+            });
             if (!gf.open) return;
             gfBuildLangs();
             // the family whose page is open left the new list (renamed or removed) and is not on the phone: its page has nothing left to show, so back
@@ -46869,9 +46874,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // the family's details (description, licence, Reserved Font Names, the files), asked once; an error is asked again when the page opens again
         function gfAskInfo(f, again) {
             const cur = gf.info[f];
-            if (cur && (cur.asking || (cur.ok && !again))) return;
+            if (cur && (cur.asking || cur.refreshing || (cur.ok && !again && !cur.stale))) return;
             const r = fntCall('gfontsInfo', [f], true);
-            gf.info[f] = !r ? { err: '' } : r.ok ? { asking: true } : { err: fntErrText(r, 'Could not start') };
+            // details of an older list (stale, gfListCame) stay shown while the newer list's come: refreshing, not asking
+            gf.info[f] = !r ? { err: '' } : !r.ok ? { err: fntErrText(r, 'Could not start') } : cur && cur.ok && cur.stale ? Object.assign({}, cur, { stale: false, refreshing: true }) : { asking: true };
             if (gf.open && gf.view === 'detail' && gf.fam === f) { gfRenderGet(); gfRenderAbout(); }
         }
         window.onGfInfo = function (family, json) {
