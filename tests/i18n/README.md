@@ -27,6 +27,9 @@ p: [ ["Freeze {0} apps", "Congelar {0} apps"] ]
 * The key is the English text as the page shows it, with white space collapsed. `{0}` marks a part the page fills in (an app name, a count); keep every
   one, once. `<1>…</1>` is an element inside a sentence (bold text, a link), `<2/>` an icon, `<br>` a line break: keep every tag with its number.
 * A tab label may hold one `\n` (each line at most 12 characters); no other text may.
+* A key that ends in a sense in square brackets, `Light [font weight]`, is a word that other places of the page use in another sense (`Light`
+  the theme): the page asks for it with `txC(...)`, and its translation is the word alone, in that sense, without the brackets. English shows the
+  word before the brackets.
 * Plurals are two entries (`{0} app`, `{0} apps`); a language with more forms should use a wording that is right for every count.
 * Names of apps, packages, files, folders, settings and colors, paths, and what commands and logs print are **data**, not text: they are never
   translated (the list is `I18N.skip(...)` in the page; `audit.js` finds places that are missing from it).

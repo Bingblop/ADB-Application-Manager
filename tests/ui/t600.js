@@ -73,7 +73,7 @@ const detail = (page) => page.evaluate((wsrc) => {
     check('   tester: the sample, size 14-96 at 40, no axis for a static family', d.dtext === LATIN && d.dsize === '14,96,40,40' && !d.axes.length && d.line.text === LATIN && d.line.size === '40px', JSON.stringify([d.dtext, d.dsize, d.axes, d.line]));
     check('   styles: ten rows, named', d.styles.map(s => s.name).join(', ') === 'Thin 100, Thin 100 Italic, Light 300, Light 300 Italic, Regular 400, Regular 400 Italic, Bold 700, Bold 700 Italic, Black 900, Black 900 Italic', d.styles.map(s => s.name).join(', '));
     check('   each row in its weight and style, with the tester text', d.styles.map(s => s.w + (s.it === 'italic' ? 'i' : '')).join(',') === '100,100i,300,300i,400,400i,700,700i,900,900i' && d.styles.every(s => s.text === LATIN && s.wait), JSON.stringify(d.styles.map(s => [s.w, s.it])));
-    check('   the details asked once (gfontsInfo), "Getting the details from Google Fonts…" meanwhile', d.calls.join(',') === 'gfontsInfo:Lato' && /^About Getting the details from Google Fonts…/.test(d.about), JSON.stringify([d.calls, d.about]));
+    check('   the details asked once (gfontsInfo), "Getting the details from Google Fonts…" meanwhile', d.calls.join(',') === 'gfontsInfo:Lato' && /^About this family Getting the details from Google Fonts…/.test(d.about), JSON.stringify([d.calls, d.about]));
     check('   asked: the head (card, the name), the tester (axes), the styles', ['Lato|card|Lato', 'Lato|axes|' + LATIN, 'Lato|styles|' + LATIN].every(k => d.asked.includes(k)), d.asked.filter(a => /^Lato/.test(a)).join(' / '));
     await drain(page);
     d = await detail(page);
@@ -93,7 +93,7 @@ const detail = (page) => page.evaluate((wsrc) => {
     });
     check('3. About: the description in three lines with More', ab.clamp && ab.sh > ab.h + 1 && ab.more === 'More' && ab.noTr === 'no', JSON.stringify(ab));
     check('   the licence: "SIL Open Font License 1.1", its text under a closed <details>', ab.rows[0] === 'Licence SIL Open Font License 1.1' && ab.lic && ab.lic.tag === 'DETAILS' && !ab.lic.open && ab.lic.sum === 'Licence text' && /Reserved Font Name "Lato"/.test(ab.lic.pre) && ab.lic.dir === 'ltr', JSON.stringify([ab.rows[0], ab.lic]));
-    check('   designer, added, updated', ab.rows.slice(1).join(' | ') === 'Designer Łukasz Dziedzic | Added Dec 15, 2010 | Updated Sep 16, 2025', ab.rows.join(' | '));
+    check('   designer, added, updated', ab.rows.slice(1).join(' | ') === 'Designer Łukasz Dziedzic | Added Dec 15, 2010 | Last updated Sep 16, 2025', ab.rows.join(' | '));
     check('   "Open on fonts.google.com"', ab.site === 'Open on fonts.google.com', ab.site);
     await page.click('#gfDescMore');
     const opened = await page.evaluate(() => ({ clamp: document.getElementById('gfDesc').classList.contains('gf-clamp'), more: getComputedStyle(document.getElementById('gfDescMore')).display }));

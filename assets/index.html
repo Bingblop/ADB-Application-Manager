@@ -33898,6 +33898,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function txT(s) { try { return LANG_ENGINE && LANG_ENGINE.t ? LANG_ENGINE.t(s) : s; } catch (e) { return s; } }
         // A sentence with changing parts ({0}, {1} ...): translated as a pattern, then filled in, so a model or key name is never looked up in a dictionary
         function txF(tpl) { const args = Array.prototype.slice.call(arguments, 1); return txT(tpl).replace(/\{(\d+)\}/g, (m, n) => (args[+n] !== undefined ? String(args[+n]) : m)); }
+        // A word that other places of the app translate otherwise ("Light" the theme, "Light" the font weight): the key names its sense in square brackets
+        // at the end ("Light [font weight]"), which no language shows; English, and a language without the key, show the word before the brackets
+        function txC(k) { const r = txT(k); return r === k ? k.replace(/\s*\[[^\]]*\]$/, '') : r; }
 
         // The Terminal: the real terminal and the Coding Agents, the second segment of the Console tab (next to the ADB Shell; the log has its own tab).
         function onTerminalShown() { txOnShown(); txFitQueue(); }
@@ -46197,11 +46200,12 @@ Type any command above (e.g. pm list packages -d)</div>
             try { return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }); } catch (e) { return String(s); }
         }
         function gfSubsetName(s) { return GF_SUBSETS[s] ? txT(GF_SUBSETS[s]) : String(s).split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
-        function gfCatName(c) { return GF_CATS[c] ? txT(GF_CATS[c]) : ''; }
+        // "Display" the font category, not the screen setting other places translate (txC)
+        function gfCatName(c) { return c === 'display' ? txC('Display [font category]') : GF_CATS[c] ? txT(GF_CATS[c]) : ''; }
         // an axis' name as Make a font says it: the five the app knows in the page's words, any other one Google's name for it (data)
         function gfAxisName(tag) { tag = String(tag); return FNT_AXIS[tag] ? txT(FNT_AXIS[tag]) : ((gf.data && gf.data.axes && gf.data.axes[tag]) || tag); }
         // a weight's name, each a txT call of its own so that tests/i18n/extract.js lists it ("ExtraLight" looks like data to it otherwise)
-        function gfWeightName(n) { return ({ 100: txT('Thin'), 200: txT('ExtraLight'), 300: txT('Light'), 400: txT('Regular'), 500: txT('Medium'), 600: txT('SemiBold'), 700: txT('Bold'), 800: txT('ExtraBold'), 900: txT('Black') })[n] || ''; }
+        function gfWeightName(n) { return ({ 100: txT('Thin'), 200: txT('ExtraLight'), 300: txC('Light [font weight]'), 400: txT('Regular'), 500: txT('Medium'), 600: txT('SemiBold'), 700: txT('Bold'), 800: txT('ExtraBold'), 900: txT('Black') })[n] || ''; }
         function gfStyleName(w) {
             const n = parseInt(w, 10) || 400, it = /i$/.test(String(w)), wn = gfWeightName(n);
             return (wn ? wn + ' ' + n : txF('Weight {0}', n)) + (it ? ' ' + txT('Italic') : '');
@@ -46355,7 +46359,8 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---- the list: search, filters, sort, 30 cards at a time ----
         function gfBuildLangs() {
-            const sel = document.getElementById('gfLang');
+            const sel = document.getElementById('gfLang'), dOpt = document.querySelector('#gfCat option[value="display"]');
+            if (dOpt) dOpt.textContent = gfCatName('display');               // the markup's English "Display" would be translated as the screen setting
             if (!sel) return;
             const keep = sel.value, have = new Set();
             ((gf.data && gf.data.families) || []).forEach(e => (Array.isArray(e.s) ? e.s : []).forEach(s => { if (typeof s === 'string' && s) have.add(s); }));
@@ -46887,7 +46892,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!box || !e) return;
             const I = gf.info[f] || {}, ok = !!I.ok;
             const row = (label, value) => value ? '<div class="fnt-now"><span>' + label + '</span><b translate="no">' + escapeHtml(value) + '</b></div>' : '';
-            let h = '<div class="fnt-lab">About</div>';
+            let h = '<div class="fnt-lab">About this family</div>';
             if (I.asking) h += '<div class="fnt-note" id="gfInfoWait">Getting the details from Google Fonts…</div>';
             else if (I.err) h += '<div class="fnt-err" id="gfInfoErr"><span class="is-err">' + escapeHtml(I.err) + '</span></div><button type="button" class="batch-tool-link" id="gfInfoRetry" onclick="gfAskInfo(' + jsArg(f) + ', true)">Retry</button>';
             if (ok && I.description) h += '<div class="gf-desc' + (gf.descOpen ? '' : ' gf-clamp') + '" id="gfDesc" translate="no" dir="auto">' + escapeHtml(I.description) + '</div>'
@@ -46897,7 +46902,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const lic = ok ? String(I.licenseName || String(I.license || '').toUpperCase()) : e.gone ? String((gf.dls[f] || {}).licenseName || '') : '';
             h += row('Licence', lic)
                 + (ok && I.licenseText ? '<details class="gf-lic" id="gfLic"><summary>Licence text</summary><pre translate="no" dir="ltr">' + escapeHtml(I.licenseText) + '</pre></details>' : '')
-                + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Updated', gfDate(e.m))
+                + row(designers.length > 1 ? 'Designers' : 'Designer', designers.join(', ')) + row(txT('Added'), gfDate(e.a)) + row('Last updated', gfDate(e.m))
                 + (e.gone ? '' : '<div class="fnt-links"><a href="#" id="gfOpenSite" onclick="openUrlExternal(' + jsArg(gfSpecimenUrl(f)) + '); return false;">Open on fonts.google.com</a></div>');
             box.innerHTML = h;
             // More only when the description runs past its three lines
