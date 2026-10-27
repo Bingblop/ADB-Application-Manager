@@ -431,6 +431,11 @@ const detail = (page) => page.evaluate((wsrc) => {
     // the previews of a family asked of the list before, answered after a newer one changed it, are dropped: the new ones are drawn, nothing leaks
     await page.evaluate(() => gfBackToList());
     await drain(page);
+    // Poppins' card drawn first (whether it was in view when the list opened depends on the cards' height), so only its page's previews are on
+    // their way when the newer list comes
+    await page.evaluate(() => { const s = document.getElementById('gfSearch'); s.value = 'Poppins'; s.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.waitForTimeout(250);
+    await drain(page);
     await showFam(page, 'Poppins');
     const p0 = await fam('Poppins');
     await page.evaluate((r) => { __fmk.gfRemote = r; }, R2);
