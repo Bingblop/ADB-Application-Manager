@@ -45074,6 +45074,10 @@ Type any command above (e.g. pm list packages -d)</div>
             ['failed', /^Some emoji files did not change\. Restart the phone/, 'Some emoji files did not change. Restart the phone to undo the swap.'],
             ['failed', /^Some emoji files did not change/, 'Some emoji files did not change.'],
             ['failed', /^The file could not be deleted/, 'The file could not be deleted.'],
+            // a Google Fonts download that failed on the phone's own storage (GfLocal, FontLibrary.localError): not the connection
+            ['failed', /^The app could not make the family's folder/, "The app could not make the family's folder."],
+            ['failed', /^The family's old folder could not be moved aside/, "The family's old folder could not be moved aside."],
+            ['failed', /^The download could not be put in place/, 'The download could not be put in place.'],
             // the ERROR line of a SamsungFonts script, as the phone's shell printed it
             ['failed', /^cannot create the font folder/, "The phone could not make the font's folder."],
             ['failed', /^cannot write the font$/, 'The phone could not write the font.'],

@@ -2,8 +2,8 @@
 // (gfontsDownload) shows the page's progress bar, open-ended with "Starting…", then "File 1 of 2 · 150 KB of 300 KB" with the bar at its share of
 // all files, and Cancel. Done: a toast, "Downloaded · 2 files · 621 KB", Use in Make a font (the one primary), Save to phone and Delete, and the card
 // gets its Downloaded badge. Cancel (gfontsCancel) says "Cancelling…", ignores later progress and goes back to Download without an error. A failed
-// download says why in the page's words (gf_not_a_font) beside Download; one the app refuses (busy: already downloading, downloading, being saved)
-// says the app's sentence. Delete (gfontsDelete, no question first) goes back to Download with a toast. Save to phone (gfontsSave) waits for
+// download says why in the page's words (gf_not_a_font) beside Download, one that failed on the phone's own storage its own sentence or a full
+// phone (never "check the connection"); one the app refuses (busy: already downloading, downloading, being saved) says the app's sentence. Delete (gfontsDelete, no question first) goes back to Download with a toast. Save to phone (gfontsSave) waits for
 // Android's save screen ("Saving…"; Delete, another save and My fonts' Export wait too), then a toast with the file's name; closing the screen
 // says nothing, a failure says why (the app's "The font family could not be saved: ..." as the page's sentence). The list follows a Delete or a
 // download made on a family's page, or one that finishes while the list shows (the Downloaded filter, the count, the badges). A downloaded family the
@@ -115,6 +115,18 @@ const kb = n => (n * 1024);
     check('   Download again: the error goes', !g.err && g.prog, JSON.stringify(g));
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     check('   a network failure: "The download failed (Connection reset). Check the connection and try again."', (await get(page)).err === 'The download failed (Connection reset). Check the connection and try again.');
+    // a failure on the phone's own storage (GfLocal, FontLibrary.localError): its own sentence, or a full phone; never "check the connection" (R2-03)
+    for (const said of ["The app could not make the family's folder.", "The family's old folder could not be moved aside.", 'The download could not be put in place.']) {
+      await page.evaluate((said) => { __fmk.gfDownloadError = { Inter: { code: 'failed', error: said } }; }, said);
+      await page.click('#gfDlBtn');
+      await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+      const e = (await get(page)).err;
+      check('   a failure on the phone: "' + said + '" as itself', e === said && !/connection/i.test(e), e);
+    }
+    await page.evaluate(() => { __fmk.gfDownloadError = { Inter: { code: 'no_space', error: 'There is not enough free space on this phone.' } }; });
+    await page.click('#gfDlBtn');
+    await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
+    check('   a full phone: "There is not enough free space on this phone."', (await get(page)).err === 'There is not enough free space on this phone.', (await get(page)).err);
     // Delete
     await showFam(page, 'Lato');
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(100);
