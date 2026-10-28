@@ -1,6 +1,8 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "각 줄을 해당 수준의 색으로 얼마나 진하게 칠할지 정합니다.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "켜짐: 각 색이 줄의 시작부터 점점 옅어집니다. 꺼짐: 줄 전체가 고른 한 가지 색입니다.",
 "SELinux label": "SELinux 레이블",
 "Not shown": "표시되지 않음",
 "Restore the default label": "기본 레이블 복원",

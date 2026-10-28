@@ -8858,11 +8858,36 @@ Type any command above (e.g. pm list packages -d)</div>
                     <button class="batch-tool-link" onclick="logcatCopy()">Copy</button>
                     <button class="batch-tool-link" onclick="logcatSave()">Save</button>
                     <button class="batch-tool-link" onclick="logcatShare()">Share</button>
+                    <button type="button" class="batch-tool-link" id="lcTintBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="lcTintModal" onclick="lcTintOpen()">Row tints</button>
                 </div>
                 <div id="logcatScope"></div>
                 <!-- Color key. Each chip is also a switch: tap to hide / show that level. -->
                 <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
                 <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
+            </div>
+            <!-- Row tints as a sheet (the owner's wish, v7.18.3): the slider and the Gradient switch of Settings > Row tints, the same setting (rowTintApply keeps every place in step) -->
+            <div class="modal-overlay" id="lcTintModal" onclick="if(event.target===this) lcTintClose()">
+                <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="lcTintTitle">
+                    <div class="sheet-header">
+                        <div class="sheet-title">
+                            <h3 id="lcTintTitle">Row tints</h3>
+                        </div>
+                        <button type="button" class="sheet-close" aria-label="Close" onclick="lcTintClose()">✕</button>
+                    </div>
+                    <div class="modal-helper">How strongly each line is tinted in the colour of its level.</div>
+                    <div class="row-tint-slider">
+                        <input type="range" id="lcRowTintRange" min="0" max="4" step="1" value="2" oninput="setRowTint(this.value)" aria-label="Row tints">
+                        <div class="row-tint-ticks"><span>Off</span><span>Faint</span><span>Subtle</span><span>Normal</span><span>Vivid</span></div>
+                    </div>
+                    <label class="switch-row" id="lcRowTintGradRow">
+                        <div>
+                            <div class="switch-title">Gradient</div>
+                            <div class="switch-sub">On: each tint fades across the line from its start. Off: the whole line is one even colour.</div>
+                        </div>
+                        <input type="checkbox" class="switch-input" id="lcRowTintGrad" onchange="setRowTintGrad(this.checked)">
+                        <span class="switch-track"></span>
+                    </label>
+                </div>
             </div>
         </section>
 
@@ -14986,14 +15011,30 @@ Type any command above (e.g. pm list packages -d)</div>
         // The Gradient switch under the slider (kv 'row_tint_grad', off by default since v7.18.1, the owner's wish; a choice saved before is kept):
         // off makes each tinted row one even colour (html[data-row-grad="off"])
         function rowTintGradOn() { return kvGet('row_tint_grad', false) === true; }
-        // The slider and the switch are in two places, Settings > Row tints and the Apps tab's search menu: both show the setting as it is now
+        // The slider and the switch are in three places, Settings > Row tints, the Apps tab's search menu and Live Logcat's Row tints sheet: all show the setting as it is now
         function rowTintApply() {
             const v = rowTintLevel(), grad = rowTintGradOn();
             document.documentElement.setAttribute('data-row-tint', ROW_TINTS[v]);
             document.documentElement.setAttribute('data-row-grad', grad ? 'on' : 'off');
-            ['rowTintRange', 'searchRowTintRange'].forEach(id => { const r = document.getElementById(id); if (r) r.value = String(v); });
-            ['rowTintGradToggle', 'searchRowTintGrad'].forEach(id => { const g = document.getElementById(id); if (g) g.checked = grad; });
+            ['rowTintRange', 'searchRowTintRange', 'lcRowTintRange'].forEach(id => { const r = document.getElementById(id); if (r) r.value = String(v); });
+            ['rowTintGradToggle', 'searchRowTintGrad', 'lcRowTintGrad'].forEach(id => { const g = document.getElementById(id); if (g) g.checked = grad; });
             return v;
+        }
+        // Live Logcat's Row tints button opens the same two controls as a sheet
+        function lcTintOpen() {
+            rowTintApply();
+            document.getElementById('lcTintModal').classList.add('show');
+            const b = document.getElementById('lcTintBtn');
+            if (b) b.setAttribute('aria-expanded', 'true');
+            const r = document.getElementById('lcRowTintRange');
+            if (r) r.focus({ preventScroll: true });
+        }
+        function lcTintClose() {
+            const m = document.getElementById('lcTintModal');
+            if (!m || !m.classList.contains('show')) return;
+            m.classList.remove('show');
+            const b = document.getElementById('lcTintBtn');
+            if (b) { b.setAttribute('aria-expanded', 'false'); if (currentViewName() === 'logcat') b.focus({ preventScroll: true }); }
         }
         function setRowTint(v) {
             v = parseInt(v, 10);

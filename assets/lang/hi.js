@@ -1,6 +1,8 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "हर पंक्ति को उसके स्तर के रंग में कितना गहरा रंगा जाए।",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "चालू: हर रंग पंक्ति की शुरुआत से धीरे-धीरे फीका होता है। बंद: पूरी पंक्ति एक समान रंग की होती है।",
 "SELinux label": "SELinux लेबल",
 "Not shown": "नहीं दिखाया गया",
 "Restore the default label": "डिफ़ॉल्ट लेबल वापस लाएँ",

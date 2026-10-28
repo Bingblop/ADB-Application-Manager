@@ -1,6 +1,8 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "مدى قوة تلوين كل سطر بلون مستواه.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "تشغيل: يتلاشى كل لون عبر السطر من بدايته. إيقاف: يصبح السطر كله لونًا واحدًا متساويًا.",
 "SELinux label": "تصنيف SELinux",
 "Not shown": "غير معروض",
 "Restore the default label": "استعادة التصنيف الافتراضي",

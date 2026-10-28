@@ -1,6 +1,8 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "Her satırın kendi düzeyinin rengine ne kadar güçlü boyanacağı.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Açık: her renk satırın başından itibaren solar. Kapalı: satırın tamamı tek düz renktir.",
 "SELinux label": "SELinux etiketi",
 "Not shown": "Gösterilmiyor",
 "Restore the default label": "Varsayılan etiketi geri yükle",

@@ -1,6 +1,8 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "Seberapa kuat setiap baris diwarnai dengan warna levelnya.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Aktif: setiap warna memudar di sepanjang baris dari awalnya. Nonaktif: seluruh baris berwarna rata.",
 "SELinux label": "Label SELinux",
 "Not shown": "Tidak ditampilkan",
 "Restore the default label": "Pulihkan label bawaan",

@@ -1,6 +1,8 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "Насколько сильно каждая строка окрашивается в цвет своего уровня.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Вкл.: оттенок плавно угасает вдоль строки от её начала. Выкл.: вся строка одного ровного цвета.",
 "SELinux label": "Метка SELinux",
 "Not shown": "Не показана",
 "Restore the default label": "Восстановить метку по умолчанию",

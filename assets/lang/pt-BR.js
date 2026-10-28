@@ -1,6 +1,8 @@
 // Português (Brasil) (pt-BR): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['pt-BR'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "A intensidade com que cada linha é tingida com a cor do seu nível.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Ativado: cada tom esmaece ao longo da linha a partir do início. Desativado: a linha inteira fica com uma cor uniforme.",
 "SELinux label": "Rótulo SELinux",
 "Not shown": "Não exibido",
 "Restore the default label": "Restaurar o rótulo padrão",

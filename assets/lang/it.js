@@ -1,6 +1,8 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "Quanto è intensa la tinta di ogni riga nel colore del suo livello.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Attivo: ogni tinta sfuma lungo la riga dal suo inizio. Disattivo: l'intera riga ha un colore uniforme.",
 "SELinux label": "Etichetta SELinux",
 "Not shown": "Non mostrata",
 "Restore the default label": "Ripristina l'etichetta predefinita",

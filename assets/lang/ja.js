@@ -1,6 +1,8 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "各行をそのレベルの色でどれだけ強く色付けするか。",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "オン: 各色は行の先頭から徐々に薄くなります。オフ: 行全体が均一な色になります。",
 "SELinux label": "SELinux ラベル",
 "Not shown": "表示なし",
 "Restore the default label": "既定のラベルに戻す",
