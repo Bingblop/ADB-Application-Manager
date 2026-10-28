@@ -5686,6 +5686,7 @@ x: {
 },
 p: [
 ["Android kept {0} at {1}", "Android tetap menyetel {0} ke {1}"],
+["could not read it back", "tidak dapat membacanya kembali"],
 ["Label before the last change: {0}", "Label sebelum perubahan terakhir: {0}"],
 ["Before the last change: {0} ({1}) {2}", "Sebelum perubahan terakhir: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Izin tidak dapat dibaca: {0}"],

@@ -5686,6 +5686,7 @@ x: {
 },
 p: [
 ["Android kept {0} at {1}", "Android は {0} を {1} のままにしました"],
+["could not read it back", "結果を読み戻せませんでした"],
 ["Label before the last change: {0}", "最後の変更前のラベル: {0}"],
 ["Before the last change: {0} ({1}) {2}", "前回の変更前: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "権限を読み取れませんでした: {0}"],

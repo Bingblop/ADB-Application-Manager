@@ -5686,6 +5686,7 @@ x: {
 },
 p: [
 ["Android kept {0} at {1}", "Android가 {0}을(를) {1}(으)로 유지했습니다"],
+["could not read it back", "결과를 다시 읽지 못했습니다"],
 ["Label before the last change: {0}", "마지막 변경 전 레이블: {0}"],
 ["Before the last change: {0} ({1}) {2}", "마지막 변경 전: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "권한을 읽을 수 없습니다: {0}"],

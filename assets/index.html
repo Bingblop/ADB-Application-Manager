@@ -21084,16 +21084,16 @@ Type any command above (e.g. pm list packages -d)</div>
             const d = inspectorData || {};
             const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
             return (d.permissions || []).filter(p => {
-                if (alsFilter === 'granted' && !p.granted) return false;
-                if (alsFilter === 'denied' && p.granted) return false;
-                if (alsFilter === 'changeable' && !p.changeable) return false;
-                if (alsFilter === 'locked' && p.changeable) return false;
+                if (alsFilter === 'granted' && !permOn(p)) return false;
+                if (alsFilter === 'denied' && permOn(p)) return false;
+                if (alsFilter === 'changeable' && !permCanChange(p)) return false;
+                if (alsFilter === 'locked' && permCanChange(p)) return false;
                 return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
             });
         }
         async function alsBulk(grant) {
             if (alsBulkBusy || alsKind !== 'perms') return;
-            const todo = alsVisiblePerms().filter(p => p.changeable && p.granted !== grant);
+            const todo = alsVisiblePerms().filter(p => permCanChange(p) && permOn(p) !== grant);
             if (!todo.length) { showToast(grant ? 'Nothing to grant here' : 'Nothing to revoke here'); return; }
             if (!guardPrivilege((grant ? 'Grant' : 'Revoke') + ' permissions')) return;
             const app = allApps.find(a => a.pkg === inspectedPkg) || { name: inspectedPkg };
@@ -21108,11 +21108,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 showToast((grant ? 'Granting ' : 'Revoking ') + (i + 1) + ' of ' + todo.length + '…');
                 await new Promise(r => setTimeout(r, 0));
                 let r;
-                try { r = parseActionResult(window.AndroidBridge.setPermission(pkg, todo[i].name, grant)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+                // A permission Android switches by its app op goes through the op, the rest through pm grant/revoke (v7.19.0)
+                const op = permOpToggle(todo[i]);
+                try { r = parseActionResult(op && window.AndroidBridge.setAppOp ? window.AndroidBridge.setAppOp(pkg, op, grant ? 'allow' : 'ignore') : window.AndroidBridge.setPermission(pkg, todo[i].name, grant)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
                 if (r.ok) done++; else failed.push({ name: todo[i].name.replace(/^android\.permission\./, ''), pkg: todo[i].name, output: r.output, success: false });
             }
             alsBulkBusy = false;
             showToast((grant ? 'Granted ' : 'Revoked ') + done + ' of ' + todo.length + (failed.length ? ' • ' + failed.length + ' failed' : ''));
+            if (todo.some(p => permOpToggle(p)) && typeof refreshAppOps === 'function') refreshAppOps();
             reloadInspectorDetails();
             alsRender();
             if (failed.length) showCommandResults('Permission Manager', grant ? 'grant' : 'revoke', failed);
@@ -21152,7 +21155,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     if (alsFilter === 'locked' && permCanChange(p)) return false;
                     return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
                 }).sort((a, b) => (permCanChange(b) - permCanChange(a)) || a.name.localeCompare(b.name));
-                const toGrant = rows.filter(p => p.changeable && !p.granted).length, toRevoke = rows.filter(p => p.changeable && p.granted).length;
+                const toGrant = rows.filter(p => permCanChange(p) && !permOn(p)).length, toRevoke = rows.filter(p => permCanChange(p) && permOn(p)).length;
                 document.getElementById('alsBulkRow').style.display = '';
                 const gb = document.getElementById('alsGrantAll'), rb = document.getElementById('alsRevokeAll');
                 gb.innerText = 'Grant all shown (' + toGrant + ')'; gb.disabled = !toGrant || alsBulkBusy;
@@ -27290,6 +27293,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // debugging service name, which carry no address. Ports 5556 to 5585 keep the port ("10.0.2.2:5557"): there one computer serves several
         // devices (emulators, forwarded ports), so the same address is not the same device.
         function cdHostOf(serial) {
+            // A bare IPv4 address is that address on the default port 5555 (adb connect 192.168.1.20)
+            if (/^\d{1,3}(\.\d{1,3}){3}$/.test(String(serial || ''))) serial = serial + ':5555';
             const m = /^([^\s:]+):(\d+)$/.exec(String(serial || ''));
             if (!m || /^(127\.0\.0\.1|localhost)$/i.test(m[1]) || cd.bt.has(serial)) return '';
             const port = +m[2];
@@ -31754,13 +31759,14 @@ Type any command above (e.g. pm list packages -d)</div>
             // Android applies the stricter of an op's uid-level and package-level modes, so an op with a uid-level mode gets both (v7.19.0)
             if (cur && cur.uidMode && window.AndroidBridge.setAppOpUid) window.AndroidBridge.setAppOpUid(inspectedPkg, op, mode);
             const { ok, output } = parseActionResult(window.AndroidBridge.setAppOp(inspectedPkg, op, mode));
-            refreshAppOps();
+            const readOk = refreshAppOps();
             if (!ok) {
                 const msg = output.trim().split('\n')[0] || 'Could not change that app op';
                 showToast(/SecurityException|not allowed|permission denial/i.test(output) && !isRootActive() ? txT('Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.') : msg);
                 return;
             }
             // read it back: Android can keep another mode (a protected op, or a system app), and the toggle must not claim a change that did not happen
+            if (!readOk) { showToast(op + ' → ' + mode + ' · ' + txT('could not read it back')); return; }
             const now = (appOpsList || []).find(o => o.name === op);
             if (now && (mode !== 'default' ? opEffectiveMode(now) !== mode : (now.uidMode && now.uidMode !== 'default'))) showToast(txF('Android kept {0} at {1}', op, opEffectiveMode(now)));
             else showToast(op + ' → ' + mode);
@@ -31777,13 +31783,16 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function refreshAppOps() {
-            if (!window.AndroidBridge || !inspectedPkg || !window.AndroidBridge.getAppOpsRaw) return;
+            if (!window.AndroidBridge || !inspectedPkg || !window.AndroidBridge.getAppOpsRaw) return false;
             const raw = window.AndroidBridge.getAppOpsRaw(inspectedPkg) || '';
+            // a failed read (an error or a timeout) keeps the list it had, so a toggle never reads back a list that is not there
+            if (/^\s*(Error|Exception|java\.|Timed out|Timeout)/i.test(raw)) return false;
             if (inspectorData) inspectorData.appopsRaw = raw;
             appOpsList = withPermissionOps(parseAppOps(raw));
             renderAppOpsList();
             if (inspectorData) renderPermissionsList();
             if (alsIsOpen()) alsRender();
+            return true;
         }
 
         // ---------- Manifest viewer ----------

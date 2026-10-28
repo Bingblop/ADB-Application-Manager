@@ -5168,6 +5168,7 @@
 {"k":"connection failed","ctx":"built by the code of: upd reason text"},
 {"k":"console","ctx":"built by the code of: top level"},
 {"k":"content:word","ctx":"in the File Manager tab"},
+{"k":"could not read it back","ctx":"built by the code of: set app op mode"},
 {"k":"d","ctx":"built by the code of: parse name list"},
 {"k":"date","ctx":"built by the code of: top level"},
 {"k":"date:2025-03-01..2025-03-31","ctx":"in the File Manager tab"},

@@ -5686,6 +5686,7 @@ x: {
 },
 p: [
 ["Android kept {0} at {1}", "O Android manteve {0} em {1}"],
+["could not read it back", "não foi possível confirmar"],
 ["Label before the last change: {0}", "Rótulo antes da última alteração: {0}"],
 ["Before the last change: {0} ({1}) {2}", "Antes da última alteração: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Não foi possível ler as permissões: {0}"],

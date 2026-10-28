@@ -2244,6 +2244,8 @@ public class MainActivity extends Activity {
         }
         // Automatic's order (RootGate.autoPick): Super User, Shizuku as uid 0 or 1000, ADB over TCP, Wireless Debugging, Shizuku as uid 2000.
         // su is asked at most once (its answer is kept until a fresh check); the headless window of a tile tap only reads an answer already known.
+        long gen;
+        synchronized (modeCacheLock) { gen = modeCacheGen; }
         String devices = adbDevicesOutput();
         boolean suOk = autoRootGranted();
         boolean szAuth = isShizukuAuthorized();
@@ -2257,6 +2259,10 @@ public class MainActivity extends Activity {
         }
         String pick = RootGate.autoPick(suOk, szAuth, szUid, tcp, wireless);
         String resolved = pick == null ? "standard" : pick;
+        // an invalidation meanwhile (su was granted on the auto-su thread) makes this answer old: use it once, do not keep it
+        synchronized (modeCacheLock) {
+            if (modeCacheGen != gen) return resolved;
+        }
         cachedAutoMode = resolved;
         cachedAutoModeAt = now;
         return resolved;

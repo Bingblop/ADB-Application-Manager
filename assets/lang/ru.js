@@ -5686,6 +5686,7 @@ x: {
 },
 p: [
 ["Android kept {0} at {1}", "Android оставил {0} в режиме {1}"],
+["could not read it back", "не удалось проверить результат"],
 ["Label before the last change: {0}", "Метка до последнего изменения: {0}"],
 ["Before the last change: {0} ({1}) {2}", "До последнего изменения: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Не удалось прочитать разрешения: {0}"],

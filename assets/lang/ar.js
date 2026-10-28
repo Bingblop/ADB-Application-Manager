@@ -5686,6 +5686,7 @@ x: {
 },
 p: [
 ["Android kept {0} at {1}", "أبقى Android ‏{0} على {1}"],
+["could not read it back", "تعذّر التحقق منه"],
 ["Label before the last change: {0}", "التصنيف قبل آخر تغيير: {0}"],
 ["Before the last change: {0} ({1}) {2}", "قبل آخر تغيير: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "تعذّرت قراءة الأذونات: {0}"],

@@ -5686,6 +5686,7 @@ x: {
 },
 p: [
 ["Android kept {0} at {1}", "Android {0} değerini {1} olarak bıraktı"],
+["could not read it back", "geri okunamadı"],
 ["Label before the last change: {0}", "Son değişiklikten önceki etiket: {0}"],
 ["Before the last change: {0} ({1}) {2}", "Son değişiklikten önce: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "İzinler okunamadı: {0}"],
