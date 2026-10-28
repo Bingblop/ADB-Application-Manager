@@ -129,7 +129,7 @@ const APPS = [
   // ---- 7. screen sizes: the two rows fit at 320, 360 and 412 px, on a tall and on a short screen, with the top tab bar alone and with the bottom bar ----
   const MANY = Array.from({ length: 60 }, (_, i) => ({ pkg: 'com.vendor.app' + i, name: 'Application ' + i }));
   for (const [wd, ht, bottomNav] of [[320, 568], [360, 640], [360, 520], [412, 915], [320, 568, true], [360, 520, true], [360, 640, true], [360, 720, true], [412, 915, true]]) {
-    const p = await open({ width: wd, height: ht }, { apps: MANY, bottomNav: !!bottomNav });
+    const p = await open({ width: wd, height: ht }, { apps: MANY, bottomNav: !!bottomNav, kv: bottomNav ? { bnav_tip: 'true' } : undefined });          // (the bar's one-time tip taken as seen: for its 4 seconds it would stand over the menu's last row)
     await p.tap('#searchMenuBtn'); await still(p);
     const m = await ev(p, () => {
       const vis = el => !!el && el.getBoundingClientRect().height > 0 && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
@@ -159,6 +159,76 @@ const APPS = [
       return { boxBelowHeader: document.getElementById('searchBox').getBoundingClientRect().top >= hdr - 1, btnHit: hit === btn };
     });
     check('   [360x480, bottom bar] the search box and its button stay under the header', m.boxBelowHeader && m.btnHit, JSON.stringify(m));
+    await p.close();
+  }
+  // what a check below sees: the menu (scrolled inside to its end, as a finger would), the bottom bar at the foot of the screen or the rail at the left
+  const fit = p => ev(p, () => {
+    const el = document.getElementById('searchMenu'), nav = document.getElementById('bnav'), bb = nav.getBoundingClientRect(), scrolls = el.scrollHeight > el.clientHeight + 1;
+    const shown = !nav.classList.contains('bnav-off'), atFoot = shown && bb.height > 0 && bb.width >= innerWidth - 1 && bb.top < innerHeight, rail = shown && bb.width > 0 && bb.width < innerWidth / 2;
+    const bottom = atFoot ? bb.top : innerHeight;
+    el.scrollTop = el.scrollHeight;
+    const g = document.getElementById('searchMenuRowGrad').getBoundingClientRect(), h = document.elementFromPoint(g.left + g.width / 2, g.top + g.height / 2);
+    const out = { open: el.style.display !== 'none', atFoot, rail, scrolls, onScreen: el.getBoundingClientRect().bottom <= bottom + 1, gradHit: !!h && !!h.closest('#searchMenuRowGrad') && g.bottom <= bottom + 1 };
+    el.scrollTop = 0;
+    return out;
+  });
+  const barOff = p => ev(p, () => document.getElementById('bnav').classList.contains('bnav-off'));
+  // the phone turned with the menu open: the menu is placed again for the new screen (cut to the room above the bottom bar, or above the screen's edge
+  // when the rail of a wide screen stands at the left, the rest scrolling inside), and whole again when the phone is turned back
+  {
+    const p = await open({ width: 360, height: 800 }, { apps: MANY, bottomNav: true, kv: { bnav_tip: 'true' } });
+    await p.tap('#searchMenuBtn'); await still(p);
+    const turn = async (w, h) => { await p.setViewportSize({ width: w, height: h }); await sleep(400); await still(p); return fit(p); };
+    const tall = await fit(p), bar = await turn(640, 360), rail = await turn(800, 360), low = await turn(640, 300), back = await turn(360, 800);
+    check('   [360x800 turned to 640x360 with the menu open, bottom bar] the menu is placed again: it ends above the bar and scrolls inside, the Gradient row can be reached', bar.open && bar.atFoot && bar.scrolls && bar.onScreen && bar.gradHit, JSON.stringify(bar));
+    check('   [800x360, the rail at the left] it ends above the bottom of the screen and scrolls inside, the Gradient row can be reached', rail.open && rail.rail && !rail.atFoot && rail.scrolls && rail.onScreen && rail.gradHit, JSON.stringify(rail));
+    check('   [640x300, a phone on its side with little room] still above the bar, scrolling inside, the Gradient row can be reached', low.open && low.atFoot && low.scrolls && low.onScreen && low.gradHit, JSON.stringify(low));
+    check('   turned back to 360x800, the whole menu shows again without scrolling inside, above the bar', tall.open && !tall.scrolls && back.open && back.atFoot && !back.scrolls && back.onScreen && back.gradHit, JSON.stringify({ tall, back }));
+    await p.close();
+  }
+  // the keyboard was up (a search typed) when the menu opened, and goes down after: the bottom bar comes back, and the menu is placed above it, not under it
+  for (const [wd, ht, kb] of [[360, 480, 250], [640, 360, 170]]) {
+    const p = await open({ width: wd, height: ht }, { apps: MANY, bottomNav: true, kv: { bnav_tip: 'true' } });
+    await p.focus('#searchInput'); await sleep(250);
+    await p.setViewportSize({ width: wd, height: kb }); await sleep(300);
+    await p.tap('#searchMenuBtn'); await sleep(150);
+    const away = await barOff(p);
+    await p.setViewportSize({ width: wd, height: ht }); await sleep(700); await still(p);
+    const m = await fit(p);
+    check('   [' + wd + 'x' + ht + ', the keyboard going down after the menu opened] the bar is back and the menu ends above it, the Gradient row can be reached', away && m.open && m.atFoot && m.onScreen && m.gradHit, JSON.stringify(Object.assign({ away }, m)));
+    await p.close();
+  }
+  // the search box still in focus (the bar is put away while it is) when ⋮ is tapped, with no change of size: the bar comes back as the focus leaves, the menu is placed above it
+  for (const [wd, ht] of [[640, 360], [360, 560]]) {
+    const p = await open({ width: wd, height: ht }, { apps: MANY, bottomNav: true, kv: { bnav_tip: 'true' } });
+    await p.focus('#searchInput'); await sleep(300);
+    const away = await barOff(p);
+    await p.tap('#searchMenuBtn'); await sleep(700); await still(p);
+    const m = await fit(p);
+    check('   [' + wd + 'x' + ht + ', the search box in focus when the menu opened] the bar is back and the menu ends above it, the Gradient row can be reached', away && m.open && m.atFoot && m.onScreen && m.gradHit, JSON.stringify(Object.assign({ away }, m)));
+    await p.close();
+  }
+  // the same with the tab bar shown too (Navigation: both), typed with the keyboard up: the page stands where only the menu's first, taller cut let it go,
+  // and drops back once the menu is cut again for the bar; the cut allows for that drop
+  {
+    const p = await open({ width: 360, height: 480 }, { apps: MANY, bottomNav: true, kv: { bnav_tip: 'true', nav_mode: '"both"' } });
+    await p.focus('#searchInput'); await sleep(250);
+    await p.setViewportSize({ width: 360, height: 250 }); await sleep(300);
+    await p.keyboard.type('Application 42'); await sleep(500);
+    await p.tap('#searchMenuBtn'); await sleep(600);
+    await p.setViewportSize({ width: 360, height: 480 }); await sleep(700); await still(p);
+    const m = await fit(p), tabs = await ev(p, () => document.getElementById('tabBar').getBoundingClientRect().height > 0);
+    check('   [360x480, tab bar and bottom bar, a search typed with the keyboard up, then the keyboard down] the menu ends above the bar, the Gradient row can be reached', tabs && m.open && m.atFoot && m.onScreen && m.gradHit, JSON.stringify(Object.assign({ tabs }, m)));
+    await p.close();
+  }
+  // a search that finds one app: the page can scroll only a little, so the menu is cut to the room it really gets
+  {
+    const p = await open({ width: 360, height: 480 }, { apps: MANY, bottomNav: true, kv: { bnav_tip: 'true' } });
+    await ev(p, () => { document.getElementById('searchInput').value = 'Application 42'; handleSearch(); });
+    await sleep(500);
+    await p.tap('#searchMenuBtn'); await still(p);
+    const m = await fit(p), shown = await ev(p, () => Array.from(document.querySelectorAll('.app-card')).filter(c => c.offsetParent && !c.closest('#cdAppList')).length);
+    check('   [360x480, a search that finds one app] the menu ends above the bar and scrolls inside, the Gradient row can be reached', shown === 1 && m.open && m.atFoot && m.scrolls && m.onScreen && m.gradHit, JSON.stringify(Object.assign({ shown }, m)));
     await p.close();
   }
 

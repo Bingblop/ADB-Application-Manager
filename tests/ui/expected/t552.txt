@@ -29,6 +29,16 @@
 7. [360x720, bottom bar] the menu is all on screen above the bottom bar (the bar is really shown) (scrolling inside when the screen is short), the slider and the Gradient row can be reached and nothing covers them, the menu and its step names fit: true
 7. [412x915, bottom bar] the menu is all on screen above the bottom bar (the bar is really shown) (scrolling inside when the screen is short), the slider and the Gradient row can be reached and nothing covers them, the menu and its step names fit: true
    [360x480, bottom bar] the search box and its button stay under the header: true
+   [360x800 turned to 640x360 with the menu open, bottom bar] the menu is placed again: it ends above the bar and scrolls inside, the Gradient row can be reached: true
+   [800x360, the rail at the left] it ends above the bottom of the screen and scrolls inside, the Gradient row can be reached: true
+   [640x300, a phone on its side with little room] still above the bar, scrolling inside, the Gradient row can be reached: true
+   turned back to 360x800, the whole menu shows again without scrolling inside, above the bar: true
+   [360x480, the keyboard going down after the menu opened] the bar is back and the menu ends above it, the Gradient row can be reached: true
+   [640x360, the keyboard going down after the menu opened] the bar is back and the menu ends above it, the Gradient row can be reached: true
+   [640x360, the search box in focus when the menu opened] the bar is back and the menu ends above it, the Gradient row can be reached: true
+   [360x560, the search box in focus when the menu opened] the bar is back and the menu ends above it, the Gradient row can be reached: true
+   [360x480, tab bar and bottom bar, a search typed with the keyboard up, then the keyboard down] the menu ends above the bar, the Gradient row can be reached: true
+   [360x480, a search that finds one app] the menu ends above the bar and scrolls inside, the Gradient row can be reached: true
 8. in German the rows say Zeilenfärbung and the same word for Gradient as Settings, and the step names are translated: true
    the step names are the ones of Settings' card: true
    in Arabic (right to left) the row is translated and the menu stays on the screen: true
