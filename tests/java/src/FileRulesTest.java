@@ -130,6 +130,36 @@ public class FileRulesTest {
         eq("rm ignores the destination", FileRules.batchRefusal("rm", P + "/Download/a.txt", prefs, priv, WHY), null);
         eq("the adb key removed is refused", FileRules.batchRefusal("rm", key, "", priv, WHY), WHY);
 
+        // v7.18.2 root file management: permissions and owner
+        eq("refuse root", FileRules.permRefusal("/", false), "System location: not touched");
+        eq("refuse top level", FileRules.permRefusal("/data", false), "System location: not touched");
+        eq("refuse storage root", FileRules.permRefusal(P, true), "System location: not touched");
+        eq("refuse system tree", FileRules.permRefusal("/system/bin", false), "System location: not touched");
+        eq("a file under system is fine", FileRules.permRefusal("/system/bin/sh", false), null);
+        eq("but not a whole system folder at once", FileRules.permRefusal("/system/etc/init", true), "A whole folder of the system partitions: not changed at once");
+        eq("a data folder recursively is fine", FileRules.permRefusal("/data/local/tmp/x", true), null);
+        eq("no path", FileRules.permRefusal("", false), "No path");
+        eq("relative path", FileRules.permRefusal("tmp/x", false), "No path");
+        eq("chmod", FileRules.chmodCommand("/data/local/tmp/a b", "644", false), "chmod 644 -- '/data/local/tmp/a b' && echo FMOK");
+        eq("chmod -R 4 digits", FileRules.chmodCommand("/data/x", "0755", true), "chmod -R 0755 -- '/data/x' && echo FMOK");
+        eq("chmod quote", FileRules.chmodCommand("/data/it's", "600", false), "chmod 600 -- '/data/it'\\''s' && echo FMOK");
+        for (String bad : new String[] { "", "64", "888", "u+x", "12345", "644; rm -rf /", null }) {
+            boolean threw = false;
+            try { FileRules.chmodCommand("/data/x", bad, false); } catch (IllegalArgumentException e) { threw = true; }
+            is("bad mode refused: " + bad, threw, true);
+        }
+        eq("chown both", FileRules.chownCommand("/data/x", "root", "shell", false), "chown -h root:shell -- '/data/x' && echo FMOK");
+        eq("chown numbers -R", FileRules.chownCommand("/data/x", "1000", "1000", true), "chown -h -R 1000:1000 -- '/data/x' && echo FMOK");
+        eq("chown owner only", FileRules.chownCommand("/data/x", "system", "", false), "chown -h system -- '/data/x' && echo FMOK");
+        eq("chown group only", FileRules.chownCommand("/data/x", "", "media_rw", false), "chown -h :media_rw -- '/data/x' && echo FMOK");
+        eq("chown app user", FileRules.chownCommand("/data/x", "u0_a123", "u0_a123", false), "chown -h u0_a123:u0_a123 -- '/data/x' && echo FMOK");
+        for (String[] bad : new String[][] { { "", "" }, { "root;id", "" }, { "", "a b" }, { "-R", "" }, { "$(id)", "" }, { "root:root", "" } }) {
+            boolean threw = false;
+            try { FileRules.chownCommand("/data/x", bad[0], bad[1], false); } catch (IllegalArgumentException e) { threw = true; }
+            is("bad owner refused: " + bad[0] + "/" + bad[1], threw, true);
+        }
+        is("stat reads the marker line", FileRules.statCommand("/data/x").startsWith("stat -c 'FMSTAT %a|%U|%G|%u|%g|%F' -- '/data/x'"), true);
+
         System.out.println(n + " checks, " + fails + " failed");
         if (fails != 0) System.exit(1);
     }

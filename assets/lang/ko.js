@@ -1,6 +1,23 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"Also everything inside this folder": "이 폴더 안의 모든 항목도",
+"Apply owner": "소유자 적용",
+"Apply permissions": "권한 적용",
+"Change owner": "소유자 변경",
+"Enter an owner or a group": "소유자나 그룹을 입력하세요",
+"Group": "그룹",
+"Mode (octal)": "모드 (8진수)",
+"Open files": "파일 열기",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "어떤 파일이든 열고 바꾸고 삭제하며, 권한과 소유자를 설정합니다 (파일의 권한…).",
+"Others": "기타",
+"Owner": "소유자",
+"Owner and group": "소유자 및 그룹",
+"Permissions…": "권한…",
+"Read": "읽기",
+"Root File Management": "Root 파일 관리",
+"The mode must be three or four digits from 0 to 7, such as 644": "모드는 0~7의 숫자 3자리나 4자리여야 합니다 (예: 644)",
+"Write": "쓰기",
 "Additional Monet Customization": "추가 Monet 사용자 지정",
 "Check for updates on mobile data": "모바일 데이터로 업데이트 확인",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "사용자 지정 테마(색상, 스타일, Root 전용 테마 설정)의 사본을 보관하고 백업 파일에서 되돌립니다. 복원하면 이 탭이 채워지고, 테마 적용을 누르면 휴대폰에 기록됩니다.",
@@ -5657,6 +5674,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "선택한 파일을 아직 읽는 중입니다. 잠시 기다리세요."
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "마지막 변경 전: {0} ({1}) {2}"],
+["Could not read the permissions: {0}", "권한을 읽을 수 없습니다: {0}"],
+["Done: {0}", "완료: {0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "{1}의 소유자를 {0}(으)로 설정할까요? 필요한 파일의 소유자가 바뀌면 앱이나 Android가 작동을 멈출 수 있습니다."],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "{1} 및 그 안의 모든 항목을 {0}(으)로 설정할까요? 안의 각 항목이 전에 가졌던 값은 보관되지 않으며, 필요한 파일이 바뀌면 앱이나 Android가 작동을 멈출 수 있습니다."],
 ["Backed up the theme to {0}", "테마를 {0}에 백업했습니다"],
 ["Monet restore: {0}", "Monet 복원: {0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "{0}에서 테마를 복원할까요? 이 탭의 선택이 바뀝니다. 테마 적용을 누를 때까지 휴대폰에서는 아무것도 바뀌지 않습니다."],

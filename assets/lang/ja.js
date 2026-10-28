@@ -1,6 +1,23 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"Also everything inside this folder": "このフォルダ内のすべてにも",
+"Apply owner": "所有者を適用",
+"Apply permissions": "権限を適用",
+"Change owner": "所有者を変更",
+"Enter an owner or a group": "所有者かグループを入力してください",
+"Group": "グループ",
+"Mode (octal)": "モード (8進数)",
+"Open files": "ファイルを開く",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "あらゆるファイルを開き、変更し、削除し、権限と所有者を設定します (ファイルの「権限…」)。",
+"Others": "その他",
+"Owner": "所有者",
+"Owner and group": "所有者とグループ",
+"Permissions…": "権限…",
+"Read": "読み取り",
+"Root File Management": "Root ファイル管理",
+"The mode must be three or four digits from 0 to 7, such as 644": "モードは 0〜7 の 3 桁または 4 桁で入力してください (例: 644)",
+"Write": "書き込み",
 "Additional Monet Customization": "追加の Monet カスタマイズ",
 "Check for updates on mobile data": "モバイルデータで更新を確認",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "カスタムテーマ (色、スタイル、Root 専用のテーマ設定) のコピーを保存し、バックアップファイルから戻せます。復元するとこのタブに入力され、「テーマを適用」でスマホに書き込まれます。",
@@ -5657,6 +5674,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "選択したファイルをまだ読み込み中です。しばらくお待ちください。"
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "前回の変更前: {0} ({1}) {2}"],
+["Could not read the permissions: {0}", "権限を読み取れませんでした: {0}"],
+["Done: {0}", "完了: {0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "{1} の所有者を {0} にしますか? 必要なファイルの所有者が変わると、アプリや Android が動かなくなることがあります。"],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "{1} とその中のすべてを {0} にしますか? 中の各項目の元の値は保存されません。必要なファイルが変わると、アプリや Android が動かなくなることがあります。"],
 ["Backed up the theme to {0}", "テーマを {0} にバックアップしました"],
 ["Monet restore: {0}", "Monet の復元: {0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "{0} からテーマを復元しますか? このタブの選択は置き換えられます。「テーマを適用」をタップするまでスマホでは何も変わりません。"],

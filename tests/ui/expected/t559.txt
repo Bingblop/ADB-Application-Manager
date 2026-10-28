@@ -54,7 +54,7 @@ ok      the toast says so: "Super User was not granted. The working mode stays S
 ok      no su, Automatic chosen: the switch fails and Automatic is put back (configuredMode auto), the tag reads NOT FOUND
 ok      Root already chosen and su says no again: Root stays chosen (no setWorkingMode), DENIED
 ok      Request Super User asks su through selectWorkingMode("root") (the path of Working Modes' Request Root Access); a grant unlocks the tab and puts nothing back
-ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and the four locked feature buttons (Trackers in apps since v7.16.2, Additional Monet Customization since v7.18.1) are at least 36 px tall, the tag stays on one line, the locked button is greyed
+ok   6. at 360 px nothing is wider than the screen, the Request, Open-manager and the five locked feature buttons (Trackers in apps since v7.16.2, Additional Monet Customization since v7.18.1, Root File Management since v7.18.2) are at least 36 px tall, the tag stays on one line, the locked button is greyed
 ok   7. the guide's Root Features topic names the Features card, Super User for apps with Open manager, and Open root manager; no "later version" of the card
 ok      its Super User for apps topic: Open manager opens the manager the way its icon does, not on its list of apps with root; the status is read again on return
 ok      its Getting Super User topic quotes the hidden-manager message word for word; not in that manager's list only until the app has asked once, and what to do at DENIED when the manager says no without asking (T-059)

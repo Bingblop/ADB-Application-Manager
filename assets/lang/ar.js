@@ -1,6 +1,23 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"Also everything inside this folder": "وأيضًا كل ما في هذا المجلد",
+"Apply owner": "تطبيق المالك",
+"Apply permissions": "تطبيق الأذونات",
+"Change owner": "تغيير المالك",
+"Enter an owner or a group": "أدخل مالكًا أو مجموعة",
+"Group": "المجموعة",
+"Mode (octal)": "الوضع (ثماني)",
+"Open files": "فتح الملفات",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "افتح أي ملف وغيّره واحذفه، واضبط أذوناته ومالكه (الأذونات… على الملف).",
+"Others": "الآخرون",
+"Owner": "المالك",
+"Owner and group": "المالك والمجموعة",
+"Permissions…": "الأذونات…",
+"Read": "قراءة",
+"Root File Management": "إدارة الملفات بـ Root",
+"The mode must be three or four digits from 0 to 7, such as 644": "يجب أن يتكون الوضع من ثلاثة أو أربعة أرقام من 0 إلى 7، مثل 644",
+"Write": "كتابة",
 "Additional Monet Customization": "تخصيص Monet إضافي",
 "Check for updates on mobile data": "البحث عن التحديثات عبر بيانات الجوال",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "احتفظ بنسخة من سمتك المخصصة (اللون والنمط وعناصر التحكم في السمة الخاصة بـ Root) واستعدها من ملف نسخة احتياطية. الاستعادة تملأ هذا التبويب؛ وتطبيق السمة يكتبها على الهاتف.",
@@ -5657,6 +5674,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "لا تزال قراءة الملفات التي اخترتها جارية. انتظر لحظة."
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "قبل آخر تغيير: {0} ({1}) {2}"],
+["Could not read the permissions: {0}", "تعذّرت قراءة الأذونات: {0}"],
+["Done: {0}", "تم: {0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "تعيين المالك {0} على {1}؟ قد يتوقف تطبيق أو Android عن العمل عندما يتغير مالك ملفات يحتاجها."],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "تعيين {0} على {1} وكل ما بداخله؟ لا يُحفظ ما كان لكل عنصر بداخله من قبل، وقد يتوقف تطبيق أو Android عن العمل عندما تتغير ملفات يحتاجها."],
 ["Backed up the theme to {0}", "تم نسخ السمة احتياطيًا إلى {0}"],
 ["Monet restore: {0}", "استعادة Monet: {0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "استعادة السمة من {0}؟ ستُستبدل اختياراتك في هذا التبويب. لن يتغير شيء على الهاتف حتى تضغط تطبيق السمة."],

@@ -1,6 +1,23 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+"Also everything inside this folder": "Auch alles in diesem Ordner",
+"Apply owner": "Besitzer anwenden",
+"Apply permissions": "Berechtigungen anwenden",
+"Change owner": "Besitzer ändern",
+"Enter an owner or a group": "Geben Sie einen Besitzer oder eine Gruppe ein",
+"Group": "Gruppe",
+"Mode (octal)": "Modus (oktal)",
+"Open files": "Dateien öffnen",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "Jede Datei öffnen, ändern und löschen und ihre Berechtigungen und ihren Besitzer festlegen (Berechtigungen… bei einer Datei).",
+"Others": "Andere",
+"Owner": "Besitzer",
+"Owner and group": "Besitzer und Gruppe",
+"Permissions…": "Berechtigungen…",
+"Read": "Lesen",
+"Root File Management": "Root-Dateiverwaltung",
+"The mode must be three or four digits from 0 to 7, such as 644": "Der Modus muss aus drei oder vier Ziffern von 0 bis 7 bestehen, etwa 644",
+"Write": "Schreiben",
 "Additional Monet Customization": "Weitere Monet-Anpassung",
 "Check for updates on mobile data": "Über mobile Daten nach Updates suchen",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Bewahren Sie eine Kopie Ihres eigenen Designs auf (Farbe, Stil und die Root-Design-Regler) und holen Sie es aus einer Sicherungsdatei zurück. Die Wiederherstellung füllt diesen Tab aus; Design anwenden schreibt es auf das Telefon.",
@@ -5657,6 +5674,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Die gewählten Dateien werden noch gelesen. Warten Sie kurz."
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "Vor der letzten Änderung: {0} ({1}) {2}"],
+["Could not read the permissions: {0}", "Die Berechtigungen ließen sich nicht lesen: {0}"],
+["Done: {0}", "Erledigt: {0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "Besitzer {0} für {1} setzen? Eine App oder Android kann aufhören zu funktionieren, wenn Dateien, die sie braucht, den Besitzer wechseln."],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "{0} für {1} und alles darin setzen? Was jedes Element darin vorher hatte, wird nicht aufbewahrt, und eine App oder Android kann aufhören zu funktionieren, wenn sich Dateien ändern, die sie braucht."],
 ["Backed up the theme to {0}", "Design gesichert in {0}"],
 ["Monet restore: {0}", "Monet-Wiederherstellung: {0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "Design aus {0} wiederherstellen? Ihre Auswahl in diesem Tab wird ersetzt. Auf dem Telefon ändert sich nichts, bis Sie auf Design anwenden tippen."],

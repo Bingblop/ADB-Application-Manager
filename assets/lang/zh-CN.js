@@ -1,6 +1,23 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"Also everything inside this folder": "也包括此文件夹内的所有内容",
+"Apply owner": "应用所有者",
+"Apply permissions": "应用权限",
+"Change owner": "更改所有者",
+"Enter an owner or a group": "请输入所有者或组",
+"Group": "组",
+"Mode (octal)": "模式（八进制）",
+"Open files": "打开文件",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "打开、修改和删除任何文件，并设置其权限和所有者（文件上的“权限…”）。",
+"Others": "其他人",
+"Owner": "所有者",
+"Owner and group": "所有者和组",
+"Permissions…": "权限…",
+"Read": "读取",
+"Root File Management": "Root 文件管理",
+"The mode must be three or four digits from 0 to 7, such as 644": "模式必须是 0 到 7 的三位或四位数字，例如 644",
+"Write": "写入",
 "Additional Monet Customization": "更多 Monet 自定义",
 "Check for updates on mobile data": "使用移动数据检查更新",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "保存一份自定义主题的副本(颜色、样式和仅限 Root 的主题控件),并可从备份文件恢复。恢复会填入此标签页;“应用主题”会把它写入手机。",
@@ -5657,6 +5674,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "你选择的文件仍在读取中。请稍候。"
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "上次更改前：{0}（{1}）{2}"],
+["Could not read the permissions: {0}", "无法读取权限：{0}"],
+["Done: {0}", "完成：{0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "要将 {1} 的所有者设为 {0} 吗？所需文件的所有者改变后，应用或 Android 可能无法正常工作。"],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "要将 {1} 及其中所有内容设为 {0} 吗？其中各项原来的值不会保留；所需文件改变后，应用或 Android 可能无法正常工作。"],
 ["Backed up the theme to {0}", "主题已备份到 {0}"],
 ["Monet restore: {0}", "Monet 恢复:{0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "要从 {0} 恢复主题吗?此标签页中的选择将被替换。在你点按“应用主题”之前,手机上不会有任何变化。"],

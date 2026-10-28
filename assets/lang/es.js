@@ -1,6 +1,23 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+"Also everything inside this folder": "También todo lo que hay en esta carpeta",
+"Apply owner": "Aplicar propietario",
+"Apply permissions": "Aplicar permisos",
+"Change owner": "Cambiar propietario",
+"Enter an owner or a group": "Introduce un propietario o un grupo",
+"Group": "Grupo",
+"Mode (octal)": "Modo (octal)",
+"Open files": "Abrir archivos",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "Abre, cambia y elimina cualquier archivo, y define sus permisos y su propietario (Permisos… en un archivo).",
+"Others": "Otros",
+"Owner": "Propietario",
+"Owner and group": "Propietario y grupo",
+"Permissions…": "Permisos…",
+"Read": "Leer",
+"Root File Management": "Gestión de archivos Root",
+"The mode must be three or four digits from 0 to 7, such as 644": "El modo debe tener tres o cuatro dígitos del 0 al 7, como 644",
+"Write": "Escribir",
 "Additional Monet Customization": "Personalización Monet adicional",
 "Check for updates on mobile data": "Buscar actualizaciones con datos móviles",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Guarda una copia de tu tema personalizado (el color, el estilo y los controles de tema solo para Root) y recupéralo desde un archivo de copia. Restaurar rellena esta pestaña; Aplicar tema lo escribe en el teléfono.",
@@ -5657,6 +5674,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Todavía se están leyendo los archivos que elegiste. Espera un momento."
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "Antes del último cambio: {0} ({1}) {2}"],
+["Could not read the permissions: {0}", "No se pudieron leer los permisos: {0}"],
+["Done: {0}", "Hecho: {0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "¿Poner el propietario {0} en {1}? Una app o Android puede dejar de funcionar cuando cambia el propietario de archivos que necesita."],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "¿Poner {0} en {1} y en todo lo que contiene? Lo que tenía antes cada elemento no se guarda, y una app o Android puede dejar de funcionar cuando cambian archivos que necesita."],
 ["Backed up the theme to {0}", "Tema guardado en {0}"],
 ["Monet restore: {0}", "Restauración Monet: {0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "¿Restaurar el tema desde {0}? Se reemplazan tus opciones de esta pestaña. Nada cambia en el teléfono hasta que toques Aplicar tema."],

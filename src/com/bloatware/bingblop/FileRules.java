@@ -110,6 +110,50 @@ final class FileRules {
         return base + ".apk";
     }
 
+    // ---- Root file management (v7.18.2): permissions and owner, as root only ----
+
+    private static final Pattern MODE = Pattern.compile("[0-7]{3,4}");
+    private static final Pattern WHO = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9_.-]{0,31}");
+
+    private static String sq(String s) { return "'" + s.replace("'", "'\\''") + "'"; }
+
+    /**
+     * Why a permissions or owner change of {@code path} is refused before anything runs, or null: no path, a place {@link #isProtected} names
+     * (a storage root, a top-level or system folder: a change there can stop the phone from starting), or the whole of a folder inside one of
+     * the system partitions' trees changed at once.
+     */
+    static String permRefusal(String path, boolean recursive) {
+        if (path == null || path.isEmpty() || !path.startsWith("/")) return "No path";
+        if (isProtected(path)) return "System location: not touched";
+        if (recursive && path.matches("/(system|vendor|product|system_ext|odm|apex)(/.*)?")) return "A whole folder of the system partitions: not changed at once";
+        return null;
+    }
+
+    /** The shell line that reads a path's mode, owner and SELinux label: a line "FMSTAT mode|user|group|uid|gid|type", then the label line. */
+    static String statCommand(String path) {
+        String q = sq(path);
+        return "stat -c 'FMSTAT %a|%U|%G|%u|%g|%F' -- " + q + " && { ls -Zd -- " + q + " 2>/dev/null | head -n 1; true; }";
+    }
+
+    /** chmod as a shell line ending in FMOK; the mode is three or four octal digits (else IllegalArgumentException with the reason). */
+    static String chmodCommand(String path, String mode, boolean recursive) {
+        if (mode == null || !MODE.matcher(mode).matches()) throw new IllegalArgumentException("The mode must be three or four digits from 0 to 7, such as 644");
+        return "chmod " + (recursive ? "-R " : "") + mode + " -- " + sq(path) + " && echo FMOK";
+    }
+
+    /**
+     * chown as a shell line ending in FMOK: {@code owner} and/or {@code group} (a name or a number; an empty group leaves the group as it is,
+     * an empty owner with a group changes only the group). A symbolic link itself is changed, not what it points to (-h).
+     */
+    static String chownCommand(String path, String owner, String group, boolean recursive) {
+        String o = owner == null ? "" : owner.trim(), g = group == null ? "" : group.trim();
+        if (o.isEmpty() && g.isEmpty()) throw new IllegalArgumentException("Enter an owner or a group");
+        if (!o.isEmpty() && !WHO.matcher(o).matches()) throw new IllegalArgumentException("The owner must be a user name or number, such as root or 1000");
+        if (!g.isEmpty() && !WHO.matcher(g).matches()) throw new IllegalArgumentException("The group must be a group name or number, such as root or 1000");
+        String who = o.isEmpty() ? ":" + g : g.isEmpty() ? o : o + ":" + g;
+        return "chown -h " + (recursive ? "-R " : "") + who + " -- " + sq(path) + " && echo FMOK";
+    }
+
     /**
      * True when {@code out} holds {@code marker} as a whole line (a trailing carriage return or blanks are fine). A command that ends with "&amp;&amp; echo OK" prints it on a line of its own;
      * a message that merely contains the letters (a file called "BOOKS", an error about "/sdcard/OKAY") is not a success.
