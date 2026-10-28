@@ -55,6 +55,11 @@ public class JobService extends Service {
         start(c);
     }
 
+    /** The run's notification as it looks now: what the service shows if it starts again while the run goes on (a file job beginning). */
+    public static void updateWith(int noteId, Notification note) {
+        synchronized (JobService.class) { if (withNote != null && withId == noteId && note != null) withNote = note; }
+    }
+
     /** The run that began with {@link #beginWith} is over. A file job still going takes the foreground back with its own notification. */
     public static void endWith(Context c) {
         boolean last, fileJobsLeft, wasRunning;

@@ -774,7 +774,7 @@ public class MainActivity extends Activity {
     // is not switched to Automatic for it (v7.19.0)
     private static boolean rootGrantUnclear;
     private static long suMissingSince;               // when su was first found missing while Super User is the chosen mode (0: it is there)
-    private final java.util.concurrent.atomic.AtomicBoolean autoSuAsking = new java.util.concurrent.atomic.AtomicBoolean();
+    private static final java.util.concurrent.atomic.AtomicBoolean autoSuAsking = new java.util.concurrent.atomic.AtomicBoolean();   // one su question at a time, whichever window asks
 
     private static void invalidateModeCache() {
         synchronized (modeCacheLock) {
@@ -1046,6 +1046,12 @@ public class MainActivity extends Activity {
         // held in the foreground by its own notification (JobService.beginWith), so the run reaches its last app when this window is left (v7.19.0)
         android.app.Notification first = QuickStopNotice.first(app, run);
         if (first != null) JobService.beginWith(app, QuickStopNotice.ID, first);
+        // and the CPU kept awake for the run (at most ten minutes), so a screen turned off does not pause it until the phone wakes
+        android.os.PowerManager.WakeLock wake = null;
+        try {
+            android.os.PowerManager pm = (android.os.PowerManager) app.getSystemService(Context.POWER_SERVICE);
+            if (pm != null) { wake = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "adbmanager:kill-apps"); wake.setReferenceCounted(false); wake.acquire(10 * 60 * 1000L); }
+        } catch (RuntimeException ignored) {}
         // No tile refresh here or in finishQuickAction: the Kill Apps tile is passive (no ACTIVE_TILE meta-data), and
         // TileService.requestListeningState does nothing for a passive tile. Android reads QuickStopRun.tileActive() in the tile's
         // onStartListening each time the panel opens, so the tile is lit when the panel is opened while a run is going. Making the tile
@@ -1068,6 +1074,7 @@ public class MainActivity extends Activity {
             QuickStopRun.end(run);
             QuickStopNotice.clear(app, run);
             if (first != null) JobService.endWith(app);
+            if (wake != null) try { wake.release(); } catch (RuntimeException ignored) {}
         }
         return run.summary();
     }
@@ -2386,6 +2393,7 @@ public class MainActivity extends Activity {
             String op = android.app.AppOpsManager.permissionToOp(permName);
             if (op != null && op.startsWith("android:")) {
                 String name = op.substring(8).toUpperCase(java.util.Locale.ROOT);
+                if ("FINE_LOCATION".equals(name)) name = "COARSE_LOCATION";       // Android keeps the location mode under the coarse op (its switch op)
                 if (ShellArgs.isAppOp(name)) out.put("op", name);
             }
         } catch (Throwable ignored) {}

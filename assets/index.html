@@ -21143,11 +21143,11 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             if (alsKind === 'perms') {
                 const perms = d.permissions || [];
-                const granted = perms.filter(p => p.granted).length;
+                const granted = perms.filter(permOn).length;
                 sum.innerText = perms.length + ' declared · ' + granted + ' granted · ' + perms.filter(permCanChange).length + ' you can change';
                 const rows = perms.filter(p => {
-                    if (alsFilter === 'granted' && !p.granted) return false;
-                    if (alsFilter === 'denied' && p.granted) return false;
+                    if (alsFilter === 'granted' && !permOn(p)) return false;
+                    if (alsFilter === 'denied' && permOn(p)) return false;
                     if (alsFilter === 'changeable' && !permCanChange(p)) return false;
                     if (alsFilter === 'locked' && permCanChange(p)) return false;
                     return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
@@ -21159,11 +21159,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 rb.innerText = 'Revoke all shown (' + toRevoke + ')'; rb.disabled = !toRevoke || alsBulkBusy;
                 list.innerHTML = rows.length ? rows.map(p => {
                     const short = p.name.replace(/^android\.permission\./, '');
-                    const state = p.granted ? 'Granted' : 'Not granted';
+                    const state = permOn(p) ? 'Granted' : 'Not granted';
                     const how = p.changeable ? 'You can grant or revoke it here.' : permOpToggle(p) ? txT('Android controls it by its app op: allow or stop it here.') : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
-                    const btn = p.changeable
+                    const btn = permOpToggle(p) ? permOpBtn(p) : p.changeable
                         ? `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (p.granted ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${lk(lockedNow())}${p.granted ? 'GRANTED' : 'REVOKED'}</button>`
-                        : permOpToggle(p) ? permOpBtn(p) : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                        : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                     return `<div class="perm-row als-row"><div class="perm-info">
                         <div class="perm-name">${escapeHtml(p.label || short)}</div>
                         <div class="perm-sub"><span class="perm-kind">${escapeHtml(p.protection || 'unknown')}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}<span class="perm-kind">${state}</span></div>
@@ -27304,8 +27304,8 @@ Type any command above (e.g. pm list packages -d)</div>
             Object.keys(known).forEach(s => {
                 const h = cdHostOf(s);
                 if (!h || best[h] === s) return;
-                const keep = known[best[h]] || {};
-                if (!keep.name && known[s] && known[s].name) keep.name = known[s].name;          // a name given to the old entry is kept
+                const keep = known[best[h]] || {}, named = (e, key) => !!(e && e.name && e.name !== key);
+                if (!named(keep, best[h]) && named(known[s], s)) keep.name = known[s].name;      // a real name of the old entry is kept over an address
                 delete known[s]; dropped = true;
             });
             return dropped;
@@ -31603,8 +31603,8 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             const q = (document.getElementById('permsSearch').value || '').toLowerCase().trim();
             const rows = perms.filter(p => {
-                if (permsFilter === 'granted' && !p.granted) return false;
-                if (permsFilter === 'denied' && p.granted) return false;
+                if (permsFilter === 'granted' && !permOn(p)) return false;
+                if (permsFilter === 'denied' && permOn(p)) return false;
                 if (permsFilter === 'changeable' && !permCanChange(p)) return false;
                 if (permsFilter === 'installtime' && permCanChange(p)) return false;
                 if (q && !(p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q))) return false;
@@ -31619,9 +31619,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 const shortName = p.name.replace(/^android\.permission\./, '');
                 const kind = p.protection || 'unknown';
                 const sub = [p.label, p.name !== shortName ? p.name : ''].filter(Boolean).join(' • ');
-                const btn = p.changeable
+                const btn = permOpToggle(p) ? permOpBtn(p) : p.changeable
                     ? `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (p.granted ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${lk(lockedNow())}${p.granted ? 'GRANTED' : 'DENIED'}</button>`
-                    : permOpToggle(p) ? permOpBtn(p) : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                    : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                 return `
                     <div class="perm-row">
                         <div class="perm-info">
@@ -31679,7 +31679,10 @@ Type any command above (e.g. pm list packages -d)</div>
             return list.sort((a, b) => a.name.localeCompare(b.name));
         }
         // A permission Android controls by its app op (Display over other apps, Usage access ...): pm grant cannot change it, the op can (v7.19.0)
-        function permOpToggle(p) { return p && p.appOp && !p.changeable && p.op ? p.op : ''; }
+        // Also a development permission (Display over other apps, Usage access): pm grant changes its bit, but Android decides by the op
+        function permOpToggle(p) { return p && p.appOp && p.op && (!p.changeable || p.protection === 'development') ? p.op : ''; }
+        // Granted as Android applies it: by the op for a permission switched through its op, else the permission bit
+        function permOn(p) { return permOpToggle(p) ? permOpOn(p) : !!p.granted; }
         function permCanChange(p) { return !!(p.changeable || permOpToggle(p)); }
         // What Android applies: the stricter of an op's uid-level and package-level modes (v7.19.0)
         const OP_STRICT = { allow: 0, default: 0, foreground: 1, ignore: 2, deny: 3 };
@@ -31759,7 +31762,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             // read it back: Android can keep another mode (a protected op, or a system app), and the toggle must not claim a change that did not happen
             const now = (appOpsList || []).find(o => o.name === op);
-            if (mode !== 'default' && now && opEffectiveMode(now) !== mode) showToast(txF('Android kept {0} at {1}', op, opEffectiveMode(now)));
+            if (now && (mode !== 'default' ? opEffectiveMode(now) !== mode : (now.uidMode && now.uidMode !== 'default'))) showToast(txF('Android kept {0} at {1}', op, opEffectiveMode(now)));
             else showToast(op + ' → ' + mode);
         }
 
