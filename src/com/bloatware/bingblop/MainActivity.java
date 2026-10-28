@@ -773,6 +773,7 @@ public class MainActivity extends Activity {
     // the last su answer was no answer (it timed out, or su could not run): a refusal kept in rootGrant then is not a clear "no", and a chosen Super User
     // is not switched to Automatic for it (v7.19.0)
     private static boolean rootGrantUnclear;
+    private static long suMissingSince;               // when su was first found missing while Super User is the chosen mode (0: it is there)
     private final java.util.concurrent.atomic.AtomicBoolean autoSuAsking = new java.util.concurrent.atomic.AtomicBoolean();
 
     private static void invalidateModeCache() {
@@ -2271,7 +2272,15 @@ public class MainActivity extends Activity {
         if (!"root".equals(activeWorkingMode)) return false;
         Boolean lastAnswer;
         synchronized (modeCacheLock) { lastAnswer = rootGrantUnclear ? null : rootGrant; }      // a timed-out prompt is not a "no"
-        if (!RootGate.rootLost(activeWorkingMode, isRootAvailable(), lastAnswer)) return false;
+        // su not found counts only once it has stayed missing for two minutes: on some root managers the check can miss for a moment (an update,
+        // early boot), and a one-off miss must not rewrite the chosen mode
+        boolean suFound = isRootAvailable();
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (suFound) suMissingSince = 0;
+        else if (suMissingSince == 0) suMissingSince = now;
+        if (!suFound && now - suMissingSince < 120000) suFound = true;
+        if (!RootGate.rootLost(activeWorkingMode, suFound, lastAnswer)) return false;
+        suMissingSince = 0;
         setConfiguredMode("auto");
         notifyJs("window.onRootModeLost && window.onRootModeLost()");
         return true;
@@ -10917,7 +10926,9 @@ public class MainActivity extends Activity {
             long gen;
             synchronized (modeCacheLock) {
                 gen = modeCacheGen;
-                if (recheckRoot) { rootChecked = false; rootGrant = null; }
+                // su is asked again only while Super User is the chosen mode: in Automatic a fresh check would bring the root manager's prompt
+                // back each time (Automatic keeps the answer it got, v7.19.0)
+                if (recheckRoot) { rootChecked = false; if ("root".equals(activeWorkingMode)) { rootGrant = null; rootGrantUnclear = false; } }
             }
             String json = probeWorkingMode();
             synchronized (modeCacheLock) {
@@ -11067,7 +11078,8 @@ public class MainActivity extends Activity {
                     pb.redirectErrorStream(true);
                     String out = runProcessWithTimeout(pb, 15000);
                     ok = out != null && out.contains("uid=0");
-                    synchronized (modeCacheLock) { rootGrant = ok; }
+                    boolean unclear = !ok && (out == null || out.startsWith("Error:") || out.contains("[Process timed out"));
+                    synchronized (modeCacheLock) { rootGrant = ok; rootGrantUnclear = unclear; }
                     message = ok ? "Using Root (Superuser)" : "Root was denied or is not available";
                 } else if ("unprivileged".equals(mode)) {
                     message = "Switched to Read-Only Mode";

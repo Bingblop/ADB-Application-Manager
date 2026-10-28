@@ -28903,7 +28903,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 let hit = null;
                 for (let n = 0; n < 3 && !hit; n++) {
                     if (n) await cdSleep(1500);                          // the announcement can take a moment to appear after pairing
-                    await cdFindNearby(true);
+                    await cdFindNearby(true, 5000);                         // short: a slow adb must not hold the pairing step for long
                     hit = (cd.nearby || []).find(x => cdHostOf(x.addr) === host.toLowerCase());
                 }
                 if (hit) { c.value = hit.addr; cdConnect(hit.addr); return; }
@@ -28961,7 +28961,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // paired device connects with one tap (Connect). Looked up when the tab opens (at most once a minute) and on Refresh; this phone's own
         // announcement and devices connected now are left out. A device that was never paired answers Connect with a pairing error: pair it under + Add device.
         const CD_NEARBY_GAP_MS = 60000;
-        async function cdFindNearby(force) {
+        async function cdFindNearby(force, timeoutMs) {
             // a forced look while one is going waits for it (the pair step then looks again), instead of returning with nothing
             if (cd.nearbyBusy) { if (force && cd.nearbyWait) await cd.nearbyWait; return; }
             if (!force && Date.now() - (cd.nearbyAt || 0) < CD_NEARBY_GAP_MS) return;
@@ -28970,7 +28970,7 @@ Type any command above (e.g. pm list packages -d)</div>
             cd.nearbyWait = new Promise(r => { done = r; });
             let found = [];
             try {
-                const out = await cdRun(['mdns', 'services'], { serial: '', timeout: 15000 });
+                const out = await cdRun(['mdns', 'services'], { serial: '', timeout: timeoutMs || 15000 });
                 if (!cdFail(out)) found = cdParseMdns(out).filter(x => x.kind === 'connect');
             } finally { cd.nearbyBusy = false; done(); }
             let own = '';

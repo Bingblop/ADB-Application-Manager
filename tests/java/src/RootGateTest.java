@@ -101,7 +101,7 @@ public class RootGateTest {
         && probe.contains("synchronized (modeCacheLock) { lastAnswer = rootGrant; }") && probe.contains("if (Boolean.FALSE.equals(lastAnswer)) obj.put(\"rootGranted\", false);")
         && probe.indexOf("else if (rootAvailable) {") > probe.indexOf("if (rootAvailable && suAsked) obj.put(\"rootGranted\", rootGrantedNow);"));
     String fresh = bodyOf(m, "private String probeAndCacheMode(boolean recheckRoot) {");
-    check("source: a fresh probe forgets su's last answer", fresh != null && fresh.contains("if (recheckRoot) { rootChecked = false; rootGrant = null; }"));
+    check("source: a fresh probe forgets su's last answer while Super User is chosen (Automatic keeps it, so its prompt does not come back)", fresh != null && fresh.contains("if (recheckRoot) { rootChecked = false; if (\"root\".equals(activeWorkingMode)) { rootGrant = null; rootGrantUnclear = false; } }"));
 
     // the page: the gate helper, and the verdict read from the working-mode data
     String gate = bodyOf(h, "function isRootActive() {");
