@@ -150,7 +150,7 @@ final class InstallConfirm {
      */
     static String messageFontPackage(String fontName, String packageName, String versionName, String installedVersion, String mode, String options) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Source: a font package this app made (Custom Fonts, My fonts)\n");
+        sb.append("Source: a font package this app made (Custom Fonts)\n");
         viaLine(sb, mode);
         newOrReplaces(sb, installedVersion);
         sb.append("The file matches the SHA-256 checksum the app recorded when it made the package.\n");

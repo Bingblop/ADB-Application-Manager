@@ -3,7 +3,7 @@ ok      it sits after Root Features, before About
 ok      the bottom bar names it "Fonts" and has an icon for it
 ok      the top bar shows it
 ok   2. the tab opens (switchView)
-ok      six cards in order
+ok      five cards in order
 ok      their titles
 ok   3. Regular: a row with Choose
 ok      Bold: None, with the line that Android makes bold from the Regular
@@ -11,19 +11,20 @@ ok      no variable font picked: no "same variable font" choice
 ok      Emoji: None, the downloaded mergeable Twemoji, own file
 ok      Build is the one primary button and starts disabled
 ok   4. five emoji rows
-ok      two fonts in My fonts, with their packages
-ok   5. Root: the font changer is unlocked (ROOT) and shows the font in use
+ok      the Phone font drop-down opens its list: Default first, and the two fonts made here, with their packages
+ok      its ✕ closes it
+ok   5. Root: the Phone font card is unlocked (ROOT), no One UI note, and its drop-down ("Font") shows the font in use
 ok      the system emoji card is unlocked (ROOT)
 ok   6. dark, 412 px: no horizontal scroll
 ok      with the bottom bar, More has a Custom Fonts tile with its icon
-ok   8. German: the card titles and the rows of My fonts are in German ("In Verwendung", "Normal und Fett"); English again after
+ok   8. German: the card titles, the drop-down's label and every line of the open Phone font list are in German ("Schriftart des Telefons", "Schriftart", "In Verwendung"); English again after
 ok      no page errors (dark)
-ok   7. light-412: six cards, no horizontal scroll
+ok   7. light-412: five cards, no horizontal scroll
 ok      the light theme is in use (a light page)
 ok      no page errors
-ok   7. light-360: six cards, no horizontal scroll
+ok   7. light-360: five cards, no horizontal scroll
 ok      the light theme is in use (a light page)
 ok      no page errors
-ok   7. dark-360: six cards, no horizontal scroll
+ok   7. dark-360: five cards, no horizontal scroll
 ok      no page errors
 all passed

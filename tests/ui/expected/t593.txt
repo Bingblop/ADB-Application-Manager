@@ -3,13 +3,13 @@ ok      HTTP 503: the server answered, try again later
 ok      a network failure keeps its detail
 ok      a zip without the font keeps the file name
 ok      each line is in the error colour, and the rows offer Download again
-ok   2. pm's Failure line after "The phone did not install the font:"
-ok      pm's exception over several lines: "The phone did not install the font:" and every detail, on one line
+ok   2. pm's Failure line after "The phone did not install the font:", in the Phone font card
+ok      pm's exception over several lines: "The phone did not install the font:" and every detail, on one line, under the build result's buttons (not in the card)
 ok      the same for an uninstall: "The phone did not uninstall the font:" and the details
 ok      a failure whose message runs over two lines keeps the page's lead and both lines
-ok      a busy Export: the bridge's reason; Export stays on (no save screen opened)
+ok      a busy Export: the bridge's reason under the buttons; Export stays on (no save screen opened)
 ok      a second save screen: "The save screen is already open."
-ok   3. the changer's lock names the system user (UID 1000) and root (UID 0)
+ok   3. Lato chosen in the Phone font list: the changer's lock names the system user (UID 1000) and root (UID 0)
 ok      System emoji's lock: root only
 ok      no page errors
 ok   4. a script's ERROR line is a sentence of the page

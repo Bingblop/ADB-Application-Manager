@@ -2,10 +2,11 @@
 // font without a Weight axis keeps Bold at None (Android makes bold text from the Regular); choosing "Same variable font" for it says the Bold would
 // look like the Regular. With a Weight axis, a Bold set at the Regular's weight or lighter says bold text would look like the rest; a heavier one says
 // nothing. An own COLRv1 emoji file on Android 12 says it needs Android 13 and Build waits. A name made only of blank fillers (U+3164) is named as such
-// and Build waits, and so is a name of only spaces; an emoji newer than the Unicode the page knows counts, and the bridge makes the font. A font
-// deleted from My fonts takes its preview face with it (document.fonts). Root Features has its "?" (HELP_LINKS) in the top card, beside the status
-// tag and not over it, and it opens the guide at that tab. FULL-GUIDE's table of tabs says "right before …" as the tab bar has it, and gives the
-// Font changer's gate with root (UID 0) as the app's lock does.
+// and Build waits, and so is a name of only spaces; an emoji newer than the Unicode the page knows counts, and the bridge makes the font. That font,
+// deleted from the Phone font list (a press and hold asks first, then Delete), leaves the list and takes the buttons under its build result with it
+// (v7.19.1: My fonts and its preview faces are gone). Root Features has its "?" (HELP_LINKS) in the top card, beside the status tag and not over it,
+// and it opens the guide at that tab. FULL-GUIDE's table of tabs says "right before …" as the tab bar has it, and gives the Phone font's gate with
+// root (UID 0) as the app's lock does.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -26,6 +27,15 @@ async function open(b, opts) {
   await page.evaluate(() => switchView('fonts'));
   await page.waitForTimeout(400);
   return { ctx, page, errors };
+}
+// the Phone font list: open it from its drop-down, read its rows (data-k: 'default' or the package), press and hold one with the mouse
+const openList = async (page) => { await page.click('#fntPhonePick'); await page.waitForTimeout(250); };
+const listKeys = (page) => page.evaluate(() => [...document.querySelectorAll('#fntPhoneList .fnt-pr')].map(r => r.dataset.k));
+async function hold(page, k) {
+  const box = await page.locator('#fntPhoneList .fnt-pr[data-k="' + k + '"]').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down(); await page.waitForTimeout(750); await page.mouse.up();
+  await page.waitForTimeout(250);
 }
 const make = (page) => page.evaluate(() => {
   const sel = document.getElementById('fntBoldSel'), hint = document.getElementById('fntNameMsg');
@@ -87,18 +97,29 @@ const make = (page) => page.evaluate(() => {
     await page.click('#fntBuildBtn');
     await page.waitForTimeout(400);
     const made = await page.evaluate(() => document.getElementById('fntBuildResult').textContent.trim());
-    check('   the bridge takes that name: the font is made', made.indexOf('\u{1F0F6} is ready in My fonts.') === 0, made);
+    check('   the bridge takes that name: the font is made', made.indexOf('\u{1F0F6} is ready. Use it now, or choose it later under Phone font.') === 0, made);
     await page.fill('#fntName', '');
     await page.waitForTimeout(100);
     check('   an empty name: no line (nothing typed yet), Build waits', (await make(page)).hint === '' && !(await make(page)).build);
-    // ---- 4. a deleted font takes its preview face with it ----
-    const had = await page.evaluate(() => { const k = fnt.libFaces.c4d5e6; window.__face = k && k.face; return !!(window.__face && [...document.fonts].includes(window.__face)); });
-    check('4. Lato\'s row shows its first line in Lato (a face of its own)', had);
-    await page.evaluate(() => [...document.querySelectorAll('#fntLib_c4d5e6 .mode-action-btn')].find(x => x.textContent === 'Delete').click());
-    await page.waitForTimeout(250);
+    // ---- 4. the font just made, deleted from the Phone font list, takes the buttons under its build result with it ----
+    const built = await page.evaluate(() => ({ id: fnt.resultId, entry: window.__fmk.lib[0], acts: [...document.querySelectorAll('#fntBuildActs button')].map(x => x.textContent) }));
+    const PKG = built.entry.pkg;
+    await openList(page);
+    const before = await listKeys(page);
+    check('4. the font just made: the buttons for it under the build result, and a row of its own in the Phone font list', built.id && built.id === built.entry.id && built.entry.name === '\u{1F0F6}'
+      && built.acts.join() === 'Use it,Install,Export,Make again' && before.includes(PKG), JSON.stringify([built.id, built.acts, PKG, before]));
+    await hold(page, PKG);
+    const ask = await page.evaluate(() => ({ open: document.getElementById('mpAskModal').classList.contains('show'), title: document.getElementById('mpAskTitle').textContent, ok: document.getElementById('mpAskOk').textContent }));
+    check('   a press and hold on it (not installed): it asks to delete it from the app', ask.open && ask.title === 'Delete \u{1F0F6}?' && ask.ok === 'Delete', JSON.stringify(ask));
     await page.click('#mpAskOk');
     await page.waitForTimeout(250);
-    check('   deleted: the face is gone from document.fonts', await page.evaluate(() => !document.getElementById('fntLib_c4d5e6') && ![...document.fonts].includes(window.__face) && !fnt.libFaces.c4d5e6));
+    await openList(page);
+    const after = await page.evaluate(() => ({ calls: window.__fmk.calls.filter(c => /^fontMakerDelete/.test(c)), resultId: fnt.resultId, acts: document.querySelectorAll('#fntBuildActs button').length,
+      result: document.getElementById('fntBuildResult').textContent, keys: [...document.querySelectorAll('#fntPhoneList .fnt-pr')].map(r => r.dataset.k) }));
+    check('   deleted: fontMakerDelete with its id, it leaves the list, and the build result and its buttons go with it', after.calls.join() === 'fontMakerDelete:' + built.id && !after.keys.includes(PKG)
+      && after.keys.length === before.length - 1 && !after.resultId && !after.acts && !after.result, JSON.stringify(after));
+    await page.click('#fntPhoneSheet .sheet-close');
+    await page.waitForTimeout(200);
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -137,7 +158,7 @@ const make = (page) => page.evaluate(() => {
     await page.click('#rfTop > .help-q');
     await page.waitForTimeout(900);
     check('   it opens the guide at Root Features', await page.evaluate(() => document.getElementById('helpGuideModal').classList.contains('show') && hg.cur === 'tab-rootfeatures'), await page.evaluate(() => String(hg.cur)));
-    // ---- 7. the full guide's table of tabs: "right before X" as the tab bar has it, and the Font changer's gate as the app words its lock ----
+    // ---- 7. the full guide's table of tabs: "right before X" as the tab bar has it, and the Phone font's gate as the app words it ----
     const tabs = await page.evaluate(() => TAB_DEFS.map(t => t.name));
     const md = fs.readFileSync(require('path').join(__dirname, '..', '..', 'docs', 'FULL-GUIDE.md'), 'utf8').split('\n').filter(l => /^\| \*\*[^*]+\*\* \|/.test(l));
     const before = md.map(l => { const m = /right before \*{0,2}([A-Z][\w/ -]*?)\*{0,2}[:,.]/.exec(l); return m ? [/^\| \*\*([^*]+)\*\*/.exec(l)[1], m[1]] : null; }).filter(Boolean);
@@ -145,7 +166,7 @@ const make = (page) => page.evaluate(() => {
     check('7. FULL-GUIDE: every "right before …" in the table of tabs matches the tab bar (Root Features right before Custom Fonts)', before.length >= 2 && !wrong.length
       && before.some(([t, n]) => t === 'Root Features' && n === 'Custom Fonts'), JSON.stringify({ before, wrong }));
     const fontsRow = md.find(l => l.startsWith('| **Custom Fonts** |')) || '';
-    check('   the Custom Fonts row gives the Font changer\'s gate with the system user (UID 1000) and root (UID 0)', /Font changer\*\*[^)]*\(Apply[^;]*; Root, or Shizuku as the system user \(UID 1000\) or as root \(UID 0\)\)/.test(fontsRow), fontsRow.slice(0, 600));
+    check('   the Custom Fonts row gives the Phone font\'s gate with the system user (UID 1000) and root (UID 0)', /Phone font\*\* \(a drop-down[^;]*; a font Samsung or Monotype did not sign needs Root, or Shizuku as the system user \(UID 1000\) or as root \(UID 0\)\)/.test(fontsRow), fontsRow.slice(0, 600));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

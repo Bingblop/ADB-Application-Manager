@@ -32,14 +32,16 @@ ok      a full phone: "There is not enough free space on this phone."
 ok   7. Lato on the phone: "Downloaded · 10 files", the Regular and Bold choices
 ok   8. Save to phone: gfontsSave, "Saving…" waits, Delete waits
 ok      the focus goes from Save to phone (waiting) to Use in Make a font
-ok      My fonts' Export waits too
+ok      the Export under the build result (the font just made) waits too
 ok      Delete is not asked while it saves
 ok      saved: a toast with the file's name; the buttons back
 ok      the focus stays on Use in Make a font
 ok   9. Delete: gfontsDelete, at once (no question), a toast, Download again
 ok      the focus goes from Delete (gone) to Download
 ok      its card has no Downloaded badge any more
-ok      while My fonts saves a font: Save to phone waits
+ok      while the build result's Export saves the font just made: Save to phone waits
+ok      Save to phone asked meanwhile sends nothing
+ok      the font saved ("Saved Inter Variable.apk"): Save to phone on again
 ok      no page errors
 ok   10. the save screen closed: nothing said, Save to phone again
 ok      no page errors

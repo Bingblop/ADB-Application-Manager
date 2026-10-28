@@ -10,8 +10,9 @@ ok      a name of only spaces: named as such too, Build waits
 ok      a name of an emoji newer than this Unicode (U+1F0F6, unknown here): no line, Build is on
 ok      the bridge takes that name: the font is made
 ok      an empty name: no line (nothing typed yet), Build waits
-ok   4. Lato's row shows its first line in Lato (a face of its own)
-ok      deleted: the face is gone from document.fonts
+ok   4. the font just made: the buttons for it under the build result, and a row of its own in the Phone font list
+ok      a press and hold on it (not installed): it asks to delete it from the app
+ok      deleted: fontMakerDelete with its id, it leaves the list, and the build result and its buttons go with it
 ok      no page errors
 ok   5. COLRv1 on Android 12: "Needs Android 13 to show inside a font.", Build waits
 ok      a COLRv0 file instead: no line, Build is on
@@ -20,6 +21,6 @@ ok   6. Root Features has its "?" in the top card, pointing at its topic
 ok      beside the status tag and the title, never over them, level with the tag
 ok      it opens the guide at Root Features
 ok   7. FULL-GUIDE: every "right before …" in the table of tabs matches the tab bar (Root Features right before Custom Fonts)
-ok      the Custom Fonts row gives the Font changer's gate with the system user (UID 1000) and root (UID 0)
+ok      the Custom Fonts row gives the Phone font's gate with the system user (UID 1000) and root (UID 0)
 ok      no page errors
 all passed

@@ -1,33 +1,38 @@
-ok   1. Root: the changer is open (ROOT), the font in use, Reset on
+ok   1. Root: the Phone font card is open (ROOT), the drop-down shows the font in use, no locked row, no One UI note
 ok      System emoji open (ROOT): Default, the downloaded font, Use, Soft reboot
-ok      Apply: off on the font in use, on for the other
-ok      One UI 8.5: the note above My fonts, once
+ok      the list: nothing locked, the font in use marked In use
+ok      a tap on the font in use closes the list and sends nothing
 ok      no page errors
-ok   2. the system user: the changer asks the app ("Checking…") and is open as SYSTEM USER
+ok   2. the system user: the card asks the app ("Checking…") and is open as SYSTEM USER
 ok      System emoji: the standard locked row, "Needs Super User", disabled
 ok      the system user is never called root
 ok      only the changer status was asked (no system emoji status off its gate)
-ok   3. Apply: fontMakerApply(id), "Applying…" on the row, Reset off while it runs
+ok   3. Lato chosen: fontMakerApply(id), the drop-down says "Applying…" and is off while it runs
 ok      the read-back: sans.loc and the file with its size, hash and label
-ok      Lato is the phone font now, In use in My fonts
+ok      Lato is the phone font now: the drop-down shows it, the list marks it In use
 ok      a toast says it is applied
-ok   4. Reset to Default: fontMakerReset, "Resetting…"
-ok      back to Default: sans.loc default#default, Reset off, the toast
+ok   4. Default chosen: fontMakerReset, "Resetting…", the drop-down off while it runs
+ok      back to Default: the drop-down shows Default, sans.loc default#default, the toast
+ok      Default is the one in use now: a tap on it sends nothing
 ok      no page errors
-ok   5. Shizuku as UID 0: both cards open, both ROOT
+ok   5. Shizuku as UID 0: both cards open, both ROOT, the drop-down shows the font in use
 ok      no page errors
-ok   6. the ADB shell: the changer is the standard locked row, "Needs Root or the system user"
+ok   6. the ADB shell: the card is LIMITED, no locked row; the drop-down asks for a font and stays on
+ok      One UI 8.5: the note above the drop-down, once: Font style takes only signed fonts, the others need Root or the system user
 ok      System emoji locked too, "Needs Super User"
-ok      every Apply in My fonts carries the lock
+ok      the list: a lock on each font Samsung or Monotype did not sign (Comic Neue and the two made here), none on the others
 ok      nothing privileged was asked
-ok      a tap on a locked Apply goes the Root way (asks), sends nothing
+ok      a tap on a locked font: the warning, nothing sent, nothing asked
+ok      a tap on a font Samsung or Monotype signed: Samsung's Font style opens on it, the font changer is not used
+ok      fntApply called anyway goes the Root way (asks), sends nothing
 ok      no page errors
-ok   7. not a Samsung: the changer says it needs a Samsung phone (SAMSUNG ONLY)
-ok      My fonts says font packages work only on Samsung phones, export still works
-ok      Install and Apply are off
+ok   7. not a Samsung: SAMSUNG ONLY, no drop-down
+ok      the note: font packages work only on Samsung phones, fonts can still be made and exported
+ok      a font made here: Use it and Install off, Export and Make again on
+ok      Export works: fontMakerExport, the toast
 ok      System emoji works on any phone with root
 ok      the changer status was not asked
 ok      no page errors
-ok   8. a One UI that applies these fonts: no note above My fonts
+ok   8. a One UI that applies these fonts, the ADB shell: no note above the drop-down, no lock in the list
 ok      no page errors
 all passed
