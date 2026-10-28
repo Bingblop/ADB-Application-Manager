@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="i18n.js"></script>
     <script src="monet.js"></script>
-    <title>ADB/Root Full System Toolbox</title>
+    <title>ADB/Root Toolbox</title>
     <style>
         /* =====================================================================================================================
            DESIGN TOKENS: every colour, space, radius, type size and weight the page is drawn from. A rule uses a token; it does not
@@ -362,7 +362,7 @@
         #execModeBadge[data-tone="none"] { background: color-mix(in srgb, var(--status-user) 15%, transparent); border-color: color-mix(in srgb, var(--status-user) 40%, transparent); color: var(--status-warn); }
         #execModeBadge[data-tone="none"] .status-dot { background: var(--status-warn); }
 
-        /* the title: "ADB/Root Full" over "System Toolbox" (two lines of near equal width, so it fits at 320 px and is largest at 412 px), every word in the text colour (the owner's wish, v7.15: one colour), heavy and tight. Solid colours only: a
+        /* the title: "ADB/Root" over "Toolbox" (v7.19.1; two lines of near equal width, so it fits at 320 px and is largest at 412 px), every word in the text colour (the owner's wish, v7.15: one colour), heavy and tight. Solid colours only: a
            gradient clipped to the text (background-clip: text with a transparent fill) came out invisible on some phones' WebView */
         .brand-text h1 {
             font-size: clamp(var(--fs-code), 4.1vw, 18px);
@@ -4521,7 +4521,7 @@
     <header class="app-header">
         <div class="brand-box">
             <div class="brand-text">
-                <h1 translate="no"><span class="bt-line"><span>ADB/Root</span> <span>Full</span> </span><span class="bt-line"><span>System</span> <span>Toolbox</span></span></h1>
+                <h1 translate="no"><span class="bt-line"><span>ADB/Root</span> </span><span class="bt-line"><span>Toolbox</span></span></h1>
                 <p id="deviceInfoSubtitle"><span class="bt-sub" id="deviceInfoLine1">&nbsp;</span><span class="bt-sub" id="deviceInfoLine2">&nbsp;</span></p>
             </div>
         </div>
@@ -5056,7 +5056,7 @@
             </div>
             <div class="color-card" id="selfUpdateCard">
                 <div class="color-card-title">App update</div>
-                <div class="color-card-subtitle">Update ADB/Root Full System Toolbox itself, straight from its GitHub releases. The download is checked to be this app, a newer version and signed with the same key before installing.</div>
+                <div class="color-card-subtitle">Update ADB/Root Toolbox itself, straight from its GitHub releases. The download is checked to be this app, a newer version and signed with the same key before installing.</div>
                 <div class="uad-status" id="selfUpdStatus">Checking this app's version…</div>
                 <div class="mode-btn-row" style="margin-top:6px;">
                     <button class="mode-action-btn primary" id="selfUpdCheckBtn" onclick="checkSelfUpdateUI()">Check for app update</button>
@@ -6352,7 +6352,7 @@
             </div>
             <div class="color-card cc" id="quickActionsHelp" data-cc="quickactions" data-cc-default="closed">
                 <div class="color-card-title">Quick actions</div>
-                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Kill Apps</b> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.</div>
+                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Kill Apps</b> into your panel; or long-press the home screen → Widgets → ADB/Root Toolbox. They run without opening the app.</div>
             </div>
         </section>
 
@@ -8296,7 +8296,7 @@
             </style>
             <div class="color-card about-hero">
                 <div class="about-logo"><svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.2 2 4.5 13.4h5.6l-1.1 8.6 9-11.9h-5.7z"/></svg></div>
-                <div class="about-name">ADB/Root Full System Toolbox</div>
+                <div class="about-name">ADB/Root Toolbox</div>
                 <div class="about-ver" id="aboutVersion">Version …</div>
                 <div class="about-blurb">Freeze, debloat, install, back up and inspect every app on your phone, straight from the phone: through ADB, Wireless Debugging, Shizuku or Root. No computer, no account, no ads.</div>
                 <div class="mode-btn-row">
@@ -8624,7 +8624,7 @@
                     <button class="find-nav" onclick="shareTerminal()" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg></button>
                     <button class="find-nav danger" onclick="cnClearAll()" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                 </div>
-                <div class="cn-empty" id="termEmpty">ADB/Root Full System Toolbox Shell Terminal Ready.
+                <div class="cn-empty" id="termEmpty">ADB/Root Toolbox Shell Terminal Ready.
 Type any command above (e.g. pm list packages -d)</div>
                 <div class="cn-list" id="termOutput" translate="no"></div>
             </div>
@@ -10230,7 +10230,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="font-sample" id="fontPvSample" translate="no" aria-label="Sample text in this font">
                 <div class="fs-big">Aa Bb 123</div>
                 <div class="fs-line">The quick brown fox jumps over the lazy dog.</div>
-                <div class="fs-line fs-bold">ADB/Root Full System Toolbox</div>
+                <div class="fs-line fs-bold">ADB/Root Toolbox</div>
             </div>
             <div class="color-card-subtitle" id="fontPvNote"></div>
             <div class="mode-btn-row" style="margin-top:10px;">
@@ -16599,7 +16599,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 allSizes = null;
                 if (inspectedPkg) renderInspectorSizes(inspectedPkg);
             } else {
-                showToast('Turn on usage access for ADB/Root Full System Toolbox, then come back');
+                showToast('Turn on usage access for ADB/Root Toolbox, then come back');
             }
         }
 
@@ -29453,7 +29453,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const level = document.getElementById('logcatLevel');
             const needle = (document.getElementById('logcatFilter').value || '').trim();
             const hidden = LC_LEVELS.filter(l => logcatHidden.has(l[0])).map(l => l[1]);
-            const head = ['# ADB/Root Full System Toolbox - log export', '# ' + new Date().toString(),
+            const head = ['# ADB/Root Toolbox - log export', '# ' + new Date().toString(),
                 '# Level: ' + level.options[level.selectedIndex].text + ' and above',
                 '# App: ' + (logcatApp ? logcatApp.name + ' (' + logcatApp.pkg + ')' : 'all apps')
                     + (needle ? ' | Text filter: "' + needle + '"' : '') + (hidden.length ? ' | Hidden levels: ' + hidden.join(', ') : ''),
@@ -32395,7 +32395,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     bg: v('--bg-base'), card: v('--bg-card'), surface: v('--bg-surface'), text: v('--text-main'), muted: v('--text-muted'),
                     accent: v('--accent'), onAccent: v('--on-accent'), border: v('--border-glass'), radius: parseFloat(v('--radius-xl')) || 24,
                     light: document.documentElement.getAttribute('data-appearance') === 'light',
-                    alertTitle: tr('ADB/Root Full System Toolbox'), confirmTitle: tr('Confirm'), promptTitle: tr('Enter a value'), ok: tr('OK'), cancel: tr('Cancel')
+                    alertTitle: tr('ADB/Root Toolbox'), confirmTitle: tr('Confirm'), promptTitle: tr('Enter a value'), ok: tr('OK'), cancel: tr('Cancel')
                 }));
             } catch (e) {}
         }
@@ -35581,7 +35581,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 : b === 'priv' ? 'Android sh (mksh with toybox), running ' + (s.uid === 0 ? 'as root' : 'as the ADB shell user (uid 2000), so pm, am, cmd, dumpsys, settings and logcat work')
                 : 'Android sh (mksh with toybox) inside this app\'s private sandbox (it cannot reach other apps)';
             return [
-                'You are ' + ag.name.replace(/\s*\(.*\)$/, '') + ', a coding agent working inside the Terminal of an Android app (ADB/Root Full System Toolbox). The user chats with you on their phone.',
+                'You are ' + ag.name.replace(/\s*\(.*\)$/, '') + ', a coding agent working inside the Terminal of an Android app (ADB/Root Toolbox). The user chats with you on their phone.',
                 'Environment: Android ' + (i.release || '?') + ' (API ' + (i.sdk || '?') + ') on ' + ((i.manufacturer || '') + ' ' + (i.model || '')).trim() + ' (' + (i.abi || 'arm64-v8a') + '). Shell: ' + shell + '. Working folder: ' + (s.cwd || '?') + '. Date: ' + new Date().toISOString().slice(0, 10) + '.',
                 'You act through action blocks that the app carries out after the user approves them. Use at most ONE action block per reply, put it at the end, and stop writing after it. Write the block as plain text, not inside a code fence:',
                 '<run>shell command(s)</run> runs in the shell above. Non-interactive only: no editors, pagers, prompts or full-screen programs. Keep output short (head, tail, grep).',
@@ -36548,7 +36548,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function txCliLogin(ag) {
             const cli = TX_CLI[ag.cli];
             if (!cli) return;
-            const inner = 'export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"; echo "Signing in to ' + cli.name + '. Follow the link it shows; come back to ADB/Root Full System Toolbox when it says you are signed in."; ' + cli.login;
+            const inner = 'export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"; echo "Signing in to ' + cli.name + '. Follow the link it shows; come back to ADB/Root Toolbox when it says you are signed in."; ' + cli.login;
             const cmd = cli.where === 'debian' ? txDebianCmd(inner) : inner;
             txOpenTermux(cmd);
         }
@@ -41620,7 +41620,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function paypalDonateUrl(amount) {
             return 'https://www.paypal.com/donate?business=' + encodeURIComponent(DONATE_EMAIL)
                 + '&no_recurring=1'
-                + '&item_name=' + encodeURIComponent('Buy me a coffee - ADB/Root Full System Toolbox')
+                + '&item_name=' + encodeURIComponent('Buy me a coffee - ADB/Root Toolbox')
                 + '&amount=' + encodeURIComponent(Number(amount).toFixed(2))
                 + '&currency_code=USD';
         }
@@ -41666,7 +41666,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function contactDetailsText() {
             if (!aboutInfo || !aboutInfo.pkg) { try { renderAbout(); } catch (e) {} }
             const i = aboutInfo || {};
-            const l = ['App: ADB/Root Full System Toolbox ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
+            const l = ['App: ADB/Root Toolbox ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
             if (i.android) l.push('Android: ' + i.android + ' (API ' + i.sdk + ')');
             if (i.device) l.push('Phone: ' + i.device + (i.abi ? ' · ' + i.abi : ''));
             const mode = workingModeFullLabel();
@@ -41716,7 +41716,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function aboutShare() {
-            shareText('ADB/Root Full System Toolbox', 'ADB/Root Full System Toolbox: freeze, debloat, install, back up and inspect Android apps through ADB, Wireless Debugging, Shizuku or Root.\n' + ABOUT_REPO + '/releases/latest');
+            shareText('ADB/Root Toolbox', 'ADB/Root Toolbox: freeze, debloat, install, back up and inspect Android apps through ADB, Wireless Debugging, Shizuku or Root.\n' + ABOUT_REPO + '/releases/latest');
         }
 
         function aboutDate(ms) {
@@ -41846,7 +41846,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function aboutDebugText() {
             const i = aboutInfo || {};
-            const lines = ['ADB/Root Full System Toolbox ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
+            const lines = ['ADB/Root Toolbox ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
             if (i.pkg) lines.push('Package: ' + i.pkg + (i.debuggable ? ' (debug build)' : ''));
             if (i.android) lines.push('Android: ' + i.android + ' (API ' + i.sdk + ')');
             if (i.device) lines.push('Device: ' + i.device + (i.abi ? ' · ' + i.abi : ''));
@@ -41858,7 +41858,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function aboutCopyDebug() { if (!aboutInfo || !aboutInfo.pkg) renderAbout(); copyText(aboutDebugText()); }
-        function aboutShareDebug() { if (!aboutInfo || !aboutInfo.pkg) renderAbout(); shareText('ADB/Root Full System Toolbox debug info', aboutDebugText()); }
+        function aboutShareDebug() { if (!aboutInfo || !aboutInfo.pkg) renderAbout(); shareText('ADB/Root Toolbox debug info', aboutDebugText()); }
         function aboutCopyFingerprint() {
             const h = aboutInfo && aboutInfo.signerSha256;
             if (!h) { showToast('The fingerprint is shown in the app build'); return; }

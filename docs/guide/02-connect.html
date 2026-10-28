@@ -257,7 +257,7 @@
 <ol class="hg-steps">
 <li>Check that Shizuku says it is running.</li>
 <li>In this app, tap the badge and find the <b>Shizuku ADB Service</b> card. Its tag tells you where things stand.</li>
-<li>Tap <b>Authorize &amp; Use Shizuku</b>. Shizuku shows its own question asking whether to allow ADB/Root Full System Toolbox to use Shizuku. Tap the button that allows it (Shizuku's wording may differ a little between versions).</li>
+<li>Tap <b>Authorize &amp; Use Shizuku</b>. Shizuku shows its own question asking whether to allow ADB/Root Toolbox to use Shizuku. Tap the button that allows it (Shizuku's wording may differ a little between versions).</li>
 <li>A message says "Shizuku authorized. Using Shizuku mode.". The tag becomes <b>AUTHORIZED</b>, and the badge turns green and reads "Shizuku ADB (UID 2000)".</li>
 </ol>
 <p>The card also has <b>Open Shizuku</b>, which opens the Shizuku app, and <b>Check Status</b>, which looks again. Authorizing Shizuku makes Shizuku your working mode, and it works alongside ADB over TCP.</p>
@@ -337,7 +337,7 @@
 <ul>
 <li><b>Tag says NOT FOUND.</b> No <code>su</code> was found. The root manager may not be installed or may have been disabled, or, with KernelSU, KernelSU Next or APatch, it has not allowed this app yet (they show <code>su</code> only to the apps they allow: allow the app in the manager's list, or use <b>Open root manager</b> on Root Features, see <a href="#rootfeatures-grant">Getting Super User</a>). Fix that, then open the sheet again or tap <b>Check Status</b> on the Shizuku card, which re-checks everything.</li>
 <li><b>"Root was denied or is not available".</b> You tapped Deny, or the root manager did not answer in time. Tap <b>Request Root Access</b> again and approve it, or look for the app in the root manager's list and allow it there.</li>
-<li><b>Tag says DENIED, and the badge says "Root (Superuser) (not ready)".</b> <code>su</code> exists but did not answer as root for this app, so nothing privileged runs. Open your root manager, find ADB/Root Full System Toolbox in its list of apps, set it to allow, then choose Root again with <b>Request Root Access</b> in Working Modes. If you allowed it after the question had timed out, the tag stays DENIED until you do this.</li>
+<li><b>Tag says DENIED, and the badge says "Root (Superuser) (not ready)".</b> <code>su</code> exists but did not answer as root for this app, so nothing privileged runs. Open your root manager, find ADB/Root Toolbox in its list of apps, set it to allow, then choose Root again with <b>Request Root Access</b> in Working Modes. If you allowed it after the question had timed out, the tag stays DENIED until you do this.</li>
 </ul>
 </section>
 
@@ -484,7 +484,7 @@
 
 <h4>The Shizuku permission</h4>
 <table class="hg-table"><thead><tr><th>On screen</th><th>What it is for</th><th>Without it</th></tr></thead><tbody>
-<tr><td>A question from the Shizuku app: allow ADB/Root Full System Toolbox to use Shizuku?</td><td>Lets the app run commands through Shizuku. The Android names are <code>moe.shizuku.manager.permission.API_V23</code> and <code>rikka.shizuku.permission.USE_SHIZUKU</code>. It is asked when you tap <b>Authorize &amp; Use Shizuku</b> (<a href="#mode-shizuku">Shizuku</a>).</td><td>Shizuku mode is not available. Every other mode still works.</td></tr>
+<tr><td>A question from the Shizuku app: allow ADB/Root Toolbox to use Shizuku?</td><td>Lets the app run commands through Shizuku. The Android names are <code>moe.shizuku.manager.permission.API_V23</code> and <code>rikka.shizuku.permission.USE_SHIZUKU</code>. It is asked when you tap <b>Authorize &amp; Use Shizuku</b> (<a href="#mode-shizuku">Shizuku</a>).</td><td>Shizuku mode is not available. Every other mode still works.</td></tr>
 </tbody></table>
 
 <h4>Install unknown apps</h4>
@@ -502,5 +502,5 @@
 <h4>What it does not ask for</h4>
 <p>The app has no permission for the camera, the microphone, your location, contacts, calendar, messages, call log or accounts. It is not an accessibility service or a device administrator.</p>
 <div class="hg-note"><b>Tip.</b> Do not mix up the two uses of "Install unknown apps". When you download this app, the switch that matters is the one for the app you download <i>with</i>, such as your browser (<a href="#install-and-update">Installing and updating the app</a>). The switch for this app itself (the row <b>Install unknown apps</b> in the Permissions sheet) only matters when it hands a file to Android's installer. Setting up a working mode avoids that step, because the app then installs the file itself.</div>
-<p>To take anything back, open Android's Settings, then <b>Apps</b>, then <b>ADB/Root Full System Toolbox</b>, and look under <b>Permissions</b>. Special accesses are under Settings, Apps, <b>Special app access</b> (the names vary by phone), or just use the sheet in About again. See also <a href="#privacy">Privacy</a>.</p>
+<p>To take anything back, open Android's Settings, then <b>Apps</b>, then <b>ADB/Root Toolbox</b>, and look under <b>Permissions</b>. Special accesses are under Settings, Apps, <b>Special app access</b> (the names vary by phone), or just use the sheet in About again. See also <a href="#privacy">Privacy</a>.</p>
 </section>
