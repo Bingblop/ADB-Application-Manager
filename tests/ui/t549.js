@@ -1,8 +1,9 @@
-// Settings > Row tints > Gradient (the owner's wish): a switch right under the Row tints slider, in Settings' switch style, on by default (the tints as before:
-// a glow and wash in the Apps rows, a wash from the leading edge in the Logcats). Off makes every tinted row one even colour, no gradient image in its tint
-// layer: the Apps tab's running, frozen, uninstalled and selected rows, Connected Devices' app rows, Live Logcat's rows and Connected Devices' Logcat rows;
-// the strength still follows the slider (Off draws none), and on the even colour the package line leans toward the main text. The choice is kept across a
-// reload, the even colour is drawn without color-mix() too, and at Vivid every text of a tinted row that reads at 4.5:1 with Row tints Off still does on the
+// Settings > Row tints > Gradient (the owner's wish): a switch right under the Row tints slider, in Settings' switch style, off by default since v7.18.1 (the
+// owner's wish: one even colour until the person turns the gradient on). Off makes every tinted row one even colour, no gradient image in its tint layer: the
+// Apps tab's running, frozen, uninstalled and selected rows, Connected Devices' app rows, Live Logcat's rows and Connected Devices' Logcat rows; the strength
+// still follows the slider (Off draws none), and on the even colour the package line leans toward the main text. On draws the tints as before v7.18.1 (a glow
+// and wash in the Apps rows, a wash from the leading edge in the Logcats). A choice of either is kept across a reload (on, the one a default would undo, too),
+// the even colour is drawn without color-mix() too, and at Vivid every text of a tinted row that reads at 4.5:1 with Row tints Off still does on the
 // even fill, in every palette, dark and light (the Apps rows measured on the pixels with the text hidden, the Logcats on the mixed colour, as t411, t476 and
 // t477 do).
 const fs = require('fs');
@@ -82,7 +83,7 @@ function pkgInk() {
         sameStyle: st(row) === st(other), checked: tog.checked, type: tog.type, attr: document.documentElement.getAttribute('data-row-grad'), shown: rr.height > 0 };
     });
     check('Settings > Row tints has a Gradient switch right under the slider, inside the card, in the switch-row style of the other cards', !sw.missing && sw.inCard && sw.afterSlider && sw.below && sw.last && sw.title === 'Gradient' && sw.sub && sw.track && sw.sameStyle && sw.type === 'checkbox' && sw.shown, JSON.stringify(sw));
-    check('   it is on by default (html data-row-grad="on")', sw.checked === true && sw.attr === 'on', JSON.stringify(sw));
+    check('   it is off by default (html data-row-grad="off", nothing stored)', sw.checked === false && sw.attr === 'off' && !('row_tint_grad' in await ev(() => window.__settings)), JSON.stringify(sw));
 
     // the lists, with every kind of tinted row
     // (Live Logcat and a device's Apps and Logcat are filled first: leaving the Apps tab clears its selection. The layers of the other tabs are read while hidden.)
@@ -94,14 +95,21 @@ function pkgInk() {
     const tap = async () => { await ev(() => switchView('prefs')); await page.waitForTimeout(150); await page.click('#rowTintGradRow .switch-track'); await page.waitForTimeout(150); };
     await toApps();
     const kinds = l => l.map(x => x.kind.replace(/ \w$/, '')).filter((k, i, a) => a.indexOf(k) === i).join(', ');
+    const dflt = await ev(layers);
+    check('   so by default every tinted row is one even colour (' + kinds(dflt) + ')', dflt.length >= 18 && dflt.every(x => x.img === 'none' && x.color === x.want), JSON.stringify(dflt.filter(x => !(x.img === 'none' && x.color === x.want))));
 
+    // on: a real tap on the switch
+    await tap();
+    const on = await ev(() => ({ checked: document.getElementById('rowTintGradToggle').checked, attr: document.documentElement.getAttribute('data-row-grad'), kv: window.__settings.row_tint_grad }));
+    check('a tap turns it on: html data-row-grad="on", kept as row_tint_grad true', on.checked === true && on.attr === 'on' && on.kv === 'true', JSON.stringify(on));
+    await toApps();
     const before = await ev(layers), inkOn = await ev(pkgInk);
     check('   with it on, every tinted row is a gradient (' + kinds(before) + ')', before.length >= 18 && before.every(x => /gradient\(/.test(x.img)), JSON.stringify(before.filter(x => !/gradient\(/.test(x.img))));
 
-    // off: a real tap on the switch
+    // off again: a tap
     await tap();
     const off = await ev(() => ({ checked: document.getElementById('rowTintGradToggle').checked, attr: document.documentElement.getAttribute('data-row-grad'), kv: window.__settings.row_tint_grad }));
-    check('a tap turns it off: html data-row-grad="off", kept as row_tint_grad false', off.checked === false && off.attr === 'off' && off.kv === 'false', JSON.stringify(off));
+    check('another tap turns it off: html data-row-grad="off", kept as row_tint_grad false', off.checked === false && off.attr === 'off' && off.kv === 'false', JSON.stringify(off));
     await toApps();
 
     const want = { Off: 0, Faint: 0.06, Subtle: 0.11, Normal: 0.2, Vivid: 0.24 };
@@ -128,14 +136,19 @@ function pkgInk() {
     const back = await ev(layers);
     check('on again, every row is drawn exactly as before (the same gradients, the same strength)', JSON.stringify(back) === JSON.stringify(before) && await ev(() => document.documentElement.getAttribute('data-row-grad') === 'on' && window.__settings.row_tint_grad === 'true'), JSON.stringify(back.filter((x, i) => JSON.stringify(x) !== JSON.stringify(before[i]))));
 
-    // kept across a reload
+    // kept across a reload: on (the choice the default would undo), then off
+    const reload = async () => {
+      const saved = await ev(() => JSON.parse(JSON.stringify(window.__settings)));
+      await page.addInitScript(s => { Object.assign(window.__settings, s); }, saved);
+      await page.reload(); await page.waitForTimeout(600);
+      await ev(() => switchView('apps')); await page.waitForTimeout(300);
+      return ev(() => { const a = getComputedStyle(document.querySelector('#view-apps .app-card.running'), '::before'); return { attr: document.documentElement.getAttribute('data-row-grad'), checked: document.getElementById('rowTintGradToggle').checked, menu: document.getElementById('smRowTintGrad').checked, img: a.backgroundImage, o: +a.opacity }; });
+    };
+    let re = await reload();
+    check('after a reload the switch is still on (in Settings and in the search menu) and a running app\'s row is still a gradient', re.attr === 'on' && re.checked === true && re.menu === true && /gradient\(/.test(re.img) && Math.abs(re.o - 0.11) < 0.002, JSON.stringify(re));
     await tap();
-    const saved = await ev(() => JSON.parse(JSON.stringify(window.__settings)));
-    await page.addInitScript(s => { Object.assign(window.__settings, s); }, saved);
-    await page.reload(); await page.waitForTimeout(600);
-    await ev(() => switchView('apps')); await page.waitForTimeout(300);
-    const re = await ev(() => { const a = getComputedStyle(document.querySelector('#view-apps .app-card.running'), '::before'); return { attr: document.documentElement.getAttribute('data-row-grad'), checked: document.getElementById('rowTintGradToggle').checked, img: a.backgroundImage, o: +a.opacity }; });
-    check('after a reload the switch is still off and a running app\'s row is still one even colour', re.attr === 'off' && re.checked === false && re.img === 'none' && Math.abs(re.o - 0.11 * 0.4) < 0.002, JSON.stringify(re));
+    re = await reload();
+    check('after a tap and a reload the switch is still off and a running app\'s row is still one even colour', re.attr === 'off' && re.checked === false && re.menu === false && re.img === 'none' && Math.abs(re.o - 0.11 * 0.4) < 0.002, JSON.stringify(re));
 
     await ev(() => { logcatStop(); cdLcStop(); });
     await page.close();

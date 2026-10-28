@@ -812,7 +812,7 @@
             display: none;
         }
 
-        /* The menu at the right end of the search bar: a label, a divider and a switch on every row */
+        /* The menu at the right end of the search bar: a label, a divider and a switch on every row, but for Row tints, which has the slider of Settings */
         .search-menu-btn {
             position: absolute;
             right: 44px;
@@ -872,6 +872,7 @@
             border-radius: var(--radius-chip);
             box-shadow: var(--shadow-pop);
             padding: var(--space-1) var(--space-5);
+            overscroll-behavior: contain;          /* when it scrolls inside itself (a short screen: toggleSearchMenu), the page behind it stays put */
         }
 
         .sm-row {
@@ -890,10 +891,12 @@
         .sm-sub { display: block; margin-top: var(--space-1); font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); font-weight:var(--fw-semibold); }
         .sm-div { align-self: stretch; width: 1px; margin: 2px 0; background: var(--border-glass); flex: 0 0 auto; }
         .sm-row .switch-input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
-        /* the last row opens something (Row tints in Settings) instead of turning something on: a chevron where the others have a switch, the same focus ring */
-        .sm-go:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
-        .sm-chev { flex: 0 0 auto; display: block; color: var(--text-muted); }
-        [dir="rtl"] .sm-chev { transform: scaleX(-1); }
+        /* Row tints, the same slider as in Settings (under the row's name and line, the full width of the row) and the Gradient switch under it: the menu
+           stays open while they are used, so the rows behind it change as you go. The slider row is not a label: a tap beside the slider does nothing */
+        .sm-tint { cursor: default; }
+        .sm-tint .row-tint-slider { padding-top: var(--space-2); }
+        .sm-tint .row-tint-ticks { font-size: var(--fs-caption); gap: var(--space-1); }
+        .row-tint-slider input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
         .search-note {
             margin: -4px 4px 10px;
@@ -971,8 +974,9 @@
 
         /* A row's colours. Only a row the person selected has an outline (the accent); every other row keeps the plain hairline.
            A running, frozen or uninstalled app gets a glow in its state's colour (green, blue, red) behind its icon that fades across the
-           row, with a soft shine along the top, as strong as "Row tints" in Settings says: Off, Subtle (the default) or Normal.
-           Drawn without color-mix(): a WebView before Chrome 111 throws a color-mix() declaration away, and the row then got a white
+           row, with a soft shine along the top, as strong as "Row tints" in Settings (or in the Apps tab's search menu) says: Off, Faint, Subtle (the
+           default), Normal or Vivid. That is the Gradient switch on; it is off by default since v7.18.1, and then the rule further down makes the layer one
+           even colour. Drawn without color-mix(): a WebView before Chrome 111 throws a color-mix() declaration away, and the row then got a white
            outline (currentColor) and no background at all. The layer is one static gradient: nothing moves while the list scrolls. */
         html { --rt-o: 0.11; }          /* Subtle; five steps since v7.14 (the owner's wish): Off, Faint, Subtle, Normal, Vivid */
         html[data-row-tint="off"] { --rt-o: 0; }
@@ -1010,7 +1014,7 @@
                 linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 45%),
                 linear-gradient(105deg, var(--accent), var(--secondary));
         }
-        /* Settings > Row tints > Gradient switched off (kv 'row_tint_grad', html[data-row-grad="off"]; the owner's wish): the layer is one even colour
+        /* Settings > Row tints > Gradient switched off (kv 'row_tint_grad', html[data-row-grad="off"]; the owner's wish, and the default since v7.18.1): the layer is one even colour
            over the whole row, no shine, glow or wash. A plain colour (no color-mix(), so an old WebView draws it too), as strong as the slider says,
            Off still none. An even fill lies under all of the row's text, also where the wash had faded, so it is laid at 0.4 of the slider's strength
            (Vivid 9.6%, about the 9% of a state colour the status inks are made to read on): the badges, the name, the package and the menu button
@@ -4601,11 +4605,21 @@
                         <span class="sm-div"></span>
                         <input type="checkbox" class="switch-input" id="searchOptRegex" checked onchange="setSearchOpt('regex', this.checked)"><span class="switch-track"></span>
                     </label>
-                    <div class="sm-row sm-go" id="searchMenuRowTints" role="button" tabindex="0" onclick="searchMenuRowTints()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();searchMenuRowTints();}">
-                        <span class="sm-text"><span class="sm-name">Row tints</span><span class="sm-sub">How strongly rows are tinted. Opens Settings.</span></span>
-                        <span class="sm-div"></span>
-                        <svg class="sm-chev" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                    <!-- Row tints and its Gradient switch, the same controls as the Row tints card of Settings (both write the same settings and show the same values) -->
+                    <div class="sm-row sm-tint" id="searchMenuRowTints" role="group" aria-labelledby="smRowTintName">
+                        <div class="sm-text">
+                            <span class="sm-name" id="smRowTintName">Row tints</span><span class="sm-sub">How strongly rows are tinted.</span>
+                            <div class="row-tint-slider">
+                                <input type="range" id="smRowTintRange" min="0" max="4" step="1" value="2" oninput="setRowTint(this.value)" aria-label="Row tints">
+                                <div class="row-tint-ticks"><span>Off</span><span>Faint</span><span>Subtle</span><span>Normal</span><span>Vivid</span></div>
+                            </div>
+                        </div>
                     </div>
+                    <label class="sm-row" id="searchMenuRowGrad">
+                        <span class="sm-text"><span class="sm-name">Gradient</span><span class="sm-sub">Each tint fades across the row. Off: one even colour.</span></span>
+                        <span class="sm-div"></span>
+                        <input type="checkbox" class="switch-input" id="smRowTintGrad" onchange="setRowTintGrad(this.checked)"><span class="switch-track"></span>
+                    </label>
                 </div>
             </div>
             <div class="search-note" id="searchNote" style="display:none;" role="status"></div>
@@ -6596,9 +6610,9 @@
                 <label class="switch-row" id="rowTintGradRow">
                     <div>
                         <div class="switch-title">Gradient</div>
-                        <div class="switch-sub">On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.</div>
+                        <div class="switch-sub">On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. Off by default.</div>
                     </div>
-                    <input type="checkbox" class="switch-input" id="rowTintGradToggle" checked onchange="setRowTintGrad(this.checked)">
+                    <input type="checkbox" class="switch-input" id="rowTintGradToggle" onchange="setRowTintGrad(this.checked)">
                     <span class="switch-track"></span>
                 </label>
             </div>
@@ -14926,16 +14940,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (old >= 0 && old <= 2) kvSet('row_tint_lv', v);
             return v;
         }
-        // The Gradient switch under the slider (kv 'row_tint_grad', on by default): off makes each tinted row one even colour (html[data-row-grad="off"])
-        function rowTintGradOn() { return kvGet('row_tint_grad', true) !== false; }
+        // The Gradient switch under the slider (kv 'row_tint_grad'): off makes each tinted row one even colour (html[data-row-grad="off"]). Off by default
+        // since v7.18.1 (the owner's wish): only a stored true turns it on, so a choice made before is kept and everyone else gets the even colour.
+        function rowTintGradOn() { return kvGet('row_tint_grad', false) === true; }
+        // The slider and the switch are in two places, the Row tints card of Settings and the Apps tab's search menu (⋮): both show the setting as it is
         function rowTintApply() {
             const v = rowTintLevel(), grad = rowTintGradOn();
             document.documentElement.setAttribute('data-row-tint', ROW_TINTS[v]);
             document.documentElement.setAttribute('data-row-grad', grad ? 'on' : 'off');
-            const r = document.getElementById('rowTintRange');
-            if (r) r.value = String(v);
-            const g = document.getElementById('rowTintGradToggle');
-            if (g) g.checked = grad;
+            ['rowTintRange', 'smRowTintRange'].forEach(id => { const r = document.getElementById(id); if (r) r.value = String(v); });
+            ['rowTintGradToggle', 'smRowTintGrad'].forEach(id => { const g = document.getElementById(id); if (g) g.checked = grad; });
             return v;
         }
         function setRowTint(v) {
@@ -20420,7 +20434,11 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             if (closeSearchMenu()) return;
             syncSearchUi();
+            rowTintApply();                                                   // the Row tints slider and switch show the setting as it is now
             const menu = document.getElementById('searchMenu');
+            const doc = document.scrollingElement || document.documentElement;
+            const canScroll = Math.max(0, doc.scrollHeight - window.innerHeight - window.scrollY);          // how far the page itself scrolls, without the menu (which lengthens it)
+            menu.style.maxHeight = ''; menu.style.overflowY = '';
             menu.style.display = '';
             document.getElementById('searchMenuBtn').setAttribute('aria-expanded', 'true');
             document.body.classList.add('search-menu-open');               // the batch button steps aside while the menu is open
@@ -20430,21 +20448,14 @@ Type any command above (e.g. pm list packages -d)</div>
             const tabs = document.getElementById('tabBar').getBoundingClientRect(), hdr = document.querySelector('.app-header');
             const bar = document.getElementById('bnav'), bb = bar && !bar.classList.contains('bnav-off') ? bar.getBoundingClientRect() : null;
             const barH = bb && bb.height > 0 && bb.width >= window.innerWidth - 1 && bb.top < window.innerHeight ? window.innerHeight - bb.top : 0;          // (the rail of a wide screen stands at the left: it covers no row)
-            const need = r.bottom - (window.innerHeight - barH - 10), room = box.top - (Math.max(tabs.bottom, hdr ? hdr.getBoundingClientRect().bottom : 0) + 8);
-            if (need > 0 && room > 0) window.scrollBy({ top: Math.min(need, room), behavior: 'smooth' });
-        }
-
-        // The last row of the menu: Row tints is a setting of Settings, so the row closes the menu and goes there (Back comes back to the Apps tab, as from any other tab).
-        // Settings opens on the card, which is lit up for a moment like the sections the bottom bar's shortcuts go to (bnavReveal), and the slider has the focus for a keyboard.
-        function searchMenuRowTints() {
-            closeSearchMenu();
-            if (!switchView('prefs')) return;
-            setTimeout(() => {
-                if (currentViewName() !== 'prefs') return;                       // Back was pressed meanwhile
-                bnavReveal('#rowTintCard');
-                const r = document.getElementById('rowTintRange');
-                if (r) r.focus({ preventScroll: true });
-            }, 90);
+            const bottom = window.innerHeight - barH - 10;
+            const need = r.bottom - bottom, room = box.top - (Math.max(tabs.bottom, hdr ? hdr.getBoundingClientRect().bottom : 0) + 8);
+            const shift = need > 0 && room > 0 ? Math.min(need, room, canScroll) : 0;
+            if (shift > 0) window.scrollBy({ top: shift, behavior: 'smooth' });
+            // Taller than the screen has room for even then (a short screen, large text, a long language: the Row tints slider and the Gradient switch make it
+            // the tallest menu of the page), it scrolls inside itself, so its last row is never left under the bottom bar
+            const fit = Math.floor(bottom - (r.top - shift));
+            if (r.bottom - shift > bottom && fit >= 160) { menu.style.maxHeight = fit + 'px'; menu.style.overflowY = 'auto'; }
         }
 
         // The box says what it searches, and the menu shows the options as they are now

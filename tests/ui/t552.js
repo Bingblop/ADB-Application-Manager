@@ -1,20 +1,24 @@
-// Apps tab: the three-dot menu of the search bar has a fourth and last row, "Row tints", that opens Settings on the Row tints card. It is drawn like the
-// switch rows (name, a one-line grey line under it, the divider) with a chevron where they have a switch. A tap or Enter / Space closes the menu (and clears
-// body.search-menu-open), makes Settings the current view with the Row tints card in view and lit up for a moment (the helper the bottom bar's shortcuts use),
-// the slider has the focus, and Back returns to the Apps tab with its search as it was. The three switches above it are as they were and still work.
+// Apps tab: the three-dot menu of the search bar ends with Row tints, the very slider of Settings > Row tints (Off, Faint, Subtle, Normal, Vivid), and its
+// Gradient switch (the owner's wish, v7.18.1; before, the last row only opened Settings). Both change the setting right there, the menu stays open and the
+// rows behind it change as you go; they and Settings' controls are one setting (a change in one place shows in the other). Gradient is off by default. The
+// slider row is built like the switch rows (name, one grey line, a hairline above) with the slider and its five step names under its line; the Gradient row is
+// a switch row like the three above it. Keyboard: Tab goes switch, slider, switch; the arrow keys move the slider; Escape and Back close the menu. On a short
+// screen the menu scrolls inside itself, so its last row is never under the bottom bar. Translated in every language (the step names fit at 320 px), and in
+// Arabic the slider and its step names both run from the right.
 const { chromium, PAGE } = require('./lib/pw');
 const inst = require('./lib/inst_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, ok || extra === undefined ? '' : extra); }          // (the numbers behind a passing check stay out of the output: they depend on the fonts)
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const APPS = [
-  { pkg: 'com.example.calendar', name: 'Calendar' },
-  { pkg: 'com.example.camera', name: 'Camera' },
+  { pkg: 'com.example.calendar', name: 'Calendar', isRunning: true },
+  { pkg: 'com.example.camera', name: 'Camera', isFrozen: true },
   { pkg: 'com.example.clock', name: 'Clock' },
-  { pkg: 'org.zz.notes', name: 'Calculator' }
+  { pkg: 'org.zz.notes', name: 'Calculator', isUninstalled: true }
 ];
-const ROW = '#searchMenuRowTints';
-const SUB = 'How strongly rows are tinted. Opens Settings.';
+const TINT = '#searchMenuRowTints', GRAD = '#searchMenuRowGrad';
+const STEPS = ['Off', 'Faint', 'Subtle', 'Normal', 'Vivid'], RT = ['off', 'faint', 'subtle', 'normal', 'vivid'];
+const LANGS = ['ar', 'de', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'pt-BR', 'ru', 'tr', 'zh-CN'];
 
 (async () => {
   const b = await chromium.launch();
@@ -25,7 +29,7 @@ const SUB = 'How strongly rows are tinted. Opens Settings.';
     page.bottomNav = !!opts.bottomNav;
     page.on('pageerror', e => { errors.push(e.message); });
     const apps = opts.apps || APPS;
-    await page.addInitScript(inst.initScript, { kv: { perm_intro_v61: '1' }, apps, store: opts.store || {} });
+    await page.addInitScript(inst.initScript, { kv: Object.assign({ perm_intro_v61: '1' }, opts.kv || {}), apps, store: opts.store || {} });
     await page.goto(PAGE);
     await page.waitForFunction(n => document.getElementById('countAll').innerText === String(n), apps.length);
     return page;
@@ -33,239 +37,243 @@ const SUB = 'How strongly rows are tinted. Opens Settings.';
   const ev = (page, fn, arg) => page.evaluate(fn, arg);
   const menuOpen = page => ev(page, () => document.getElementById('searchMenu').style.display !== 'none');
   const opts = page => ev(page, () => ({ names: document.getElementById('searchOptNames').checked, packages: document.getElementById('searchOptPackages').checked, regex: document.getElementById('searchOptRegex').checked }));
-  const names = page => ev(page, () => Array.from(document.querySelectorAll('#appsListContainer .app-card .app-name')).map(n => n.innerText).sort().join());
   // the page has stopped scrolling (a smooth scroll takes a moment)
   const still = async page => { let n = 0, last = -1; for (let i = 0; i < 60 && n < 4; i++) { await sleep(60); const y = await ev(page, () => Math.round(scrollY)); n = y === last ? n + 1 : 0; last = y; } };
-  // where things are: what the card is under (header, tab bar, bottom bar) and whether it is inside the rest of the screen
-  const where = page => ev(page, () => {
-    const vis = el => !!el && el.getBoundingClientRect().height > 0 && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
-    const card = document.getElementById('rowTintCard'), r = card.getBoundingClientRect();
-    const hdr = document.querySelector('.app-header').getBoundingClientRect().bottom, tb = document.getElementById('tabBar'), bn = document.getElementById('bnav');
-    const top = Math.max(hdr, vis(tb) ? tb.getBoundingClientRect().bottom : 0), bottom = vis(bn) ? bn.getBoundingClientRect().top : innerHeight;
+  // the setting as it is: what is stored, what the page draws, and what both places show
+  const state = page => ev(page, () => {
+    const run = document.querySelector('#appsListContainer .app-card.running'), a = run ? getComputedStyle(run, '::before') : null;
     return {
-      view: currentViewName(), menu: searchMenuOpen(), expanded: document.getElementById('searchMenuBtn').getAttribute('aria-expanded'), cls: document.body.classList.contains('search-menu-open'),
-      shown: vis(card), inView: vis(card) && r.top >= top - 1 && r.bottom <= bottom + 1, aboveFold: r.top >= innerHeight, flash: card.classList.contains('bn-flash'),
-      focus: document.activeElement ? document.activeElement.id : '', gear: document.getElementById('prefsHeaderBtn').classList.contains('active'), stack: viewStack.join()
+      lv: rowTintLevel(), tint: document.documentElement.getAttribute('data-row-tint'), grad: document.documentElement.getAttribute('data-row-grad'),
+      kvLv: window.__kv.row_tint_lv, kvGrad: window.__kv.row_tint_grad,
+      menuRange: document.getElementById('smRowTintRange').value, setRange: document.getElementById('rowTintRange').value,
+      menuGrad: document.getElementById('smRowTintGrad').checked, setGrad: document.getElementById('rowTintGradToggle').checked,
+      rowO: a ? Math.round(+a.opacity * 1000) / 1000 : null, rowImg: a ? (a.backgroundImage === 'none' ? 'none' : /gradient\(/.test(a.backgroundImage) ? 'gradient' : a.backgroundImage) : null,
+      view: currentViewName()
     };
   });
-  const rowInfo = page => ev(page, () => {
-    const row = document.getElementById('searchMenuRowTints');
-    if (!row) return null;
-    const rows = Array.from(document.querySelectorAll('#searchMenu .sm-row')), menu = document.getElementById('searchMenu').getBoundingClientRect(), r = row.getBoundingClientRect();
-    const name = row.querySelector('.sm-name'), sub = row.querySelector('.sm-sub'), svg = row.querySelector('svg'), s = svg ? svg.getBoundingClientRect() : null;
-    const track = document.querySelector('#searchMenu .switch-track'), t = track ? track.getBoundingClientRect() : null;
+  const rows = page => ev(page, () => {
+    const all = Array.from(document.querySelectorAll('#searchMenu .sm-row')), menu = document.getElementById('searchMenu').getBoundingClientRect();
+    const tint = document.getElementById('searchMenuRowTints'), grad = document.getElementById('searchMenuRowGrad'), regex = all[2];
+    if (!tint || !grad) return null;
+    const rng = tint.querySelector('input[type="range"]'), ticks = tint.querySelector('.row-tint-ticks'), set = document.querySelector('#rowTintCard .row-tint-slider');
+    const name = tint.querySelector('.sm-name'), sub = tint.querySelector('.sm-sub'), r = tint.getBoundingClientRect(), nr = name.getBoundingClientRect(), sr = sub.getBoundingClientRect(), rr = rng.getBoundingClientRect();
+    const look = el => ['display', 'alignItems', 'paddingTop', 'paddingBottom', 'columnGap', 'borderTopStyle', 'borderTopWidth'].map(k => getComputedStyle(el)[k]).join(' ');
+    const gi = grad.querySelector('input');
     return {
-      last: rows[rows.length - 1] === row, count: rows.length, rowNames: rows.map(x => x.querySelector('.sm-name').innerText).join('|'), name: name ? name.innerText : null, sub: sub ? sub.innerText : null, subs: row.querySelectorAll('.sm-sub').length,
-      role: row.getAttribute('role'), tabindex: row.getAttribute('tabindex'), tag: row.tagName, divider: !!row.querySelector('.sm-div'), dividers: document.querySelectorAll('#searchMenu .sm-div').length,
-      chevron: !!svg && svg.getAttribute('aria-hidden') === 'true' && !svg.hasAttribute('role'), switchIn: !!row.querySelector('input'),
-      insideMenu: r.left >= menu.left - 1 && r.right <= menu.right + 1 && r.bottom <= menu.bottom + 1, tall: r.height >= 44, textFits: name.scrollWidth <= name.clientWidth + 1,
-      chevronAtEnd: !!s && !!t && Math.abs(s.right - t.right) <= 1 && s.left >= r.left && s.top >= r.top && s.bottom <= r.bottom, chevronColor: svg ? getComputedStyle(svg).color : '',
-      cursor: getComputedStyle(row).cursor, userSelect: getComputedStyle(row).userSelect, lineAbove: getComputedStyle(row).borderTopWidth !== '0px', inScreen: r.left >= 0 && r.right <= innerWidth,
-      sameLook: ['display', 'alignItems', 'paddingTop', 'paddingBottom', 'columnGap', 'borderTopStyle'].every(k => getComputedStyle(row)[k] === getComputedStyle(rows[2])[k]),
-      fontLook: getComputedStyle(name).fontSize === getComputedStyle(rows[2].querySelector('.sm-name')).fontSize && getComputedStyle(sub).fontSize === getComputedStyle(rows[2].querySelector('.sm-sub')).fontSize && getComputedStyle(sub).color === getComputedStyle(rows[2].querySelector('.sm-sub')).color
+      names: all.map(x => x.querySelector('.sm-name').innerText).join('|'), count: all.length, order: all.indexOf(tint) === 3 && all.indexOf(grad) === 4,
+      name: name.innerText, sub: sub.innerText, subs: tint.querySelectorAll('.sm-sub').length, fontLook: getComputedStyle(name).fontSize === getComputedStyle(regex.querySelector('.sm-name')).fontSize && getComputedStyle(sub).fontSize === getComputedStyle(regex.querySelector('.sm-sub')).fontSize && getComputedStyle(sub).color === getComputedStyle(regex.querySelector('.sm-sub')).color,
+      tintLook: look(tint) === look(regex), gradLook: look(grad) === look(regex), tag: tint.tagName, role: tint.getAttribute('role'), labelledBy: tint.getAttribute('aria-labelledby') === name.id && !!name.id,
+      notLabel: !tint.closest('label') && tint.tagName !== 'LABEL', cursor: getComputedStyle(tint).cursor, noSwitch: !tint.querySelector('input[type="checkbox"]'), oldGone: typeof window.searchMenuRowTints !== 'function' && !document.querySelector('#searchMenu .sm-chev, #searchMenu .sm-go, #searchMenu [role="button"]'),          // (window.searchMenuRowTints is now the row itself: an element's id)
+      range: [rng.id, rng.min, rng.max, rng.step, rng.getAttribute('aria-label')].join(' '), setRange: (() => { const s = document.getElementById('rowTintRange'); return [s.min, s.max, s.step, s.getAttribute('aria-label')].join(' '); })(),
+      ticks: Array.from(ticks.children).map(t => t.innerText).join('|'), setTicks: Array.from(set.querySelector('.row-tint-ticks').children).map(t => t.innerText).join('|'),
+      sameSlider: rng.closest('.row-tint-slider') && getComputedStyle(rng).accentColor === getComputedStyle(document.getElementById('rowTintRange')).accentColor,
+      below: nr.bottom <= sr.top + 1 && sr.bottom <= rr.top + 1, fullWidth: Math.abs(rr.width - sr.width) <= 4 && rr.left >= r.left - 1 && rr.right <= r.right + 1,
+      ticksFit: ticks.scrollWidth <= ticks.clientWidth + 1 && Array.from(ticks.children).every(t => t.getBoundingClientRect().right <= ticks.getBoundingClientRect().right + 1 && t.getBoundingClientRect().left >= ticks.getBoundingClientRect().left - 1),
+      gradName: grad.querySelector('.sm-name').innerText, gradSub: grad.querySelector('.sm-sub').innerText, gradLabel: grad.tagName === 'LABEL', gradDiv: !!grad.querySelector('.sm-div'), gradTrack: !!grad.querySelector('.switch-input + .switch-track'),
+      gradInput: gi.id + ' ' + gi.type, gradOn: gi.checked, dividers: document.querySelectorAll('#searchMenu .sm-div').length,
+      insideMenu: [tint, grad].every(x => { const q = x.getBoundingClientRect(); return q.left >= menu.left - 1 && q.right <= menu.right + 1; }), inScreen: [tint, grad].every(x => { const q = x.getBoundingClientRect(); return q.left >= 0 && q.right <= innerWidth; }),
+      tall: r.height >= 44 && grad.getBoundingClientRect().height >= 44, rangeTall: rr.height >= 16, textFits: [name, sub, grad.querySelector('.sm-name')].every(e => e.scrollWidth <= e.clientWidth + 1)
     };
   });
 
-  // ---- 1. the row: last, built like the others, the three above it unchanged ----
+  // ---- 1. the rows: Row tints with its slider, then Gradient, after the three search switches ----
   let page = await open();
   await page.tap('#searchMenuBtn');
   check('1. the menu opens', await menuOpen(page));
-  let r = await rowInfo(page);
-  check('   a fourth row is there and it is the last one, after the regex row', !!r && r.last && r.count === 4, JSON.stringify(r));
-  check('   the rows are Include application names, Include package names, Use regex matching, Row tints', !!r && r.rowNames === 'Include application names|Include package names|Use regex matching|Row tints', r && r.rowNames);
-  check('   its line under the name is "' + SUB + '" (one line of grey text, as in the regex row)', !!r && r.name === 'Row tints' && r.sub === SUB && r.subs === 1 && r.fontLook, JSON.stringify(r));
-  check('   it is drawn like the others: same row box, a hairline above, the divider before its end, not selectable text, a pointer', !!r && r.sameLook && r.lineAbove && r.divider && r.dividers === 4 && r.userSelect === 'none' && r.cursor === 'pointer', JSON.stringify(r));
-  check('   at its end is a chevron (hidden from a screen reader), not a switch', !!r && r.chevron && !r.switchIn && r.chevronAtEnd, JSON.stringify(r));
-  check('   it is a button for a screen reader and a keyboard (role button, tabindex 0, named by its text)', !!r && r.role === 'button' && r.tabindex === '0' && r.tag === 'DIV', JSON.stringify(r));
-  check('   it is inside the menu and the screen, at least 44 px tall, and its name fits', !!r && r.insideMenu && r.inScreen && r.tall && r.textFits, JSON.stringify(r));
-  const three = await ev(page, () => Array.from(document.querySelectorAll('#searchMenu label.sm-row')).map(l => ({ name: l.querySelector('.sm-name').innerText, sub: l.querySelector('.sm-sub') ? l.querySelector('.sm-sub').innerText : '', input: l.querySelector('input').id, type: l.querySelector('input').type, on: l.querySelector('input').checked, divider: !!l.querySelector('.sm-div'), track: !!l.querySelector('.switch-track') })));
-  check('   the three rows above it are as before: labels with their switches, all on, the regex line unchanged', three.length === 3 && three.map(t => t.input).join() === 'searchOptNames,searchOptPackages,searchOptRegex' && three.every(t => t.type === 'checkbox' && t.on && t.divider && t.track) && three[0].sub === '' && three[1].sub === '' && three[2].sub === 'If turned off, applications and packages are matched exactly: the whole name has to be typed.', JSON.stringify(three));
-
+  let r = await rows(page);
+  check('   its rows are Include application names, Include package names, Use regex matching, Row tints, Gradient', !!r && r.count === 5 && r.order && r.names === 'Include application names|Include package names|Use regex matching|Row tints|Gradient', r && r.names);
+  check('   the old shortcut is gone: no chevron row, nothing that opens Settings', !!r && r.oldGone, JSON.stringify(r));
+  check('   Row tints: its name, one grey line "How strongly rows are tinted." as in the regex row, a hairline above, the row box of the others', !!r && r.name === 'Row tints' && r.sub === 'How strongly rows are tinted.' && r.subs === 1 && r.fontLook && r.tintLook, JSON.stringify(r));
+  check('   under its line the slider of Settings: 0 to 4 in steps of 1, named Row tints, the same five step names (Off, Faint, Subtle, Normal, Vivid), the full width of the row', !!r && r.range === 'smRowTintRange 0 4 1 Row tints' && r.setRange === '0 4 1 Row tints' && r.ticks === STEPS.join('|') && r.ticks === r.setTicks && r.sameSlider && r.below && r.fullWidth && r.rangeTall, JSON.stringify(r));
+  check('   the slider row is a group named by its name, not a label and not a switch (a tap beside the slider does nothing), with the plain arrow', !!r && r.role === 'group' && r.labelledBy && r.notLabel && r.noSwitch && r.cursor === 'default', JSON.stringify(r));
+  check('   Gradient: a switch row like the three above (name, line, divider, switch), off by default', !!r && r.gradName === 'Gradient' && r.gradSub === 'Each tint fades across the row. Off: one even colour.' && r.gradLabel && r.gradDiv && r.gradTrack && r.gradInput === 'smRowTintGrad checkbox' && r.gradOn === false && r.gradLook && r.dividers === 4, JSON.stringify(r));
+  check('   both are inside the menu and the screen, at least 44 px tall, and their texts and step names fit', !!r && r.insideMenu && r.inScreen && r.tall && r.textFits && r.ticksFit, JSON.stringify(r));
+  let s = await state(page);
+  check('   they show the setting as it is: Subtle, Gradient off (the defaults), like Settings', s.menuRange === '2' && s.setRange === '2' && s.lv === 2 && s.tint === 'subtle' && s.menuGrad === false && s.setGrad === false && s.grad === 'off' && s.rowImg === 'none', JSON.stringify(s));
+  const three = await ev(page, () => Array.from(document.querySelectorAll('#searchMenu label.sm-row')).slice(0, 3).map(l => ({ input: l.querySelector('input').id, on: l.querySelector('input').checked, sub: l.querySelector('.sm-sub') ? l.querySelector('.sm-sub').innerText : '' })));
+  check('   the three search switches are as before: all on, the regex line unchanged', three.map(t => t.input).join() === 'searchOptNames,searchOptPackages,searchOptRegex' && three.every(t => t.on) && three[2].sub === 'If turned off, applications and packages are matched exactly: the whole name has to be typed.', JSON.stringify(three));
   await page.screenshot({ path: 'rowtints_menu.png' });
-  if (!r) { console.log('the row is not there: the rest of the script needs it'); console.log(bad + ' FAILED'); await b.close(); process.exit(1); }
+  if (!r) { console.log('the rows are not there: the rest of the script needs them'); console.log(bad + ' FAILED'); await b.close(); process.exit(1); }
 
-  // ---- 2. the three switches still work, and the menu stays open while they do ----
+  // ---- 2. the search switches still work, and the menu stays open while they do ----
   const flip = async id => { await page.locator('.sm-row:has(#' + id + ') .sm-name').click(); };
   await flip('searchOptRegex');
   check('2. the regex switch turns off and the menu stays open', JSON.stringify(await opts(page)) === JSON.stringify({ names: true, packages: true, regex: false }) && await menuOpen(page));
   await flip('searchOptRegex');
   await flip('searchOptNames');
-  check('   the names switch turns off (packages stay on) and the menu stays open', JSON.stringify(await opts(page)) === JSON.stringify({ names: false, packages: true, regex: true }) && await menuOpen(page));
   await flip('searchOptPackages');
-  check('   turning the last one (packages) off turns names on instead, as before', JSON.stringify(await opts(page)) === JSON.stringify({ names: true, packages: false, regex: true }));
+  check('   turning off names, then packages, turns names on instead, as before', JSON.stringify(await opts(page)) === JSON.stringify({ names: true, packages: false, regex: true }));
   await flip('searchOptPackages');
-  check('   all three are on again, and the new row did not move them', JSON.stringify(await opts(page)) === JSON.stringify({ names: true, packages: true, regex: true }) && !!(await rowInfo(page) || {}).last);
-  await page.focus('#searchOptRegex'); await page.keyboard.press('Space');
-  check('   Space on a switch flips it (the keyboard is as before)', (await opts(page)).regex === false);
-  await page.keyboard.press('Space');
-  check('   a tap on a switch does not open Settings', (await ev(page, () => currentViewName())) === 'apps' && await menuOpen(page));
+  check('   all three are on again, and the Row tints setting did not move', JSON.stringify(await opts(page)) === JSON.stringify({ names: true, packages: true, regex: true }) && (await state(page)).lv === 2);
 
-  // ---- 3. a tap ----
+  // ---- 3. the slider, by touch: right there, the menu stays open, the rows behind it change ----
+  const tapAt = async frac => { const bx = await page.locator('#smRowTintRange').boundingBox(); await page.touchscreen.tap(bx.x + 4 + (bx.width - 8) * frac, bx.y + bx.height / 2); await sleep(120); };
+  const o0 = (await state(page)).rowO;
+  await tapAt(1);
+  s = await state(page);
+  check('3. a tap at the slider\'s end sets Vivid: stored, drawn (html data-row-tint="vivid") and shown in Settings too', s.lv === 4 && s.tint === 'vivid' && s.kvLv === '4' && s.menuRange === '4' && s.setRange === '4', JSON.stringify(s));
+  check('   the menu stays open and the tab stays the Apps tab', await menuOpen(page) && s.view === 'apps', JSON.stringify(s));
+  check('   the running app\'s row behind the menu is tinted more strongly at once', s.rowO > o0, o0 + ' -> ' + s.rowO);
+  await tapAt(0);
+  s = await state(page);
+  check('   a tap at its start sets Off: no tint on the row', s.lv === 0 && s.tint === 'off' && s.kvLv === '0' && s.setRange === '0' && s.rowO === 0 && await menuOpen(page), JSON.stringify(s));
+  const steps = [];
+  for (let i = 0; i <= 4; i++) { await tapAt(i / 4); steps.push((await state(page)).tint); }
+  check('   each of the five steps can be tapped: ' + steps.join(', '), steps.join() === RT.join(), steps.join());
+  await tapAt(0.5);
+  check('   back to Subtle (the middle)', (await state(page)).lv === 2);
+  // a drag along it, as a finger does: the page's own input events
+  const bx = await page.locator('#smRowTintRange').boundingBox();
+  await page.mouse.move(bx.x + bx.width / 2, bx.y + bx.height / 2); await page.mouse.down(); await page.mouse.move(bx.x + bx.width * 0.8, bx.y + bx.height / 2, { steps: 6 }); await page.mouse.up(); await sleep(120);
+  s = await state(page);
+  check('   a drag to the right moves it on (Normal), and the menu is still open', s.lv === 3 && s.setRange === '3' && await menuOpen(page), JSON.stringify(s));
+  await page.tap(TINT + ' .sm-name'); await sleep(100);
+  s = await state(page);
+  check('   a tap on the row\'s name does nothing: the menu stays open, Settings does not open, the level stays', await menuOpen(page) && s.view === 'apps' && s.lv === 3, JSON.stringify(s));
+
+  // ---- 4. Gradient, by touch ----
+  await page.tap(GRAD + ' .sm-name'); await sleep(120);
+  s = await state(page);
+  check('4. a tap on Gradient turns it on: stored (row_tint_grad true), drawn (html data-row-grad="on", the running row is a gradient), on in Settings too', s.menuGrad && s.setGrad && s.grad === 'on' && s.kvGrad === 'true' && s.rowImg === 'gradient', JSON.stringify(s));
+  check('   and the menu stays open', await menuOpen(page) && s.view === 'apps');
+  await page.tap(GRAD + ' .switch-track'); await sleep(120);
+  s = await state(page);
+  check('   a tap on the switch itself turns it off again: one even colour', !s.menuGrad && !s.setGrad && s.grad === 'off' && s.kvGrad === 'false' && s.rowImg === 'none' && await menuOpen(page), JSON.stringify(s));
+  await page.screenshot({ path: 'rowtints_menu_used.png' });
+
+  // ---- 5. one setting: a change in Settings shows in the menu ----
   await page.keyboard.press('Escape');
-  await page.fill('#searchInput', 'cal'); await sleep(80);
-  const before = await names(page);
-  await page.tap('#searchMenuBtn');
-  const pre = await ev(page, () => ({ y: Math.round(scrollY), view: currentViewName() }));
-  await page.tap(ROW);
-  let w = await where(page);
-  check('3. a tap on the row closes the menu at once (the button says closed, body.search-menu-open is gone)', !w.menu && w.expanded === 'false' && !w.cls && !(await menuOpen(page)), JSON.stringify(w));
-  check('   Settings is the current view and its gear is lit', w.view === 'prefs' && w.gear, JSON.stringify(w));
-  await page.waitForFunction(() => document.getElementById('rowTintCard').classList.contains('bn-flash') && document.activeElement && document.activeElement.id === 'rowTintRange', null, { timeout: 3000, polling: 'raf' }).catch(() => {});
-  w = await where(page);
-  check('   the Row tints card is lit up for a moment (the highlight of the bottom bar\'s shortcuts)', w.flash, JSON.stringify(w));
-  check('   the slider of the card has the focus', w.focus === 'rowTintRange', JSON.stringify(w));
-  await still(page);
-  w = await where(page);
-  check('   the card is shown and fully in view, under the header and above the bottom of the screen', w.shown && w.inView, JSON.stringify(w));
-  await page.waitForFunction(() => !document.getElementById('rowTintCard').classList.contains('bn-flash'), null, { timeout: 4000 }).catch(() => {});
-  check('   the highlight goes away by itself', !(await where(page)).flash);
-  await page.screenshot({ path: 'rowtints_after_tap.png' });
-
-  // ---- 4. Back ----
-  const stack = (await where(page)).stack;
-  const back = await ev(page, () => { const r = handleAndroidBack(); return { r, view: currentViewName(), menu: searchMenuOpen(), cls: document.body.classList.contains('search-menu-open') }; });
-  check('4. Back goes back to the Apps tab (the tab the shortcut was used on)', stack === 'apps' && back.r === true && back.view === 'apps' && !back.menu && !back.cls, JSON.stringify({ stack, back }));
-  check('   with the search as it was (text and list), and the menu closed', (await ev(page, () => document.getElementById('searchInput').value)) === 'cal' && (await names(page)) === before);
-  const again = await ev(page, () => { const r = handleAndroidBack(); return { r, view: currentViewName() }; });
-  check('   and the Back after that is the usual one (the first tab: it is not spent on a menu or on Settings)', again.view === 'apps' && !(await menuOpen(page)), JSON.stringify(again));
-  await page.fill('#searchInput', ''); await sleep(60);
-
-  // ---- 5. the card is not just near the top: from a Settings page scrolled to its end, from an Apps tab scrolled down ----
   await ev(page, () => switchView('prefs')); await sleep(150);
-  await ev(page, () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' })); await sleep(150);
-  const farY = await ev(page, () => Math.round(scrollY));
-  await ev(page, () => switchView('apps')); await sleep(150);
-  await ev(page, () => window.scrollTo({ top: 0, behavior: 'instant' }));
-  await page.tap('#searchMenuBtn');
-  await page.tap(ROW); await still(page);
-  w = await where(page);
-  check('5. with Settings left scrolled to its end, the card is brought into view all the same', farY > 400 && w.view === 'prefs' && w.shown && w.inView, JSON.stringify({ farY, w }));
-  await ev(page, () => { handleAndroidBack(); });
-  await ev(page, () => { switchView('prefs'); window.scrollTo({ top: 0, behavior: 'instant' }); switchView('apps'); }); await sleep(100);
-  const top0 = await ev(page, () => { switchView('prefs'); const r = document.getElementById('rowTintCard').getBoundingClientRect(); const out = { below: r.top >= innerHeight - 40 }; switchView('apps'); return out; });
-  await page.tap('#searchMenuBtn'); await page.tap(ROW); await still(page);
-  w = await where(page);
-  check('   and from Settings scrolled to its top, where the card is not on the screen yet', top0.below && w.view === 'prefs' && w.shown && w.inView, JSON.stringify({ top0, w }));
-  await ev(page, () => { handleAndroidBack(); });
+  await page.locator('#rowTintRange').fill('1');
+  await page.click('#rowTintGradRow .switch-track'); await sleep(120);
+  await ev(page, () => handleAndroidBack()); await sleep(150);
+  check('5. back in the Apps tab after Faint and Gradient on in Settings', (await ev(page, () => currentViewName())) === 'apps');
+  await page.tap('#searchMenuBtn'); await sleep(150);
+  s = await state(page);
+  check('   the menu shows Faint and Gradient on', s.menuRange === '1' && s.menuGrad === true && s.lv === 1 && s.grad === 'on', JSON.stringify(s));
+  // a setting changed behind the page's back (a restored backup): the menu reads it again each time it opens
+  await page.keyboard.press('Escape');
+  await ev(page, () => { window.__kv.row_tint_lv = '4'; window.__kv.row_tint_grad = 'false'; });
+  await page.tap('#searchMenuBtn'); await sleep(150);
+  s = await state(page);
+  check('   a value stored meanwhile is what the menu shows when it opens again (Vivid, Gradient off)', s.menuRange === '4' && s.menuGrad === false && s.tint === 'vivid' && s.grad === 'off', JSON.stringify(s));
+  await ev(page, () => { setRowTint(2); });
+  await page.keyboard.press('Escape');
 
-  // ---- 6. the keyboard: Tab reaches the row, a focus ring shows, Enter and Space do what a tap does ----
-  await sleep(100);
-  await ev(page, () => switchView('apps'));
+  // ---- 6. the keyboard ----
   await page.focus('#searchMenuBtn'); await page.keyboard.press('Enter');
   check('6. Enter on the menu button opens the menu', await menuOpen(page));
-  // what the row's own onkeydown did with each key: a listener on the row itself, added after the inline handler, so it runs right after it and before anything above the row (a Space left alone scrolls the page)
-  await ev(page, () => { window.__kd = []; document.getElementById('searchMenuRowTints').addEventListener('keydown', e => window.__kd.push({ key: e.key, prevented: e.defaultPrevented })); });
-  const kd = key => ev(page, k => (window.__kd || []).filter(x => x.key === k).map(x => x.prevented), key);
   await page.focus('#searchOptRegex'); await page.keyboard.press('Tab');
-  const tabbed = await ev(page, () => { const a = document.activeElement, cs = getComputedStyle(a); return { id: a.id, ring: cs.outlineStyle === 'solid' && parseFloat(cs.outlineWidth) >= 2 }; });
-  check('   Tab from the last switch reaches the row, and it shows a focus ring', tabbed.id === 'searchMenuRowTints' && tabbed.ring, JSON.stringify(tabbed));
+  let f = await ev(page, () => { const a = document.activeElement, cs = getComputedStyle(a); return { id: a.id, ring: cs.outlineStyle === 'solid' && parseFloat(cs.outlineWidth) >= 2 }; });
+  check('   Tab from the regex switch reaches the slider, and it shows a focus ring', f.id === 'smRowTintRange' && f.ring, JSON.stringify(f));
   await page.screenshot({ path: 'rowtints_menu_focus.png' });
-  await page.keyboard.press('Enter');
-  w = await where(page);
-  check('   Enter closes the menu and opens Settings', !w.menu && w.expanded === 'false' && !w.cls && w.view === 'prefs', JSON.stringify(w));
-  check('   and the row\'s handler took the Enter key (its default action is prevented)', (await kd('Enter')).join() === 'true', JSON.stringify(await kd('Enter')));
-  await still(page);
-  w = await where(page);
-  check('   with the card in view and the slider focused (a keyboard goes on from there with the arrow keys)', w.shown && w.inView && w.focus === 'rowTintRange', JSON.stringify(w));
-  const tint0 = await ev(page, () => rowTintLevel());
   await page.keyboard.press('ArrowRight');
-  const tint1 = await ev(page, () => rowTintLevel());
-  check('   an arrow key changes Row tints right there', tint1 === tint0 + 1 || tint1 === 4 && tint0 === 4, tint0 + ' -> ' + tint1);
-  await ev(page, () => { setRowTint(String(2)); });
-  await ev(page, () => { handleAndroidBack(); });
-  check('   Back returns to the Apps tab', (await ev(page, () => currentViewName())) === 'apps');
-  await page.focus('#searchMenuBtn'); await page.keyboard.press('Enter');
-  await page.focus(ROW);
+  s = await state(page);
+  check('   the right arrow moves it one step (Normal), in Settings too', s.lv === 3 && s.setRange === '3' && await menuOpen(page), JSON.stringify(s));
+  await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowLeft');
+  check('   the left arrow moves it back (Faint)', (await state(page)).lv === 1);
+  await page.keyboard.press('End');
+  check('   End goes to Vivid, Home to Off', (await state(page)).lv === 4 && (await page.keyboard.press('Home'), (await state(page)).lv === 0));
+  await ev(page, () => { setRowTint(2); });
+  await page.keyboard.press('Tab');
+  f = await ev(page, () => document.activeElement.id);
+  check('   Tab goes on to the Gradient switch', f === 'smRowTintGrad', f);
   await page.keyboard.press('Space');
-  w = await where(page);
-  check('   Space does the same as Enter', !w.menu && !w.cls && w.view === 'prefs', JSON.stringify(w));
-  check('   and the row\'s handler took the Space key too: its default action (scrolling the page) is prevented', (await kd(' ')).join() === 'true', JSON.stringify(await kd(' ')));
-  await still(page);
-  w = await where(page);
-  check('   the card is in view after Space too', w.shown && w.inView && w.focus === 'rowTintRange', JSON.stringify(w));
-  await ev(page, () => { handleAndroidBack(); });
-  await page.focus('#searchMenuBtn'); await page.keyboard.press('Enter');
-  await page.focus(ROW); await page.keyboard.press('a'); await page.keyboard.press('Tab');
-  check('   other keys on the row do nothing (the menu is still open) and are left alone (not prevented)', await menuOpen(page) && (await ev(page, () => currentViewName())) === 'apps' && (await kd('a')).join() === 'false' && (await kd('Tab')).join() === 'false', JSON.stringify({ a: await kd('a'), tab: await kd('Tab') }));
+  s = await state(page);
+  check('   Space turns it on, the menu stays open', s.menuGrad && s.grad === 'on' && await menuOpen(page), JSON.stringify(s));
+  await page.keyboard.press('Space');
+  check('   Space again turns it off', (await state(page)).grad === 'off');
   await page.keyboard.press('Escape');
   check('   Escape still closes the menu and the focus goes back to its button', !(await menuOpen(page)) && (await ev(page, () => document.activeElement.id)) === 'searchMenuBtn');
+  await page.tap('#searchMenuBtn');
+  const back = await ev(page, () => { const r = handleAndroidBack(); return { r, view: currentViewName(), menu: searchMenuOpen(), cls: document.body.classList.contains('search-menu-open') }; });
+  check('   Back closes the menu (and stays on the Apps tab)', back.r === true && back.view === 'apps' && !back.menu && !back.cls, JSON.stringify(back));
+  await page.tap('#searchMenuBtn');
+  await page.touchscreen.tap(4, 320); await sleep(100);                     // the page's own margin, left of the menu
+  check('   a tap outside it closes it too', !(await menuOpen(page)));
   await page.close();
 
-  // ---- 7. used twice, the second time is as good as the first ----
-  page = await open();
-  await page.tap('#searchMenuBtn'); await page.tap(ROW); await still(page);
-  await ev(page, () => { handleAndroidBack(); });
-  await page.tap('#searchMenuBtn'); await page.tap(ROW); await still(page);
-  w = await where(page);
-  check('7. used twice in a row it does the same again (one Back goes back to the Apps tab)', w.view === 'prefs' && w.shown && w.inView && w.stack === 'apps', JSON.stringify(w));
-  await ev(page, () => { handleAndroidBack(); });
-  check('   and the menu is closed when you are back', !(await menuOpen(page)) && (await ev(page, () => currentViewName())) === 'apps' && (await where(page)).stack === '');
+  // ---- 7. a choice made before this version: kept (Gradient on stays on, Vivid stays Vivid) ----
+  page = await open(null, { kv: { row_tint_grad: 'true', row_tint_lv: '4' } });
+  await page.tap('#searchMenuBtn'); await sleep(100);
+  s = await state(page);
+  check('7. with Gradient on and Vivid stored from before, both stay: the menu and Settings show them and the row is a gradient', s.menuGrad && s.setGrad && s.grad === 'on' && s.rowImg === 'gradient' && s.menuRange === '4' && s.tint === 'vivid', JSON.stringify(s));
+  await page.close();
+  page = await open(null, { kv: { row_tint_grad: 'false' } });
+  s = await state(page);
+  check('   and with Gradient off stored from before, it stays off', !s.menuGrad && !s.setGrad && s.grad === 'off', JSON.stringify(s));
   await page.close();
 
-  // ---- 8. screen sizes: the row fits at 320, 360 and 412 px, on a tall and on a short screen, with the top tab bar alone (the harness default) and with the bottom bar (the app's default) ----
-  // The menu is brought into view when it opens: above the bottom bar when that is shown (the extra row would be partly under it on a short screen otherwise).
-  const MANY = Array.from({ length: 60 }, (_, i) => ({ pkg: 'com.vendor.app' + i, name: 'Application ' + i }));          // a long list: the page can scroll, which is what opens the menu in view
-  for (const [wd, ht, bottomNav] of [[320, 568], [360, 640], [360, 520], [412, 915], [320, 568, true], [360, 520, true], [360, 640, true], [360, 720, true], [412, 915, true]]) {
-    const p = await open({ width: wd, height: ht }, { apps: MANY, bottomNav: !!bottomNav });
+  // ---- 8. screen sizes: both rows on screen and usable at 320, 360 and 412 px, tall and short, with the top tab bar alone (the harness default) and with the
+  // bottom bar (the app's default); where the menu is taller than the room it has, it scrolls inside itself and its last row comes above the bar ----
+  const MANY = Array.from({ length: 60 }, (_, i) => ({ pkg: 'com.vendor.app' + i, name: 'Application ' + i, isRunning: i % 3 === 0 }));          // a long list: the page can scroll, which is what opens the menu in view
+  for (const [wd, ht, bottomNav, few] of [[320, 568], [360, 640], [360, 520], [412, 915], [320, 568, true], [360, 520, true], [360, 640, true], [360, 720, true], [412, 915, true], [360, 480, true], [320, 568, true, true], [360, 480, true, true]]) {
+    const p = await open({ width: wd, height: ht }, { apps: few ? APPS : MANY, bottomNav: !!bottomNav });
     await p.tap('#searchMenuBtn'); await still(p);
     const m = await ev(p, () => {
       const vis = el => !!el && el.getBoundingClientRect().height > 0 && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
-      const row = document.getElementById('searchMenuRowTints'), b = row.getBoundingClientRect(), tabs = document.getElementById('tabBar'), bar = document.getElementById('bnav');
+      const menu = document.getElementById('searchMenu'), tabs = document.getElementById('tabBar'), bar = document.getElementById('bnav');
       const top = Math.max(document.querySelector('.app-header').getBoundingClientRect().bottom, vis(tabs) ? tabs.getBoundingClientRect().bottom : 0), bottom = vis(bar) ? bar.getBoundingClientRect().top : innerHeight;
-      const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
-      const lastLine = document.elementFromPoint(b.left + b.width / 2, b.bottom - 2);          // the low edge of the row too: its second text line is not hidden under the bar
-      const menu = document.getElementById('searchMenu').getBoundingClientRect();
-      return { barShown: vis(bar), onScreen: b.top >= top - 1 && b.bottom <= bottom + 1, hit: !!hit && hit.closest('.sm-row') === row, lastLine: !!lastLine && lastLine.closest('.sm-row') === row, inside: menu.left >= 0 && menu.right <= innerWidth, noSideScroll: document.documentElement.scrollWidth <= innerWidth,
-        nameFits: row.querySelector('.sm-name').scrollWidth <= row.querySelector('.sm-name').clientWidth + 1, subFits: row.querySelector('.sm-sub').scrollWidth <= row.querySelector('.sm-sub').clientWidth + 1 };
+      const scrolls = menu.scrollHeight > menu.clientHeight + 1;
+      menu.scrollTop = menu.scrollHeight;                                          // a finger scrolls the menu to its end
+      const at = id => {
+        const row = document.getElementById(id), q = row.getBoundingClientRect(), m = menu.getBoundingClientRect();
+        const hit = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2), low = document.elementFromPoint(q.left + q.width / 2, q.bottom - 2);
+        return q.top >= top - 1 && q.bottom <= bottom + 1 && q.top >= m.top - 1 && q.bottom <= m.bottom + 1 && !!hit && hit.closest('.sm-row') === row && !!low && low.closest('.sm-row') === row;
+      };
+      const rng = document.getElementById('smRowTintRange').getBoundingClientRect(), rh = document.elementFromPoint(rng.left + rng.width / 2, rng.top + rng.height / 2);
+      const ticks = document.querySelector('#searchMenu .row-tint-ticks'), mr = menu.getBoundingClientRect();
+      return { barShown: vis(bar), scrolls, grad: at('searchMenuRowGrad'), tint: at('searchMenuRowTints'), slider: rh && rh.id === 'smRowTintRange', inside: mr.left >= 0 && mr.right <= innerWidth && mr.bottom <= bottom + 1, noSideScroll: document.documentElement.scrollWidth <= innerWidth,
+        ticksFit: ticks.scrollWidth <= ticks.clientWidth + 1, boxBelowHeader: document.getElementById('searchBox').getBoundingClientRect().top >= document.querySelector('.app-header').getBoundingClientRect().bottom - 1 };
     });
-    const tag = '[' + wd + 'x' + ht + (bottomNav ? ', bottom bar' : '') + ']';
-    check('8. ' + tag + ' the row is on screen' + (bottomNav ? ' above the bottom bar (the bar is really shown)' : ' under the tab bar') + ', tappable (nothing covers it, its low edge neither), inside the menu, and its texts fit', (!bottomNav || m.barShown) && m.onScreen && m.hit && m.lastLine && m.inside && m.noSideScroll && m.nameFits && m.subFits, JSON.stringify(m));
-    await p.tap(ROW); await still(p);
-    const x = await where(p);
-    check('   and it takes you to the card, in view', x.view === 'prefs' && x.shown && x.inView && !x.menu, JSON.stringify(x));
-    await p.close();
-  }
-  // a short screen with the bottom bar: the page scrolls to show the menu, but never so far that the search box (and its button) goes under the header, which is all there is at the top then
-  {
-    const p = await open({ width: 360, height: 480 }, { apps: MANY, bottomNav: true });
-    await p.tap('#searchMenuBtn'); await still(p);
-    const m = await ev(p, () => {
-      const hdr = document.querySelector('.app-header').getBoundingClientRect().bottom, btn = document.getElementById('searchMenuBtn'), bb = btn.getBoundingClientRect();
-      const hit = document.elementFromPoint(bb.left + bb.width / 2, bb.top + bb.height / 2), row = document.getElementById('searchMenuRowTints'), r = row.getBoundingClientRect();
-      const bar = document.getElementById('bnav').getBoundingClientRect(), mid = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      return { boxBelowHeader: document.getElementById('searchBox').getBoundingClientRect().top >= hdr - 1, btnHit: hit === btn, rowHit: !!mid && mid.closest('.sm-row') === row, rowAboveBar: r.top < bar.top };
-    });
-    check('   [360x480, bottom bar] the search box and its button stay under the header, and the row can still be tapped', m.boxBelowHeader && m.btnHit && m.rowHit && m.rowAboveBar, JSON.stringify(m));
+    const tag = '[' + wd + 'x' + ht + (bottomNav ? ', bottom bar' : '') + (few ? ', 4 apps' : '') + ']';
+    check('8. ' + tag + ' Row tints and Gradient are on screen' + (bottomNav ? ' above the bottom bar (the bar is really shown)' : ' under the tab bar') + ', inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways',
+      (!bottomNav || m.barShown) && m.grad && m.tint && m.slider && m.inside && m.noSideScroll && m.ticksFit && m.boxBelowHeader, JSON.stringify(m));
+    // the slider and the switch work there too
+    await p.locator('#smRowTintRange').evaluate(e => e.scrollIntoView({ block: 'nearest' }));
+    const bb = await p.locator('#smRowTintRange').boundingBox();
+    await p.touchscreen.tap(bb.x + bb.width - 4, bb.y + bb.height / 2); await sleep(100);
+    await p.tap(GRAD + ' .switch-track'); await sleep(100);
+    const u = await state(p);
+    check('   and both work there: Vivid and Gradient on, with the menu still open', u.lv === 4 && u.grad === 'on' && await menuOpen(p), JSON.stringify(u));
+    if (wd === 360 && ht === 480 && bottomNav && !few) await p.screenshot({ path: 'rowtints_short_screen.png' });
     await p.close();
   }
 
-  // ---- 9. with the bottom navigation bar (the app's default): the card ends up above the bar ----
-  page = await open({ width: 360, height: 640 }, { bottomNav: true });
-  const bn = await ev(page, () => { const n = document.getElementById('bnav'); return !!n && n.getBoundingClientRect().height > 0 && getComputedStyle(n).display !== 'none'; });
-  await page.tap('#searchMenuBtn'); await page.tap(ROW); await still(page);
-  w = await where(page);
-  check('9. with the bottom bar on, the shortcut goes to Settings and the card is in view above the bar', bn && w.view === 'prefs' && w.shown && w.inView && !w.menu, JSON.stringify({ bn, w }));
-  await page.screenshot({ path: 'rowtints_bottom_bar.png' });
-  await ev(page, () => { handleAndroidBack(); });
-  check('   Back comes back to the Apps tab', (await ev(page, () => currentViewName())) === 'apps');
-  await page.close();
-
-  // ---- 10. the language: the row is translated, the chevron points the way the language reads ----
-  page = await open();
+  // ---- 9. the languages: every one translates the rows and the step names fit at 320 px; Arabic runs from the right ----
+  page = await open({ width: 320, height: 640 }, { apps: MANY });
+  const lines = [];
+  for (const lang of LANGS) {
+    await ev(page, l => I18N.set(l), lang);
+    await page.waitForFunction(() => document.querySelector('#searchMenuRowTints .sm-name').textContent !== 'Row tints' && document.querySelector('#searchMenuRowGrad .sm-sub').textContent !== 'Each tint fades across the row. Off: one even colour.', null, { timeout: 5000 }).catch(() => {});
+    await page.tap('#searchMenuBtn'); await still(page);
+    const l = await rows(page);
+    const t = await ev(page, () => ({ sub: document.querySelector('#searchMenuRowTints .sm-sub').textContent, grad: document.querySelector('#searchMenuRowGrad .sm-name').textContent, set: document.querySelector('#rowTintCard .row-tint-ticks').textContent }));
+    const ok = !!l && l.name !== 'Row tints' && t.sub !== 'How strongly rows are tinted.' && l.gradSub !== 'Each tint fades across the row. Off: one even colour.' && l.ticks !== STEPS.join('|') && l.ticks.replace(/\|/g, '') === t.set && l.ticksFit && l.textFits && l.insideMenu && l.inScreen;
+    if (!ok) lines.push(lang + ' ' + JSON.stringify({ l, t }));
+    await page.keyboard.press('Escape');
+  }
+  check('9. in each of the 13 languages the two rows, their lines and the step names are translated (the same step names as Settings), and at 320 px they fit', lines.length === 0, lines.join(' || '));
   await ev(page, () => I18N.set('de'));
   await page.waitForFunction(() => document.querySelector('#searchMenuRowTints .sm-name').textContent === 'Zeilenfärbung', null, { timeout: 5000 }).catch(() => {});
   await page.tap('#searchMenuBtn');
-  const de = await rowInfo(page);
-  check('10. in German the row says Zeilenfärbung with its German line (and still is the last row)', !!de && de.last && de.name === 'Zeilenfärbung' && de.sub === 'Wie stark Zeilen gefärbt werden. Öffnet die Einstellungen.', JSON.stringify(de));
-  await page.tap(ROW); await still(page);
-  w = await where(page);
-  check('    and it still goes to the card', w.view === 'prefs' && w.shown && w.inView, JSON.stringify(w));
+  const de = await rows(page);
+  check('    in German: Zeilenfärbung, its line, the step names Aus to Kräftig, and Verlauf', !!de && de.name === 'Zeilenfärbung' && de.sub === 'Wie stark Zeilen gefärbt werden.' && de.ticks === 'Aus|Schwach|Dezent|Normal|Kräftig' && de.gradName === 'Verlauf' && de.gradSub === 'Jede Färbung läuft über die Zeile hinweg aus. Aus: eine gleichmäßige Farbe.', JSON.stringify(de));
+  await page.keyboard.press('Escape');
   await ev(page, () => I18N.set('ar'));
   await page.waitForFunction(() => document.querySelector('#searchMenuRowTints .sm-name').textContent === 'تلوين الصفوف' && document.documentElement.dir === 'rtl', null, { timeout: 5000 }).catch(() => {});
-  await ev(page, () => { handleAndroidBack(); });
-  await page.tap('#searchMenuBtn');
-  const ar = await ev(page, () => { const row = document.getElementById('searchMenuRowTints'), svg = row.querySelector('svg'); return { dir: document.documentElement.dir, name: row.querySelector('.sm-name').innerText, flipped: getComputedStyle(svg).transform, last: Array.from(document.querySelectorAll('#searchMenu .sm-row')).pop() === row }; });
-  check('    in Arabic (right to left) the row is translated and the chevron is turned to point left', ar.dir === 'rtl' && ar.name === 'تلوين الصفوف' && ar.last && /^matrix\(-1,/.test(ar.flipped), JSON.stringify(ar));
+  await page.tap('#searchMenuBtn'); await still(page);
+  const ar = await ev(page, () => {
+    const t = Array.from(document.querySelectorAll('#searchMenu .row-tint-ticks span')).map(s => s.getBoundingClientRect()), rng = document.getElementById('smRowTintRange');
+    return { dir: document.documentElement.dir, rangeDir: getComputedStyle(rng).direction, offRight: t[0].left > t[4].left, name: document.querySelector('#searchMenuRowTints .sm-name').textContent };
+  });
+  check('    in Arabic (right to left) the step names start at the right (Off) and so does the slider', ar.dir === 'rtl' && ar.rangeDir === 'rtl' && ar.offRight && ar.name === 'تلوين الصفوف', JSON.stringify(ar));
+  // in Arabic a tap at the slider's right end is Off, as its step name says
+  const ab = await page.locator('#smRowTintRange').boundingBox();
+  await page.touchscreen.tap(ab.x + ab.width - 4, ab.y + ab.height / 2); await sleep(100);
+  const arLv = (await state(page)).lv;
+  await page.touchscreen.tap(ab.x + 4, ab.y + ab.height / 2); await sleep(100);
+  check('    and a tap at its right end is Off, at its left end Vivid', arLv === 0 && (await state(page)).lv === 4, arLv + ' / ' + (await state(page)).lv);
   await page.close();
 
   check('no page errors', errors.length === 0, errors.join(' | '));
