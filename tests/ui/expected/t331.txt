@@ -12,7 +12,7 @@ ok      Enabled / Frozen and System / User are pairs that share a frame, the fra
 ok      Enter on a focused count pill uses it
 ok   5. the sort menu shows its whole choice for every choice (it was cut to 60 px; since v7.14 it shares the row with the Action Button picker): [{"v":"name","w":136,"text":67,"fits":true,"sorted":true},{"v":"updated","w":136,"text":71,"fits":true,"sorted":true},{"v":"installed","w":136,"text":59,"fits":true,"sorted":true},{"v":"size","w":136,"text":24,"fits":true,"sorted":true},{"v":"updates","w":136,"text":69,"fits":true,"sorted":true}]
 ok      the row keeps the menu and the Action Button picker, each with its label (v7.14: the buttons moved to Saved Applications)
-ok   6. 320 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":238,"rowH":46,"sideScroll":false,"grid":false}
+ok   6. 320 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":246,"rowH":46,"sideScroll":false,"grid":false}
 ok   6. 360 px: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":246,"rowH":46,"sideScroll":false,"grid":false}
 ok   6. 360 px in German: the first app row starts under 280 px, the filters are one row, the page does not scroll sideways: {"firstRow":246,"rowH":46,"sideScroll":false,"grid":false} Installiert (9)
 ok   7. at 1200 px the page column stays 600 px wide, so the twelve pills still overflow their 568 px row and the arrow shows: {"shown":true,"overflows":true,"rowW":568}
