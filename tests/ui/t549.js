@@ -1,5 +1,5 @@
-// Settings > Row tints > Gradient (the owner's wish): a switch right under the Row tints slider, in Settings' switch style, on by default (the tints as before:
-// a glow and wash in the Apps rows, a wash from the leading edge in the Logcats). Off makes every tinted row one even colour, no gradient image in its tint
+// Settings > Row tints > Gradient (the owner's wish): a switch right under the Row tints slider, in Settings' switch style, off by default since v7.18.1
+// (on: the tints as before, a glow and wash in the Apps rows, a wash from the leading edge in the Logcats). Off makes every tinted row one even colour, no gradient image in its tint
 // layer: the Apps tab's running, frozen, uninstalled and selected rows, Connected Devices' app rows, Live Logcat's rows and Connected Devices' Logcat rows;
 // the strength still follows the slider (Off draws none), and on the even colour the package line leans toward the main text. The choice is kept across a
 // reload, the even colour is drawn without color-mix() too, and at Vivid every text of a tinted row that reads at 4.5:1 with Row tints Off still does on the
@@ -82,7 +82,7 @@ function pkgInk() {
         sameStyle: st(row) === st(other), checked: tog.checked, type: tog.type, attr: document.documentElement.getAttribute('data-row-grad'), shown: rr.height > 0 };
     });
     check('Settings > Row tints has a Gradient switch right under the slider, inside the card, in the switch-row style of the other cards', !sw.missing && sw.inCard && sw.afterSlider && sw.below && sw.last && sw.title === 'Gradient' && sw.sub && sw.track && sw.sameStyle && sw.type === 'checkbox' && sw.shown, JSON.stringify(sw));
-    check('   it is on by default (html data-row-grad="on")', sw.checked === true && sw.attr === 'on', JSON.stringify(sw));
+    check('   it is off by default (html data-row-grad="off")', sw.checked === false && sw.attr === 'off', JSON.stringify(sw));
 
     // the lists, with every kind of tinted row
     // (Live Logcat and a device's Apps and Logcat are filled first: leaving the Apps tab clears its selection. The layers of the other tabs are read while hidden.)
@@ -95,6 +95,10 @@ function pkgInk() {
     await toApps();
     const kinds = l => l.map(x => x.kind.replace(/ \w$/, '')).filter((k, i, a) => a.indexOf(k) === i).join(', ');
 
+    // on: a real tap on the switch (it is off at first)
+    await tap();
+    check('a tap turns it on: html data-row-grad="on", kept as row_tint_grad true', await ev(() => document.getElementById('rowTintGradToggle').checked && document.documentElement.getAttribute('data-row-grad') === 'on' && window.__settings.row_tint_grad === 'true'));
+    await toApps();
     const before = await ev(layers), inkOn = await ev(pkgInk);
     check('   with it on, every tinted row is a gradient (' + kinds(before) + ')', before.length >= 18 && before.every(x => /gradient\(/.test(x.img)), JSON.stringify(before.filter(x => !/gradient\(/.test(x.img))));
 
@@ -128,14 +132,13 @@ function pkgInk() {
     const back = await ev(layers);
     check('on again, every row is drawn exactly as before (the same gradients, the same strength)', JSON.stringify(back) === JSON.stringify(before) && await ev(() => document.documentElement.getAttribute('data-row-grad') === 'on' && window.__settings.row_tint_grad === 'true'), JSON.stringify(back.filter((x, i) => JSON.stringify(x) !== JSON.stringify(before[i]))));
 
-    // kept across a reload
-    await tap();
+    // kept across a reload (on, the choice that is not the default)
     const saved = await ev(() => JSON.parse(JSON.stringify(window.__settings)));
     await page.addInitScript(s => { Object.assign(window.__settings, s); }, saved);
     await page.reload(); await page.waitForTimeout(600);
     await ev(() => switchView('apps')); await page.waitForTimeout(300);
     const re = await ev(() => { const a = getComputedStyle(document.querySelector('#view-apps .app-card.running'), '::before'); return { attr: document.documentElement.getAttribute('data-row-grad'), checked: document.getElementById('rowTintGradToggle').checked, img: a.backgroundImage, o: +a.opacity }; });
-    check('after a reload the switch is still off and a running app\'s row is still one even colour', re.attr === 'off' && re.checked === false && re.img === 'none' && Math.abs(re.o - 0.11 * 0.4) < 0.002, JSON.stringify(re));
+    check('after a reload the switch is still on and a running app\'s row is still a gradient', re.attr === 'on' && re.checked === true && /gradient\(/.test(re.img), JSON.stringify(re));
 
     await ev(() => { logcatStop(); cdLcStop(); });
     await page.close();
