@@ -36,7 +36,8 @@ ok      and it answers like the others (18 ms here)
 ok      a second own name tested right after the first: the "Your host name" tile is for the new name (host, text, answer), still one tile: {"host":"second-own.example.net","line":"second-own.example.net","ms":"21 ms","n":1}
 ok      a name the check refuses (an IP address) is not sent to the test; a name that is in the list is not sent twice
 ok      (dns.google typed: tested once)
-ok   10. "Sort by speed" is off by default, and with it off the tiles keep the array order whatever the answers are
+ok   10. "Sort by speed" is on by default (v7.19.0); turned off it is remembered, and the tiles keep the array order whatever the answers are
+ok      on again: remembered as on
 ok      on: the ones that answered, quickest first (Cloudflare 39, AdGuard 40, Google 60, Quad9 90), then the ones not tested yet in array order, then the ones that failed (OpenDNS, DNS.SB): one.one.one.one,dns.adguard-dns.com,dns.google,dns.quad9.net,security.cloudflare-dns.com,family.cloudflare-dns.com,dns10.quad9.net,family.adguard-dns.com,unfiltered.adguard-dns.com,family-filter-dns.cleanbrowsing.org,adult-filter-dns.cleanbrowsing.org,security-filter-dns.cleanbrowsing.org,dns.nextdns.io,dns.opendns.com,dot.sb
 ok      an answer that comes in later moves into place at once (NextDNS, 3 ms, first)
 ok      off again: the array order
