@@ -1,6 +1,24 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "Ini adalah tautan: buka file yang ditunjuknya dan ubah izinnya di sana",
+"Also everything inside this folder": "Juga semua isi folder ini",
+"Apply owner": "Terapkan pemilik",
+"Apply permissions": "Terapkan izin",
+"Change owner": "Ubah pemilik",
+"Enter an owner or a group": "Masukkan pemilik atau grup",
+"Group": "Grup",
+"Mode (octal)": "Mode (oktal)",
+"Open files": "Buka file",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "Buka, ubah, dan hapus file apa pun, serta atur izin dan pemiliknya (Izin… pada file).",
+"Others": "Lainnya",
+"Owner": "Pemilik",
+"Owner and group": "Pemilik dan grup",
+"Permissions…": "Izin…",
+"Read": "Baca",
+"Root File Management": "Manajemen File Root",
+"The mode must be three or four digits from 0 to 7, such as 644": "Mode harus tiga atau empat digit dari 0 sampai 7, misalnya 644",
+"Write": "Tulis",
 "Additional Monet Customization": "Kustomisasi Monet Tambahan",
 "Check for updates on mobile data": "Periksa pembaruan dengan data seluler",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Simpan salinan tema kustom Anda (warna, gaya, dan kontrol tema khusus Root) lalu kembalikan dari file cadangan. Memulihkan mengisi tab ini; Terapkan tema menuliskannya ke ponsel.",
@@ -5657,6 +5675,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "File yang Anda pilih masih dibaca. Tunggu sebentar."
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "Sebelum perubahan terakhir: {0} ({1}) {2}"],
+["Could not read the permissions: {0}", "Izin tidak dapat dibaca: {0}"],
+["Done: {0}", "Selesai: {0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "Tetapkan pemilik {0} pada {1}? Aplikasi atau Android bisa berhenti bekerja jika file yang dibutuhkannya berganti pemilik."],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "Tetapkan {0} pada {1} dan semua isinya? Nilai sebelumnya dari tiap item di dalamnya tidak disimpan, dan aplikasi atau Android bisa berhenti bekerja jika file yang dibutuhkannya berubah."],
 ["Backed up the theme to {0}", "Tema dicadangkan ke {0}"],
 ["Monet restore: {0}", "Pemulihan Monet: {0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "Pulihkan tema dari {0}? Pilihan Anda di tab ini akan diganti. Tidak ada yang berubah di ponsel sampai Anda mengetuk Terapkan tema."],

@@ -18092,11 +18092,55 @@ public class MainActivity extends Activity {
             try {
                 if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
                 a = fmCanonicalPath(a);
-                if (b != null && !b.isEmpty()) b = fmCanonicalPath(b);
+                // the second argument is a path for cp/mv only: for chmod/chown it is a mode or owner:group and stays as typed
+                if (b != null && !b.isEmpty() && !FileRules.isPermOp(op)) b = fmCanonicalPath(b);
                 // the same protection the batch operations have: removing or moving away a whole storage root, a top-level folder or a system tree
                 if (("rm".equals(op) || "mv".equals(op)) && !a.startsWith("content://") && fmProtectedPath(a)) { res.put("ok", false); res.put("output", "System location: not touched"); return res.toString(); }
                 // nothing is copied out of, moved, removed from or written into the app's own private data from here, also not to or from added storage
                 if (fmPrivate(a) || ((("cp".equals(op) || "mv".equals(op)) && b != null && !b.isEmpty() && fmPrivate(b)))) { res.put("ok", false); res.put("output", PRIVATE_WHY); return res.toString(); }
+                // v7.18.2 Root file management: the mode, owner and label of a path (stat), and changing them (chmod / chown, "-r" for everything
+                // inside a folder too), only as the root user (Root with su, or Shizuku as uid 0), through the privileged shell with a long timeout
+                if (FileRules.isPermOp(op)) {
+                    if (a.startsWith("content://")) { res.put("ok", false); res.put("output", "Added storage has no permissions to change"); return res.toString(); }
+                    if (fmkGate(true) == null) { res.put("ok", false); res.put("output", "Needs Super User (Root with su, or Shizuku as root)"); return res.toString(); }
+                    boolean rec = op.endsWith("-r");
+                    String cmd;
+                    if ("stat".equals(op)) cmd = FileRules.statCommand(a);
+                    else {
+                        String why = FileRules.permRefusal(a, rec);
+                        if (why != null) { res.put("ok", false); res.put("output", why); return res.toString(); }
+                        try {
+                            if ("chmod".equals(op) || "chmod-r".equals(op)) cmd = FileRules.chmodCommand(a, b, rec);
+                            else if ("chown".equals(op) || "chown-r".equals(op)) {
+                                String w = b == null ? "" : b;
+                                int c = w.indexOf(':');
+                                cmd = FileRules.chownCommand(a, c < 0 ? w : w.substring(0, c), c < 0 ? "" : w.substring(c + 1), rec);
+                            } else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
+                        } catch (IllegalArgumentException bad) { res.put("ok", false); res.put("output", bad.getMessage()); return res.toString(); }
+                    }
+                    String out = batchShell(cmd);
+                    if (out == null) out = "";
+                    if ("stat".equals(op)) {
+                        boolean got = false;
+                        for (String line : out.split("\\r?\\n")) {
+                            line = line.trim();
+                            if (line.startsWith("FMSTAT ")) {
+                                String[] f = line.substring(7).split("\\|", -1);
+                                if (f.length >= 6) { res.put("mode", f[0]); res.put("user", f[1]); res.put("group", f[2]); res.put("uid", f[3]); res.put("gid", f[4]); res.put("type", f[5]); got = true; }
+                            } else if (got && !line.isEmpty() && !res.has("label")) {
+                                int sp = line.indexOf(' ');
+                                String lab = sp > 0 ? line.substring(0, sp) : line;
+                                if (lab.contains(":")) res.put("label", lab);
+                            }
+                        }
+                        res.put("ok", got);
+                        res.put("output", got ? "OK" : out.trim());
+                    } else {
+                        res.put("ok", FileRules.okLine(out, "FMOK"));
+                        res.put("output", out.replaceAll("(?m)^FMOK\\s*$", "OK").trim());
+                    }
+                    return res.toString();
+                }
                 if (a.startsWith("content://") || (b != null && b.startsWith("content://"))) {
                     String out = fmOpSaf(op, a, b);
                     res.put("ok", out.isEmpty());

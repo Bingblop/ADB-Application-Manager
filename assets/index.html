@@ -3139,6 +3139,21 @@
         #fmList.fm-selecting .fm-more { display: none; }
         #fmList .perm-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
         #fmList .perm-row.fm-picked { background: var(--accent-glow); border-radius: var(--radius-md); }
+        /* v7.18.2 Root file management: the Permissions… panel of a file's sheet (read, write, run for owner, group and others; the mode; owner and group) */
+        .fm-perm-grid { display: grid; grid-template-columns: auto repeat(3, 1fr); gap: var(--space-1) var(--space-2); align-items: center; margin: var(--space-3) 0; }
+        .fm-perm-grid label { display: flex; align-items: center; justify-content: center; min-height: var(--tap); cursor: pointer; }
+        .fm-perm-grid input { width: 22px; height: 22px; accent-color: var(--accent); cursor: pointer; }
+        .fm-perm-head { font-size: var(--fs-caption); color: var(--text-muted); text-align: center; }
+        .fm-perm-who { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--text-main); }
+        .fm-perm-line { font-size: var(--fs-caption); color: var(--text-muted); word-break: break-all; margin-top: var(--space-2); }
+        .fm-perm-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-2); }
+        .fm-perm-two .modal-text-input, .fm-perm-mode .modal-text-input { margin: 0; min-width: 0; }
+        .fm-perm-mode { display: flex; align-items: center; gap: var(--space-2); }
+        .fm-perm-mode .modal-text-input { flex: 1 1 auto; font-family: monospace; }
+        .fm-perm-rec { display: flex; align-items: center; gap: var(--space-2); min-height: var(--tap); font-size: var(--fs-label); color: var(--text-main); cursor: pointer; }
+        .fm-perm-rec input { width: 20px; height: 20px; accent-color: var(--accent); }
+        .fm-perm-sub { font-size: var(--fs-label); font-weight: var(--fw-bold); color: var(--text-main); margin-top: var(--space-4); }
+        .fm-perm-go { width: 100%; justify-content: center; margin-top: var(--space-3); }
         .fm-opts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-5); margin-top: var(--space-3h); }
         .fm-opt { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--fs-body); font-weight:var(--fw-bold); cursor: pointer; }
         .fm-opt input { width: 18px; height: 18px; accent-color: var(--accent); }
@@ -10187,6 +10202,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <input class="modal-text-input" id="fmDestInput" placeholder="Destination path" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if (event.key === 'Enter') fmDestConfirm()">
                 <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:var(--space-3);" id="fmDestConfirm" onclick="fmDestConfirm()">Confirm</button>
             </div>
+            <div id="fmPermRow" style="display:none; margin-top:10px;"></div>
             <div id="fmViewer" class="terminal-box" style="display:none; max-height:50vh; overflow:auto; margin-top:10px;"></div>
         </div>
     </div>
@@ -24511,6 +24527,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('fmActionPath').innerText = full;
             document.getElementById('fmDestRow').style.display = 'none';
             document.getElementById('fmViewer').style.display = 'none';
+            document.getElementById('fmPermRow').style.display = 'none';
             const isSaf = full.startsWith('content://');
             const kind = isDir ? 'dir' : fmKind(name);
             const btns = [];
@@ -24528,6 +24545,8 @@ Type any command above (e.g. pm list packages -d)</div>
             // added storage has no path to type: Copy and Move put the item on the clipboard, then Paste goes in the folder you open
             btns.push(isSaf ? `<button class="batch-grid-btn" onclick="fmClipOne('cp')">Copy</button>` : `<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
             btns.push(isSaf ? `<button class="batch-grid-btn" onclick="fmClipOne('mv')">Move</button>` : `<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
+            // v7.18.2 Root file management: the mode and owner, only as the root user (the same gate as the Root-only theme controls)
+            if (!isSaf && ovlCanWriteOverlays()) btns.push(`<button class="batch-grid-btn" onclick="fmPermOpen()">Permissions…</button>`);
             btns.push(`<button class="batch-grid-btn danger" onclick="fmStartDest('rm')">Delete</button>`);
             document.getElementById('fmActionBtns').innerHTML = btns.join('');
             haptic();
@@ -24535,10 +24554,129 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function closeFmAction() { haptic(); document.getElementById('fmActionModal').classList.remove('show'); }
 
+        // ---- v7.18.2 Root file management: Permissions… (read the mode, owner, group and SELinux label; change the mode or the owner) ----
+        let fmPerm = null;          // { full, isDir, mode: '0644' (4 digits), user, group, uid, gid, label, before: what it was before the last change here }
+        const FM_PERM_WHO = [['Owner', 6], ['Group', 3], ['Others', 0]], FM_PERM_BITS = [['Read', 4], ['Write', 2], ['Run', 1]];
+        function fmPermCall(op, a, b) {
+            try { return JSON.parse(window.AndroidBridge.fmOp(op, a, b)); } catch (e) { return { ok: false, output: String(e && e.message || e) }; }
+        }
+        function fmPermRwx(mode) {
+            const m = parseInt(mode, 8) || 0;
+            return FM_PERM_WHO.map(([, sh]) => FM_PERM_BITS.map(([, bit], i) => (m >> sh) & bit ? 'rwx'[i] : '-').join('')).join('');
+        }
+        function fmPermOpen() {
+            if (!fmActionTarget || !window.AndroidBridge || !window.AndroidBridge.fmOp) return;
+            haptic();
+            document.getElementById('fmDestRow').style.display = 'none';
+            document.getElementById('fmViewer').style.display = 'none';
+            const box = document.getElementById('fmPermRow');
+            box.style.display = '';
+            const t = fmActionTarget, r = fmPermCall('stat', t.full, null);
+            if (!r.ok || !/^[0-7]{1,4}$/.test(String(r.mode || ''))) {
+                fmPerm = null;
+                box.innerHTML = '<div class="fm-perm-line">' + escapeHtml(txF('Could not read the permissions: {0}', r.output || 'no answer')) + '</div>';
+                return;
+            }
+            const before = fmPerm && fmPerm.full === t.full ? fmPerm.before : '';
+            // an id with no name reads UNKNOWN in stat: the number stands in for it (it is what chown takes back)
+            const known = (n, id) => n && n !== 'UNKNOWN' ? n : String(id || '');
+            fmPerm = { full: t.full, isDir: !!t.isDir, isLink: r.type === 'symbolic link', mode: String(r.mode).padStart(4, '0'), user: known(r.user, r.uid), group: known(r.group, r.gid), uid: r.uid || '', gid: r.gid || '', label: r.label || '', before };
+            fmPermRender();
+        }
+        function fmPermRender() {
+            const p = fmPerm, box = document.getElementById('fmPermRow');
+            if (!p || !box) return;
+            const m = parseInt(p.mode, 8), esc = escapeHtml;
+            let grid = '<span></span>' + FM_PERM_BITS.map(([n]) => '<span class="fm-perm-head">' + esc(txT(n)) + '</span>').join('');
+            FM_PERM_WHO.forEach(([who, sh]) => {
+                grid += '<span class="fm-perm-who">' + esc(txT(who)) + '</span>' + FM_PERM_BITS.map(([n, bit]) => '<label><input type="checkbox" data-bit="' + (bit << sh) + '"' + ((m >> sh) & bit ? ' checked' : '')
+                    + ' aria-label="' + esc(txT(who) + ': ' + txT(n)) + '" onchange="fmPermTick()"></label>').join('');
+            });
+            const rec = id => p.isDir ? '<label class="fm-perm-rec"><input type="checkbox" id="' + id + '"> ' + esc(txT('Also everything inside this folder')) + '</label>' : '';
+            // a symbolic link's own mode is not used, and chmod would change what it points to: only its owner is offered here
+            const modePart = p.isLink ? '<div class="fm-perm-line" id="fmPermLink">' + esc(txT('This is a link: open the file it points to and change the permissions there')) + '</div>'
+                : '<div class="fm-perm-sub">' + esc(txT('Permissions')) + '</div>'
+                + '<div class="fm-perm-grid">' + grid + '</div>'
+                + '<div class="fm-perm-mode"><input class="modal-text-input" id="fmPermMode" inputmode="numeric" maxlength="4" value="' + esc(p.mode) + '" aria-label="' + esc(txT('Mode (octal)')) + '" autocomplete="off" oninput="fmPermTyped()">'
+                + '<span class="fm-perm-head" id="fmPermRwx">' + fmPermRwx(p.mode) + '</span></div>'
+                + rec('fmPermModeRec')
+                + '<button class="mode-action-btn primary fm-perm-go" id="fmPermModeBtn" onclick="fmPermApply(\'chmod\')">' + esc(txT('Apply permissions')) + '</button>';
+            box.innerHTML = '<div class="fm-perm-line" id="fmPermNow">' + esc(fmPermNowText()) + '</div>'
+                + modePart
+                + '<div class="fm-perm-sub">' + esc(txT('Owner and group')) + '</div>'
+                + '<div class="fm-perm-two"><input class="modal-text-input" id="fmPermUser" value="' + esc(p.user) + '" placeholder="' + esc(txT('Owner')) + '" aria-label="' + esc(txT('Owner')) + '" autocomplete="off" autocapitalize="off" spellcheck="false">'
+                + '<input class="modal-text-input" id="fmPermGroup" value="' + esc(p.group) + '" placeholder="' + esc(txT('Group')) + '" aria-label="' + esc(txT('Group')) + '" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'
+                + rec('fmPermOwnRec')
+                + '<button class="mode-action-btn primary fm-perm-go" id="fmPermOwnBtn" onclick="fmPermApply(\'chown\')">' + esc(txT('Apply owner')) + '</button>'
+                + (p.before ? '<div class="fm-perm-line" id="fmPermBefore">' + esc(p.before) + '</div>' : '');
+        }
+        function fmPermNowText() {
+            const p = fmPerm;
+            return txT('Now:') + ' ' + p.mode + ' (' + fmPermRwx(p.mode) + ') · ' + p.user + (p.uid ? ' (' + p.uid + ')' : '') + ':' + p.group + (p.gid ? ' (' + p.gid + ')' : '') + (p.label ? ' · ' + p.label : '');
+        }
+        function fmPermTick() {
+            if (!fmPerm) return;
+            const typed = document.getElementById('fmPermMode').value;
+            let m = parseInt(/^[0-7]{4}$/.test(typed) ? typed : fmPerm.mode, 8);   // three digits typed: the special bits are the file's own
+            m &= 0o7000;                                                 // setuid, setgid and sticky stay as they are
+            document.querySelectorAll('#fmPermRow .fm-perm-grid input').forEach(i => { if (i.checked) m |= +i.dataset.bit; });
+            const v = m.toString(8).padStart(4, '0');
+            document.getElementById('fmPermMode').value = v;
+            document.getElementById('fmPermRwx').textContent = fmPermRwx(v);
+        }
+        function fmPermTyped() {
+            const el = document.getElementById('fmPermMode'), v = el.value.replace(/[^0-7]/g, '').slice(0, 4);
+            if (v !== el.value) el.value = v;
+            if (!/^[0-7]{3,4}$/.test(v)) return;
+            const m = parseInt(v, 8);
+            document.querySelectorAll('#fmPermRow .fm-perm-grid input').forEach(i => { i.checked = !!(m & +i.dataset.bit); });
+            document.getElementById('fmPermRwx').textContent = fmPermRwx(v);
+        }
+        function fmPermApply(kind) {
+            const p = fmPerm;
+            if (!p) return;
+            const recEl = document.getElementById(kind === 'chmod' ? 'fmPermModeRec' : 'fmPermOwnRec'), rec = !!(recEl && recEl.checked);
+            let b, what;
+            if (kind === 'chmod') {
+                b = (document.getElementById('fmPermMode').value || '').trim();
+                if (!/^[0-7]{3,4}$/.test(b)) { showToast('The mode must be three or four digits from 0 to 7, such as 644'); return; }
+                if (b.length === 3) b = p.mode.charAt(0) + b;                // three digits keep setuid, setgid and sticky as they are
+                if (b === p.mode && !rec) { showToast('Nothing to change'); return; }
+                what = b + ' (' + fmPermRwx(b) + ')';
+            } else {
+                const u = (document.getElementById('fmPermUser').value || '').trim(), g = (document.getElementById('fmPermGroup').value || '').trim();
+                if (!u && !g) { showToast('Enter an owner or a group'); return; }
+                if ((u || p.user) === p.user && (g || p.group) === p.group && !rec) { showToast('Nothing to change'); return; }
+                b = u + ':' + g;
+                what = (u || p.user) + ':' + (g || p.group);
+            }
+            const name = fmBase(p.full) || p.full;
+            if (rec || kind === 'chown') {
+                nextDialogTitle(kind === 'chmod' ? 'Change permissions' : 'Change owner');
+                const q = rec ? 'Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.'
+                    : 'Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.';
+                if (!confirm(txF(q, what, name))) return;
+            }
+            haptic();
+            const before = txF('Before the last change: {0} ({1}) {2}', p.mode, fmPermRwx(p.mode), p.user + ':' + p.group);
+            const r = fmPermCall(kind + (rec ? '-r' : ''), p.full, b);
+            if (!r.ok) {
+                const out = String(r.output || '');
+                showToast(out && out.length < 90 && !/\n/.test(out) ? out : 'Failed');
+                if (out.length >= 90 || /\n/.test(out)) showCommandResults('Permissions', kind, [{ name, pkg: p.full, output: out, success: false }]);
+                return;
+            }
+            p.before = before;
+            showToast(txF('Done: {0}', what));
+            fmPermOpen();                                                // read back what Android says now
+            fmRefresh();
+        }
+
         function fmStartDest(op) {
             if (!fmActionTarget) return;
             fmPendingOp = op;
             const row = document.getElementById('fmDestRow');
+            document.getElementById('fmPermRow').style.display = 'none';
             const input = document.getElementById('fmDestInput');
             const confirm = document.getElementById('fmDestConfirm');
             row.style.display = '';
@@ -24648,6 +24786,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!fmActionTarget) return;
             const v = document.getElementById('fmViewer');
             document.getElementById('fmDestRow').style.display = 'none';
+            document.getElementById('fmPermRow').style.display = 'none';
             let txt;
             try { txt = window.AndroidBridge.fmRead(fmActionTarget.full); } catch (e) { txt = 'Error: ' + (e && e.message || e); }
             const html = /^Error:/.test(txt || '') ? null : synFor(fmActionTarget.name, txt);
@@ -24679,6 +24818,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('fmActionBtns').innerHTML = '';
             document.getElementById('fmViewer').style.display = 'none';
             const row = document.getElementById('fmDestRow');
+            document.getElementById('fmPermRow').style.display = 'none';
             const input = document.getElementById('fmDestInput');
             const confirm = document.getElementById('fmDestConfirm');
             row.style.display = '';
@@ -24708,6 +24848,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('fmActionBtns').innerHTML = '';
             document.getElementById('fmViewer').style.display = 'none';
             const row = document.getElementById('fmDestRow');
+            document.getElementById('fmPermRow').style.display = 'none';
             const input = document.getElementById('fmDestInput');
             const confirm = document.getElementById('fmDestConfirm');
             row.style.display = '';
@@ -29664,8 +29805,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 + rootFeatureRow('Trackers in apps', 'Switch off the tracker parts (ads, analytics) of any app.', 'Open apps', 'rfTrackersBtn', 'rootManageTrackers()', isRootActive())
                 // v7.18.1 (the owner's wish): a signpost to the RRO/Monet Customization tab, whose Root-only theme controls write a color overlay
                 // (the UID-0 tier: Root with su, or Shizuku as root)
-                + rootFeatureRow('Additional Monet Customization', 'Pure black, more styles, intensity and your own accents for every app that uses Monet colors.', 'Open tab', 'rfMonetBtn', 'rootOpenMonet()', ovlCanWriteOverlays());
+                + rootFeatureRow('Additional Monet Customization', 'Pure black, more styles, intensity and your own accents for every app that uses Monet colors.', 'Open tab', 'rfMonetBtn', 'rootOpenMonet()', ovlCanWriteOverlays())
+                + rootFeatureRow('Root File Management', 'Open, change and delete any file, and set its permissions and owner (Permissions… on a file).', 'Open files', 'rfFilesBtn', 'rootOpenFiles()', ovlCanWriteOverlays());
         }
+        // "Root File Management" (v7.18.2): the File Manager, where as root every path goes through su and a file's sheet has Permissions…
+        function rootOpenFiles() { switchView('files'); }
         // "Additional Monet Customization": the RRO/Monet Customization tab on its Theme half, with the Root-only theme controls brought into view
         function rootOpenMonet() {
             if (!switchView('overlays')) return;

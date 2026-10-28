@@ -1,6 +1,24 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "यह एक लिंक है: जिस फ़ाइल की ओर यह इशारा करता है उसे खोलें और वहीं अनुमतियाँ बदलें",
+"Also everything inside this folder": "इस फ़ोल्डर के अंदर का सब कुछ भी",
+"Apply owner": "मालिक लागू करें",
+"Apply permissions": "अनुमतियां लागू करें",
+"Change owner": "मालिक बदलें",
+"Enter an owner or a group": "कोई मालिक या समूह डालें",
+"Group": "समूह",
+"Mode (octal)": "मोड (ऑक्टल)",
+"Open files": "फ़ाइलें खोलें",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "कोई भी फ़ाइल खोलें, बदलें और हटाएं, और उसकी अनुमतियां और मालिक तय करें (फ़ाइल पर अनुमतियां…)।",
+"Others": "अन्य",
+"Owner": "मालिक",
+"Owner and group": "मालिक और समूह",
+"Permissions…": "अनुमतियां…",
+"Read": "पढ़ना",
+"Root File Management": "Root फ़ाइल प्रबंधन",
+"The mode must be three or four digits from 0 to 7, such as 644": "मोड 0 से 7 तक के तीन या चार अंकों का होना चाहिए, जैसे 644",
+"Write": "लिखना",
 "Additional Monet Customization": "अतिरिक्त Monet कस्टमाइज़ेशन",
 "Check for updates on mobile data": "मोबाइल डेटा पर अपडेट जाँचें",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "अपनी कस्टम थीम (रंग, स्टाइल और सिर्फ़ Root वाले थीम नियंत्रण) की एक कॉपी रखें और उसे बैकअप फ़ाइल से वापस लाएँ। रीस्टोर करने से यह टैब भर जाता है; थीम लागू करें उसे फ़ोन पर लिखता है।",
@@ -5657,6 +5675,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "आपकी चुनी हुई फ़ाइलें अभी पढ़ी जा रही हैं। थोड़ा रुकें।"
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "पिछले बदलाव से पहले: {0} ({1}) {2}"],
+["Could not read the permissions: {0}", "अनुमतियां पढ़ी नहीं जा सकीं: {0}"],
+["Done: {0}", "हो गया: {0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "{1} पर मालिक {0} सेट करें? जिन फ़ाइलों की ज़रूरत है उनका मालिक बदलने पर कोई ऐप या Android काम करना बंद कर सकता है।"],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "{1} और उसके अंदर की हर चीज़ पर {0} सेट करें? अंदर के हर आइटम का पहले वाला मान नहीं रखा जाता, और ज़रूरी फ़ाइलें बदलने पर कोई ऐप या Android काम करना बंद कर सकता है।"],
 ["Backed up the theme to {0}", "थीम का बैकअप {0} में लिया गया"],
 ["Monet restore: {0}", "Monet रीस्टोर: {0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "{0} से थीम रीस्टोर करें? इस टैब में आपके चुनाव बदल दिए जाएँगे। जब तक आप थीम लागू करें पर टैप नहीं करते, फ़ोन पर कुछ नहीं बदलता।"],

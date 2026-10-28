@@ -1,6 +1,24 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "Это ссылка: откройте файл, на который она указывает, и измените разрешения там",
+"Also everything inside this folder": "Также всё содержимое этой папки",
+"Apply owner": "Применить владельца",
+"Apply permissions": "Применить разрешения",
+"Change owner": "Сменить владельца",
+"Enter an owner or a group": "Введите владельца или группу",
+"Group": "Группа",
+"Mode (octal)": "Режим (восьмеричный)",
+"Open files": "Открыть файлы",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "Открывайте, изменяйте и удаляйте любые файлы, задавайте их разрешения и владельца («Разрешения…» у файла).",
+"Others": "Остальные",
+"Owner": "Владелец",
+"Owner and group": "Владелец и группа",
+"Permissions…": "Разрешения…",
+"Read": "Чтение",
+"Root File Management": "Управление файлами с Root",
+"The mode must be three or four digits from 0 to 7, such as 644": "Режим должен состоять из трёх или четырёх цифр от 0 до 7, например 644",
+"Write": "Запись",
 "Additional Monet Customization": "Дополнительная настройка Monet",
 "Check for updates on mobile data": "Проверять обновления по мобильной сети",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Сохраните копию своей темы (цвет, стиль и настройки темы только для Root) и верните её из файла резервной копии. Восстановление заполняет эту вкладку; «Применить тему» записывает её на телефон.",
@@ -5657,6 +5675,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Выбранные вами файлы ещё читаются. Подождите немного."
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "До последнего изменения: {0} ({1}) {2}"],
+["Could not read the permissions: {0}", "Не удалось прочитать разрешения: {0}"],
+["Done: {0}", "Готово: {0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "Назначить владельца {0} для {1}? Приложение или Android может перестать работать, если у нужных ему файлов сменится владелец."],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "Установить {0} для {1} и всего содержимого? Прежние значения каждого вложенного элемента не сохраняются, а приложение или Android может перестать работать, если изменятся нужные ему файлы."],
 ["Backed up the theme to {0}", "Тема сохранена в {0}"],
 ["Monet restore: {0}", "Восстановление Monet: {0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "Восстановить тему из {0}? Ваши настройки на этой вкладке будут заменены. На телефоне ничего не изменится, пока вы не нажмёте «Применить тему»."],

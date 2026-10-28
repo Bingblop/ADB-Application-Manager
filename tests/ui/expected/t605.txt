@@ -1,0 +1,31 @@
+ok   1. Root Features lists Root File Management, locked without root
+ok      with root it has Open files
+ok      Open files opens the File Manager
+ok   2. Permissions… is in a file's sheet only as root, right before Delete
+ok      not for added storage
+ok   3. it reads the path: mode 0660 (rw-rw----), owner u0_a123 (10123), group media_rw (1023), the label
+ok      the ticks, the mode field and the owner fields say the same
+ok      a file has no "everything inside" choice
+ok      it asked the app with fmOp stat
+ok   4. ticking Owner Run and Others Read makes 0764 (rwxrw-r--)
+ok      typing 755 ticks rwx r-x r-x
+ok      only octal digits stay in the field
+ok   5. Apply permissions on a file sends chmod 0755 at once (no question), then reads it again
+ok      the toast and the panel show the new mode, and what it was before
+ok      the same mode again: Nothing to change, nothing sent
+ok   6. Apply owner asks first; No sends nothing
+ok      Yes sends chown root: (the group as it is)
+ok      the panel reads root:media_rw now
+ok      an empty owner and group is refused before the app is asked
+ok   7. a folder keeps its setgid bit (2770) and offers Also everything inside this folder
+ok      a tick keeps setgid: 2774
+ok      three digits keep setgid too; everything inside asks first, then sends chmod-r 2775
+ok      a refusal of the app is shown as it is
+ok   8. at 360 px everything of the panel is inside the sheet, nothing scrolls sideways
+ok      each tick is at least 44 px tall to tap
+ok   9. typing 770 and then ticking Others Read keeps the folder's setgid: 2774
+ok      a symbolic link: no ticks and no Apply permissions, a line says to change the file it points to; Apply owner stays
+ok      an owner with no name (stat says UNKNOWN) shows its number 2001
+ok      View contents closes the Permissions panel
+ok   no page errors
+all passed

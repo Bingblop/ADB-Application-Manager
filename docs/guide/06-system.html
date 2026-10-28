@@ -1667,6 +1667,7 @@
     <li><b>App components</b> ("Enable or disable activities, services, receivers and providers for any app."): see <a href="#rootfeatures-components">App components under Super User</a>.</li>
     <li><b>Trackers in apps</b> ("Switch off the tracker parts (ads, analytics) of any app."): see <a href="#rootfeatures-trackers">Switching trackers off in apps</a>.</li>
     <li><b>Additional Monet Customization</b> ("Pure black, more styles, intensity and your own accents for every app that uses Monet colors."): <b>Open tab</b> goes to the <b>RRO/Monet Customization</b> tab, on its <b>Theme</b> half, at the <a href="#overlays-root">Root-only theme controls</a>. It unlocks only as root (Root with su, or Shizuku as UID 0), as those controls do; Shizuku as UID 1000 keeps it locked.</li>
+    <li><b>Root File Management</b> ("Open, change and delete any file, and set its permissions and owner (Permissions… on a file)."): <b>Open files</b> opens the File Manager; see <a href="#rootfeatures-files">Root file management</a>. Root user only, as the Monet row.</li>
   </ul>
   <p>The tab reads the state again by itself when the working mode changes and when you come back after tapping <b>Open root manager</b> or <b>Open manager</b> here, so a grant you just approved shows up without a restart (when Root is not your chosen mode yet, it first asks whether to switch to Root, see <a href="#rootfeatures-grant">Getting Super User</a>). Each time you open the tab while it would read <b>ACTIVE</b>, the app first asks <code>su</code> again, so a grant you took back in the manager since then shows as <b>DENIED</b> and the rows lock. If you opened the manager another way (from the home screen, say), tap <b>Request Super User</b>, or <b>Check Status</b> in Working Modes, to make the app ask again.</p>
 
@@ -1837,5 +1838,33 @@
     <li><b>Not tried on a phone yet.</b> This feature has been checked on a computer, not yet on a rooted phone or with Shizuku as the system user.</li>
   </ul>
   <div class="hg-warn"><b>Careful.</b> Start with one app you can do without, use it for a day, then go on. Leave the trackers of system apps alone unless you have a reason.</div>
+</section>
+<section id="rootfeatures-files" data-title="Root file management" data-group="The tabs">
+  <p class="hg-lead">With Super User the <a href="#tab-files">File Manager</a> works as root: it opens, copies, moves, renames, edits and deletes files anywhere, also in other apps' data and in the system folders, and a file's sheet gets <b>Permissions…</b> to change who may read, write and run it, and who owns it.</p>
+  <p><b>Where it is:</b> <b>Root Features</b>, the row <b>Root File Management</b>; <b>Open files</b> opens the File Manager. In the File Manager, tap a file or folder (or its <b>⋮</b>): <b>Permissions…</b> is the button before <b>Delete</b>. Both need the root user: Root as the working mode with <code>su</code> granted, or Shizuku running as root (UID 0). Shizuku as the system user (UID 1000) or over ADB keeps the row locked and shows no <b>Permissions…</b>. Added storage (a folder you picked through Android) has no permissions to change.</p>
+
+  <h4>What Permissions… shows</h4>
+  <ul>
+    <li>A line <b>Now:</b> with the mode in digits and letters (for example <code>0644 (rw-r--r--)</code>), the owner and the group with their numbers, and the SELinux label.</li>
+    <li><b>Permissions</b>: ticks for <b>Read</b>, <b>Write</b> and <b>Run</b> for <b>Owner</b>, <b>Group</b> and <b>Others</b>, and the same as digits in a field (<code>755</code>, <code>0644</code>). Either one changes the other. The special bits (setuid, setgid, sticky: the first of four digits) stay as they are unless you type four digits. <b>Apply permissions</b> changes the mode at once. A symbolic link has no <b>Permissions</b> part: its own mode is not used, and changing it would change the file it points to, so open that file instead. An owner or group with no name shows its number.</li>
+    <li><b>Owner and group</b>: a user and a group, as a name (<code>root</code>, <code>system</code>, <code>media_rw</code>, <code>u0_a123</code>) or a number (<code>0</code>, <code>1000</code>). Leave one empty to keep it. <b>Apply owner</b> asks first. A link is changed itself, not what it points to.</li>
+    <li>For a folder, <b>Also everything inside this folder</b> under each part changes the folder and every file and folder in it. It always asks first.</li>
+    <li>After a change the panel reads the item again, so what it shows is what Android now has, with a line <b>Before the last change:</b> that keeps the old values.</li>
+  </ul>
+
+  <h4>What you are getting into</h4>
+  <ul>
+    <li><b>Nothing stops you from breaking an app or Android.</b> An app whose files you make unreadable to it, or that you hand to another owner, can crash or lose its data; system files with the wrong mode, owner or label can stop the phone from starting. Change only what you know.</li>
+    <li>The app refuses a few places outright: <code>/</code>, the top-level folders (<code>/data</code>, <code>/system</code> and the like), a storage root, the first levels of the system partitions, and this app's own data. It also never changes a whole folder of the system partitions at once.</li>
+    <li>The system partitions (<code>/system</code>, <code>/vendor</code>, <code>/product</code>) are read-only on almost every phone: a change there fails with Android's own message.</li>
+    <li>Permissions and owner do not change the SELinux label. A file copied or moved into another app's folder may keep a label that app cannot use; this app does not relabel files.</li>
+  </ul>
+
+  <h4>How to undo it</h4>
+  <ul>
+    <li><b>One file or folder:</b> open <b>Permissions…</b> again, put back the values the <b>Before the last change:</b> line shows (it stays while the sheet is open on that item), and apply them. Note them down first if you will close the sheet.</li>
+    <li><b>Everything inside a folder:</b> what each item inside had before is not kept, so there is no exact undo. For app data, <b>Clear data</b> of that app (<a href="#apps-menu">the app's menu</a>) gives it fresh files with the right owner; reinstalling it does the same. For your own storage, Android repairs the owner of shared storage by itself on the next restart in most cases.</li>
+    <li><b>A phone that no longer starts</b> after a change to system files needs the same repair as any broken root change: your root manager's or recovery's way back, or flashing the firmware again. That is why the system folders are guarded.</li>
+  </ul>
 </section>
 

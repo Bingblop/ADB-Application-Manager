@@ -1,6 +1,24 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "Bu bir bağlantı: işaret ettiği dosyayı açın ve izinleri orada değiştirin",
+"Also everything inside this folder": "Bu klasörün içindeki her şey de",
+"Apply owner": "Sahibi uygula",
+"Apply permissions": "İzinleri uygula",
+"Change owner": "Sahibi değiştir",
+"Enter an owner or a group": "Bir sahip veya grup girin",
+"Group": "Grup",
+"Mode (octal)": "Mod (sekizli)",
+"Open files": "Dosyaları aç",
+"Open, change and delete any file, and set its permissions and owner (Permissions… on a file).": "Herhangi bir dosyayı açın, değiştirin ve silin; izinlerini ve sahibini belirleyin (bir dosyada İzinler…).",
+"Others": "Diğerleri",
+"Owner": "Sahip",
+"Owner and group": "Sahip ve grup",
+"Permissions…": "İzinler…",
+"Read": "Okuma",
+"Root File Management": "Root Dosya Yönetimi",
+"The mode must be three or four digits from 0 to 7, such as 644": "Mod, 0 ile 7 arasında üç veya dört basamak olmalı, örneğin 644",
+"Write": "Yazma",
 "Additional Monet Customization": "Ek Monet Özelleştirmesi",
 "Check for updates on mobile data": "Güncellemeleri mobil veride de denetle",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Özel temanızın bir kopyasını saklayın (renk, stil ve yalnızca Root tema denetimleri) ve bir yedek dosyasından geri getirin. Geri yükleme bu sekmeyi doldurur; Temayı uygula onu telefona yazar.",
@@ -5657,6 +5675,11 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Seçtiğiniz dosyalar hâlâ okunuyor. Biraz bekleyin."
 },
 p: [
+["Before the last change: {0} ({1}) {2}", "Son değişiklikten önce: {0} ({1}) {2}"],
+["Could not read the permissions: {0}", "İzinler okunamadı: {0}"],
+["Done: {0}", "Tamam: {0}"],
+["Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.", "{1} için sahip {0} olarak ayarlansın mı? İhtiyaç duyduğu dosyaların sahibi değişince bir uygulama veya Android çalışmayı bırakabilir."],
+["Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.", "{1} ve içindeki her şey için {0} ayarlansın mı? İçindeki her öğenin önceki değeri saklanmaz ve ihtiyaç duyduğu dosyalar değişince bir uygulama veya Android çalışmayı bırakabilir."],
 ["Backed up the theme to {0}", "Tema şuraya yedeklendi: {0}"],
 ["Monet restore: {0}", "Monet geri yükleme: {0}"],
 ["Restore the theme from {0}? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.", "Tema {0} dosyasından geri yüklensin mi? Bu sekmedeki seçimleriniz değiştirilir. Temayı uygula'ya dokunana kadar telefonda hiçbir şey değişmez."],
