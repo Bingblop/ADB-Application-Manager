@@ -334,7 +334,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const btns = [...v.querySelectorAll('.mode-action-btn, .op-mode-btn')].filter(b => b.getClientRects().length).map(b => ({ id: b.id || b.className, h: Math.round(b.getBoundingClientRect().height) }));
     return { wide: document.documentElement.scrollWidth - innerWidth, btns, tagOneLine: document.getElementById('rfStatusTag').getBoundingClientRect().height < 24, lockedOpacity: getComputedStyle(v.querySelector('.op-mode-btn.locked')).opacity };
   });
-  check('6. at 360 px nothing is wider than the screen, the Request, Open-manager and the three locked feature buttons (Trackers in apps since v7.16.2) are at least 36 px tall, the tag stays on one line, the locked button is greyed', geo.wide <= 0 && geo.btns.length === 5 && geo.btns.every(x => x.h >= 36) && geo.tagOneLine && +geo.lockedOpacity < 1, JSON.stringify(geo));
+  check('6. at 360 px nothing is wider than the screen, the Request, Open-manager and the four locked feature buttons (Trackers in apps since v7.16.2, Additional Monet Customization since v7.18.1) are at least 36 px tall, the tag stays on one line, the locked button is greyed', geo.wide <= 0 && geo.btns.length === 6 && geo.btns.every(x => x.h >= 36) && geo.tagOneLine && +geo.lockedOpacity < 1, JSON.stringify(geo));
   await page.screenshot({ path: 'rootfeatures_locked.png', fullPage: true });
 
   // ---- 7. the Help Guide matches the tab (T-029): read the built in-app guide (assets/guide.js) and FULL-GUIDE.md's tab table
