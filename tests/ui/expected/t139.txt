@@ -19,7 +19,7 @@ ok      pulled down again, the menu closes to the checkmark button and the apps 
 ok      turned off for this selection
 ok   4. a new selection starts with Keep selecting after running on again
 ok      it is not remembered in the saved state
-ok   6. the package name has its own colour, not the name's white and not the plain grey: {"name":"rgb(230, 224, 233)","pkg":"color(srgb 0.804392 0.752314 0.911529)","muted":"#CAC4D0"}
+ok   6. the package name has its own colour, not the name's white and not the plain grey: {"name":"rgb(230, 224, 233)","pkg":"color(srgb 0.814149 0.764925 0.911749)","muted":"#CAC4D0"}
 ok   7. switching to another tab with apps selected clears them and removes the checkmark button in the same moment: {"n0":1,"n":0,"fab":false,"bar":false,"tr":"0s"}
 ok      back in the Apps tab nothing is selected
 ok   8. with Uninstalled on, tapping Running turns Uninstalled off: {"a":["uninstalled"],"b":["running"]}

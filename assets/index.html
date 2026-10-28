@@ -20446,17 +20446,32 @@ Type any command above (e.g. pm list packages -d)</div>
             // (or under the header, which is all there is at the top when the bottom bar is the navigation: the tab bar is not shown then)
             const r = menu.getBoundingClientRect(), box = document.getElementById('searchBox').getBoundingClientRect();
             const tabs = document.getElementById('tabBar').getBoundingClientRect(), hdr = document.querySelector('.app-header');
-            const bar = document.getElementById('bnav'), bb = bar && !bar.classList.contains('bnav-off') ? bar.getBoundingClientRect() : null;
-            const barH = bb && bb.height > 0 && bb.width >= window.innerWidth - 1 && bb.top < window.innerHeight ? window.innerHeight - bb.top : 0;          // (the rail of a wide screen stands at the left: it covers no row)
-            const bottom = window.innerHeight - barH - 10;
+            const bottom = searchMenuBottom();
             const need = r.bottom - bottom, room = box.top - (Math.max(tabs.bottom, hdr ? hdr.getBoundingClientRect().bottom : 0) + 8);
             const shift = need > 0 && room > 0 ? Math.min(need, room, canScroll) : 0;
             if (shift > 0) window.scrollBy({ top: shift, behavior: 'smooth' });
-            // Taller than the screen has room for even then (a short screen, large text, a long language: the Row tints slider and the Gradient switch make it
-            // the tallest menu of the page), it scrolls inside itself, so its last row is never left under the bottom bar
-            const fit = Math.floor(bottom - (r.top - shift));
-            if (r.bottom - shift > bottom && fit >= 160) { menu.style.maxHeight = fit + 'px'; menu.style.overflowY = 'auto'; }
+            searchMenuFit(menu, r.top - shift, bottom);
         }
+
+        // How far down the open search menu may reach: above the bottom bar when that is on the screen (the rail of a wide screen stands at the left: it covers no row)
+        function searchMenuBottom() {
+            const bar = document.getElementById('bnav'), bb = bar && !bar.classList.contains('bnav-off') ? bar.getBoundingClientRect() : null;
+            const barH = bb && bb.height > 0 && bb.width >= window.innerWidth - 1 && bb.top < window.innerHeight ? window.innerHeight - bb.top : 0;
+            return window.innerHeight - barH - 10;
+        }
+
+        // Taller than the screen has room for under its top (a short screen, large text, a long language: the Row tints slider and the Gradient switch make it
+        // the tallest menu of the page), the menu scrolls inside itself, so its last row is not left under the bottom bar. Room for less than two rows is
+        // left alone (the page is then too short for a menu at all).
+        function searchMenuFit(menu, top, bottom) {
+            menu.style.maxHeight = ''; menu.style.overflowY = '';
+            const fit = Math.floor(bottom - top);
+            if (top + menu.getBoundingClientRect().height > bottom && fit >= 88) { menu.style.maxHeight = fit + 'px'; menu.style.overflowY = 'auto'; }
+        }
+        // ...and again when the window changes size with the menu open (the phone turned, split screen): after the bottom bar has taken its new place
+        window.addEventListener('resize', () => {
+            if (searchMenuOpen()) requestAnimationFrame(() => { const m = document.getElementById('searchMenu'); searchMenuFit(m, m.getBoundingClientRect().top, searchMenuBottom()); });
+        });
 
         // The box says what it searches, and the menu shows the options as they are now
         function syncSearchUi() {

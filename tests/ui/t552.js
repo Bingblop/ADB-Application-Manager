@@ -3,7 +3,7 @@
 // rows behind it change as you go; they and Settings' controls are one setting (a change in one place shows in the other). Gradient is off by default. The
 // slider row is built like the switch rows (name, one grey line, a hairline above) with the slider and its five step names under its line; the Gradient row is
 // a switch row like the three above it. Keyboard: Tab goes switch, slider, switch; the arrow keys move the slider; Escape and Back close the menu. On a short
-// screen the menu scrolls inside itself, so its last row is never under the bottom bar. Translated in every language (the step names fit at 320 px), and in
+// screen the menu scrolls inside itself, so its last row can be reached above the bottom bar, and it fits itself again when the phone is turned. Translated in every language (the step names fit at 320 px), and in
 // Arabic the slider and its step names both run from the right.
 const { chromium, PAGE } = require('./lib/pw');
 const inst = require('./lib/inst_mock.js');
@@ -249,7 +249,7 @@ const LANGS = ['ar', 'de', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'pt-BR', 'r
     await page.tap('#searchMenuBtn'); await still(page);
     const l = await rows(page);
     const t = await ev(page, () => ({ sub: document.querySelector('#searchMenuRowTints .sm-sub').textContent, grad: document.querySelector('#searchMenuRowGrad .sm-name').textContent, set: document.querySelector('#rowTintCard .row-tint-ticks').textContent }));
-    const ok = !!l && l.name !== 'Row tints' && t.sub !== 'How strongly rows are tinted.' && l.gradSub !== 'Each tint fades across the row. Off: one even colour.' && l.ticks !== STEPS.join('|') && l.ticks.replace(/\|/g, '') === t.set && l.ticksFit && l.textFits && l.insideMenu && l.inScreen;
+    const ok = !!l && l.name !== 'Row tints' && t.sub !== 'How strongly rows are tinted.' && t.grad !== 'Gradient' && l.gradSub !== 'Each tint fades across the row. Off: one even colour.' && l.ticks !== STEPS.join('|') && l.ticks.replace(/\|/g, '') === t.set && l.ticksFit && l.textFits && l.insideMenu && l.inScreen;
     if (!ok) lines.push(lang + ' ' + JSON.stringify({ l, t }));
     await page.keyboard.press('Escape');
   }
@@ -274,6 +274,22 @@ const LANGS = ['ar', 'de', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'pt-BR', 'r
   const arLv = (await state(page)).lv;
   await page.touchscreen.tap(ab.x + 4, ab.y + ab.height / 2); await sleep(100);
   check('    and a tap at its right end is Off, at its left end Vivid', arLv === 0 && (await state(page)).lv === 4, arLv + ' / ' + (await state(page)).lv);
+  await page.close();
+
+  // ---- 10. the phone turned with the menu open: it fits itself again (whole where there is room, scrolling above the bar again where there is not) ----
+  page = await open({ width: 360, height: 480 }, { apps: MANY, bottomNav: true });
+  await page.tap('#searchMenuBtn'); await still(page);
+  const fitNow = p => ev(p, () => {
+    const m = document.getElementById('searchMenu'), r = m.getBoundingClientRect(), bar = document.getElementById('bnav').getBoundingClientRect();
+    return { open: m.style.display !== 'none', limited: m.style.maxHeight !== '', scrolls: m.scrollHeight > m.clientHeight + 1, aboveBar: r.bottom <= bar.top + 1 };
+  });
+  const short1 = await fitNow(page);
+  await page.setViewportSize({ width: 360, height: 900 }); await sleep(300);
+  const tall = await fitNow(page);
+  await page.setViewportSize({ width: 360, height: 480 }); await sleep(300);
+  const short2 = await fitNow(page);
+  check('10. turned with the menu open: short, it scrolls inside itself above the bar; tall, it is whole again; short again, it scrolls above the bar again',
+    short1.open && short1.limited && short1.scrolls && short1.aboveBar && tall.open && !tall.limited && !tall.scrolls && tall.aboveBar && short2.open && short2.limited && short2.scrolls && short2.aboveBar, JSON.stringify({ short1, tall, short2 }));
   await page.close();
 
   check('no page errors', errors.length === 0, errors.join(' | '));

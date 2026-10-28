@@ -66,5 +66,6 @@
     in German: Zeilenfärbung, its line, the step names Aus to Kräftig, and Verlauf: true
     in Arabic (right to left) the step names start at the right (Off) and so does the slider: true
     and a tap at its right end is Off, at its left end Vivid: true
+10. turned with the menu open: short, it scrolls inside itself above the bar; tall, it is whole again; short again, it scrolls above the bar again: true
 no page errors: true
 all checks passed
