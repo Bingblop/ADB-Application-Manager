@@ -17,7 +17,9 @@ concurrency:
 jobs:
   ui:
     name: UI scripts
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04 (2026-10-28), where Playwright 1.56.1 installs no Chromium, and the expected outputs in
+    # tests/ui/expected were recorded with this image's fonts. Move it together with a Playwright update and newly recorded outputs.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
