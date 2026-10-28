@@ -73,7 +73,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     return out;
   }, [k, !!sel]);
   check('   a frozen app\'s row is tinted blue (a selected one has the selection colours instead), an enabled one has no tint', await (async () => {
-    await ev(() => { const st = document.createElement('style'); st.textContent = '*{transition:none!important}'; document.head.appendChild(st);
+    // (the tint drawn as a gradient, Row tints > Gradient on: the default until v7.18.1; the even colour, the default since, is t549's)
+    await ev(() => { const st = document.createElement('style'); st.textContent = '*{transition:none!important}'; document.head.appendChild(st); setRowTintGrad(true);
       allApps.length = 0; allApps.push({ name: 'Alpha', pkg: 'com.t.alpha', isFrozen: true, isSystem: false }, { name: 'Bravo', pkg: 'com.t.bravo', isFrozen: false, isSystem: false }); renderApps(); });
     const a = await layer('alpha'), b = await layer('bravo'), s = await layer('alpha', true);
     return /frozen/.test(a.cls) && !/frozen/.test(b.cls) && a.o > 0 && a.img.indexOf(a.frozen) >= 0 && b.img === 'none' && a.bg === b.bg && a.border === b.border

@@ -19,6 +19,7 @@ const APPS = [
   const page = await b.newPage({ viewport: { width: 390, height: 860 } });
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(PAGE); await page.waitForTimeout(400);
+  await page.evaluate(() => setRowTintGrad(true));   // (Row tints > Gradient on: the glow measured here, the default until v7.18.1; the even colour, the default since, is t549's)
   const ev = (fn, a) => page.evaluate(fn, a);
   await ev(apps => { switchView('devices'); document.getElementById('cdWork').style.display = ''; cd.apps = apps; cd.filters.clear(); cdAppsRender(); }, APPS);
 

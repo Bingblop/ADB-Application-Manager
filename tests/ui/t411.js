@@ -19,7 +19,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     await page.addInitScript(appsMock.initScript, opts);
     if (noColorMix) await page.route(u => u.href === PAGE, r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(fileURLToPath(PAGE), 'utf8').replace(/color-mix\(/g, 'no-color-mix(') }));
     await page.goto(PAGE); await page.waitForTimeout(600);
-    await page.evaluate(() => switchView('apps')); await page.waitForTimeout(300);
+    await page.evaluate(() => { setRowTintGrad(true); switchView('apps'); }); await page.waitForTimeout(300);   // (Row tints > Gradient on: the glow measured here, the default until v7.18.1; the even colour, the default since, is t549's)
     return page;
   };
   // every row: its border, ring, background and tint layer

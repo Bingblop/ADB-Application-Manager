@@ -12,6 +12,7 @@ const LOG = ['V', 'D', 'I', 'W', 'E', 'F'].map((l, i) => '10-12 10:00:0' + i + '
   page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(mock.initScript, { kv: { perm_intro_v61: '1' }, log: LOG });
   await page.goto(PAGE); await page.waitForTimeout(400);
+  await page.evaluate(() => setRowTintGrad(true));   // (Row tints > Gradient on: the glow measured here, the default until v7.18.1; the even colour, the default since, is t549's)
   const ev = (fn, a) => page.evaluate(fn, a);
   const look = () => ev(() => {
     const lum = c => { const v = c.map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };

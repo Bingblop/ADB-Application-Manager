@@ -17,6 +17,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
 
   // ---- 1. Row tints ----
   // (v7.14: the tint is the row's ::before layer, a glow in the state's colour; its strength is that layer's opacity, a plain row has none)
+  // (The glow is Row tints > Gradient on, the default until v7.18.1, so it is switched on here; the even colour, the default since, is t549's.)
+  await ev(() => setRowTintGrad(true));
   const layer = k => ev(k => { const a = getComputedStyle(document.getElementById('card_com.t.' + k), '::before'); return a.content === 'none' ? 0 : +a.opacity; }, k);
   await ev(() => { switchView('apps'); allApps.length = 0; allApps.push({ name: 'Run', pkg: 'com.t.run', isRunning: true }, { name: 'Plain', pkg: 'com.t.plain' }); renderApps(); });
   const dist = async () => Math.round(((await layer('run')) - (await layer('plain'))) * 1000) / 1000;
