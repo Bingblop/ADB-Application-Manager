@@ -1,6 +1,10 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"SELinux label": "Метка SELinux",
+"Not shown": "Не показана",
+"Restore the default label": "Восстановить метку по умолчанию",
+"the default label": "метку по умолчанию",
 "This is a link: open the file it points to and change the permissions there": "Это ссылка: откройте файл, на который она указывает, и измените разрешения там",
 "Also everything inside this folder": "Также всё содержимое этой папки",
 "Apply owner": "Применить владельца",
@@ -5675,6 +5679,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Выбранные вами файлы ещё читаются. Подождите немного."
 },
 p: [
+["Label before the last change: {0}", "Метка до последнего изменения: {0}"],
 ["Before the last change: {0} ({1}) {2}", "До последнего изменения: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Не удалось прочитать разрешения: {0}"],
 ["Done: {0}", "Готово: {0}"],

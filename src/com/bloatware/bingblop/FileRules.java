@@ -129,9 +129,10 @@ final class FileRules {
         return null;
     }
 
-    /** The ops of Root file management (stat, chmod, chown, and their "-r" forms): their second argument is a mode or owner:group, not a path. */
+    /** The ops of Root file management (stat, chmod, chown, restorecon, and their "-r" forms): their second argument is a mode or owner:group, not a path. */
     static boolean isPermOp(String op) {
-        return op != null && (op.equals("stat") || op.equals("chmod") || op.equals("chmod-r") || op.equals("chown") || op.equals("chown-r"));
+        return op != null && (op.equals("stat") || op.equals("chmod") || op.equals("chmod-r") || op.equals("chown") || op.equals("chown-r")
+                || op.equals("restorecon") || op.equals("restorecon-r"));
     }
 
     /** What chmod answers for a symbolic link: chmod would change what the link points to, which no check here has looked at. */
@@ -164,6 +165,15 @@ final class FileRules {
         if (!g.isEmpty() && !WHO.matcher(g).matches()) throw new IllegalArgumentException("The group must be a group name or number, such as root or 1000");
         String who = o.isEmpty() ? ":" + g : g.isEmpty() ? o : o + ":" + g;
         return "chown -h " + (recursive ? "-R " : "") + who + " -- " + sq(path) + " && echo FMOK";
+    }
+
+    /**
+     * restorecon as a shell line ending in FMOK: puts back the SELinux label the system policy gives {@code path} (and, recursive, everything
+     * in it), the fix for a file copied or moved into another app's data that keeps a label that app cannot use. It sets only the policy's own
+     * default, never a label of the person's choosing.
+     */
+    static String restoreconCommand(String path, boolean recursive) {
+        return "restorecon " + (recursive ? "-R " : "") + "-- " + sq(path) + " && echo FMOK";
     }
 
     /**

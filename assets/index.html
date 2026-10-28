@@ -12760,7 +12760,7 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
+            if (viewName === 'prefs') { vtRefreshUi(); askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -24608,6 +24608,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 + '<input class="modal-text-input" id="fmPermGroup" value="' + esc(p.group) + '" placeholder="' + esc(txT('Group')) + '" aria-label="' + esc(txT('Group')) + '" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'
                 + rec('fmPermOwnRec')
                 + '<button class="mode-action-btn primary fm-perm-go" id="fmPermOwnBtn" onclick="fmPermApply(\'chown\')">' + esc(txT('Apply owner')) + '</button>'
+                // v7.18.3: the SELinux label put back to what the system policy gives this place (restorecon), the fix for a file copied into another app's data
+                + '<div class="fm-perm-sub">' + esc(txT('SELinux label')) + '</div>'
+                + '<div class="fm-perm-line" id="fmPermLabel">' + esc(p.label || txT('Not shown')) + '</div>'
+                + rec('fmPermLabelRec')
+                + '<button class="mode-action-btn fm-perm-go" id="fmPermLabelBtn" onclick="fmPermApply(\'restorecon\')">' + esc(txT('Restore the default label')) + '</button>'
                 + (p.before ? '<div class="fm-perm-line" id="fmPermBefore">' + esc(p.before) + '</div>' : '');
         }
         function fmPermNowText() {
@@ -24635,9 +24640,12 @@ Type any command above (e.g. pm list packages -d)</div>
         function fmPermApply(kind) {
             const p = fmPerm;
             if (!p) return;
-            const recEl = document.getElementById(kind === 'chmod' ? 'fmPermModeRec' : 'fmPermOwnRec'), rec = !!(recEl && recEl.checked);
+            const recEl = document.getElementById(kind === 'chmod' ? 'fmPermModeRec' : kind === 'restorecon' ? 'fmPermLabelRec' : 'fmPermOwnRec'), rec = !!(recEl && recEl.checked);
             let b, what;
-            if (kind === 'chmod') {
+            if (kind === 'restorecon') {
+                b = '';
+                what = txT('the default label');
+            } else if (kind === 'chmod') {
                 b = (document.getElementById('fmPermMode').value || '').trim();
                 if (!/^[0-7]{3,4}$/.test(b)) { showToast('The mode must be three or four digits from 0 to 7, such as 644'); return; }
                 if (b.length === 3) b = p.mode.charAt(0) + b;                // three digits keep setuid, setgid and sticky as they are
@@ -24652,13 +24660,14 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             const name = fmBase(p.full) || p.full;
             if (rec || kind === 'chown') {
-                nextDialogTitle(kind === 'chmod' ? 'Change permissions' : 'Change owner');
+                nextDialogTitle(kind === 'chmod' ? 'Change permissions' : kind === 'restorecon' ? 'Restore the default label' : 'Change owner');
                 const q = rec ? 'Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.'
                     : 'Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.';
                 if (!confirm(txF(q, what, name))) return;
             }
             haptic();
-            const before = txF('Before the last change: {0} ({1}) {2}', p.mode, fmPermRwx(p.mode), p.user + ':' + p.group);
+            const before = kind === 'restorecon' ? txF('Label before the last change: {0}', p.label || '?')
+                : txF('Before the last change: {0} ({1}) {2}', p.mode, fmPermRwx(p.mode), p.user + ':' + p.group);
             const r = fmPermCall(kind + (rec ? '-r' : ''), p.full, b);
             if (!r.ok) {
                 const out = String(r.output || '');

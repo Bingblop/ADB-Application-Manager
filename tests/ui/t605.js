@@ -22,12 +22,13 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     window.__permCalls = []; window.__permFail = '';
     const br = window.AndroidBridge, orig = br.fmOp.bind(br);
     br.fmOp = (op, a, bb) => {
-      if (op === 'stat' || /^ch(mod|own)/.test(op)) {
+      if (op === 'stat' || /^(ch(mod|own)|restorecon)/.test(op)) {
         window.__permCalls.push(op + ' ' + a + (bb ? ' ' + bb : ''));
         const r = window.__perm[a];
         if (op === 'stat') return JSON.stringify(r ? Object.assign({ ok: true, output: 'OK', type: 'regular file', label: 'u:object_r:media_rw_data_file:s0' }, r) : { ok: false, output: 'no such file' });
         if (window.__permFail) return JSON.stringify({ ok: false, output: window.__permFail });
-        if (op.startsWith('chmod')) r.mode = bb.replace(/^0(?=\d{3})/, '');
+        if (op.startsWith('restorecon')) r.label = 'u:object_r:app_data_file:s0';
+        else if (op.startsWith('chmod')) r.mode = bb.replace(/^0(?=\d{3})/, '');
         else { const [u, g] = bb.split(':'); if (u) r.user = u; if (g) r.group = g; }
         return JSON.stringify({ ok: true, output: 'OK' });
       }
@@ -144,6 +145,22 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await page.locator('#fmActionBtns button', { hasText: 'Permissions…' }).click(); await page.waitForTimeout(80);
   await ev(() => fmViewText()); await page.waitForTimeout(80);
   check('   View contents closes the Permissions panel', await ev(() => getComputedStyle(document.getElementById('fmPermRow')).display === 'none'));
+
+  // 10) v7.18.3 Restore the default label (restorecon): a file at once, a folder with everything inside asks first; the panel reads it back
+  await openSheet(F, false);
+  await page.locator('#fmActionBtns button', { hasText: 'Permissions…' }).click(); await page.waitForTimeout(100);
+  check('10. the panel shows the SELinux label and Restore the default label', (await ev(() => document.getElementById('fmPermLabel').textContent)) === 'u:object_r:media_rw_data_file:s0' && (await page.locator('#fmPermLabelBtn').innerText()).trim() === 'Restore the default label');
+  await ev(() => { window.__permCalls.length = 0; }); dialogs.length = 0;
+  await page.locator('#fmPermLabelBtn').click(); await page.waitForTimeout(150);
+  const c10 = await ev(() => window.__permCalls.slice());
+  check('   on a file it sends restorecon at once, then reads the path again', dialogs.length === 0 && c10[0] === 'restorecon ' + F && c10[1] === 'stat ' + F, JSON.stringify(c10));
+  check('   the panel shows the new label and the label before', (await ev(() => document.getElementById('fmPermLabel').textContent)) === 'u:object_r:app_data_file:s0'
+    && (await ev(() => (document.getElementById('fmPermBefore') || {}).textContent)) === 'Label before the last change: u:object_r:media_rw_data_file:s0', await ev(() => (document.getElementById('fmPermBefore') || {}).textContent));
+  await openSheet(D, true);
+  await page.locator('#fmActionBtns button', { hasText: 'Permissions…' }).click(); await page.waitForTimeout(100);
+  await page.locator('#fmPermLabelRec').check(); dialogs.length = 0; await ev(() => { window.__permCalls.length = 0; });
+  await page.locator('#fmPermLabelBtn').click(); await page.waitForTimeout(150);
+  check('   a folder with everything inside asks first, then sends restorecon-r', dialogs.length === 1 && (await ev(() => window.__permCalls[0])) === 'restorecon-r ' + D, JSON.stringify(dialogs) + ' ' + await ev(() => window.__permCalls.join(' | ')));
 
   check('no page errors', errors.length === 0, errors.join(' | '));
   await b.close();

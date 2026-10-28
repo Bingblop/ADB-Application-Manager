@@ -1,6 +1,10 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+"SELinux label": "Étiquette SELinux",
+"Not shown": "Non affichée",
+"Restore the default label": "Rétablir l'étiquette par défaut",
+"the default label": "l'étiquette par défaut",
 "This is a link: open the file it points to and change the permissions there": "Ceci est un lien : ouvrez le fichier vers lequel il pointe et modifiez les autorisations là-bas",
 "Also everything inside this folder": "Aussi tout le contenu de ce dossier",
 "Apply owner": "Appliquer le propriétaire",
@@ -5675,6 +5679,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Les fichiers que vous avez choisis sont encore en cours de lecture. Patientez un instant."
 },
 p: [
+["Label before the last change: {0}", "Étiquette avant la dernière modification : {0}"],
 ["Before the last change: {0} ({1}) {2}", "Avant la dernière modification : {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Impossible de lire les autorisations : {0}"],
 ["Done: {0}", "Fait : {0}"],

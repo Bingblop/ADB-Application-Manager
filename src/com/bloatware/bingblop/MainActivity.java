@@ -18111,6 +18111,7 @@ public class MainActivity extends Activity {
                         if (why != null) { res.put("ok", false); res.put("output", why); return res.toString(); }
                         try {
                             if ("chmod".equals(op) || "chmod-r".equals(op)) cmd = FileRules.chmodCommand(a, b, rec);
+                            else if ("restorecon".equals(op) || "restorecon-r".equals(op)) cmd = FileRules.restoreconCommand(a, rec);
                             else if ("chown".equals(op) || "chown-r".equals(op)) {
                                 String w = b == null ? "" : b;
                                 int c = w.indexOf(':');
