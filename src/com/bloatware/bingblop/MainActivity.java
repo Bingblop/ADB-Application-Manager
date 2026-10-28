@@ -18092,14 +18092,15 @@ public class MainActivity extends Activity {
             try {
                 if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
                 a = fmCanonicalPath(a);
-                if (b != null && !b.isEmpty()) b = fmCanonicalPath(b);
+                // the second argument is a path for cp/mv only: for chmod/chown it is a mode or owner:group and stays as typed
+                if (b != null && !b.isEmpty() && !FileRules.isPermOp(op)) b = fmCanonicalPath(b);
                 // the same protection the batch operations have: removing or moving away a whole storage root, a top-level folder or a system tree
                 if (("rm".equals(op) || "mv".equals(op)) && !a.startsWith("content://") && fmProtectedPath(a)) { res.put("ok", false); res.put("output", "System location: not touched"); return res.toString(); }
                 // nothing is copied out of, moved, removed from or written into the app's own private data from here, also not to or from added storage
                 if (fmPrivate(a) || ((("cp".equals(op) || "mv".equals(op)) && b != null && !b.isEmpty() && fmPrivate(b)))) { res.put("ok", false); res.put("output", PRIVATE_WHY); return res.toString(); }
                 // v7.18.2 Root file management: the mode, owner and label of a path (stat), and changing them (chmod / chown, "-r" for everything
                 // inside a folder too), only as the root user (Root with su, or Shizuku as uid 0), through the privileged shell with a long timeout
-                if ("stat".equals(op) || op.startsWith("chmod") || op.startsWith("chown")) {
+                if (FileRules.isPermOp(op)) {
                     if (a.startsWith("content://")) { res.put("ok", false); res.put("output", "Added storage has no permissions to change"); return res.toString(); }
                     if (fmkGate(true) == null) { res.put("ok", false); res.put("output", "Needs Super User (Root with su, or Shizuku as root)"); return res.toString(); }
                     boolean rec = op.endsWith("-r");

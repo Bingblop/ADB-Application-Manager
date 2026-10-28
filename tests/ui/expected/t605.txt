@@ -23,5 +23,9 @@ ok      three digits keep setgid too; everything inside asks first, then sends c
 ok      a refusal of the app is shown as it is
 ok   8. at 360 px everything of the panel is inside the sheet, nothing scrolls sideways
 ok      each tick is at least 44 px tall to tap
+ok   9. typing 770 and then ticking Others Read keeps the folder's setgid: 2774
+ok      a symbolic link: no ticks and no Apply permissions, a line says to change the file it points to; Apply owner stays
+ok      an owner with no name (stat says UNKNOWN) shows its number 2001
+ok      View contents closes the Permissions panel
 ok   no page errors
 all passed

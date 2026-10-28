@@ -17,7 +17,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await page.addInitScript(fm.initScript, { files: { '/storage/emulated/0/Download/a.sh': 'echo hi', '/storage/emulated/0/Download/dir': null } });
   // stat / chmod / chown over the mock: one record per path
   await page.addInitScript(() => {
-    window.__perm = { '/storage/emulated/0/Download/a.sh': { mode: '660', user: 'u0_a123', group: 'media_rw', uid: '10123', gid: '1023' }, '/storage/emulated/0/Download/dir': { mode: '2770', user: 'root', group: 'sdcard_rw', uid: '0', gid: '1015' } };
+    window.__perm = { '/storage/emulated/0/Download/a.sh': { mode: '660', user: 'u0_a123', group: 'media_rw', uid: '10123', gid: '1023' }, '/storage/emulated/0/Download/dir': { mode: '2770', user: 'root', group: 'sdcard_rw', uid: '0', gid: '1015' },
+      '/storage/emulated/0/Download/ln': { mode: '777', user: 'UNKNOWN', group: 'everybody', uid: '2001', gid: '9997', type: 'symbolic link' } };
     window.__permCalls = []; window.__permFail = '';
     const br = window.AndroidBridge, orig = br.fmOp.bind(br);
     br.fmOp = (op, a, bb) => {
@@ -124,6 +125,25 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('8. at 360 px everything of the panel is inside the sheet, nothing scrolls sideways', wide);
   const tall = await ev(() => Array.from(document.querySelectorAll('#fmPermRow .fm-perm-grid label')).every(l => l.getBoundingClientRect().height >= 44));
   check('   each tick is at least 44 px tall to tap', tall);
+
+  // 9) review fixes: three typed digits then a tick keep the special bits; a link offers no mode (chmod would follow it); an id with no name
+  //    shows its number; View contents closes the panel
+  await openSheet(D, true);
+  await page.locator('#fmActionBtns button', { hasText: 'Permissions…' }).click(); await page.waitForTimeout(100);
+  await page.fill('#fmPermMode', '770'); await page.waitForTimeout(30);
+  await page.locator('#fmPermRow input[aria-label="Others: Read"]').check(); await page.waitForTimeout(30);
+  check('9. typing 770 and then ticking Others Read keeps the folder\'s setgid: 2774', (await ev(() => document.getElementById('fmPermMode').value)) === '2774', await ev(() => document.getElementById('fmPermMode').value));
+  const LN = '/storage/emulated/0/Download/ln';
+  await openSheet(LN, false);
+  await page.locator('#fmActionBtns button', { hasText: 'Permissions…' }).click(); await page.waitForTimeout(100);
+  const l9 = await ev(() => ({ grid: !!document.querySelector('#fmPermRow .fm-perm-grid'), modeBtn: !!document.getElementById('fmPermModeBtn'), note: (document.getElementById('fmPermLink') || {}).textContent,
+    ownBtn: !!document.getElementById('fmPermOwnBtn'), user: document.getElementById('fmPermUser').value, now: document.getElementById('fmPermNow').textContent }));
+  check('   a symbolic link: no ticks and no Apply permissions, a line says to change the file it points to; Apply owner stays', !l9.grid && !l9.modeBtn && l9.ownBtn && l9.note === 'This is a link: open the file it points to and change the permissions there', JSON.stringify(l9));
+  check('   an owner with no name (stat says UNKNOWN) shows its number 2001', l9.user === '2001' && l9.now.includes('· 2001 (2001):everybody (9997)'), JSON.stringify(l9));
+  await openSheet(F, false);
+  await page.locator('#fmActionBtns button', { hasText: 'Permissions…' }).click(); await page.waitForTimeout(80);
+  await ev(() => fmViewText()); await page.waitForTimeout(80);
+  check('   View contents closes the Permissions panel', await ev(() => getComputedStyle(document.getElementById('fmPermRow')).display === 'none'));
 
   check('no page errors', errors.length === 0, errors.join(' | '));
   await b.close();

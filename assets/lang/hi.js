@@ -1,6 +1,7 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "यह एक लिंक है: जिस फ़ाइल की ओर यह इशारा करता है उसे खोलें और वहीं अनुमतियाँ बदलें",
 "Also everything inside this folder": "इस फ़ोल्डर के अंदर का सब कुछ भी",
 "Apply owner": "मालिक लागू करें",
 "Apply permissions": "अनुमतियां लागू करें",

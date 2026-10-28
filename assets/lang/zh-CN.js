@@ -1,6 +1,7 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "这是一个链接：请打开它指向的文件，在那里更改权限",
 "Also everything inside this folder": "也包括此文件夹内的所有内容",
 "Apply owner": "应用所有者",
 "Apply permissions": "应用权限",

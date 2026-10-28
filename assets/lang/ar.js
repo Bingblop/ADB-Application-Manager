@@ -1,6 +1,7 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "هذا رابط: افتح الملف الذي يشير إليه وغيّر الأذونات هناك",
 "Also everything inside this folder": "وأيضًا كل ما في هذا المجلد",
 "Apply owner": "تطبيق المالك",
 "Apply permissions": "تطبيق الأذونات",

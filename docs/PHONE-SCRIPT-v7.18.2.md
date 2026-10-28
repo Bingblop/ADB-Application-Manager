@@ -16,5 +16,6 @@ About 10 minutes, one pass or fail per step. v7.18.2 brings root file management
 5. Type `shell` as Owner, empty the Group, **Apply owner**, Yes. **Pass:** the Now line shows owner shell (2000), the group as before.
 6. Put back the values the "Before" line showed (mode and owner). **Pass:** the Now line matches the first one of step 3.
 7. Open the sheet of `/data/local/tmp` itself. **Pass:** **Permissions…** answers "System location: not touched" when you apply anything.
-8. Make a folder `/data/local/tmp/t` with two files in it. **Permissions…** on `t`, type 700, tick **Also everything inside this folder**, **Apply permissions**. **Pass:** it asks first; after Yes, each file inside shows 0700 in its own Permissions….
-9. Delete `/data/local/tmp/p.txt` and `/data/local/tmp/t`.
+8. Open `/system/bin`, tap `ls` (a link to toybox) → **Permissions…**. **Pass:** no ticks and no **Apply permissions**; a line says "This is a link: open the file it points to and change the permissions there". Change nothing here.
+9. Make a folder `/data/local/tmp/t` with two files in it. **Permissions…** on `t`, type 700, tick **Also everything inside this folder**, **Apply permissions**. **Pass:** it asks first; after Yes, each file inside shows 0700 in its own Permissions….
+10. Delete `/data/local/tmp/p.txt` and `/data/local/tmp/t`.

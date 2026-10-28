@@ -1,6 +1,7 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "링크입니다. 링크가 가리키는 파일을 열어 그곳에서 권한을 변경하세요",
 "Also everything inside this folder": "이 폴더 안의 모든 항목도",
 "Apply owner": "소유자 적용",
 "Apply permissions": "권한 적용",

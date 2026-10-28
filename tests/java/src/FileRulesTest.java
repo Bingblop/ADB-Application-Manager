@@ -140,9 +140,11 @@ public class FileRulesTest {
         eq("a data folder recursively is fine", FileRules.permRefusal("/data/local/tmp/x", true), null);
         eq("no path", FileRules.permRefusal("", false), "No path");
         eq("relative path", FileRules.permRefusal("tmp/x", false), "No path");
-        eq("chmod", FileRules.chmodCommand("/data/local/tmp/a b", "644", false), "chmod 644 -- '/data/local/tmp/a b' && echo FMOK");
-        eq("chmod -R 4 digits", FileRules.chmodCommand("/data/x", "0755", true), "chmod -R 0755 -- '/data/x' && echo FMOK");
-        eq("chmod quote", FileRules.chmodCommand("/data/it's", "600", false), "chmod 600 -- '/data/it'\\''s' && echo FMOK");
+        eq("chmod (a link refused: chmod would follow it)", FileRules.chmodCommand("/data/local/tmp/a b", "644", false), "if [ -L '/data/local/tmp/a b' ]; then echo 'This is a link: open the file it points to and change the permissions there'; else chmod 644 -- '/data/local/tmp/a b' && echo FMOK; fi");
+        eq("chmod -R 4 digits", FileRules.chmodCommand("/data/x", "0755", true), "if [ -L '/data/x' ]; then echo 'This is a link: open the file it points to and change the permissions there'; else chmod -R 0755 -- '/data/x' && echo FMOK; fi");
+        eq("chmod quote", FileRules.chmodCommand("/data/it's", "600", false), "if [ -L '/data/it'\\''s' ]; then echo 'This is a link: open the file it points to and change the permissions there'; else chmod 600 -- '/data/it'\\''s' && echo FMOK; fi");
+        for (String op : new String[] { "stat", "chmod", "chmod-r", "chown", "chown-r" }) is("perm op keeps its mode/owner argument as typed: " + op, FileRules.isPermOp(op), true);
+        for (String op : new String[] { "cp", "mv", "rm", "mkdir", "touch", "chmodx", "", null }) is("a path op: " + op, FileRules.isPermOp(op), false);
         for (String bad : new String[] { "", "64", "888", "u+x", "12345", "644; rm -rf /", null }) {
             boolean threw = false;
             try { FileRules.chmodCommand("/data/x", bad, false); } catch (IllegalArgumentException e) { threw = true; }

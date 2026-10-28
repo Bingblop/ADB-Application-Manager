@@ -1,6 +1,7 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "これはリンクです。リンク先のファイルを開いて、そこで権限を変更してください",
 "Also everything inside this folder": "このフォルダ内のすべてにも",
 "Apply owner": "所有者を適用",
 "Apply permissions": "権限を適用",

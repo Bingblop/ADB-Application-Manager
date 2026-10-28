@@ -4613,6 +4613,7 @@
 {"k":"This font's emoji are made of pictures (CBDT or sbix), which cannot go inside a font. Choose a COLR emoji font.","ctx":"built by the code of: top level"},
 {"k":"This font's files changed since it was made. Make it again.","ctx":"built by the code of: top level"},
 {"k":"This font's maker does not allow it to be embedded or changed (\"restricted license\" in the font). Use it only if its license lets you.","ctx":"built by the code of: top level"},
+{"k":"This is a link: open the file it points to and change the permissions there","ctx":"built by the code of: fm perm render"},
 {"k":"This is a symbol family. Make a font needs a plain text font, so this one may not work there.","ctx":"built by the code of: gf render get"},
 {"k":"This is a symbol font, so emoji cannot be added to it. Set Emoji to None.","ctx":"built by the code of: top level"},
 {"k":"This is a symbol font: its characters are not at their Unicode places, so ordinary text does not show in it.","ctx":"built by the code of: top level"},

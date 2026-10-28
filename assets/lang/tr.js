@@ -1,6 +1,7 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "Bu bir bağlantı: işaret ettiği dosyayı açın ve izinleri orada değiştirin",
 "Also everything inside this folder": "Bu klasörün içindeki her şey de",
 "Apply owner": "Sahibi uygula",
 "Apply permissions": "İzinleri uygula",

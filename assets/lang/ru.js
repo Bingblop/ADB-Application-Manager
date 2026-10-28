@@ -1,6 +1,7 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "Это ссылка: откройте файл, на который она указывает, и измените разрешения там",
 "Also everything inside this folder": "Также всё содержимое этой папки",
 "Apply owner": "Применить владельца",
 "Apply permissions": "Применить разрешения",

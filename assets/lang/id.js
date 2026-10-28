@@ -1,6 +1,7 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "Ini adalah tautan: buka file yang ditunjuknya dan ubah izinnya di sana",
 "Also everything inside this folder": "Juga semua isi folder ini",
 "Apply owner": "Terapkan pemilik",
 "Apply permissions": "Terapkan izin",

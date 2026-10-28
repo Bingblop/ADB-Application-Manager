@@ -129,16 +129,28 @@ final class FileRules {
         return null;
     }
 
+    /** The ops of Root file management (stat, chmod, chown, and their "-r" forms): their second argument is a mode or owner:group, not a path. */
+    static boolean isPermOp(String op) {
+        return op != null && (op.equals("stat") || op.equals("chmod") || op.equals("chmod-r") || op.equals("chown") || op.equals("chown-r"));
+    }
+
+    /** What chmod answers for a symbolic link: chmod would change what the link points to, which no check here has looked at. */
+    static final String LINK_NO_CHMOD = "This is a link: open the file it points to and change the permissions there";
+
     /** The shell line that reads a path's mode, owner and SELinux label: a line "FMSTAT mode|user|group|uid|gid|type", then the label line. */
     static String statCommand(String path) {
         String q = sq(path);
         return "stat -c 'FMSTAT %a|%U|%G|%u|%g|%F' -- " + q + " && { ls -Zd -- " + q + " 2>/dev/null | head -n 1; true; }";
     }
 
-    /** chmod as a shell line ending in FMOK; the mode is three or four octal digits (else IllegalArgumentException with the reason). */
+    /**
+     * chmod as a shell line ending in FMOK; the mode is three or four octal digits (else IllegalArgumentException with the reason). A symbolic
+     * link is refused ({@link #LINK_NO_CHMOD}): chmod follows it, so it would change a file the protection checks never saw.
+     */
     static String chmodCommand(String path, String mode, boolean recursive) {
         if (mode == null || !MODE.matcher(mode).matches()) throw new IllegalArgumentException("The mode must be three or four digits from 0 to 7, such as 644");
-        return "chmod " + (recursive ? "-R " : "") + mode + " -- " + sq(path) + " && echo FMOK";
+        String q = sq(path);
+        return "if [ -L " + q + " ]; then echo " + sq(LINK_NO_CHMOD) + "; else chmod " + (recursive ? "-R " : "") + mode + " -- " + q + " && echo FMOK; fi";
     }
 
     /**

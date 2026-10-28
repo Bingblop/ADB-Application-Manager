@@ -1,6 +1,7 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+"This is a link: open the file it points to and change the permissions there": "Esto es un enlace: abre el archivo al que apunta y cambia los permisos allí",
 "Also everything inside this folder": "También todo lo que hay en esta carpeta",
 "Apply owner": "Aplicar propietario",
 "Apply permissions": "Aplicar permisos",
