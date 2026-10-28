@@ -1,6 +1,13 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.": "Использует лучший готовый режим: Super User → Shizuku (UID 0/1000) → ADB TCP → отладка по Wi-Fi → Shizuku (UID 2000). Выберите конкретный режим ниже, чтобы закрепить его.",
+"Android controls it by its app op: allow or stop it here.": "Android управляет им через app op: разрешите или остановите его здесь.",
+"Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.": "Android отклонил эту app op из оболочки. Изменить её может Super User или Shizuku, запущенный как система (UID 1000).",
+"Found on this Wi-Fi": "Найдено в этой сети Wi-Fi",
+"Paired. Looking for its connect port...": "Сопряжено. Ищем порт подключения...",
+"Super User is no longer available. The working mode is back on Automatic.": "Super User больше недоступен. Режим работы снова «Автоматически».",
+"not set yet": "ещё не задано",
 "How strongly each line is tinted in the colour of its level.": "Насколько сильно каждая строка окрашивается в цвет своего уровня.",
 "On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Вкл.: оттенок плавно угасает вдоль строки от её начала. Выкл.: вся строка одного ровного цвета.",
 "SELinux label": "Метка SELinux",
@@ -28,8 +35,6 @@ x: {
 "Additional Monet Customization": "Дополнительная настройка Monet",
 "Check for updates on mobile data": "Проверять обновления по мобильной сети",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Сохраните копию своей темы (цвет, стиль и настройки темы только для Root) и верните её из файла резервной копии. Восстановление заполняет эту вкладку; «Применить тему» записывает её на телефон.",
-"Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.": "Выкл.: обновления приложений проверяются только по Wi-Fi; в мобильной сети остаются последние результаты. По умолчанию выключено.",
-"Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.": "Выкл.: каталоги магазинов загружаются и обновляются только по Wi-Fi; в мобильной сети показывается прежняя копия. По умолчанию выключено.",
 "Open tab": "Открыть вкладку",
 "Pure black, more styles, intensity and your own accents for every app that uses Monet colors.": "Чистый чёрный, больше стилей, интенсивность и свои акценты для каждого приложения, использующего цвета Monet.",
 "Restore theme": "Восстановить тему",
@@ -4516,7 +4521,6 @@ x: {
 "User": "Пользователь",
 "User (": "Пользовательские (",
 "Uses Root. The app is stopped while its data is copied.": "Использует Root. Пока копируются данные, приложение остановлено.",
-"Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "Использует лучший готовый режим: ADB TCP → отладка по Wi-Fi → Shizuku. Выберите конкретный режим ниже, чтобы закрепить его.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Использует системную службу Shizuku для выполнения команд от имени shell UID 2000 без Root. Работает вместе с ADB TCP 5555 — авторизация Shizuku переключает на него.",
 "Using the VirusTotal API key from Settings (approved).": "Используется ключ API VirusTotal из настроек (подтверждён).",
 "V": "V",
@@ -5681,6 +5685,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Выбранные вами файлы ещё читаются. Подождите немного."
 },
 p: [
+["Android kept {0} at {1}", "Android оставил {0} в режиме {1}"],
 ["Label before the last change: {0}", "Метка до последнего изменения: {0}"],
 ["Before the last change: {0} ({1}) {2}", "До последнего изменения: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Не удалось прочитать разрешения: {0}"],

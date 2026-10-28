@@ -1,6 +1,13 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.": "Menggunakan backend terbaik yang siap: Super User → Shizuku (UID 0/1000) → ADB TCP → Debugging nirkabel → Shizuku (UID 2000). Pilih mode tertentu di bawah untuk menyematkannya.",
+"Android controls it by its app op: allow or stop it here.": "Android mengendalikannya lewat app op-nya: izinkan atau hentikan di sini.",
+"Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.": "Android menolak app op ini dari shell. Super User, atau Shizuku yang berjalan sebagai sistem (UID 1000), dapat mengubahnya.",
+"Found on this Wi-Fi": "Ditemukan di Wi-Fi ini",
+"Paired. Looking for its connect port...": "Tersambung. Mencari port koneksinya...",
+"Super User is no longer available. The working mode is back on Automatic.": "Super User tidak tersedia lagi. Mode kerja kembali ke Otomatis.",
+"not set yet": "belum diatur",
 "How strongly each line is tinted in the colour of its level.": "Seberapa kuat setiap baris diwarnai dengan warna levelnya.",
 "On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Aktif: setiap warna memudar di sepanjang baris dari awalnya. Nonaktif: seluruh baris berwarna rata.",
 "SELinux label": "Label SELinux",
@@ -28,8 +35,6 @@ x: {
 "Additional Monet Customization": "Kustomisasi Monet Tambahan",
 "Check for updates on mobile data": "Periksa pembaruan dengan data seluler",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Simpan salinan tema kustom Anda (warna, gaya, dan kontrol tema khusus Root) lalu kembalikan dari file cadangan. Memulihkan mengisi tab ini; Terapkan tema menuliskannya ke ponsel.",
-"Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.": "Mati: aplikasi hanya diperiksa pembaruannya lewat Wi-Fi; dengan data seluler hasil terakhir tetap ada. Mati secara bawaan.",
-"Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.": "Mati: katalog toko hanya diunduh dan diperbarui lewat Wi-Fi; dengan data seluler salinan sebelumnya yang ditampilkan. Mati secara bawaan.",
 "Open tab": "Buka tab",
 "Pure black, more styles, intensity and your own accents for every app that uses Monet colors.": "Hitam pekat, lebih banyak gaya, intensitas, dan aksen Anda sendiri untuk setiap aplikasi yang memakai warna Monet.",
 "Restore theme": "Pulihkan tema",
@@ -4515,7 +4520,6 @@ x: {
 "User": "Pengguna",
 "User (": "Pengguna (",
 "Uses Root. The app is stopped while its data is copied.": "Menggunakan Root. Aplikasi dihentikan selama datanya disalin.",
-"Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "Menggunakan backend terbaik yang siap: ADB TCP → Debugging nirkabel → Shizuku. Pilih mode tertentu di bawah untuk menyematkannya.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Menggunakan layanan Shizuku sistem untuk menjalankan perintah di bawah UID shell 2000 tanpa root. Bekerja berdampingan dengan ADB TCP 5555 — mengotorisasi Shizuku akan langsung beralih ke Shizuku.",
 "Using the VirusTotal API key from Settings (approved).": "Memakai kunci API VirusTotal dari Pengaturan (disetujui).",
 "V": "V",
@@ -5681,6 +5685,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "File yang Anda pilih masih dibaca. Tunggu sebentar."
 },
 p: [
+["Android kept {0} at {1}", "Android tetap menyetel {0} ke {1}"],
 ["Label before the last change: {0}", "Label sebelum perubahan terakhir: {0}"],
 ["Before the last change: {0} ({1}) {2}", "Sebelum perubahan terakhir: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Izin tidak dapat dibaca: {0}"],

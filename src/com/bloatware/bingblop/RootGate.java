@@ -31,4 +31,26 @@ public final class RootGate {
         if (active(mode, suGranted)) return true;
         return "shizuku".equals(mode) && shizukuAuthorized && shizukuUid == 0;
     }
+
+    /**
+     * The order Automatic follows (v7.19.0): Super User, then Shizuku running as root or as the Android system user (uid 0 or 1000), then ADB over
+     * TCP (port 5555), then Wireless Debugging, then Shizuku as the ADB shell user (uid 2000, or a uid that is not known). The first that is ready
+     * wins: "root", "shizuku", "adb_tcp" or "adb_wireless", or null when none is. uid 1000 is the system user, never root.
+     */
+    public static String autoPick(boolean suGranted, boolean shizukuAuthorized, int shizukuUid, boolean tcpReady, boolean wirelessReady) {
+        if (suGranted) return "root";
+        if (shizukuAuthorized && (shizukuUid == 0 || shizukuUid == 1000)) return "shizuku";
+        if (tcpReady) return "adb_tcp";
+        if (wirelessReady) return "adb_wireless";
+        if (shizukuAuthorized) return "shizuku";
+        return null;
+    }
+
+    /**
+     * Super User is the chosen mode and is gone: the phone has no su any more, or su said no (or gave no answer) the last time it was asked
+     * ({@code lastAnswer} FALSE; null is "not asked yet", which is not a loss). The app then goes back to Automatic (v7.19.0).
+     */
+    public static boolean rootLost(String configured, boolean suFound, Boolean lastAnswer) {
+        return "root".equals(configured) && (!suFound || Boolean.FALSE.equals(lastAnswer));
+    }
 }

@@ -1,6 +1,13 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.": "तैयार सबसे अच्छा बैकएंड इस्तेमाल करता है: Super User → Shizuku (UID 0/1000) → ADB TCP → वायरलेस डीबगिंग → Shizuku (UID 2000)। इसके बजाय किसी खास मोड को पिन करने के लिए नीचे उसे चुनें।",
+"Android controls it by its app op: allow or stop it here.": "Android इसे इसके app op से नियंत्रित करता है: यहाँ अनुमति दें या रोकें।",
+"Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.": "Android ने shell से यह app op अस्वीकार कर दिया। Super User, या सिस्टम (UID 1000) के रूप में चल रहा Shizuku, इसे बदल सकता है।",
+"Found on this Wi-Fi": "इस Wi-Fi पर मिले",
+"Paired. Looking for its connect port...": "पेयर हो गया। इसका कनेक्ट पोर्ट ढूँढा जा रहा है...",
+"Super User is no longer available. The working mode is back on Automatic.": "Super User अब उपलब्ध नहीं है। वर्किंग मोड वापस ऑटोमैटिक पर है।",
+"not set yet": "अभी सेट नहीं",
 "How strongly each line is tinted in the colour of its level.": "हर पंक्ति को उसके स्तर के रंग में कितना गहरा रंगा जाए।",
 "On: each tint fades across the line from its start. Off: the whole line is one even colour.": "चालू: हर रंग पंक्ति की शुरुआत से धीरे-धीरे फीका होता है। बंद: पूरी पंक्ति एक समान रंग की होती है।",
 "SELinux label": "SELinux लेबल",
@@ -28,8 +35,6 @@ x: {
 "Additional Monet Customization": "अतिरिक्त Monet कस्टमाइज़ेशन",
 "Check for updates on mobile data": "मोबाइल डेटा पर अपडेट जाँचें",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "अपनी कस्टम थीम (रंग, स्टाइल और सिर्फ़ Root वाले थीम नियंत्रण) की एक कॉपी रखें और उसे बैकअप फ़ाइल से वापस लाएँ। रीस्टोर करने से यह टैब भर जाता है; थीम लागू करें उसे फ़ोन पर लिखता है।",
-"Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.": "बंद: ऐप्स के अपडेट सिर्फ़ Wi-Fi पर जाँचे जाते हैं; मोबाइल डेटा पर पिछले नतीजे बने रहते हैं। डिफ़ॉल्ट रूप से बंद।",
-"Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.": "बंद: स्टोर कैटलॉग सिर्फ़ Wi-Fi पर डाउनलोड और रीफ़्रेश होते हैं; मोबाइल डेटा पर पिछली कॉपी दिखती है। डिफ़ॉल्ट रूप से बंद।",
 "Open tab": "टैब खोलें",
 "Pure black, more styles, intensity and your own accents for every app that uses Monet colors.": "पूरा काला, ज़्यादा स्टाइल, तीव्रता और Monet रंग इस्तेमाल करने वाले हर ऐप के लिए आपके अपने एक्सेंट।",
 "Restore theme": "थीम रीस्टोर करें",
@@ -4516,7 +4521,6 @@ x: {
 "User": "उपयोगकर्ता",
 "User (": "उपयोगकर्ता (",
 "Uses Root. The app is stopped while its data is copied.": "Root इस्तेमाल करता है। डेटा कॉपी होते समय ऐप रोका जाता है।",
-"Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "तैयार सबसे अच्छा बैकएंड इस्तेमाल करता है: ADB TCP → वायरलेस डीबगिंग → Shizuku। इसके बजाय किसी खास मोड को पिन करने के लिए नीचे उसे चुनें।",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Root के बिना शेल UID 2000 के तहत कमांड चलाने के लिए सिस्टम की Shizuku सेवा इस्तेमाल करता है। ADB TCP 5555 के साथ काम करता है — Shizuku को अधिकृत करने पर यह उसी पर स्विच हो जाता है।",
 "Using the VirusTotal API key from Settings (approved).": "सेटिंग की VirusTotal API कुंजी इस्तेमाल हो रही है (मंज़ूर)।",
 "V": "V",
@@ -5681,6 +5685,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "आपकी चुनी हुई फ़ाइलें अभी पढ़ी जा रही हैं। थोड़ा रुकें।"
 },
 p: [
+["Android kept {0} at {1}", "Android ने {0} को {1} पर ही रखा"],
 ["Label before the last change: {0}", "पिछले बदलाव से पहले का लेबल: {0}"],
 ["Before the last change: {0} ({1}) {2}", "पिछले बदलाव से पहले: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "अनुमतियां पढ़ी नहीं जा सकीं: {0}"],

@@ -1,5 +1,19 @@
 # Changelog
 
+## v7.19.0-Pro (versionCode 870)
+
+A release on top of v7.18.3, cut from `main`, with the eight fixes and enhancements the owner asked for on 2026-10-28. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone**; the page was checked in a headless browser with a mock and the Java by the Java suite. `docs/PHONE-SCRIPT-v7.19.0.md` is the phone script.
+
+- **Working mode order.** **Automatic** now uses the first of these that is ready: **Super User** (su granted), **Shizuku as root (UID 0) or as the system user (UID 1000)**, **ADB over TCP** (5555), **Wireless Debugging**, and **Shizuku as the shell user (UID 2000)** last. The Automatic card says so. Before, Automatic never used Super User and put every Shizuku after Wireless Debugging.
+- **Super User lost.** When **Super User** is the chosen mode and su is gone or said no, the app switches the working mode back to **Automatic** by itself and says *Super User is no longer available. The working mode is back on Automatic.*
+- **Connected Devices: paired devices on your Wi-Fi.** A refresh also asks adb which paired devices announce wireless debugging on the same Wi-Fi; they show under **Found on this Wi-Fi** with their IP and current port and a **Connect** button. **+ Add device** types the first one in for you, and after a successful **Pair** the app finds the new device's connect port and connects by itself.
+- **Saved devices: one entry per IP.** A device that comes back on another port (Wireless debugging picks a new one each time) replaces its old entry instead of adding one more; lists saved by older versions are merged the same way. Connect on a saved Wi-Fi device uses the port it announces now.
+- **Kill Apps runs to the end.** The run is held by a foreground job with its notification, so it is not frozen or killed half way with the screen off or the app in the background, and Back no longer ends it. The apps that draw its notification or that the run goes through are stopped last: the keyboard, the home screen, **System UI** (stopping it in the middle made the live notification vanish), and Shizuku and the root manager at the very end.
+- **App ops and permissions.** Changing an op that also has a uid-level mode now sets both (Android uses the stricter one, so the change used to look ignored); every change is read back, and a mode Android kept is said instead of claimed. The ops behind an app's permissions are listed even before Android has a mode for them. Permissions controlled by an app op (Display over other apps, Usage access, Modify system settings ...) get a working GRANTED / DENIED toggle. Large apps whose permission list was too big to read at once show their permissions again.
+- **DNS: Sort by speed** is on by default and remembers what you last chose.
+- **Mobile data switches.** **Update stores on mobile data** (App Stores) and **Check for updates on mobile data** (App Updater) are slim one-line switches at the top of their pages, without the description.
+- **Help Guide** (connect, apps, tools, system, devices) and every new text in all 14 languages.
+
 ## v7.18.3-Pro (versionCode 869)
 
 A small release on top of v7.18.2, cut from `main`, with the owner's VirusTotal key and Live Logcat Row tints requests and answering the owner's question of 2026-10-28 ("does the file manager have full control over files that are normally blocked, when Super User is granted?"). Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone**; the page was checked in a headless browser with a mock, the command builder by the Java suite. `docs/PHONE-SCRIPT-v7.18.3.md` is the phone script.

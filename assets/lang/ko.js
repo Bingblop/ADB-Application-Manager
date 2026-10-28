@@ -1,6 +1,13 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.": "준비된 가장 좋은 백엔드를 사용합니다: Super User → Shizuku (UID 0/1000) → ADB TCP → 무선 디버깅 → Shizuku (UID 2000). 대신 고정하려면 아래에서 특정 모드를 선택하세요.",
+"Android controls it by its app op: allow or stop it here.": "Android가 앱 작업(app op)으로 제어합니다: 여기서 허용하거나 중지하세요.",
+"Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.": "Android가 셸에서 이 app op를 거부했습니다. Super User 또는 시스템(UID 1000)으로 실행 중인 Shizuku가 변경할 수 있습니다.",
+"Found on this Wi-Fi": "이 Wi-Fi에서 찾음",
+"Paired. Looking for its connect port...": "페어링됨. 연결 포트를 찾는 중...",
+"Super User is no longer available. The working mode is back on Automatic.": "Super User를 더 이상 사용할 수 없습니다. 작동 모드가 자동으로 돌아갔습니다.",
+"not set yet": "아직 설정 안 됨",
 "How strongly each line is tinted in the colour of its level.": "각 줄을 해당 수준의 색으로 얼마나 진하게 칠할지 정합니다.",
 "On: each tint fades across the line from its start. Off: the whole line is one even colour.": "켜짐: 각 색이 줄의 시작부터 점점 옅어집니다. 꺼짐: 줄 전체가 고른 한 가지 색입니다.",
 "SELinux label": "SELinux 레이블",
@@ -28,8 +35,6 @@ x: {
 "Additional Monet Customization": "추가 Monet 사용자 지정",
 "Check for updates on mobile data": "모바일 데이터로 업데이트 확인",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "사용자 지정 테마(색상, 스타일, Root 전용 테마 설정)의 사본을 보관하고 백업 파일에서 되돌립니다. 복원하면 이 탭이 채워지고, 테마 적용을 누르면 휴대폰에 기록됩니다.",
-"Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.": "끄기: 앱 업데이트는 Wi-Fi에서만 확인합니다. 모바일 데이터에서는 마지막 결과가 유지됩니다. 기본값은 끄기.",
-"Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.": "끄기: 스토어 카탈로그는 Wi-Fi에서만 다운로드하고 새로 고칩니다. 모바일 데이터에서는 이전 사본이 표시됩니다. 기본값은 끄기.",
 "Open tab": "탭 열기",
 "Pure black, more styles, intensity and your own accents for every app that uses Monet colors.": "Monet 색상을 쓰는 모든 앱을 위한 완전한 검정, 더 많은 스타일, 강도, 나만의 강조 색상.",
 "Restore theme": "테마 복원",
@@ -4515,7 +4520,6 @@ x: {
 "User": "사용자",
 "User (": "사용자 (",
 "Uses Root. The app is stopped while its data is copied.": "Root를 사용합니다. 데이터를 복사하는 동안 앱이 중지됩니다.",
-"Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "준비된 가장 좋은 백엔드를 사용합니다: ADB TCP → 무선 디버깅 → Shizuku. 대신 고정하려면 아래에서 특정 모드를 선택하세요.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "시스템 Shizuku 서비스를 사용해 Root 없이 셸 UID 2000으로 명령어를 실행합니다. ADB TCP 5555와 함께 사용할 수 있으며, Shizuku를 승인하면 Shizuku로 전환됩니다.",
 "Using the VirusTotal API key from Settings (approved).": "설정의 VirusTotal API 키를 사용 중입니다(승인됨).",
 "V": "V",
@@ -5681,6 +5685,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "선택한 파일을 아직 읽는 중입니다. 잠시 기다리세요."
 },
 p: [
+["Android kept {0} at {1}", "Android가 {0}을(를) {1}(으)로 유지했습니다"],
 ["Label before the last change: {0}", "마지막 변경 전 레이블: {0}"],
 ["Before the last change: {0} ({1}) {2}", "마지막 변경 전: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "권한을 읽을 수 없습니다: {0}"],

@@ -222,6 +222,7 @@
   <ul>
     <li><b>GRANTED</b> or <b>DENIED</b>: a runtime permission (the kind Android asks you about, like Camera or Location). Tap it to flip it. A message says "Revoked (name)" or "Granted (name)". Android can close the app when you take a permission away.</li>
     <li><b>A padlock with GRANTED or NOT GRANTED</b>: an install-time permission. Android fixed it when the app was installed and does not let anyone change it later, so this button does nothing. The padlock is the reason.</li>
+    <li><b>GRANTED or DENIED on a permission tagged "app op"</b> that <code>pm grant</code> cannot change (Display over other apps, Usage access, Modify system settings and others): the button switches its app op between allow and ignore instead (since 7.19.0).</li>
     <li><b>A padlock on a GRANTED / DENIED button</b>: you could change it, but you have no working mode right now. Set one up and the padlock goes.</li>
   </ul>
 
@@ -235,6 +236,7 @@
     <li><b>Deny</b>: the request is refused with an error.</li>
     <li><b>Reset</b>: back to Android's default for that op.</li>
   </ul>
+  <p>The ops behind the app's permissions are listed even when Android has not recorded a mode for them yet ("not set yet"). Android uses the stricter of an op's uid-level mode and its app-level mode, so when an op has a uid-level mode both are set. After a change the app reads the op back: if Android kept another mode, a message says so (<i>Android kept CAMERA at ignore</i>) instead of claiming the change. Some ops refuse the ADB shell: Super User, or Shizuku running as the system user (UID 1000), can change them. Large apps whose permission list was too big to read at once now show their permissions too.</p>
   <p>Under the list, a field "Other op, e.g. RUN_ANY_IN_BACKGROUND", a mode menu and a <b>Set</b> button let you set an op that is not listed.</p>
 
   <h5>Activities</h5>
@@ -606,6 +608,7 @@
     <li><b>Tapping the notification</b> opens this app on <b>Saved Applications</b> with the <b>Edit Saved List</b> sheet of the quick list (the same sheet as <b>Edit</b> on that list's card). The run is not touched: it goes on while you look, and its notification stays. If the Saved Applications tab was turned off, it is turned on again, and a message says so.</li>
     <li>On <b>Android 16 and newer</b> the notification is asked for as a <b>Live Update</b>: the phone may show it as a small chip in the status bar ("3/12"). That needs the <b>Live updates</b> row of the <a href="#app-permissions">permissions sheet</a> (Notifications as well). Where the phone does not show it as a Live Update, you get the same notification without the chip.</li>
     <li>Swiping the notification away does not stop the run; it just stays hidden until the run is over.</li>
+    <li>The run keeps going to the last app with the screen off or the app in the background: it runs as a foreground job, and the apps that draw the notification or that the run needs are stopped last, in this order: the keyboard, the home screen, System UI (stopping it earlier made the notification vanish mid-run), and Shizuku and the root manager at the very end (stopping the one the run goes through ends it). Back while a run is going leaves it running.</li>
     <li>A second tap while a run is going does not start another one: the message says "Kill Apps is already running. Tap Cancel in its notification to stop it."</li>
   </ul>
   <h4>Apps it never stops</h4>

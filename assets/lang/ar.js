@@ -1,6 +1,13 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.": "يستخدم أفضل واجهة خلفية جاهزة: Super User ← Shizuku (UID 0/1000) ← ADB TCP ← تصحيح الأخطاء اللاسلكي ← Shizuku (UID 2000). اختر وضعًا محددًا أدناه لتثبيته بدلًا من ذلك.",
+"Android controls it by its app op: allow or stop it here.": "يتحكم Android فيه عبر app op الخاص به: اسمح به أو أوقفه هنا.",
+"Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.": "رفض Android هذا الـ app op من الـ shell. يمكن لـ Super User، أو Shizuku العامل كنظام (UID 1000)، تغييره.",
+"Found on this Wi-Fi": "تم العثور عليها على شبكة Wi-Fi هذه",
+"Paired. Looking for its connect port...": "تم الاقتران. جارٍ البحث عن منفذ الاتصال...",
+"Super User is no longer available. The working mode is back on Automatic.": "لم يعد Super User متاحًا. عاد وضع التشغيل إلى تلقائي.",
+"not set yet": "لم يُضبط بعد",
 "How strongly each line is tinted in the colour of its level.": "مدى قوة تلوين كل سطر بلون مستواه.",
 "On: each tint fades across the line from its start. Off: the whole line is one even colour.": "تشغيل: يتلاشى كل لون عبر السطر من بدايته. إيقاف: يصبح السطر كله لونًا واحدًا متساويًا.",
 "SELinux label": "تصنيف SELinux",
@@ -28,8 +35,6 @@ x: {
 "Additional Monet Customization": "تخصيص Monet إضافي",
 "Check for updates on mobile data": "البحث عن التحديثات عبر بيانات الجوال",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "احتفظ بنسخة من سمتك المخصصة (اللون والنمط وعناصر التحكم في السمة الخاصة بـ Root) واستعدها من ملف نسخة احتياطية. الاستعادة تملأ هذا التبويب؛ وتطبيق السمة يكتبها على الهاتف.",
-"Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.": "إيقاف: يتم البحث عن تحديثات التطبيقات عبر Wi-Fi فقط؛ وعلى بيانات الجوال تبقى النتائج الأخيرة. متوقف افتراضيًا.",
-"Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.": "إيقاف: يتم تنزيل كتالوجات المتاجر وتحديثها عبر Wi-Fi فقط؛ وعلى بيانات الجوال تظهر النسخة السابقة. متوقف افتراضيًا.",
 "Open tab": "فتح التبويب",
 "Pure black, more styles, intensity and your own accents for every app that uses Monet colors.": "أسود خالص وأنماط أكثر وشدة ولمسات لونية خاصة بك لكل تطبيق يستخدم ألوان Monet.",
 "Restore theme": "استعادة السمة",
@@ -4516,7 +4521,6 @@ x: {
 "User": "المستخدم",
 "User (": "المستخدم (",
 "Uses Root. The app is stopped while its data is copied.": "يستخدم Root. يتم إيقاف التطبيق أثناء نسخ بياناته.",
-"Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "يستخدم أفضل واجهة خلفية جاهزة: ADB TCP ← تصحيح الأخطاء اللاسلكي ← Shizuku. اختر وضعًا محددًا أدناه لتثبيته بدلًا من ذلك.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "يستخدم خدمة Shizuku في النظام لتنفيذ الأوامر تحت shell UID 2000 دون Root. يعمل إلى جانب ADB TCP 5555 — وتفويض Shizuku ينقلك إليه.",
 "Using the VirusTotal API key from Settings (approved).": "يُستخدم مفتاح VirusTotal API من الإعدادات (معتمد).",
 "V": "V",
@@ -5681,6 +5685,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "لا تزال قراءة الملفات التي اخترتها جارية. انتظر لحظة."
 },
 p: [
+["Android kept {0} at {1}", "أبقى Android ‏{0} على {1}"],
 ["Label before the last change: {0}", "التصنيف قبل آخر تغيير: {0}"],
 ["Before the last change: {0} ({1}) {2}", "قبل آخر تغيير: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "تعذّرت قراءة الأذونات: {0}"],
