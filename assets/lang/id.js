@@ -1,6 +1,12 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "Seberapa kuat setiap baris diwarnai dengan warna levelnya.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Aktif: setiap warna memudar di sepanjang baris dari awalnya. Nonaktif: seluruh baris berwarna rata.",
+"SELinux label": "Label SELinux",
+"Not shown": "Tidak ditampilkan",
+"Restore the default label": "Pulihkan label bawaan",
+"the default label": "label bawaan",
 "This is a link: open the file it points to and change the permissions there": "Ini adalah tautan: buka file yang ditunjuknya dan ubah izinnya di sana",
 "Also everything inside this folder": "Juga semua isi folder ini",
 "Apply owner": "Terapkan pemilik",
@@ -5675,6 +5681,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "File yang Anda pilih masih dibaca. Tunggu sebentar."
 },
 p: [
+["Label before the last change: {0}", "Label sebelum perubahan terakhir: {0}"],
 ["Before the last change: {0} ({1}) {2}", "Sebelum perubahan terakhir: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Izin tidak dapat dibaca: {0}"],
 ["Done: {0}", "Selesai: {0}"],

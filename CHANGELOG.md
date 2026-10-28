@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.18.3-Pro (versionCode 869)
+
+A small release on top of v7.18.2, cut from `main`, with the owner's VirusTotal key and Live Logcat Row tints requests and answering the owner's question of 2026-10-28 ("does the file manager have full control over files that are normally blocked, when Super User is granted?"). Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone**; the page was checked in a headless browser with a mock, the command builder by the Java suite. `docs/PHONE-SCRIPT-v7.18.3.md` is the phone script.
+
+- **Restore the default label** in the File Manager's **Permissions…** (root user only): a new **SELinux label** part shows the item's label and puts back the one the system policy gives that place (`restorecon`), for a folder optionally with everything inside it (asked first). It is the fix for a file copied or moved into another app's data that keeps a label the app cannot use; it never sets a label of your choosing. After it the panel reads the item again and keeps a line **Label before the last change:**.
+- **VirusTotal API key field** (Settings, the owner's request): with a key saved, the field is no longer blank when Settings opens: it holds the key as dots, so it is plain that a key is entered. Remove still empties it.
+- **Row tints on Live Logcat** (the owner's request): a **Row tints** button at the end of the Record / Copy / Save / Share row opens a sheet with the Row tints slider and the **Gradient** switch, the same setting as Settings and the Apps tab's search menu (all three stay in step).
+- **Help Guide**: *Root file management* lists what runs as root (browse, read, edit, create, copy, move, rename, delete, mode, owner, label), what is always refused, and why the system partitions stay read-only.
+
 ## v7.18.2-Pro (versionCode 868)
 
 A small release on top of v7.18.1, cut from `main`, with the owner's request of 2026-10-28: full root file management. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. This app roots nothing: the new parts need Root as the working mode with su granted, or Shizuku running as root (UID 0), and are shown locked (never hidden) without it. **Nothing in it has been run on a phone**; the page was checked in a headless browser with a mock, the command builder by the Java suite. `docs/PHONE-SCRIPT-v7.18.2.md` is the phone script.

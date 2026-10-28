@@ -1,6 +1,12 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "각 줄을 해당 수준의 색으로 얼마나 진하게 칠할지 정합니다.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "켜짐: 각 색이 줄의 시작부터 점점 옅어집니다. 꺼짐: 줄 전체가 고른 한 가지 색입니다.",
+"SELinux label": "SELinux 레이블",
+"Not shown": "표시되지 않음",
+"Restore the default label": "기본 레이블 복원",
+"the default label": "기본 레이블",
 "This is a link: open the file it points to and change the permissions there": "링크입니다. 링크가 가리키는 파일을 열어 그곳에서 권한을 변경하세요",
 "Also everything inside this folder": "이 폴더 안의 모든 항목도",
 "Apply owner": "소유자 적용",
@@ -5675,6 +5681,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "선택한 파일을 아직 읽는 중입니다. 잠시 기다리세요."
 },
 p: [
+["Label before the last change: {0}", "마지막 변경 전 레이블: {0}"],
 ["Before the last change: {0} ({1}) {2}", "마지막 변경 전: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "권한을 읽을 수 없습니다: {0}"],
 ["Done: {0}", "완료: {0}"],

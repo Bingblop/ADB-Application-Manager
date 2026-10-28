@@ -1,6 +1,12 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "हर पंक्ति को उसके स्तर के रंग में कितना गहरा रंगा जाए।",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "चालू: हर रंग पंक्ति की शुरुआत से धीरे-धीरे फीका होता है। बंद: पूरी पंक्ति एक समान रंग की होती है।",
+"SELinux label": "SELinux लेबल",
+"Not shown": "नहीं दिखाया गया",
+"Restore the default label": "डिफ़ॉल्ट लेबल वापस लाएँ",
+"the default label": "डिफ़ॉल्ट लेबल",
 "This is a link: open the file it points to and change the permissions there": "यह एक लिंक है: जिस फ़ाइल की ओर यह इशारा करता है उसे खोलें और वहीं अनुमतियाँ बदलें",
 "Also everything inside this folder": "इस फ़ोल्डर के अंदर का सब कुछ भी",
 "Apply owner": "मालिक लागू करें",
@@ -5675,6 +5681,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "आपकी चुनी हुई फ़ाइलें अभी पढ़ी जा रही हैं। थोड़ा रुकें।"
 },
 p: [
+["Label before the last change: {0}", "पिछले बदलाव से पहले का लेबल: {0}"],
 ["Before the last change: {0} ({1}) {2}", "पिछले बदलाव से पहले: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "अनुमतियां पढ़ी नहीं जा सकीं: {0}"],
 ["Done: {0}", "हो गया: {0}"],

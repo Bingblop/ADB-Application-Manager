@@ -1,6 +1,12 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "Wie stark jede Zeile in der Farbe ihrer Stufe getönt wird.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Ein: Jede Tönung verläuft vom Anfang über die Zeile. Aus: Die ganze Zeile hat eine gleichmäßige Farbe.",
+"SELinux label": "SELinux-Label",
+"Not shown": "Nicht angezeigt",
+"Restore the default label": "Standard-Label wiederherstellen",
+"the default label": "das Standard-Label",
 "This is a link: open the file it points to and change the permissions there": "Das ist ein Link: Öffnen Sie die Datei, auf die er zeigt, und ändern Sie dort die Berechtigungen",
 "Also everything inside this folder": "Auch alles in diesem Ordner",
 "Apply owner": "Besitzer anwenden",
@@ -5675,6 +5681,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Die gewählten Dateien werden noch gelesen. Warten Sie kurz."
 },
 p: [
+["Label before the last change: {0}", "Label vor der letzten Änderung: {0}"],
 ["Before the last change: {0} ({1}) {2}", "Vor der letzten Änderung: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Die Berechtigungen ließen sich nicht lesen: {0}"],
 ["Done: {0}", "Erledigt: {0}"],

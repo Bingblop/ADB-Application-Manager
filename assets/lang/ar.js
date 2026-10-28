@@ -1,6 +1,12 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "مدى قوة تلوين كل سطر بلون مستواه.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "تشغيل: يتلاشى كل لون عبر السطر من بدايته. إيقاف: يصبح السطر كله لونًا واحدًا متساويًا.",
+"SELinux label": "تصنيف SELinux",
+"Not shown": "غير معروض",
+"Restore the default label": "استعادة التصنيف الافتراضي",
+"the default label": "التصنيف الافتراضي",
 "This is a link: open the file it points to and change the permissions there": "هذا رابط: افتح الملف الذي يشير إليه وغيّر الأذونات هناك",
 "Also everything inside this folder": "وأيضًا كل ما في هذا المجلد",
 "Apply owner": "تطبيق المالك",
@@ -5675,6 +5681,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "لا تزال قراءة الملفات التي اخترتها جارية. انتظر لحظة."
 },
 p: [
+["Label before the last change: {0}", "التصنيف قبل آخر تغيير: {0}"],
 ["Before the last change: {0} ({1}) {2}", "قبل آخر تغيير: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "تعذّرت قراءة الأذونات: {0}"],
 ["Done: {0}", "تم: {0}"],

@@ -27,5 +27,9 @@ ok   9. typing 770 and then ticking Others Read keeps the folder's setgid: 2774
 ok      a symbolic link: no ticks and no Apply permissions, a line says to change the file it points to; Apply owner stays
 ok      an owner with no name (stat says UNKNOWN) shows its number 2001
 ok      View contents closes the Permissions panel
+ok   10. the panel shows the SELinux label and Restore the default label
+ok      on a file it sends restorecon at once, then reads the path again
+ok      the panel shows the new label and the label before
+ok      a folder with everything inside asks first, then sends restorecon-r
 ok   no page errors
 all passed

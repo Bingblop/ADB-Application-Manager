@@ -1,6 +1,12 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "Her satırın kendi düzeyinin rengine ne kadar güçlü boyanacağı.",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Açık: her renk satırın başından itibaren solar. Kapalı: satırın tamamı tek düz renktir.",
+"SELinux label": "SELinux etiketi",
+"Not shown": "Gösterilmiyor",
+"Restore the default label": "Varsayılan etiketi geri yükle",
+"the default label": "varsayılan etiket",
 "This is a link: open the file it points to and change the permissions there": "Bu bir bağlantı: işaret ettiği dosyayı açın ve izinleri orada değiştirin",
 "Also everything inside this folder": "Bu klasörün içindeki her şey de",
 "Apply owner": "Sahibi uygula",
@@ -5675,6 +5681,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Seçtiğiniz dosyalar hâlâ okunuyor. Biraz bekleyin."
 },
 p: [
+["Label before the last change: {0}", "Son değişiklikten önceki etiket: {0}"],
 ["Before the last change: {0} ({1}) {2}", "Son değişiklikten önce: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "İzinler okunamadı: {0}"],
 ["Done: {0}", "Tamam: {0}"],

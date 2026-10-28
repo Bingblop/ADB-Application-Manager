@@ -1,6 +1,12 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "各行をそのレベルの色でどれだけ強く色付けするか。",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "オン: 各色は行の先頭から徐々に薄くなります。オフ: 行全体が均一な色になります。",
+"SELinux label": "SELinux ラベル",
+"Not shown": "表示なし",
+"Restore the default label": "既定のラベルに戻す",
+"the default label": "既定のラベル",
 "This is a link: open the file it points to and change the permissions there": "これはリンクです。リンク先のファイルを開いて、そこで権限を変更してください",
 "Also everything inside this folder": "このフォルダ内のすべてにも",
 "Apply owner": "所有者を適用",
@@ -5675,6 +5681,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "選択したファイルをまだ読み込み中です。しばらくお待ちください。"
 },
 p: [
+["Label before the last change: {0}", "最後の変更前のラベル: {0}"],
 ["Before the last change: {0} ({1}) {2}", "前回の変更前: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "権限を読み取れませんでした: {0}"],
 ["Done: {0}", "完了: {0}"],

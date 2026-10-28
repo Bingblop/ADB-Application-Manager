@@ -1,6 +1,12 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"How strongly each line is tinted in the colour of its level.": "每行按其级别颜色着色的强度。",
+"On: each tint fades across the line from its start. Off: the whole line is one even colour.": "开：每种色调从行首开始逐渐淡出。关：整行为一种均匀的颜色。",
+"SELinux label": "SELinux 标签",
+"Not shown": "未显示",
+"Restore the default label": "恢复默认标签",
+"the default label": "默认标签",
 "This is a link: open the file it points to and change the permissions there": "这是一个链接：请打开它指向的文件，在那里更改权限",
 "Also everything inside this folder": "也包括此文件夹内的所有内容",
 "Apply owner": "应用所有者",
@@ -5675,6 +5681,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "你选择的文件仍在读取中。请稍候。"
 },
 p: [
+["Label before the last change: {0}", "上次更改前的标签：{0}"],
 ["Before the last change: {0} ({1}) {2}", "上次更改前：{0}（{1}）{2}"],
 ["Could not read the permissions: {0}", "无法读取权限：{0}"],
 ["Done: {0}", "完成：{0}"],

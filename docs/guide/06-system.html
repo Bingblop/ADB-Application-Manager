@@ -1848,16 +1848,20 @@
     <li>A line <b>Now:</b> with the mode in digits and letters (for example <code>0644 (rw-r--r--)</code>), the owner and the group with their numbers, and the SELinux label.</li>
     <li><b>Permissions</b>: ticks for <b>Read</b>, <b>Write</b> and <b>Run</b> for <b>Owner</b>, <b>Group</b> and <b>Others</b>, and the same as digits in a field (<code>755</code>, <code>0644</code>). Either one changes the other. The special bits (setuid, setgid, sticky: the first of four digits) stay as they are unless you type four digits. <b>Apply permissions</b> changes the mode at once. A symbolic link has no <b>Permissions</b> part: its own mode is not used, and changing it would change the file it points to, so open that file instead. An owner or group with no name shows its number.</li>
     <li><b>Owner and group</b>: a user and a group, as a name (<code>root</code>, <code>system</code>, <code>media_rw</code>, <code>u0_a123</code>) or a number (<code>0</code>, <code>1000</code>). Leave one empty to keep it. <b>Apply owner</b> asks first. A link is changed itself, not what it points to.</li>
+    <li><b>SELinux label</b> (v7.18.3): the item's label, and <b>Restore the default label</b>, which puts back the label the system policy gives that place (<code>restorecon</code>). Use it after copying or moving a file into another app's data: a file keeps the label of where it came from, and the app may not be able to use it. It never sets a label of your choosing.</li>
     <li>For a folder, <b>Also everything inside this folder</b> under each part changes the folder and every file and folder in it. It always asks first.</li>
     <li>After a change the panel reads the item again, so what it shows is what Android now has, with a line <b>Before the last change:</b> that keeps the old values.</li>
   </ul>
+
+  <h4>What runs as root</h4>
+  <p>With Super User, everything the app cannot do with its own file access goes through the root shell: listing any folder (<code>/data/data</code>, <code>/data/app</code>, <code>/data/system</code>, <code>/vendor</code>), reading a file (the viewer shows the first 128 KB), editing and saving text, creating, copying, moving, renaming and deleting, and the mode, owner and label above. Always refused: changing or deleting <code>/</code>, a top-level folder (<code>/data</code>, <code>/system</code>), a storage root, the first folders of the system partitions (<code>/system/app</code> itself) and a few system folders of <code>/data</code> (<code>/data/data</code>, <code>/data/app</code> themselves); what is inside them is allowed. This app's own private data is never touched. The system partitions (<code>/system</code>, <code>/vendor</code>, <code>/product</code>) stay read-only: on a phone with verified boot they cannot be written without turning it off, which can leave a phone that does not start, so the app does not offer it.</p>
 
   <h4>What you are getting into</h4>
   <ul>
     <li><b>Nothing stops you from breaking an app or Android.</b> An app whose files you make unreadable to it, or that you hand to another owner, can crash or lose its data; system files with the wrong mode, owner or label can stop the phone from starting. Change only what you know.</li>
     <li>The app refuses a few places outright: <code>/</code>, the top-level folders (<code>/data</code>, <code>/system</code> and the like), a storage root, the first levels of the system partitions, and this app's own data. It also never changes a whole folder of the system partitions at once.</li>
     <li>The system partitions (<code>/system</code>, <code>/vendor</code>, <code>/product</code>) are read-only on almost every phone: a change there fails with Android's own message.</li>
-    <li>Permissions and owner do not change the SELinux label. A file copied or moved into another app's folder may keep a label that app cannot use; this app does not relabel files.</li>
+    <li>Permissions and owner do not change the SELinux label. A file copied or moved into another app's folder may keep a label that app cannot use: <b>Restore the default label</b> fixes that.</li>
   </ul>
 
   <h4>How to undo it</h4>
