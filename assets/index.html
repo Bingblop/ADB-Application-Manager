@@ -872,6 +872,7 @@
             border-radius: var(--radius-chip);
             box-shadow: var(--shadow-pop);
             padding: var(--space-1) var(--space-5);
+            overscroll-behavior: contain;          /* when it scrolls inside itself (a short screen: searchMenuPlace), the page behind it stays put */
         }
 
         .sm-row {
@@ -12257,11 +12258,12 @@ Type any command above (e.g. pm list packages -d)</div>
             const w = window.innerWidth, h = Math.max(window.innerHeight, vv ? vv.height : 0);
             if (w !== bnavFullW) { bnavFullW = w; bnavFullH = 0; }                               // turned around, or a different window: measure again
             if (h > bnavFullH) bnavFullH = h;
-            const away = bnavAway();
+            const away = bnavAway(), was = document.documentElement.classList.contains('bnav-away');
             if (away) { bnavMenuClose(true); bnavTipHide(); }
             document.documentElement.classList.toggle('bnav-away', away);
             nav.classList.toggle('bnav-off', away);
             if (away) { nav.setAttribute('inert', ''); nav.setAttribute('aria-hidden', 'true'); } else { nav.removeAttribute('inert'); nav.removeAttribute('aria-hidden'); bnavPlace(false); }
+            if (away !== was && searchMenuOpen()) searchMenuPlace(document.getElementById('searchMenu'), true);          // the open search menu ends above the bar that came back, or takes the room it left
         }
         let bnavQueued = false;
         function bnavQueue() { if (bnavQueued) return; bnavQueued = true; requestAnimationFrame(() => { bnavQueued = false; bnavVisibility(); }); }
@@ -20537,23 +20539,35 @@ Type any command above (e.g. pm list packages -d)</div>
             if (closeSearchMenu()) return;
             syncSearchUi();
             const menu = document.getElementById('searchMenu');
-            menu.style.maxHeight = ''; menu.style.overflowY = '';
             menu.style.display = '';
             document.getElementById('searchMenuBtn').setAttribute('aria-expanded', 'true');
             document.body.classList.add('search-menu-open');               // the batch button steps aside while the menu is open
-            // The menu hangs below the box: bring it all into view (above the bottom bar when that is on the screen), but not so far that the box itself goes under the tabs
-            // (or under the header, which is all there is at the top when the bottom bar is the navigation: the tab bar is not shown then)
+            searchMenuPlace(menu, false);
+        }
+
+        // The menu hangs below the box: bring it all into view (above the bottom bar when that is on the screen), but not so far that the box itself goes under the tabs
+        // (or under the header, which is all there is at the top when the bottom bar is the navigation: the tab bar is not shown then)
+        function searchMenuPlace(menu, again) {
+            const kept = menu.scrollTop, se = document.scrollingElement || document.documentElement, y0 = window.scrollY;
+            // How far the page itself can still scroll, the menu aside (a short list: not always as far as the menu needs). Below 0 when the page stands
+            // where only the menu's earlier size let it go: once the menu is cut, the page drops back by that much
+            menu.style.overflowY = 'hidden'; menu.style.maxHeight = '0px';
+            const canScroll = se.scrollHeight - window.innerHeight - y0;
+            menu.style.maxHeight = ''; menu.style.overflowY = '';
             const r = menu.getBoundingClientRect(), box = document.getElementById('searchBox').getBoundingClientRect();
             const tabs = document.getElementById('tabBar').getBoundingClientRect(), hdr = document.querySelector('.app-header');
-            const bar = document.getElementById('bnav'), bb = bar && !bar.classList.contains('bnav-off') ? bar.getBoundingClientRect() : null;
-            const barH = bb && bb.height > 0 && bb.width >= window.innerWidth - 1 && bb.top < window.innerHeight ? window.innerHeight - bb.top : 0;          // (the rail of a wide screen stands at the left: it covers no row)
+            const barH = floatBase();          // the bottom bar as laid out (not where its slide-in has got to), 0 when it is away or is the rail of a wide screen
             const need = r.bottom - (window.innerHeight - barH - 10), room = box.top - (Math.max(tabs.bottom, hdr ? hdr.getBoundingClientRect().bottom : 0) + 8);
-            const by = need > 0 && room > 0 ? Math.min(need, room) : 0;
-            if (by) window.scrollBy({ top: by, behavior: 'smooth' });
-            // A screen too short for all of it (the Row tints slider made the menu taller): the rest scrolls inside the menu
+            const by = need <= 0 ? 0 : canScroll < 0 ? canScroll : room > 0 && canScroll > 0 ? Math.min(need, room, canScroll) : 0;
+            if (by > 0) window.scrollBy({ top: by, behavior: again ? 'auto' : 'smooth' });          // placed again (a turn, the bar): at once, as a smooth scroll still running would swallow it
+            // A screen too short for all of it (the Row tints slider made the menu taller, a phone turned sideways): the rest scrolls inside the menu,
+            // in whatever room there is down to 48 px (with less, the menu is left whole and the page scrolls)
             const fit = Math.floor(window.innerHeight - barH - 10 - (r.top - by));
-            if (r.height > fit && fit >= 120) { menu.style.maxHeight = fit + 'px'; menu.style.overflowY = 'auto'; }
+            if (r.height > fit && fit >= 48) { menu.style.maxHeight = fit + 'px'; menu.style.overflowY = 'auto'; menu.scrollTop = kept; }
         }
+        // ...and again when the window changes size with the menu open (the phone turned, split screen). When the bottom bar comes back or goes away
+        // (the keyboard, the focus leaving the search box), bnavVisibility places it again
+        window.addEventListener('resize', () => { if (searchMenuOpen()) searchMenuPlace(document.getElementById('searchMenu'), true); });
 
         // The box says what it searches, and the menu shows the options as they are now
         function syncSearchUi() {

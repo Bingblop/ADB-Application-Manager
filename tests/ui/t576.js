@@ -38,10 +38,11 @@ const SIX = ['V', 'D', 'I', 'W', 'E', 'F'].map((l, i) => line(i, l, 'Tag' + l, '
       const s = getComputedStyle(row), be = getComputedStyle(row, '::before');
       const dot = rgb(getComputedStyle(document.querySelector('#logcatKey .lvl-' + l + ' .lc-dot')).backgroundColor);
       const bar = rgb(document.dir === 'rtl' ? s.borderRightColor : s.borderLeftColor);
-      const tintFirst = rgb((be.backgroundImage.match(/(rgb|color)\([^)]*\)/) || [''])[0]);
+      // the tint: one even colour (Row tints > Gradient off, the default since v7.18.1), or the first colour of the gradient with Gradient on
+      const tintFirst = rgb(be.backgroundImage === 'none' ? be.backgroundColor : (be.backgroundImage.match(/(rgba?|color)\([^)]*\)/) || [''])[0]);
       const bg = rgb(s.backgroundColor);
       const ink = { badge: rgb(getComputedStyle(row.querySelector('.lc-badge')).color), tag: rgb(getComputedStyle(row.querySelector('.lc-tag')).color), msg: rgb(getComputedStyle(row.querySelector('.lc-msg')).color) };
-      const near = c => c.every((x, i) => Math.abs(x - want[l][i]) < 2);
+      const near = c => c.length === 3 && c.every((x, i) => Math.abs(x - want[l][i]) < 2);
       out[l] = {
         dot: near(dot), bar: near(bar), tint: near(tintFirst), barW: parseFloat(document.dir === 'rtl' ? s.borderRightWidth : s.borderLeftWidth),
         badgeToward: +toward(ink.badge, l).toFixed(2), tagToward: +toward(ink.tag, l).toFixed(2), msgToward: +toward(ink.msg, l).toFixed(2),
