@@ -1,70 +1,70 @@
-1. the menu opens: true 
-   its rows are Include application names, Include package names, Use regex matching, Row tints, Gradient: true 
-   the old shortcut is gone: no chevron row, nothing that opens Settings: true 
-   Row tints: its name, one grey line "How strongly rows are tinted." as in the regex row, a hairline above, the row box of the others: true 
-   under its line the slider of Settings: 0 to 4 in steps of 1, named Row tints, the same five step names (Off, Faint, Subtle, Normal, Vivid), the full width of the row: true 
-   the slider row is a group named by its name, not a label and not a switch (a tap beside the slider does nothing), with the plain arrow: true 
-   Gradient: a switch row like the three above (name, line, divider, switch), off by default: true 
-   both are inside the menu and the screen, at least 44 px tall, and their texts and step names fit: true 
-   they show the setting as it is: Subtle, Gradient off (the defaults), like Settings: true 
-   the three search switches are as before: all on, the regex line unchanged: true 
-2. the regex switch turns off and the menu stays open: true 
-   turning off names, then packages, turns names on instead, as before: true 
-   all three are on again, and the Row tints setting did not move: true 
-3. a tap at the slider's end sets Vivid: stored, drawn (html data-row-tint="vivid") and shown in Settings too: true 
-   the menu stays open and the tab stays the Apps tab: true 
-   the running app's row behind the menu is tinted more strongly at once: true 
-   a tap at its start sets Off: no tint on the row: true 
-   each of the five steps can be tapped: off, faint, subtle, normal, vivid: true 
-   back to Subtle (the middle): true 
-   a drag to the right moves it on (Normal), and the menu is still open: true 
-   a tap on the row's name does nothing: the menu stays open, Settings does not open, the level stays: true 
-4. a tap on Gradient turns it on: stored (row_tint_grad true), drawn (html data-row-grad="on", the running row is a gradient), on in Settings too: true 
-   and the menu stays open: true 
-   a tap on the switch itself turns it off again: one even colour: true 
-5. back in the Apps tab after Faint and Gradient on in Settings: true 
-   the menu shows Faint and Gradient on: true 
-   a value stored meanwhile is what the menu shows when it opens again (Vivid, Gradient off): true 
-6. Enter on the menu button opens the menu: true 
-   Tab from the regex switch reaches the slider, and it shows a focus ring: true 
-   the right arrow moves it one step (Normal), in Settings too: true 
-   the left arrow moves it back (Faint): true 
-   End goes to Vivid, Home to Off: true 
-   Tab goes on to the Gradient switch: true 
-   Space turns it on, the menu stays open: true 
-   Space again turns it off: true 
-   Escape still closes the menu and the focus goes back to its button: true 
-   Back closes the menu (and stays on the Apps tab): true 
-   a tap outside it closes it too: true 
-7. with Gradient on and Vivid stored from before, both stay: the menu and Settings show them and the row is a gradient: true 
-   and with Gradient off stored from before, it stays off: true 
-8. [320x568] Row tints and Gradient are on screen under the tab bar, inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [360x640] Row tints and Gradient are on screen under the tab bar, inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [360x520] Row tints and Gradient are on screen under the tab bar, inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [412x915] Row tints and Gradient are on screen under the tab bar, inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [320x568, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [360x520, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [360x640, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [360x720, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [412x915, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [360x480, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [320x568, bottom bar, 4 apps] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-8. [360x480, bottom bar, 4 apps] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true 
-   and both work there: Vivid and Gradient on, with the menu still open: true 
-9. in each of the 13 languages the two rows, their lines and the step names are translated (the same step names as Settings), and at 320 px they fit: true 
-    in German: Zeilenfärbung, its line, the step names Aus to Kräftig, and Verlauf: true 
-    in Arabic (right to left) the step names start at the right (Off) and so does the slider: true 
-    and a tap at its right end is Off, at its left end Vivid: true 
-no page errors: true 
+1. the menu opens: true
+   its rows are Include application names, Include package names, Use regex matching, Row tints, Gradient: true
+   the old shortcut is gone: no chevron row, nothing that opens Settings: true
+   Row tints: its name, one grey line "How strongly rows are tinted." as in the regex row, a hairline above, the row box of the others: true
+   under its line the slider of Settings: 0 to 4 in steps of 1, named Row tints, the same five step names (Off, Faint, Subtle, Normal, Vivid), the full width of the row: true
+   the slider row is a group named by its name, not a label and not a switch (a tap beside the slider does nothing), with the plain arrow: true
+   Gradient: a switch row like the three above (name, line, divider, switch), off by default: true
+   both are inside the menu and the screen, at least 44 px tall, and their texts and step names fit: true
+   they show the setting as it is: Subtle, Gradient off (the defaults), like Settings: true
+   the three search switches are as before: all on, the regex line unchanged: true
+2. the regex switch turns off and the menu stays open: true
+   turning off names, then packages, turns names on instead, as before: true
+   all three are on again, and the Row tints setting did not move: true
+3. a tap at the slider's end sets Vivid: stored, drawn (html data-row-tint="vivid") and shown in Settings too: true
+   the menu stays open and the tab stays the Apps tab: true
+   the running app's row behind the menu is tinted more strongly at once: true
+   a tap at its start sets Off: no tint on the row: true
+   each of the five steps can be tapped: off, faint, subtle, normal, vivid: true
+   back to Subtle (the middle): true
+   a drag to the right moves it on (Normal), and the menu is still open: true
+   a tap on the row's name does nothing: the menu stays open, Settings does not open, the level stays: true
+4. a tap on Gradient turns it on: stored (row_tint_grad true), drawn (html data-row-grad="on", the running row is a gradient), on in Settings too: true
+   and the menu stays open: true
+   a tap on the switch itself turns it off again: one even colour: true
+5. back in the Apps tab after Faint and Gradient on in Settings: true
+   the menu shows Faint and Gradient on: true
+   a value stored meanwhile is what the menu shows when it opens again (Vivid, Gradient off): true
+6. Enter on the menu button opens the menu: true
+   Tab from the regex switch reaches the slider, and it shows a focus ring: true
+   the right arrow moves it one step (Normal), in Settings too: true
+   the left arrow moves it back (Faint): true
+   End goes to Vivid, Home to Off: true
+   Tab goes on to the Gradient switch: true
+   Space turns it on, the menu stays open: true
+   Space again turns it off: true
+   Escape still closes the menu and the focus goes back to its button: true
+   Back closes the menu (and stays on the Apps tab): true
+   a tap outside it closes it too: true
+7. with Gradient on and Vivid stored from before, both stay: the menu and Settings show them and the row is a gradient: true
+   and with Gradient off stored from before, it stays off: true
+8. [320x568] Row tints and Gradient are on screen under the tab bar, inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [360x640] Row tints and Gradient are on screen under the tab bar, inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [360x520] Row tints and Gradient are on screen under the tab bar, inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [412x915] Row tints and Gradient are on screen under the tab bar, inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [320x568, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [360x520, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [360x640, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [360x720, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [412x915, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [360x480, bottom bar] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [320x568, bottom bar, 4 apps] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+8. [360x480, bottom bar, 4 apps] Row tints and Gradient are on screen above the bottom bar (the bar is really shown), inside the menu, nothing covers them (their low edge neither), the step names fit, nothing scrolls sideways: true
+   and both work there: Vivid and Gradient on, with the menu still open: true
+9. in each of the 13 languages the two rows, their lines and the step names are translated (the same step names as Settings), and at 320 px they fit: true
+    in German: Zeilenfärbung, its line, the step names Aus to Kräftig, and Verlauf: true
+    in Arabic (right to left) the step names start at the right (Off) and so does the slider: true
+    and a tap at its right end is Off, at its left end Vivid: true
+no page errors: true
 all checks passed
