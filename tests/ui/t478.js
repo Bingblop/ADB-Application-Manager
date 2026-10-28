@@ -19,6 +19,8 @@ const APPS = [
   const page = await b.newPage({ viewport: { width: 390, height: 860 } });
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(PAGE); await page.waitForTimeout(400);
+  // Row tints > Gradient is off by default since v7.18.1; this script measures the gradient tints, so it turns the switch on (t549 covers the default)
+  await page.evaluate(() => setRowTintGrad(true));
   const ev = (fn, a) => page.evaluate(fn, a);
   await ev(apps => { switchView('devices'); document.getElementById('cdWork').style.display = ''; cd.apps = apps; cd.filters.clear(); cdAppsRender(); }, APPS);
 

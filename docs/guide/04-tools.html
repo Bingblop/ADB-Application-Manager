@@ -361,7 +361,7 @@
 
   <h4>Before you start</h4>
   <ul>
-    <li>Checking needs the internet and no working mode.</li>
+    <li>Checking needs the internet and no working mode. It runs on Wi-Fi only unless you switch on <b>Check for updates on mobile data</b>, the last card of the box (off by default since 7.18.1, and kept once on; it is separate from the App Stores' switch). On mobile data with the switch off, a check stops at once with <i>You are on mobile data, and updates are checked only on Wi-Fi.</i> and the last results stay.</li>
     <li>Installing an update needs a working mode: ADB over TCP, Wireless Debugging, Shizuku or Root (see <a href="#modes-overview">Working modes</a>). Without one, a sheet <b>Working Mode Required</b> opens. The only exception is this app's own update, which can use Android's install screen. Android can then ask you to allow installs from this app first (Android calls the setting <b>Install unknown apps</b>): switch it on for this app when asked, or beforehand in <b>About</b>, <b>Permissions</b> (see <a href="#app-permissions">The permissions this app asks for</a>).</li>
     <li>Play Store apps are not checked here (see the <b>Play Store apps (via Aurora)</b> card below).</li>
     <li><b>Find and download an app</b> needs the internet. A working mode is needed only if you switch on <b>Install on download</b>, and even then Android's own installer is used when you have none.</li>
@@ -549,10 +549,13 @@
     <li>A GitHub token saved in the <a href="#tab-updates">Application Updater</a> box lifts GitHub's limit on these requests.</li>
   </ul>
 
+  <h4>Update stores on mobile data</h4>
+  <p>The last card of the tab, a switch, <b>off by default</b> (since 7.18.1). While it is off, the store catalogs (GitHub, F-Droid and its repositories, Orion, ShizuStore, your own stores) are downloaded and refreshed only on Wi-Fi (or Ethernet). On mobile data, or a network Android calls metered that is not Wi-Fi, each tab shows the copy it kept from before, whatever its age, and the app icons are not downloaded (the letters show instead); a tab with no copy yet says <i>You are on mobile data, and stores update only on Wi-Fi.</i> A <b>Refresh</b> on mobile data keeps the copy it has. Turn the switch on and the stores update on mobile data too; the choice is kept. Opening an app's page and installing it are things you ask for, so they work on any network.</p>
+
   <h4>F-Droid extras</h4>
   <ul>
     <li>The drop-down at the top chooses the repository. Press <b>Repos</b> to see the list: each entry has <b>Browse apps</b>, <b>Copy address</b> and <b>Copy fingerprint</b>. Press the same button again (it now says <b>&larr; Apps</b>) to come back. <b>Copy address &amp; fingerprint</b> copies both for the open repository.</li>
-    <li>A catalog can be several MB, F-Droid's own tens of MB. On mobile data or a hotspot the tab asks first ("You're on a metered connection") and waits for <b>Download</b>. A catalog is kept for 12 hours.</li>
+    <li>A catalog can be several MB, F-Droid's own tens of MB. A catalog is kept for 12 hours. On mobile data the catalogs keep to Wi-Fi unless you allow it (next part).</li>
     <li>Apps with no build for your phone are hidden, and a note tells you how many.</li>
     <li>When the repository publishes a SHA-256 for a file (F-Droid's index does), the download is checked against it. A mismatch stops the install.</li>
   </ul>

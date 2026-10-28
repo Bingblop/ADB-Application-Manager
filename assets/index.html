@@ -890,10 +890,10 @@
         .sm-sub { display: block; margin-top: var(--space-1); font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); font-weight:var(--fw-semibold); }
         .sm-div { align-self: stretch; width: 1px; margin: 2px 0; background: var(--border-glass); flex: 0 0 auto; }
         .sm-row .switch-input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
-        /* the last row opens something (Row tints in Settings) instead of turning something on: a chevron where the others have a switch, the same focus ring */
-        .sm-go:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
-        .sm-chev { flex: 0 0 auto; display: block; color: var(--text-muted); }
-        [dir="rtl"] .sm-chev { transform: scaleX(-1); }
+        /* Row tints: the slider of Settings > Row tints under the row's name (the whole row is not a tap target, so no pointer) */
+        .sm-tint { cursor: default; }
+        .sm-tint .row-tint-slider { display: block; margin-top: var(--space-2); }
+        .sm-tint .row-tint-ticks { font-size: var(--fs-pill); }
 
         .search-note {
             margin: -4px 4px 10px;
@@ -4601,11 +4601,17 @@
                         <span class="sm-div"></span>
                         <input type="checkbox" class="switch-input" id="searchOptRegex" checked onchange="setSearchOpt('regex', this.checked)"><span class="switch-track"></span>
                     </label>
-                    <div class="sm-row sm-go" id="searchMenuRowTints" role="button" tabindex="0" onclick="searchMenuRowTints()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();searchMenuRowTints();}">
-                        <span class="sm-text"><span class="sm-name">Row tints</span><span class="sm-sub">How strongly rows are tinted. Opens Settings.</span></span>
-                        <span class="sm-div"></span>
-                        <svg class="sm-chev" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                    <!-- Row tints right here (the owner's wish, v7.18.1): the slider and the Gradient switch of Settings > Row tints, the same setting (rowTintApply keeps both places in step) -->
+                    <div class="sm-row sm-tint" id="searchMenuRowTints">
+                        <span class="sm-text"><span class="sm-name">Row tints</span>
+                            <span class="row-tint-slider"><input type="range" id="searchRowTintRange" min="0" max="4" step="1" value="2" oninput="setRowTint(this.value)" aria-label="Row tints"><span class="row-tint-ticks"><span>Off</span><span>Faint</span><span>Subtle</span><span>Normal</span><span>Vivid</span></span></span>
+                        </span>
                     </div>
+                    <label class="sm-row" id="searchMenuRowGrad">
+                        <span class="sm-text"><span class="sm-name">Gradient</span></span>
+                        <span class="sm-div"></span>
+                        <input type="checkbox" class="switch-input" id="searchRowTintGrad" onchange="setRowTintGrad(this.checked)"><span class="switch-track"></span>
+                    </label>
                 </div>
             </div>
             <div class="search-note" id="searchNote" style="display:none;" role="status"></div>
@@ -5070,6 +5076,17 @@
                     <button class="mode-action-btn" id="usKeyImportBtn" onclick="mpKeyImport()">Import KeyStore</button>
                     <button class="mode-action-btn" id="usKeyResetBtn" onclick="mpKeyReset()">New key</button>
                 </div>
+            </div>
+            <!-- v7.18.1 (the owner's wish): the check goes online on Wi-Fi only unless this is on (kv 'updates_mobile_data'; enforced by the app's runUpdateCheck) -->
+            <div class="color-card" id="updMobileCard">
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">Check for updates on mobile data</div>
+                        <div class="switch-sub">Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="updMobileToggle" onchange="setMobileDataOk('updates_mobile_data', this.checked)">
+                    <span class="switch-track"></span>
+                </label>
             </div>
             </div>
         </section>
@@ -6066,6 +6083,19 @@
                     <div class="sdb-note" id="ovlRootStale" style="display:none;"></div>
                     <div class="sdb-note" id="ovlRootOneUi" style="display:none;"></div>
                 </div>
+
+                <!-- v7.18.1 (the owner's wish): the custom theme of this tab backed up and restored the way the saved lists are (Saved Applications >
+                     Back up and restore): the same place for the file, Share, Restore from a file. A restore fills in the tab; Apply theme writes it -->
+                <div class="color-card" id="ovlBackupCard">
+                    <div class="color-card-title">Back up and restore</div>
+                    <div class="color-card-subtitle">Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.</div>
+                    <div class="lb-where" id="ovlBkWhere"></div>
+                    <div class="mode-btn-row" style="margin:8px 0 0;">
+                        <button class="mode-action-btn primary" onclick="ovlBkNow()">Back up now</button>
+                        <button class="mode-action-btn" onclick="ovlBkShare()">Share…</button>
+                        <button class="mode-action-btn" onclick="ovlBkRestoreFile()">Restore from a file…</button>
+                    </div>
+                </div>
             </div>
 
             <div id="ovlListPanel" style="display:none;">
@@ -6237,6 +6267,17 @@
             <!-- Sub-tabs the person added with the + tab (a repository address, or a GitHub or Codeberg user or project) -->
             <div id="storeCustomPanels"></div>
 
+            <!-- v7.18.1 (the owner's wish): catalogs go online on Wi-Fi only unless this is on (kv 'store_mobile_data'; the app enforces it: storeMobileBlocked) -->
+            <div class="color-card" id="storeMobileCard">
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">Update stores on mobile data</div>
+                        <div class="switch-sub">Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="storeMobileToggle" onchange="setMobileDataOk('store_mobile_data', this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+            </div>
 
         </section>
 
@@ -6596,9 +6637,9 @@
                 <label class="switch-row" id="rowTintGradRow">
                     <div>
                         <div class="switch-title">Gradient</div>
-                        <div class="switch-sub">On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.</div>
+                        <div class="switch-sub">On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. Off by default.</div>
                     </div>
-                    <input type="checkbox" class="switch-input" id="rowTintGradToggle" checked onchange="setRowTintGrad(this.checked)">
+                    <input type="checkbox" class="switch-input" id="rowTintGradToggle" onchange="setRowTintGrad(this.checked)">
                     <span class="switch-track"></span>
                 </label>
             </div>
@@ -14926,16 +14967,16 @@ Type any command above (e.g. pm list packages -d)</div>
             if (old >= 0 && old <= 2) kvSet('row_tint_lv', v);
             return v;
         }
-        // The Gradient switch under the slider (kv 'row_tint_grad', on by default): off makes each tinted row one even colour (html[data-row-grad="off"])
-        function rowTintGradOn() { return kvGet('row_tint_grad', true) !== false; }
+        // The Gradient switch under the slider (kv 'row_tint_grad', off by default since v7.18.1, the owner's wish; a choice saved before is kept):
+        // off makes each tinted row one even colour (html[data-row-grad="off"])
+        function rowTintGradOn() { return kvGet('row_tint_grad', false) === true; }
+        // The slider and the switch are in two places, Settings > Row tints and the Apps tab's search menu: both show the setting as it is now
         function rowTintApply() {
             const v = rowTintLevel(), grad = rowTintGradOn();
             document.documentElement.setAttribute('data-row-tint', ROW_TINTS[v]);
             document.documentElement.setAttribute('data-row-grad', grad ? 'on' : 'off');
-            const r = document.getElementById('rowTintRange');
-            if (r) r.value = String(v);
-            const g = document.getElementById('rowTintGradToggle');
-            if (g) g.checked = grad;
+            ['rowTintRange', 'searchRowTintRange'].forEach(id => { const r = document.getElementById(id); if (r) r.value = String(v); });
+            ['rowTintGradToggle', 'searchRowTintGrad'].forEach(id => { const g = document.getElementById(id); if (g) g.checked = grad; });
             return v;
         }
         function setRowTint(v) {
@@ -16938,8 +16979,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 ? `<button class="batch-tool-link" onclick="storeShown += 60; renderStoreList()">Show ${Math.min(60, left)} more · ${left} left</button>` : '';
             const esc = escapeHtml;
             const rows = apps.slice(0, storeShown).map(a => {
-                const img = a.iconHash ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:var(--radius-md);object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
-                const fb = `<div style="width:46px;height:46px;border-radius:var(--radius-md);flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:var(--fw-heavy);color:var(--on-gradient);">${esc(firstChar(a.name))}</div>`;
+                const withIcon = a.iconHash && !storeIconsOff();
+                const img = withIcon ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:var(--radius-md);object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
+                const fb = `<div style="width:46px;height:46px;border-radius:var(--radius-md);flex-shrink:0;display:${withIcon ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:var(--fw-heavy);color:var(--on-gradient);">${esc(firstChar(a.name))}</div>`;
                 const chips = [];
                 if (a.stars != null) chips.push(esc(fmtCount(a.stars)) + ' stars');
                 if (a.versionName) chips.push('v' + esc(a.versionName));
@@ -17038,7 +17080,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function setStoreAvatar(iconHash, name) {
             const av = document.getElementById('storeDetailAvatar');
             const letter = firstChar(name, '?');
-            if (iconHash) av.innerHTML = `<img src="${storeBase}/icons/${escapeHtml(iconHash)}.png" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter;">`;
+            if (iconHash && !storeIconsOff()) av.innerHTML = `<img src="${storeBase}/icons/${escapeHtml(iconHash)}.png" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter;">`;
             else av.textContent = letter;
         }
 
@@ -19446,9 +19488,21 @@ Type any command above (e.g. pm list packages -d)</div>
         function showMoreSource(key) { haptic(); storeSrc[key].shown += STORE_PAGE; renderSource(key); }
 
         // ---- cards ----
+        // on mobile data while stores keep to Wi-Fi (App Stores > Update stores on mobile data off) the lists show letters, no icon is downloaded;
+        // asked of the app at most every few seconds, not for each row
+        var storeIconsOffAt = 0, storeIconsOffVal = false;   // var: the ShizuStore list above calls it too
+        function storeIconsOff() {
+            const now = Date.now();
+            if (now - storeIconsOffAt > 4000) {
+                storeIconsOffAt = now;
+                try { storeIconsOffVal = !!(window.AndroidBridge && window.AndroidBridge.storeMobileBlockedNow && window.AndroidBridge.storeMobileBlockedNow()); } catch (e) { storeIconsOffVal = false; }
+            }
+            return storeIconsOffVal;
+        }
         function srcIconHtml(a) {
             const esc = escapeHtml;
             const letter = esc(firstChar(a.name));
+            if (a.icon && storeIconsOff()) a = Object.assign({}, a, { icon: '' });
             const img = a.icon ? `<img class="sr-icon" loading="lazy" src="${esc(a.icon)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
             const fb = `<div class="sr-fallback"${a.icon ? ' style="display:none;"' : ''}>${letter}</div>`;
             return img + fb;
@@ -19632,12 +19686,6 @@ Type any command above (e.g. pm list packages -d)</div>
                 s.shown = STORE_PAGE; s.cat = ''; refreshCats('fdroid'); renderFdroid();
                 return;
             }
-            // Catalogs run from a few MB to tens of MB: ask first on mobile data
-            if (!s.meteredOk && window.AndroidBridge.isNetworkMetered && window.AndroidBridge.isNetworkMetered()) {
-                s.items = []; s.loaded = false; s.loading = false; s.error = ''; s.pendingMetered = true;
-                refreshCats('fdroid'); renderFdroid();
-                return;
-            }
             s.pendingMetered = false;
             s.items = []; s.keys = null; s.loaded = false; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE; s.cat = '';
             s.progress = 'Contacting ' + repo.name + '…'; s.meta = {};
@@ -19647,7 +19695,22 @@ Type any command above (e.g. pm list packages -d)</div>
             else window.AndroidBridge.storeSourceCatalog('fdroid-repo', repo.address);
         }
 
-        function fdroidAllowMetered() { storeSrc.fdroid.meteredOk = true; haptic(); fdroidLoadRepo(false); }
+        // "Update stores on mobile data" and "Check for updates on mobile data" (v7.18.1, off by default, remembered once turned on): the app only
+        // reads the stored value (mobileDataBlocked) before a catalog or an update check goes online. Turned on, the store tab open now loads again.
+        function mobileDataSync() {
+            [['storeMobileToggle', 'store_mobile_data'], ['updMobileToggle', 'updates_mobile_data']].forEach(([id, k]) => { const el = document.getElementById(id); if (el) el.checked = kvGet(k, false) === true; });
+        }
+        function setMobileDataOk(key, on) {
+            kvSet(key, !!on);
+            storeIconsOffAt = 0;
+            mobileDataSync();
+            haptic();
+            if (key === 'store_mobile_data') {
+                showToast(on ? 'Stores now update on mobile data too' : 'Stores update only on Wi-Fi');
+                if (on && currentViewName() === 'store') { if (currentStoreTab === 'fdroid') fdroidLoadRepo(false); else switchStoreTab(currentStoreTab); }
+            } else showToast(on ? 'Updates are now checked on mobile data too' : 'Updates are checked only on Wi-Fi');
+        }
+        mobileDataSync();
 
         function fdroidSelectRepo(id) {
             const s = storeSrc.fdroid;
@@ -19708,10 +19771,6 @@ Type any command above (e.g. pm list packages -d)</div>
                 return;
             }
             filters.style.display = '';
-            if (s.pendingMetered) {
-                extra.innerHTML = `<div class="store-prompt"><div style="flex:1;">You're on a metered connection (mobile data / hotspot). <b>${escapeHtml(repo ? repo.name : 'This repository')}</b>'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.</div>
-                    <button class="batch-tool-link" onclick="fdroidAllowMetered()">Download</button></div>`;
-            }
             const filtered = srcFiltered('fdroid');
             const shown = filtered.slice(0, s.shown);
             srcEl('fdroid', 'Count').innerText = (s.items.length ? filtered.length + (filtered.length !== s.items.length ? ' / ' + s.items.length : '') + ' apps' : '');
@@ -19984,7 +20043,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ver = item.ver || item.version;
             document.getElementById('storeDetailSub').innerText = (item.pkg || (item.owner ? item.owner + '/' + item.repo : '')) + (ver && String(ver).toLowerCase() !== 'latest' ? ' · v' + String(ver).replace(/^v/i, '') : '');
             const av = document.getElementById('storeDetailAvatar'), letter = firstChar(item.name, '?');
-            if (item.icon) av.innerHTML = `<img src="${escapeHtml(item.icon)}" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter">`;
+            if (item.icon && !storeIconsOff()) av.innerHTML = `<img src="${escapeHtml(item.icon)}" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter">`;
             else av.textContent = letter;
             storeGenericRender(item, memo || null, memo ? '' : 'Loading the full description and the screenshots…', false);
             if (memo) return;
@@ -20421,6 +20480,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (closeSearchMenu()) return;
             syncSearchUi();
             const menu = document.getElementById('searchMenu');
+            menu.style.maxHeight = ''; menu.style.overflowY = '';
             menu.style.display = '';
             document.getElementById('searchMenuBtn').setAttribute('aria-expanded', 'true');
             document.body.classList.add('search-menu-open');               // the batch button steps aside while the menu is open
@@ -20431,20 +20491,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const bar = document.getElementById('bnav'), bb = bar && !bar.classList.contains('bnav-off') ? bar.getBoundingClientRect() : null;
             const barH = bb && bb.height > 0 && bb.width >= window.innerWidth - 1 && bb.top < window.innerHeight ? window.innerHeight - bb.top : 0;          // (the rail of a wide screen stands at the left: it covers no row)
             const need = r.bottom - (window.innerHeight - barH - 10), room = box.top - (Math.max(tabs.bottom, hdr ? hdr.getBoundingClientRect().bottom : 0) + 8);
-            if (need > 0 && room > 0) window.scrollBy({ top: Math.min(need, room), behavior: 'smooth' });
-        }
-
-        // The last row of the menu: Row tints is a setting of Settings, so the row closes the menu and goes there (Back comes back to the Apps tab, as from any other tab).
-        // Settings opens on the card, which is lit up for a moment like the sections the bottom bar's shortcuts go to (bnavReveal), and the slider has the focus for a keyboard.
-        function searchMenuRowTints() {
-            closeSearchMenu();
-            if (!switchView('prefs')) return;
-            setTimeout(() => {
-                if (currentViewName() !== 'prefs') return;                       // Back was pressed meanwhile
-                bnavReveal('#rowTintCard');
-                const r = document.getElementById('rowTintRange');
-                if (r) r.focus({ preventScroll: true });
-            }, 90);
+            const by = need > 0 && room > 0 ? Math.min(need, room) : 0;
+            if (by) window.scrollBy({ top: by, behavior: 'smooth' });
+            // A screen too short for all of it (the Row tints slider made the menu taller): the rest scrolls inside the menu
+            const fit = Math.floor(window.innerHeight - barH - 10 - (r.top - by));
+            if (r.height > fit && fit >= 120) { menu.style.maxHeight = fit + 'px'; menu.style.overflowY = 'auto'; }
         }
 
         // The box says what it searches, and the menu shows the options as they are now
@@ -21231,6 +21282,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         window.onTextFilePicked = function (r) {
             if (r && r.tag === 'lists-file') { listsOnFile(r); return; }
+            if (r && r.tag === 'monet-file') { if (r.error) showToast('Could not read that file: ' + r.error); else ovlBkRestoreFrom(r.text || '', r.name || 'that file'); return; }
             if (r && r.tag === 'hs-restore') { if (r.error) showToast('Could not read that file: ' + r.error); else sdbRestoreFrom(r.text || ''); return; }
             if (!r || !String(r.tag || '').startsWith('presets-')) return;
             if (r.error) { showToast('Could not read that file: ' + r.error); return; }
@@ -29609,7 +29661,16 @@ Type any command above (e.g. pm list packages -d)</div>
             const managerHere = isRootActive() && !!d.rootAvailable;
             return rootFeatureRow('Super User for apps', 'Manage which apps get root in your manager.', 'Open manager', 'rfSuAppsBtn', 'rootManageSuperuser()', managerHere)
                 + rootFeatureRow('App components', 'Enable or disable activities, services, receivers and providers for any app.', 'Open apps', 'rfComponentsBtn', 'rootManageComponents()', isRootActive())
-                + rootFeatureRow('Trackers in apps', 'Switch off the tracker parts (ads, analytics) of any app.', 'Open apps', 'rfTrackersBtn', 'rootManageTrackers()', isRootActive());
+                + rootFeatureRow('Trackers in apps', 'Switch off the tracker parts (ads, analytics) of any app.', 'Open apps', 'rfTrackersBtn', 'rootManageTrackers()', isRootActive())
+                // v7.18.1 (the owner's wish): a signpost to the RRO/Monet Customization tab, whose Root-only theme controls write a color overlay
+                // (the UID-0 tier: Root with su, or Shizuku as root)
+                + rootFeatureRow('Additional Monet Customization', 'Pure black, more styles, intensity and your own accents for every app that uses Monet colors.', 'Open tab', 'rfMonetBtn', 'rootOpenMonet()', ovlCanWriteOverlays());
+        }
+        // "Additional Monet Customization": the RRO/Monet Customization tab on its Theme half, with the Root-only theme controls brought into view
+        function rootOpenMonet() {
+            if (!switchView('overlays')) return;
+            if (typeof ovlSub !== 'undefined' && ovlSub !== 'theme') ovlSetSub('theme');
+            setTimeout(() => { if (currentViewName() === 'overlays') bnavReveal('#ovlRootCard'); }, 90);
         }
         function renderRootFeatures() {
             const gate = document.getElementById('rootGate');
@@ -40602,6 +40663,92 @@ Type any command above (e.g. pm list packages -d)</div>
             showToast('Copied the setting');
         }
 
+        // ---- Back up and restore the custom theme (v7.18.1) ----
+        // A backup is a small JSON file, as the saved lists' is: { app: 'adb-app-manager', format: 1, kind: 'monet-theme', exportedAt, theme: { source, color,
+        // style, recent, black, accurate, rootStyle, spec, adjust: { accentSat, bgSat, bgLight }, accents: { secondary, tertiary } } }. It goes where the saved
+        // lists' backups go (the folder chosen there, or Download/ADB App Manager); Share sends it anywhere else. A restore is checked value by value and
+        // fills in the tab (the editor and the Root-only controls' stored choices); nothing is written to the phone until Apply theme.
+        function ovlBkPayload() {
+            const spec = kvGet('ovl_spec', null);
+            return { app: 'adb-app-manager', format: 1, kind: 'monet-theme', exportedAt: new Date().toISOString(), theme: {
+                source: ovlSource, color: ovlColor, style: ovlStyle, recent: ovlRecent.slice(), black: ovlBlackOn(), accurate: ovlAccurateStored(),
+                rootStyle: String(kvGet('ovl_root_style', '') || ''), spec: typeof spec === 'string' && OVL_SPEC_IDS.includes(spec) ? spec : '',
+                adjust: Object.fromEntries(OVL_ADJ.map(o => [o.key, ovlAdjClamp(kvGet(o.kv, 100))])), accents: Object.fromEntries(OVL_ACC.map(o => [o.key, ovlAccStored(o)])) } };
+        }
+        function ovlBkText() { return JSON.stringify(ovlBkPayload(), null, 2) + '\n'; }
+        function ovlBkRender() {
+            const w = document.getElementById('ovlBkWhere');
+            if (!w) return;
+            const k = lbState();
+            w.innerHTML = '<span>' + (k.uri ? 'Backups go to the folder ' + escapeHtml(k.label || 'you chose') : 'Backups go to Download/ADB App Manager (the default)') + '</span>';
+        }
+        function ovlBkNow() {
+            ovlInit();
+            const k = lbState(), text = ovlBkText(), name = 'monet-theme-' + lbStamp(new Date()) + '.json';
+            let out = null;
+            try {
+                if (k.uri) {
+                    if (!lbHasBridge()) { showToast('Backing up to a folder needs the app build'); return; }
+                    const r = JSON.parse(window.AndroidBridge.treeWriteText(k.uri, name, text, false) || '{}');
+                    out = r.ok ? { where: (k.label || 'the folder') + '/' + (r.name || name) } : { error: r.error || 'the folder would not take the file' };
+                } else if (window.AndroidBridge && window.AndroidBridge.saveTextToDownloads) {
+                    const r = window.AndroidBridge.saveTextToDownloads(name, text) || '';
+                    out = /^Error/i.test(r) ? { error: r.replace(/^Error:\s*/i, '') } : { where: r };
+                } else { showToast('Saving is only available in the app'); return; }
+            } catch (e) { out = { error: String(e && e.message || e) }; }
+            haptic();
+            if (out.error) showToast('The backup failed: ' + out.error);
+            else showToast('Backed up the theme to ' + out.where);
+        }
+        function ovlBkShare() {
+            ovlInit();
+            haptic();
+            shareFileViaBridge('monet-theme-' + lbStamp(new Date()) + '.json', ovlBkText(), 'application/json');
+        }
+        function ovlBkRestoreFile() {
+            if (!window.AndroidBridge || !window.AndroidBridge.pickTextFile) { showToast('Restoring needs the app build'); return; }
+            haptic();
+            window.AndroidBridge.pickTextFile('monet-file');
+        }
+        // what a file may bring in, checked: only known styles and specs, six-digit colours, the sliders' range; anything else keeps the tab's own value
+        function ovlBkParse(text) {
+            let d;
+            try { d = JSON.parse(text); } catch (e) { return { error: 'That is not a backup file (it is not JSON).' }; }
+            if (!d || typeof d !== 'object' || d.app !== 'adb-app-manager' || d.kind !== 'monet-theme' || !d.theme || typeof d.theme !== 'object') return { error: 'That is not a Monet theme backup from this app.' };
+            if (d.format !== 1) return { error: 'That backup was made by a newer version of the app (format ' + d.format + ').' };
+            const t = d.theme, hex6 = v => typeof v === 'string' && /^[0-9A-Fa-f]{6}$/.test(v) ? v.toUpperCase() : '';
+            const adj = t.adjust && typeof t.adjust === 'object' ? t.adjust : {}, acc = t.accents && typeof t.accents === 'object' ? t.accents : {};
+            return {
+                source: t.source === 'preset' ? 'preset' : 'home_wallpaper', color: ovlNormalizeHex(t.color) || '', style: OVL_STYLE_IDS.includes(t.style) ? t.style : '',
+                recent: Array.isArray(t.recent) ? t.recent.map(ovlNormalizeHex).filter(Boolean).slice(0, OVL_RECENT_MAX) : [],
+                black: t.black === true, accurate: t.accurate !== false, spec: OVL_SPEC_IDS.includes(t.spec) ? t.spec : '',
+                rootStyle: OVL_ROOT_STYLE_IDS.includes(t.rootStyle) && (t.rootStyle !== 'CMF' || t.spec === '2026') ? t.rootStyle : '',
+                adjust: Object.fromEntries(OVL_ADJ.map(o => [o.key, ovlAdjClamp(Number(adj[o.key]))])), accents: Object.fromEntries(OVL_ACC.map(o => [o.key, hex6(acc[o.key])]))
+            };
+        }
+        function ovlBkRestoreFrom(text, name) {
+            const got = ovlBkParse(text);
+            if (got.error) { showToast(got.error); return; }
+            nextDialogTitle('Restore theme');
+            if (!confirm('Restore the theme from ' + name + '? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.')) return;
+            ovlInit();
+            haptic();
+            ovlTouched = true;
+            ovlSource = got.source === 'preset' && got.color ? 'preset' : 'home_wallpaper';
+            if (got.color) ovlColor = got.color;
+            if (got.style) ovlStyle = got.style;
+            if (got.recent.length) { ovlRecent = got.recent.concat(ovlRecent.filter(h => !got.recent.includes(h))).slice(0, OVL_RECENT_MAX); kvSet('ovl_recent', ovlRecent); }
+            kvSet('ovl_black', got.black);
+            kvSet('ovl_accurate_shades', got.accurate ? '1' : '0');
+            kvSet('ovl_spec', got.spec || null);
+            kvSet('ovl_root_style', got.rootStyle);
+            OVL_ADJ.forEach(o => kvSet(o.kv, got.adjust[o.key]));
+            OVL_ACC.forEach(o => kvSet(o.kv, got.accents[o.key]));
+            ovlAdjMoving = null;
+            try { ovlRenderEditor(); ovlRenderRoot(); ovlRenderActions(); } catch (e) { console.error('Monet restore: ' + e); }
+            showToast('Theme restored from ' + name + '. Tap Apply theme to use it.');
+        }
+
         // ---- the overlay list ----
 
         function ovlReadList() {
@@ -40889,7 +41036,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function ovlRender() {
             ovlRenderChrome();
-            if (ovlSub === 'theme') { ovlRenderNow(); ovlRenderEditor(); ovlRenderThemeError(); ovlRenderRoot(); }
+            if (ovlSub === 'theme') { ovlRenderNow(); ovlRenderEditor(); ovlRenderThemeError(); ovlRenderRoot(); ovlBkRender(); }
             else ovlRenderList();
         }
 
