@@ -4,6 +4,7 @@ ok   Add device opens on the Wi-Fi tab
 ok   a short pairing code is turned down before adb runs
 ok   a wrong code shows adb's answer
 ok   pairing sends the address and the code
+ok   then its connect port is looked up, and with none announced the Connect box waits for it
 ok   a refused connect says so and stays open
 ok   connecting closes the sheet, selects the watch and remembers it
 ok   the card shows the model, Android, screen, density, battery, link and Wear OS

@@ -1,6 +1,13 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.": "準備ができている最適なバックエンドを使用します：Super User → Shizuku (UID 0/1000) → ADB TCP → ワイヤレスデバッグ → Shizuku (UID 2000)。特定のモードに固定するには、下から選択してください。",
+"Android controls it by its app op: allow or stop it here.": "Android はアプリ操作 (app op) で制御しています: ここで許可または停止できます。",
+"Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.": "Android はシェルからのこの app op を拒否しました。Super User、またはシステム (UID 1000) として動作する Shizuku なら変更できます。",
+"Found on this Wi-Fi": "この Wi-Fi で見つかったデバイス",
+"Paired. Looking for its connect port...": "ペア設定しました。接続ポートを探しています...",
+"Super User is no longer available. The working mode is back on Automatic.": "Super User が使えなくなりました。動作モードを自動に戻しました。",
+"not set yet": "未設定",
 "How strongly each line is tinted in the colour of its level.": "各行をそのレベルの色でどれだけ強く色付けするか。",
 "On: each tint fades across the line from its start. Off: the whole line is one even colour.": "オン: 各色は行の先頭から徐々に薄くなります。オフ: 行全体が均一な色になります。",
 "SELinux label": "SELinux ラベル",
@@ -28,8 +35,6 @@ x: {
 "Additional Monet Customization": "追加の Monet カスタマイズ",
 "Check for updates on mobile data": "モバイルデータで更新を確認",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "カスタムテーマ (色、スタイル、Root 専用のテーマ設定) のコピーを保存し、バックアップファイルから戻せます。復元するとこのタブに入力され、「テーマを適用」でスマホに書き込まれます。",
-"Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.": "オフ: アプリの更新は Wi-Fi でのみ確認します。モバイルデータでは前回の結果が残ります。既定はオフ。",
-"Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.": "オフ: ストアのカタログは Wi-Fi でのみダウンロード・更新します。モバイルデータでは前回のコピーを表示します。既定はオフ。",
 "Open tab": "タブを開く",
 "Pure black, more styles, intensity and your own accents for every app that uses Monet colors.": "純粋な黒、追加のスタイル、強さ、独自のアクセントを、Monet カラーを使うすべてのアプリに。",
 "Restore theme": "テーマを復元",
@@ -4516,7 +4521,6 @@ x: {
 "User": "ユーザー",
 "User (": "ユーザー(",
 "Uses Root. The app is stopped while its data is copied.": "Rootを使用します。データのコピー中、アプリは停止されます。",
-"Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "準備ができている最適なバックエンドを使用します：ADB TCP → ワイヤレスデバッグ → Shizuku。特定のモードに固定するには、下から選択してください。",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "システムのShizukuサービスを使い、Rootなしでシェルのuid 2000としてコマンドを実行します。ADB TCP 5555と併用でき、Shizukuを許可するとそちらに切り替わります。",
 "Using the VirusTotal API key from Settings (approved).": "設定の VirusTotal API キーを使用しています（承認済み）。",
 "V": "V",
@@ -5681,6 +5685,8 @@ x: {
 "The files you chose are still being read. Wait a moment.": "選択したファイルをまだ読み込み中です。しばらくお待ちください。"
 },
 p: [
+["Android kept {0} at {1}", "Android は {0} を {1} のままにしました"],
+["could not read it back", "結果を読み戻せませんでした"],
 ["Label before the last change: {0}", "最後の変更前のラベル: {0}"],
 ["Before the last change: {0} ({1}) {2}", "前回の変更前: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "権限を読み取れませんでした: {0}"],

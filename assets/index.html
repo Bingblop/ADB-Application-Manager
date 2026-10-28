@@ -3896,6 +3896,11 @@
             margin-top: 2px;
         }
 
+        /* v7.19.0: the "on mobile data" switch of App Stores and App Updater is one slim line at the top of its page, with no description */
+        .color-card.mobile-slim { padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); }
+        .mobile-slim .switch-row { margin-top: 0; padding-top: 0; border-top: 0; }
+        .mobile-slim .switch-title { font-size: var(--fs-label); }
+
         .switch-input {
             position: absolute;
             opacity: 0;
@@ -4992,6 +4997,15 @@
                 .us-got b { word-break:break-all; }
                 .us-key-actions { display:flex; gap:var(--space-3); flex-wrap:wrap; margin-top:var(--space-3); }
             </style>
+            <!-- v7.18.1 (the owner's wish): the check goes online on Wi-Fi only unless this is on (kv 'updates_mobile_data'; enforced by the app's runUpdateCheck).
+                 v7.19.0: one slim line at the top of the pane, no description -->
+            <div class="color-card mobile-slim" id="updMobileCard">
+                <label class="switch-row">
+                    <div class="switch-title">Check for updates on mobile data</div>
+                    <input type="checkbox" class="switch-input" id="updMobileToggle" onchange="setMobileDataOk('updates_mobile_data', this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+            </div>
             <div class="color-card" id="usCard">
                 <div class="color-card-title">Find and download an app</div>
                 <div class="color-card-subtitle">Search by app name or package name. APKMirror is the default. Every source in the list serves the original file the developer signed, never a modified one.</div>
@@ -5092,17 +5106,6 @@
                     <button class="mode-action-btn" id="usKeyImportBtn" onclick="mpKeyImport()">Import KeyStore</button>
                     <button class="mode-action-btn" id="usKeyResetBtn" onclick="mpKeyReset()">New key</button>
                 </div>
-            </div>
-            <!-- v7.18.1 (the owner's wish): the check goes online on Wi-Fi only unless this is on (kv 'updates_mobile_data'; enforced by the app's runUpdateCheck) -->
-            <div class="color-card" id="updMobileCard">
-                <label class="switch-row">
-                    <div>
-                        <div class="switch-title">Check for updates on mobile data</div>
-                        <div class="switch-sub">Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.</div>
-                    </div>
-                    <input type="checkbox" class="switch-input" id="updMobileToggle" onchange="setMobileDataOk('updates_mobile_data', this.checked)">
-                    <span class="switch-track"></span>
-                </label>
             </div>
             </div>
         </section>
@@ -5386,6 +5389,7 @@
                 </div>
                 <div class="cd-info" id="cdInfo"></div>
                 <div id="cdLost"></div>
+                <div id="cdNearby"></div>
                 <div id="cdSaved"></div>
             </div>
 
@@ -6164,6 +6168,16 @@
                 .store-prompt { display:flex; gap:var(--space-3h); align-items:center; background:var(--fill-2); border:1px dashed var(--accent); border-radius:var(--radius-md); padding:var(--space-3h) var(--space-4); margin-bottom:var(--space-3h); font-size:var(--fs-body); color:var(--text-main); }
             </style>
 
+            <!-- v7.18.1 (the owner's wish): catalogs go online on Wi-Fi only unless this is on (kv 'store_mobile_data'; the app enforces it: storeMobileBlocked).
+                 v7.19.0: one slim line at the top of the tab, no description -->
+            <div class="color-card mobile-slim" id="storeMobileCard">
+                <label class="switch-row">
+                    <div class="switch-title">Update stores on mobile data</div>
+                    <input type="checkbox" class="switch-input" id="storeMobileToggle" onchange="setMobileDataOk('store_mobile_data', this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+            </div>
+
             <div class="store-subtabs h-fade" id="storeSubtabs" role="tablist">
                 <button class="store-subtab active" data-store="shizu" onclick="switchStoreTab('shizu')">ShizuStore</button>
                 <button class="store-subtab" data-store="github" onclick="switchStoreTab('github')">GitHub</button>
@@ -6283,17 +6297,6 @@
             <!-- Sub-tabs the person added with the + tab (a repository address, or a GitHub or Codeberg user or project) -->
             <div id="storeCustomPanels"></div>
 
-            <!-- v7.18.1 (the owner's wish): catalogs go online on Wi-Fi only unless this is on (kv 'store_mobile_data'; the app enforces it: storeMobileBlocked) -->
-            <div class="color-card" id="storeMobileCard">
-                <label class="switch-row">
-                    <div>
-                        <div class="switch-title">Update stores on mobile data</div>
-                        <div class="switch-sub">Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.</div>
-                    </div>
-                    <input type="checkbox" class="switch-input" id="storeMobileToggle" onchange="setMobileDataOk('store_mobile_data', this.checked)">
-                    <span class="switch-track"></span>
-                </label>
-            </div>
 
         </section>
 
@@ -6924,7 +6927,7 @@
                                 <div class="switch-title">Sort by speed</div>
                                 <div class="switch-sub">After a test, the fastest service comes first. Off keeps the list in its usual order.</div>
                             </div>
-                            <input type="checkbox" class="switch-input" id="pdnsSort" onchange="pdnsSortChange(this.checked)">
+                            <input type="checkbox" class="switch-input" id="pdnsSort" checked onchange="pdnsSortChange(this.checked)">
                             <span class="switch-track"></span>
                         </label>
                         <div class="pdns-list" id="pdnsList" role="group" aria-labelledby="pdnsServicesLabel"></div>
@@ -10927,7 +10930,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <span class="mode-status-tag inactive" id="statusTagAuto">AUTO</span>
                 </div>
                 <div class="mode-card-desc">
-                    Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.
+                    Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.
                 </div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn mode-use-btn" data-mode="auto" onclick="selectModeUI('auto')">
@@ -14190,6 +14193,14 @@ Type any command above (e.g. pm list packages -d)</div>
             unprivileged: 'Read-Only'
         };
         let modeInputsPrefilled = false;
+        // Super User was the chosen mode and is gone (no su any more, or su said no): the app went back to Automatic by itself (v7.19.0). The app calls
+        // this when it switched; a probe that switched says rootFellBack. One toast for both, then the mode is read again.
+        let rootLostToastAt = 0;
+        window.onRootModeLost = function () {
+            const now = Date.now();
+            if (now - rootLostToastAt > 5000) { rootLostToastAt = now; showToast('Super User is no longer available. The working mode is back on Automatic.'); }
+            if ((lastModesData || {}).configuredMode === 'root') { checkAllWorkingModes(false); loadPackageData(); }
+        };
 
         function openWorkingModesModal() {
             haptic();
@@ -14245,6 +14256,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const dataStr = fresh && window.AndroidBridge.getWorkingModeFresh ? window.AndroidBridge.getWorkingModeFresh() : window.AndroidBridge.getWorkingMode();
                 const d = JSON.parse(dataStr);
                 lastModesData = d;
+                if (d.rootFellBack) window.onRootModeLost();
                 const configured = d.configuredMode || 'auto';
                 currentWorkingMode = d.activeMode || 'unprivileged';
                 isPrivilegedActive = !!d.isPrivileged;
@@ -17547,7 +17559,7 @@ Type any command above (e.g. pm list packages -d)</div>
         ];
         const PDNS_SAMPLES = 3, PDNS_TIMEOUT_MS = 3000, PDNS_MAX_HOSTS = 40, PDNS_ARM_MS = 10000;
         let PDNS_SILENCE_MS = 60000;                                               // a scan that says nothing for this long is given up (a native side that hangs)
-        let pdnsScan = null, pdnsScanN = 0, pdnsSortOn = false, pdnsArmed = null, pdnsArmTimer = 0, pdnsWatch = 0, pdnsTestMsgText = '';
+        let pdnsScan = null, pdnsScanN = 0, pdnsSortOn = kvGet('pdns_sort', true) !== false, pdnsArmed = null, pdnsArmTimer = 0, pdnsWatch = 0, pdnsTestMsgText = '';
         let pdnsSeq = 0, pdnsBusy = false, pdnsReading = false, pdnsState = null, pdnsAt = 0, pdnsBackend = null;   // pdnsSeq: the number of the newest thing the card asked; an answer to an older one is dropped
 
         // The host name that may be written, or why not. Pure: no page, no bridge. { ok: true, host } (lower case, one trailing dot dropped) or { ok: false, why }.
@@ -17962,7 +17974,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (f) { const n = document.createElement('span'); n.setAttribute('translate', 'no'); n.textContent = pdnsName(f); fv.appendChild(n); fv.appendChild(document.createTextNode(' · ' + txF('{0} ms', pdnsTotal(pdnsScan.res[f])))); }
             }
         }
-        function pdnsSortChange(on) { pdnsSortOn = !!on; pdnsScanRender(); }
+        // Sort by speed is remembered (kv 'pdns_sort'), on until it is turned off (v7.19.0)
+        function pdnsSortChange(on) { pdnsSortOn = !!on; kvSet('pdns_sort', pdnsSortOn); pdnsScanRender(); }
+        { const sw = document.getElementById('pdnsSort'); if (sw) sw.checked = pdnsSortOn; }
 
         function pdnsTestHosts() {
             const hosts = [];
@@ -21046,7 +21060,7 @@ Type any command above (e.g. pm list packages -d)</div>
             try { d = JSON.parse(window.AndroidBridge.getAppDetails(pkg)); } catch (e) { showToast('Could not read this app'); return; }
             inspectedPkg = pkg;                       // the permission and component actions below work on the app named here
             inspectorData = d;
-            appOpsList = parseAppOps(d.appopsRaw || '');
+            appOpsList = withPermissionOps(parseAppOps(d.appopsRaw || ''));
             const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
             document.getElementById('alsSub').innerText = app.name + ' · ' + pkg;
             alsSel.clear();
@@ -21084,16 +21098,16 @@ Type any command above (e.g. pm list packages -d)</div>
             const d = inspectorData || {};
             const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
             return (d.permissions || []).filter(p => {
-                if (alsFilter === 'granted' && !p.granted) return false;
-                if (alsFilter === 'denied' && p.granted) return false;
-                if (alsFilter === 'changeable' && !p.changeable) return false;
-                if (alsFilter === 'locked' && p.changeable) return false;
+                if (alsFilter === 'granted' && !permOn(p)) return false;
+                if (alsFilter === 'denied' && permOn(p)) return false;
+                if (alsFilter === 'changeable' && !permCanChange(p)) return false;
+                if (alsFilter === 'locked' && permCanChange(p)) return false;
                 return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
             });
         }
         async function alsBulk(grant) {
             if (alsBulkBusy || alsKind !== 'perms') return;
-            const todo = alsVisiblePerms().filter(p => p.changeable && p.granted !== grant);
+            const todo = alsVisiblePerms().filter(p => permCanChange(p) && permOn(p) !== grant);
             if (!todo.length) { showToast(grant ? 'Nothing to grant here' : 'Nothing to revoke here'); return; }
             if (!guardPrivilege((grant ? 'Grant' : 'Revoke') + ' permissions')) return;
             const app = allApps.find(a => a.pkg === inspectedPkg) || { name: inspectedPkg };
@@ -21108,11 +21122,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 showToast((grant ? 'Granting ' : 'Revoking ') + (i + 1) + ' of ' + todo.length + '…');
                 await new Promise(r => setTimeout(r, 0));
                 let r;
-                try { r = parseActionResult(window.AndroidBridge.setPermission(pkg, todo[i].name, grant)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+                // A permission Android switches by its app op goes through the op, the rest through pm grant/revoke (v7.19.0)
+                const op = permOpToggle(todo[i]);
+                try { r = parseActionResult(op && window.AndroidBridge.setAppOp ? window.AndroidBridge.setAppOp(pkg, op, grant ? 'allow' : 'ignore') : window.AndroidBridge.setPermission(pkg, todo[i].name, grant)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
                 if (r.ok) done++; else failed.push({ name: todo[i].name.replace(/^android\.permission\./, ''), pkg: todo[i].name, output: r.output, success: false });
             }
             alsBulkBusy = false;
             showToast((grant ? 'Granted ' : 'Revoked ') + done + ' of ' + todo.length + (failed.length ? ' • ' + failed.length + ' failed' : ''));
+            if (todo.some(p => permOpToggle(p)) && typeof refreshAppOps === 'function') refreshAppOps();
             reloadInspectorDetails();
             alsRender();
             if (failed.length) showCommandResults('Permission Manager', grant ? 'grant' : 'revoke', failed);
@@ -21143,25 +21160,25 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             if (alsKind === 'perms') {
                 const perms = d.permissions || [];
-                const granted = perms.filter(p => p.granted).length;
-                sum.innerText = perms.length + ' declared · ' + granted + ' granted · ' + perms.filter(p => p.changeable).length + ' you can change';
+                const granted = perms.filter(permOn).length;
+                sum.innerText = perms.length + ' declared · ' + granted + ' granted · ' + perms.filter(permCanChange).length + ' you can change';
                 const rows = perms.filter(p => {
-                    if (alsFilter === 'granted' && !p.granted) return false;
-                    if (alsFilter === 'denied' && p.granted) return false;
-                    if (alsFilter === 'changeable' && !p.changeable) return false;
-                    if (alsFilter === 'locked' && p.changeable) return false;
+                    if (alsFilter === 'granted' && !permOn(p)) return false;
+                    if (alsFilter === 'denied' && permOn(p)) return false;
+                    if (alsFilter === 'changeable' && !permCanChange(p)) return false;
+                    if (alsFilter === 'locked' && permCanChange(p)) return false;
                     return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
-                }).sort((a, b) => (b.changeable - a.changeable) || a.name.localeCompare(b.name));
-                const toGrant = rows.filter(p => p.changeable && !p.granted).length, toRevoke = rows.filter(p => p.changeable && p.granted).length;
+                }).sort((a, b) => (permCanChange(b) - permCanChange(a)) || a.name.localeCompare(b.name));
+                const toGrant = rows.filter(p => permCanChange(p) && !permOn(p)).length, toRevoke = rows.filter(p => permCanChange(p) && permOn(p)).length;
                 document.getElementById('alsBulkRow').style.display = '';
                 const gb = document.getElementById('alsGrantAll'), rb = document.getElementById('alsRevokeAll');
                 gb.innerText = 'Grant all shown (' + toGrant + ')'; gb.disabled = !toGrant || alsBulkBusy;
                 rb.innerText = 'Revoke all shown (' + toRevoke + ')'; rb.disabled = !toRevoke || alsBulkBusy;
                 list.innerHTML = rows.length ? rows.map(p => {
                     const short = p.name.replace(/^android\.permission\./, '');
-                    const state = p.granted ? 'Granted' : 'Not granted';
-                    const how = p.changeable ? 'You can grant or revoke it here.' : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
-                    const btn = p.changeable
+                    const state = permOn(p) ? 'Granted' : 'Not granted';
+                    const how = p.changeable ? 'You can grant or revoke it here.' : permOpToggle(p) ? txT('Android controls it by its app op: allow or stop it here.') : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
+                    const btn = permOpToggle(p) ? permOpBtn(p) : p.changeable
                         ? `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (p.granted ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${lk(lockedNow())}${p.granted ? 'GRANTED' : 'REVOKED'}</button>`
                         : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                     return `<div class="perm-row als-row"><div class="perm-info">
@@ -21210,7 +21227,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // the app op behind a permission, when this app has one recorded: CAMERA for android.permission.CAMERA, FINE_LOCATION for ACCESS_FINE_LOCATION
         function alsOpLine(permName) {
             const base = permName.replace(/^.*\./, '');
-            const op = (appOpsList || []).find(o => o.name === base || o.name === base.replace(/^ACCESS_/, ''));
+            const perm = ((inspectorData && inspectorData.permissions) || []).find(p => p.name === permName);
+            const op = (appOpsList || []).find(o => o.name === (perm && perm.op) || o.name === base || o.name === base.replace(/^ACCESS_/, ''));
             return op ? `<div class="als-detail" translate="no">App op ${escapeHtml(op.name)}: ${escapeHtml(op.mode)}</div>` : '';
         }
         function alsVisibleActs() {
@@ -27141,6 +27159,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (d && d.state === 'device') { await cdLoadInfo(); cdSub(cd.sub); }
             }
             if (manual) showToast(cd.devices.length ? cd.devices.length + (cd.devices.length === 1 ? ' device' : ' devices') : 'No device found');
+            cdFindNearby(!!manual);
         }
 
         function cdRenderDevices() {
@@ -27154,6 +27173,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('cdWork').style.display = d && d.state === 'device' ? '' : 'none';
             cdRenderRecent();
             cdRenderLost();
+            cdRenderNearby();
         }
 
         function cdSelect(serial) {
@@ -27277,7 +27297,49 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdWaitList() { const k = kvGet('cd_retry', null), r = cdParseWaits(Array.isArray(k) ? k.join(',') : ''); return r.ok ? r.list : CD_AUTO_WAITS.slice(); }
         function cdWaitText(list) { return list.join(', '); }
-        function cdKnown() { const k = kvGet('cd_known', {}); return k && typeof k === 'object' && !Array.isArray(k) ? k : {}; }
+        function cdKnown() {
+            const k = kvGet('cd_known', {});
+            if (!k || typeof k !== 'object' || Array.isArray(k)) return {};
+            if (cdDedupeKnown(k)) kvSet('cd_known', k);
+            return k;
+        }
+        // The IP address of a Wi-Fi device ("192.168.1.20:5555" -> "192.168.1.20"); '' for USB, a Bluetooth link (a local port) and a Wireless
+        // debugging service name, which carry no address. Ports 5556 to 5585 keep the port ("10.0.2.2:5557"): there one computer serves several
+        // devices (emulators, forwarded ports), so the same address is not the same device.
+        function cdHostOf(serial) {
+            // A bare IPv4 address is that address on the default port 5555 (adb connect 192.168.1.20)
+            if (/^\d{1,3}(\.\d{1,3}){3}$/.test(String(serial || ''))) serial = serial + ':5555';
+            const m = /^([^\s:]+):(\d+)$/.exec(String(serial || ''));
+            if (!m || /^(127\.0\.0\.1|localhost)$/i.test(m[1]) || cd.bt.has(serial)) return '';
+            const port = +m[2];
+            return m[1].toLowerCase() + (port > 5555 && port <= 5585 ? ':' + port : '');
+        }
+        // One saved entry per Wi-Fi device (v7.19.0): the same IP address is the same device, whatever its port (Wireless debugging takes a new port
+        // every time it is switched on). Of the entries that share an address, the one connected now stays, else the newest. True when it dropped any.
+        function cdDedupeKnown(known) {
+            const best = {}, rank = s => (cdIsUp(s) ? 1e15 : 0) + ((known[s] || {}).at || 0);
+            Object.keys(known).forEach(s => { const h = cdHostOf(s); if (h && (!best[h] || rank(s) > rank(best[h]))) best[h] = s; });
+            let dropped = false;
+            Object.keys(known).forEach(s => {
+                const h = cdHostOf(s);
+                if (!h || best[h] === s) return;
+                const keep = known[best[h]] || {}, named = (e, key) => !!(e && e.name && e.name !== key);
+                if (!named(keep, best[h]) && named(known[s], s)) keep.name = known[s].name;      // a real name of the old entry is kept over an address
+                delete known[s]; dropped = true;
+            });
+            return dropped;
+        }
+        // The addresses typed or tapped before (kv 'cd_recent', newest first), one per IP address (v7.19.0)
+        function cdRecent() {
+            const r = kvGet('cd_recent', []), hosts = new Set();
+            return (Array.isArray(r) ? r : []).filter(x => {
+                if (!x || !x.addr) return false;
+                const h = cdHostOf(x.addr);
+                if (!h) return true;
+                if (hosts.has(h)) return false;
+                hosts.add(h); return true;
+            });
+        }
         const CD_SAVED_MAX = 20;                           // devices kept in the saved list
         function cdSaveOn() { return kvGet('cd_save', true) !== false; }
         function cdAutoOn() { return kvGet('cd_autore', true) !== false; }
@@ -27383,9 +27445,9 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- Saved devices: every device that was connected, kept until it is deleted here ----
         function cdSavedRows() {
             const known = cdKnown(), rows = [], seen = new Set();
-            Object.keys(known).forEach(s => { seen.add(s); rows.push({ serial: s, name: known[s].name || s, at: known[s].at || 0, up: cdIsUp(s) }); });
-            const r = kvGet('cd_recent', []);
-            (Array.isArray(r) ? r : []).forEach(x => { if (!x || !x.addr || seen.has(x.addr)) return; seen.add(x.addr); rows.push({ serial: x.addr, name: x.addr, at: x.at || 0, up: cdIsUp(x.addr) }); });
+            const hosts = new Set();
+            Object.keys(known).forEach(s => { seen.add(s); if (cdHostOf(s)) hosts.add(cdHostOf(s)); rows.push({ serial: s, name: known[s].name || s, at: known[s].at || 0, up: cdIsUp(s) }); });
+            cdRecent().forEach(x => { if (seen.has(x.addr) || hosts.has(cdHostOf(x.addr))) return; seen.add(x.addr); rows.push({ serial: x.addr, name: x.addr, at: x.at || 0, up: cdIsUp(x.addr) }); });
             return rows.sort((a, b) => (b.up - a.up) || (b.at - a.at));
         }
         function cdRenderSaved() {
@@ -27411,7 +27473,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function cdSavedToggle() { cd.savedOpen = !cd.savedOpen; cdRenderSaved(); }
         function cdSaveToggle() { kvSet('cd_save', !cdSaveOn()); cdRenderSaved(); haptic(); showToast(cdSaveOn() ? 'Devices you connect are saved' : 'Devices you connect are no longer saved'); }
         function cdSavedConnect(serial) {
-            if (cdKnown()[serial]) return cdReconnectSerial(serial, false);
+            if (cdKnown()[serial] || cdHostOf(serial)) return cdReconnectSerial(serial, false);     // a Wi-Fi address: a port that moved is looked up (mDNS)
             return cdConnect(serial);
         }
         function cdDeleteSaved(serial) {
@@ -27434,7 +27496,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const up = cdIsUp(serial);
             cdForget(serial, true);
             const r = kvGet('cd_recent', []);
-            if (Array.isArray(r)) kvSet('cd_recent', r.filter(x => x.addr !== serial));
+            const h = cdHostOf(serial);
+            if (Array.isArray(r)) kvSet('cd_recent', r.filter(x => x && x.addr !== serial && !(h && cdHostOf(x.addr) === h)));
             if (up) { cd.skip[serial] = true; cd.up.add(serial); }
         }
         function cdForget(serial, quiet) {
@@ -28825,8 +28888,8 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---- Add a device ----
         function cdAddOpen(tab) {
-            const recent = kvGet('cd_recent', []);
-            if (!document.getElementById('cdConnAddr').value && recent[0]) document.getElementById('cdConnAddr').value = recent[0].addr;
+            const recent = cdRecent(), near = cdNearbyRows()[0];
+            if (!document.getElementById('cdConnAddr').value && (near || recent[0])) document.getElementById('cdConnAddr').value = near ? near.addr : recent[0].addr;
             document.getElementById('cdAddLog').innerText = '';
             document.getElementById('cdAddModal').classList.add('show');
             cdAddTab(tab || cd.addTab || 'wifi');
@@ -28852,9 +28915,18 @@ Type any command above (e.g. pm list packages -d)</div>
             cd.pairing = false; btn.disabled = false;
             cdAddLog(out);
             if (/Successfully paired/i.test(out)) {
-                showToast('Paired. Now connect.');
                 const host = addr.replace(/:\d+$/, '');
                 const c = document.getElementById('cdConnAddr');
+                // v7.19.0: the device announces the port to connect to on this Wi-Fi (mDNS); look it up and connect, so no second address has to be typed
+                showToast('Paired. Looking for its connect port...');
+                let hit = null;
+                for (let n = 0; n < 3 && !hit; n++) {
+                    if (n) await cdSleep(1500);                          // the announcement can take a moment to appear after pairing
+                    await cdFindNearby(true, 5000);                         // short: a slow adb must not hold the pairing step for long
+                    hit = (cd.nearby || []).find(x => cdHostOf(x.addr) === host.toLowerCase());
+                }
+                if (hit) { c.value = hit.addr; cdConnect(hit.addr); return; }
+                showToast('Paired. Now connect.');
                 if (!c.value.trim()) c.value = host + ':';
                 c.focus();
             }
@@ -28883,15 +28955,16 @@ Type any command above (e.g. pm list packages -d)</div>
         function cdRemember(addr) {
             let r = kvGet('cd_recent', []);
             if (!Array.isArray(r)) r = [];
-            r = r.filter(x => x.addr !== addr);
+            const h = cdHostOf(addr);
+            r = r.filter(x => x && x.addr !== addr && !(h && cdHostOf(x.addr) === h));      // the same IP on another port is the same device (v7.19.0)
             r.unshift({ addr: addr, at: Date.now() });
             if (cdSaveOn()) kvSet('cd_recent', r.slice(0, 8));
         }
         function cdRenderRecent() {
             const el = document.getElementById('cdRecentWrap');
             if (!el) return;
-            const r = kvGet('cd_recent', []);
-            if (!Array.isArray(r) || !r.length || cdCur()) { el.style.display = 'none'; return; }
+            const r = cdRecent();
+            if (!r.length || cdCur()) { el.style.display = 'none'; return; }
             el.style.display = '';
             el.innerHTML = 'Recent: ' + r.map(x => '<button class="cd-chip" translate="no" data-a="' + escapeHtml(x.addr) + '" onclick="cdConnect(this.dataset.a)">' + escapeHtml(x.addr) + '</button>').join(' ');
         }
@@ -28902,6 +28975,44 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (m) res.push({ name: m[1], kind: /pairing/.test(m[2]) ? 'pair' : 'connect', addr: m[3] });
             });
             return res;
+        }
+        // ---- Found on this Wi-Fi (v7.19.0): devices that offer Wireless debugging on this network, with the address and port they announce now, so a
+        // paired device connects with one tap (Connect). Looked up when the tab opens (at most once a minute) and on Refresh; this phone's own
+        // announcement and devices connected now are left out. A device that was never paired answers Connect with a pairing error: pair it under + Add device.
+        const CD_NEARBY_GAP_MS = 60000;
+        async function cdFindNearby(force, timeoutMs) {
+            // a forced look while one is going waits for it (the pair step then looks again), instead of returning with nothing
+            if (cd.nearbyBusy) { if (force && cd.nearbyWait) await cd.nearbyWait; return; }
+            if (!force && Date.now() - (cd.nearbyAt || 0) < CD_NEARBY_GAP_MS) return;
+            cd.nearbyBusy = true; cd.nearbyAt = Date.now();
+            let done = null;
+            cd.nearbyWait = new Promise(r => { done = r; });
+            let found = [];
+            try {
+                const out = await cdRun(['mdns', 'services'], { serial: '', timeout: timeoutMs || 15000 });
+                if (!cdFail(out)) found = cdParseMdns(out).filter(x => x.kind === 'connect');
+            } finally { cd.nearbyBusy = false; done(); }
+            let own = '';
+            try { own = String((window.AndroidBridge && window.AndroidBridge.getDeviceIp && window.AndroidBridge.getDeviceIp()) || '').toLowerCase(); } catch (e) {}
+            const hosts = new Set();
+            cd.nearby = found.filter(x => { const h = cdHostOf(x.addr); if (!h || h === own || hosts.has(h)) return false; hosts.add(h); return true; });
+            cdRenderNearby();
+        }
+        // the ones not connected now (by address, or by the service name adb gives a device it connected to by itself)
+        function cdNearbyRows() {
+            return (cd.nearby || []).filter(x => !cd.devices.some(d => d.state === 'device' && (cdHostOf(d.serial) === cdHostOf(x.addr) || d.serial.indexOf(x.name + '.') === 0)));
+        }
+        function cdRenderNearby() {
+            const el = document.getElementById('cdNearby');
+            if (!el) return;
+            const rows = cdNearbyRows();
+            if (!rows.length) { el.innerHTML = ''; return; }
+            const known = cdKnown(), nameOf = addr => { const s = Object.keys(known).find(k => cdHostOf(k) === cdHostOf(addr)); return s ? known[s].name : ''; };
+            el.innerHTML = '<div class="cd-count" style="margin-top:var(--space-3h);">Found on this Wi-Fi</div>' + rows.map(x => {
+                const nm = nameOf(x.addr);
+                return '<div class="cd-found"><div class="cd-found-main" translate="no">' + escapeHtml(nm || x.addr) + '<span>' + escapeHtml((nm ? x.addr + ' \u00b7 ' : '') + txT('Wireless debugging')) + '</span></div>' +
+                    '<button class="cd-row-act" data-a="' + escapeHtml(x.addr) + '" onclick="cdConnect(this.dataset.a)">Connect</button></div>';
+            }).join('');
         }
         async function cdScan() {
             const btn = document.getElementById('cdScanBtn'), list = document.getElementById('cdScanList');
@@ -31221,7 +31332,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const mods = listed ? Array.from(new Set((listed.mods || []).concat(d.mods))) : [];
                 if (listed && mods.length > ((listed.mods && listed.mods.length) || 0)) { listed.mods = mods; renderApps(); }
             }
-            appOpsList = parseAppOps(d.appopsRaw || '');
+            appOpsList = withPermissionOps(parseAppOps(d.appopsRaw || ''));
             renderPermissionsList();
             renderAppOpsList();
 
@@ -31511,13 +31622,13 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             const q = (document.getElementById('permsSearch').value || '').toLowerCase().trim();
             const rows = perms.filter(p => {
-                if (permsFilter === 'granted' && !p.granted) return false;
-                if (permsFilter === 'denied' && p.granted) return false;
-                if (permsFilter === 'changeable' && !p.changeable) return false;
-                if (permsFilter === 'installtime' && p.changeable) return false;
+                if (permsFilter === 'granted' && !permOn(p)) return false;
+                if (permsFilter === 'denied' && permOn(p)) return false;
+                if (permsFilter === 'changeable' && !permCanChange(p)) return false;
+                if (permsFilter === 'installtime' && permCanChange(p)) return false;
                 if (q && !(p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q))) return false;
                 return true;
-            }).sort((a, b) => (b.changeable - a.changeable) || a.name.localeCompare(b.name));
+            }).sort((a, b) => (permCanChange(b) - permCanChange(a)) || a.name.localeCompare(b.name));
 
             if (!rows.length) {
                 container.innerHTML = '<div class="list-empty">No permissions match.</div>';
@@ -31527,14 +31638,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 const shortName = p.name.replace(/^android\.permission\./, '');
                 const kind = p.protection || 'unknown';
                 const sub = [p.label, p.name !== shortName ? p.name : ''].filter(Boolean).join(' • ');
-                const btn = p.changeable
+                const btn = permOpToggle(p) ? permOpBtn(p) : p.changeable
                     ? `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (p.granted ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${lk(lockedNow())}${p.granted ? 'GRANTED' : 'DENIED'}</button>`
                     : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                 return `
                     <div class="perm-row">
                         <div class="perm-info">
                             <div class="perm-name">${permWbr(shortName)}</div>
-                            <div class="perm-sub"><span class="perm-kind">${escapeHtml(kind)}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}${p.changeable ? '' : '<span class="perm-kind">locked</span>'}${permWbr(sub)}</div>
+                            <div class="perm-sub"><span class="perm-kind">${escapeHtml(kind)}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}${permCanChange(p) ? '' : '<span class="perm-kind">locked</span>'}${permWbr(sub)}</div>
                             ${agentBtnHtml('permission', p.name, ['Declared by the app: ' + inspectedPkg, 'Protection level: ' + kind, p.label ? 'Android calls it: ' + p.label : ''])}
                         </div>
                         ${btn}
@@ -31576,6 +31687,36 @@ Type any command above (e.g. pm list packages -d)</div>
                 }
             });
             return Array.from(ops.values()).sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        // The app ops behind the app's permissions are listed even when Android has no mode recorded for them yet, so they can be set (v7.19.0)
+        function withPermissionOps(list) {
+            const have = new Set(list.map(o => o.name));
+            ((inspectorData && inspectorData.permissions) || []).forEach(p => {
+                if (p && p.op && !have.has(p.op)) { have.add(p.op); list.push({ name: p.op, mode: 'default', detail: txT('not set yet'), uidMode: '', uidOnly: false }); }
+            });
+            return list.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        // A permission Android controls by its app op (Display over other apps, Usage access ...): pm grant cannot change it, the op can (v7.19.0)
+        // Also a development permission (Display over other apps, Usage access): pm grant changes its bit, but Android decides by the op
+        function permOpToggle(p) { return p && p.appOp && p.op && (!p.changeable || p.protection === 'development') ? p.op : ''; }
+        // Granted as Android applies it: by the op for a permission switched through its op, else the permission bit
+        function permOn(p) { return permOpToggle(p) ? permOpOn(p) : !!p.granted; }
+        function permCanChange(p) { return !!(p.changeable || permOpToggle(p)); }
+        // What Android applies: the stricter of an op's uid-level and package-level modes (v7.19.0)
+        const OP_STRICT = { allow: 0, default: 0, foreground: 1, ignore: 2, deny: 3 };
+        function opEffectiveMode(op) {
+            if (!op) return 'default';
+            if (!op.uidMode || op.uidOnly) return op.mode;
+            return (OP_STRICT[op.uidMode] || 0) > (OP_STRICT[op.mode] || 0) ? op.uidMode : op.mode;
+        }
+        function permOpOn(p) {
+            const mode = opEffectiveMode((appOpsList || []).find(o => o.name === p.op));
+            return mode === 'allow' || mode === 'foreground' || (mode === 'default' && !!p.granted);
+        }
+        function permOpBtn(p) {
+            const on = permOpOn(p);
+            return `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (on ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-op="${escapeHtml(p.op)}" data-on="${on}" onclick="setAppOpMode(this.getAttribute('data-op'), this.getAttribute('data-on') === 'true' ? 'ignore' : 'allow')">${lk(lockedNow())}${on ? 'GRANTED' : 'DENIED'}</button>`;
         }
 
         function setOpsFilter(f) {
@@ -31628,9 +31769,21 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!guardPrivilege('Change App Op')) return;
             haptic();
             if (!window.AndroidBridge || !inspectedPkg) return;
+            const cur = (appOpsList || []).find(o => o.name === op);
+            // Android applies the stricter of an op's uid-level and package-level modes, so an op with a uid-level mode gets both (v7.19.0)
+            if (cur && cur.uidMode && window.AndroidBridge.setAppOpUid) window.AndroidBridge.setAppOpUid(inspectedPkg, op, mode);
             const { ok, output } = parseActionResult(window.AndroidBridge.setAppOp(inspectedPkg, op, mode));
-            showToast(ok ? op + ' → ' + mode : (output.trim().split('\n')[0] || 'Could not change that app op'));
-            refreshAppOps();
+            const readOk = refreshAppOps();
+            if (!ok) {
+                const msg = output.trim().split('\n')[0] || 'Could not change that app op';
+                showToast(/SecurityException|not allowed|permission denial/i.test(output) && !isRootActive() ? txT('Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.') : msg);
+                return;
+            }
+            // read it back: Android can keep another mode (a protected op, or a system app), and the toggle must not claim a change that did not happen
+            if (!readOk) { showToast(op + ' → ' + mode + ' · ' + txT('could not read it back')); return; }
+            const now = (appOpsList || []).find(o => o.name === op);
+            if (now && (mode !== 'default' ? opEffectiveMode(now) !== mode : (now.uidMode && now.uidMode !== 'default'))) showToast(txF('Android kept {0} at {1}', op, opEffectiveMode(now)));
+            else showToast(op + ' → ' + mode);
         }
 
         function setCustomAppOp() {
@@ -31644,12 +31797,16 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function refreshAppOps() {
-            if (!window.AndroidBridge || !inspectedPkg || !window.AndroidBridge.getAppOpsRaw) return;
+            if (!window.AndroidBridge || !inspectedPkg || !window.AndroidBridge.getAppOpsRaw) return false;
             const raw = window.AndroidBridge.getAppOpsRaw(inspectedPkg) || '';
+            // a failed read (an error or a timeout) keeps the list it had, so a toggle never reads back a list that is not there
+            if (/^\s*(Error|Exception|java\.|Timed out|Timeout)/i.test(raw)) return false;
             if (inspectorData) inspectorData.appopsRaw = raw;
-            appOpsList = parseAppOps(raw);
+            appOpsList = withPermissionOps(parseAppOps(raw));
             renderAppOpsList();
+            if (inspectorData) renderPermissionsList();
             if (alsIsOpen()) alsRender();
+            return true;
         }
 
         // ---------- Manifest viewer ----------

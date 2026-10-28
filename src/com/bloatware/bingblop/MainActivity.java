@@ -770,6 +770,11 @@ public class MainActivity extends Activity {
     // Whether root was actually GRANTED to this app (su answers uid=0), not only that an su file exists. null: not asked yet. Asked only while Root is the chosen
     // mode (a root manager shows a prompt for it), kept until the person checks again (the mode buttons) or switches to Root.
     private static Boolean rootGrant;
+    // the last su answer was no answer (it timed out, or su could not run): a refusal kept in rootGrant then is not a clear "no", and a chosen Super User
+    // is not switched to Automatic for it (v7.19.0)
+    private static boolean rootGrantUnclear;
+    private static long suMissingSince;               // when su was first found missing while Super User is the chosen mode (0: it is there)
+    private static final java.util.concurrent.atomic.AtomicBoolean autoSuAsking = new java.util.concurrent.atomic.AtomicBoolean();   // one su question at a time, whichever window asks
 
     private static void invalidateModeCache() {
         synchronized (modeCacheLock) {
@@ -1032,8 +1037,21 @@ public class MainActivity extends Activity {
         org.json.JSONArray pkgs = list.optJSONArray("packages");
         for (int i = 0; pkgs != null && i < pkgs.length(); i++) listed.add(pkgs.optString(i));
         final Context app = getApplicationContext();                 // the notification does not depend on this (headless) window staying
-        QuickStopRun run = new QuickStopRun(list.optString("id"), list.optString("name"), listed, QuickStopRun.protectedPackages(getPackageName(), webViewPackageName()));
+        // the apps whose stop would take the notification or the run's own tools with it go last, System UI last of all (QuickStopRun.lastOrder)
+        List<String> tools = new ArrayList<String>(java.util.Arrays.asList(SHIZUKU_PKG, SHIZUKU_PLUS_PKG));
+        for (RootManagers.Manager m : RootManagers.known()) tools.add(m.pkg);
+        QuickStopRun run = new QuickStopRun(list.optString("id"), list.optString("name"), listed, QuickStopRun.protectedPackages(getPackageName(), webViewPackageName()),
+                QuickStopRun.lastOrder(tools, keyboardPackage(), homePackage()));
         if (!QuickStopRun.begin(run, android.os.SystemClock.elapsedRealtime())) return "Kill Apps is already running. Tap Cancel in its notification to stop it.";
+        // held in the foreground by its own notification (JobService.beginWith), so the run reaches its last app when this window is left (v7.19.0)
+        android.app.Notification first = QuickStopNotice.first(app, run);
+        if (first != null) JobService.beginWith(app, QuickStopNotice.ID, first);
+        // and the CPU kept awake for the run (at most ten minutes), so a screen turned off does not pause it until the phone wakes
+        android.os.PowerManager.WakeLock wake = null;
+        try {
+            android.os.PowerManager pm = (android.os.PowerManager) app.getSystemService(Context.POWER_SERVICE);
+            if (pm != null) { wake = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "adbmanager:kill-apps"); wake.setReferenceCounted(false); wake.acquire(10 * 60 * 1000L); }
+        } catch (RuntimeException ignored) {}
         // No tile refresh here or in finishQuickAction: the Kill Apps tile is passive (no ACTIVE_TILE meta-data), and
         // TileService.requestListeningState does nothing for a passive tile. Android reads QuickStopRun.tileActive() in the tile's
         // onStartListening each time the panel opens, so the tile is lit when the panel is opened while a run is going. Making the tile
@@ -1055,8 +1073,32 @@ public class MainActivity extends Activity {
         } finally {
             QuickStopRun.end(run);
             QuickStopNotice.clear(app, run);
+            if (first != null) JobService.endWith(app);
+            if (wake != null) try { wake.release(); } catch (RuntimeException ignored) {}
         }
         return run.summary();
+    }
+
+    /** The package of the keyboard in use, or "" when the phone does not say. */
+    private String keyboardPackage() {
+        try {
+            String id = android.provider.Settings.Secure.getString(getContentResolver(), "default_input_method");
+            int slash = id == null ? -1 : id.indexOf('/');
+            return slash > 0 ? id.substring(0, slash) : "";
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** The package of the home screen in use, or "" when there is no default one. */
+    private String homePackage() {
+        try {
+            android.content.pm.ResolveInfo ri = getPackageManager().resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), PackageManager.MATCH_DEFAULT_ONLY);
+            String p = ri == null || ri.activityInfo == null ? null : ri.activityInfo.packageName;
+            return p == null || "android".equals(p) ? "" : p;                  // "android": no default, the chooser would answer
+        } catch (Throwable t) {
+            return "";
+        }
     }
 
     /** The package of the WebView this phone uses (Android System WebView, or Chrome on a phone that uses it), or "" when the phone does not say. */
@@ -2107,19 +2149,51 @@ public class MainActivity extends Activity {
         synchronized (modeCacheLock) {
             if (rootGrant != null) return rootGrant;
         }
-        boolean ok;
+        boolean ok, unclear;
         try {
             ProcessBuilder pb = new ProcessBuilder("su", "-c", "id");
             pb.redirectErrorStream(true);
             String out = runProcessWithTimeout(pb, 8000);
             ok = out != null && out.contains("uid=0");
+            unclear = !ok && (out == null || out.startsWith("Error:") || out.contains("[Process timed out"));
         } catch (Exception e) {
             ok = false;
+            unclear = true;
         }
         synchronized (modeCacheLock) {
             rootGrant = ok;
+            rootGrantUnclear = unclear;
         }
         return ok;
+    }
+
+    /**
+     * Automatic's Super User check (v7.19.0). It never holds the page: an su answer already known is used, and one not known yet is asked once on a
+     * thread of its own (the root manager may show its prompt), after which the page reads the modes again. A tile tap's headless window never asks.
+     */
+    private boolean autoRootGranted() {
+        if (!isRootAvailable()) return false;
+        Boolean known;
+        synchronized (modeCacheLock) { known = rootGrant; }
+        if (known != null) return known;
+        if (!isHeadless() && autoSuAsking.compareAndSet(false, true)) {
+            Thread t = new Thread(new Runnable() {
+                @Override public void run() {
+                    try {
+                        if (isRootGranted()) {
+                            invalidateModeCache();
+                            cachedAutoMode = null;
+                            notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes()");
+                        }
+                    } finally {
+                        autoSuAsking.set(false);
+                    }
+                }
+            }, "auto-su");
+            t.setDaemon(true);
+            t.start();
+        }
+        return false;
     }
 
     /** The su verdict as already known, without asking (no prompt): not asked yet counts as not granted. */
@@ -2133,7 +2207,7 @@ public class MainActivity extends Activity {
         for (String path : SU_PATHS) {
             if (new File(path).exists()) return true;
         }
-        // "no su" rarely changes (Magisk can be installed while the app runs): ask the shell once a minute, not on every probe
+        // "no su" rarely changes (a root manager can be installed while the app runs): ask the shell once a minute, not on every probe
         synchronized (modeCacheLock) {
             if (rootChecked && System.nanoTime() / 1000000L - rootCheckedAt < 60000) return rootCached;
         }
@@ -2158,6 +2232,7 @@ public class MainActivity extends Activity {
 
     /** Backend used to execute commands right now: adb_tcp, adb_wireless, shizuku, root or standard. */
     private String resolveExecMode() {
+        fallBackFromLostRoot();
         String mode = activeWorkingMode;
         if (!"auto".equals(mode)) {
             return "unprivileged".equals(mode) ? "standard" : mode;
@@ -2167,24 +2242,61 @@ public class MainActivity extends Activity {
         if (cached != null && now - cachedAutoModeAt < 4000) {
             return cached;
         }
+        // Automatic's order (RootGate.autoPick): Super User, Shizuku as uid 0 or 1000, ADB over TCP, Wireless Debugging, Shizuku as uid 2000.
+        // su is asked at most once (its answer is kept until a fresh check); the headless window of a tile tap only reads an answer already known.
+        long gen;
+        synchronized (modeCacheLock) { gen = modeCacheGen; }
         String devices = adbDevicesOutput();
-        String resolved;
-        if (isTargetReady(devices, tcpTarget())) {
-            resolved = "adb_tcp";
-        } else if (adbWirelessPort > 0 && isTargetReady(devices, wirelessTarget())) {
-            resolved = "adb_wireless";
-        } else if (isShizukuAuthorized()) {
-            resolved = "shizuku";
-        } else if (isPortOpen(adbTcpHost, adbTcpPort, 200)) {
+        boolean suOk = autoRootGranted();
+        boolean szAuth = isShizukuAuthorized();
+        int szUid = szAuth ? shizukuUidOrUnknown() : -1;
+        boolean tcp = isTargetReady(devices, tcpTarget());
+        boolean wireless = adbWirelessPort > 0 && isTargetReady(devices, wirelessTarget());
+        if (!suOk && !(szAuth && (szUid == 0 || szUid == 1000)) && !tcp && isPortOpen(adbTcpHost, adbTcpPort, 200)) {
             // Port is open but not connected yet: connect quietly without changing the configured mode
             performConnect(adbTcpHost, adbTcpPort, null);
-            resolved = isAdbTargetConnected(tcpTarget()) ? "adb_tcp" : "standard";
-        } else {
-            resolved = "standard";
+            tcp = isAdbTargetConnected(tcpTarget());
+        }
+        String pick = RootGate.autoPick(suOk, szAuth, szUid, tcp, wireless);
+        String resolved = pick == null ? "standard" : pick;
+        // an invalidation meanwhile (su was granted on the auto-su thread) makes this answer old: use it once, do not keep it
+        synchronized (modeCacheLock) {
+            if (modeCacheGen != gen) return resolved;
         }
         cachedAutoMode = resolved;
         cachedAutoModeAt = now;
         return resolved;
+    }
+
+    /** Shizuku's server uid (0 root, 1000 system, 2000 ADB shell), or -1 when it cannot be read. */
+    private static int shizukuUidOrUnknown() {
+        try {
+            return Shizuku.getUid();
+        } catch (Throwable t) {
+            return -1;
+        }
+    }
+
+    /**
+     * Super User is the chosen mode but is no longer there (no su on the phone any more, or su said no the last time it was asked): the mode goes
+     * back to Automatic, which then picks the best mode that is ready, and the page is told so it can say it (v7.19.0). Returns true when it did.
+     */
+    private boolean fallBackFromLostRoot() {
+        if (!"root".equals(activeWorkingMode)) return false;
+        Boolean lastAnswer;
+        synchronized (modeCacheLock) { lastAnswer = rootGrantUnclear ? null : rootGrant; }      // a timed-out prompt is not a "no"
+        // su not found counts only once it has stayed missing for two minutes: on some root managers the check can miss for a moment (an update,
+        // early boot), and a one-off miss must not rewrite the chosen mode
+        boolean suFound = isRootAvailable();
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (suFound) suMissingSince = 0;
+        else if (suMissingSince == 0) suMissingSince = now;
+        if (!suFound && now - suMissingSince < 120000) suFound = true;
+        if (!RootGate.rootLost(activeWorkingMode, suFound, lastAnswer)) return false;
+        suMissingSince = 0;
+        setConfiguredMode("auto");
+        notifyJs("window.onRootModeLost && window.onRootModeLost()");
+        return true;
     }
 
     private static String deviceWifiIp() {
@@ -2218,6 +2330,29 @@ public class MainActivity extends Activity {
         int g = (int) (Color.green(a) * inv + Color.green(b) * ratio);
         int bl = (int) (Color.blue(a) * inv + Color.blue(b) * ratio);
         return Color.rgb(r, g, bl);
+    }
+
+    /**
+     * The package with its permissions and its four kinds of components, for the app's details. One call asks for all of it, but a big app (Play
+     * services, a system app with thousands of components) can be more than one answer of Android's package manager may carry: it then throws, and
+     * the details used to come with no permissions at all (v7.19.0). Then the permissions are read alone and each kind of component on its own;
+     * a kind that is still too big is left out.
+     */
+    private PackageInfo detailsPackageInfo(String pkg) throws PackageManager.NameNotFoundException {
+        PackageManager pm = getPackageManager();
+        int match = PackageManager.MATCH_DISABLED_COMPONENTS | PackageManager.MATCH_UNINSTALLED_PACKAGES;
+        try {
+            return pm.getPackageInfo(pkg, match | PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES
+                    | PackageManager.GET_PROVIDERS | PackageManager.GET_PERMISSIONS);
+        } catch (RuntimeException tooBig) {
+            Log.w(TAG, "app details of " + pkg + " in parts: " + tooBig.getClass().getSimpleName());
+        }
+        PackageInfo info = pm.getPackageInfo(pkg, match | PackageManager.GET_PERMISSIONS);
+        try { info.activities = pm.getPackageInfo(pkg, match | PackageManager.GET_ACTIVITIES).activities; } catch (RuntimeException ignored) {}
+        try { info.services = pm.getPackageInfo(pkg, match | PackageManager.GET_SERVICES).services; } catch (RuntimeException ignored) {}
+        try { info.receivers = pm.getPackageInfo(pkg, match | PackageManager.GET_RECEIVERS).receivers; } catch (RuntimeException ignored) {}
+        try { info.providers = pm.getPackageInfo(pkg, match | PackageManager.GET_PROVIDERS).providers; } catch (RuntimeException ignored) {}
+        return info;
     }
 
     /**
@@ -2258,6 +2393,16 @@ public class MainActivity extends Activity {
         out.put("protection", protection);
         out.put("changeable", changeable);
         out.put("appOp", appOp);
+        // the app op behind the permission, by the name appops uses (android:system_alert_window -> SYSTEM_ALERT_WINDOW), or none: the App Ops list
+        // shows it even before it was ever set, and an app-op permission (one pm grant cannot change) is switched through it (v7.19.0)
+        try {
+            String op = android.app.AppOpsManager.permissionToOp(permName);
+            if (op != null && op.startsWith("android:")) {
+                String name = op.substring(8).toUpperCase(java.util.Locale.ROOT);
+                if ("FINE_LOCATION".equals(name)) name = "COARSE_LOCATION";       // Android keeps the location mode under the coarse op (its switch op)
+                if (ShellArgs.isAppOp(name)) out.put("op", name);
+            }
+        } catch (Throwable ignored) {}
         out.put("label", label);
         out.put("description", description);
         out.put("group", group);
@@ -10795,7 +10940,9 @@ public class MainActivity extends Activity {
             long gen;
             synchronized (modeCacheLock) {
                 gen = modeCacheGen;
-                if (recheckRoot) { rootChecked = false; rootGrant = null; }
+                // su is asked again only while Super User is the chosen mode: in Automatic a fresh check would bring the root manager's prompt
+                // back each time (Automatic keeps the answer it got, v7.19.0)
+                if (recheckRoot) { rootChecked = false; if ("root".equals(activeWorkingMode)) { rootGrant = null; rootGrantUnclear = false; } }
             }
             String json = probeWorkingMode();
             synchronized (modeCacheLock) {
@@ -10834,12 +10981,16 @@ public class MainActivity extends Activity {
 
                 boolean rootAvailable = isRootAvailable();
                 obj.put("rootAvailable", rootAvailable);
-                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode, and
-                // never from the headless window of a tile tap (QuickActionActivity): the root manager's prompt would come up behind the
-                // collapsing panel, and one left unanswered would be remembered as a refusal. There only a verdict already known counts; not
-                // asked yet reads as not granted (the tile stays dim) until the app is opened and asks.
-                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());
-                if (rootAvailable && "root".equals(activeWorkingMode)) obj.put("rootGranted", rootGrantedNow);
+                // root counts as ready only when su really answers for this app, and that is asked while Root or Automatic is the chosen mode
+                // (Automatic tries Super User first, v7.19.0), and never from the headless window of a tile tap (QuickActionActivity): the
+                // root manager's prompt would come up behind the collapsing panel, and one left unanswered would be remembered as a refusal.
+                // There only a verdict already known counts; not asked yet reads as not granted (the tile stays dim) until the app is opened and asks.
+                boolean suAsked = "root".equals(activeWorkingMode) || "auto".equals(activeWorkingMode);
+                // Automatic never waits for su here (autoRootGranted asks it on a thread of its own); Root asks as before
+                boolean rootGrantedNow = rootAvailable && suAsked && ("auto".equals(activeWorkingMode) ? autoRootGranted() : (isHeadless() ? rootGrantedKnown() : isRootGranted()));
+                // Super User chosen, and gone (no su, or su said no): back to Automatic before the mode is read below
+                if (fallBackFromLostRoot()) obj.put("rootFellBack", true);
+                if (rootAvailable && suAsked) obj.put("rootGranted", rootGrantedNow);
                 else if (rootAvailable) {
                     // in another mode su is not asked, but its last answer is still known: a refusal (Request Super User puts the mode the user had back
                     // after one) reads as DENIED on Root Features until a fresh check forgets it (probeAndCacheMode(true) clears rootGrant)
@@ -10847,20 +10998,17 @@ public class MainActivity extends Activity {
                     synchronized (modeCacheLock) { lastAnswer = rootGrant; }
                     if (Boolean.FALSE.equals(lastAnswer)) obj.put("rootGranted", false);
                 }
-                // the Root Features gate (RootGate.active): Root is the chosen mode and su really granted it, as one verdict the page can read
-                obj.put("rootWorkingModeActive", rootGrantedNow);
                 obj.put("deviceIp", deviceWifiIp());
 
                 String configured = activeWorkingMode;
                 String resolved;
                 boolean available;
                 if ("auto".equals(configured)) {
-                    if (tcpConnected) resolved = "adb_tcp";
-                    else if (wirelessConnected) resolved = "adb_wireless";
-                    else if (shizukuAuthorized) resolved = "shizuku";
-                    else if (tcpPortOpen) resolved = "adb_tcp"; // connected lazily on the first command
-                    else resolved = "unprivileged";
-                    available = !"unprivileged".equals(resolved);
+                    // RootGate.autoPick: Super User, Shizuku as uid 0 or 1000, ADB over TCP (an open port is connected lazily on the first command),
+                    // Wireless Debugging, Shizuku as uid 2000
+                    String pick = RootGate.autoPick(rootGrantedNow, shizukuAuthorized, shizukuObj.optInt("uid", -1), tcpConnected || tcpPortOpen, wirelessConnected);
+                    resolved = pick == null ? "unprivileged" : pick;
+                    available = pick != null;
                 } else {
                     resolved = configured;
                     if ("adb_tcp".equals(configured)) available = tcpConnected || tcpPortOpen;
@@ -10875,6 +11023,9 @@ public class MainActivity extends Activity {
                 // tier for writing colour overlays: Root with su, or Shizuku started as root (uid 0). Both key off the RESOLVED mode, so
                 // Auto that lands on a uid-1000 Shizuku unlocks too; a uid-2000 ADB-shell Shizuku and an unknown uid stay locked. See RootGate.
                 int szUid = shizukuObj.optInt("uid", -1);
+                // the Root Features gate (RootGate.active): Super User is the mode in use (chosen, or picked by Automatic) and su really granted it,
+                // as one verdict the page can read
+                obj.put("rootWorkingModeActive", RootGate.active(resolved, rootGrantedNow));
                 obj.put("sysPrivActive", RootGate.unlocked(resolved, rootGrantedNow, shizukuAuthorized, szUid));
                 obj.put("rootUidActive", RootGate.uid0(resolved, rootGrantedNow, shizukuAuthorized, szUid));
 
@@ -10941,7 +11092,8 @@ public class MainActivity extends Activity {
                     pb.redirectErrorStream(true);
                     String out = runProcessWithTimeout(pb, 15000);
                     ok = out != null && out.contains("uid=0");
-                    synchronized (modeCacheLock) { rootGrant = ok; }
+                    boolean unclear = !ok && (out == null || out.startsWith("Error:") || out.contains("[Process timed out"));
+                    synchronized (modeCacheLock) { rootGrant = ok; rootGrantUnclear = unclear; }
                     message = ok ? "Using Root (Superuser)" : "Root was denied or is not available";
                 } else if ("unprivileged".equals(mode)) {
                     message = "Switched to Read-Only Mode";
@@ -13162,10 +13314,7 @@ public class MainActivity extends Activity {
             try {
                 JSONObject obj = new JSONObject();
                 try {
-                    int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES
-                            | PackageManager.GET_PROVIDERS | PackageManager.GET_PERMISSIONS
-                            | PackageManager.MATCH_DISABLED_COMPONENTS | PackageManager.MATCH_UNINSTALLED_PACKAGES;
-                    PackageInfo info = getPackageManager().getPackageInfo(pkg, flags);
+                    PackageInfo info = detailsPackageInfo(pkg);
                     obj.put("versionName", info.versionName != null ? info.versionName : "N/A");
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         obj.put("versionCode", info.getLongVersionCode());
@@ -20083,6 +20232,16 @@ public class MainActivity extends Activity {
             return runShellAction("appops set " + pkg + " " + op + " " + mode);
         }
 
+        /**
+         * The uid-level mode of an app op (appops set --uid). Android applies the stricter of an op's uid-level and package-level modes, so a
+         * package-level change under a stricter uid-level mode never took effect; the page sets both for an op that has a uid-level mode (v7.19.0).
+         */
+        @JavascriptInterface
+        public String setAppOpUid(String pkg, String op, String mode) {
+            if (!BackupScripts.isPackageName(pkg) || !ShellArgs.isAppOp(op) || !ShellArgs.isAppOpMode(mode)) return flagged(false, "Error: not a valid package, app op and value");
+            return runShellAction("appops set --uid " + pkg + " " + op + " " + mode);
+        }
+
         @JavascriptInterface
         public String setPermission(String pkg, String perm, boolean grant) {
             if (!BackupScripts.isPackageName(pkg) || !BackupScripts.isPermission(perm)) return flagged(false, "Error: not a valid package and permission name");
@@ -20355,6 +20514,8 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
         if (isHeadless()) {                                // a tile / widget action has no page: Back just closes it
+            // while Kill Apps runs, Back only puts the window away: closing it would end the Shizuku shell the run's stops go through (v7.19.0)
+            if (QuickStopRun.active() != null) { moveTaskToBack(true); return; }
             super.onBackPressed();
             return;
         }

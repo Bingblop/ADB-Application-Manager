@@ -1,6 +1,13 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+"Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.": "Verwendet das beste bereite Backend: Super User → Shizuku (UID 0/1000) → ADB TCP → Kabelloses Debugging → Shizuku (UID 2000). Wählen Sie unten einen bestimmten Modus, um ihn stattdessen festzulegen.",
+"Android controls it by its app op: allow or stop it here.": "Android steuert sie über ihre App-Op: hier erlauben oder stoppen.",
+"Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.": "Android hat diese App-Op aus der Shell abgelehnt. Super User oder Shizuku als System (UID 1000) kann sie ändern.",
+"Found on this Wi-Fi": "In diesem WLAN gefunden",
+"Paired. Looking for its connect port...": "Gekoppelt. Suche nach seinem Verbindungsport...",
+"Super User is no longer available. The working mode is back on Automatic.": "Super User ist nicht mehr verfügbar. Der Betriebsmodus steht wieder auf Automatisch.",
+"not set yet": "noch nicht festgelegt",
 "How strongly each line is tinted in the colour of its level.": "Wie stark jede Zeile in der Farbe ihrer Stufe getönt wird.",
 "On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Ein: Jede Tönung verläuft vom Anfang über die Zeile. Aus: Die ganze Zeile hat eine gleichmäßige Farbe.",
 "SELinux label": "SELinux-Label",
@@ -28,8 +35,6 @@ x: {
 "Additional Monet Customization": "Weitere Monet-Anpassung",
 "Check for updates on mobile data": "Über mobile Daten nach Updates suchen",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Bewahren Sie eine Kopie Ihres eigenen Designs auf (Farbe, Stil und die Root-Design-Regler) und holen Sie es aus einer Sicherungsdatei zurück. Die Wiederherstellung füllt diesen Tab aus; Design anwenden schreibt es auf das Telefon.",
-"Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.": "Aus: Apps werden nur im WLAN auf Updates geprüft; über mobile Daten bleiben die letzten Ergebnisse stehen. Standardmäßig aus.",
-"Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.": "Aus: Die Store-Kataloge werden nur im WLAN geladen und aktualisiert; über mobile Daten wird die vorherige Kopie gezeigt. Standardmäßig aus.",
 "Open tab": "Tab öffnen",
 "Pure black, more styles, intensity and your own accents for every app that uses Monet colors.": "Reines Schwarz, mehr Stile, Intensität und eigene Akzente für jede App, die Monet-Farben nutzt.",
 "Restore theme": "Design wiederherstellen",
@@ -4515,7 +4520,6 @@ x: {
 "User": "Nutzer",
 "User (": "Nutzer (",
 "Uses Root. The app is stopped while its data is copied.": "Verwendet Root. Die App wird beendet, während ihre Daten kopiert werden.",
-"Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "Verwendet das beste bereite Backend: ADB TCP → Kabelloses Debugging → Shizuku. Wählen Sie unten einen bestimmten Modus, um ihn stattdessen festzulegen.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Verwendet den System-Shizuku-Dienst, um Befehle unter Shell-UID 2000 ohne Root auszuführen. Funktioniert parallel zu ADB TCP 5555 – die Autorisierung von Shizuku wechselt dorthin.",
 "Using the VirusTotal API key from Settings (approved).": "Es wird der VirusTotal-API-Schlüssel aus den Einstellungen verwendet (bestätigt).",
 "V": "V",
@@ -5681,6 +5685,8 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Die gewählten Dateien werden noch gelesen. Warten Sie kurz."
 },
 p: [
+["Android kept {0} at {1}", "Android hat {0} auf {1} belassen"],
+["could not read it back", "konnte es nicht zurücklesen"],
 ["Label before the last change: {0}", "Label vor der letzten Änderung: {0}"],
 ["Before the last change: {0} ({1}) {2}", "Vor der letzten Änderung: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Die Berechtigungen ließen sich nicht lesen: {0}"],

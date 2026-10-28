@@ -24,6 +24,19 @@ public class RootGateTest {
     check("null mode: locked, no exception", !RootGate.active(null, true) && !RootGate.active(null, false));
     check("a blank or odd spelling of root is not root", !RootGate.active("", true) && !RootGate.active("Root", true) && !RootGate.active(" root", true));
 
+    // ---- Automatic's order (v7.19.0): Super User, Shizuku as uid 0 or 1000, ADB over TCP, Wireless Debugging, Shizuku as uid 2000
+    check("auto: su granted wins over everything", "root".equals(RootGate.autoPick(true, true, 0, true, true)));
+    check("auto: Shizuku uid 1000 and uid 0 come before ADB TCP", "shizuku".equals(RootGate.autoPick(false, true, 1000, true, true)) && "shizuku".equals(RootGate.autoPick(false, true, 0, true, true)));
+    check("auto: ADB TCP comes before Wireless Debugging and a uid 2000 Shizuku", "adb_tcp".equals(RootGate.autoPick(false, true, 2000, true, true)));
+    check("auto: Wireless Debugging comes before a uid 2000 Shizuku", "adb_wireless".equals(RootGate.autoPick(false, true, 2000, false, true)));
+    check("auto: a uid 2000 (or unknown uid) Shizuku is the last pick", "shizuku".equals(RootGate.autoPick(false, true, 2000, false, false)) && "shizuku".equals(RootGate.autoPick(false, true, -1, false, false)));
+    check("auto: nothing ready gives null", RootGate.autoPick(false, false, -1, false, false) == null);
+    // ---- Super User lost while it is the chosen mode
+    check("root chosen, su gone: lost", RootGate.rootLost("root", false, null));
+    check("root chosen, su said no: lost", RootGate.rootLost("root", true, Boolean.FALSE));
+    check("root chosen, su there and not asked yet or granted: kept", !RootGate.rootLost("root", true, null) && !RootGate.rootLost("root", true, Boolean.TRUE));
+    check("another mode is never treated as lost root", !RootGate.rootLost("auto", false, Boolean.FALSE) && !RootGate.rootLost(null, false, null));
+
     // ---- the privileged tiers above the ADB shell (RootGate.unlocked): Root with su, or Shizuku as the system user (uid 1000) or root (uid 0)
     check("Shizuku authorized as the system user (uid 1000): unlocked", RootGate.unlocked("shizuku", false, true, 1000));
     check("Shizuku authorized as root (uid 0): unlocked", RootGate.unlocked("shizuku", false, true, 0));
@@ -77,16 +90,18 @@ public class RootGateTest {
 
     // MainActivity: the probe reports the gate's verdict, computed as root chosen AND su granted (not from rootAvailable alone)
     String probe = bodyOf(m, "private String probeWorkingMode() {");
-    check("source: probeWorkingMode puts rootWorkingModeActive", probe != null && probe.contains("obj.put(\"rootWorkingModeActive\", rootGrantedNow);"));
-    check("source: that verdict is root chosen AND su granted (asked in the app's window; a tile tap's headless window only reads a grant already known)", probe != null && probe.contains("boolean rootGrantedNow = rootAvailable && \"root\".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());"));
+    check("source: probeWorkingMode puts rootWorkingModeActive", probe != null && probe.contains("obj.put(\"rootWorkingModeActive\", RootGate.active(resolved, rootGrantedNow));"));
+    check("source: su is asked while Root or Automatic is chosen (asked in the app's window; a tile tap's headless window only reads a grant already known)", probe != null && probe.contains("boolean suAsked = \"root\".equals(activeWorkingMode) || \"auto\".equals(activeWorkingMode);") && probe.contains("boolean rootGrantedNow = rootAvailable && suAsked && (\"auto\".equals(activeWorkingMode) ? autoRootGranted() : (isHeadless() ? rootGrantedKnown() : isRootGranted()));"));
+    check("source: a lost Super User falls back to Automatic before the mode is read", probe != null && probe.contains("if (fallBackFromLostRoot()) obj.put(\"rootFellBack\", true);") && probe.indexOf("fallBackFromLostRoot()") < probe.indexOf("String configured = activeWorkingMode;"));
+    check("source: Automatic picks by RootGate.autoPick", probe != null && probe.contains("RootGate.autoPick(rootGrantedNow, shizukuAuthorized,"));
     check("source: the fallback answer of a failed probe has no rootWorkingModeActive (the page then stays locked)", probe != null && !bodyOf(m, "private String probeWorkingMode() {").substring(probe.indexOf("catch (Exception e)")).contains("rootWorkingModeActive"));
     // T-043: outside Root su is not asked, but a known refusal (the last answer, kept in rootGrant) is still reported, so Root Features reads DENIED after
     // Request Super User put the previous mode back; a fresh probe forgets it
     check("source: outside Root, a remembered refusal is reported as rootGranted false (read under the lock, never a fresh su call)", probe != null
         && probe.contains("synchronized (modeCacheLock) { lastAnswer = rootGrant; }") && probe.contains("if (Boolean.FALSE.equals(lastAnswer)) obj.put(\"rootGranted\", false);")
-        && probe.indexOf("else if (rootAvailable) {") > probe.indexOf("if (rootAvailable && \"root\".equals(activeWorkingMode)) obj.put(\"rootGranted\", rootGrantedNow);"));
+        && probe.indexOf("else if (rootAvailable) {") > probe.indexOf("if (rootAvailable && suAsked) obj.put(\"rootGranted\", rootGrantedNow);"));
     String fresh = bodyOf(m, "private String probeAndCacheMode(boolean recheckRoot) {");
-    check("source: a fresh probe forgets su's last answer", fresh != null && fresh.contains("if (recheckRoot) { rootChecked = false; rootGrant = null; }"));
+    check("source: a fresh probe forgets su's last answer while Super User is chosen (Automatic keeps it, so its prompt does not come back)", fresh != null && fresh.contains("if (recheckRoot) { rootChecked = false; if (\"root\".equals(activeWorkingMode)) { rootGrant = null; rootGrantUnclear = false; } }"));
 
     // the page: the gate helper, and the verdict read from the working-mode data
     String gate = bodyOf(h, "function isRootActive() {");

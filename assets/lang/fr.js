@@ -1,6 +1,13 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+"Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.": "Utilise le meilleur backend prêt : Super User → Shizuku (UID 0/1000) → ADB TCP → débogage sans fil → Shizuku (UID 2000). Choisissez un mode précis ci-dessous pour le fixer à la place.",
+"Android controls it by its app op: allow or stop it here.": "Android la contrôle par son app op : autorisez-la ou arrêtez-la ici.",
+"Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.": "Android a refusé cette app op depuis le shell. Super User, ou Shizuku exécuté en tant que système (UID 1000), peut la modifier.",
+"Found on this Wi-Fi": "Trouvés sur ce Wi-Fi",
+"Paired. Looking for its connect port...": "Associé. Recherche de son port de connexion...",
+"Super User is no longer available. The working mode is back on Automatic.": "Super User n'est plus disponible. Le mode de fonctionnement repasse en Automatique.",
+"not set yet": "pas encore défini",
 "How strongly each line is tinted in the colour of its level.": "L'intensité de la teinte de chaque ligne, dans la couleur de son niveau.",
 "On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Activé : chaque teinte s'estompe le long de la ligne depuis son début. Désactivé : toute la ligne est d'une couleur uniforme.",
 "SELinux label": "Étiquette SELinux",
@@ -28,8 +35,6 @@ x: {
 "Additional Monet Customization": "Personnalisation Monet supplémentaire",
 "Check for updates on mobile data": "Rechercher les mises à jour sur données mobiles",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Gardez une copie de votre thème personnalisé (la couleur, le style et les réglages de thème réservés à Root) et récupérez-le depuis un fichier de sauvegarde. La restauration remplit cet onglet ; Appliquer le thème l'écrit sur le téléphone.",
-"Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.": "Désactivé : les mises à jour des apps ne sont vérifiées qu'en Wi-Fi ; sur données mobiles, les derniers résultats restent. Désactivé par défaut.",
-"Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.": "Désactivé : les catalogues des stores ne sont téléchargés et actualisés qu'en Wi-Fi ; sur données mobiles, la copie précédente est affichée. Désactivé par défaut.",
 "Open tab": "Ouvrir l'onglet",
 "Pure black, more styles, intensity and your own accents for every app that uses Monet colors.": "Noir pur, plus de styles, intensité et vos propres accents pour chaque app qui utilise les couleurs Monet.",
 "Restore theme": "Restaurer le thème",
@@ -4516,7 +4521,6 @@ x: {
 "User": "Utilisateur",
 "User (": "Utilisateur (",
 "Uses Root. The app is stopped while its data is copied.": "Utilise Root. L’application est arrêtée pendant la copie de ses données.",
-"Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "Utilise le meilleur backend prêt : ADB TCP → débogage sans fil → Shizuku. Choisissez un mode précis ci-dessous pour le fixer à la place.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Utilise le service Shizuku du système pour exécuter des commandes sous l’UID shell 2000 sans root. Fonctionne avec ADB TCP 5555 — autoriser Shizuku bascule dessus.",
 "Using the VirusTotal API key from Settings (approved).": "Utilisation de la clé API VirusTotal des Paramètres (approuvée).",
 "V": "V",
@@ -5681,6 +5685,8 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Les fichiers que vous avez choisis sont encore en cours de lecture. Patientez un instant."
 },
 p: [
+["Android kept {0} at {1}", "Android a laissé {0} sur {1}"],
+["could not read it back", "impossible de le relire"],
 ["Label before the last change: {0}", "Étiquette avant la dernière modification : {0}"],
 ["Before the last change: {0} ({1}) {2}", "Avant la dernière modification : {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "Impossible de lire les autorisations : {0}"],

@@ -1,6 +1,13 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.": "Hazır olan en iyi arka ucu kullanır: Super User → Shizuku (UID 0/1000) → ADB TCP → Kablosuz hata ayıklama → Shizuku (UID 2000). Bunun yerine sabitlemek için aşağıdan belirli bir mod seçin.",
+"Android controls it by its app op: allow or stop it here.": "Android bunu uygulama işlemiyle (app op) denetler: buradan izin verin veya durdurun.",
+"Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.": "Android bu app op'u kabuktan reddetti. Super User veya sistem olarak (UID 1000) çalışan Shizuku bunu değiştirebilir.",
+"Found on this Wi-Fi": "Bu Wi-Fi'de bulundu",
+"Paired. Looking for its connect port...": "Eşlendi. Bağlantı bağlantı noktası aranıyor...",
+"Super User is no longer available. The working mode is back on Automatic.": "Super User artık kullanılamıyor. Çalışma modu yeniden Otomatik oldu.",
+"not set yet": "henüz ayarlanmadı",
 "How strongly each line is tinted in the colour of its level.": "Her satırın kendi düzeyinin rengine ne kadar güçlü boyanacağı.",
 "On: each tint fades across the line from its start. Off: the whole line is one even colour.": "Açık: her renk satırın başından itibaren solar. Kapalı: satırın tamamı tek düz renktir.",
 "SELinux label": "SELinux etiketi",
@@ -28,8 +35,6 @@ x: {
 "Additional Monet Customization": "Ek Monet Özelleştirmesi",
 "Check for updates on mobile data": "Güncellemeleri mobil veride de denetle",
 "Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.": "Özel temanızın bir kopyasını saklayın (renk, stil ve yalnızca Root tema denetimleri) ve bir yedek dosyasından geri getirin. Geri yükleme bu sekmeyi doldurur; Temayı uygula onu telefona yazar.",
-"Off: apps are checked for updates only on Wi-Fi; on mobile data the last results stay. Off by default.": "Kapalı: uygulamaların güncellemeleri yalnızca Wi-Fi'da denetlenir; mobil veride son sonuçlar kalır. Varsayılan olarak kapalı.",
-"Off: the store catalogs are downloaded and refreshed only on Wi-Fi; on mobile data the copy from before is shown. Off by default.": "Kapalı: mağaza katalogları yalnızca Wi-Fi'da indirilir ve yenilenir; mobil veride önceki kopya gösterilir. Varsayılan olarak kapalı.",
 "Open tab": "Sekmeyi aç",
 "Pure black, more styles, intensity and your own accents for every app that uses Monet colors.": "Saf siyah, daha çok stil, yoğunluk ve Monet renklerini kullanan her uygulama için kendi vurgularınız.",
 "Restore theme": "Temayı geri yükle",
@@ -4516,7 +4521,6 @@ x: {
 "User": "Kullanıcı",
 "User (": "Kullanıcı (",
 "Uses Root. The app is stopped while its data is copied.": "Root kullanır. Verileri kopyalanırken uygulama durdurulur.",
-"Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "Hazır olan en iyi arka ucu kullanır: ADB TCP → Kablosuz hata ayıklama → Shizuku. Bunun yerine sabitlemek için aşağıdan belirli bir mod seçin.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Komutları root olmadan shell UID 2000 altında çalıştırmak için sistemdeki Shizuku hizmetini kullanır. ADB TCP 5555 ile birlikte çalışır — Shizuku’yu yetkilendirmek ona geçer.",
 "Using the VirusTotal API key from Settings (approved).": "Ayarlar’daki VirusTotal API anahtarı kullanılıyor (onaylı).",
 "V": "V",
@@ -5681,6 +5685,8 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Seçtiğiniz dosyalar hâlâ okunuyor. Biraz bekleyin."
 },
 p: [
+["Android kept {0} at {1}", "Android {0} değerini {1} olarak bıraktı"],
+["could not read it back", "geri okunamadı"],
 ["Label before the last change: {0}", "Son değişiklikten önceki etiket: {0}"],
 ["Before the last change: {0} ({1}) {2}", "Son değişiklikten önce: {0} ({1}) {2}"],
 ["Could not read the permissions: {0}", "İzinler okunamadı: {0}"],

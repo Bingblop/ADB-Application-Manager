@@ -369,13 +369,15 @@
 <h4>Auto mode</h4>
 <p>Auto is the default and is called <b>Automatic (Recommended)</b> on its card. It does not create a connection of its own; it looks at what is ready and uses the first of these, in this order:</p>
 <ol class="hg-steps">
-<li><b>ADB over TCP</b>, if the app is connected to <code>127.0.0.1:5555</code>.</li>
+<li><b>Super User</b>, if a root manager is on the phone and it has granted this app su. The first time Auto looks, the root manager may ask you.</li>
+<li><b>Shizuku running as root (UID 0) or as the system user (UID 1000)</b>, if this app has been approved.</li>
+<li><b>ADB over TCP</b>, if the app is connected to <code>127.0.0.1:5555</code>, or port 5555 is open (it then connects quietly and uses it).</li>
 <li><b>Wireless Debugging</b>, if the app is connected to the address you last used.</li>
-<li><b>Shizuku</b>, if it is running and this app has been approved.</li>
-<li><b>ADB over TCP again</b>, if port 5555 is open but the app has not connected yet: it connects quietly and uses it.</li>
+<li><b>Shizuku running as the shell user (UID 2000)</b>, if it is running and this app has been approved.</li>
 <li>Otherwise <b>Read-Only</b>.</li>
 </ol>
-<p>Root is never part of this list. The Automatic card lists only "ADB TCP, Wireless Debugging, Shizuku". When the app starts with Auto (or ADB over TCP) on and port 5555 open, it connects to it by itself.</p>
+<p>The Automatic card shows the same order: "Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000)" (since 7.19.0; before, Auto never used Super User). When the app starts with Auto (or ADB over TCP) on and port 5555 open, it connects to it by itself.</p>
+<p><b>When Super User goes away.</b> If <b>Super User</b> is the mode you chose and su is no longer there (the root manager was removed) or su said no the last time it was asked, the app switches the working mode back to <b>Automatic</b> by itself and says <i>Super User is no longer available. The working mode is back on Automatic.</i> Automatic then uses the best mode that is ready. Choose Super User again once su works.</p>
 <p>When Auto has found something, the badge reads "Auto" followed by a dot and the mode, for example "Auto &#8226; Wireless ADB (37099)". Auto changes its mind when things change: if the Wi-Fi drops, it falls back to the next ready mode, or to Read-Only. Pinning a specific mode instead stops that, and the badge goes orange with "(not ready)" if that mode is not available.</p>
 
 <h4>Read-Only mode</h4>
