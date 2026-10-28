@@ -598,7 +598,7 @@
       <tr><td>Widget</td><td><b>Kill Apps</b> button</td><td>The same as the Kill Apps tile.</td></tr>
     </tbody>
   </table>
-  <p>The widget is called <b>ADB/Root Full System Toolbox</b> (on a narrow widget the name ends in "…"). It shows its name (tap the name to open the app), a line "Mode: (current mode)" and a line "Quick list: (list name) ((number) apps)", or "Quick list: No quick list set". It can be made wider, and it refreshes itself after every action and about every half hour.</p>
+  <p>The widget is called <b>ADB/Root Toolbox</b> (on a narrow widget the name ends in "…"). It shows its name (tap the name to open the app), a line "Mode: (current mode)" and a line "Quick list: (list name) ((number) apps)", or "Quick list: No quick list set". It can be made wider, and it refreshes itself after every action and about every half hour.</p>
   <p>The answers of Kill Apps are short: "Force-stopped 5 apps" (with ", 1 failed" when some did not stop and ", 2 left alone" when the list holds apps it does not stop), "Cancelled after 3 of 12 apps", "No quick list set. Open Saved Applications in the app and tap Quick list.", or "Needs ADB, Shizuku or Root. Set up a working mode first."</p>
 
   <h4>The Kill Apps notification</h4>
@@ -612,14 +612,14 @@
     <li>A second tap while a run is going does not start another one: the message says "Kill Apps is already running. Tap Cancel in its notification to stop it."</li>
   </ul>
   <h4>Apps it never stops</h4>
-  <p>Whatever the list says, <b>Kill Apps</b> leaves three kinds of app alone, because stopping them would break the run or the window that shows it: <b>this app</b> (ADB/Root Full System Toolbox), the <b>app that draws its window</b> (the phone's WebView app, usually Android System WebView or Chrome), and <b>Media Picker</b> (<code>com.google.android.providers.media.module</code>). They stay in the list, they are not counted as stopped, and the message says how many were left alone ("Force-stopped 4 apps, 1 left alone").</p>
+  <p>Whatever the list says, <b>Kill Apps</b> leaves three kinds of app alone, because stopping them would break the run or the window that shows it: <b>this app</b> (ADB/Root Toolbox), the <b>app that draws its window</b> (the phone's WebView app, usually Android System WebView or Chrome), and <b>Media Picker</b> (<code>com.google.android.providers.media.module</code>). They stay in the list, they are not counted as stopped, and the message says how many were left alone ("Force-stopped 4 apps, 1 left alone").</p>
 
   <h4>Step by step: set up Kill Apps</h4>
   <ol class="hg-steps">
     <li>In the Application Manager, select the apps you want to stop together and tap <b>Save to List</b> in the batch sheet (see <a href="#apps-batch">batch actions</a>). Give the list a name.</li>
     <li>Open the <b>Saved Applications</b> tab and tap <b>Quick list</b> on that list. The button turns to "Quick list" with a tick, and a message says "(name) is now the quick list. Add the "Kill Apps" tile or the widget to use it."</li>
     <li>Add the tile: swipe down twice from the top of the screen to open the full Quick Settings panel, tap the pencil icon (edit), and drag <b>Working mode</b> and <b>Kill Apps</b> into your panel. The wording differs a little between phone makers.</li>
-    <li>Or add the widget: press and hold an empty spot on the home screen, tap <b>Widgets</b>, find <b>ADB/Root Full System Toolbox</b> and drag it onto a home screen page.</li>
+    <li>Or add the widget: press and hold an empty spot on the home screen, tap <b>Widgets</b>, find <b>ADB/Root Toolbox</b> and drag it onto a home screen page.</li>
     <li>Tap <b>Kill Apps</b>. A message says how many apps were force-stopped.</li>
   </ol>
   <p>To use a different list, tap <b>Quick list</b> on another list: only one list is the quick list. Tap the ticked button again to clear it. If you delete the quick list, it is cleared. If you edit it, the widget's number is refreshed.</p>

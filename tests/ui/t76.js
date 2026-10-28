@@ -286,9 +286,11 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
   }
 
   // 14) the same with a web view that has no ResizeObserver (an old one): the heights are still measured at the start and when the window changes
-  //     (from 320 px, where the header is shorter than at 412 px, so the second height must differ from the first)
+  //     (from 260 px, a very narrow window where the title is smaller and so the header shorter than at 412 px, so the second height must differ from the
+  //     first; v7.19.1: the shorter name "ADB/Root" over "Toolbox" is at its largest from about 300 px, so 320 px no longer differs. The heights depend on
+  //     the fonts, so they are printed only when a check fails)
   {
-    const p = await b.newPage({ viewport: { width: 320, height: 760 } });
+    const p = await b.newPage({ viewport: { width: 260, height: 760 } });
     p.on('pageerror', e => { bad++; console.log('FAIL page error:', e.message); });
     await p.addInitScript(() => { delete window.ResizeObserver; });
     await p.addInitScript(inst.initScript, { kv: { perm_intro_v61: '1' } });
@@ -296,11 +298,13 @@ const DEFAULT_PINNED = ['apps', 'installer', 'extrasettings', 'console'];       
     await p.waitForFunction(() => document.querySelectorAll('.tab-btn').length > 0);
     await sleep(1200);                                              // it looks again every second
     const v = await p.evaluate(() => ({ hdr: getComputedStyle(document.documentElement).getPropertyValue('--hdr-h'), real: document.querySelector('.app-header').offsetHeight + 'px', tabs: getComputedStyle(document.documentElement).getPropertyValue('--tabs-h'), realTabs: document.getElementById('tabBar').offsetHeight + 'px', ro: typeof ResizeObserver }));
-    check('14. without ResizeObserver the heights of the header and the tab bar are still followed (' + v.hdr + ' and ' + v.tabs + ' a second after the start)', v.ro === 'undefined' && v.hdr === v.real && v.tabs === v.realTabs, JSON.stringify(v));
+    const ok14 = v.ro === 'undefined' && v.hdr === v.real && v.tabs === v.realTabs;
+    check('14. without ResizeObserver the heights of the header and the tab bar are still followed a second after the start', ok14, ok14 ? undefined : JSON.stringify(v));
     await p.setViewportSize({ width: 412, height: 760 });
     await sleep(150);
     const v2 = await p.evaluate(() => ({ hdr: getComputedStyle(document.documentElement).getPropertyValue('--hdr-h'), real: document.querySelector('.app-header').offsetHeight + 'px' }));
-    check('    and again when the window changes (' + v2.hdr + ')', v2.hdr === v2.real && v2.hdr !== v.hdr, JSON.stringify([v, v2]));
+    const ok14b = v2.hdr === v2.real && v2.hdr !== v.hdr;
+    check('    and again when the window changes (412 px, a taller header)', ok14b, ok14b ? undefined : JSON.stringify([v, v2]));
     await p.close();
   }
 

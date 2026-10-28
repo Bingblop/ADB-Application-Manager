@@ -31,7 +31,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // the colours
   let th = await ev(() => window.__themes[window.__themes.length - 1]);
   check('1. applyTheme sends the colours and the words of the dialogs', !!th && /^#/.test(th.accent) && /^#/.test(th.card) && /^#/.test(th.text) && !!th.surface && !!th.muted && !!th.onAccent && !!th.border && th.radius === 24 && th.light === false
-    && th.ok === 'OK' && th.cancel === 'Cancel' && th.confirmTitle === 'Confirm' && th.promptTitle === 'Enter a value' && th.alertTitle === 'ADB/Root Full System Toolbox', Object.keys(th || {}).join());
+    && th.ok === 'OK' && th.cancel === 'Cancel' && th.confirmTitle === 'Confirm' && th.promptTitle === 'Enter a value' && th.alertTitle === 'ADB/Root Toolbox', Object.keys(th || {}).join());
   check('   they are the colours on the page', await ev(t => { const cs = getComputedStyle(document.documentElement); return cs.getPropertyValue('--bg-card').trim() === t.card && cs.getPropertyValue('--accent').trim() === t.accent; }, th));
   await ev(() => setAppearance('light')); await page.waitForTimeout(200);
   const lt = await ev(() => window.__themes[window.__themes.length - 1]);

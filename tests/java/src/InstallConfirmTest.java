@@ -158,7 +158,7 @@ public class InstallConfirmTest {
 
     // ---- a font package made in the Custom Fonts tab: the app checked the file against the SHA-256 it recorded when it made it ----
     String fp = InstallConfirm.messageFontPackage("My Font", "com.monotype.android.font.MyFont_3fa9c1", "2.0", null, "root", "-r -i com.sec.android.app.samsungapps");
-    is("a font package says where it comes from, and names no host", fp.startsWith("Source: a font package this app made (Custom Fonts, My fonts)\n") && !fp.contains("Downloaded from"));
+    is("a font package says where it comes from, and names no host", fp.startsWith("Source: a font package this app made (Custom Fonts)\n") && !fp.contains("Downloaded from"));
     is("it names the mode", fp.contains("It is installed through: Root.\n"));
     is("it says what was checked: the SHA-256 recorded when the package was made", fp.contains("The file matches the SHA-256 checksum the app recorded when it made the package.\n"));
     is("…and never that no checksum was compared", !fp.contains("No checksum"));

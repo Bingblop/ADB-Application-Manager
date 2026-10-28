@@ -1,5 +1,20 @@
 # Changelog
 
+## v7.19.1-Pro (versionCode 871)
+
+A small release on top of v7.19.0, cut from `main`, with the three changes the owner asked for on 2026-10-28 and the new name he chose the same evening. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone**; the page was checked in a headless browser with a mock and the Java by the Java suite. `docs/PHONE-SCRIPT-v7.19.1.md` is the phone script.
+
+- **New name: ADB/Root Toolbox.** It is the name under the icon, on the widget, in the page title, in About, the console banner, shared texts and the Help Guide, in all 14 languages; the header shows it on two lines ("ADB/Root" over "Toolbox"). Before, it was ADB/Root Full System Toolbox. The package, the APK file names and the release name stay the same, so updating keeps every setting and saved file.
+- **Mobile data switches below the help button.** On **App Stores** and **App Updater** the slim mobile data switch sat over the **?** help button, so a tap on the switch opened the Help Guide. The switch now sits below it.
+- **Phone font: every font on the phone in one drop-down.** The Custom Fonts tab's **My fonts** list and **Font changer** card are now one **Phone font** card with a **Font** drop-down: **Default** (the phone's own font), then every font package installed on the phone and every font made on the tab, by name, each saying where it came from and whether Samsung's Font style takes it. Choosing a font uses it:
+  - with **Root**, or **Shizuku as the system user (UID 1000) or as root (UID 0)**, the app puts the chosen font on the phone itself (any font package, not only the ones made here: its Regular and Bold are read from the package), and **Default** puts the phone's own font back;
+  - without them, a font the phone takes by itself (one that came with the phone, one signed by Samsung or Monotype, or any font before One UI 8.5) opens Samsung's **Font style** with its name to choose there, installing a font made here first;
+  - a font **not signed by Samsung or Monotype** on One UI 8.5 (and 8.0 from the March 2026 patch) shows a warning and the font is not changed. The app compares a package's signer with the phone's own (the system's and its preinstalled fonts'), and a signer it cannot read counts as not signed.
+- **Press and hold a font to uninstall it.** It asks first, uninstalls with any working mode (and reads back that it is gone) or opens the font's App info without one. **Default**, the fonts that came with the phone and the font in use are refused with a message saying why; a font made here that is not installed is offered for **Delete** instead. Delete works from the keyboard too.
+- **The font just made** now has its buttons under the build result: **Use it**, **Install** (or **Update**), **Export** and **Make again**. They go away when the next font starts.
+- **Kept apart.** Installing, uninstalling and using the same font package no longer run at once (from the drop-down, the build result or a second window); the later one says the font is busy. An uninstall that cannot read which font is in use (with Root or the system user) stops with *The phone did not answer. Try again.* instead of going ahead.
+- **Help Guide** (Custom Fonts, recipes, help) and every new text in all 14 languages.
+
 ## v7.19.0-Pro (versionCode 870)
 
 A release on top of v7.18.3, cut from `main`, with the eight fixes and enhancements the owner asked for on 2026-10-28. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone**; the page was checked in a headless browser with a mock and the Java by the Java suite. `docs/PHONE-SCRIPT-v7.19.0.md` is the phone script.

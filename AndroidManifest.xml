@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="870"
-    android:versionName="7.19.0-Pro">
+    android:versionCode="871"
+    android:versionName="7.19.1-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -66,7 +66,7 @@
     </queries>
 
     <application
-        android:label="ADB/Root Full System Toolbox"
+        android:label="ADB/Root Toolbox"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
@@ -84,7 +84,7 @@
 
         <activity
             android:name="com.bloatware.bingblop.MainActivity"
-            android:label="ADB/Root Full System Toolbox"
+            android:label="ADB/Root Toolbox"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density|fontScale|locale|layoutDirection"
             android:windowSoftInputMode="adjustResize"
             android:exported="true">
@@ -177,7 +177,7 @@
         <service
             android:name=".SdmAccessService"
             android:exported="true"
-            android:label="SD Maid (AppCleaner) - ADB/Root Full System Toolbox"
+            android:label="SD Maid (AppCleaner) - ADB/Root Toolbox"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -191,7 +191,7 @@
         <receiver
             android:name=".QuickWidgetProvider"
             android:exported="true"
-            android:label="ADB/Root Full System Toolbox">
+            android:label="ADB/Root Toolbox">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

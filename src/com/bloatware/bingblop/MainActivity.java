@@ -2867,7 +2867,7 @@ public class MainActivity extends Activity {
                             };
                             if (retried == null) {
                                 PackageInfo me = pm.getPackageInfo(getPackageName(), 0);
-                                o.self = new UpdateChecker.App(getPackageName(), "ADB/Root Full System Toolbox", currentVersionName(), versionCodeOf(me), null, false, false, false);
+                                o.self = new UpdateChecker.App(getPackageName(), "ADB/Root Toolbox", currentVersionName(), versionCodeOf(me), null, false, false, false);
                             }
                             UpdateChecker checker = new UpdateChecker(UpdateManager.netHttp(5000, 8000), UpdateChecker.SYSTEM_CLOCK, updateCache());
                             updateCheckRun = checker;
@@ -6953,7 +6953,7 @@ public class MainActivity extends Activity {
     private static final String FMK_LOCK_CHANGER = "Needs Root, or Shizuku running as the system user (UID 1000) or root (UID 0).";
     private static final String FMK_LOCK_SYS = "Needs Root, or Shizuku running as root (UID 0).";
     private static final String FMK_NOT_SAMSUNG = "Font packages work only on Samsung phones.";
-    private static final String FMK_NOT_FOUND = "That font is not in My fonts any more.";
+    private static final String FMK_NOT_FOUND = "That font is not in this app any more.";
     private static final String FMK_CHANGED = "This font's files changed since it was made. Make it again.";
     private static final String FMK_NO_MEMORY = "The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.";
     private static final String FMK_EMOJI_UPDATED = "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.";
@@ -7496,7 +7496,7 @@ public class MainActivity extends Activity {
         final FontLibrary.Entry e = FontLibrary.read(d, id);
         if (e != null) {
             String applied = FontLibrary.readApplied(d);
-            if (applied != null && applied.equals(e.suffix)) return fmkErr("applied", "Reset the font changer first.");
+            if (applied != null && applied.equals(e.suffix)) return fmkErr("applied", "This font is in use. Choose another font first, then delete it.");
         }
         if (fmkJobs.inUse("id:" + id)) {
             if (fmkJobs.inUse("make:" + id)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
@@ -7694,15 +7694,20 @@ public class MainActivity extends Activity {
      * App info opens (the app holds no permission to ask Android to remove another package). {ok, how:"pm"|"settings", note}.
      */
     private JSONObject fmkUninstall(final FontLibrary.Entry e) {
+        if (!BackupScripts.isPackageName(e.pkg) || FontPackage.suffixOf(e.pkg) == null) return FontLibrary.error("not_found", FMK_NOT_FOUND);
+        return fmkUninstallPkg(e.pkg);
+    }
+
+    /** fmkUninstall for any font package (the Phone font card's press and hold too, fmkUninstallPackage, which checks the package first). */
+    private JSONObject fmkUninstallPkg(final String pkg) {
         try {
-            if (!BackupScripts.isPackageName(e.pkg) || FontPackage.suffixOf(e.pkg) == null) return FontLibrary.error("not_found", FMK_NOT_FOUND);
             String mode = resolveExecMode();
             if (!InstallGuards.isPrivilegedMode(mode)) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + e.pkg));
+                            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg));
                             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             startActivity(i);
                         } catch (Exception ignored) {}
@@ -7710,9 +7715,9 @@ public class MainActivity extends Activity {
                 });
                 return new JSONObject().put("ok", true).put("how", "settings").put("note", "");
             }
-            if (fmkInstalledVersion(e.pkg) == 0) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
-            String out = shellVia(mode, "pm uninstall " + BackupScripts.quote(e.pkg));
-            if (fmkInstalledVersion(e.pkg) == 0) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            if (fmkInstalledVersion(pkg) == 0) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            String out = shellVia(mode, "pm uninstall " + BackupScripts.quote(pkg));
+            if (fmkInstalledVersion(pkg) == 0) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
             return FontLibrary.error("uninstall_failed", fmkFailLine(out));
         } catch (Throwable t) {
             return FontLibrary.error("failed", "The font could not be uninstalled: " + errMsg(t));
@@ -7809,41 +7814,52 @@ public class MainActivity extends Activity {
             String[] shas = e.hasBold ? new String[] { e.regularSha, e.boldSha } : new String[] { e.regularSha };
             long[] sizes = e.hasBold ? new long[] { e.regularSize, e.boldSize } : new long[] { e.regularSize };
             for (int i = 0; i < files.length; i++) if (!shas[i].equals(FontLibrary.sha256(files[i]))) return FontLibrary.error("changed", FMK_CHANGED);
-            int user = FontLibrary.userIdOf(android.os.Process.myUid());
-            SamsungFonts.Roots r = SamsungFonts.Roots.system();
-            boolean placed = false;
-            try {
-                for (int i = 0; i < files.length; i++) {
-                    String out = fmkRun(backend, SamsungFonts.writeFontScript(r, user, e.suffix, names[i], sizes[i], shas[i]), files[i], 180000);
-                    SamsungFonts.WriteResult w = SamsungFonts.parseWrite(out, names[i]);
-                    if (!w.ok || !shas[i].equals(w.sha256)) return FontLibrary.error("failed", w.ok ? "The font did not arrive whole on the phone." : w.error);
-                }
-                // a Bold an earlier build of this font left would be drawn for bold text: the install takes only that file away
-                String[] drop = e.hasBold ? new String[0] : new String[] { FontLibrary.DROID_BOLD };
-                SamsungFonts.ApplyResult ar = SamsungFonts.parseApply(fmkRun(backend, SamsungFonts.installScript(r, user, e.suffix, names, shas, drop), null, 60000));
-                JSONObject rb = fmkReadBack(ar);
-                boolean filesOk = true;
-                for (int i = 0; i < names.length; i++) {
-                    boolean seen = false;
-                    for (SamsungFonts.FileInfo f : ar.files) if (names[i].equals(f.name) && shas[i].equals(f.sha256)) seen = true;
-                    filesOk &= seen;
-                }
-                if (!e.hasBold) for (SamsungFonts.FileInfo f : ar.files) if (FontLibrary.DROID_BOLD.equals(f.name)) filesOk = false;
-                String want = r.appFonts + "/" + user + "/" + e.suffix + "#" + e.suffix;
-                if (!ar.ok || !want.equals(ar.sansLoc) || !filesOk) {
-                    String why = !ar.error.isEmpty() ? ar.error : "The phone did not take the font (sans.loc reads \"" + ar.sansLoc + "\").";
-                    return FontLibrary.error("failed", why).put("readBack", rb);
-                }
-                placed = true;
-                FontLibrary.writeApplied(d, e.suffix, System.currentTimeMillis());
-                int target = SamsungFonts.styleIndex(fmkFontPackages(), e.pkg);
-                boolean refreshed = fmkRefreshFontStyle(backend, target);
-                return new JSONObject().put("ok", true).put("readBack", rb).put("refreshed", refreshed).put("styleIndex", target);
-            } finally {
-                if (!placed) fmkDiscard(backend, r, user, e.suffix);
-            }
+            return fmkPlace(backend, e.suffix, e.pkg, files, names, shas, sizes);
         } catch (Throwable t) {
             return FontLibrary.error("failed", "The font could not be applied: " + errMsg(t));
+        }
+    }
+
+    /**
+     * fmkApply's steps for any font, of My fonts or of a package on the phone (fmkApplyPackage): the files streamed in and checked, one install
+     * call, the read-back, Settings told. Without a Bold among {@code names}, a Bold an earlier font of that suffix left is taken away.
+     */
+    private JSONObject fmkPlace(String backend, String suffix, String pkg, File[] files, String[] names, String[] shas, long[] sizes) throws Exception {
+        boolean hasBold = false;
+        for (String n : names) hasBold |= FontLibrary.DROID_BOLD.equals(n);
+        FontLibrary.Dirs d = fmkDirs();
+        int user = FontLibrary.userIdOf(android.os.Process.myUid());
+        SamsungFonts.Roots r = SamsungFonts.Roots.system();
+        boolean placed = false;
+        try {
+            for (int i = 0; i < files.length; i++) {
+                String out = fmkRun(backend, SamsungFonts.writeFontScript(r, user, suffix, names[i], sizes[i], shas[i]), files[i], 180000);
+                SamsungFonts.WriteResult w = SamsungFonts.parseWrite(out, names[i]);
+                if (!w.ok || !shas[i].equals(w.sha256)) return FontLibrary.error("failed", w.ok ? "The font did not arrive whole on the phone." : w.error);
+            }
+            // a Bold an earlier build of this font left would be drawn for bold text: the install takes only that file away
+            String[] drop = hasBold ? new String[0] : new String[] { FontLibrary.DROID_BOLD };
+            SamsungFonts.ApplyResult ar = SamsungFonts.parseApply(fmkRun(backend, SamsungFonts.installScript(r, user, suffix, names, shas, drop), null, 60000));
+            JSONObject rb = fmkReadBack(ar);
+            boolean filesOk = true;
+            for (int i = 0; i < names.length; i++) {
+                boolean seen = false;
+                for (SamsungFonts.FileInfo f : ar.files) if (names[i].equals(f.name) && shas[i].equals(f.sha256)) seen = true;
+                filesOk &= seen;
+            }
+            if (!hasBold) for (SamsungFonts.FileInfo f : ar.files) if (FontLibrary.DROID_BOLD.equals(f.name)) filesOk = false;
+            String want = r.appFonts + "/" + user + "/" + suffix + "#" + suffix;
+            if (!ar.ok || !want.equals(ar.sansLoc) || !filesOk) {
+                String why = !ar.error.isEmpty() ? ar.error : "The phone did not take the font (sans.loc reads \"" + ar.sansLoc + "\").";
+                return FontLibrary.error("failed", why).put("readBack", rb);
+            }
+            placed = true;
+            FontLibrary.writeApplied(d, suffix, System.currentTimeMillis());
+            int target = SamsungFonts.styleIndex(fmkFontPackages(), pkg);
+            boolean refreshed = fmkRefreshFontStyle(backend, target);
+            return new JSONObject().put("ok", true).put("readBack", rb).put("refreshed", refreshed).put("styleIndex", target);
+        } finally {
+            if (!placed) fmkDiscard(backend, r, user, suffix);
         }
     }
 
@@ -7871,6 +7887,283 @@ public class MainActivity extends Activity {
         } catch (Throwable t) {
             return FontLibrary.error("failed", "The default font could not be put back: " + errMsg(t));
         }
+    }
+
+    // ---- the Phone font card (v7.19.1): every font package on the phone, switched to and uninstalled from one list ----
+
+    private static final String FMK_PKG_GONE = "That font is not installed any more.";
+    /** Each font package's XML, read once per version: package -> {lastUpdateTime, name, regular file, bold file} (PhoneFonts). */
+    private final Map<String, String[]> fmkXmlCache = new java.util.HashMap<String, String[]>();
+
+    /** A font package's name as the page may send it: com.monotype.android.font.<suffix>, and a suffix the font changer's scripts take. */
+    private static boolean fmkIsFontPkg(String pkg) {
+        return fmkIsFontPkgName(pkg) && SamsungFonts.isSuffix(pkg.substring(FontPackage.PACKAGE_PREFIX.length()));
+    }
+
+    /** A font package's name, whatever its suffix: enough for pm uninstall, which takes the name quoted (not for the font changer). */
+    private static boolean fmkIsFontPkgName(String pkg) {
+        return pkg != null && pkg.startsWith(FontPackage.PACKAGE_PREFIX) && BackupScripts.isPackageName(pkg);
+    }
+
+    /** At most {@code max} bytes of a stream (and the stream closed); one more than {@code max} when it is longer. */
+    private static byte[] fmkReadAtMost(InputStream in, int max) throws IOException {
+        try {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while (out.size() <= max && (n = in.read(buf, 0, Math.min(buf.length, max + 1 - out.size()))) > 0) out.write(buf, 0, n);
+            return out.toByteArray();
+        } finally {
+            in.close();
+        }
+    }
+
+    /**
+     * {name, regular, bold} from a package's font XML (assets/xml/<suffix>.xml, else its only or first XML there): the name Samsung's Font
+     * style shows and the asset files drawn as the Regular and the Bold; each null when not read. Read once per package version.
+     */
+    private String[] fmkFontXml(PackageInfo pi) {
+        String stamp = String.valueOf(pi.lastUpdateTime);
+        synchronized (fmkXmlCache) {
+            String[] c = fmkXmlCache.get(pi.packageName);
+            if (c != null && stamp.equals(c[0])) return new String[] { c[1], c[2], c[3] };
+        }
+        String[] out = new String[3];
+        String src = pi.applicationInfo == null ? null : pi.applicationInfo.sourceDir;
+        if (src != null && pi.packageName.startsWith(FontPackage.PACKAGE_PREFIX)) {
+            String own = "assets/xml/" + pi.packageName.substring(FontPackage.PACKAGE_PREFIX.length()) + ".xml";
+            java.util.zip.ZipFile z = null;
+            try {
+                z = new java.util.zip.ZipFile(src);
+                java.util.zip.ZipEntry best = null;
+                java.util.Enumeration<? extends java.util.zip.ZipEntry> en = z.entries();
+                for (int n = 0; en.hasMoreElements() && n < 4096; n++) {
+                    java.util.zip.ZipEntry ze = en.nextElement();
+                    String name = ze.getName();
+                    if (ze.isDirectory() || !name.startsWith("assets/xml/") || name.indexOf('/', 11) >= 0 || !name.toLowerCase(java.util.Locale.ROOT).endsWith(".xml")) continue;
+                    if (best == null || name.equalsIgnoreCase(own)) best = ze;
+                }
+                if (best != null) {
+                    byte[] b = fmkReadAtMost(z.getInputStream(best), PhoneFonts.MAX_XML);
+                    if (b.length <= PhoneFonts.MAX_XML) {
+                        String xml = new String(b, "UTF-8");
+                        String[] files = PhoneFonts.sansFiles(xml);
+                        out[0] = PhoneFonts.displayName(xml);
+                        out[1] = files[0];
+                        out[2] = files[1];
+                    }
+                }
+            } catch (Throwable unreadable) {
+                // a package the app cannot open: its label names it, and the font changer says what it could not read
+            } finally {
+                if (z != null) try { z.close(); } catch (IOException ignored) {}
+            }
+        }
+        synchronized (fmkXmlCache) {
+            fmkXmlCache.put(pi.packageName, new String[] { stamp, out[0], out[1], out[2] });
+        }
+        return out;
+    }
+
+    /**
+     * Every font on the phone for the Phone font card: {ok, fonts:[{pkg, suffix, name, system, recognized, madeHere, id, installed}], device}.
+     * The installed font packages (com.monotype.android.font.*), then the fonts of My fonts that are not installed. {@code recognized}: Samsung's
+     * Font style takes it by itself (PhoneFonts.recognized; the reference is the platform's signer and the signers of the font packages that came
+     * with the phone). {@code id}: its My fonts entry, which Apply then writes from the app's own copy.
+     */
+    private String fmkPhoneFontsJson() throws Exception {
+        PackageManager pm = getPackageManager();
+        JSONObject dev = fmkDevice();
+        boolean selfSignedOk = dev.optBoolean("appliesSelfSigned", false);
+        List<FontLibrary.Entry> entries = FontLibrary.list(fmkDirs());
+        Set<String> suffixes = new HashSet<String>();
+        for (FontLibrary.Entry e : entries) suffixes.add(e.suffix);
+        String key = null;
+        try {
+            SigningKey k = SigningKey.existing();
+            if (k != null) key = k.sha256();
+        } catch (Throwable noKey) {}
+        int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+        Set<String> reference = new HashSet<String>();
+        try {
+            reference.addAll(signerDigests(pm.getPackageInfo("android", sigFlags), true));
+        } catch (Throwable noPlatform) {}
+        List<PackageInfo> pkgs = new ArrayList<PackageInfo>();
+        for (String pkg : fmkFontPackages()) {
+            try {
+                PackageInfo pi = pm.getPackageInfo(pkg, sigFlags);
+                pkgs.add(pi);
+                if (pi.applicationInfo != null && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) reference.addAll(signerDigests(pi, true));
+            } catch (Throwable gone) {}
+        }
+        JSONArray fonts = new JSONArray();
+        Set<String> installed = new HashSet<String>();
+        for (PackageInfo pi : pkgs) {
+            String pkg = pi.packageName, suffix = pkg.substring(FontPackage.PACKAGE_PREFIX.length());
+            installed.add(pkg);
+            boolean system = pi.applicationInfo != null && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+            Set<String> signers = signerDigests(pi, true);
+            FontLibrary.Entry e = null;
+            for (FontLibrary.Entry x : entries) if (x.pkg.equals(pkg)) e = x;
+            String name = e != null ? e.name : fmkFontXml(pi)[0];
+            if (name == null && pi.applicationInfo != null) {
+                try {
+                    name = PhoneFonts.cleanName(String.valueOf(pm.getApplicationLabel(pi.applicationInfo)));
+                } catch (Throwable noLabel) {}
+            }
+            if (name == null || name.equals(pkg)) name = suffix;
+            fonts.put(new JSONObject().put("pkg", pkg).put("suffix", suffix).put("name", name).put("system", system)
+                    .put("recognized", PhoneFonts.recognized(selfSignedOk, system, signers, reference))
+                    .put("madeHere", FontPackage.madeHere(pkg, system, suffixes, signers, key))
+                    .put("id", e == null ? JSONObject.NULL : e.id).put("installed", true));
+        }
+        for (FontLibrary.Entry e : entries) {
+            if (installed.contains(e.pkg)) continue;
+            fonts.put(new JSONObject().put("pkg", e.pkg).put("suffix", e.suffix).put("name", e.name).put("system", false)
+                    .put("recognized", selfSignedOk).put("madeHere", true).put("id", e.id).put("installed", false));
+        }
+        return new JSONObject().put("ok", true).put("fonts", fonts).put("device", dev).toString();
+    }
+
+    /** One font file of a package's assets/fonts/ copied into the app's cache, checked to be one TrueType or OpenType font (PhoneFonts.isFont). */
+    private static File fmkExtractFont(java.util.zip.ZipFile z, String name, File to) throws IOException {
+        java.util.zip.ZipEntry ze = z.getEntry("assets/fonts/" + name);
+        if (ze == null || ze.isDirectory()) throw new IOException("The font package has no file " + name + ".");
+        InputStream in = z.getInputStream(ze);
+        long total = 0;
+        byte[] head = new byte[4];
+        int headLen = 0;
+        try {
+            OutputStream out = new FileOutputStream(to);
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    if ((total += n) > Sfnt.MAX_FONT_BYTES) throw new IOException("The font in this package is larger than " + (Sfnt.MAX_FONT_BYTES >> 20) + " MB.");
+                    for (int i = 0; i < n && headLen < 4; i++) head[headLen++] = buf[i];
+                    out.write(buf, 0, n);
+                }
+            } finally {
+                out.close();
+            }
+        } finally {
+            in.close();
+        }
+        if (!PhoneFonts.isFont(head)) throw new IOException(name + " in this package is not a TrueType or OpenType font.");
+        return to;
+    }
+
+    /**
+     * Applies an installed font package with the font changer: the files its font XML draws as the Regular and the Bold (or its only font file)
+     * are read from the package itself and written as My fonts' are (fmkPlace). {ok, readBack, refreshed, styleIndex} or {ok:false, code, error}.
+     */
+    private JSONObject fmkApplyPackage(String pkg) {
+        List<File> temp = new ArrayList<File>();
+        java.util.zip.ZipFile z = null;
+        try {
+            String backend = fmkGate(false);
+            if (backend == null) return FontLibrary.error("locked", FMK_LOCK_CHANGER);
+            if (!fmkIsFontPkg(pkg)) return FontLibrary.error("not_found", FMK_PKG_GONE);
+            PackageInfo pi;
+            try {
+                pi = getPackageManager().getPackageInfo(pkg, 0);
+            } catch (Throwable gone) {
+                return FontLibrary.error("not_found", FMK_PKG_GONE);
+            }
+            String suffix = pkg.substring(FontPackage.PACKAGE_PREFIX.length());
+            String[] x = fmkFontXml(pi);
+            String reg = x[1], bold = x[2];
+            z = new java.util.zip.ZipFile(pi.applicationInfo.sourceDir);
+            if (reg == null) {                                          // no XML that says: the package's only font file
+                java.util.Enumeration<? extends java.util.zip.ZipEntry> en = z.entries();
+                String only = null;
+                int count = 0;
+                for (int n = 0; en.hasMoreElements() && n < 4096; n++) {
+                    String name = en.nextElement().getName(), low = name.toLowerCase(java.util.Locale.ROOT);
+                    if (name.startsWith("assets/fonts/") && name.indexOf('/', 13) < 0 && (low.endsWith(".ttf") || low.endsWith(".otf"))) { only = name.substring(13); count++; }
+                }
+                if (count == 1 && PhoneFonts.isAssetName(only)) reg = only;
+            }
+            if (reg == null) return FontLibrary.error("no_font", "This font package does not say which of its files is the font, so the font changer cannot use it.");
+            if (bold != null && bold.equals(reg)) bold = null;          // the same file for bold text: Android makes bold from the Regular, as it would
+            FontLibrary.Dirs d = fmkDirs();
+            if (!d.work.isDirectory() && !d.work.mkdirs()) throw new IOException("There is no room in the app's cache for the font.");
+            String base = "pkg-" + System.nanoTime();
+            File regFile = new File(d.work, base + "-r.ttf");
+            temp.add(regFile);
+            fmkExtractFont(z, reg, regFile);
+            File boldFile = null;
+            if (bold != null) {
+                boldFile = new File(d.work, base + "-b.ttf");
+                temp.add(boldFile);
+                fmkExtractFont(z, bold, boldFile);
+            }
+            File[] files = boldFile == null ? new File[] { regFile } : new File[] { regFile, boldFile };
+            String[] names = boldFile == null ? new String[] { FontLibrary.DROID_REGULAR } : new String[] { FontLibrary.DROID_REGULAR, FontLibrary.DROID_BOLD };
+            String[] shas = new String[files.length];
+            long[] sizes = new long[files.length];
+            for (int i = 0; i < files.length; i++) { shas[i] = FontLibrary.sha256(files[i]); sizes[i] = files[i].length(); }
+            return fmkPlace(backend, suffix, pkg, files, names, shas, sizes);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be applied: " + errMsg(t));
+        } finally {
+            if (z != null) try { z.close(); } catch (IOException ignored) {}
+            for (File f : temp) f.delete();
+        }
+    }
+
+    /**
+     * Uninstalls a font package from the Phone font card. Refused for a font that came with the phone, and, where the font changer can read the
+     * phone's font (RootGate.unlocked), for the font in use; then as fmkUninstall: pm uninstall in a privileged mode, else the package's App info.
+     * {ok, how:"pm"|"settings", note} or {ok:false, code, error}.
+     */
+    private JSONObject fmkUninstallPackage(String pkg) {
+        try {
+            if (!fmkIsFontPkgName(pkg)) return FontLibrary.error("not_found", FMK_PKG_GONE);
+            PackageInfo pi;
+            try {
+                pi = getPackageManager().getPackageInfo(pkg, 0);
+            } catch (Throwable gone) {
+                return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            }
+            if (pi.applicationInfo != null && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+                return FontLibrary.error("system", "This font came with the phone, so it is not uninstalled.");
+            }
+            String backend = isSamsung() ? fmkGate(false) : null;
+            if (backend != null) {
+                String out = fmkRun(backend, SamsungFonts.statusScript(SamsungFonts.Roots.system(), FontLibrary.userIdOf(android.os.Process.myUid())), null, 20000);
+                // no full answer: the font in use is not known, so nothing is uninstalled (the check would fail open)
+                if (out == null || !out.contains(SamsungFonts.M_END)) return FontLibrary.error("no_answer", "The phone did not answer. Try again.");
+                String cur = SamsungFonts.parseStatus(out).currentSuffix;
+                if (cur != null && cur.equalsIgnoreCase(pkg.substring(FontPackage.PACKAGE_PREFIX.length()))) {
+                    return FontLibrary.error("in_use", "This font is in use. Choose another font first, then uninstall it.");
+                }
+            }
+            return fmkUninstallPkg(pkg);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be uninstalled: " + errMsg(t));
+        }
+    }
+
+    /**
+     * Samsung's Font style screen (Settings > Display > Font size and style > Font style): the Settings activity named for it, found on this
+     * phone, since One UI does not publish one; null when there is none, and the page then opens Display settings.
+     */
+    private Intent fmkFontStyleIntent() {
+        try {
+            PackageInfo pi = getPackageManager().getPackageInfo("com.android.settings", PackageManager.GET_ACTIVITIES);
+            ActivityInfo best = null;
+            if (pi.activities != null) {
+                for (ActivityInfo a : pi.activities) {
+                    if (!a.exported || !a.enabled || a.name == null) continue;
+                    String n = a.name.toLowerCase(java.util.Locale.ROOT);
+                    if (!n.contains("fontstyle")) continue;
+                    if (best == null || n.endsWith("fontstyleactivity")) best = a;
+                }
+            }
+            if (best != null) return new Intent().setClassName(best.packageName, best.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        } catch (Throwable notFound) {}                                 // a list too large to pass, or no Settings by that name
+        return null;
     }
 
     // ---- emoji downloads ----
@@ -12029,7 +12322,7 @@ public class MainActivity extends Activity {
             };
             try {
                 checkTermuxReady();
-                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB/Root Full System Toolbox check", new TermuxLink.Callback() {
+                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB/Root Toolbox check", new TermuxLink.Callback() {
                     @Override
                     public void onResult(TermuxLink.Result r) {
                         if (!answered.compareAndSet(false, true)) return;
@@ -14892,8 +15185,14 @@ public class MainActivity extends Activity {
             if ("install".equals(kind) && !isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
             final FontLibrary.Entry e = FontLibrary.isId(id) ? FontLibrary.read(fmkDirs(), id) : null;
             if (e == null) return fmkErr("not_found", FMK_NOT_FOUND);
-            // a delete (and a build of it again) waits for it; an install does not start while the font's files are made again
-            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, "install".equals(kind) ? "make:" + id : null, kind, id, "id:" + id);
+            // a delete (and a build of it again) waits for it; an install does not start while the font's files are made again, and neither
+            // starts while the Phone font card applies or uninstalls the same package (and those wait for it)
+            final String pkgKey = e.pkg == null ? null : "pkg:" + e.pkg;
+            final FontLibrary.Jobs.Job job;
+            synchronized (fmkJobs) {
+                job = pkgKey != null && fmkJobs.inUse(pkgKey) ? null
+                        : fmkJobs.startFor(MainActivity.this, "install".equals(kind) ? "make:" + id : null, kind, id, "id:" + id, pkgKey);
+            }
             if (job == null) {
                 if (fmkJobs.inUse("make:" + id)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
                 return fmkErr("busy", "This font is busy. Wait for it to finish.");
@@ -14940,6 +15239,75 @@ public class MainActivity extends Activity {
             if (!isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
             if (fmkGate(false) == null) return fmkErr("locked", FMK_LOCK_CHANGER);
             return fmkPrivJob("reset", null);
+        }
+
+        /** v7.19.1 Phone font: every font on the phone, {ok, fonts:[{pkg, suffix, name, system, recognized, madeHere, id, installed}], device} (fmkPhoneFontsJson). */
+        @JavascriptInterface
+        public String fontMakerPhoneFonts() {
+            try {
+                return fmkPhoneFontsJson();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /** Applies an installed font package with the font changer (RootGate.unlocked). Answer {ok, job}; then window.onFontMakerApplied({ok, readBack, refreshed}). */
+        @JavascriptInterface
+        public String fontMakerApplyPackage(String pkg) {
+            if (!isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
+            if (fmkGate(false) == null) return fmkErr("locked", FMK_LOCK_CHANGER);
+            if (!fmkIsFontPkgName(pkg) || fmkInstalledVersion(pkg) == 0) return fmkErr("not_found", FMK_PKG_GONE);
+            if (!fmkIsFontPkg(pkg)) return fmkErr("bad_suffix", "The font changer cannot use this font package's name.");
+            return fmkPrivJob("applypkg", pkg);
+        }
+
+        /** Uninstalls a font package (fmkUninstallPackage). Answer {ok, job}; then window.onFontMakerPkgUninstalled(pkg, {ok, how, note}). */
+        @JavascriptInterface
+        public String fontMakerUninstallPackage(final String pkg) {
+            if (!fmkIsFontPkgName(pkg)) return fmkErr("not_found", FMK_PKG_GONE);
+            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, "pkg:" + pkg, "uninstallpkg", pkg, "pkg:" + pkg);
+            if (job == null) return fmkErr("busy", "This font is busy. Wait for it to finish.");
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res;
+                        try {
+                            res = fmkUninstallPackage(pkg);
+                        } finally {
+                            fmkJobs.finish(job);
+                        }
+                        notifyJs("window.onFontMakerPkgUninstalled && window.onFontMakerPkgUninstalled(" + JSONObject.quote(pkg) + ", " + JSONObject.quote(res.toString()) + ")");
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** Opens Samsung's Font style screen, or Display settings where this phone has none by that name. {ok, exact}. */
+        @JavascriptInterface
+        public String fontMakerOpenFontStyle() {
+            final Intent exact = fmkFontStyleIntent();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        startActivity(exact != null ? exact : new Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                    } catch (Throwable t) {
+                        try {
+                            startActivity(new Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                        } catch (Throwable ignored) {}
+                    }
+                }
+            });
+            try {
+                return new JSONObject().put("ok", true).put("exact", exact != null).toString();
+            } catch (Exception e) {
+                return "{\"ok\":true}";
+            }
         }
 
         /** The five emoji downloads for this phone: {ok, sdk, items:[{id, name, version, format, mergeable, minApi, usable, size, sha256, license, ..., downloaded}]}. */
@@ -15058,14 +15426,17 @@ public class MainActivity extends Activity {
          * a time, and a system emoji step also waits for another window's (fmkSysLock).
          */
         private String fmkPrivJob(final String kind, final String id) {
-            boolean single = "apply".equals(kind) || "reset".equals(kind) || "sysapply".equals(kind) || "sysundo".equals(kind);
-            // what the step reads, so a delete waits for it: the entry an apply writes, the emoji file a swap streams
-            String uses = id == null ? null : ("sysapply".equals(kind) ? "sys:" : "id:") + id;
-            // an apply does not start while the font's files are made again
-            String busyIf = "apply".equals(kind) && id != null ? "make:" + id : null;
+            boolean single = "apply".equals(kind) || "applypkg".equals(kind) || "reset".equals(kind) || "sysapply".equals(kind) || "sysundo".equals(kind);
+            // what the step reads, so a delete waits for it: the entry an apply writes, the package an applypkg reads, the emoji file a swap streams
+            String uses = id == null ? null : ("sysapply".equals(kind) ? "sys:" : "applypkg".equals(kind) ? "pkg:" : "id:") + id;
+            // an apply does not start while the font's files are made again, nor an applypkg while its package is installed or uninstalled
+            String busyIf = id == null ? null : "apply".equals(kind) ? "make:" + id : "applypkg".equals(kind) ? "pkg:" + id : null;
             final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, busyIf, kind, single ? "only" : String.valueOf(System.nanoTime()), uses);
             if (job == null) {
-                if (busyIf != null && fmkJobs.inUse(busyIf)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
+                if (busyIf != null && fmkJobs.inUse(busyIf)) {
+                    if ("apply".equals(kind)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
+                    return fmkErr("busy", "This font is busy. Wait for it to finish.");
+                }
                 return fmkErr("busy", "The phone is still busy with the last change. Wait for it to finish.");
             }
             try {
@@ -15078,6 +15449,8 @@ public class MainActivity extends Activity {
                                 notifyJs("window.onFontMakerChangerStatus && window.onFontMakerChangerStatus(" + JSONObject.quote(fmkChangerStatus().toString()) + ")");
                             } else if ("apply".equals(kind)) {
                                 notifyJs("window.onFontMakerApplied && window.onFontMakerApplied(" + JSONObject.quote(fmkApply(id).toString()) + ")");
+                            } else if ("applypkg".equals(kind)) {
+                                notifyJs("window.onFontMakerApplied && window.onFontMakerApplied(" + JSONObject.quote(fmkApplyPackage(id).toString()) + ")");
                             } else if ("reset".equals(kind)) {
                                 notifyJs("window.onFontMakerReset && window.onFontMakerReset(" + JSONObject.quote(fmkReset().toString()) + ")");
                             } else if ("sysstatus".equals(kind)) {
@@ -16003,7 +16376,7 @@ public class MainActivity extends Activity {
                         @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
                     }, 2000, 25L * 1024 * 1024);
                     java.util.ArrayList<String> head = new java.util.ArrayList<String>();
-                    head.add("ADB/Root Full System Toolbox - log recording");
+                    head.add("ADB/Root Toolbox - log recording");
                     head.add("Started: " + new java.util.Date());
                     head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
                     head.add("Level: " + lv + " and above");
@@ -20359,7 +20732,7 @@ public class MainActivity extends Activity {
                     try {
                         ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                         if (cm != null) {
-                            cm.setPrimaryClip(ClipData.newPlainText("ADB/Root Full System Toolbox", text));
+                            cm.setPrimaryClip(ClipData.newPlainText("ADB/Root Toolbox", text));
                             Toast.makeText(MainActivity.this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {

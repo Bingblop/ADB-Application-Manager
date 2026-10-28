@@ -835,7 +835,10 @@ public class FontLibraryTest {
                 { "fontMakerCancel", "String jobId" }, { "fontMakerLibrary", "" }, { "fontMakerFontData", "String id, String face" },
                 { "fontMakerDelete", "String id" }, { "fontMakerExport", "String id" }, { "fontMakerInstall", "String id" },
                 { "fontMakerUninstall", "String id" }, { "fontMakerChangerStatus", "" }, { "fontMakerApply", "String id" },
-                { "fontMakerReset", "" }, { "emojiCatalog", "" }, { "emojiDownload", "String id" }, { "emojiCancel", "String id" },
+                { "fontMakerReset", "" },
+                // v7.19.1: the Phone font card (every font package on the phone)
+                { "fontMakerPhoneFonts", "" }, { "fontMakerApplyPackage", "String pkg" }, { "fontMakerUninstallPackage", "String pkg" }, { "fontMakerOpenFontStyle", "" },
+                { "emojiCatalog", "" }, { "emojiDownload", "String id" }, { "emojiCancel", "String id" },
                 { "emojiDelete", "String id" }, { "sysEmojiStatus", "" }, { "sysEmojiApply", "String id" }, { "sysEmojiUndo", "" },
                 { "softRestart", "" },
                 // v7.18.0: the Google Fonts browser and the emoji samples (google-fonts-v7.18.0.md section 5)
@@ -851,7 +854,7 @@ public class FontLibraryTest {
             is("bridge method " + m[0] + "(" + m[1] + ")", p.matcher(ma).find(), true);
         }
         for (String cb : new String[] { "onFontMakerPicked", "onFontMakerProgress", "onFontMakerBuilt", "onFontMakerInstalled", "onFontMakerUninstalled",
-                "onFontMakerExported", "onFontMakerChangerStatus", "onFontMakerApplied", "onFontMakerReset", "onEmojiProgress", "onEmojiDone",
+                "onFontMakerExported", "onFontMakerChangerStatus", "onFontMakerApplied", "onFontMakerReset", "onFontMakerPkgUninstalled", "onEmojiProgress", "onEmojiDone",
                 "onSysEmojiStatus", "onSysEmojiApplied", "onSysEmojiUndone",
                 "onGfCatalog", "onGfPreview", "onGfInfo", "onGfProgress", "onGfDone", "onGfSaved", "onEmojiSpecimen" })
             is("callback " + cb, ma.contains("window." + cb + " && window." + cb + "("), true);
@@ -878,7 +881,7 @@ public class FontLibraryTest {
                     "no_picker", "zip_entry", "bad_zip", "unknown", "missing_table", "no_outlines", "not_supported", "bad_package", "bad_version", "write_failed",
                     "read_failed", "emoji_damaged", "emoji_too_complex", "emoji_too_big", "failed",
                     "gf_unknown", "gf_bad_name", "gf_bad_answer", "gf_no_files", "gf_too_big", "gf_not_a_font", "gf_no_preview", "gf_not_downloaded",
-                    "gf_bad_file", "gf_changed", "emo_changed", "emo_no_sample" })
+                    "gf_bad_file", "gf_changed", "emo_changed", "emo_no_sample", "system", "no_font" })
                 is("FNT_ERR words the code " + c, err.contains("\n            " + c + ": "), true);
             // every code the font engine and the bridge send has a sentence of the page; the three named here never leave Java (the engine catches them)
             Set<String> internal = new HashSet<String>(Arrays.asList("not_cff", "no_instance", "not_variable"));
@@ -971,9 +974,11 @@ public class FontLibraryTest {
         is("UID 1000 is the system user, never root", low.contains("root (uid 1000)") || low.contains("uid 1000 root") || low.contains("root user (uid 1000)") || !low.contains("the system user (uid 1000)"), false);
         is("the bridge gates the changer and the system emoji before it starts a job",
                 body(ma, "public String fontMakerApply(").contains("fmkGate(false) == null") && body(ma, "public String fontMakerReset(").contains("fmkGate(false) == null")
+                && body(ma, "public String fontMakerApplyPackage(").contains("fmkGate(false) == null")
                 && body(ma, "public String sysEmojiApply(").contains("fmkGate(true) == null") && body(ma, "public String sysEmojiUndo(").contains("fmkGate(true) == null")
                 && body(ma, "public String softRestart(").contains("fmkGate(true)"), true);
         is("…and every job reads the gate again when it runs", body(ma, "private JSONObject fmkApply(").contains("fmkGate(false)") && body(ma, "private JSONObject fmkReset(").contains("fmkGate(false)")
+                && body(ma, "private JSONObject fmkApplyPackage(").contains("fmkGate(false)")
                 && body(ma, "private JSONObject fmkSysApply(").contains("fmkGate(true)") && body(ma, "private JSONObject fmkSysUndo(").contains("fmkGate(true)"), true);
         is("network only through HttpSafe.open", tab.contains("HttpSafe.open(") && !tab.contains("openConnection(") && !tab.contains("new URL(") && !tab.contains("new java.net.URL("), true);
         Matcher runs = Pattern.compile("fmkRun\\(backend, ([^\\n]*)").matcher(tab);
@@ -984,11 +989,15 @@ public class FontLibraryTest {
             is("a script built by SamsungFonts or SettingsDb, or quoted: " + arg, arg.startsWith("SamsungFonts.") || arg.startsWith("SettingsDb.writeScript(") || arg.contains("BackupScripts.quote("), true);
         }
         is("the scripts are found", nRuns >= 10, true);
-        String apply = body(ma, "private JSONObject fmkApply(");
+        // v7.19.1: a font of My fonts and a package on the phone go the same way (fmkPlace)
+        is("Apply of My fonts and of a package both place the font through fmkPlace",
+                body(ma, "private JSONObject fmkApply(").contains("return fmkPlace(backend, e.suffix, e.pkg, files, names, shas, sizes);")
+                        && body(ma, "private JSONObject fmkApplyPackage(").contains("return fmkPlace(backend, suffix, pkg, files, names, shas, sizes);"), true);
+        String apply = body(ma, "private JSONObject fmkPlace(");
         is("the changer's success is read back (sans.loc and every hash), not taken from an exit text",
                 apply.contains("want.equals(ar.sansLoc)") && apply.contains("shas[i].equals(f.sha256)") && apply.contains("shas[i].equals(w.sha256)"), true);
         is("the changer stages every file and puts them in place in one install; an Apply that stops clears what it staged",
-                apply.contains("SamsungFonts.installScript(r, user, e.suffix, names, shas, drop)") && apply.contains("finally") && apply.contains("if (!placed) fmkDiscard(backend, r, user, e.suffix)")
+                apply.contains("SamsungFonts.installScript(r, user, suffix, names, shas, drop)") && apply.contains("finally") && apply.contains("if (!placed) fmkDiscard(backend, r, user, suffix)")
                         && body(ma, "private void fmkDiscard(").contains("SamsungFonts.discardScript(") && !tab.contains("removeFontScript"), true);
 
         // the system emoji: never bound over an update in /data/fonts/files, only the swap's own binds taken off, the record before the bind
@@ -1057,7 +1066,7 @@ public class FontLibraryTest {
         is("the build catches OutOfMemoryError as no_memory", body(ma, "private void fmkBuildJob(").contains("catch (OutOfMemoryError oom)") && body(ma, "private void fmkBuildJob(").contains("\"no_memory\""), true);
         is("the base64 answers are capped", body(ma, "private String fmkBase64(").contains("FontLibrary.MAX_PREVIEW_BYTES"), true);
         is("a delete waits for an install, an uninstall or an apply of the font, and for a swap of the emoji font",
-                body(ma, "private String fmkLibraryJob(").contains("kind, id, \"id:\" + id)") && body(ma, "private String fmkPrivJob(").contains("\"sys:\" : \"id:\"")
+                body(ma, "private String fmkLibraryJob(").contains("kind, id, \"id:\" + id, pkgKey)") && body(ma, "private String fmkPrivJob(").contains("\"sys:\" : \"applypkg\".equals(kind) ? \"pkg:\" : \"id:\"")
                         && body(ma, "private String fmkDelete(").contains("fmkJobs.inUse(\"id:\" + id)") && body(ma, "public String emojiDelete(").contains("fmkJobs.inUse(\"sys:\" + id)"), true);
         is("the request codes reach the tab", ma.contains("requestCode == REQ_FONTMAKER_PICK") && ma.contains("requestCode == REQ_FONTMAKER_EXPORT"), true);
         String pick = body(ma, "private JSONObject fmkCopyPick(");
@@ -1133,7 +1142,11 @@ public class FontLibraryTest {
         is("a font made again is refused while it is installed, uninstalled, applied or saved", start.contains("fmkJobs.startFor(this, rebuild == null ? null : \"id:\" + rebuild.id, \"build\", \"only\"")
                 && start.contains("rebuild == null ? null : \"make:\" + rebuild.id"), true);
         is("…and they are refused while it is made again", body(ma, "private String fmkLibraryJob(").contains("\"install\".equals(kind) ? \"make:\" + id : null")
-                && body(ma, "private String fmkPrivJob(").contains("\"apply\".equals(kind) && id != null ? \"make:\" + id : null"), true);
+                && body(ma, "private String fmkPrivJob(").contains("\"apply\".equals(kind) ? \"make:\" + id : \"applypkg\".equals(kind) ? \"pkg:\" + id : null"), true);
+        // v7.19.1: the Phone font card's apply and uninstall of a package and the library's install and uninstall of it keep apart
+        is("an install or uninstall from the library waits for the Phone font card's jobs on the same package, and they for it",
+                body(ma, "private String fmkLibraryJob(").contains("pkgKey != null && fmkJobs.inUse(pkgKey) ? null")
+                        && body(ma, "public String fontMakerUninstallPackage(").contains("startFor(MainActivity.this, \"pkg:\" + pkg,"), true);
         // the refusal names no one job, since every job that holds "id:" can be the one (an uninstall too); a delete says so for a font made again (R-JOBS-3)
         is("a font made again while another job has it is refused as a busy font", start.contains("return fmkErr(\"busy\", \"This font is busy. Wait for it to finish.\");"), true);
         String del = body(ma, "private String fmkDelete(");
