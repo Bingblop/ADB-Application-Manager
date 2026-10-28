@@ -2677,6 +2677,7 @@ public class MainActivity extends Activity {
                         loadUpdateState();
                         before = updateLastSummary;
                         rowsBefore.putAll(updateResults);
+                        if (mobileDataBlocked("updates_mobile_data")) throw new java.io.IOException(UPDATES_WIFI_ONLY);
                         approvedUpdates.clear();            // a yes holds for the update it was given for, not for what a new check finds
                         retried = retryFailed && before != null ? pkgsOfArray(before.optJSONArray("failed")) : null;
                         if (retried != null) {
@@ -3273,6 +3274,7 @@ public class MainActivity extends Activity {
             public void run() {
                 JSONObject o = new JSONObject();
                 try {
+                    storeNetGate();
                     JSONObject cat = ShizuStore.catalog(200, 2000);
                     o.put("status", "ok");
                     o.put("base", ShizuStore.BASE);
@@ -3549,11 +3551,48 @@ public class MainActivity extends Activity {
         return new File(d, key.replaceAll("[^A-Za-z0-9._-]", "_") + ".json");
     }
 
-    /** A cached catalog (JSON array of items) younger than {@code ttlMs}, or null. */
+    /** The page's message when a catalog would be downloaded on mobile data while "Update stores on mobile data" is off. */
+    private static final String STORE_WIFI_ONLY = "You are on mobile data, and stores update only on Wi-Fi. Turn on Update stores on mobile data (at the bottom of this tab) to allow it.";
+
+    /**
+     * v7.18.1, the owner's wish: the App Stores tab's "Update stores on mobile data" (the page's kv 'store_mobile_data', off by default). While it
+     * is off, a store catalog is not downloaded or refreshed unless the phone is on Wi-Fi or Ethernet: a catalog kept from before is shown instead,
+     * whatever its age, and without one the load ends with STORE_WIFI_ONLY. A VPN or another network counts as mobile data when it is metered.
+     * Offline (no network) is not blocked here: the download fails on its own, with its own message.
+     */
+    private boolean storeMobileBlocked() { return mobileDataBlocked("store_mobile_data"); }
+
+    /** The Application Updater's own switch of the same kind, "Check for updates on mobile data" (kv 'updates_mobile_data', off by default, v7.18.1). */
+    private static final String UPDATES_WIFI_ONLY = "You are on mobile data, and updates are checked only on Wi-Fi. Turn on Check for updates on mobile data (at the bottom of this tab) to allow it.";
+
+    /** True on mobile data (or a metered VPN / other network) while the page's switch under kv {@code kvKey} does not allow it; never offline. */
+    private boolean mobileDataBlocked(String kvKey) {
+        try {
+            if (prefs != null && "true".equals(prefs.getString("kv_" + kvKey, ""))) return false;
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return false;
+            android.net.Network n = cm.getActiveNetwork();
+            android.net.NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+            if (nc == null) return false;
+            if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) return false;
+            if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) return true;
+            return cm.isActiveNetworkMetered();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Called right before a catalog goes to the network: stops it on mobile data while that is not allowed (storeMobileBlocked). */
+    private void storeNetGate() throws java.io.IOException {
+        if (storeMobileBlocked()) throw new java.io.IOException(STORE_WIFI_ONLY);
+    }
+
+    /** A cached catalog (JSON array of items) younger than {@code ttlMs} (of any age on mobile data while stores update only on Wi-Fi), or null. */
     private JSONArray storeCacheRead(String key, long ttlMs) {
         try {
             File f = storeCacheFile(key);
-            if (!f.isFile() || System.currentTimeMillis() - f.lastModified() > ttlMs || f.length() > 40L * 1024 * 1024) return null;
+            if (!f.isFile() || f.length() > 40L * 1024 * 1024) return null;
+            if (System.currentTimeMillis() - f.lastModified() > ttlMs && !storeMobileBlocked()) return null;
             java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream((int) f.length());
             java.io.FileInputStream in = new java.io.FileInputStream(f);
             try {
@@ -3640,6 +3679,7 @@ public class MainActivity extends Activity {
         if (arg != null && arg.startsWith("q:")) {
             String q = arg.substring(2).trim();
             if (q.isEmpty()) { storeDeliver(source, arg, new JSONArray(), null); return; }
+            storeNetGate();
             JSONArray found = new JSONArray();
             Set<String> seen = new HashSet<String>();
             for (int page = 0; page < 2; page++) {
@@ -3664,6 +3704,7 @@ public class MainActivity extends Activity {
             storeDeliver(source, arg, cached, extra);
             return;
         }
+        storeNetGate();
 
         JSONArray all = new JSONArray();
         Set<String> seen = new HashSet<String>();
@@ -3716,6 +3757,7 @@ public class MainActivity extends Activity {
         if (force) storeCacheClear("orion");
         JSONArray cached = force ? null : storeCacheRead("orion", STORE_CACHE_TTL_MS);
         if (cached != null && cached.length() > 0) { storeDeliver("orion", null, cached, null); return; }
+        storeNetGate();
         storeProgress("orion", null, "Downloading the Orion catalog…");
         JSONArray items = Stores.orionCatalog(4000).optJSONArray("items");
         if (items == null) items = new JSONArray();
@@ -3750,6 +3792,7 @@ public class MainActivity extends Activity {
             storeDeliver(source, arg, cached, extra);
             return;
         }
+        storeNetGate();
         storeProgress(source, arg, "Contacting the repository…");
         final File detailTmp = new File(storeDetailFile(address).getPath() + ".tmp");
         final java.io.BufferedWriter dw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new FileOutputStream(detailTmp), "UTF-8"), 65536);
@@ -3796,6 +3839,7 @@ public class MainActivity extends Activity {
         if (force) storeCacheClear(ckey);
         JSONArray cached = force ? null : storeCacheRead(ckey, STORE_CACHE_TTL_MS);
         if (cached != null && cached.length() > 0) { storeDeliver(source, arg, cached, null); return; }
+        storeNetGate();
         storeProgress(source, arg, "Asking " + ("github-owner".equals(kind) || "github-repo".equals(kind) ? "GitHub" : "Codeberg") + "…");
         String token = secrets().get(SecretSettings.GITHUB_TOKEN);
         JSONArray items;
@@ -3816,11 +3860,13 @@ public class MainActivity extends Activity {
      * "q:<text>" = search), "orion", "fdroid-repos" (the known-repo directory) or "fdroid-repo" (arg = address).
      * {@code force} bypasses the on-disk cache.
      */
-    private void runStoreSourceCatalog(final String source, final String arg, final boolean force) {
+    private void runStoreSourceCatalog(final String source, final String arg, final boolean refresh) {
         executor.submit(new Runnable() {
             @Override
             public void run() {
                 try {
+                    // a Refresh on mobile data while stores update only on Wi-Fi does not clear the copy from before: it is shown again
+                    final boolean force = refresh && !storeMobileBlocked();
                     if ("github".equals(source)) loadGithubCatalog(arg, force);
                     else if ("orion".equals(source)) loadOrionCatalog(force);
                     else if ("fdroid-repos".equals(source)) {
@@ -15525,7 +15571,13 @@ public class MainActivity extends Activity {
             if (source != null && !source.isEmpty()) runStoreSourceCatalog(source, arg, true);
         }
 
-        /** True on a metered connection (mobile data / hotspot) - the UI asks before a big catalog download. */
+        /** True while the store catalogs keep to Wi-Fi and the phone is on mobile data (v7.18.1): the page then shows the letters, not the icons. */
+        @JavascriptInterface
+        public boolean storeMobileBlockedNow() {
+            return storeMobileBlocked();
+        }
+
+        /** True on a metered connection (mobile data / hotspot). */
         @JavascriptInterface
         public boolean isNetworkMetered() {
             try {

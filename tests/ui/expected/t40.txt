@@ -26,7 +26,7 @@
 16. repo directory lists 3 repos (filters hidden), Browse loads that repo: true
     copy address & fingerprint: true "https://guardianproject.info/fdroid/repo\nB7C2EEFD"
     error from a repo is shown plainly: true
-17. metered: prompt shown, no download until confirmed, then requested: true 3 3 4
+17. mobile data: no prompt, the catalog is asked for (the app decides and says why), the switch is off at first, on reloads the catalog and is kept, off again: true 3 4 5
 18. orion requested, categories (incl. multi-tag) + Z–A sort + filter: true ["All categories (2)","Automation (1)","Media (1)","Utility (1)"]
 19. ShizuStore: category dropdown from slugs, show-more paging, filter: true ["All categories (130)","Automation (65)","System Tools (65)"] 60 60 "Show 5 more · 5 left"
 20. no Aurora sub-tab or pane in App Stores: true

@@ -1,0 +1,23 @@
+ok   1. the Theme panel ends with "Back up and restore", right after the Root-only theme controls
+ok      its buttons are Back up now, Share…, Restore from a file…, and it says where backups go
+ok      it fits a 360 px screen
+ok   2. Back up now writes monet-theme-<stamp>.json to Download
+ok      it holds the app, the kind, format 1 and the theme: colour, style, Pure black, the sliders, the accents
+ok      the toast says where
+ok   3. Restore from a file… asks the app for a file (tag monet-file)
+ok   4. a restore asks first; No leaves the tab as it was
+ok      Yes brings back the colour, the style, Pure black, the slider and the accent
+ok      nothing is written to the phone (no theme write, no overlay)
+ok      the toast says to tap Apply theme
+ok   5. a Saved lists backup and a text file are refused, nothing asked, nothing changed
+ok      odd values fall back: the colour and style stay, the slider is held to 200, a bad accent is none, no spec, no CMF
+ok   6. Root Features lists Additional Monet Customization, locked without Super User
+ok      with Super User it has an Open tab button
+ok      Open tab goes to the Monet tab, on its Theme half
+ok   7. both mobile data switches are off by default
+ok      they are "Update stores on mobile data" and "Check for updates on mobile data"
+ok      the updater one turns on alone, kept as updates_mobile_data true
+ok      the store one too, kept as store_mobile_data true
+ok      turning the updater one off leaves the store one on
+ok   no page errors
+all passed

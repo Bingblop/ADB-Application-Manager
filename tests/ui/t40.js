@@ -204,18 +204,25 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.waitForTimeout(40);
   console.log('    error from a repo is shown plainly:', /no browsable catalog/.test(await text('#fdroidStatus')));
 
-  // 17) Metered connection: asks before downloading a catalog.
+  // 17) Mobile data (7.18.1): no prompt in the page any more; the app itself keeps catalogs to Wi-Fi unless the App Stores switch allows mobile data.
   await page.evaluate(() => { window.__metered = true; });
   const mAsk0 = await page.evaluate(() => window.__src.filter(c => c[0] === 'fdroid-repo').length);
-  await page.selectOption('#fdroidRepo', 'izzyondroid'); await page.waitForTimeout(40);   // cached from earlier -> no prompt needed
-  await page.selectOption('#fdroidRepo', 'fdroid'); await page.waitForTimeout(40);
   await page.evaluate(() => { storeSrc.fdroid.cache = {}; });   // simulate a fresh session
-  await page.selectOption('#fdroidRepo', 'guardian'); await page.waitForTimeout(40);
+  await page.selectOption('#fdroidRepo', 'izzyondroid'); await page.waitForTimeout(40);
   const mAsk1 = await page.evaluate(() => window.__src.filter(c => c[0] === 'fdroid-repo').length);
-  const mPrompt = await text('#fdroidExtra');
-  await page.locator('#fdroidExtra button').click(); await page.waitForTimeout(40);
+  const noPrompt = !/metered connection/i.test(await text('#fdroidExtra'));
+  await ev({ source: 'fdroid-repo', arg: 'https://apt.izzysoft.de/fdroid/repo', status: 'error', error: 'You are on mobile data, and stores update only on Wi-Fi. Turn on Update stores on mobile data (at the bottom of this tab) to allow it.' });
+  await page.waitForTimeout(40);
+  const saysWhy = /only on Wi-Fi/.test(await text('#fdroidStatus'));
+  const mSw = page.locator('#storeMobileToggle');
+  const offAtFirst = (await mSw.count()) === 1 && !(await mSw.isChecked());
+  await page.evaluate(() => setMobileDataOk('store_mobile_data', true)); await page.waitForTimeout(40);
   const mAsk2 = await page.evaluate(() => window.__src.filter(c => c[0] === 'fdroid-repo').length);
-  console.log('17. metered: prompt shown, no download until confirmed, then requested:', mAsk1 === mAsk0 && /metered connection/.test(mPrompt) && mAsk2 === mAsk1 + 1, mAsk0, mAsk1, mAsk2);
+  const kept = await page.evaluate(() => kvGet('store_mobile_data', false) === true && document.getElementById('storeMobileToggle').checked);
+  await page.evaluate(() => setMobileDataOk('store_mobile_data', false)); await page.waitForTimeout(40);
+  const offAgain = await page.evaluate(() => kvGet('store_mobile_data', true) === false && !document.getElementById('storeMobileToggle').checked);
+  console.log('17. mobile data: no prompt, the catalog is asked for (the app decides and says why), the switch is off at first, on reloads the catalog and is kept, off again:',
+    noPrompt && saysWhy && mAsk1 === mAsk0 + 1 && offAtFirst && mAsk2 === mAsk1 + 1 && kept && offAgain, mAsk0, mAsk1, mAsk2);
 
   // ===== Orion =====
   await page.evaluate(() => switchStoreTab('orion')); await page.waitForTimeout(50);
