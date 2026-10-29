@@ -1,5 +1,13 @@
 # Changelog
 
+## v7.19.5-Pro (versionCode 875)
+
+A fix release on top of v7.19.4, cut from `main`, for the owner's report of 2026-10-29 that Smart Tabs did not seem to work. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Not run on a phone yet:** `docs/PHONE-SCRIPT-v7.19.5.md` is the check.
+
+- **Smart Tabs now changes the bottom bar itself.** In v7.19.4 the openings were counted and the tabs were reordered, but the bottom bar kept the four tabs pinned in the Feature List and only reordered those: a tab you opened most that was not pinned went first under **More**, so with the bottom bar (the default) nothing seemed to happen. Now, while Smart Tabs is on, the bottom bar holds **Application Manager and the three tabs you open most**, pinned or not, the most opened right after Application Manager, and the rest wait under More in the same order with **About** last; the top bar shows the same order. On a tie a pinned tab comes first, so turning it on before anything is counted leaves the bar as it was.
+- **The Feature List's pins rest while Smart Tabs is on** (like its arrows), lit for the tabs Smart Tabs put on the bar, and the note says so. Your own pins are kept and are the bar again when Smart Tabs is turned off.
+- **The order also updates every time the app comes back to the front**, from the app itself as well as the page: on some phones the web view did not report that the app had been in the background, so the new order waited for a restart of the app.
+
 ## v7.19.4-Pro (versionCode 874)
 
 A small release on top of v7.19.3, cut from `main`, with the changes the owner asked for on 2026-10-29. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone yet:** `docs/PHONE-SCRIPT-v7.19.4.md` is the check.

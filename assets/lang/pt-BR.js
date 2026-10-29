@@ -3909,7 +3909,7 @@ x: {
 "Smaller text": "Texto menor",
 "Smallest width it needs": "Menor largura necessária",
 "Smart Tabs": "Smart Tabs",
-"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.": "Smart Tabs está ativado (Navegação, acima), então as abas seguem a ordem em que você mais as abre. Desative para ordená-las com as setas.",
+"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.": "Smart Tabs está ativado (Navegação, acima), então as abas seguem a ordem em que você mais as abre e a barra inferior mostra as que você mais abre. Desative para ordená-las e fixá-las você mesmo.",
 "Smart Tabs off: the tabs are in the Feature List order": "Smart Tabs desativado: as abas seguem a ordem da Lista de recursos",
 "Smart Tabs on: the tabs you open most come first": "Smart Tabs ativado: as abas que você mais abre vêm primeiro",
 "SoC": "SoC",

@@ -3909,7 +3909,7 @@ x: {
 "Smaller text": "Daha küçük metin",
 "Smallest width it needs": "İhtiyaç duyduğu en küçük genişlik",
 "Smart Tabs": "Smart Tabs",
-"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.": "Smart Tabs açık (Gezinme, yukarıda), bu yüzden sekmeler en çok açtığınız sıraya göre dizilir. Oklarla sıralamak için kapatın.",
+"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.": "Smart Tabs açık (Gezinme, yukarıda), bu yüzden sekmeler en çok açtığınız sıraya göre dizilir ve alt çubukta en çok açtıklarınız durur. Kendiniz sıralamak ve sabitlemek için kapatın.",
 "Smart Tabs off: the tabs are in the Feature List order": "Smart Tabs kapalı: sekmeler Özellik Listesi sırasında",
 "Smart Tabs on: the tabs you open most come first": "Smart Tabs açık: en çok açtığınız sekmeler önce gelir",
 "SoC": "SoC",

@@ -3906,7 +3906,7 @@
 {"k":"Smaller text","ctx":"in the the page"},
 {"k":"Smallest width it needs","ctx":"built by the code of: render configs"},
 {"k":"Smart Tabs","ctx":"in the Settings (the gear in the header)"},
-{"k":"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.","ctx":"in the Settings (the gear in the header)"},
+{"k":"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.","ctx":"in the Settings (the gear in the header)"},
 {"k":"Smart Tabs off: the tabs are in the Feature List order","ctx":"built by the code of: set smart tabs"},
 {"k":"Smart Tabs on: the tabs you open most come first","ctx":"built by the code of: set smart tabs"},
 {"k":"SoC","ctx":"built by the code of: tm render cpu"},

@@ -3909,7 +3909,7 @@ x: {
 "Smaller text": "더 작은 텍스트",
 "Smallest width it needs": "필요한 최소 너비",
 "Smart Tabs": "Smart Tabs",
-"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.": "Smart Tabs가 켜져 있어(위의 탐색) 탭이 많이 여는 순서대로 놓입니다. 화살표로 정렬하려면 끄세요.",
+"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.": "Smart Tabs가 켜져 있어(위의 탐색) 탭이 많이 여는 순서대로 놓이고, 하단 바에는 가장 많이 여는 탭이 들어갑니다. 직접 정렬하고 고정하려면 끄세요.",
 "Smart Tabs off: the tabs are in the Feature List order": "Smart Tabs 꺼짐: 탭이 기능 목록 순서를 따릅니다",
 "Smart Tabs on: the tabs you open most come first": "Smart Tabs 켜짐: 가장 많이 여는 탭이 먼저 옵니다",
 "SoC": "SoC",

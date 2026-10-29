@@ -33,7 +33,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const on = (await top()).split(',');
   check('   turned on: most opened right after Application Manager, About last', on[0] === 'apps' && on[1] === 'fonts' && on[2] === 'devices' && on[on.length - 1] === 'about' && on.length === before.split(',').length, on.join(','));
   const bn = await ev(() => bnavPinnedShown().join(',') + '|' + bnavMoreKeys().slice(0, 2).join(','));
-  check('   the bottom bar follows the same order (More lists Custom Fonts first)', /\|fonts,devices$/.test(bn), bn);
+  check('   the bottom bar holds the tabs opened most, pinned or not (v7.19.5), then a pinned tab on a tie', bn === 'apps,fonts,devices,installer|console,extrasettings', bn);
   const fl = await ev(() => ({ note: getComputedStyle(document.getElementById('featureSmartNote')).display !== 'none', first: document.querySelector('#featureList .fl-row').dataset.tab, arrows: [...document.querySelectorAll('#featureList .fl-move')].every(x => x.disabled) }));
   check('   the Feature List shows that order, says why, and its arrows rest', fl.note && fl.first === 'fonts' && fl.arrows, JSON.stringify(fl));
   for (let i = 0; i < 5; i++) await ev(() => { switchView('logcat'); switchView('apps'); });

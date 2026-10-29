@@ -3909,7 +3909,7 @@ x: {
 "Smaller text": "较小文字",
 "Smallest width it needs": "所需的最小宽度",
 "Smart Tabs": "Smart Tabs",
-"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.": "Smart Tabs 已开启（上方的导航），标签页按你打开的频率排列。关闭后可用箭头排序。",
+"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.": "Smart Tabs 已开启（上方的导航），标签页按你打开的频率排列，底部栏放的是你最常打开的标签页。关闭后可自行排序和固定。",
 "Smart Tabs off: the tabs are in the Feature List order": "Smart Tabs 已关闭：标签页按功能列表的顺序排列",
 "Smart Tabs on: the tabs you open most come first": "Smart Tabs 已开启：最常打开的标签页排在前面",
 "SoC": "SoC",
