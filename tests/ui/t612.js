@@ -3,9 +3,9 @@
 // default) looked the same; t611 ran in Top bar only. Here, in Bottom bar only on a phone-sized screen with a real key-value store behind the bridge
 // (lib/bnav_mock.js, kept across a reload): tabs opened from More and left with Back are counted in the store, turning Smart Tabs on puts the tabs opened
 // most on the bar (pinned or not, a pinned tab first on a tie) with the rest under More and About last, the Feature List's pins rest and show the bar,
-// the order does not change while tabs are opened but does when the app comes back (onAppResume from the app's onResume, with no visibilitychange: a web
-// view does not always send one), a reload (a cold start) keeps it all, turning it off gives the pins back, and turned on with nothing counted the bar
-// stays as it was. Both bars show the same order.
+// the order does not change while tabs are opened, nor on a theme change (onAppResume()), but does when the app comes back (onAppResume(true) from the
+// app's onResume, with no visibilitychange: a web view does not always send one), an open More sheet then following the bar, a reload (a cold
+// start) keeps it all, turning it off gives the pins back, and turned on with nothing counted the bar stays as it was. Both bars show the same order.
 const { chromium, PAGE } = require('./lib/pw');
 const mock = require('./lib/bnav_mock.js');
 let bad = 0;
@@ -60,7 +60,13 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await fromMore('logcat', 8);
   check('3. no tab moves while tabs are being opened', await bar() === 'apps,fonts,devices,installer', await bar());
   await ev(() => onAppResume()); await sleep(150);
+  check('   nor after a theme or wallpaper change while the app is in front (onAppResume without true)', await bar() === 'apps,fonts,devices,installer', await bar());
+  await ev(() => bnavMoreOpen()); await sleep(150);
+  await ev(() => onAppResume(true)); await sleep(150);
   check('   back in the app (onResume, no visibilitychange): Live Logcat is first on the bar', await bar() === 'apps,logcat,fonts,devices', await bar());
+  const tiles = await ev(() => [...document.querySelectorAll('#bnavMoreGrid .bn-tile')].map(t => t.dataset.tab));
+  check('   More, left open, follows the bar: Live Logcat is gone from it, Installer is first in it', tiles[0] === 'installer' && !tiles.includes('logcat') && tiles[tiles.length - 1] === 'about', tiles.join(','));
+  await ev(() => bnavMoreClose()); await sleep(100);
 
   await page.reload(); await sleep(700);
   check('4. after a restart Smart Tabs is still on, with the same bar', await ev(() => smartTabsOn && document.getElementById('smartTabsToggle').checked) && await bar() === 'apps,logcat,fonts,devices', await bar());

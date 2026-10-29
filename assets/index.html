@@ -12305,7 +12305,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // pinned only went first under More and the bar looked the same). Every opening of a tab is counted (kv 'tab_opens', { key: count }), with Smart Tabs on or
         // off, so turning it on uses what is known already; when a count passes SMART_CAP every count is halved, so what is used now outweighs what was used months ago.
         // The order is worked out when the page starts, when Smart Tabs is turned on and when the app comes back to the front (the page's visibilitychange, and
-        // onAppResume, which the app calls from onResume: a web view does not always hide the page when the app goes to the back), never while a tab is being
+        // onAppResume(true), which the app calls from onResume only: a web view does not always hide the page when the app goes to the back; a theme or wallpaper
+        // change calls onAppResume() too, while the app is in front, and does not reorder), and an open More sheet is filled again with it; never while a tab is being
         // tapped: a tab does not jump away under the thumb. A tie goes to a pinned tab first, then to the Feature List order, so turning it on with nothing counted
         // yet leaves the bottom bar as it was; the Feature List order is the order again when Smart Tabs is turned off.
         const SMART_CAP = 400;
@@ -12334,6 +12335,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (smartOrder && next.join() === smartOrder.join()) return;
             smartOrder = next;
             tabsApplyConfig();
+            const m = document.getElementById('bnavMoreModal');
+            if (m && m.classList.contains('show')) bnavMoreFill();          // the app came back with More open: its tiles follow the bar
         }
         function smartUi() { const t = document.getElementById('smartTabsToggle'); if (t) t.checked = smartTabsOn; }
         function setSmartTabs(on) {
@@ -12470,15 +12473,23 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- More: the tabs that are on but not pinned ----
         function bnavMoreOpen() {
             haptic();
-            const grid = document.getElementById('bnavMoreGrid'), cur = currentViewName();
-            if (!grid) return;
-            grid.innerHTML = bnavMoreKeys().map(k => '<button type="button" class="bn-tile' + (k === cur ? ' current' : '') + '" data-tab="' + k + '"' + (k === cur ? ' aria-current="page"' : '') + ' onclick="bnavMoreGo(\'' + k + '\')">'
-                + '<span class="bn-ico">' + bnavIcon(k) + bnavBadgeHtml(bnavBadges[k]) + '</span><span class="bn-tl">' + escapeHtml(tabDef(k).label) + '</span><span class="bn-tl bn-tl-short">' + escapeHtml(bnavShort(k)) + '</span></button>').join('');
+            if (!bnavMoreFill()) return;
             document.getElementById('bnavMoreModal').classList.add('show');
             const mb = document.querySelector('#bnav .bn-item[data-more]');
             if (mb) mb.setAttribute('aria-expanded', 'true');
-            const first = grid.querySelector('.bn-tile');
+            const first = document.querySelector('#bnavMoreGrid .bn-tile');
             if (first) first.focus({ preventScroll: true });
+        }
+        // The tiles of More (also again while it is open, when Smart Tabs changes the bar); a tile that had the focus keeps it, if it is still there
+        function bnavMoreFill() {
+            const grid = document.getElementById('bnavMoreGrid'), cur = currentViewName();
+            if (!grid) return false;
+            const had = grid.contains(document.activeElement) && document.activeElement.dataset ? document.activeElement.dataset.tab : '';
+            grid.innerHTML = bnavMoreKeys().map(k => '<button type="button" class="bn-tile' + (k === cur ? ' current' : '') + '" data-tab="' + k + '"' + (k === cur ? ' aria-current="page"' : '') + ' onclick="bnavMoreGo(\'' + k + '\')">'
+                + '<span class="bn-ico">' + bnavIcon(k) + bnavBadgeHtml(bnavBadges[k]) + '</span><span class="bn-tl">' + escapeHtml(tabDef(k).label) + '</span><span class="bn-tl bn-tl-short">' + escapeHtml(bnavShort(k)) + '</span></button>').join('');
+            const back = had && grid.querySelector('.bn-tile[data-tab="' + had + '"]');
+            if (back) back.focus({ preventScroll: true });
+            return true;
         }
         function bnavMoreClose() {
             document.getElementById('bnavMoreModal').classList.remove('show');
@@ -34357,9 +34368,10 @@ Type any command above (e.g. pm list packages -d)</div>
             szAutoAsk();
         }
 
-        function onAppResume() {
+        // resumed: true only from the app's onResume; a theme or wallpaper change calls this without it, while the app is in front
+        function onAppResume(resumed) {
             if (typeof rootGrantReadBack === 'function') { try { rootGrantReadBack(); } catch (e) {} }     // back from a root-manager hand-off without being hidden
-            try { smartRefresh(); } catch (e) {}                              // Smart Tabs: the order of the tabs opened meanwhile, also when the web view never hid the page
+            if (resumed === true) { try { smartRefresh(); } catch (e) {} }          // Smart Tabs: the order of the tabs opened meanwhile, also when the web view never hid the page
             permOnChange();
             if (typeof mpHResumed === 'function') { try { mpHResumed(); } catch (e) {} }
             // Material You follows the wallpaper: re-read the dynamic colors whenever the app comes back
