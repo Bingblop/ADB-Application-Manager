@@ -95,7 +95,7 @@ public final class WearStub {
         return startCmd(phone) + (port > 0 ? " --ei port " + port : "");
     }
 
-    private static final Pattern ADDR = Pattern.compile("^([^\\s:]+):(\\d{1,5})$");
+    private static final Pattern ADDR = Pattern.compile("^(\\[[0-9A-Fa-f:.]*:[0-9A-Fa-f:.]+\\]|[^\\s:]+):(\\d{1,5})$");
 
     /** The port of a serial of the form host:port (1 to 65535), 0 for anything else or a loopback host. */
     static int portOf(String serial) {
@@ -103,6 +103,13 @@ public final class WearStub {
         if (!m.matches()) return 0;
         String host = m.group(1).toLowerCase(Locale.ROOT);
         if (host.startsWith("127.") || host.equals("localhost")) return 0;
+        if (host.startsWith("[")) {
+            try {
+                if (java.net.InetAddress.getByName(host).isLoopbackAddress()) return 0;
+            } catch (java.net.UnknownHostException invalid) {
+                return 0;
+            }
+        }
         int p = Integer.parseInt(m.group(2));
         return p >= 1 && p <= 65535 ? p : 0;
     }
