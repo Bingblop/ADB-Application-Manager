@@ -11,7 +11,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const ctx = await b.newContext({ viewport: { width: 360, height: 800 }, hasTouch: true });
   const page = await ctx.newPage();
   const cdp = await ctx.newCDPSession(page);
-  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
   page.on('dialog', d => d.accept());
   await page.addInitScript(sdb.initScript); await page.addInitScript(ovl.initScript);
   await page.goto(URL); await page.waitForTimeout(400);

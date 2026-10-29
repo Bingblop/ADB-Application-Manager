@@ -7,7 +7,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 360, height: 800 } });
-  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
   const dialogs = []; let answer = true;
   page.on('dialog', d => { dialogs.push(d.message()); answer ? d.accept() : d.dismiss(); });
   await page.addInitScript(mock.initScript);

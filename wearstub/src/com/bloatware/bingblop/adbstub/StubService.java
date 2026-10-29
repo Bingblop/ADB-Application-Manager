@@ -35,6 +35,8 @@ public final class StubService extends Service {
     /** The phone's renewal of the lease (am broadcast over adb, to the same receiver as Stop). */
     static final String ACTION_RENEW = "com.bloatware.bingblop.adbstub.RENEW";
     static final String EXTRA_PHONE = "phone";
+    /** The adb port the phone reached the watch on (version 3 and later), for the status screen. */
+    static final String EXTRA_PORT = "port";
     private static final String CHANNEL = "stub";
     private static final int NOTE_ID = 1;
 
@@ -44,6 +46,7 @@ public final class StubService extends Service {
     static volatile String phone = "";
     static volatile boolean wifiUp;
     static volatile String ip = "";
+    static volatile int port;
 
     private static volatile StubService instance;
 
@@ -94,7 +97,12 @@ public final class StubService extends Service {
             stopNow(this);
             return START_NOT_STICKY;
         }
-        if (intent != null && intent.hasExtra(EXTRA_PHONE)) phone = clean(intent.getStringExtra(EXTRA_PHONE));
+        if (intent != null && intent.hasExtra(EXTRA_PHONE)) {
+            // a start from the phone says which phone and which port (0: the phone has none to tell, e.g. a Bluetooth link), so a port from an earlier start does not stay
+            phone = clean(intent.getStringExtra(EXTRA_PHONE));
+            int p = intent.getIntExtra(EXTRA_PORT, 0);
+            updatePort(p);
+        }
         startForeground(NOTE_ID, note());
         renew();
         hold();
@@ -105,6 +113,10 @@ public final class StubService extends Service {
         if (s == null) return "";
         String t = s.replaceAll("[\\p{Cntrl}]", " ").trim();
         return t.length() > 60 ? t.substring(0, 60) : t;
+    }
+
+    static void updatePort(int p) {
+        port = p >= 1 && p <= 65535 ? p : 0;
     }
 
     @SuppressWarnings("deprecation")
@@ -181,6 +193,9 @@ public final class StubService extends Service {
         running = false;
         wifiUp = false;
         ip = "";
+        // the next start says its own phone and port; until then the screen says the port is unknown (or what the system tells) and names no phone
+        port = 0;
+        phone = "";
         try { stopForeground(true); } catch (Exception ignored) {}
         stopSelf();
     }
@@ -205,7 +220,7 @@ public final class StubService extends Service {
         Notification.Builder b;
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationChannel ch = new NotificationChannel(CHANNEL, "ADB Stub", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel ch = new NotificationChannel(CHANNEL, "ADB Toolbox", NotificationManager.IMPORTANCE_LOW);
             ch.setShowBadge(false);
             nm.createNotificationChannel(ch);
             b = new Notification.Builder(this, CHANNEL);
@@ -213,7 +228,7 @@ public final class StubService extends Service {
             b = new Notification.Builder(this);
         }
         return b.setSmallIcon(R.drawable.ic_stub)
-                .setContentTitle("ADB Stub")
+                .setContentTitle("ADB Toolbox")
                 .setContentText("Screen on, Wi-Fi held for ADB")
                 .setOngoing(true)
                 .setContentIntent(open)

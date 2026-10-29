@@ -1,6 +1,10 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"Android lets only root or the system do this, and on this device adb runs as the shell user without su.": "Android ではこの操作は root かシステムにしか許されず、このデバイスでは adb が su なしの shell ユーザーとして動いています。",
+"Not on the device": "デバイスにない",
+"not on the device": "デバイスにありません",
+"on the device": "デバイスにあります",
 "End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "最後に、\"In short:\" で始まる独立した行をもう1行加え、その設定が何をするかを15語以内の1文で述べてください。",
 "From Ask agent": "「エージェントに聞く」より",
 "The font changer cannot use this font package's name.": "フォントチェンジャーはこのフォントパッケージの名前を使えません。",
@@ -2592,7 +2596,6 @@ x: {
 "No connection: the request did not go through": "接続できません：リクエストが届きませんでした",
 "No default (free web lookup only)": "既定なし(無料のWeb検索のみ)",
 "No description yet": "説明はまだありません",
-"No details": "詳細なし",
 "No device": "端末なし",
 "No device connected": "接続された端末はありません",
 "No device found": "端末が見つかりません",
@@ -5694,6 +5697,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "選択したファイルをまだ読み込み中です。しばらくお待ちください。"
 },
 p: [
+["version {0}", "バージョン {0}"],
 ["Kept with this setting: {0}", "この設定と一緒に保存しました: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} は使用中です。先に別のフォントを選んでから、削除してください。"],
 ["Choose {0} in Font size and style, then Font style.", "「フォントサイズとスタイル」から「フォントスタイル」を開き、{0} を選んでください。"],

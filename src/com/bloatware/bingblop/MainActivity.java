@@ -6703,6 +6703,9 @@ public class MainActivity extends Activity {
     private static final int REQ_PICK_CD = 4293;         // package files to send to a connected device
     private static final int REQ_BT_CONNECT = 9203;
     private final ExecutorService cdExecutor = Executors.newFixedThreadPool(3);
+    // the app details' manifest reads, one at a time on their own thread: pulling a whole APK from an older watch can take minutes, and must not hold
+    // the threads the device list, the stub's renewals and Disconnect run on (v7.19.3)
+    private final ExecutorService cdManifestExecutor = Executors.newSingleThreadExecutor();
     private final java.util.concurrent.ConcurrentHashMap<String, Process> cdProcs = new java.util.concurrent.ConcurrentHashMap<String, Process>();
     private final java.util.Set<String> cdCancelled = java.util.Collections.synchronizedSet(new HashSet<String>());
     private volatile String cdPickTag = "";
@@ -6715,12 +6718,60 @@ public class MainActivity extends Activity {
             Process p = buildAdbProcess(args.toArray(new String[0])).start();
             if (tag != null && !tag.isEmpty()) cdProcs.put(tag, p);
             try {
+                // stopped between the check above and putting p where cdCancel finds it: cdCancel had nothing to end, so it ends here
+                if (tag != null && cdCancelled.contains(tag)) { p.destroy(); return "Error: stopped"; }
                 return readProcessWithTimeout(p, timeoutMs);
             } finally {
                 if (tag != null) cdProcs.remove(tag);
             }
         } catch (Exception e) {
             return "Error: " + e.getMessage();
+        }
+    }
+
+    /**
+     * The same adb, its standard output read as bytes (adb exec-out of a binary file), at most max of them; its error output is thrown away so it
+     * cannot land in the middle of the file. Null when it failed, ran out of time or went past max.
+     */
+    private byte[] cdExecBytes(String tag, List<String> args, int timeoutMs, final int max) {
+        if (tag != null && cdCancelled.contains(tag)) return null;
+        Process p = null;
+        try {
+            ProcessBuilder pb = buildAdbProcess(args.toArray(new String[0]));
+            pb.redirectErrorStream(false);
+            pb.redirectError(ProcessBuilder.Redirect.to(new File("/dev/null")));
+            p = pb.start();
+            if (tag != null && !tag.isEmpty()) cdProcs.put(tag, p);
+            if (tag != null && cdCancelled.contains(tag)) return null;
+            final InputStream in = p.getInputStream();
+            final java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+            FutureTask<Boolean> read = new FutureTask<Boolean>(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    byte[] b = new byte[65536];
+                    int n;
+                    while ((n = in.read(b)) > 0) {
+                        if (buf.size() + n > max) return false;
+                        buf.write(b, 0, n);
+                    }
+                    return true;
+                }
+            });
+            Thread t = new Thread(read, "cd-bytes");
+            t.setDaemon(true);
+            t.start();
+            Boolean whole = read.get(timeoutMs, TimeUnit.MILLISECONDS);
+            return whole != null && whole ? buf.toByteArray() : null;
+        } catch (InterruptedException stopped) {
+            // the app is closing (onDestroy, shutdownNow): the read is over, and so is what would follow it (RemoteManifest's adb pull)
+            if (tag != null) cdCancelled.add(tag);
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (tag != null) cdProcs.remove(tag);
+            if (p != null) try { p.destroy(); } catch (Exception ignored) {}
         }
     }
 
@@ -13707,7 +13758,7 @@ public class MainActivity extends Activity {
                 }
 
                 try {
-                    String appops = BackupScripts.isPackageName(pkg) ? executeShell("cmd appops get " + pkg) : "";
+                    String appops = BackupScripts.isPackageName(pkg) ? appOpsWithUid(pkg) : "";
                     obj.put("appopsRaw", appops != null ? appops : "");
                 } catch (Exception ignored) {}
 
@@ -14239,6 +14290,61 @@ public class MainActivity extends Activity {
             if (p != null) try { p.destroy(); } catch (Exception ignored) {}
         }
 
+        /**
+         * The AndroidManifest.xml of an app on a connected device, decoded (Connected Devices app details, v7.19.3): RemoteManifest reads it out of the
+         * APK on the device (unzip -p) or pulls the APK into the cache. Answer: onCdResult({tag, out}), out the XML or "Error: ...".
+         */
+        @JavascriptInterface
+        public void cdManifest(final String tag, final String serial, final String apkPath) {
+            final String t = tag == null ? "" : tag;
+            cdCancelled.remove(t);
+            try {
+                cdManifestExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        String out = cdCancelled.contains(t) ? "Error: stopped" : RemoteManifest.read(new RemoteManifest.Adb() {
+                            @Override
+                            public byte[] bytes(List<String> args, int timeoutMs, int max) { return cdExecBytes(t, args, timeoutMs, max); }
+                            @Override
+                            public String run(List<String> args, int timeoutMs) { return cdExec(t, args, timeoutMs); }
+                        }, serial, apkPath, getCacheDir(), new RemoteManifest.Decoder() {
+                            @Override
+                            public String fromBytes(byte[] data) { return ManifestDecoder.decodeBytes(data, null); }
+                            @Override
+                            public String fromApk(String path) throws Exception { return ManifestDecoder.decodeApk(path, null); }
+                        });
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, out) + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
+        /**
+         * What this phone knows of these permissions (Connected Devices app details): for each name its protection, whether pm grant can change it,
+         * whether an app op decides it and which, and its label, as for an app of this phone (describePermission). Framework permissions are the same
+         * on the other device; one only the other device declares comes back as "undefined".
+         */
+        @JavascriptInterface
+        public String cdPermInfo(String namesJson) {
+            JSONObject res = new JSONObject();
+            try {
+                JSONArray a = new JSONArray(namesJson == null ? "[]" : namesJson);
+                PackageManager pm = getPackageManager();
+                for (int i = 0; i < a.length() && i < 2000; i++) {
+                    String name = a.optString(i, "");
+                    if (name.isEmpty() || name.length() > 300 || res.has(name)) continue;
+                    JSONObject o = new JSONObject();
+                    try { describePermission(pm, name, o); } catch (Exception ignored) {}
+                    o.remove("description");
+                    res.put(name, o);
+                }
+            } catch (Exception ignored) {}
+            return res.toString();
+        }
+
         /** The serials adb knows this phone by (its own ADB TCP and Wireless Debugging endpoints), so the tab leaves them out of the list of other devices. */
         @JavascriptInterface
         public String cdSelfSerials() {
@@ -14354,6 +14460,7 @@ public class MainActivity extends Activity {
             try {
                 o.put("bundled", cdStubApk() != null);
                 o.put("version", WearStub.VERSION);
+                o.put("auto", WearStub.MIN_AUTO);
             } catch (Exception ignored) {}
             return o.toString();
         }
@@ -14397,10 +14504,10 @@ public class MainActivity extends Activity {
                                 }
                             } else if (a.equals("start")) {
                                 String name = phone == null || phone.trim().isEmpty() ? (Build.MODEL == null ? "" : Build.MODEL) : phone;
-                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.startCmd(name)), 20000);
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.startCmd(name, serial)), 20000);
                                 ok = WearStub.started(out);
                             } else if (a.equals("renew")) {
-                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.renewCmd()), 15000);
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.renewCmd(serial)), 15000);
                                 ok = WearStub.renewed(out);
                             } else if (a.equals("stop")) {
                                 out = cdExec(t, cdStubArgs(serial, "shell", WearStub.stopCmd()), quick ? WearStub.QUICK_STOP_MS : 20000);
@@ -20596,7 +20703,23 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getAppOpsRaw(String pkg) {
             if (!BackupScripts.isPackageName(pkg)) return "Error: not a package name";
-            return executeShell("cmd appops get " + pkg);
+            return appOpsWithUid(pkg);
+        }
+
+        /**
+         * cmd appops get <pkg>. Since Android 10 it lists the uid's modes first, but writes "Uid mode:" only before the first of them, so when it
+         * starts so, the uid's own list (cmd appops get <uid>) follows after a "#UID-OPS" line: the page counts it off to tell where the uid's
+         * modes end and the package's begin (parseAppOps).
+         */
+        private String appOpsWithUid(String pkg) {
+            String raw = executeShell("cmd appops get " + pkg);
+            if (raw == null || !raw.trim().startsWith("Uid mode:")) return raw;
+            try {
+                int uid = getPackageManager().getApplicationInfo(pkg, 0).uid;
+                String u = executeShell("cmd appops get " + uid);
+                if (u != null && u.trim().startsWith("Uid mode:")) return raw.replaceAll("\\s+$", "") + "\n#UID-OPS\n" + u.trim();
+            } catch (Exception ignored) {}
+            return raw;
         }
 
         @JavascriptInterface
@@ -20949,6 +21072,7 @@ public class MainActivity extends Activity {
             if (sdm != null) sdm.bridge().shutdown();
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
+        try { cdManifestExecutor.shutdownNow(); } catch (Throwable ignored) {}
         try { thumbExec.shutdownNow(); } catch (Throwable ignored) {}      // File Manager thumbnails: the page that asked for them is gone
         // the tracker scan: stop its pool FIRST (a trackerScan that comes in now is rejected), then the scan that runs, which would read
         // every app's dex for minutes and keep this activity alive; it ends after the app it is reading and saves what it found to the cache

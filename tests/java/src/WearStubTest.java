@@ -96,6 +96,14 @@ public class WearStubTest {
         String longName = WearStub.quotedPhone(new String(new char[100]).replace('\0', 'a'));
         check("the phone's name is cut at 60 characters", longName.length() == 62);
         check("no name: an empty word", WearStub.quotedPhone(null).equals("''"));
+        // the port the phone reached the watch on goes to the stub's screen (version 3)
+        check("a watch's address: its port goes with the start", WearStub.startCmd("P", "192.168.1.30:5555").equals(WearStub.startCmd("P") + " --ei port 5555"));
+        check("another port", WearStub.startCmd("P", "10.0.0.7:41567").endsWith(" --ei port 41567"));
+        check("a Bluetooth link is a port on this phone: none sent", WearStub.portOf("127.0.0.1:5555") == 0 && WearStub.portOf("localhost:5555") == 0 && WearStub.startCmd("P", "127.0.0.1:5555").equals(WearStub.startCmd("P")));
+        check("a Wireless debugging service name and a USB serial have no port", WearStub.portOf("adb-ABC123-xyz._adb-tls-connect._tcp") == 0 && WearStub.portOf("R5CT1234ABC") == 0 && WearStub.portOf(null) == 0 && WearStub.portOf("") == 0);
+        check("a port out of range or not a number is none", WearStub.portOf("1.2.3.4:0") == 0 && WearStub.portOf("1.2.3.4:65536") == 0 && WearStub.portOf("1.2.3.4:99999") == 0 && WearStub.portOf("1.2.3.4:abc") == 0 && WearStub.portOf("1.2.3.4:65535") == 65535 && WearStub.portOf("1.2.3.4:1") == 1);
+        check("nothing in the serial reaches the shell command (only digits are sent)", !WearStub.startCmd("P", "1.2.3.4:5555; reboot").contains("reboot") && WearStub.portOf("1.2.3.4:5555; reboot") == 0);
+        check("started by itself from the first stub with a lease, and no later than the stub this app carries", WearStub.MIN_AUTO == 2 && WearStub.MIN_AUTO <= WearStub.VERSION);
         check("am start's answer: started", WearStub.started("Starting: Intent { cmp=" + WearStub.PKG + "/.StubActivity (has extras) }"));
         check("am start's answer: an error", !WearStub.started("Starting: Intent { cmp=x }\nError type 3\nError: Activity class {x} does not exist."));
         check("no answer: not started", !WearStub.started(null));
@@ -103,8 +111,9 @@ public class WearStubTest {
         check("stop asks the stub first", stop.startsWith("am broadcast -a " + WearStub.PKG + ".STOP -n " + WearStub.PKG + "/.StopReceiver"));
         check("... then ends its process (the watch drops its locks and Wi-Fi request)", stop.contains("am force-stop " + WearStub.PKG + ";"));
         check("... and says it is done", stop.endsWith("echo stopped"));
-        String renew = WearStub.renewCmd();
-        check("renew is a broadcast to the stub's receiver", renew.equals("am broadcast -a " + WearStub.PKG + ".RENEW -n " + WearStub.PKG + "/.StopReceiver"));
+        String renew = WearStub.renewCmd("192.168.1.30:5555");
+        check("renew carries the current watch port", renew.equals("am broadcast -a " + WearStub.PKG + ".RENEW -n " + WearStub.PKG + "/.StopReceiver --ei port 5555")
+                && WearStub.renewCmd("adb-ABC123-xyz._adb-tls-connect._tcp").endsWith("--ei port 0"));
         check("am broadcast's answer: renewed", WearStub.renewed("Broadcasting: Intent { act=" + WearStub.PKG + ".RENEW flg=0x400000 cmp=" + WearStub.PKG + "/.StopReceiver }\nBroadcast completed: result=0"));
         check("an adb error: not renewed", !WearStub.renewed("error: device offline") && !WearStub.renewed("Error: timed out") && !WearStub.renewed(null));
 
@@ -151,7 +160,23 @@ public class WearStubTest {
             check("... and reads no status after it", ma.contains("final boolean quick = a.equals(\"stop\") && \"quick\".equals(phone);") && Pattern.compile("if \\(!quick\\) \\{\\s*String st = cdExec\\(t, cdStubArgs\\(serial, \"shell\", WearStub.statusCmd\\(\\)\\)").matcher(ma).find());
             check("cdStub reads no stub state from a status adb could not get", ma.contains("if (WearStub.adbFailed(st)) {") && !ma.contains("st.startsWith(\"Error\")"));
             String rcv = read(new File(repo, "wearstub/src/com/bloatware/bingblop/adbstub/StopReceiver.java"));
-            check("the receiver renews on Renew", rcv.contains("ACTION_RENEW.equals(intent.getAction())) StubService.renewNow()"));
+            check("the receiver updates the endpoint before renewing", rcv.contains("intent.hasExtra(StubService.EXTRA_PORT)") && rcv.contains("StubService.updatePort(intent.getIntExtra(StubService.EXTRA_PORT, 0))")
+                && rcv.contains("StubService.renewNow()") && svc.contains("static void updatePort(int p)"));
+            // the watch shows the phone app's own icon: the same files, byte for byte, in every density
+            check("the stub's icon is its mipmap ic_launcher", m.contains("android:icon=\"@mipmap/ic_launcher\""));
+            check("the stub is called ADB Toolbox on the watch: its label, its screen's title and its notification", m.contains("android:label=\"ADB Toolbox\"")
+                && read(new File(repo, "wearstub/src/com/bloatware/bingblop/adbstub/StubActivity.java")).contains("title.setText(\"ADB Toolbox\")") && svc.contains(".setContentTitle(\"ADB Toolbox\")"));
+            int same = 0, all = 0;
+            for (String dir : new String[] { "mipmap-anydpi-v26", "mipmap-mdpi", "mipmap-hdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi" }) {
+                File[] icons = new File(repo, "res/" + dir).listFiles((d, f) -> f.startsWith("ic_launcher"));
+                for (File phone : icons == null ? new File[0] : icons) {
+                    all++;
+                    File watch = new File(repo, "wearstub/res/" + dir + "/" + phone.getName());
+                    if (watch.isFile() && java.util.Arrays.equals(Files.readAllBytes(phone.toPath()), Files.readAllBytes(watch.toPath()))) same++;
+                    else System.out.println("  differs from the phone app's: wearstub/res/" + dir + "/" + phone.getName());
+                }
+            }
+            check("... and each of its files is the phone app's (" + same + " of " + all + ")", all >= 11 && same == all);
         }
 
         System.out.println(fails == 0 ? "PASS WearStubTest: " + n + " checks" : "FAILED WearStubTest: " + fails + " of " + n);

@@ -29,7 +29,7 @@ const { chromium, PAGE } = require('./lib/pw');
       if ((m = /^monkey -p '(.+)'/.exec(cmd))) return 'Events injected: 1';
       if ((m = /^pm clear/.exec(cmd))) return 'Success';
       if ((m = /^pm path '(.+)'$/.exec(cmd))) return 'package:/data/app/~~ab==/' + m[1] + '-1==/base.apk\npackage:/data/app/~~ab==/' + m[1] + '-1==/split_config.xxhdpi.apk';
-      if (/^dumpsys package/.test(cmd)) return '    versionCode=12 minSdk=30 targetSdk=34\n    versionName=2.4.1\n    firstInstallTime=2026-01-02 03:04:05';
+      if ((m = /^dumpsys package '([^']+)'/.exec(cmd))) return 'Packages:\n  Package [' + m[1] + '] (1a2b3c):\n    versionCode=12 minSdk=30 targetSdk=34\n    versionName=2.4.1\n    firstInstallTime=2026-01-02 03:04:05';
       if (/^logcat -c/.test(cmd)) return '';
       if (/^logcat -d/.test(cmd)) return '--------- beginning of main\n10-03 04:00:01.123  1000  1001 I WatchFace: tick 1\n10-03 04:00:02.456  1000  1002 W Battery: low\n10-03 04:00:03.789  1000  1003 E Sensors: failed to read';
       if (/^ls -la '\/sdcard\/'$/.test(cmd)) return 'total 12\ndrwxrwx--x 2 u0_a1 media_rw 4096 2026-01-02 03:04 Download\ndrwxrwx--x 2 u0_a1 media_rw 4096 2026-01-02 03:04 Music\n-rw-rw---- 1 u0_a1 media_rw 12 2026-01-02 03:04 notes.txt';
@@ -179,7 +179,7 @@ const { chromium, PAGE } = require('./lib/pw');
   check('Reinstall runs install-existing and the app is back', (await calls()).some(c => /cmd package install-existing 'com\.google\.android\.apps\.fitness'/.test(c)) && await ev(() => !/UNINSTALLED/.test(document.getElementById('cdcard_com.google.android.apps.fitness').innerText)));
   await ev(() => cdAppMenu('com.example.fit')); await wait(200);
   const menu = await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).map(b => b.innerText));
-  check('the app menu has Open, Force stop, Clear data, Enable, Uninstall, Pull APK, Details, App page, Select, Copy', menu.join('|') === 'Open|Force stop|Clear data|Enable|Uninstall|Pull APK|Details|App page on device|Select|Copy package', menu.join('|'));
+  check('the app menu has Open, Force stop, Clear data, Enable, Uninstall, Pull APK, the app details tabs, App page, Select, Copy', menu.join('|') === 'Open|Force stop|Clear data|Enable|Uninstall|Pull APK|Permissions|App Ops|Activities|Components|Manifest|Details|App page on device|Select|Copy package', menu.join('|'));
   await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).find(b => b.innerText === 'Uninstall').click()); await wait(150);
   check('Uninstall asks first and nothing runs until it is confirmed', await ev(() => document.getElementById('cdAskModal').classList.contains('show') && /Uninstall Fit/.test(document.getElementById('cdAskTitle').innerText)) && !(await calls()).some(c => /pm uninstall/.test(c)));
   await page.click('#cdAskOk'); await wait(250);
@@ -193,8 +193,8 @@ const { chromium, PAGE } = require('./lib/pw');
   check('Pull APK pulls the base and its splits to the phone\'s Download folder', pulls.length === 2 && /com\.wear\.weather\.apk$/.test(pulls[0]) && /com\.wear\.weather_split_config\.xxhdpi\.apk$/.test(pulls[1]) && /Download\/ADB App Manager\/Devices\/192\.168\.1\.20_5555\//.test(pulls[0]), JSON.stringify(pulls));
   await ev(() => cdAppMenu('com.wear.weather')); await wait(100);
   await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).find(b => b.innerText === 'Details').click()); await wait(300);
-  check('Details shows what dumpsys says', await ev(() => /versionName=2\.4\.1/.test(document.getElementById('cdSheetBody').innerText)));
-  await ev(() => cdSheetClose());
+  check('Details opens the app details on its Raw tab with what dumpsys says', await ev(() => document.getElementById('cdInspModal').classList.contains('show') && document.getElementById('cdiTabRaw').classList.contains('active') && /versionName=2\.4\.1/.test(document.getElementById('cdiRaw').innerText) && document.getElementById('cdiVersion').innerText === 'Version 2.4.1 (12)'));
+  await ev(() => cdInspClose());
 
   // many apps: select two, disable, a failure is reported
   await ev(async () => { await cdDo('reinstall', 'com.example.fit'); });             // (fit was uninstalled above: an uninstalled app cannot be enabled, and the app now checks)

@@ -33,7 +33,7 @@
             /* ---- Accent [theme] ---- */
             --accent: #00E5FF;                       /* active tab, selection, links, focus border, primary actions */
             --accent-glow: rgba(0, 229, 255, 0.35);  /* soft halo and selected-row tint; not for text */
-            --secondary: #7C4DFF;                    /* the end of the accent-to-secondary gradient on the logo and primary buttons */
+            --secondary: #7C4DFF;                    /* the end of the accent-to-secondary gradient on primary buttons */
             --on-accent: #000000;                    /* text and icons on a solid accent fill (black or white, whichever contrasts more) */
 
             /* ---- Status [theme]: always pair the colour with a text label ---- */
@@ -1780,7 +1780,7 @@
         }
 
         /* The app menu stacks a header and the buttons above its lists, so it may stand a little taller than the other sheets */
-        #inspectorModal .modal-sheet {
+        #inspectorModal .modal-sheet, #cdInspModal .modal-sheet {
             max-height: 93vh;
         }
 
@@ -1834,22 +1834,22 @@
         /* The app menu's header: icon, name, package and version on the left (the icon at the top of the block, not floating beside it), Share and
            close on the right. The tags and the copy chips, dates and sizes go under it across the whole sheet, so on a 320-360 px phone the text
            column is not squeezed beside a column of chips (that broke "Updated" and "Cache" in the middle and cut "Copy name" off). */
-        #inspectorModal .sheet-header { align-items: flex-start; gap: var(--space-4); margin-bottom: 0; }
-        #inspectorModal .sheet-app-hero { align-items: flex-start; flex: 1 1 auto; min-width: 0; }
-        #inspectorModal .sheet-app-hero .sheet-title { flex: 1 1 auto; min-width: 0; }
-        #inspectorModal .sheet-title h3 { overflow-wrap: anywhere; }
-        #inspectorModal .sheet-header-top { display: flex; align-items: center; gap: var(--space-1); flex: 0 0 auto; }          /* the close's round target brings its own room */
+        #inspectorModal .sheet-header, #cdInspModal .sheet-header { align-items: flex-start; gap: var(--space-4); margin-bottom: 0; }
+        #inspectorModal .sheet-app-hero, #cdInspModal .sheet-app-hero { align-items: flex-start; flex: 1 1 auto; min-width: 0; }
+        #inspectorModal .sheet-app-hero .sheet-title, #cdInspModal .sheet-app-hero .sheet-title { flex: 1 1 auto; min-width: 0; }
+        #inspectorModal .sheet-title h3, #cdInspModal .sheet-title h3 { overflow-wrap: anywhere; }
+        #inspectorModal .sheet-header-top, #cdInspModal .sheet-header-top { display: flex; align-items: center; gap: var(--space-1); flex: 0 0 auto; }          /* the close's round target brings its own room */
         #inspectorModal .sheet-header-actions { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); row-gap: 0; }
         #inspectorModal .sheet-header-actions > .uad-chip { margin-top: var(--space-3); }
         #inspectorModal .uad-chip.uad-chip-ask { background: var(--tint-accent); border-color: var(--line-accent); color: var(--text-main); }          /* tonal (v7.15): an offer, not a warning in white outline */
         /* the filter chips of the app menu's lists stay on one line and scroll sideways, with a fade at the end that has more (.h-fade, v7.15) */
-        #inspectorModal .chip-row.h-fade { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-block: var(--space-1); margin-block-start: calc(-1 * var(--space-1)); }
-        #inspectorModal .chip-row.h-fade::-webkit-scrollbar { display: none; }
-        #inspectorModal .chip-row.h-fade > .filter-chip { flex: 0 0 auto; white-space: nowrap; }
-        #inspectorModal .sheet-meta { margin-bottom: var(--space-4); }
+        #inspectorModal .chip-row.h-fade, #cdInspModal .chip-row.h-fade { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-block: var(--space-1); margin-block-start: calc(-1 * var(--space-1)); }
+        #inspectorModal .chip-row.h-fade::-webkit-scrollbar, #cdInspModal .chip-row.h-fade::-webkit-scrollbar { display: none; }
+        #inspectorModal .chip-row.h-fade > .filter-chip, #cdInspModal .chip-row.h-fade > .filter-chip { flex: 0 0 auto; white-space: nowrap; }
+        #inspectorModal .sheet-meta, #cdInspModal .sheet-meta { margin-bottom: var(--space-4); }
         #inspectorModal .sheet-meta .copy-row { flex-wrap: wrap; overflow: visible; }
-        #inspectorModal .sheet-meta p.sheet-dates { margin-top: var(--space-2); overflow-wrap: break-word; }
-        #inspectorModal .sheet-meta p.sheet-dates + p.sheet-dates { margin-top: 1px; }
+        #inspectorModal .sheet-meta p.sheet-dates, #cdInspModal .sheet-meta p.sheet-dates { margin-top: var(--space-2); overflow-wrap: break-word; }
+        #inspectorModal .sheet-meta p.sheet-dates + p.sheet-dates, #cdInspModal .sheet-meta p.sheet-dates + p.sheet-dates { margin-top: 1px; }
         /* the UAD-NG classification of the app, under Share: tap for the project's full description */
         .uad-chip { display: inline-flex; align-items: center; gap: var(--space-2); font: inherit; font-size: var(--fs-pill); font-weight:var(--fw-bold); padding: var(--space-1) var(--space-3h); border-radius: var(--radius-pill);
             border: 1px solid currentColor; background: var(--fill-2); cursor: pointer; max-width: 100%; }
@@ -2147,8 +2147,8 @@
             word-break: break-all;
         }
 
-        #permsContainer .perm-sub { word-break: normal; overflow-wrap: anywhere; }          /* breaks where permWbr allows, and only inside a word that still does not fit */
-        #permsContainer .perm-name { word-break: normal; overflow-wrap: anywhere; }
+        #permsContainer .perm-sub, #cdiPerms .perm-sub, #cdiActs .perm-sub, #cdiComps .perm-sub { word-break: normal; overflow-wrap: anywhere; }          /* breaks where permWbr allows, and only inside a word that still does not fit */
+        #permsContainer .perm-name, #cdiPerms .perm-name { word-break: normal; overflow-wrap: anywhere; }
         #permsContainer .agent-btn { background: transparent; padding-inline: var(--space-1); margin-inline-start: calc(-1 * var(--space-1)); }          /* a ghost text button under the name (v7.15): the row's own switch leads */
 
         .perm-kind {
@@ -4359,13 +4359,9 @@
 
         /* About tab */
         .about-hero { text-align: center; }
-        .about-logo {
-            width: 64px; height: 64px; margin: 2px auto var(--space-3h); border-radius: var(--radius-chip);
-            background: linear-gradient(135deg, var(--accent), var(--secondary));
-            display: flex; align-items: center; justify-content: center; font-size: 32px;
-            color: var(--on-accent);
-            box-shadow: 0 0 22px var(--accent-glow);
-        }
+        /* the app icon itself (assets/app_icon.png): the robot in its toolbox, no tile behind it */
+        .about-logo { width: 64px; height: 64px; margin: 2px auto var(--space-3h); }
+        .about-logo img { display: block; width: 100%; height: 100%; }
         .about-name { font-size: 18px; font-weight:var(--fw-heavy); }
         .about-ver { font-size: var(--fs-body); color: var(--text-muted); font-weight:var(--fw-bold); margin: 2px 0 var(--space-3); }
         .about-blurb { font-size: var(--fs-body); color: var(--text-muted); line-height: 1.5; margin-bottom: var(--space-4); }
@@ -4460,7 +4456,7 @@
         .rt-keys button.on { background: var(--accent); color: var(--on-accent); }
         .rt-keys button.lock { box-shadow: inset 0 -3px 0 var(--on-accent); }
         /* a bottom sheet pulled up by its handle: it takes (nearly) the whole screen */
-        .modal-sheet.sheet-expanded, #inspectorModal .modal-sheet.sheet-expanded { max-height: calc(100vh - 14px); min-height: 72vh; }
+        .modal-sheet.sheet-expanded, #inspectorModal .modal-sheet.sheet-expanded, #cdInspModal .modal-sheet.sheet-expanded { max-height: calc(100vh - 14px); min-height: 72vh; }
         .modal-sheet.sheet-dragging { transition: none !important; }
         /* The app menu's tab at full screen (sheetFullOpen): the header, the tags and the menu buttons step aside, a slim bar with the tab's name
            and a ✕ takes the top, the tab strip stays (another tab opens at full screen too) and the open tab's list fills the rest of the screen.
@@ -4474,19 +4470,19 @@
         .list-toolbar .sheet-full-btn { align-self: center; margin-inline-start: 0; }
         .chip-row.sheet-full-row { justify-content: flex-end; }
         .sheet-full-head { display: none; }
-        #inspectorModal .modal-sheet.tab-full { height: 100%; max-height: none; min-height: 0; border-radius: 0; display: flex; flex-direction: column; overflow: hidden;
+        #inspectorModal .modal-sheet.tab-full, #cdInspModal .modal-sheet.tab-full { height: 100%; max-height: none; min-height: 0; border-radius: 0; display: flex; flex-direction: column; overflow: hidden;
             padding-top: calc(var(--space-5) + env(safe-area-inset-top, 0px)); padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); }
-        #inspectorModal .modal-sheet.tab-full > :not(.sheet-full-head):not(.sheet-tabs):not(.sheet-tab-content) { display: none; }
-        #inspectorModal .modal-sheet.tab-full > .sheet-full-head { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
+        #inspectorModal .modal-sheet.tab-full > :not(.sheet-full-head):not(.sheet-tabs):not(.sheet-tab-content), #cdInspModal .modal-sheet.tab-full > :not(.sheet-full-head):not(.sheet-tabs):not(.sheet-tab-content) { display: none; }
+        #inspectorModal .modal-sheet.tab-full > .sheet-full-head, #cdInspModal .modal-sheet.tab-full > .sheet-full-head { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
         .sheet-full-titles { flex: 1 1 auto; min-width: 0; }
         .sheet-full-titles h3 { font-size: var(--fs-sheet); font-weight: var(--fw-heavy); }
         .sheet-full-titles p { font-size: var(--fs-pkg); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #inspectorModal .modal-sheet.tab-full > .sheet-tabs { flex: 0 0 auto; }
-        #inspectorModal .modal-sheet.tab-full > .sheet-tab-content.active { flex: 1 1 auto; min-height: 0; max-height: none; }
-        #inspectorModal .modal-sheet.tab-full .sheet-full-btn { display: none; }
+        #inspectorModal .modal-sheet.tab-full > .sheet-tabs, #cdInspModal .modal-sheet.tab-full > .sheet-tabs { flex: 0 0 auto; }
+        #inspectorModal .modal-sheet.tab-full > .sheet-tab-content.active, #cdInspModal .modal-sheet.tab-full > .sheet-tab-content.active { flex: 1 1 auto; min-height: 0; max-height: none; }
+        #inspectorModal .modal-sheet.tab-full .sheet-full-btn, #cdInspModal .modal-sheet.tab-full .sheet-full-btn { display: none; }
         @media (prefers-reduced-motion: no-preference) {
-            #inspectorModal .modal-sheet.tab-full { animation: tabFullIn 0.22s ease-out; }
-            #inspectorModal .modal-sheet.tab-full-back { animation: tabFullBack 0.2s ease-out; }
+            #inspectorModal .modal-sheet.tab-full, #cdInspModal .modal-sheet.tab-full { animation: tabFullIn 0.22s ease-out; }
+            #inspectorModal .modal-sheet.tab-full-back, #cdInspModal .modal-sheet.tab-full-back { animation: tabFullBack 0.2s ease-out; }
             @keyframes tabFullIn { from { opacity: 0.4; transform: translateY(24px); } to { opacity: 1; transform: none; } }
             @keyframes tabFullBack { from { opacity: 0.4; } to { opacity: 1; } }
         }
@@ -4566,7 +4562,7 @@
                     <div class="mode-alert-desc" id="driftDesc"></div>
                 </div>
                 <button class="mode-alert-btn" onclick="reviewDrift()">Review</button>
-                <button class="mode-alert-btn" onclick="dismissDrift()" style="margin-left:6px;">✕</button>
+                <button class="mode-alert-btn" onclick="dismissDrift()" style="margin-left:6px;" aria-label="Dismiss">✕</button>
             </div>
 
             <!-- Sort and export -->
@@ -5189,12 +5185,12 @@
                     <button class="batch-tool-link" onclick="fmClipSet('mv')">Move</button>
                     <button class="batch-tool-link" id="fmSelCompressBtn" onclick="czOpenSelected()">Compress</button>
                     <button class="batch-tool-link" style="color:var(--status-bloat);" onclick="fmDeleteSelected()">Delete</button>
-                    <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
+                    <button class="batch-tool-link" onclick="fmSelExit()" aria-label="Cancel">✕</button>
                 </div>
                 <div class="fm-selbar" id="fmClipBar" style="display:none;">
                     <span class="fm-count" id="fmClipText"></span>
                     <button class="batch-tool-link" id="fmPasteBtn" onclick="fmPaste()">Paste here</button>
-                    <button class="batch-tool-link" onclick="fmClipClear()">✕</button>
+                    <button class="batch-tool-link" onclick="fmClipClear()" aria-label="Cancel">✕</button>
                 </div>
                 <div id="fmBatchStatus" class="uad-status" style="display:none; margin-bottom:8px;"></div>
                 <div id="fmSearchStatus" class="uad-status" style="display:none; margin-bottom:8px;"></div>
@@ -8304,7 +8300,7 @@
                 @keyframes authSpin { to { transform:rotate(360deg); } }
             </style>
             <div class="color-card about-hero">
-                <div class="about-logo"><svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.2 2 4.5 13.4h5.6l-1.1 8.6 9-11.9h-5.7z"/></svg></div>
+                <div class="about-logo"><img src="app_icon.png" width="64" height="64" alt="" draggable="false"></div>
                 <div class="about-name">ADB/Root Toolbox</div>
                 <div class="about-ver" id="aboutVersion">Version …</div>
                 <div class="about-blurb">Freeze, debloat, install, back up and inspect every app on your phone, straight from the phone: through ADB, Wireless Debugging, Shizuku or Root. No computer, no account, no ads.</div>
@@ -11237,6 +11233,160 @@ Type any command above (e.g. pm list packages -d)</div>
         </div>
     </div>
 
+    <!-- An app of a connected device, in the layout of the Apps tab's app menu (v7.19.3, the owner's wish): its permissions and app ops, granted and set
+         here, its activities, which start on the device (a watch's screen is woken first), its receivers, services and providers, its manifest, features
+         and libraries, all read over adb (cdInsp*). The round button at the end of a tab's search row lets the tab fill the screen, as in the app menu. -->
+    <div class="modal-overlay" id="cdInspModal" onclick="if(event.target===this) { if (!sheetFullClose()) cdInspClose(); }">
+        <div class="modal-sheet" role="dialog" aria-labelledby="cdiTitle">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" id="cdiAvatar"></div>
+                    <div class="sheet-title">
+                        <h3 id="cdiTitle"></h3>
+                        <p id="cdiPkg" translate="no"></p>
+                        <p id="cdiVersion" class="sheet-version"></p>
+                    </div>
+                </div>
+                <div class="sheet-header-top">
+                    <span class="copy-chip" onclick="cdInspLoad(true)">Reload</span>
+                    <button type="button" class="sheet-close" aria-label="Close" onclick="cdInspClose()">✕</button>
+                </div>
+            </div>
+            <div class="sheet-meta">
+                <p id="cdiDevice" class="sheet-dates" translate="no"></p>
+                <p id="cdiDates" class="sheet-dates"></p>
+            </div>
+            <div class="sheet-full-head">
+                <div class="sheet-full-titles">
+                    <h3>Permissions</h3>
+                    <p translate="no"></p>
+                </div>
+                <button type="button" class="sheet-close" aria-label="Close" onclick="sheetFullClose()">✕</button>
+            </div>
+            <div class="sheet-tabs h-fade" id="cdiTabs">
+                <div class="sheet-tab-pill active" data-tab="perms" onclick="cdInspTab('perms')">Permissions <span class="tab-count" id="cdiPermsCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="ops" onclick="cdInspTab('ops')">App Ops <span class="tab-count" id="cdiOpsCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="acts" onclick="cdInspTab('acts')">Activities <span class="tab-count" id="cdiActsCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="comps" onclick="cdInspTab('comps')">Components <span class="tab-count" id="cdiCompsCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="manifest" onclick="cdInspTab('manifest')">Manifest</div>
+                <div class="sheet-tab-pill" data-tab="features" onclick="cdInspTab('features')">Features <span class="tab-count" id="cdiFeaturesCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="libs" onclick="cdInspTab('libs')">Libraries <span class="tab-count" id="cdiLibsCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="raw" onclick="cdInspTab('raw')">Raw</div>
+            </div>
+
+            <div id="cdiTabPerms" class="sheet-tab-content active">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="cdiPermsSearch" placeholder="Search permissions..." oninput="cdiRenderPerms()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Permissions" title="Expand Permissions"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
+                </div>
+                <div class="chip-row h-fade" id="cdiPermsFilters">
+                    <span class="filter-chip active" data-filter="all" onclick="cdiFilter('perms', 'all')">All</span>
+                    <span class="filter-chip" data-filter="granted" onclick="cdiFilter('perms', 'granted')">Granted</span>
+                    <span class="filter-chip" data-filter="denied" onclick="cdiFilter('perms', 'denied')">Denied</span>
+                    <span class="filter-chip" data-filter="changeable" onclick="cdiFilter('perms', 'changeable')">Changeable</span>
+                    <span class="filter-chip" data-filter="installtime" onclick="cdiFilter('perms', 'installtime')">Install-time</span>
+                </div>
+                <div id="cdiPerms"><div class="list-empty">Loading permissions...</div></div>
+            </div>
+
+            <div id="cdiTabOps" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="cdiOpsSearch" placeholder="Search app ops..." oninput="cdiRenderOps()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button class="mode-action-btn" onclick="cdInspLoad(true)">Refresh</button>
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand App Ops" title="Expand App Ops"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
+                </div>
+                <div class="chip-row h-fade" id="cdiOpsFilters">
+                    <span class="filter-chip active" data-filter="all" onclick="cdiFilter('ops', 'all')">All</span>
+                    <span class="filter-chip" data-filter="allow" onclick="cdiFilter('ops', 'allow')">Allowed</span>
+                    <span class="filter-chip" data-filter="restricted" onclick="cdiFilter('ops', 'restricted')">Ignored / Denied</span>
+                    <span class="filter-chip" data-filter="foreground" onclick="cdiFilter('ops', 'foreground')">Foreground</span>
+                </div>
+                <div id="cdiOps"><div class="list-empty">Loading app ops...</div></div>
+                <div class="op-custom-row">
+                    <input type="text" class="list-search" id="cdiOpName" placeholder="Other op, e.g. RUN_ANY_IN_BACKGROUND" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                    <select class="op-select" id="cdiOpMode">
+                        <option value="allow">allow</option>
+                        <option value="ignore">ignore</option>
+                        <option value="deny">deny</option>
+                        <option value="foreground">foreground</option>
+                        <option value="default">default</option>
+                    </select>
+                    <button class="mode-action-btn primary" onclick="cdiSetCustomOp()">Set</button>
+                </div>
+            </div>
+
+            <div id="cdiTabActs" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="cdiActsSearch" placeholder="Search activities..." oninput="cdiRenderActs()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Activities" title="Expand Activities"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
+                </div>
+                <div class="chip-row h-fade" id="cdiActsFilters">
+                    <span class="filter-chip active" data-filter="all" onclick="cdiFilter('acts', 'all')">All</span>
+                    <span class="filter-chip" data-filter="exported" onclick="cdiFilter('acts', 'exported')">Exported</span>
+                    <span class="filter-chip" data-filter="unexported" onclick="cdiFilter('acts', 'unexported')">Unexported</span>
+                </div>
+                <div id="cdiActs"><div class="list-empty">Loading activities...</div></div>
+            </div>
+
+            <div id="cdiTabComps" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="cdiCompsSearch" placeholder="Search receivers, services, providers..." oninput="cdiRenderComps()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Components" title="Expand Components"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
+                </div>
+                <div class="chip-row h-fade" id="cdiCompsFilters">
+                    <span class="filter-chip active" data-filter="all" onclick="cdiFilter('comps', 'all')">All</span>
+                    <span class="filter-chip" data-filter="exported" onclick="cdiFilter('comps', 'exported')">Exported</span>
+                    <span class="filter-chip" data-filter="unexported" onclick="cdiFilter('comps', 'unexported')">Unexported</span>
+                </div>
+                <div id="cdiComps"><div class="list-empty">Loading components...</div></div>
+            </div>
+
+            <div id="cdiTabManifest" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="cdiManSearch" placeholder="Find in manifest..." oninput="cdiRenderManifest()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="chip-row">
+                    <span class="filter-chip" onclick="cdiManStep(-1)">▲</span>
+                    <span class="filter-chip" onclick="cdiManStep(1)">▼</span>
+                    <span class="filter-chip active" id="cdiManOnly" onclick="cdiManOnlyToggle()">Matches only</span>
+                    <span class="filter-chip" onclick="cdiManCopy()">Copy</span>
+                    <span class="filter-chip" onclick="cdiManShare()">Share</span>
+                    <span class="filter-chip" onclick="cdiManSave()">Save to Downloads</span>
+                    <span class="manifest-meta" id="cdiManMeta"></span>
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Manifest" title="Expand Manifest"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
+                </div>
+                <pre id="cdiManifest" class="manifest-view" translate="no">Decoding AndroidManifest.xml...</pre>
+            </div>
+
+            <div id="cdiTabFeatures" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="cdiFeaturesSearch" placeholder="Search features..." oninput="cdiRenderFeatures()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Features" title="Expand Features"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
+                </div>
+                <div class="chip-row h-fade" id="cdiFeaturesFilters">
+                    <span class="filter-chip active" data-filter="all" onclick="cdiFilter('features', 'all')">All</span>
+                    <span class="filter-chip" data-filter="required" onclick="cdiFilter('features', 'required')">Required</span>
+                    <span class="filter-chip" data-filter="optional" onclick="cdiFilter('features', 'optional')">Optional</span>
+                    <span class="filter-chip" data-filter="missing" onclick="cdiFilter('features', 'missing')">Not on the device</span>
+                </div>
+                <div id="cdiFeatures"><div class="list-empty">Loading…</div></div>
+            </div>
+
+            <div id="cdiTabLibs" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="cdiLibsSearch" placeholder="Search libraries..." oninput="cdiRenderLibs()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Libraries" title="Expand Libraries"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button>
+                </div>
+                <div id="cdiLibs"><div class="list-empty">Loading…</div></div>
+            </div>
+
+            <div id="cdiTabRaw" class="sheet-tab-content">
+                <div class="chip-row sheet-full-row"><button type="button" class="sheet-full-btn" onclick="sheetFullOpen()" aria-label="Expand Raw" title="Expand Raw"><i><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i></button></div>
+                <pre id="cdiRaw" translate="no" style="font-family:monospace; font-size:var(--fs-overline); color:var(--accent); white-space:pre-wrap;"></pre>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="cdAddModal" onclick="if(event.target===this) cdAddClose()">
         <div class="modal-sheet" style="max-width:520px;" role="dialog" aria-labelledby="cdAddTitle">
             <div class="sheet-header">
@@ -12928,7 +13078,8 @@ Type any command above (e.g. pm list packages -d)</div>
             '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName',
             '.tm-row-name', '.tm-row-sub', '.tm-stat-raw',
             '.tx-screen', '.tx-key-input', '.tx-sheet-code', '.tx-row-sub[translate="no"]', '#txHelpModal code',
-            '#hgBody', '.cd-dev-name', '.cd-dev-sub:not(.cd-stub-state)', '.cd-term', '.cd-fm-name', '.cd-fm-meta', '.cd-path', '.cd-set-key', '.cd-set-val', '.cd-queue-name', '.cd-log', '.cd-found-main', '#cdSheetSub', '.cd-chip', '#cdDeviceSel', '#cdLcOut', '.cd-bt-row b'
+            '#hgBody', '.cd-dev-name', '.cd-dev-sub:not(.cd-stub-state)', '.cd-term', '.cd-fm-name', '.cd-fm-meta', '.cd-path', '.cd-set-key', '.cd-set-val', '.cd-queue-name', '.cd-log', '.cd-found-main', '#cdSheetSub', '.cd-chip', '#cdDeviceSel', '#cdLcOut', '.cd-bt-row b',
+            '#cdiTitle', '#cdiPkg', '#cdiDevice', '#cdiManifest', '#cdiRaw'
         ].join(', '));
         // The same inside a sentence: in these templates the changing part is the name of the app, file, folder or saved item the action is about. Other templates
         // translate a changing part that is a word of the dictionary (a filter, a mode, a stream); a folder called Download must not become "Descargar" in "Delete Download?"
@@ -26050,7 +26201,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <div class="perm-name${e.d ? ' fm-dir' : ''}">${escapeHtml(flat ? e.p : e.n)}${e.d ? '/' : ''}</div>
                     <div class="perm-sub">${escapeHtml(sub)}</div>
                 </div>
-                <button class="perm-toggle-btn locked" onclick="arcMenu(${i})">⋯</button>
+                <button class="perm-toggle-btn locked" onclick="arcMenu(${i})" aria-label="Menu">⋯</button>
             </div>`;
         }
 
@@ -27092,7 +27243,7 @@ Type any command above (e.g. pm list packages -d)</div>
             keep: null, bt: new Set(), scan: [], addTab: 'wifi', ask: null, acts: [],
             phone: { sel: new Set(), filter: 'user' },
             up: new Set(), upKnown: false, dropped: {}, rc: {}, savedOpen: false, skip: {},
-            stub: {}, stubRenew: null, stubRenewing: false
+            stub: {}, stubProbed: {}, stubRenew: null, stubRenewing: false
         };
         const cdWait = {};
         let cdSeq = 0;
@@ -27189,6 +27340,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 moved = true;
             }
             cdNoteDevices();
+            cdStubProbeOthers();
             const d = cdCur();
             const key = d ? d.serial + ':' + d.state : '';
             const sig = cd.devices.map(x => x.serial + ':' + x.state + ':' + cdDevLabel(x)).join('|') + '#' + cd.serial;
@@ -27406,6 +27558,8 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             Object.keys(cd.skip).forEach(k => { if (!now.has(k)) delete cd.skip[k]; });
             Object.keys(cd.stub).forEach(k => { if (!now.has(k) && !(cd.stub[k] || {}).busy) delete cd.stub[k]; });   // checked (and started) again when it is back
+            Object.keys(cd.stubProbed).forEach(k => { if (!now.has(k)) delete cd.stubProbed[k]; });
+            try { Object.keys(cdi.su).concat(Object.keys(cdi.feats)).forEach(k => { if (!now.has(k)) cdiForget(k); }); } catch (e) {}
             if (changed) {
                 const keys = Object.keys(known);
                 if (keys.length > CD_SAVED_MAX) keys.sort((a, b) => known[a].at - known[b].at).slice(0, keys.length - CD_SAVED_MAX).forEach(k => { if (!now.has(k)) delete known[k]; });
@@ -27706,7 +27860,23 @@ Type any command above (e.g. pm list packages -d)</div>
             } finally { cd.stubRenewing = false; }
             cdStubRenewTimer();
         }
-        // once per connection: what the watch has, and start the stub when it is installed (and up to date) but not running
+        // a watch that connects while another device is the chosen one is looked after too: the chosen device is read by cdLoadInfo, every other new one is
+        // asked once what it is (a watch says "watch" in its build characteristics) and, if it is a watch, goes through cdStubOnConnect like the chosen one
+        async function cdStubProbeOthers() {
+            if (!cdStubBundled() || !cdStubAutoOn()) return;
+            for (const d of cd.devices.slice()) {
+                if (d.state !== 'device' || d.serial === cd.serial) continue;
+                if (cd.stub[d.serial]) { if (!cd.stub[d.serial].checked) cdStubOnConnect(d.serial); continue; }   // a watch already: its stub's status once more if it failed
+                if (cd.stubProbed[d.serial]) continue;
+                cd.stubProbed[d.serial] = true;
+                const out = await cdRun(['shell', 'getprop ro.build.characteristics'], { serial: d.serial, timeout: 15000 });
+                if (cdFail(out)) { delete cd.stubProbed[d.serial]; continue; }      // adb could not ask: asked again on the next list
+                if (/watch/i.test(out) && cdIsUp(d.serial)) cdStubOnConnect(d.serial);
+            }
+        }
+        // the oldest stub that is started by itself: an older one than this app carries still lets go by itself (the app says from which version)
+        function cdStubAutoMin() { const top = cdStubBundled(); return Math.min(top, (cdStubInfoCache && cdStubInfoCache.auto) || top); }
+        // once per connection: what the watch has, and start the stub when it is installed (and not too old) but not running
         async function cdStubOnConnect(serial) {
             if (!cdStubBundled()) return;
             const st = cd.stub[serial] = cd.stub[serial] || {};
@@ -27715,7 +27885,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const r = await cdStubCall('status', serial);
             if (!r.ok) st.checked = false;              // adb could not ask the watch: asked again on the next load of its details
             cdStubKeep(serial, r);
-            if (r.installed && !r.running && (r.version || 0) >= cdStubBundled() && cdStubAutoOn() && cdIsUp(serial)) cdStubDo('start', serial, true);
+            if (r.running && cdIsUp(serial)) cdStubKeep(serial, await cdStubCall('renew', serial));
+            if (r.installed && !r.running && (r.version || 0) >= cdStubAutoMin() && cdStubAutoOn() && cdIsUp(serial)) cdStubDo('start', serial, true);
         }
         async function cdStubDo(action, serial, auto) {
             const st = cd.stub[serial] = cd.stub[serial] || {};
@@ -27759,7 +27930,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (st.busy) state = st.busy;
             else if (st.installed === undefined) state = 'Checking...';
             else if (!st.installed) { state = 'Keeps the watch screen on and its Wi-Fi connected while this phone is connected.'; btn = ['install', 'Install', true]; }
-            else if ((st.version || 0) < top) { state = 'A newer version comes with this app.'; btn = ['install', 'Update', true]; }
+            else if ((st.version || 0) < top) { state = 'A newer version comes with this app.'; btn = ['install', 'Update', true]; if (st.running) badge = '<span class="tag-badge tag-running">Running</span>'; }
             else if (st.running) { state = 'The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it.'; btn = ['stop', 'Stop', false]; badge = '<span class="tag-badge tag-running">Running</span>'; }
             else { state = 'Installed, not running.'; btn = ['start', 'Start', true]; }
             return '<div class="cd-dev cd-stub" id="cdStub"><div class="cd-dev-main"><div class="cd-dev-name">ADB Stub</div><div class="cd-dev-sub cd-stub-state">' + escapeHtml(state) + '</div>' +
@@ -28223,7 +28394,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 b.push(a.disabled ? { label: 'Enable', cls: 'accent', fn: () => cdAppAct(pkg, 'enable') } : { label: 'Freeze', cls: 'blue', fn: () => cdAppAct(pkg, 'disable') });
                 b.push({ label: 'Uninstall', cls: 'danger', fn: () => cdAppAct(pkg, 'uninstall') });
                 b.push({ label: 'Pull APK', fn: () => cdPullApk(pkg) });
-                b.push({ label: 'Details', fn: () => cdAppInfo(pkg) });
+                [['perms', 'Permissions'], ['ops', 'App Ops'], ['acts', 'Activities'], ['comps', 'Components'], ['manifest', 'Manifest'], ['raw', 'Details']].forEach(([tab, label]) => b.push({ label: label, fn: () => cdInspOpen(pkg, tab) }));          // the Apps tab's app menu for this app of the device (v7.19.3)
                 b.push({ label: 'App page on device', fn: () => cdAppPage(pkg) });
             } else {
                 b.push({ label: 'Reinstall', cls: 'green', fn: () => cdAppAct(pkg, 'reinstall') });
@@ -28232,11 +28403,547 @@ Type any command above (e.g. pm list packages -d)</div>
             b.push({ label: 'Copy package', fn: () => copyText(pkg) });
             cdSheetOpen({ title: a.name, sub: pkg, pkg: pkg, buttons: b });
         }
-        async function cdAppInfo(pkg) {
-            cdSheetOpen({ title: cdApp(pkg).name, sub: pkg, pkg: pkg, body: '<div class="cd-note">Reading...</div>', buttons: [{ label: 'Close', fn: () => {} }] });
-            const out = await cdSh('dumpsys package ' + cdQ(pkg) + ' | grep -E "versionCode|versionName|firstInstallTime|lastUpdateTime|installerPackageName|targetSdk|minSdk|userId=|codePath|pkgFlags=" | head -24', { timeout: 30000 });
+        // ---- An app of the chosen device in the Apps tab's app menu layout (v7.19.3, the owner's wish): Permissions and App Ops that are granted and set
+        // here, Activities that start on the device, Components, the Manifest, Features, Libraries and what dumpsys says. One shell command reads the
+        // package (dumpsys package, cut to its own block), its app ops and its APK path; the manifest comes from the APK (AndroidBridge.cdManifest), and
+        // the activities, receivers, services and providers from the manifest with the device's enabled / disabled lists over them. ----
+        const cdi = { serial: '', pkg: '', name: '', seq: 0, d: null, perms: [], ops: [], opsRaw: '', apk: '', man: '', manBusy: false, manTag: '', manFor: '', why: '', parts: null, feats: {}, su: {},
+            filters: { perms: 'all', ops: 'all', acts: 'all', comps: 'all', features: 'all' }, manOnly: true };
+        // the line cdExec adds to what a command printed before it was cut off: a part of an answer, not an answer
+        const CD_TIMED_OUT = /\[Process timed out after \d+ms\]/;
+        // what was learnt of a device (its su, its feature list) is forgotten when it leaves the list or is connected anew: the address may be another device then
+        function cdiForget(serial) { try { delete cdi.su[serial]; delete cdi.feats[serial]; } catch (e) {} }
+        const CDI_TABS = { perms: 'cdiTabPerms', ops: 'cdiTabOps', acts: 'cdiTabActs', comps: 'cdiTabComps', manifest: 'cdiTabManifest', features: 'cdiTabFeatures', libs: 'cdiTabLibs', raw: 'cdiTabRaw' };
+        const CDI_SEARCH = ['cdiPermsSearch', 'cdiOpsSearch', 'cdiActsSearch', 'cdiCompsSearch', 'cdiManSearch', 'cdiFeaturesSearch', 'cdiLibsSearch'];
+        function cdiOpen() { return document.getElementById('cdInspModal').classList.contains('show'); }
+        function cdiQ(id) { return (document.getElementById(id).value || '').toLowerCase().trim(); }
+        function cdInspOpen(pkg, tab) {
+            if (!cdReady()) return;
+            const a = cdApp(pkg), d = cdCur();
+            cdiStopManifest();
+            Object.assign(cdi, { serial: cd.serial, pkg: pkg, name: a.name, seq: cdi.seq + 1, d: null, perms: [], ops: [], opsRaw: '', apk: '', man: '', manFor: '', why: '', parts: null });
+            Object.keys(cdi.filters).forEach(k => { cdi.filters[k] = 'all'; });
+            document.querySelectorAll('#cdInspModal .chip-row.h-fade .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === 'all'));
+            CDI_SEARCH.forEach(id => { document.getElementById(id).value = ''; });
+            document.getElementById('cdiTitle').innerText = a.name;
+            document.getElementById('cdiPkg').innerText = pkg;
+            document.getElementById('cdiVersion').innerText = 'Reading...';
+            document.getElementById('cdiDevice').innerText = d ? cdDevLabel(d) + ' \u00b7 ' + d.serial : '';
+            document.getElementById('cdiDates').innerText = '';
+            paintSheetAvatar(pkg, a.name, 'cdiAvatar');
+            ['cdiPermsCount', 'cdiOpsCount', 'cdiActsCount', 'cdiCompsCount', 'cdiFeaturesCount', 'cdiLibsCount'].forEach(id => { document.getElementById(id).innerText = ''; });
+            document.getElementById('cdiPerms').innerHTML = '<div class="list-empty">Loading permissions...</div>';
+            document.getElementById('cdiOps').innerHTML = '<div class="list-empty">Loading app ops...</div>';
+            document.getElementById('cdiActs').innerHTML = '<div class="list-empty">Loading activities...</div>';
+            document.getElementById('cdiComps').innerHTML = '<div class="list-empty">Loading components...</div>';
+            document.getElementById('cdiManifest').innerText = 'Decoding AndroidManifest.xml...';
+            document.getElementById('cdiManMeta').innerText = '';
+            ['cdiFeatures', 'cdiLibs'].forEach(id => { document.getElementById(id).innerHTML = '<div class="list-empty">Loading…</div>'; });
+            document.getElementById('cdiRaw').innerText = '';
+            const m = document.getElementById('cdInspModal');
+            sheetFullReset(m.querySelector('.modal-sheet'));
+            m.classList.add('show');
+            haptic();
+            cdInspTab(tab || 'perms', true);
+            cdInspLoad();
+        }
+        function cdInspClose() {
+            const m = document.getElementById('cdInspModal');
+            sheetFullReset(m.querySelector('.modal-sheet'));
+            m.classList.remove('show');
+            cdi.seq++;                                          // an answer still on its way is for a sheet that is gone
+            cdiStopManifest();
+            haptic();
+        }
+        function cdInspTab(tab, silent) {
+            document.querySelectorAll('#cdInspModal .sheet-tab-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-tab') === tab));
+            document.querySelectorAll('#cdInspModal .sheet-tab-content').forEach(c => c.classList.toggle('active', c.id === CDI_TABS[tab]));
+            const pill = document.querySelector('#cdInspModal .sheet-tab-pill.active');
+            if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            if (tab === 'features') cdiLoadFeatures();
+            if (sheetFullIsOpen()) sheetFullTitle();
+            if (!silent) haptic();
+        }
+        function cdiFilter(tab, f) {
+            cdi.filters[tab] = f;
+            document.querySelectorAll('#' + CDI_TABS[tab] + ' .chip-row.h-fade .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === f));
+            haptic();
+            ({ perms: cdiRenderPerms, ops: cdiRenderOps, acts: cdiRenderActs, comps: cdiRenderComps, features: cdiRenderFeatures })[tab]();
+        }
+
+        // the package's own block of dumpsys package, its app ops and its APK files, in one go
+        function cdiCmd(pkg) {
+            const q = cdQ(pkg);
+            return 'dumpsys package ' + q + " | sed -n '/^Packages:/,/^[^ ]/p; /^Shared users:/,/^[^ ]/p'; echo '#CDI-OPS'; cmd appops get " + q + " 2>&1; echo '#CDI-PATH'; pm path " + q + ' 2>&1';
+        }
+        function cdiSplit(out) {
+            const t = String(out || ''), a = t.indexOf('#CDI-OPS'), b = t.indexOf('#CDI-PATH');
+            return { dump: a >= 0 ? t.slice(0, a) : t, ops: a >= 0 ? t.slice(a + 8, b >= 0 ? b : undefined).trim() : '', path: b >= 0 ? t.slice(b + 9).trim() : '' };
+        }
+        // dumpsys package <pkg>, the block "Package [pkg]": its fields, the permissions it asks for, has at install and at run time (user 0), its own
+        // permissions, the components user 0 turned off and on, the libraries Android links in. An app with a sharedUserId has its grants on the shared
+        // user (the block "SharedUser [name]" under "Shared users:"), read from there when its own block has none
+        function cdParsePkgDump(txt, pkg) {
+            const d = { found: false, requested: [], install: {}, runtime: {}, declared: {}, disabled: new Set(), enabled: new Set(), libs: [], optLibs: [], libFiles: [], raw: '' };
+            const lines = String(txt || '').split('\n');
+            const ind = l => l.length - l.replace(/^\s+/, '').length;
+            const blockAt = i => { const b = [lines[i]]; for (let j = i + 1; j < lines.length && !(lines[j].trim() && ind(lines[j]) <= ind(lines[i])); j++) b.push(lines[j]); return b; };
+            const i = lines.findIndex(l => l.trim().startsWith('Package [' + pkg + ']'));
+            if (i < 0) return d;
+            d.found = true;
+            const block = blockAt(i);
+            d.raw = block.join('\n').replace(/\s+$/, '');
+            const SECS = { 'requested permissions:': 'req', 'install permissions:': 'inst', 'runtime permissions:': 'rt', 'declared permissions:': 'decl', 'disabledComponents:': 'dis',
+                'enabledComponents:': 'en', 'usesLibraries:': 'libs', 'usesOptionalLibraries:': 'optLibs', 'usesLibraryFiles:': 'libFiles' };
+            const scan = (blk, only) => {
+                let sec = '', user = -1, m;
+                blk.slice(1).forEach(l => {
+                    const t = l.trim();
+                    if (!t) return;
+                    if ((m = t.match(/^User (\d+):/))) { user = +m[1]; sec = ''; }
+                    if (!only) {
+                        if ((m = t.match(/\bversionCode=(\d+)/))) d.versionCode = m[1];
+                        if ((m = t.match(/\bminSdk=(\d+)/))) d.minSdk = +m[1];
+                        if ((m = t.match(/\btargetSdk=(\d+)/))) d.targetSdk = +m[1];
+                        if ((m = t.match(/^versionName=(.*)$/))) d.versionName = m[1];
+                        if ((m = t.match(/\bfirstInstallTime=(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)/)) && (user <= 0 || !d.firstInstall)) d.firstInstall = m[1];
+                        if ((m = t.match(/^lastUpdateTime=(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)/))) d.lastUpdate = m[1];
+                        if ((m = t.match(/^installerPackageName=(\S+)/))) d.installer = m[1];
+                        if ((m = t.match(/^primaryCpuAbi=(\S+)/)) && m[1] !== 'null') d.abi = m[1];
+                        if ((m = t.match(/^pkgFlags=\[(.*)\]/))) d.system = /\bSYSTEM\b/.test(m[1]);
+                        if (!d.uid && (m = t.match(/^(?:userId|appId)=(\d+)/))) d.uid = m[1];      // appId= since Android 12; user 0's uid is the app id
+                    }
+                    if (SECS[t]) {                                                    // another user's grants and switches are not user 0's
+                        sec = SECS[t];
+                        if ((user > 0 && /^(rt|dis|en)$/.test(sec)) || (only && !only.includes(sec))) sec = 'skip';
+                        return;
+                    }
+                    if (!sec) return;
+                    if (sec === 'libFiles') { if (/^\//.test(t)) { d.libFiles.push(t); return; } sec = ''; return; }
+                    if (!/^[A-Za-z_][\w.$-]*(:|$)/.test(t) || /^[\w.]+=/.test(t)) { sec = ''; return; }
+                    const name = t.split(':')[0], rest = t.slice(name.length + 1);
+                    if (sec === 'req') { if (!d.requested.includes(name)) d.requested.push(name); }
+                    else if (sec === 'inst') { if (!/,\s*userId=(?!0\b)\d+\s*$/.test(rest)) d.install[name] = /granted=true/.test(rest); }    // Android 12+ adds other users' lines
+                    else if (sec === 'rt') d.runtime[name] = { granted: /granted=true/.test(rest), flags: ((rest.match(/flags=\[\s*([^\]]*?)\s*\]/) || [])[1] || '') };
+                    else if (sec === 'decl') d.declared[name] = (rest.match(/prot=([\w|]+)/) || [])[1] || '';
+                    else if (sec === 'dis') d.disabled.add(name);
+                    else if (sec === 'en') d.enabled.add(name);
+                    else if (sec === 'libs' || sec === 'optLibs') d[sec].push(name);
+                });
+            };
+            scan(block);
+            const su = (d.raw.match(/sharedUser=SharedUserSetting\{\w+ ([^\/\s}]+)/) || [])[1];
+            if (su && !Object.keys(d.install).length && !Object.keys(d.runtime).length) {
+                const k = lines.findIndex(l => l.trim().startsWith('SharedUser [' + su + ']'));
+                if (k >= 0) { const sb = blockAt(k); d.sharedUser = su; scan(sb, ['inst', 'rt']); d.raw += '\n\n' + sb.join('\n').replace(/\s+$/, ''); }
+            }
+            return d;
+        }
+        // a protection as dumpsys writes it (signature|privileged|development) in the words of the app menu
+        function cdiProt(p) {
+            const f = String(p || '').split('|');
+            if (f.includes('development')) return 'development';
+            return { dangerous: 'runtime', normal: 'normal', signature: 'signature', signatureOrSystem: 'privileged' }[f[0]] || (f[0] || 'unknown');
+        }
+        async function cdInspLoad(again) {
+            const seq = cdi.seq, serial = cdi.serial, pkg = cdi.pkg;
+            if (!pkg) return;
+            if (again) haptic();
+            const out = await cdSh(cdiCmd(pkg), { serial: serial, timeout: 60000 });
+            if (seq !== cdi.seq) return;
+            const f = cdFail(out), parts = cdiSplit(out), d = cdParsePkgDump(parts.dump, pkg);
+            if (f || !d.found) {
+                const why = f || txT('Not installed for this user');
+                document.getElementById('cdiVersion').innerText = 'Version unavailable';
+                ['cdiPerms', 'cdiOps', 'cdiActs', 'cdiComps'].forEach(id => { document.getElementById(id).innerHTML = '<div class="list-empty">' + escapeHtml(why) + '</div>'; });
+                if (!cdi.d) {                                   // nothing read yet: the manifest's tabs say so too
+                    cdi.why = why;
+                    ['cdiFeatures', 'cdiLibs'].forEach(id => { document.getElementById(id).innerHTML = '<div class="list-empty">' + escapeHtml(why) + '</div>'; });
+                    document.getElementById('cdiRaw').innerText = why;
+                    if (!cdi.man) document.getElementById('cdiManifest').innerText = why;
+                }
+                return;
+            }
+            // Android 10+ writes "Uid mode:" only before the first of the uid's modes: the uid's own list tells how many there are (parseAppOps)
+            if (/^Uid mode:/.test(parts.ops) && d.uid) {
+                const u = String(await cdSh('cmd appops get ' + d.uid + ' 2>&1', { serial: serial, timeout: 30000 })).trim();
+                if (seq !== cdi.seq) return;
+                if (/^Uid mode:/.test(u) && !CD_TIMED_OUT.test(u)) parts.ops += '\n#UID-OPS\n' + u;
+            }
+            cdi.d = d;
+            cdi.why = '';
+            cdi.opsRaw = parts.ops;
+            const paths = parts.path.split('\n').map(l => l.trim()).filter(l => l.startsWith('package:')).map(l => l.slice(8));
+            cdi.apk = paths.find(p => /\/base\.apk$/.test(p)) || paths[0] || '';
+            cdiBuildPerms();
+            cdi.ops = cdiOpsFrom(parts.ops);
+            const name = d.versionName || '', code = d.versionCode || '';
+            document.getElementById('cdiVersion').innerText = name || code ? 'Version ' + (name || code) + (name && code ? ' (' + code + ')' : '') : 'Version unavailable';
+            const ms = s => { const t = s ? Date.parse(s.replace(' ', 'T')) : NaN; return isNaN(t) ? '' : formatDate(t); };
+            const inst = ms(d.firstInstall), upd = d.lastUpdate && d.lastUpdate !== d.firstInstall ? ms(d.lastUpdate) : '';
+            document.getElementById('cdiDates').innerText = inst && upd ? 'Installed ' + inst + ' • Updated ' + upd : inst ? 'Installed ' + inst : upd ? 'Last updated ' + upd : '';
+            document.getElementById('cdiRaw').innerText = d.raw + (parts.ops ? '\n\n# cmd appops get ' + pkg + '\n' + parts.ops.replace(/^#UID-OPS$/m, '\n# cmd appops get ' + d.uid) : '') + (parts.path ? '\n\n# pm path ' + pkg + '\n' + parts.path : '');
+            cdiRenderPerms();
+            cdiRenderOps();
+            const manKey = cdi.apk + '|' + (d.versionCode || '');
+            if (!cdi.manBusy && (!cdi.man || cdi.manFor !== manKey || (again && /^Error:/.test(cdi.man)))) { cdi.manFor = manKey; cdiLoadManifest(); }
+            else { cdiApplyStates(); cdiRenderActs(); cdiRenderComps(); }
+        }
+
+        // ---- Permissions ----
+        // what this phone knows of each permission (its protection, whether an app op decides it) under what the device says (run time or install time)
+        function cdiBuildPerms() {
+            const d = cdi.d;
+            const names = Array.from(new Set(d.requested.concat(Object.keys(d.install), Object.keys(d.runtime))));
+            let info = {};
+            try { if (window.AndroidBridge && window.AndroidBridge.cdPermInfo) info = JSON.parse(window.AndroidBridge.cdPermInfo(JSON.stringify(names))) || {}; } catch (e) {}
+            cdi.perms = names.map(n => {
+                const i = info[n] || {}, rt = d.runtime[n];
+                let protection = d.declared[n] !== undefined ? cdiProt(d.declared[n]) : (i.protection && i.protection !== 'undefined' ? i.protection : 'unknown');
+                if (rt && protection !== 'development') protection = 'runtime';
+                return { name: n, label: i.label || '', protection: protection, changeable: !!rt || protection === 'runtime' || protection === 'development',
+                    granted: rt ? rt.granted : d.install[n] === true, appOp: !!i.appOp, op: i.op || '' };
+            });
+        }
+        function cdiOpToggle(p) { return p && p.appOp && p.op && (!p.changeable || p.protection === 'development') ? p.op : ''; }
+        function cdiOpOn(p) {
+            const mode = opEffectiveMode(cdi.ops.find(o => o.name === p.op));
+            return mode === 'allow' || mode === 'foreground' || (mode === 'default' && !!p.granted);
+        }
+        function cdiPermOn(p) { return cdiOpToggle(p) ? cdiOpOn(p) : !!p.granted; }
+        function cdiCanChange(p) { return !!(p.changeable || cdiOpToggle(p)); }
+        function cdiRenderPerms() {
+            const box = document.getElementById('cdiPerms'), perms = cdi.perms, f = cdi.filters.perms;
+            if (!cdi.d) return;
+            document.getElementById('cdiPermsCount').innerText = perms.length ? String(perms.length) : '';
+            if (!perms.length) { box.innerHTML = '<div class="list-empty">No permissions declared.</div>'; return; }
+            const q = cdiQ('cdiPermsSearch');
+            const rows = perms.filter(p => {
+                if (f === 'granted' && !cdiPermOn(p)) return false;
+                if (f === 'denied' && cdiPermOn(p)) return false;
+                if (f === 'changeable' && !cdiCanChange(p)) return false;
+                if (f === 'installtime' && cdiCanChange(p)) return false;
+                return !q || p.name.toLowerCase().includes(q) || p.label.toLowerCase().includes(q);
+            }).sort((a, b) => (cdiCanChange(b) - cdiCanChange(a)) || a.name.localeCompare(b.name));
+            if (!rows.length) { box.innerHTML = '<div class="list-empty">No permissions match.</div>'; return; }
+            box.innerHTML = rows.map(p => {
+                const short = p.name.replace(/^android\.permission\./, ''), op = cdiOpToggle(p), on = cdiPermOn(p);
+                const sub = [p.label, p.name !== short ? p.name : ''].filter(Boolean).join(' • ');
+                const btn = op ? `<button class="perm-toggle-btn ${on ? 'granted' : 'revoked'}" data-op="${escapeHtml(op)}" data-on="${on}" onclick="cdiSetOp(this.getAttribute('data-op'), this.getAttribute('data-on') === 'true' ? 'ignore' : 'allow')">${on ? 'GRANTED' : 'DENIED'}</button>`
+                    : p.changeable ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="cdiTogglePerm(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'DENIED'}</button>`
+                    : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                return `<div class="perm-row"><div class="perm-info"><div class="perm-name">${permWbr(short)}</div><div class="perm-sub"><span class="perm-kind">${escapeHtml(p.protection)}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}${cdiCanChange(p) ? '' : '<span class="perm-kind">locked</span>'}${permWbr(sub)}</div></div>${btn}</div>`;
+            }).join('');
+        }
+        // the line of a shell answer that says what went wrong, '' when it went through (pm and am print nothing or a plain line then)
+        function cdiErr(out) {
             const f = cdFail(out);
-            document.getElementById('cdSheetBody').innerHTML = '<div class="cd-log" translate="no" style="margin-top:0;">' + escapeHtml(f || out.trim().replace(/^\s+/gm, '') || 'No details') + '</div>';
+            if (f) return f;
+            const ls = String(out || '').split('\n').map(x => x.trim());
+            const i = ls.findIndex(x => /^(Exception occurred|([\w$]+\.)*[\w$]*Exception:|Error( type \d+)?:|Error type \d+$|Security exception:|Permission Denial|Operation not (allowed|permitted)|Unknown (package|permission)|Bad (component|argument)|su: |.*: inaccessible or not found$|.*: not found$|.*\bPermission denied$)/i.test(x));
+            if (i < 0) return '';
+            let l = ls[i];
+            if (/^(Exception occurred|Error type \d+$)/i.test(l) && ls[i + 1]) l = ls[i + 1];          // what went wrong is on the next line
+            return l.replace(/^Operation not allowed:\s*/i, '').replace(/^Error( type \d+)?:\s*/i, '').replace(/^Bad argument:\s*/i, '').replace(/^([\w$]+\.)*[\w$]*Exception:\s*/, '');
+        }
+        function cdiDenied(out) { return /SecurityException:|Permission Denial|Shell cannot|not allowed|does not have android\.permission|requires android\.permission|Operation not permitted|Permission denied/i.test(String(out || '')); }
+        // a command the shell user may not run (a part of an app, an activity that is not exported): once more through the device's su when it has one
+        async function cdiPriv(cmd) {
+            const serial = cdi.serial;
+            let out = await cdSh(cmd, { serial: serial, timeout: 30000 });
+            if (!cdiDenied(out)) return { out: out, su: false };
+            if (cdi.su[serial] === undefined) {
+                const su = String(await cdSh('command -v su 2>/dev/null', { serial: serial, timeout: 15000 })).trim();
+                if (cdFail(su) || CD_TIMED_OUT.test(su)) return { out: out, su: false, denied: true, unasked: true };    // adb could not ask: asked again the next time
+                cdi.su[serial] = /\/su$/.test(su) ? 'c' : '';
+            }
+            if (!cdi.su[serial]) return { out: out, su: false, denied: true };
+            // most root managers take su -c <command>; the su of an Android userdebug build takes su <uid> <command> (and calls -c an unknown user)
+            const viaSu = style => cdSh({ c: 'su -c', uid: 'su 0 sh -c' }[style] + ' ' + cdQ(cmd), { serial: serial, timeout: 60000 });
+            out = await viaSu(cdi.su[serial]);
+            if (cdi.su[serial] === 'c' && /invalid uid|unknown (user|id)|usage: su/i.test(String(out))) { cdi.su[serial] = 'uid'; out = await viaSu('uid'); }
+            return { out: out, su: true, denied: cdiDenied(out) };
+        }
+        const CDI_NEEDS_ROOT = 'Android lets only root or the system do this, and on this device adb runs as the shell user without su.';
+        // why a command did not go through: no su for what only root may do, else the line of the answer that says so, else its last line
+        function cdiWhy(r) { return r.denied && !r.su && !r.unasked ? txT(CDI_NEEDS_ROOT) : cdiErr(r.out) || String(r.out || '').trim().split('\n').pop().trim() || 'Failed'; }
+        async function cdiTogglePerm(perm, was) {
+            haptic();
+            const seq = cdi.seq;
+            const out = await cdSh(['pm', was ? 'revoke' : 'grant', cdQ(cdi.pkg), cdQ(perm)].join(' '), { serial: cdi.serial, timeout: 30000 });
+            if (seq !== cdi.seq) return;
+            const bad = cdiErr(out);
+            showToast(bad || (was ? 'Revoked ' : 'Granted ') + perm.replace(/^android\.permission\./, ''));
+            await cdInspLoad();                                 // read back: the list shows what the device says now
+        }
+
+        // ---- App Ops ----
+        // the ops of the app's permissions are listed even when the device has no mode for them yet, so they can be set
+        function cdiOpsFrom(raw) {
+            const list = parseAppOps(raw), have = new Set(list.map(o => o.name));
+            cdi.perms.forEach(p => { if (p.op && !have.has(p.op)) { have.add(p.op); list.push({ name: p.op, mode: 'default', detail: txT('not set yet'), uidMode: '', uidOnly: false }); } });
+            return list.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        function cdiRenderOps() {
+            const box = document.getElementById('cdiOps'), ops = cdi.ops, f = cdi.filters.ops;
+            if (!cdi.d) return;
+            document.getElementById('cdiOpsCount').innerText = ops.length ? String(ops.length) : '';
+            if (!ops.length) { box.innerHTML = '<div class="list-empty">No app ops recorded for this app yet. Use the field below to set one.</div>'; return; }
+            const q = cdiQ('cdiOpsSearch');
+            const rows = ops.filter(op => {
+                if (f === 'allow' && op.mode !== 'allow') return false;
+                if (f === 'restricted' && op.mode !== 'ignore' && op.mode !== 'deny') return false;
+                if (f === 'foreground' && op.mode !== 'foreground') return false;
+                return !q || op.name.toLowerCase().includes(q);
+            });
+            if (!rows.length) { box.innerHTML = '<div class="list-empty">No app ops match.</div>'; return; }
+            box.innerHTML = rows.map(op => {
+                const sub = [op.uidOnly ? 'uid-level mode' : '', op.uidMode && !op.uidOnly ? 'uid: ' + op.uidMode : '', op.detail].filter(Boolean).join(' • ');
+                const buttons = OP_MODES.map(([mode, label]) => `<button class="op-mode-btn ${mode} ${op.mode === mode ? 'on' : ''}" data-op="${escapeHtml(op.name)}" onclick="cdiSetOp(this.getAttribute('data-op'), '${mode}')">${label}</button>`).join('');
+                return `<div class="perm-row" style="flex-direction:column; align-items:stretch; gap:6px;"><div class="perm-info"><div class="perm-name">${escapeHtml(op.name)}</div>${sub ? `<div class="perm-sub">${escapeHtml(sub)}</div>` : ''}</div><div class="op-modes">${buttons}</div></div>`;
+            }).join('');
+        }
+        // the mode for the package, and for its uid too when the op has one (Android applies the stricter of the two); then read back from the device
+        async function cdiSetOp(op, mode) {
+            haptic();
+            const seq = cdi.seq, q = cdQ(cdi.pkg), cur = cdi.ops.find(o => o.name === op);
+            const set = (cur && cur.uidMode ? 'cmd appops set --uid ' + q + ' ' + op + ' ' + mode + ' >/dev/null 2>&1; ' : '') + 'cmd appops set ' + q + ' ' + op + ' ' + mode + ' 2>&1';
+            const out = await cdSh(set + "; echo '#CDI-OPS'; cmd appops get " + q + ' 2>&1' + (cdi.d && cdi.d.uid ? "; echo '#UID-OPS'; cmd appops get " + cdi.d.uid + ' 2>&1' : ''), { serial: cdi.serial, timeout: 30000 });
+            if (seq !== cdi.seq) return;
+            const at = String(out).indexOf('#CDI-OPS'), bad = cdiErr(at >= 0 ? String(out).slice(0, at) : out);
+            if (at >= 0) {
+                cdi.opsRaw = String(out).slice(at + 8).trim();
+                cdi.ops = cdiOpsFrom(cdi.opsRaw);
+                cdiRenderOps();
+                cdiRenderPerms();
+            }
+            if (bad) { showToast(bad); return; }
+            const now = cdi.ops.find(o => o.name === op);
+            if (at >= 0 && now && (mode !== 'default' ? opEffectiveMode(now) !== mode : (now.uidMode && now.uidMode !== 'default'))) showToast(txF('Android kept {0} at {1}', op, opEffectiveMode(now)));
+            else showToast(op + ' → ' + mode);
+        }
+        function cdiSetCustomOp() {
+            const el = document.getElementById('cdiOpName'), op = (el.value || '').trim().toUpperCase().replace(/\s+/g, '_');
+            if (!/^[A-Z][A-Z0-9_]+$/.test(op)) { showToast('Enter an app op name, e.g. RUN_ANY_IN_BACKGROUND'); return; }
+            cdiSetOp(op, document.getElementById('cdiOpMode').value);
+            el.value = '';
+        }
+
+        // ---- The manifest, and the activities, receivers, services and providers it lists ----
+        function cdiLoadManifest() {
+            const seq = cdi.seq, b = window.AndroidBridge;
+            const done = text => { cdi.manBusy = false; cdi.manTag = ''; cdi.man = text; cdiParseManifest(); cdiRenderManifest(); cdiRenderActs(); cdiRenderComps(); cdiRenderFeatures(); cdiRenderLibs(); };
+            if (!b || !b.cdManifest) { done('Error: ' + txT('Manifest viewer is only available in the app.')); return; }
+            if (!cdi.apk) { done('Error: ' + txT('The device did not give the APK path')); return; }
+            cdi.manBusy = true;
+            document.getElementById('cdiManifest').innerText = 'Decoding AndroidManifest.xml...';
+            const tag = cdi.manTag = 'cd' + (++cdSeq);
+            cdWait[tag] = r => { if (seq === cdi.seq) done(String(r.out == null ? '' : r.out)); };
+            try { b.cdManifest(tag, cdi.serial, cdi.apk); } catch (e) { delete cdWait[tag]; done('Error: ' + (e && e.message || e)); }
+        }
+        // a read still on its way when the sheet closes or opens for another app is stopped (the phone reads one manifest at a time)
+        function cdiStopManifest() { if (cdi.manBusy && cdi.manTag) cdStop(cdi.manTag); cdi.manTag = ''; cdi.manBusy = false; }
+        // what the manifest declares, read with the browser's XML parser: a name that starts with a dot (or has none) is in the app's package; an
+        // activity, receiver or service without android:exported is exported when it has an intent filter, a provider when the app targets API 16 or lower
+        function cdiParseManifest() {
+            const P = { ok: false, acts: [], recv: [], svc: [], prov: [], feats: [], libs: [] };
+            cdi.parts = P;
+            if (!cdi.man || /^Error:/.test(cdi.man)) return;
+            let doc = null;
+            try { doc = new DOMParser().parseFromString(cdi.man, 'application/xml'); } catch (e) {}
+            if (!doc || doc.getElementsByTagName('parsererror').length || !doc.getElementsByTagName('manifest').length) {
+                // without its xmlns line (a shrunk APK) "android:name" is not well-formed XML: read as HTML, which keeps it as the attribute's name (an empty
+                // element is closed first, or HTML would put what follows inside it)
+                try { doc = new DOMParser().parseFromString(cdi.man.replace(/^<\?xml[^>]*>/, '').replace(/<([\w:.-]+)([^<>]*?)\/>/g, '<$1$2></$1>'), 'text/html'); } catch (e) { doc = null; }
+                if (!doc || !doc.getElementsByTagName('manifest').length) return;
+            }
+            P.ok = true;
+            const NS = 'http://schemas.android.com/apk/res/android', PFX = 'android:';
+            const at = (el, n) => el.getAttributeNS(NS, n) || el.getAttribute(PFX + n) || el.getAttribute(n) || '';
+            const pkg = doc.getElementsByTagName('manifest')[0].getAttribute('package') || cdi.pkg;
+            const full = n => !n ? '' : n.charAt(0) === '.' ? pkg + n : n.indexOf('.') < 0 ? pkg + '.' + n : n;
+            const target = (cdi.d && cdi.d.targetSdk) || 0;
+            const app = doc.getElementsByTagName('application')[0];
+            const appOff = !!app && at(app, 'enabled') === 'false';
+            const list = (tag, kind) => Array.from(doc.getElementsByTagName(tag)).map(el => {
+                const filters = Array.from(el.getElementsByTagName('intent-filter'));
+                const ex = at(el, 'exported');
+                const actions = filters.flatMap(fl => Array.from(fl.getElementsByTagName('action')).map(x => at(x, 'name')));
+                const cats = filters.flatMap(fl => Array.from(fl.getElementsByTagName('category')).map(x => at(x, 'name')));
+                return { name: full(at(el, 'name')), kind: kind, alias: tag === 'activity-alias', target: tag === 'activity-alias' ? full(at(el, 'targetActivity')) : '',
+                    exported: ex === 'true' || (ex !== 'false' && (filters.length > 0 || (kind === 'prov' && target > 0 && target <= 16))),
+                    declaredOn: at(el, 'enabled') !== 'false' && !appOff, enabled: true, permission: at(el, 'permission'),
+                    launcher: actions.includes('android.intent.action.MAIN') && cats.includes('android.intent.category.LAUNCHER'), authorities: kind === 'prov' ? at(el, 'authorities') : '' };
+            }).filter(c => c.name);
+            P.acts = list('activity', 'act').concat(list('activity-alias', 'act'));
+            P.recv = list('receiver', 'recv');
+            P.svc = list('service', 'svc');
+            P.prov = list('provider', 'prov');
+            P.feats = Array.from(doc.getElementsByTagName('uses-feature')).map(el => {
+                const gl = at(el, 'glEsVersion'), n = parseInt(gl, 16);
+                return { name: at(el, 'name'), gl: gl && !at(el, 'name') ? (n >> 16) + '.' + (n & 0xffff) : '', required: at(el, 'required') !== 'false' };
+            }).filter(f => f.name || f.gl);
+            P.libs = [['uses-library', 'shared'], ['uses-static-library', 'static'], ['uses-native-library', 'native']].flatMap(([tag, kind]) =>
+                Array.from(doc.getElementsByTagName(tag)).map(el => ({ name: at(el, 'name'), kind: kind, version: at(el, 'version'), required: at(el, 'required') !== 'false' })).filter(l => l.name));
+            cdiApplyStates();
+        }
+        // what user 0 of the device turned off or on (pm disable / enable) wins over the manifest
+        function cdiApplyStates() {
+            const P = cdi.parts, d = cdi.d;
+            if (!P || !d) return;
+            [P.acts, P.recv, P.svc, P.prov].forEach(l => l.forEach(c => { c.enabled = d.disabled.has(c.name) ? false : d.enabled.has(c.name) ? true : c.declaredOn; }));
+        }
+        function cdiCompRow(c) {
+            const short = c.name.split('.').pop();
+            const warn = 'color:#FFA726;border-color:rgba(255,145,0,0.4);';
+            const badges = `<span class="perm-kind" style="${c.exported ? '' : warn}">${c.exported ? 'exported' : 'unexported'}</span>` + (c.enabled === false ? `<span class="perm-kind" style="${warn}">disabled</span>` : '') +
+                (c.permission ? `<span class="perm-kind" title="${escapeHtml(c.permission)}">protected</span>` : '');
+            const nm = escapeHtml(c.name);
+            let btns = '';
+            if (c.kind === 'act') btns += `<button class="perm-toggle-btn ${c.exported ? 'granted' : 'revoked'}" style="cursor:pointer;" data-comp="${nm}" onclick="cdiLaunch(this.getAttribute('data-comp'))">LAUNCH</button>`;
+            if (c.kind === 'svc') btns += `<button class="perm-toggle-btn revoked" style="cursor:pointer;" data-comp="${nm}" onclick="cdiStopService(this.getAttribute('data-comp'))">STOP</button>`;
+            btns += `<button class="perm-toggle-btn ${c.enabled === false ? 'granted' : 'revoked'}" style="cursor:pointer;" data-comp="${nm}" onclick="cdiToggleComp(this.getAttribute('data-comp'), ${c.enabled === false})">${c.enabled === false ? 'ENABLE' : 'DISABLE'}</button>`;
+            const sub = c.target ? c.name + ' → ' + c.target : c.authorities ? c.name + ' • ' + c.authorities : c.name;
+            return `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(short)}</div><div class="perm-sub">${badges}${permWbr(sub)}</div></div><div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">${btns}</div></div>`;
+        }
+        function cdiNoParts(box) {
+            if (cdi.manBusy || (!cdi.man && (cdi.d || !cdi.why))) return true;        // still on its way: the "Loading ..." line stays
+            if (cdi.parts && cdi.parts.ok) return false;
+            const m = String(cdi.man || '');
+            box.innerHTML = '<div class="list-empty">' + escapeHtml(/^Error:/.test(m) ? m.replace(/^Error:\s*/, '') : cdi.why || txT('Manifest not loaded')) + '</div>';
+            return true;
+        }
+        function cdiMatch(tab, q) { const f = cdi.filters[tab]; return c => !(f === 'exported' && !c.exported) && !(f === 'unexported' && c.exported) && (!q || c.name.toLowerCase().includes(q)); }
+        const cdiOrder = (a, b) => (b.launcher - a.launcher) || (b.exported - a.exported) || a.name.localeCompare(b.name);
+        function cdiRenderActs() {
+            const box = document.getElementById('cdiActs');
+            if (cdiNoParts(box)) return;
+            const list = cdi.parts.acts, shown = list.filter(cdiMatch('acts', cdiQ('cdiActsSearch'))).sort(cdiOrder);
+            document.getElementById('cdiActsCount').innerText = list.length ? String(list.length) : '';
+            if (!list.length) { box.innerHTML = '<div class="list-empty">This app has no activities.</div>'; return; }
+            const unexp = list.filter(c => !c.exported).length;
+            box.innerHTML = `<div style="font-weight:var(--fw-heavy); font-size:var(--fs-overline); margin:4px 0 6px 0; color:var(--accent);">ACTIVITIES (${list.length} • ${unexp} unexported)</div>` +
+                (shown.length ? shown.map(cdiCompRow).join('') : '<div class="list-empty">None match.</div>');
+        }
+        function cdiRenderComps() {
+            const box = document.getElementById('cdiComps');
+            if (cdiNoParts(box)) return;
+            const P = cdi.parts, match = cdiMatch('comps', cdiQ('cdiCompsSearch'));
+            const kinds = [['RECEIVERS', P.recv], ['SERVICES', P.svc], ['PROVIDERS', P.prov]];
+            const total = P.recv.length + P.svc.length + P.prov.length;
+            document.getElementById('cdiCompsCount').innerText = total ? String(total) : '';
+            let html = '';
+            kinds.forEach(([key, list]) => {
+                if (!list.length) return;
+                const shown = list.filter(match).sort(cdiOrder);
+                html += `<div style="font-weight:var(--fw-heavy); font-size:var(--fs-overline); margin:12px 0 6px 0; color:var(--secondary);">${key} (${list.length})</div>`;
+                html += shown.length ? shown.map(cdiCompRow).join('') : '<div class="list-empty">None match.</div>';
+            });
+            box.innerHTML = html || '<div class="list-empty">No receivers, services or providers.</div>';
+        }
+        function cdiComp(name) { const P = cdi.parts; return P ? [P.acts, P.recv, P.svc, P.prov].flat().find(c => c.name === name) : null; }
+        // an activity starts on the device, over whatever is on its screen (a watch's screen is woken first, or it starts behind the watch face)
+        async function cdiLaunch(name) {
+            haptic();
+            const r = await cdiPriv('input keyevent KEYCODE_WAKEUP 2>/dev/null; am start -n ' + cdQ(cdi.pkg + '/' + name) + ' 2>&1');
+            showToast(/^Starting:/m.test(String(r.out)) && !cdiErr(r.out) && !r.denied ? 'Opened on the device' : cdiWhy(r));
+        }
+        async function cdiStopService(name) {
+            haptic();
+            const r = await cdiPriv('am stopservice -n ' + cdQ(cdi.pkg + '/' + name) + ' 2>&1');
+            showToast(/^Service stopped/m.test(String(r.out)) && !r.denied ? 'Service stopped' : cdiWhy(r));
+        }
+        // one part of the app on or off for user 0 of the device (pm enable / disable): the shell user may not, so the device's su when it has one
+        async function cdiToggleComp(name, enable) {
+            const c = cdiComp(name);
+            if (!enable && ((cdi.d && cdi.d.system) || cdApp(cdi.pkg).system) && !confirm(txF('Disable {0} of the system app {1}? This can break the app or the system UI. You can turn it back on here.', name.split('.').pop(), cdi.pkg))) return;
+            haptic();
+            const seq = cdi.seq;
+            const r = await cdiPriv('pm ' + (enable ? 'enable ' : 'disable ') + cdQ(cdi.pkg + '/' + name) + ' 2>&1');
+            if (seq !== cdi.seq) return;
+            const ok = /new state:/i.test(r.out) && !cdiErr(r.out);
+            if (!ok) { showToast(cdiWhy(r)); return; }
+            if (cdi.d) { cdi.d.disabled.delete(name); cdi.d.enabled.delete(name); (enable ? cdi.d.enabled : cdi.d.disabled).add(name); }
+            if (c) c.enabled = !!enable;
+            showToast(enable ? 'Component enabled' : 'Component disabled');
+            cdiRenderActs();
+            cdiRenderComps();
+        }
+
+        // ---- The manifest tab: the Apps tab's find (▲ ▼, Matches only), Copy, Share, Save to Downloads ----
+        function cdiRenderManifest(dir) {
+            if (!findState.cdman) findState.cdman = { idx: -1, hits: [] };          // (findState is made further down the page)
+            const box = document.getElementById('cdiManifest'), meta = document.getElementById('cdiManMeta'), text = cdi.man;
+            if (!text) return;
+            if (/^Error:/.test(text)) { box.innerText = text; meta.innerText = ''; return; }
+            const lines = text.split('\n'), q = (document.getElementById('cdiManSearch').value || '').trim();
+            if (!q) { box.innerHTML = lines.map(highlightXmlLine).join('\n'); meta.innerText = lines.length + ' lines'; findState.cdman = { idx: -1, hits: [] }; return; }
+            if (cdi.manOnly) {
+                const needle = q.toLowerCase(), hits = [];
+                lines.forEach((line, i) => { if (line.toLowerCase().includes(needle)) hits.push(String(i + 1).padStart(4, ' ') + '  ' + escapeHtml(line.trim())); });
+                box.innerHTML = hits.length ? hits.join('\n') : 'No matches.';
+            } else box.innerHTML = lines.map(highlightXmlLine).join('\n');
+            runFind('cdman', box, meta, q, dir === undefined ? 0 : dir, ' lines');
+        }
+        function cdiManStep(dir) { haptic(); cdiRenderManifest(dir); }
+        function cdiManOnlyToggle() { cdi.manOnly = !cdi.manOnly; document.getElementById('cdiManOnly').classList.toggle('active', cdi.manOnly); cdiRenderManifest(); }
+        function cdiManReady() { if (cdi.man && !/^Error:/.test(cdi.man)) return true; showToast('Manifest not loaded'); return false; }
+        function cdiManCopy() { haptic(); if (cdiManReady()) copyText(cdi.man); }
+        function cdiManShare() { haptic(); if (cdiManReady()) shareFileViaBridge(cdi.pkg + '_AndroidManifest.xml', cdi.man, 'text/xml'); }
+        function cdiManSave() {
+            haptic();
+            if (!cdiManReady() || !window.AndroidBridge || !window.AndroidBridge.saveTextToDownloads) return;
+            const res = window.AndroidBridge.saveTextToDownloads(cdi.pkg + '_AndroidManifest.xml', cdi.man) || '';
+            showToast(res.startsWith('Error:') ? res : 'Saved to ' + res);
+        }
+
+        // ---- Features (with what the device has: pm list features, read once per device) and Libraries ----
+        async function cdiLoadFeatures() {
+            const serial = cdi.serial;
+            if (cdi.feats[serial]) { cdiRenderFeatures(); return; }
+            cdi.feats[serial] = { busy: true, set: new Set(), gl: '' };
+            const out = await cdSh('pm list features', { serial: serial, timeout: 30000 });
+            const F = cdi.feats[serial] = { set: new Set(), gl: '', ok: !cdFail(out) && !CD_TIMED_OUT.test(String(out)) && /^\s*feature:/m.test(String(out)) };
+            String(out).split('\n').forEach(l => {
+                const m = l.trim().match(/^feature:(.+)$/);
+                if (!m) return;
+                const g = m[1].match(/^reqGlEsVersion=0x([0-9a-f]+)/i);
+                if (g) { const n = parseInt(g[1], 16); F.gl = (n >> 16) + '.' + (n & 0xffff); } else F.set.add(m[1].split('=')[0]);
+            });
+            if (serial === cdi.serial) cdiRenderFeatures();
+            if (!F.ok) delete cdi.feats[serial];
+        }
+        function cdiRenderFeatures() {
+            const box = document.getElementById('cdiFeatures');
+            if (cdiNoParts(box)) return;
+            const F = cdi.feats[cdi.serial], known = F && F.ok;
+            const glOk = (have, need) => { const a = String(have).split('.').map(Number), b = String(need).split('.').map(Number); return a[0] > b[0] || (a[0] === b[0] && (a[1] || 0) >= (b[1] || 0)); };
+            const all = cdi.parts.feats.map(f => ({ name: f.gl ? 'OpenGL ES ' + f.gl : f.name, gl: !!f.gl, required: f.required, device: !known ? null : f.gl ? (F.gl ? glOk(F.gl, f.gl) : null) : F.set.has(f.name) }));
+            document.getElementById('cdiFeaturesCount').innerText = all.length ? String(all.length) : '';
+            if (!all.length) { box.innerHTML = '<div class="list-empty">This app does not list any hardware or software features it needs (no uses-feature entries).</div>'; return; }
+            const q = cdiQ('cdiFeaturesSearch'), f = cdi.filters.features;
+            const rows = all.filter(x => !(f === 'required' && !x.required) && !(f === 'optional' && x.required) && !(f === 'missing' && x.device !== false) && (!q || x.name.toLowerCase().includes(q)))
+                .sort((a, b) => (b.gl - a.gl) || (b.required - a.required) || a.name.localeCompare(b.name));
+            box.innerHTML = rows.length ? rows.map(x => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(x.name)}</div></div><div class="ax-badges">` +
+                (x.gl ? '' : `<span class="perm-kind"${x.required ? '' : ' style="color:var(--text-muted);"'}>${x.required ? 'required' : 'optional'}</span>`) +
+                (x.device === null ? '' : `<span class="perm-kind" style="${x.device ? 'color:#4CAF50;border-color:rgba(76,175,80,0.45);' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${x.device ? txT('on the device') : txT('not on the device')}</span>`) +
+                '</div></div>').join('') : '<div class="list-empty">None match.</div>';
+        }
+        function cdiRenderLibs() {
+            const box = document.getElementById('cdiLibs');
+            if (cdiNoParts(box)) return;
+            const q = cdiQ('cdiLibsSearch'), hit = s => !q || String(s).toLowerCase().includes(q);
+            const declared = cdi.parts.libs, files = (cdi.d && cdi.d.libFiles) || [];
+            document.getElementById('cdiLibsCount').innerText = declared.length + files.length ? String(declared.length + files.length) : '';
+            const dShown = declared.filter(l => hit(l.name)), fShown = files.filter(hit);
+            let html = `<div class="ax-sec">Libraries it asks for (${declared.length})</div>`;
+            html += !declared.length ? '<div class="ax-note">The manifest does not ask for any extra library (no uses-library entry).</div>'
+                : dShown.length ? dShown.map(l => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(l.name)}</div>${l.version ? `<div class="perm-sub">version ${escapeHtml(l.version)}</div>` : ''}</div><div class="ax-badges"><span class="perm-kind">${l.kind}</span><span class="perm-kind"${l.required ? '' : ' style="color:var(--text-muted);"'}>${l.required ? 'required' : 'optional'}</span></div></div>`).join('') : '<div class="list-empty">None match.</div>';
+            html += `<div class="ax-sec">Shared libraries linked in (${files.length})</div>`;
+            html += !files.length ? '<div class="ax-note">No shared library files are linked into this app.</div>'
+                : fShown.length ? fShown.map(p => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(String(p).split('/').pop())}</div><div class="perm-sub">${escapeHtml(p)}</div></div></div>`).join('') : '<div class="list-empty">None match.</div>';
+            if (cdi.d && cdi.d.abi) html += '<div class="ax-card">' + axRow('CPU types', cdi.d.abi, { data: true }) + '</div>';
+            box.innerHTML = html;
         }
         async function cdPullApk(pkg) {
             const serial = cd.serial;                                   // the APK paths are this device's: every pull is from this device
@@ -28984,11 +29691,12 @@ Type any command above (e.g. pm list packages -d)</div>
             cdAddLog(out);
             if (/connected to|already connected/i.test(out) && !/cannot|failed|unable/i.test(out)) {
                 const serial = /(?:connected to|already connected to)\s+(\S+)/i.exec(out);
+                const s = serial ? serial[1].replace(/[.,]$/, '') : addr;
+                cdiForget(s); cdiForget(addr);
                 cdRemember(addr);
                 cdAddClose();
                 cd.lastKey = ''; cd.sig = '';
                 await cdRefreshDevices(false);
-                const s = serial ? serial[1].replace(/[.,]$/, '') : addr;
                 if (cd.devices.some(d => d.serial === s)) cdSelect(s);
                 showToast('Connected to ' + s);
             } else showToast(cdFail(out) || String(out).trim().split('\n')[0] || 'Could not connect');
@@ -29091,6 +29799,7 @@ Type any command above (e.g. pm list packages -d)</div>
             cdAddLog(out + '\nIf nothing shows up, check that Debugging over Bluetooth is on in the Wear OS app and on the watch, then try again.');
             if (/connected to|already connected/i.test(out) && !/cannot|failed|unable/i.test(out)) {
                 cd.bt.add(addr); kvSet('cd_bt', Array.from(cd.bt));
+                cdiForget(addr);                                // every Bluetooth-linked watch is 127.0.0.1:<port>
                 cdAddClose();
                 cd.lastKey = ''; cd.sig = '';
                 await cdRefreshDevices(false);
@@ -31711,14 +32420,27 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // ---------- App Ops list ----------
-        // Parses `cmd appops get <pkg>` lines such as "CAMERA: allow; time=+2h ago" and "Uid mode: COARSE_LOCATION: foreground"
+        // Parses `cmd appops get <pkg>` lines such as "CAMERA: allow; time=+2h ago" and "Uid mode: COARSE_LOCATION: foreground". Since Android 10 the
+        // uid's modes come first, with "Uid mode:" written only before the first of them; the uid's own list (cmd appops get <uid>) may follow after a
+        // "#UID-OPS" line, and then that many lines at the top are the uid's. Without it the uid's block ends at a name seen again or at a line with
+        // times (the uid's entries carry none) (v7.19.3)
         function parseAppOps(raw) {
-            const ops = new Map();
-            String(raw || '').split('\n').forEach(line => {
-                const m = line.trim().match(/^(Uid mode:\s*)?([A-Z][A-Z0-9_]+):\s*([a-z_]+)(.*)$/);
-                if (!m) return;
+            const OP_LINE = /^(Uid mode:\s*)?([A-Z][A-Z0-9_]+):\s*([a-z_]+)(.*)$/, ops = new Map();
+            const parts = String(raw || '').split(/\r?\n#UID-OPS\r?\n/);
+            const lines = parts[0].split('\n').map(l => l.trim()).filter(l => OP_LINE.test(l));
+            let uidLeft = parts.length > 1 && /^Uid mode:/.test(lines[0] || '') ? parts[1].split('\n').filter(l => OP_LINE.test(l.trim())).length : 0, inUid = false;
+            const counted = uidLeft > 0, uidSeen = new Set();
+            lines.forEach(line => {
+                const m = line.match(OP_LINE);
                 const name = m[2];
-                const isUid = !!m[1];
+                let isUid;
+                if (counted) { isUid = uidLeft > 0; uidLeft--; }
+                else {
+                    if (m[1]) inUid = true;
+                    else if (inUid && (uidSeen.has(name) || /;\s*(time|rejectTime|duration)=|\(running\)/.test(m[4]))) inUid = false;
+                    isUid = inUid;
+                }
+                if (isUid) uidSeen.add(name);
                 const prev = ops.get(name);
                 // Package-level mode wins over uid-level for display; keep a note of the uid mode
                 if (prev && !isUid && prev.uidOnly) {
@@ -32274,13 +32996,13 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function switchSheetTab(tab, silent) {
             const ids = { perms: 'sheetTabPerms', ops: 'sheetTabOps', acts: 'sheetTabActs', comps: 'sheetTabComps', manifest: 'sheetTabManifest', raw: 'sheetTabRaw', features: 'sheetTabFeatures', configs: 'sheetTabConfigs', sigs: 'sheetTabSigs', libs: 'sheetTabLibs' };
-            document.querySelectorAll('.sheet-tab-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-tab') === tab));
-            document.querySelectorAll('.sheet-tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('#inspectorModal .sheet-tab-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-tab') === tab));
+            document.querySelectorAll('#inspectorModal .sheet-tab-content').forEach(c => c.classList.remove('active'));
             const el = document.getElementById(ids[tab]);
             if (el) el.classList.add('active');
             if (tab === 'manifest') loadManifest();
             if (tab === 'features' || tab === 'configs' || tab === 'sigs' || tab === 'libs') loadAppExtras();
-            const pill = document.querySelector('.sheet-tab-pill.active');
+            const pill = document.querySelector('#inspectorModal .sheet-tab-pill.active');
             if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: 'nearest', inline: 'nearest' });
             if (sheetFullIsOpen()) sheetFullTitle();                  // at full screen the next tab is at full screen too
             if (!silent) haptic();
@@ -32293,23 +33015,28 @@ Type any command above (e.g. pm list packages -d)</div>
         // another tab opens at full screen too. The ✕, a pull down by the handle, a tap outside and Back come back to the menu (on the tab that is
         // open then, the menu scrolled where it was); closing the menu leaves the full screen as well (sheetFullReset).
         const SHEET_TAB_NAMES = { perms: 'Permissions', ops: 'App Ops', acts: 'Activities', comps: 'Components', manifest: 'Manifest', raw: 'Raw', features: 'Features', configs: 'Configurations', sigs: 'Signatures', libs: 'Libraries' };
+        // A connected device's app (cdInspModal, v7.19.3) has the same tabs and the same button: the sheet is the one of the two that is open.
         let sheetFullSaved = null;                                    // how the menu was when it went full screen: { scroll, pulled }
-        function sheetFullSheet() { return document.querySelector('#inspectorModal .modal-sheet'); }
+        function sheetFullSheet() {
+            const c = document.getElementById('cdInspModal');
+            return (c && c.classList.contains('show') ? c : document.getElementById('inspectorModal')).querySelector('.modal-sheet');
+        }
         function sheetFullIsOpen() { const sh = sheetFullSheet(); return !!(sh && sh.classList.contains('tab-full')); }
         function sheetFullTitle() {
-            const pill = document.querySelector('#inspectorModal .sheet-tab-pill.active');
-            document.getElementById('sheetFullTitle').textContent = SHEET_TAB_NAMES[pill ? pill.getAttribute('data-tab') : 'perms'] || '';
-            document.getElementById('sheetFullApp').textContent = document.getElementById('sheetTitle').innerText;
+            const sh = sheetFullSheet();
+            const pill = sh.querySelector('.sheet-tab-pill.active');
+            sh.querySelector('.sheet-full-titles h3').textContent = SHEET_TAB_NAMES[pill ? pill.getAttribute('data-tab') : 'perms'] || '';
+            sh.querySelector('.sheet-full-titles p').textContent = sh.querySelector('.sheet-title h3').innerText;
         }
         function sheetFullOpen() {
             const sh = sheetFullSheet();
-            if (!sh || sh.classList.contains('tab-full') || !document.getElementById('inspectorModal').classList.contains('show')) return;
+            if (!sh || sh.classList.contains('tab-full') || !sh.closest('.modal-overlay').classList.contains('show')) return;
             sheetFullSaved = { scroll: sh.scrollTop, pulled: sh.classList.contains('sheet-expanded') };
             sheetFullTitle();
             sh.classList.remove('sheet-expanded', 'tab-full-back');          // a sheet pulled up by its handle is pulled up again when it comes back
             sh.classList.add('tab-full');
             sh.scrollTop = 0;
-            const x = sh.querySelector('#sheetFullHead .sheet-close');        // the button that was tapped is hidden now: the focus goes to the ✕
+            const x = sh.querySelector('.sheet-full-head .sheet-close');      // the button that was tapped is hidden now: the focus goes to the ✕
             if (x) try { x.focus({ preventScroll: true }); } catch (e) {}
             haptic();
         }
@@ -32317,7 +33044,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function sheetFullClose() {
             const sh = sheetFullSheet();
             if (!sh || !sh.classList.contains('tab-full')) return false;
-            const saved = sheetFullSaved, hadFocus = sh.querySelector('#sheetFullHead').contains(document.activeElement);
+            const saved = sheetFullSaved, hadFocus = sh.querySelector('.sheet-full-head').contains(document.activeElement);
             sheetFullSaved = null;
             sh.classList.remove('tab-full');
             if (saved && saved.pulled) sh.classList.add('sheet-expanded');
@@ -32329,9 +33056,9 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             return true;
         }
-        // the menu closes or opens another app: no full screen is left over
-        function sheetFullReset() {
-            const sh = sheetFullSheet();
+        // the menu closes or opens another app: no full screen is left over (sh: that sheet, when it is not the open one any more)
+        function sheetFullReset(sh) {
+            sh = sh || sheetFullSheet();
             sheetFullSaved = null;
             if (sh && sh.classList.contains('tab-full')) sh.classList.remove('tab-full');
         }
@@ -48286,7 +49013,7 @@ Type any command above (e.g. pm list packages -d)</div>
             new MutationObserver((list) => {
                 for (const m of list) {
                     const t = m.target;
-                    if (t.classList && t.classList.contains('modal-overlay') && !t.classList.contains('show')) { const sh = t.querySelector('.modal-sheet'); if (sh) sh.classList.remove('sheet-expanded'); if (sh && sh.classList.contains('tab-full') && typeof sheetFullReset === 'function') sheetFullReset(); }
+                    if (t.classList && t.classList.contains('modal-overlay') && !t.classList.contains('show')) { const sh = t.querySelector('.modal-sheet'); if (sh) sh.classList.remove('sheet-expanded'); if (sh && sh.classList.contains('tab-full') && typeof sheetFullReset === 'function') sheetFullReset(sh); }
                     if (t.classList && t.classList.contains('batch-bottom-sheet') && !t.classList.contains('show') && t.classList.contains('sheet-expanded')) t.classList.remove('sheet-expanded');          // (only when it is there: removing a class that is not there would still write the attribute and loop)
                 }
             }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });

@@ -1,5 +1,6 @@
 package com.bloatware.bingblop;
 
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,7 +14,9 @@ public final class WearStub {
 
     public static final String PKG = "com.bloatware.bingblop.adbstub";
     /** android:versionCode of wearstub/AndroidManifest.xml (the WearStub suite checks they agree). A watch with an older one is offered Update. */
-    public static final int VERSION = 2;
+    public static final int VERSION = 3;
+    /** The oldest stub that is started by itself when its watch connects: version 2 was the first with the lease, so it lets go by itself when the phone goes away. */
+    public static final int MIN_AUTO = 2;
     static final String ACTIVITY = PKG + "/.StubActivity";
     static final String STOP_ACTION = PKG + ".STOP";
     static final String RENEW_ACTION = PKG + ".RENEW";
@@ -82,6 +85,35 @@ public final class WearStub {
         return "am start -n " + ACTIVITY + " --es phone " + quotedPhone(phone);
     }
 
+    /**
+     * The same, and the adb port this phone reached the watch on, for the stub's screen (version 3 and later; older ones ignore it). Only a serial
+     * that is the watch's own address and port ("192.168.1.30:5555") gives one: a Bluetooth link (127.0.0.1:port) is a port on this phone, and a
+     * Wireless debugging service name has none.
+     */
+    static String startCmd(String phone, String serial) {
+        int port = portOf(serial);
+        return startCmd(phone) + (port > 0 ? " --ei port " + port : "");
+    }
+
+    private static final Pattern ADDR = Pattern.compile("^(\\[[0-9A-Fa-f:.]*:[0-9A-Fa-f:.]+\\]|[^\\s:]+):(\\d{1,5})$");
+
+    /** The port of a serial of the form host:port (1 to 65535), 0 for anything else or a loopback host. */
+    static int portOf(String serial) {
+        Matcher m = ADDR.matcher(serial == null ? "" : serial.trim());
+        if (!m.matches()) return 0;
+        String host = m.group(1).toLowerCase(Locale.ROOT);
+        if (host.startsWith("127.") || host.equals("localhost")) return 0;
+        if (host.startsWith("[")) {
+            try {
+                if (java.net.InetAddress.getByName(host).isLoopbackAddress()) return 0;
+            } catch (java.net.UnknownHostException invalid) {
+                return 0;
+            }
+        }
+        int p = Integer.parseInt(m.group(2));
+        return p >= 1 && p <= 65535 ? p : 0;
+    }
+
     /** am start prints "Starting: Intent { ... }", and "Error: ..." / "Error type N" when the activity cannot be opened. */
     static boolean started(String out) {
         String s = out == null ? "" : out;
@@ -92,8 +124,8 @@ public final class WearStub {
      * Renews the stub's lease (version 2 and later): the stub lets go of the watch by itself when it has not heard from the phone for 5 minutes, so the
      * page sends this about once a minute while the stub runs on a connected watch. Only the shell and the system may send it (DUMP).
      */
-    static String renewCmd() {
-        return "am broadcast -a " + RENEW_ACTION + " -n " + RECEIVER;
+    static String renewCmd(String serial) {
+        return "am broadcast -a " + RENEW_ACTION + " -n " + RECEIVER + " --ei port " + portOf(serial);
     }
 
     /** am broadcast prints "Broadcast completed: result=0" when the broadcast was delivered (to the stub, or to nothing when it is not running). */

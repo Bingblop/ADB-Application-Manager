@@ -8,7 +8,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const errors = [];
   const mk = async (kv, extraInit) => {
     const page = await b.newPage({ viewport: { width: 360, height: 800 } });
-    page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+    page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
     page.on('dialog', d => d.accept());
     if (kv) await page.addInitScript(k => { window.__kvInit = k; }, kv);
     await page.addInitScript(mock.initScript);

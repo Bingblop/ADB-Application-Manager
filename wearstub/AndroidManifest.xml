@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ADB Stub: the small app ADB Application Manager sends to a Wear OS watch (Connected Devices). While it runs, the watch keeps its screen on and
+  ADB Stub: the small app ADB Application Manager sends to a Wear OS watch (Connected Devices), named "ADB Toolbox" on the watch, with the phone app's icon. While it runs, the watch keeps its screen on and
   its Wi-Fi connected, so the phone's adb link over Wi-Fi does not drop when the watch would turn the screen off or hand the network back to
   Bluetooth. It is started by the phone (am start) when the watch connects and stopped by the phone (broadcast, then am force-stop) on Disconnect.
   The phone renews it about once a minute (broadcast); without a renewal for 5 minutes it lets go by itself (Lease.java).
@@ -8,8 +8,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop.adbstub"
-    android:versionCode="2"
-    android:versionName="1.1">
+    android:versionCode="3"
+    android:versionName="1.2">
 
     <uses-sdk android:minSdkVersion="25" android:targetSdkVersion="34" />
 
@@ -26,8 +26,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:label="ADB Stub"
-        android:icon="@drawable/ic_stub"
+        android:label="ADB Toolbox"
+        android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:theme="@android:style/Theme.DeviceDefault">
 
