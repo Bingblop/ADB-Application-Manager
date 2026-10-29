@@ -13,7 +13,7 @@ const KEY = 'theme_customization_overlay_packages';
   // a fresh page: kv = what an earlier run of the app left behind; post = a script that runs after the mocks
   const mk = async (opts = {}) => {
     const page = await b.newPage({ viewport: { width: 360, height: 800 }, hasTouch: true });
-    page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+    page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !m.text().includes('Failed to load resource: net::ERR_FILE_NOT_FOUND')) errors.push('console: ' + m.text()); });
     page.on('dialog', d => d.accept());
     if (opts.kv) await page.addInitScript(kv => { window.__kvInit = JSON.parse(kv); }, JSON.stringify(opts.kv));
     await page.addInitScript(sdb.initScript); await page.addInitScript(ovl.initScript);

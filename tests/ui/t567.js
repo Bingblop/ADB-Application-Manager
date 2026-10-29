@@ -76,7 +76,7 @@ const MONO_P16 = { accent1_500: '0xFF777777', accent3_500: '0xFF777777', neutral
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 360, height: 800 } });
-  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !m.text().includes('Failed to load resource: net::ERR_FILE_NOT_FOUND')) errors.push('console: ' + m.text()); });
   const dialogs = [];
   page.on('dialog', d => { dialogs.push(d.message()); d.accept(); });
   await page.addInitScript(sdb.initScript);

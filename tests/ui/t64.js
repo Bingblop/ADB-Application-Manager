@@ -11,7 +11,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const ctx = await b.newContext({ viewport: { width: 360, height: 800 }, hasTouch: true });
   const page = await ctx.newPage();
   const cdp = await ctx.newCDPSession(page);
-  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !m.text().includes('Failed to load resource: net::ERR_FILE_NOT_FOUND')) errors.push('console: ' + m.text()); });
   const dialogs = []; let answer = true;
   page.on('dialog', d => { dialogs.push(d.message()); answer ? d.accept() : d.dismiss(); });
   await page.addInitScript(mock.initScript);

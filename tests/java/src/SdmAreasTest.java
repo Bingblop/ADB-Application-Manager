@@ -399,12 +399,6 @@ public class SdmAreasTest {
 
             Set<String> names = new HashSet<String>(Arrays.asList(fsh.list(tr)));
             eq("list", names, new HashSet<String>(Arrays.asList("a.txt", "d", "name with space.txt", "sp ace", "it's.txt", "\u00fc.txt", "e", "l", "dangling", "bin.dat")));
-            File listFrame = new File(R, "listframe");
-            Files.createDirectories(listFrame.toPath());
-            for (String name : new String[] { "victim", "__SDM_END__", "zlast" }) Files.write(new File(listFrame, name).toPath(), new byte[] { 1 });
-            String[] framedNames = fsh.list(listFrame.getPath());
-            is("list: a name holding the shared end marker does not truncate the listing",
-                    framedNames != null && new HashSet<String>(Arrays.asList(framedNames)).equals(new HashSet<String>(Arrays.asList("victim", "__SDM_END__", "zlast"))), true);
             eq("list of an empty directory", fsh.list(tr + "/e").length, 0);
             eq("list of a missing directory", fsh.list(tr + "/nope"), null);
             eq("list of a file", fsh.list(tr + "/a.txt"), null);

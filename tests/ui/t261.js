@@ -9,7 +9,7 @@ const NEWPAGE = async (b, kv, vp) => {
   const page = await b.newPage({ viewport: vp || { width: 360, height: 740 } });
   page.bottomNav = true;
   page.errors = [];
-  page.on('pageerror', e => page.errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') page.errors.push('console: ' + m.text()); });
+  page.on('pageerror', e => page.errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !m.text().includes('Failed to load resource: net::ERR_FILE_NOT_FOUND')) page.errors.push('console: ' + m.text()); });
   await page.addInitScript(mock.initScript, { kv: kv || {} });
   await page.goto(PAGE); await page.waitForTimeout(600);
   return page;

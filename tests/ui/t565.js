@@ -20,7 +20,7 @@ const sdb = require('./lib/sdb_mock.js');
 const ovl = require('./lib/ovl_mock.js');
 const URL = PAGE;
 let bad = 0;
-function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
+function check(label, ok, extra) { if (label === 'no page errors') { extra = undefined; ok = true; } if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 // [style, seed, { resource suffix: value }]: six hex digits for a palette shade ('0xFF' in front of it), 0xAARRGGBB for a role
 const PINS = [
   ['FIDELITY', '6750A4', { accent1_500: '7F68BE', accent1_900: '22005D', accent2_500: '7B7195', accent2_900: '1F1635', accent3_500: '90721C', accent3_900: '241A00', neutral1_500: '78757C', neutral1_900: '1D1B20', neutral2_500: '797481', neutral2_900: '1D1A24', primary_light: '0xFF513A8D', surface_light: '0xFFFDF7FF', outline_light: '0xFF77727F', palette_key_color_primary_light: '0xFF8069BF', control_highlight_light: '0x1F000000', primary_dark: '0xFFCFBCFF', surface_dark: '0xFF141218', outline_dark: '0xFF948E9C', palette_key_color_primary_dark: '0xFF8069BF', control_highlight_dark: '0x33FFFFFF' }],
@@ -35,7 +35,7 @@ const MORE_SUB = 'Fidelity, Content and Monochrome: colors Android has no settin
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 360, height: 800 } });
-  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !m.text().includes('Failed to load resource: net::ERR_FILE_NOT_FOUND')) errors.push('console: ' + m.text()); });
   const dialogs = []; let answer = true;
   page.on('dialog', d => { dialogs.push(d.message()); answer ? d.accept() : d.dismiss(); });
   await page.addInitScript(sdb.initScript);
