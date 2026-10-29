@@ -159,11 +159,43 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   a failed answer keeps nothing', !n['global/wifi_on'] && !/Kept with this setting/.test(await askBox()), JSON.stringify(Object.keys(n)));
   await ev(() => agentAskClose());
 
+  // the bug check's findings: a long number in brackets never makes the citation cleanup slow; History opened in the sheet while an answer is on its way
+  // keeps that saved answer on screen without a "Kept" line under it; the row's Ask agent button keeps the focus when the list is drawn again; a long name wraps
+  const speed = await ev(() => { const a = 'Its value now is [1698765432100,1698765432200… and more. Leave it.\n\nSources: [1698765432100, 1698765432200…';
+    const t0 = performance.now(); const t = sdbNoteFrom(a); return { ms: performance.now() - t0, t, c: sdbNoteFrom('Turns it off [1][2, 3].\nIn short: Turns it off [1][2, 3].') }; });
+  check('8. an unclosed bracket of long numbers is quick to clean (no catastrophic backtracking); [1][2, 3] still go', speed.ms < 100 && speed.t === 'Its value now is [1698765432100,1698765432200… and more.' && speed.c === 'Turns it off.', JSON.stringify(speed));
+  await ev(() => { window.__hold = new Promise(res => { window.__release = res; }); const turn = window.txTurnApi;
+    window.txTurnApi = async (...a) => { await window.__hold; window.txTurnApi = turn; return turn(...a); };
+    window.__answers = ['Lets a computer use ADB.\nIn short: Turns USB debugging on or off.']; });
+  await ev(() => sdbOpenEditor('global', 'adb_enabled')); await sleep(200);
+  await page.click('#sdbEditAiBtn'); await sleep(200);
+  await ev(s => askHistOpen('sdbEdit', askHistSorted('sdbEdit').findIndex(e => e.name === s)), sec); await sleep(100);
+  await ev(() => window.__release()); await sleep(400);
+  n = await notes();
+  const hist = await ev(() => ({ ai: document.getElementById('sdbEditAi').innerText, about: document.getElementById('sdbEditAbout').innerText, h: askHistGet('sdbEdit').filter(e => e.id === 'global/adb_enabled').map(e => e.answer) }));
+  check('9. History opened in the sheet during an answer: the saved answer stays, with no "Kept" line under it', /Saved answer about /.test(hist.ai) && /This looks like a test switch/.test(hist.ai) && !/Kept with this setting/.test(hist.ai), JSON.stringify(hist));
+  check('   the line is still kept with the setting asked about, and its sheet shows it; History does not file the other answer under it', !!n['global/adb_enabled'] && n['global/adb_enabled'].t === 'Turns USB debugging on or off.'
+    && /From Ask agent/i.test(hist.about) && hist.h.length === 0, JSON.stringify([n['global/adb_enabled'], hist.h]));
+  await ev(() => sdbEditClose());
+  await ev(() => { window.__answers = ['Zen mode.\nIn short: Picks how strict Do Not Disturb is.']; });
+  await find('zen_mode');
+  await page.locator('#sdbList .sdb-row[data-k="zen_mode"] .agent-btn').focus(); await page.keyboard.press('Enter'); await sleep(450);
+  const foc = await ev(() => { const a = document.activeElement; return { cls: a && a.className, k: a && a.closest && a.closest('.sdb-row') ? a.closest('.sdb-row').dataset.k : '', shown: document.getElementById('agentAskModal').classList.contains('show'), kept: /Kept with this setting/.test(document.getElementById('agentAskAi').innerText) }; });
+  check('10. the list drawn again under Ask agent\'s window leaves the focus on the same row\'s Ask agent button, not on the row', foc.shown && foc.kept && /agent-btn/.test(foc.cls) && foc.k === 'zen_mode', JSON.stringify(foc));
+  await ev(() => agentAskClose());
+  await ev(() => { sdbNoteSave('global', 'zen_mode', '`accessibility_display_magnification_navbar_enabled_by_the_owner` is a switch.', 'Fake AI'); });
+  await page.setViewportSize({ width: 320, height: 860 }); await sleep(200);
+  await ev(() => sdbOpenEditor('global', 'zen_mode')); await sleep(300);
+  const wide = await ev(() => { const a = document.getElementById('sdbEditAbout'), m = a.closest('.modal-sheet'); return { a: [a.scrollWidth, a.clientWidth], m: [m.scrollWidth, m.clientWidth] }; });
+  check('11. at 320 px a kept line that starts with a long setting name wraps inside the sheet', wide.a[0] <= wide.a[1] + 1 && wide.m[0] <= wide.m[1] + 1, JSON.stringify(wide));
+  await ev(() => sdbEditClose());
+  await page.setViewportSize({ width: 400, height: 860 }); await sleep(200);
+
   // German: the sheet's heading is translated, the kept line (the AI's words) is not
   await ev(() => I18N.set('de')); await sleep(900);
   await ev(s => sdbOpenEditor('secure', s), sec); await sleep(400);
   const de = await ev(() => ({ head: document.querySelector('#sdbEditAbout .sdb-about-h').textContent, note: document.querySelector('#sdbEditAbout .sdb-note-t').textContent }));
-  check('8. German: "Aus „Agent fragen“" over the line, which stays as the AI wrote it', de.head === 'Aus „Agent fragen“' && de.note === 'A switch an app keeps for itself; changing it does nothing useful.', JSON.stringify(de));
+  check('12. German: "Aus „Agent fragen“" over the line, which stays as the AI wrote it', de.head === 'Aus „Agent fragen“' && de.note === 'A switch an app keeps for itself; changing it does nothing useful.', JSON.stringify(de));
   await ev(() => sdbEditClose());
   await ev(() => I18N.set('en')); await sleep(600);
   check('   no page errors', errors.length === 0, errors.join(' | '));
@@ -181,7 +213,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     await p2.evaluate(() => switchView('settings')); await p2.waitForTimeout(900);
     const back = await p2.evaluate(u => { sdbResetView(); const i = document.getElementById('sdbSearch'); i.value = u; sdbSearchInput(); return new Promise(res => setTimeout(() => {
       const r = document.querySelector('#sdbList .sdb-row[data-k="' + u + '"]'); res(r ? (r.querySelector('.sdb-note-t') || {}).textContent : null); }, 300)); }, und);
-    check('9. after a new start the row still shows the kept line', back === und + ' is not a standard Android setting.', JSON.stringify(back));
+    check('13. after a new start the row still shows the kept line', back === und + ' is not a standard Android setting.', JSON.stringify(back));
     check('   no page errors', errs.length === 0, errs.join(' | '));
     await ctx2.close();
   }

@@ -31,7 +31,12 @@ ok      a described setting's sheet: What it does first, then From Ask agent
 ok   6. a later answer replaces the line; a long one is cut at a word, 160 characters at most, with …
 ok   7. without an agent the web lookup answers and nothing is kept
 ok      a failed answer keeps nothing
-ok   8. German: "Aus „Agent fragen“" over the line, which stays as the AI wrote it
+ok   8. an unclosed bracket of long numbers is quick to clean (no catastrophic backtracking); [1][2, 3] still go
+ok   9. History opened in the sheet during an answer: the saved answer stays, with no "Kept" line under it
+ok      the line is still kept with the setting asked about, and its sheet shows it; History does not file the other answer under it
+ok   10. the list drawn again under Ask agent's window leaves the focus on the same row's Ask agent button, not on the row
+ok   11. at 320 px a kept line that starts with a long setting name wraps inside the sheet
+ok   12. German: "Aus „Agent fragen“" over the line, which stays as the AI wrote it
 ok      no page errors
-ok   9. after a new start the row still shows the kept line
+ok   13. after a new start the row still shows the kept line
 ok      no page errors

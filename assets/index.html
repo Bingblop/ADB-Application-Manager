@@ -5877,6 +5877,7 @@
                 .sdb-about-h { font-size:var(--fs-pkg); font-weight:var(--fw-heavy); letter-spacing:.4px; text-transform:uppercase; color:var(--text-muted); margin:var(--space-2) 0 2px; }
                 .sdb-about-h:first-child { margin-top:0; }
                 .sdb-about-t b { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; }
+                .sdb-about-t { overflow-wrap:anywhere; }          /* v7.19.2: the line Ask agent left can start with a long setting name */
                 .sdb-about-now { margin-top:var(--space-2); color:var(--accent); color:color-mix(in srgb, var(--accent) 72%, var(--text-main)); font-weight:var(--fw-bold); }
                 .sdb-about-now:empty { display:none; }
                 .sdb-help h4 { margin:var(--space-4) 0 var(--space-1); font-size:var(--fs-item); }
@@ -15326,6 +15327,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             box.classList.remove('is-err');
             box.innerHTML = '<div class="lc-ent-ai-note"></div><span class="ai-out"></span>';
+            box.dataset.hist = '1';                                                   // sdbEditAsk: an answer still on its way is not this one
             box.firstChild.textContent = ui === 'agentAsk' ? txF('Saved answer from {0}. Ask again for a new one.', askHistWhen(e)) : txF('Saved answer about {0} from {1}.', e.name, askHistWhen(e));
             box.querySelector('.ai-out').textContent = e.answer;
             if (ui === 'lcEnt') lcEntAiText = e.answer;
@@ -38517,12 +38519,13 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // the line to keep out of an answer: plain text (no Markdown, no source numbers like [1]), at most 160 characters, cut at a word
         function sdbNoteFrom(answer) {
-            const plain = x => String(x).replace(/\[\d+(?:[,\s]*\d+)*\]/g, '').replace(/\*+|`+/g, '').replace(/\s+/g, ' ').replace(/\s+([.,;:!?])/g, '$1').trim();
+            const plain = x => String(x).replace(/\[[\d,\s]+\]/g, '').replace(/\*+|`+/g, '').replace(/\s+/g, ' ').replace(/\s+([.,;:!?])/g, '$1').trim();          // [1], [2, 3]: one character class, so a long number in brackets never makes it slow
             const text = String(answer || ''), lines = text.split('\n');
             let t = '';
             for (let i = lines.length - 1; i >= 0 && !t; i--) { const m = /^[\s>#*-]*in short\s*[:,\u2013\u2014-]+\s*(.+)$/i.exec(lines[i]); if (m) t = plain(m[1]); }
             if (!t) {
-                const para = text.split(/\n\s*\n/).map(x => plain(x.replace(/^[\s>#-]+/gm, ''))).find(Boolean) || '';
+                const raw = text.split(/\n\s*\n/).find(x => plain(x.replace(/^[\s>#-]+/gm, ''))) || '';
+                const para = plain(raw.replace(/^[\s>#-]+/gm, ''));
                 const m = /^(.+?[.!?])(?=\s|$)/.exec(para);
                 t = m ? m[1] : para;
             }
@@ -38764,11 +38767,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!sdbUsable()) { box.innerHTML = ''; more.innerHTML = ''; return; }
             const ae = document.activeElement;
             let refocus = null;                                      // a keyboard user pressing Enter on a switch must still be on it afterwards
-            if (ae && ae !== document.body && box.contains(ae)) { const rw = ae.closest('.sdb-row[data-k]'); if (rw) refocus = { k: rw.dataset.k, sw: ae.classList.contains('sdb-sw') }; }
+            if (ae && ae !== document.body && box.contains(ae)) { const rw = ae.closest('.sdb-row[data-k]'); if (rw) refocus = { k: rw.dataset.k, sw: ae.classList.contains('sdb-sw'), ag: ae.classList.contains('agent-btn') }; }
             try { sdbRenderListInner(box, more); } finally {
                 if (refocus) {
                     const rw = Array.from(box.querySelectorAll('.sdb-row')).find(x => x.dataset.k === refocus.k);
-                    const el = rw && ((refocus.sw && rw.querySelector('.sdb-sw')) || rw);
+                    const el = rw && ((refocus.sw && rw.querySelector('.sdb-sw')) || (refocus.ag && rw.querySelector('.agent-btn')) || rw);          // v7.19.2: Ask agent's answer draws the list again under its window
                     if (el && el.focus) el.focus({ preventScroll: true });
                 }
             }
@@ -39325,15 +39328,17 @@ Type any command above (e.g. pm list packages -d)</div>
             const box = document.getElementById('sdbEditAi'), btn = document.getElementById('sdbEditAiBtn');
             const by = askAgentReadyNow() ? askAgentDef().name.replace(/\s*\(.*\)$/, '') : '';          // the free web lookup answers without one: nothing is kept then
             box.style.display = ''; sdbAiBusy = true; btn.disabled = true;
+            delete box.dataset.hist;
             const ans = await aiExplainInto(box, SDB_AI_SYSTEM + SDB_NOTE_ASK, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key, 'sdbEdit');
             sdbAiBusy = false; btn.disabled = false;
-            if (sdbEditing === cur && box.textContent && !box.classList.contains('is-err') && box.querySelector('.ai-out')) {
+            const shown = !box.dataset.hist;                                           // false: History put a saved answer (maybe about another setting) in the box meanwhile
+            if (sdbEditing === cur && shown && box.textContent && !box.classList.contains('is-err') && box.querySelector('.ai-out'))
                 askHistAdd('sdbEdit', { id: cur.ns + '/' + cur.key, kind: 'setting', name: cur.key, label: txT('Hidden Settings') + ' · ' + cur.ns, text: q, web: '', answer: box.querySelector('.ai-out').textContent, agent: '' });
-                if (by && ans) {
-                    sdbNoteKept(box, sdbNoteSave(cur.ns, cur.key, ans, by));
-                    document.getElementById('sdbEditAbout').innerHTML = sdbAboutHtml(cur.ns, cur.key, cur.orig);
-                    sdbEditInput();                                                    // the Now line follows what is typed, as before
-                }
+            if (sdbEditing === cur && by && ans && !box.classList.contains('is-err')) {
+                const t = sdbNoteSave(cur.ns, cur.key, ans, by);
+                if (shown) sdbNoteKept(box, t);
+                document.getElementById('sdbEditAbout').innerHTML = sdbAboutHtml(cur.ns, cur.key, cur.orig);
+                sdbEditInput();                                                        // the Now line follows what is typed, as before
             }
         }
 
