@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="frame-src 'none'">
     <script src="i18n.js"></script>
     <script src="monet.js"></script>
     <title>ADB/Root Full System Toolbox</title>
@@ -43911,6 +43910,10 @@ Type any command above (e.g. pm list packages -d)</div>
             restoreSavedTheme();
             applyTheme();
             restoreUiState();
+            const framePolicy = document.createElement('meta');
+            framePolicy.httpEquiv = 'Content-Security-Policy';
+            framePolicy.content = "frame-src 'none'";
+            document.head.appendChild(framePolicy);
             initApp();
             loadSavedLists();
             loadQuickList();
