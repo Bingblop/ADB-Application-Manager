@@ -44,6 +44,32 @@ public class SdmAcsStartTest {
         eq("stray colons are dropped", SdmAcsStart.remove(OTHER + "::" + ME + ":", ME, SHORT), OTHER);
         eq("off and on again gives the list back", SdmAcsStart.add(SdmAcsStart.remove(OTHER + ":" + ME + ":" + THIRD, ME, SHORT), ME, SHORT), OTHER + ":" + THIRD + ":" + ME);
 
+        // ---- listing checks
+
+        eq("listed null", SdmAcsStart.listed(null, ME, SHORT), false);
+
+        eq("listed empty", SdmAcsStart.listed("", ME, SHORT), false);
+
+        eq("listed other only", SdmAcsStart.listed(OTHER, ME, SHORT), false);
+
+        eq("listed me only", SdmAcsStart.listed(ME, ME, SHORT), true);
+
+        eq("listed short only", SdmAcsStart.listed(SHORT, ME, SHORT), true);
+
+        eq("listed other and me", SdmAcsStart.listed(OTHER + ":" + ME, ME, SHORT), true);
+
+        eq("listed me and other", SdmAcsStart.listed(ME + ":" + OTHER, ME, SHORT), true);
+
+        eq("listed other and short", SdmAcsStart.listed(OTHER + ":" + SHORT, ME, SHORT), true);
+
+        eq("listed short and other", SdmAcsStart.listed(SHORT + ":" + OTHER, ME, SHORT), true);
+
+        eq("listed case insensitive", SdmAcsStart.listed(ME.toUpperCase(), ME, SHORT), true);
+
+        eq("listed short case insensitive", SdmAcsStart.listed(SHORT.toUpperCase(), ME, SHORT), true);
+
+        eq("listed prefix match is false", SdmAcsStart.listed(ME + "2", ME, SHORT), false);
+
         // ---- the commands (the same text the SD Maid tab's button has always written)
         eq("read", SdmAcsStart.READ, "settings get secure enabled_accessibility_services");
         eq("write with the master switch", SdmAcsStart.writeCommand(OTHER + ":" + ME, true),
