@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.19.2-Pro (versionCode 872)
+
+A small release on top of v7.19.1, cut from `main`, with the three changes the owner asked for on 2026-10-29. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone**; the page was checked in a headless browser with a mock. `docs/PHONE-SCRIPT-v7.19.2.md` is the phone script.
+
+- **Phone font above Emoji fonts.** On the Custom Fonts tab the **Phone font** card now comes right after **Make a font**, before **Emoji fonts** and **System emoji**.
+- **App Stores: the ? on its own line.** The tab's **?** help button sits on a line of its own above the **Update stores on mobile data** switch, outside it (in v7.19.1 it was inside the switch's card), so a tap meant for one never lands on the other. The switch is thinner: a button's height (36 px instead of 76), and all of it is the switch. App Updater's **Check for updates on mobile data** switch is as thin.
+- **Hidden Settings remember what Ask agent found.** Each time an agent answers **Ask agent** about a hidden setting (from its row or from its sheet), the app keeps one short line the AI wrote with that setting for good: the agent is asked to end with an *In short:* line, and when it does not, the answer's first sentence is kept (at most 160 characters, without Markdown or source numbers). Under the answer it says *Kept with this setting: ...*. The setting's row then shows the line marked **AI** (in place of *No description yet*, or under the app's own description), its sheet shows it under **From Ask agent** with the agent's name and date, the search finds the setting by it and **Described** lists it. A later answer replaces it. The lines are kept with the app's settings on the phone, by table and name, through restarts and updates. The built-in web lookup (no agent connected) and a failed answer keep nothing.
+- **Help Guide** (Custom Fonts, App Stores, Hidden Settings) and every new text in all 14 languages.
+
 ## v7.19.1-Pro (versionCode 871)
 
 A small release on top of v7.19.0, cut from `main`, with the three changes the owner asked for on 2026-10-28 and the new name he chose the same evening. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone**; the page was checked in a headless browser with a mock and the Java by the Java suite. `docs/PHONE-SCRIPT-v7.19.1.md` is the phone script.
