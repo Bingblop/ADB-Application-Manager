@@ -1,0 +1,37 @@
+ok   1. Custom Fonts: Phone font comes right after Make a font and before Emoji fonts
+ok      no page errors
+ok   2. App Stores at 320 px: one ?, on its own line above the mobile-data card and outside it, at the right
+ok      the card is a button's height (36 px) with the whole switch inside it, and its right end is the switch
+ok      no horizontal scroll
+ok      a tap near the card's top edge turns the switch on; the Help Guide stays shut
+ok      no page errors
+ok   2. App Stores at 360 px: one ?, on its own line above the mobile-data card and outside it, at the right
+ok      the card is a button's height (36 px) with the whole switch inside it, and its right end is the switch
+ok      no horizontal scroll
+ok      a tap near the card's top edge turns the switch on; the Help Guide stays shut
+ok      the ? opens the Help Guide at App Stores
+ok      App Updater's mobile-data card is as thin, with no ? inside it
+ok      no page errors
+ok   2. App Stores at 412 px: one ?, on its own line above the mobile-data card and outside it, at the right
+ok      the card is a button's height (36 px) with the whole switch inside it, and its right end is the switch
+ok      no horizontal scroll
+ok      a tap near the card's top edge turns the switch on; the Help Guide stays shut
+ok      no page errors
+ok   3. Ask agent on a setting's row asks for the "In short:" line
+ok      and keeps that line with the setting by table and name: no Markdown, no source numbers, the agent and the time
+ok      the answer says what was kept
+ok      the row shows it under the description, marked AI
+ok   4. an answer without "In short:": its first sentence is kept
+ok      the row shows it in place of "No description yet"
+ok      the search finds the setting by the kept line
+ok      Described counts it
+ok   5. the setting sheet's Ask agent keeps the line too
+ok      its sheet shows it at once under "From Ask agent", before the guess, with the agent
+ok      a described setting's sheet: What it does first, then From Ask agent
+ok   6. a later answer replaces the line; a long one is cut at a word, 160 characters at most, with …
+ok   7. without an agent the web lookup answers and nothing is kept
+ok      a failed answer keeps nothing
+ok   8. German: "Aus „Agent fragen“" over the line, which stays as the AI wrote it
+ok      no page errors
+ok   9. after a new start the row still shows the kept line
+ok      no page errors

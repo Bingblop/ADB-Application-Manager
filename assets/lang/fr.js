@@ -1,6 +1,8 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+"End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "Termine par une ligne de plus, à part, qui commence par \"In short:\" et dit en une phrase de 15 mots au plus ce que fait le paramètre.",
+"From Ask agent": "De « Demander à l’agent »",
 "The font changer cannot use this font package's name.": "Le changeur de police ne peut pas utiliser le nom de ce paquet de police.",
 "This font is in use. Choose another font first, then delete it.": "Cette police est utilisée. Choisissez d’abord une autre police, puis supprimez-la.",
 "Came with the phone": "Fournie avec le téléphone",
@@ -5692,6 +5694,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Les fichiers que vous avez choisis sont encore en cours de lecture. Patientez un instant."
 },
 p: [
+["Kept with this setting: {0}", "Conservé avec ce paramètre : {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} est utilisée. Choisissez d’abord une autre police, puis supprimez-la."],
 ["Choose {0} in Font size and style, then Font style.", "Choisissez {0} dans Taille et style de police, puis Style de police."],
 ["Choose {0} in Font style.", "Choisissez {0} dans Style de police."],

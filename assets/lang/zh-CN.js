@@ -1,6 +1,8 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "最后再单独写一行，以 \"In short:\" 开头，用一句不超过 15 个词的话说明这个设置的作用。",
+"From Ask agent": "来自“询问代理”",
 "The font changer cannot use this font package's name.": "字体更换器无法使用这个字体包的名称。",
 "This font is in use. Choose another font first, then delete it.": "此字体正在使用。请先选择另一个字体，然后再删除它。",
 "Came with the phone": "手机自带",
@@ -5692,6 +5694,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "你选择的文件仍在读取中。请稍候。"
 },
 p: [
+["Kept with this setting: {0}", "已随此设置保存：{0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} 正在使用。请先选择另一个字体，然后再删除它。"],
 ["Choose {0} in Font size and style, then Font style.", "请在“字体大小和样式”中进入“字体样式”，然后选择 {0}。"],
 ["Choose {0} in Font style.", "请在“字体样式”中选择 {0}。"],

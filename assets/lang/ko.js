@@ -1,6 +1,8 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "마지막에 \"In short:\"로 시작하는 별도의 줄을 하나 더 쓰고, 이 설정이 하는 일을 15단어 이내의 한 문장으로 말하세요.",
+"From Ask agent": "\"에이전트에게 묻기\"에서",
 "The font changer cannot use this font package's name.": "글꼴 변경기는 이 글꼴 패키지의 이름을 사용할 수 없습니다.",
 "This font is in use. Choose another font first, then delete it.": "이 글꼴은 사용 중입니다. 먼저 다른 글꼴을 선택한 다음 삭제하세요.",
 "Came with the phone": "휴대전화 기본 제공",
@@ -5692,6 +5694,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "선택한 파일을 아직 읽는 중입니다. 잠시 기다리세요."
 },
 p: [
+["Kept with this setting: {0}", "이 설정과 함께 저장됨: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0}은(는) 사용 중입니다. 먼저 다른 글꼴을 선택한 다음 삭제하세요."],
 ["Choose {0} in Font size and style, then Font style.", "‘글꼴 크기 및 스타일’에서 ‘글꼴 스타일’로 이동해 {0}을(를) 선택하세요."],
 ["Choose {0} in Font style.", "‘글꼴 스타일’에서 {0}을(를) 선택하세요."],

@@ -1,6 +1,8 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "اختم بسطر إضافي مستقل يبدأ بـ \"In short:\" ويقول في جملة واحدة من 15 كلمة على الأكثر ما يفعله الإعداد.",
+"From Ask agent": "من «اسأل الوكيل»",
 "The font changer cannot use this font package's name.": "لا يستطيع مغيّر الخط استخدام اسم حزمة الخط هذه.",
 "This font is in use. Choose another font first, then delete it.": "هذا الخط قيد الاستخدام. اختر خطًا آخر أولًا، ثم احذفه.",
 "Came with the phone": "مضمّن في الهاتف",
@@ -5692,6 +5694,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "لا تزال قراءة الملفات التي اخترتها جارية. انتظر لحظة."
 },
 p: [
+["Kept with this setting: {0}", "حُفظ مع هذا الإعداد: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} قيد الاستخدام. اختر خطًا آخر أولًا، ثم احذفه."],
 ["Choose {0} in Font size and style, then Font style.", "اختر {0} في «حجم الخط ونمطه»، ثم «نمط الخط»."],
 ["Choose {0} in Font style.", "اختر {0} في «نمط الخط»."],

@@ -1,6 +1,8 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "最後に、\"In short:\" で始まる独立した行をもう1行加え、その設定が何をするかを15語以内の1文で述べてください。",
+"From Ask agent": "「エージェントに聞く」より",
 "The font changer cannot use this font package's name.": "フォントチェンジャーはこのフォントパッケージの名前を使えません。",
 "This font is in use. Choose another font first, then delete it.": "このフォントは使用中です。先に別のフォントを選んでから、削除してください。",
 "Came with the phone": "端末に付属",
@@ -5692,6 +5694,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "選択したファイルをまだ読み込み中です。しばらくお待ちください。"
 },
 p: [
+["Kept with this setting: {0}", "この設定と一緒に保存しました: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} は使用中です。先に別のフォントを選んでから、削除してください。"],
 ["Choose {0} in Font size and style, then Font style.", "「フォントサイズとスタイル」から「フォントスタイル」を開き、{0} を選んでください。"],
 ["Choose {0} in Font style.", "「フォントスタイル」で {0} を選んでください。"],

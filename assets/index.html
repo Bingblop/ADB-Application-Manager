@@ -3896,12 +3896,15 @@
             margin-top: 2px;
         }
 
-        /* v7.19.0: the "on mobile data" switch of App Stores and App Updater is one slim line at the top of its page, with no description */
-        .color-card.mobile-slim { padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); }
-        .mobile-slim .switch-row { margin-top: 0; padding-top: 0; border-top: 0; }
+        /* v7.19.0: the "on mobile data" switch of App Stores and App Updater is one slim line at the top of its page, with no description.
+           v7.19.2 (the owner's wish): thinner, a button's height (the switch and 4px above and below it), and all of the card is the switch */
+        .color-card.mobile-slim { padding: 0; margin-bottom: var(--space-3); }
+        .mobile-slim .switch-row { margin-top: 0; padding: var(--space-1) var(--space-3); gap: var(--space-3); border-top: 0; }
         .mobile-slim .switch-title { font-size: var(--fs-label); }
-        /* v7.19.1: on App Stores this card is the tab's first, so the tab's ? sits in it (injectHelpLinks): the switch line goes below the ?, never under it */
-        .color-card.mobile-slim.has-help { padding-top: calc(var(--space-2) + var(--ctl-h) + var(--space-2)); }
+        /* v7.19.2 (the owner's wish): a line that holds only the tab's ? (injectHelpLinks). On App Stores it sits above the mobile-data switch, outside
+           its card, so a tap meant for one never lands on the other (in v7.19.1 the ? was inside that card) */
+        .help-row { position: relative; height: var(--ctl-h); margin-bottom: var(--space-2); }
+        .help-row > .help-q { top: 0; right: var(--space-2); }
 
         .switch-input {
             position: absolute;
@@ -5827,6 +5830,8 @@
                 .sdb-key { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:var(--fs-code); font-weight:var(--fw-heavy); overflow-wrap:anywhere; line-height:1.3; }
                 .sdb-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent); margin-left:var(--space-2); vertical-align:middle; }
                 .sdb-hint { font-size:var(--fs-caption); color:var(--text-muted); margin-top:1px; line-height:1.35; }
+                /* v7.19.2 (the owner's wish): the short line Ask agent's answer left with a setting (sdbNoteSave), under its description, marked AI */
+                .sdb-note-tag { display:inline-block; font-size:var(--fs-overline); font-weight:var(--fw-heavy); line-height:1.35; color:var(--accent); background:var(--tint-accent); border-radius:var(--radius-sm); padding:0 var(--space-1); margin-right:var(--space-1); }
                 .sdb-val { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:var(--fs-body); color:var(--accent); color:color-mix(in srgb, var(--accent) 72%, var(--text-main)); margin-top:var(--space-1); overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:pre-wrap; line-height:1.35; }
                 .sdb-val.empty { color:var(--text-muted); font-style:italic; }
                 /* v7.15: the value and Ask agent on one line, so a row is a line shorter */
@@ -6170,6 +6175,8 @@
                 .store-prompt { display:flex; gap:var(--space-3h); align-items:center; background:var(--fill-2); border:1px dashed var(--accent); border-radius:var(--radius-md); padding:var(--space-3h) var(--space-4); margin-bottom:var(--space-3h); font-size:var(--fs-body); color:var(--text-main); }
             </style>
 
+            <!-- v7.19.2: the tab's ? on a line of its own, above the switch and outside its card -->
+            <div class="help-row" id="storeHelpRow"></div>
             <!-- v7.18.1 (the owner's wish): catalogs go online on Wi-Fi only unless this is on (kv 'store_mobile_data'; the app enforces it: storeMobileBlocked).
                  v7.19.0: one slim line at the top of the tab, no description -->
             <div class="color-card mobile-slim" id="storeMobileCard">
@@ -8192,13 +8199,7 @@
                 <div id="fntBuildActs"></div>
             </div>
 
-            <div class="color-card" id="fntEmojiCard">
-                <div class="color-card-title">Emoji fonts</div>
-                <div class="color-card-subtitle">Download an emoji font to put it inside a font you make or, with root, to use it as the phone's emoji.</div>
-                <div id="fntEmojiList"></div>
-            </div>
-
-            <!-- v7.19.1: one list of every font on the phone (it replaced My fonts and the Font changer's buttons). A tap uses the font: the font changer
+            <!-- v7.19.1: one list of every font on the phone (it replaced My fonts and the Font changer's buttons). v7.19.2 (the owner's wish): above Emoji fonts. A tap uses the font: the font changer
                  writes any font with Root, or Shizuku as the system user or root; without them Samsung's Font style takes the fonts Samsung or Monotype
                  signed, and the others are refused with a warning. A press and hold uninstalls one (FONTS:JS, fntRenderPhone / #fntPhoneSheet) -->
             <div class="color-card" id="fntChangerCard">
@@ -8209,6 +8210,12 @@
                 <div class="color-card-subtitle">Every font installed on this phone, and the fonts made here. Any of them can be used with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).</div>
                 <div class="fnt-note is-warn" id="fntDeviceNote" style="display:none;"></div>
                 <div id="fntChangerBody"></div>
+            </div>
+
+            <div class="color-card" id="fntEmojiCard">
+                <div class="color-card-title">Emoji fonts</div>
+                <div class="color-card-subtitle">Download an emoji font to put it inside a font you make or, with root, to use it as the phone's emoji.</div>
+                <div id="fntEmojiList"></div>
             </div>
 
             <div class="color-card" id="fntSysCard">
@@ -12908,7 +12915,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // what Android or the lists of other people say. (A name that is also a word of the dictionary, like an app called Settings, would be translated otherwise.)
         if (LANG_ENGINE.skip) LANG_ENGINE.skip([
             '.app-name', '.app-pkg', '.app-version', '#sheetTitle', '#sheetPkg', '#deviceInfoSubtitle', '#aboutBuild dd', '#aboutVersion',
-            '.sdb-key', '.sdb-val', '.sdb-change em', '.sdb-sw', '#sdbEditKey',
+            '.sdb-key', '.sdb-val', '.sdb-change em', '.sdb-sw', '#sdbEditKey', '.sdb-note-t', '.sdb-note-at',
             '.ovl-group span', '#ovlDetailId', '.ovl-sw', '.bubble-hex',
             '.perm-name', '.perm-sub', '.apk-scan-name', '.apk-scan-pkg', '#fmCurrentPath', '#fmPathInput', '#fmActionName', '#fmActionPath', '#fmViewer', '#fmEditName', '#fmEditPath', '#fmMediaName', '#fmConflictNames', '.fm-hit-line',
             '#arcTitle', '#arcMeta', '.arc-crumb', '.arc-sep', '#arcModalName', '#arcModalPath', '#arcViewText', '#arcViewMeta', '.arc-meta b', '.dif-ctx',
@@ -15198,6 +15205,8 @@ Type any command above (e.g. pm list packages -d)</div>
             tracker:    { title: 'About this tracker', label: 'Tracker', noun: 'one tracking or advertising library that Android apps embed' },
             item:       { title: 'Ask the agent', label: 'Item', noun: 'one item found on an Android phone' }
         };
+        // v7.19.2: an answer about a hidden setting ends with the one line that is kept with the setting (sdbNoteFrom reads it)
+        const SDB_NOTE_ASK = ' End with one more line, on its own, that starts with "In short:" and says in one sentence of at most 15 words what the setting does.';
         function agentSystem(kind) {
             const k = AGENT_KINDS[kind] || AGENT_KINDS.item;
             if (k.safety) return 'You help someone who is not a developer decide whether an Android app or system package can be disabled (frozen) or removed for the current user on their phone. '
@@ -15210,19 +15219,19 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         let agentAsk = null;             // { kind, name, text, web, answer, busy }
         // The button: kind and name from its data (nothing goes into an attribute that was not escaped), the rest of what the screen knows in data-ax (one line each).
-        function agentBtnHtml(kind, name, extra, cls) {
-            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '" data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">Ask agent</button>';
+        function agentBtnHtml(kind, name, extra, cls, ref) {          // ref: what the answer is kept with (a hidden setting's table, v7.19.2)
+            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '"' + (ref ? ' data-ar="' + escapeHtml(String(ref)) + '"' : '') + ' data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">Ask agent</button>';
         }
         function agentAskFromBtn(btn) {
             haptic();
-            askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : []);
+            askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : [], btn.dataset.ar || '');
         }
-        function askAgentAbout(kind, name, lines) {
+        function askAgentAbout(kind, name, lines, ref) {
             // no gate here: without a connected agent the window still opens and the built-in web lookup answers (aiExplainInto)
             const k = AGENT_KINDS[kind] || AGENT_KINDS.item, info = txInfo || {};
             const phone = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '');
             const text = phone + '\n' + k.label + ': ' + name + (lines && lines.length ? '\n' + lines.filter(Boolean).join('\n') : '');
-            agentAsk = { kind: kind, name: name, text: text, answer: '', busy: false, web: 'android ' + (kind === 'setting' ? 'settings ' : '') + name + (k.safety ? ' safe to disable' : '') };
+            agentAsk = { kind: kind, name: name, text: text, answer: '', busy: false, web: 'android ' + (kind === 'setting' ? 'settings ' : '') + name + (k.safety ? ' safe to disable' : ''), ref: ref || '' };
             document.getElementById('agentAskTitle').innerText = k.title;
             document.getElementById('agentAskSubject').innerText = name;
             document.getElementById('agentAskSent').innerText = askAgentReadyNow() ? text : agentAsk.web;          // with no agent only the search words are sent
@@ -15239,9 +15248,13 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('agentAskGo');
             cur.busy = true; btn.disabled = true;
             const wasAgent = askAgentReadyNow() ? askAgentDef().name.replace(/\s*\(.*\)$/, '') : '';
-            cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web, 'agentAsk');
+            const sys = agentSystem(cur.kind) + (cur.kind === 'setting' ? SDB_NOTE_ASK : '');          // v7.19.2: a setting's answer ends with the line kept with it
+            cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), sys, cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web, 'agentAsk');
             cur.busy = false; btn.disabled = false;
-            if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) askHistAdd('agentAsk', { id: cur.kind + '|' + cur.name, kind: cur.kind, name: cur.name, label: (AGENT_KINDS[cur.kind] || AGENT_KINDS.item).label, text: cur.text, web: cur.web || '', answer: cur.answer, agent: wasAgent });
+            if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) {
+                askHistAdd('agentAsk', { id: cur.kind + '|' + cur.name, kind: cur.kind, name: cur.name, label: (AGENT_KINDS[cur.kind] || AGENT_KINDS.item).label, text: cur.text, web: cur.web || '', answer: cur.answer, agent: wasAgent, ref: cur.ref || '' });
+                if (cur.kind === 'setting' && cur.ref && wasAgent) sdbNoteKept(document.getElementById('agentAskAi'), sdbNoteSave(cur.ref, cur.name, cur.answer, wasAgent));
+            }
         }
         // ---- a short history of the answers of the three windows that ask (Ask agent, log entry, Hidden Settings; kept on this phone only) ----
         // The last 12 answers of each window; an answer can be pinned, and a pinned answer stays when newer ones push the others out (up to 30 pins).
@@ -15303,7 +15316,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (ui === 'agentAsk') {
                 askStopRun('agentAsk');
                 const k = AGENT_KINDS[e.kind] || AGENT_KINDS.item;
-                agentAsk = { kind: e.kind, name: e.name, text: e.text, answer: e.answer, busy: false, web: e.web };
+                agentAsk = { kind: e.kind, name: e.name, text: e.text, answer: e.answer, busy: false, web: e.web, ref: typeof e.ref === 'string' ? e.ref : '' };
                 document.getElementById('agentAskTitle').innerText = k.title;
                 document.getElementById('agentAskSubject').innerText = e.name;
                 document.getElementById('agentAskSent').innerText = e.text;
@@ -26831,7 +26844,7 @@ Type any command above (e.g. pm list packages -d)</div>
             Object.keys(HELP_LINKS).forEach(view => {
                 const sec = document.getElementById('view-' + view);
                 if (!sec || sec.querySelector(':scope > .color-card > .help-q, .help-q')) return;
-                const card = sec.querySelector('.sec-head, .color-card, .cn-tabs');   // Console and Live Logcat have no card: the ? sits on the tab row; a .sec-head (v7.15) takes it before any card
+                const card = sec.querySelector('.sec-head, .help-row, .color-card, .cn-tabs');   // Console and Live Logcat have no card: the ? sits on the tab row; a .sec-head (v7.15) or a .help-row (v7.19.2) takes it before any card
                 if (!card) return;
                 card.classList.add('has-help');
                 const b = document.createElement('button');
@@ -38365,7 +38378,10 @@ Type any command above (e.g. pm list packages -d)</div>
             const known = sdbHint(ns, key);
             const h = known || sdbGuess(ns, key, value);
             const e = escapeHtml;
-            let out = '<div class="sdb-about-h">' + (known ? 'What it does' : 'What it probably is') + '</div><div class="sdb-about-t">' + e(h.t) + '</div>';
+            const note = sdbNote(ns, key);
+            const noteHtml = note ? '<div class="sdb-about-h">From Ask agent</div><div class="sdb-about-t"><span class="sdb-note-t">' + e(note.t) + '</span>'
+                + '<span class="sdb-note-at">' + e([note.by, isFinite(note.at) && note.at > 0 ? new Date(note.at).toLocaleDateString(langLocale(), { dateStyle: 'medium' }) : ''].filter(Boolean).map(x => ' · ' + x).join('')) + '</span></div>' : '';
+            let out = (known ? '' : noteHtml) + '<div class="sdb-about-h">' + (known ? 'What it does' : 'What it probably is') + '</div><div class="sdb-about-t">' + e(h.t) + '</div>';
             if (h.v) {
                 const lines = String(h.v).split(';').map(x => x.trim()).filter(Boolean).map(part => {
                     const m = /^(-?\d+(?:\.\d+)?|[A-Za-z][A-Za-z0-9_]*)\s=\s(.+)$/.exec(part);
@@ -38373,6 +38389,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 });
                 out += '<div class="sdb-about-h">Values</div><div class="sdb-about-t">' + lines.join('') + '</div>';
             }
+            if (known) out += noteHtml;
             const mean = known ? sdbMeaning(known, value) : '';
             out += '<div class="sdb-about-now" data-now="1">' + (mean ? 'Now: <b>' + e(String(value)) + '</b> = ' + e(mean) : '') + '</div>';
             return out;
@@ -38483,6 +38500,62 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // { t, r } (description and risk) for a setting, or null when nothing is known about it
+        // v7.19.2 (the owner's wish): each time Ask agent explains a hidden setting, the one short line the AI ended its answer with ("In short:", which the
+        // question asks for; else the answer's first sentence) is kept with that setting for good, by table and name: kv 'sdb_notes' { 'ns/key': { t, at, by } }.
+        // It shows under the setting in the list and in its sheet, the search finds it and Described counts it; a later answer replaces it. The free web
+        // lookup (no agent connected) keeps nothing: no AI wrote it.
+        const SDB_NOTES_KV = 'sdb_notes', SDB_NOTE_MAX = 160;
+        let sdbNotesMap = null;
+        function sdbNotes() {
+            if (!sdbNotesMap) { const o = kvGet(SDB_NOTES_KV, null); sdbNotesMap = o && typeof o === 'object' && !Array.isArray(o) ? o : {}; }
+            return sdbNotesMap;
+        }
+        function sdbNote(ns, key) {
+            const all = sdbNotes(), id = ns + '/' + key;
+            const n = Object.prototype.hasOwnProperty.call(all, id) ? all[id] : null;
+            return n && typeof n.t === 'string' && n.t ? n : null;
+        }
+        // the line to keep out of an answer: plain text (no Markdown, no source numbers like [1]), at most 160 characters, cut at a word
+        function sdbNoteFrom(answer) {
+            const plain = x => String(x).replace(/\[\d+(?:[,\s]*\d+)*\]/g, '').replace(/\*+|`+/g, '').replace(/\s+/g, ' ').replace(/\s+([.,;:!?])/g, '$1').trim();
+            const text = String(answer || ''), lines = text.split('\n');
+            let t = '';
+            for (let i = lines.length - 1; i >= 0 && !t; i--) { const m = /^[\s>#*-]*in short\s*[:,\u2013\u2014-]+\s*(.+)$/i.exec(lines[i]); if (m) t = plain(m[1]); }
+            if (!t) {
+                const para = text.split(/\n\s*\n/).map(x => plain(x.replace(/^[\s>#-]+/gm, ''))).find(Boolean) || '';
+                const m = /^(.+?[.!?])(?=\s|$)/.exec(para);
+                t = m ? m[1] : para;
+            }
+            if (t.length > SDB_NOTE_MAX) {
+                const cut = t.slice(0, SDB_NOTE_MAX - 1), sp = cut.lastIndexOf(' ');
+                t = (sp > SDB_NOTE_MAX / 2 ? cut.slice(0, sp) : cut).replace(/[\s,;:.]+$/, '') + '…';
+            }
+            return t;
+        }
+        // keeps the line of one answer with ns/key, draws the list again and gives the line back ('' when there is nothing to keep)
+        function sdbNoteSave(ns, key, answer, by) {
+            const t = sdbNoteFrom(answer);
+            if (!t || !Object.prototype.hasOwnProperty.call(SDB_TITLES, ns) || !key) return '';
+            const all = sdbNotes();
+            all[ns + '/' + key] = { t: t, at: Date.now(), by: String(by || '').slice(0, 60) };
+            kvSet(SDB_NOTES_KV, all);
+            sdbDirty();
+            sdbRender();
+            return t;
+        }
+        // under the answer: what was kept
+        function sdbNoteKept(box, t) {
+            if (!box || !t) return;
+            const d = document.createElement('div');
+            d.className = 'lc-ent-ai-note sdb-note-kept';
+            d.style.marginTop = 'var(--space-3h)';
+            d.textContent = txF('Kept with this setting: {0}', t);
+            box.appendChild(d);
+        }
+        function sdbNoteHtml(note, terms) {
+            return '<div class="sdb-hint sdb-note"><span class="sdb-note-tag" translate="no">AI</span><span class="sdb-note-t">' + sdbMark(note.t, terms) + '</span></div>';
+        }
+
         function sdbHint(ns, key) {
             const tbl = SDB_HINTS[ns];
             const h = tbl && Object.prototype.hasOwnProperty.call(tbl, key) ? tbl[key] : null;       // a setting may be called "constructor"
@@ -38609,12 +38682,12 @@ Type any command above (e.g. pm list packages -d)</div>
             const terms = sdbTerms();
             const out = [];
             data.forEach((v, k) => {
-                const hint = sdbHint(ns, k);
+                const hint = sdbHint(ns, k), note = sdbNote(ns, k);
                 if (sdbFilter === 'switch' && !sdbSwitchOf(ns, k, v)) return;
-                if (sdbFilter === 'known' && !hint) return;
+                if (sdbFilter === 'known' && !hint && !note) return;
                 if (sdbFilter === 'edited' && !sdbEdited.has(ns + '/' + k)) return;
                 if (terms.length) {
-                    const hay = (k + '\n' + v + '\n' + (hint ? hint.t + '\n' + (hint.v || '') : '')).toLowerCase();
+                    const hay = (k + '\n' + v + '\n' + (hint ? hint.t + '\n' + (hint.v || '') : '') + (note ? '\n' + note.t : '')).toLowerCase();
                     for (let i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) < 0) return;
                 }
                 out.push(k);
@@ -38669,16 +38742,17 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function sdbRowHtml(ns, key, value, terms) {
             const sw = sdbSwitchOf(ns, key, value);
-            const hint = sdbHint(ns, key);
+            const hint = sdbHint(ns, key), note = sdbNote(ns, key);
             const id = ns + '/' + key;
             let h = '<div class="sdb-row' + (sdbBusy.has(id) ? ' busy' : '') + (hint && hint.r ? ' risky' : '') + '" role="listitem" tabindex="0" data-k="' + escapeHtml(key) + '">';
             h += '<div class="sdb-main"><div class="sdb-key">' + sdbMark(key, terms) + (sdbEdited.has(id) ? '<span class="sdb-dot" title="Changed with this app"></span>' : '') + '</div>';
             if (hint) h += '<div class="sdb-hint">' + sdbMark(hint.t, terms) + (hint.r ? ' · careful' : '') + '</div>';
-            else h += '<div class="sdb-hint">No description yet</div>';
+            else if (!note) h += '<div class="sdb-hint">No description yet</div>';
+            if (note) h += sdbNoteHtml(note, terms);
             if (hint && hint.v) h += '<div class="sdb-vals">' + sdbValsHtml(hint, value, terms) + '</div>';
             const blank = value === '' ? '(empty)' : /^\s+$/.test(value) ? '(blank)' : '';
             h += '<div class="sdb-valrow"><div class="sdb-val' + (blank ? ' empty' : '') + '">' + (blank || sdbMark(sdbClip(value), terms)) + '</div>';
-            h += agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (value === '' ? '(empty)' : sdbClip(value, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '']) + '</div></div>';
+            h += agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (value === '' ? '(empty)' : sdbClip(value, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : ''], '', ns) + '</div></div>';
             if (sw) h += '<button class="sdb-sw' + (sw.on ? ' on' : '') + '" role="switch" aria-checked="' + sw.on + '" aria-label="Flip ' + escapeHtml(key) + '"><span></span></button>';
             return h + '</div>';
         }
@@ -39249,11 +39323,17 @@ Type any command above (e.g. pm list packages -d)</div>
             const q = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '') + '\nTable: ' + cur.ns + '\nSetting: ' + cur.key + '\nValue now: ' + (val === '' ? '(empty)' : val)
                 + (hint ? '\nThe app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '');
             const box = document.getElementById('sdbEditAi'), btn = document.getElementById('sdbEditAiBtn');
+            const by = askAgentReadyNow() ? askAgentDef().name.replace(/\s*\(.*\)$/, '') : '';          // the free web lookup answers without one: nothing is kept then
             box.style.display = ''; sdbAiBusy = true; btn.disabled = true;
-            await aiExplainInto(box, SDB_AI_SYSTEM, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key, 'sdbEdit');
+            const ans = await aiExplainInto(box, SDB_AI_SYSTEM + SDB_NOTE_ASK, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key, 'sdbEdit');
             sdbAiBusy = false; btn.disabled = false;
             if (sdbEditing === cur && box.textContent && !box.classList.contains('is-err') && box.querySelector('.ai-out')) {
                 askHistAdd('sdbEdit', { id: cur.ns + '/' + cur.key, kind: 'setting', name: cur.key, label: txT('Hidden Settings') + ' · ' + cur.ns, text: q, web: '', answer: box.querySelector('.ai-out').textContent, agent: '' });
+                if (by && ans) {
+                    sdbNoteKept(box, sdbNoteSave(cur.ns, cur.key, ans, by));
+                    document.getElementById('sdbEditAbout').innerHTML = sdbAboutHtml(cur.ns, cur.key, cur.orig);
+                    sdbEditInput();                                                    // the Now line follows what is typed, as before
+                }
             }
         }
 

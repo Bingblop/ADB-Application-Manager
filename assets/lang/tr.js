@@ -1,6 +1,8 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "Sonuna ayrı bir satır daha ekle: \"In short:\" ile başlasın ve ayarın ne yaptığını en fazla 15 kelimelik tek bir cümleyle söylesin.",
+"From Ask agent": "\"Ajana sor\" yanıtından",
 "The font changer cannot use this font package's name.": "Yazı tipi değiştirici bu yazı tipi paketinin adını kullanamıyor.",
 "This font is in use. Choose another font first, then delete it.": "Bu yazı tipi kullanımda. Önce başka bir yazı tipi seçin, sonra bunu silin.",
 "Came with the phone": "Telefonla birlikte geldi",
@@ -5692,6 +5694,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Seçtiğiniz dosyalar hâlâ okunuyor. Biraz bekleyin."
 },
 p: [
+["Kept with this setting: {0}", "Bu ayarla birlikte kaydedildi: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} kullanımda. Önce başka bir yazı tipi seçin, sonra bunu silin."],
 ["Choose {0} in Font size and style, then Font style.", "Yazı tipi boyutu ve stili içinde, ardından Yazı tipi stili içinde {0} öğesini seçin."],
 ["Choose {0} in Font style.", "Yazı tipi stili içinde {0} öğesini seçin."],

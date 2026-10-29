@@ -1,6 +1,6 @@
 // v7.19.1 (the owner's three asks). 1) App Stores: the "Update stores on mobile data" switch sits below the tab's "?" (it was under it, so a tap opened the
-// Help Guide): at 360 and 412 px the ? and the switch do not overlap, a tap on the switch turns it on and the guide stays shut, and the ? still opens
-// the guide. 2) Custom Fonts: My fonts is gone; a Phone font card has a drop-down of every font on the phone (Default first, then by name, each with where
+// Help Guide; v7.19.2: the ? is on a line of its own above the switch's card, outside it, t609): at 360 and 412 px the ? and the switch do not overlap, a
+// tap on the switch turns it on and the guide stays shut, and the ? still opens the guide. 2) Custom Fonts: My fonts is gone; a Phone font card has a drop-down of every font on the phone (Default first, then by name, each with where
 // it came from) that uses the font chosen. Without Root or the system user, a font Samsung or Monotype signed opens Samsung's Font style and one they
 // did not sign shows a warning and nothing changes; with Root the font changer writes any font (a package of the phone through fontMakerApplyPackage,
 // a font made here through fontMakerApply, Default through fontMakerReset). 3) A press and hold uninstalls: Default, a font that came with the phone and
@@ -61,16 +61,16 @@ const tap = async (page, k) => { await row(page, k).click(); await page.waitForT
     await page.goto(PAGE); await page.waitForTimeout(500);
     await page.evaluate(() => switchView('store')); await page.waitForTimeout(300);
     const g = await page.evaluate(() => {
-      const c = document.getElementById('storeMobileCard'), q = c.querySelector('.help-q'), t = c.querySelector('.switch-track');
+      const c = document.getElementById('storeMobileCard'), q = document.querySelector('#view-store .help-q'), t = c.querySelector('.switch-track');
       const qr = q.getBoundingClientRect(), tr = t.getBoundingClientRect(), hit = document.elementFromPoint(tr.left + tr.width / 2, tr.top + tr.height / 2);
       return { q: !!q, apart: qr.bottom <= tr.top || qr.top >= tr.bottom || qr.right <= tr.left || qr.left >= tr.right, below: tr.top >= qr.bottom, hit: hit === t || (hit && hit.closest('.switch-row') === t.closest('.switch-row')) };
     });
-    check('1. App Stores at ' + w + ' px: the ? is in the mobile-data card and the switch sits below it, apart', g.q && g.apart && g.below && g.hit, JSON.stringify(g));
+    check('1. App Stores at ' + w + ' px: the tab has its ? and the switch sits below it, apart', g.q && g.apart && g.below && g.hit, JSON.stringify(g));
     await page.click('#storeMobileCard .switch-track'); await page.waitForTimeout(250);
     const after = await page.evaluate(() => ({ on: document.getElementById('storeMobileToggle').checked, kv: kvGet('store_mobile_data', false), guide: document.getElementById('helpGuideModal').classList.contains('show') }));
     check('   a tap on the switch turns it on; the Help Guide stays shut', after.on && after.kv === true && !after.guide, JSON.stringify(after));
     if (w === 412) {
-      await page.click('#storeMobileCard .help-q'); await page.waitForTimeout(400);
+      await page.click('#view-store .help-q'); await page.waitForTimeout(400);
       check('   the ? still opens the Help Guide', await page.evaluate(() => document.getElementById('helpGuideModal').classList.contains('show')));
     }
     check('   no page errors', errors.length === 0, errors.join(' | '));

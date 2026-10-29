@@ -1,5 +1,6 @@
 // v7.17.0 Custom Fonts tab: the tab is registered (top bar, the bottom bar's More sheet with its "Fonts" label and icon) and opens with its five cards in
-// order: the intro, Make a font, Emoji fonts, Phone font, System emoji (v7.19.1: Phone font took the place of My fonts and the Font changer); in the
+// order: the intro, Make a font, Phone font, Emoji fonts, System emoji (v7.19.1: Phone font took the place of My fonts and the Font changer; v7.19.2: it
+// comes before Emoji fonts); in the
 // dark and the light theme, at 412 and 360 px wide, with no horizontal scroll. With nothing picked the Make card has a Regular row (Choose), Bold =
 // None with the line that Android makes bold from the Regular, Emoji = None plus the downloaded mergeable emoji, the name field and a disabled Build.
 // The emoji list has five rows; the Phone font drop-down opens a list with Default first and the two fonts made here by their packages; under Root
@@ -70,8 +71,9 @@ async function shot(page, file) {
     check('   the top bar shows it', reg.top.includes('fonts'), reg.top.join(','));
     const s = await shape(page);
     check('2. the tab opens (switchView)', s.active);
-    check('   five cards in order', s.cards.join(',') === 'fntTop,fntMakeCard,fntEmojiCard,fntChangerCard,fntSysCard', s.cards.join(','));
-    check('   their titles', s.titles.join(' | ') === 'Custom Fonts | Make a font | Emoji fonts | Phone font | System emoji', s.titles.join(' | '));
+    // v7.19.2 (the owner's wish): Phone font comes before Emoji fonts
+    check('   five cards in order', s.cards.join(',') === 'fntTop,fntMakeCard,fntChangerCard,fntEmojiCard,fntSysCard', s.cards.join(','));
+    check('   their titles', s.titles.join(' | ') === 'Custom Fonts | Make a font | Phone font | Emoji fonts | System emoji', s.titles.join(' | '));
     check('3. Regular: a row with Choose', /^Regular/.test(s.regRow) && /Choose$/.test(s.regRow), s.regRow);
     check('   Bold: None, with the line that Android makes bold from the Regular', s.boldSel === 'none' && /Android makes bold text from the Regular/.test(s.boldNone), JSON.stringify([s.boldSel, s.boldNone]));
     check('   no variable font picked: no "same variable font" choice', s.boldOpts.join(',') === 'none,file', s.boldOpts.join(','));
