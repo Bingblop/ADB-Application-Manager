@@ -1,0 +1,17 @@
+ok   1. Smart Tabs is a switch in the Navigation card, off by default, with a line under it
+ok      opening tabs while it is off changes nothing on the bar
+ok      but each opening is counted
+ok      turned on: most opened right after Application Manager, About last
+ok      the bottom bar follows the same order (More lists Custom Fonts first)
+ok      the Feature List shows that order, says why, and its arrows rest
+ok      no tab moves while tabs are being opened
+ok      coming back to the app puts the new favourite first
+ok      the choice is kept
+ok      turned off: the Feature List order is back and the arrows work
+ok   2. a connected device's setting has Ask agent, about that device, kept with nothing
+ok   3. Agent API keys: the Default Ask Agent's box, a password field, no key yet
+ok      a key that fails: the reason in red, no ✅
+ok      a key that works: saved, shown as dots, ✅ in both lists
+ok   4. the Terminal's Coding Agents list has the same ✅, only for that agent
+ok      Remove key: the key and every ✅ are gone
+ok   no page errors
