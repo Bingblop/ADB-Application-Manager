@@ -1,6 +1,7 @@
 0. the scan reads symbols written as escapes too (\u26a1, a surrogate pair, \u{1F4A5}, &#x26A1;, &#9889;): true
 1. the page has no emoji but the gears (© is not an emoji and is left): true []
    exactly one gear is written in it: the Terminal settings button (the header button and the app row button are SVG icons now): true
+   exactly one green check mark is written in it (AK_OK_MARK, the agent lists of Settings and the Terminal): true
    exactly one lock is written in it (LOCK_ICON, used by every button that cannot change anything in the current state: permissions, app ops, activities, services, receivers, providers): true
    the emoji fonts' sample is written once in it, as FNT_EMO_SAMPLE: true
    it is the Terminal's; the header button holds an SVG gear: true

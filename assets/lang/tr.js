@@ -274,7 +274,7 @@ x: {
 "Add a store": "Mağaza ekle",
 "Add a store: a repository address, or a GitHub or Codeberg user or project": "Mağaza ekle: bir depo adresi veya bir GitHub ya da Codeberg kullanıcısı veya projesi",
 "Add the app and phone details": "Uygulama ve telefon ayrıntılarını ekle",
-"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it. ✅ marks an agent whose key was tested and works.": "Herhangi bir ajanın anahtarını ekleyin. Hemen test edilir ve bu telefonda şifreli saklanır; Ajana sor düğmeleri ve Terminal ikisi de onu kullanır. ✅, anahtarı test edilip çalışan ajanı gösterir.",
+"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.": "Herhangi bir ajanın anahtarını ekleyin. Hemen test edilir ve bu telefonda şifreli saklanır; Ajana sor düğmeleri ve Terminal ikisi de onu kullanır.",
 "Add them to my lists": "Listelerime ekle",
 "Add this patch source?": "Bu yama kaynağı eklensin mi?",
 "Add this source": "Bu kaynağı ekle",

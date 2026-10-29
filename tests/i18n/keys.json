@@ -271,7 +271,7 @@
 {"k":"Add a store","ctx":"in a sheet (store add) / App Stores tab"},
 {"k":"Add a store: a repository address, or a GitHub or Codeberg user or project","ctx":"in the App Stores tab"},
 {"k":"Add the app and phone details","ctx":"in a sheet (contact)"},
-{"k":"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it. ✅ marks an agent whose key was tested and works.","ctx":"in the Settings (the gear in the header)"},
+{"k":"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.","ctx":"in the Settings (the gear in the header)"},
 {"k":"Add them to my lists","ctx":"built by the code of: lists restore from"},
 {"k":"Add this patch source?","ctx":"built by the code of: mp com add"},
 {"k":"Add this source","ctx":"built by the code of: mp com bundle"},

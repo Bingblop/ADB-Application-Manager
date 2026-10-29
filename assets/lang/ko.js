@@ -274,7 +274,7 @@ x: {
 "Add a store": "스토어 추가",
 "Add a store: a repository address, or a GitHub or Codeberg user or project": "스토어 추가: 저장소 주소, 또는 GitHub나 Codeberg 사용자 또는 프로젝트",
 "Add the app and phone details": "앱 및 휴대폰 세부 정보 추가",
-"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it. ✅ marks an agent whose key was tested and works.": "어떤 에이전트의 키든 추가하세요. 바로 테스트되고 이 휴대전화에 암호화되어 저장되며, 에이전트에게 묻기 버튼과 터미널이 모두 사용합니다. ✅는 키가 테스트되어 작동하는 에이전트를 표시합니다.",
+"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.": "어떤 에이전트의 키든 추가하세요. 바로 테스트되고 이 휴대전화에 암호화되어 저장되며, 에이전트에게 묻기 버튼과 터미널이 모두 사용합니다.",
 "Add them to my lists": "내 목록에 추가",
 "Add this patch source?": "이 패치 소스를 추가할까요?",
 "Add this source": "이 소스 추가",

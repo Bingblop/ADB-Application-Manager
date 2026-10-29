@@ -274,7 +274,7 @@ x: {
 "Add a store": "إضافة متجر",
 "Add a store: a repository address, or a GitHub or Codeberg user or project": "إضافة متجر: عنوان مستودع، أو مستخدم أو مشروع على GitHub أو Codeberg",
 "Add the app and phone details": "إضافة تفاصيل التطبيق والهاتف",
-"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it. ✅ marks an agent whose key was tested and works.": "أضف مفتاح أي وكيل. يُختبر فورًا ويُحفظ مشفّرًا على هذا الهاتف، وتستخدمه أزرار اسأل الوكيل والطرفية معًا. ✅ تعني وكيلًا اختُبر مفتاحه وهو يعمل.",
+"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.": "أضف مفتاح أي وكيل. يُختبر فورًا ويُحفظ مشفّرًا على هذا الهاتف، وتستخدمه أزرار اسأل الوكيل والطرفية معًا.",
 "Add them to my lists": "إضافتها إلى قوائمي",
 "Add this patch source?": "إضافة مصدر التصحيحات هذا؟",
 "Add this source": "إضافة هذا المصدر",

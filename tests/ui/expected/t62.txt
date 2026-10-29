@@ -9,7 +9,7 @@
    Enter on a switch flips it (and does not open the editor): true
    the switch says what state it is in: true
    the search box and the buttons have labels: true
-4. the table, filter, sort and changes are stored: true {"sdb_ui":"{\"ns\":\"secure\",\"filter\":\"switch\",\"sort\":\"za\"}","sdb_journal":"[{\"n\":3,\"t\":<epoch ms>,\"ns\":\"global\",\"k\":\"device_name\",\"f\":\"Sam's phone\",\"lf\":false,\"v\":\"Pe
+4. the table, filter, sort and changes are stored: true {"tab_opens":"{\"settings\":1}","sdb_ui":"{\"ns\":\"secure\",\"filter\":\"switch\",\"sort\":\"za\"}","sdb_journal":"[{\"n\":3,\"t\":<epoch ms>,\"ns\":\"global\",\"k\":\"device_name\",\"f\":\"Sam's
    after a restart they are back: true {"ns":"secure","filter":"switch","sort":"za","journal":3,"active":"Secure\n65 / 193","chip":"switch","edited":"global/device_name,secure/ui_night_mode,system/accelerometer_rotation"}
    and the Edited filter still knows what was changed before: true
    a damaged store falls back to the defaults and keeps only the good entries: true {"ns":"global","filter":"all","sort":"az","journal":["ok"]}

@@ -274,7 +274,7 @@ x: {
 "Add a store": "Tambahkan toko",
 "Add a store: a repository address, or a GitHub or Codeberg user or project": "Tambahkan toko: alamat repositori, atau pengguna atau proyek GitHub atau Codeberg",
 "Add the app and phone details": "Tambahkan detail aplikasi dan ponsel",
-"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it. ✅ marks an agent whose key was tested and works.": "Tambahkan kunci agen mana pun. Kunci langsung diuji dan disimpan terenkripsi di ponsel ini; tombol Tanya agen dan Terminal sama-sama memakainya. ✅ menandai agen yang kuncinya sudah diuji dan berfungsi.",
+"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.": "Tambahkan kunci agen mana pun. Kunci langsung diuji dan disimpan terenkripsi di ponsel ini; tombol Tanya agen dan Terminal sama-sama memakainya.",
 "Add them to my lists": "Tambahkan ke daftar saya",
 "Add this patch source?": "Tambahkan sumber patch ini?",
 "Add this source": "Tambahkan sumber ini",

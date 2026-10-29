@@ -19,10 +19,10 @@ About 8 minutes, one pass or fail per step. v7.19.4 is the owner's list of 2026-
 ## Agent API keys and checkmarks (3 minutes)
 
 7. Settings → **Default Ask Agent**. **Pass:** under the test button there is an **Agent API keys** section: an agent list, a key field, **Test key**, **Get a key** and **Remove key** (Remove shows only when a key is saved).
-8. Choose an agent, paste a wrong key and press **Test key**. **Pass:** a red line says why it failed; nothing is saved and no ✅ appears.
-9. Paste the right key and press **Test key**. **Pass:** "It works ... ✅", the field shows dots, and the agent has **✅** after its name in the Agent API keys list and in the Default Ask Agent list (when it is one of those).
+8. Choose an agent, paste a wrong key and press **Test key**. **Pass:** a red line says why it failed; nothing is saved and no check mark appears.
+9. Paste the right key and press **Test key**. **Pass:** "It works ...", the field shows dots, and the agent has a **green check mark** after its name in the Agent API keys list and in the Default Ask Agent list (when it is one of those).
 10. Press **Test key** again with the field left as dots. **Pass:** the agent answers one sample question with the saved key.
-11. Console → **Terminal**, open the **Coding Agents** list. **Pass:** the same agent has **✅** after its name (when it is a Terminal agent).
-12. Back in Settings press **Remove key** and confirm. **Pass:** the field is empty and the ✅ is gone from all the lists.
+11. Console → **Terminal**, open the **Coding Agents** list. **Pass:** the same agent has a **green check mark** after its name (when it is a Terminal agent).
+12. Back in Settings press **Remove key** and confirm. **Pass:** the field is empty and the check mark is gone from all the lists.
 
 Report what fails with **Report a bug or idea** in the About tab, with the step number.

@@ -274,7 +274,7 @@ x: {
 "Add a store": "添加商店",
 "Add a store: a repository address, or a GitHub or Codeberg user or project": "添加商店：仓库地址，或 GitHub 或 Codeberg 的用户或项目",
 "Add the app and phone details": "添加应用和手机详情",
-"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it. ✅ marks an agent whose key was tested and works.": "添加任意智能体的密钥。它会立即测试，并加密保存在这部手机上；“询问智能体”按钮和终端都会使用它。✅ 表示该智能体的密钥已测试且可用。",
+"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.": "添加任意智能体的密钥。它会立即测试，并加密保存在这部手机上；“询问智能体”按钮和终端都会使用它。",
 "Add them to my lists": "添加到我的列表",
 "Add this patch source?": "添加此补丁来源？",
 "Add this source": "添加此来源",

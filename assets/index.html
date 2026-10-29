@@ -6612,10 +6612,10 @@
                 <div class="lc-ent-ai" id="askTestOut" style="display:none; margin-top:var(--space-3);"></div>
                 <div class="appearance-note" id="askTestRes"></div>
 
-                <!-- v7.19.4: agent API keys here as well as in Console → Terminal (one key per agent, the same encrypted store on the phone). ✅ in the lists: a key that was tested and worked -->
+                <!-- v7.19.4: agent API keys here as well as in Console → Terminal (one key per agent, the same encrypted store on the phone). The green check mark in the lists: a key that was tested and worked -->
                 <div class="cc-section" id="akCard">
                     <div class="cc-section-title">Agent API keys</div>
-                    <div class="color-card-subtitle">Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it. ✅ marks an agent whose key was tested and works.</div>
+                    <div class="color-card-subtitle">Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.</div>
                     <select class="op-select lang-select" id="akAgentSelect" aria-label="Agent for the API key" onchange="akPick(this.value)"></select>
                     <input class="modal-text-input" id="akKeyInput" type="password" style="margin-top:10px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" onfocus="akKeyFocus(this)" onblur="akKeyBlur(this)">
                     <div class="mode-btn-row" style="margin-top:10px;">
@@ -15364,9 +15364,9 @@ Type any command above (e.g. pm list packages -d)</div>
             showToast(ag ? 'Default Ask Agent: ' + ag.name : 'No Default Ask Agent');
         }
         // ---- Agent API keys (v7.19.4, Settings > Default Ask Agent): the same keys as Console → Terminal's Connect sheets (AgentVault on the phone, never in the page) ----
-        // ✅ after an agent's name, here, in the Default Ask Agent list and in the Terminal's Coding Agents list: its saved key was tested and worked. kv 'agent_key_ok' =
+        // A green check mark (AK_OK_MARK, the one written in the page: the owner asked for it, t78) after an agent's name, here, in the Default Ask Agent list and in the Terminal's Coding Agents list: its saved key was tested and worked. kv 'agent_key_ok' =
         // { provider: stamp }; the stamp is when the key was saved and its hint, so a key saved again without a test ("Save anyway") or removed loses the mark, and so does a failed test.
-        const AK_OK_MARK = ' \u2705';
+        const AK_OK_MARK = ' \u2705';                    // the only emoji besides the gear, the lock and the emoji samples (t78)
         let akCur = '';                                   // the agent the key box is for
         const akTests = {};                               // the key tests started here: { reqId: { agent } }
         function akAgents() {                             // every agent that takes a key: the web research ones first, as in the list above
@@ -15410,7 +15410,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 res.classList.toggle('is-err', v.readable === false);
                 res.textContent = !v.key ? txF('No key saved for {0} yet.', ag.name)
                     : v.readable === false ? txT('The saved key can no longer be read: enter it again.')
-                    : akOk(ag) ? txF('Saved key {0}: tested, it works.', v.hint || '') + AK_OK_MARK
+                    : akOk(ag) ? txF('Saved key {0}: tested, it works.', v.hint || '')
                     : txF('Saved key {0}: not tested yet. Press Test key.', v.hint || '');
             }
         }
@@ -15450,12 +15450,12 @@ Type any command above (e.g. pm list packages -d)</div>
                 const inp = document.getElementById('akKeyInput');
                 if (inp && akCur === ag.id) { inp.value = ''; inp.dataset.saved = '1'; if (document.activeElement === inp) inp.blur(); }
                 akMark(ag, true);
-                if (out && akCur === ag.id) { out.classList.remove('is-err'); out.textContent = txF('It works: the {0} key is saved, encrypted on this phone.', ag.name) + AK_OK_MARK; }
+                if (out && akCur === ag.id) { out.classList.remove('is-err'); out.textContent = txF('It works: the {0} key is saved, encrypted on this phone.', ag.name); }
                 if (typeof txSyncUi === 'function' && txOpened) txSyncUi();
                 return;
             }
             const text = res.ok ? txT('The key works, but it could not be saved on this phone.') : txErrText(txMkErr(res.status, res.error, res.body, res.headers || {}));
-            if (!res.ok) akMark(ag, false);                                    // a key that failed its test leaves no ✅ (the same key may be the saved one)
+            if (!res.ok) akMark(ag, false);                                    // a key that failed its test leaves no check mark (the same key may be the saved one)
             if (out && akCur === ag.id) errNote(out, text);
         }
         function akForget() {
@@ -15498,7 +15498,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const t0 = Date.now(), stamp0 = akStamp(ag);
             const ans = await aiExplainInto(out, agentSystem('package'), askTestSample(), () => askTestBusy, 'Only this sample question is sent to them: whether the Calculator package can be disabled.', null, ui, ag);
             const ok = !!ans && !out.classList.contains('is-err');
-            if (out.textContent !== txT('Stopped.') && akStamp(ag) === stamp0) akMark(ag, ok);          // not when the key was replaced while the question ran          // ✅ in the agent lists follows the last test of the saved key
+            if (out.textContent !== txT('Stopped.') && akStamp(ag) === stamp0) akMark(ag, ok);          // not when the key was replaced while the question ran          // the check mark follows the last test of the saved key
             res.classList.toggle('is-err', !ok);
             res.textContent = ok ? txF('It works: {0} answered in {1} s.', ag.name, Math.max(1, Math.round((Date.now() - t0) / 1000)))
                 : (out.textContent === txT('Stopped.') ? '' : txT('It did not work. The message above says why.'));
@@ -36217,7 +36217,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function txBuildAgentSelect() {
             const sel = document.getElementById('txAgent');
             if (!sel) return;
-            const opt = a => '<option value="' + a.id + '"' + (a.id === 'none' ? '' : ' translate="no"') + '>' + escapeHtml(a.name + (akOk(a) ? AK_OK_MARK : '')) + '</option>';      // names stay as they are; None and the headings are translated. ✅: a key tested and working (v7.19.4)
+            const opt = a => '<option value="' + a.id + '"' + (a.id === 'none' ? '' : ' translate="no"') + '>' + escapeHtml(a.name + (akOk(a) ? AK_OK_MARK : '')) + '</option>';      // names stay as they are; None and the headings are translated. AK_OK_MARK: a key tested and working (v7.19.4)
             sel.innerHTML = opt(TX_AGENTS[0])
                 + '<optgroup label="' + escapeHtml('API Key Required') + '">' + TX_AGENTS.filter(a => a.group === 'key').map(opt).join('') + '</optgroup>'
                 + '<optgroup label="' + escapeHtml('Free Open-Source') + '">' + TX_AGENTS.filter(a => a.group === 'oss').map(opt).join('') + '</optgroup>';
@@ -37797,7 +37797,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ag = txAgentDef(t.agent);
             let r = '';
             try { r = String(window.AndroidBridge.aiSaveKey(ag.provider, t.key, t.base) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
-            akMark(ag, false);                                                    // saved without a working test: no ✅
+            akMark(ag, false);                                                    // saved without a working test: no check mark
             if (r !== 'ok') { txAlert(ag.name, r.replace(/^error:\s*/, '') || 'It could not be saved'); return; }
             showToast('Saved without a working test');
             if (ag.askOnly) { txSettings.connect[ag.id] = 'key'; txSaveSettings(); txCloseConnect(); txAskOnlyConnected(ag); }

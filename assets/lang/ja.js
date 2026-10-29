@@ -274,7 +274,7 @@ x: {
 "Add a store": "ストアを追加",
 "Add a store: a repository address, or a GitHub or Codeberg user or project": "ストアを追加：リポジトリのアドレス、または GitHub か Codeberg のユーザーまたはプロジェクト",
 "Add the app and phone details": "アプリと端末の詳細を追加",
-"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it. ✅ marks an agent whose key was tested and works.": "任意のエージェントのキーを追加します。すぐにテストされ、このスマートフォンに暗号化して保存されます。「エージェントに質問」ボタンとターミナルの両方で使われます。✅ はキーがテスト済みで動作するエージェントです。",
+"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.": "任意のエージェントのキーを追加します。すぐにテストされ、このスマートフォンに暗号化して保存されます。「エージェントに質問」ボタンとターミナルの両方で使われます。",
 "Add them to my lists": "自分のリストに追加",
 "Add this patch source?": "このパッチソースを追加しますか？",
 "Add this source": "このソースを追加",

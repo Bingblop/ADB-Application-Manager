@@ -274,7 +274,7 @@ x: {
 "Add a store": "Добавить магазин",
 "Add a store: a repository address, or a GitHub or Codeberg user or project": "Добавить магазин: адрес репозитория либо пользователь или проект GitHub или Codeberg",
 "Add the app and phone details": "Добавить сведения о приложении и телефоне",
-"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it. ✅ marks an agent whose key was tested and works.": "Добавьте ключ любого агента. Он сразу проверяется и хранится в зашифрованном виде на этом телефоне; его используют и кнопки «Спросить агента», и Терминал. ✅ отмечает агента, чей ключ проверен и работает.",
+"Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.": "Добавьте ключ любого агента. Он сразу проверяется и хранится в зашифрованном виде на этом телефоне; его используют и кнопки «Спросить агента», и Терминал.",
 "Add them to my lists": "Добавить в мои списки",
 "Add this patch source?": "Добавить этот источник патчей?",
 "Add this source": "Добавить этот источник",
