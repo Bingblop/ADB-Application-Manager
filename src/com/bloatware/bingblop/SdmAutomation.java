@@ -105,8 +105,7 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
         if (v == null) return false;
         String me = packageName + "/" + SdmAccessService.class.getName();
         String short1 = packageName + "/." + SdmAccessService.class.getSimpleName();
-        for (String s : v.split(":")) if (s.equalsIgnoreCase(me) || s.equalsIgnoreCase(short1)) return true;
-        return false;
+        return SdmAcsStart.listed(v, me, short1);
     }
     /** True when Android lists the service as switched on (it may still be starting). */
     public static boolean isEnabledInSettings(Context c) {
