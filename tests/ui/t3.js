@@ -37,7 +37,7 @@ const manifest = fs.readFileSync(fixture('manifest.xml'), 'utf8').split('\n').sl
   console.log('frozen app menu shows Enable:', await page.isVisible('#sheetBtnUnfreeze'), 'Freeze:', await page.isVisible('#sheetBtnFreeze'));
   await page.evaluate(() => closeInspector());
   await page.locator('#card_com\\.sec\\.android\\.app\\.camera .btn-mini[title="Menu"]').click(); await page.waitForTimeout(200);
-  console.log('perm rows:', await page.locator('#permsContainer .perm-row').count(), '| tab label:', await page.locator('.sheet-tab-pill[data-tab="perms"]').innerText());
+  console.log('perm rows:', await page.locator('#permsContainer .perm-row').count(), '| tab label:', await page.locator('#inspectorModal .sheet-tab-pill[data-tab="perms"]').innerText());
   console.log('locked buttons (a permission that cannot be toggled) carry the lock:', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('#permsContainer .perm-toggle-btn')).map(b => [b.classList.contains('locked'), b.innerText.trim()]))));
   await page.click('#permsFilterRow [data-filter="changeable"]');
   console.log('changeable rows:', await page.locator('#permsContainer .perm-row').count());
@@ -46,7 +46,7 @@ const manifest = fs.readFileSync(fixture('manifest.xml'), 'utf8').split('\n').sl
   console.log('camera after toggle:', await page.locator('#permsContainer .perm-row').first().innerText());
   await page.locator('#sheetTabPerms').screenshot({ path: 'perms.png' }).catch(()=>{});
   await page.screenshot({ path: 'perms_full.png' });
-  await page.click('.sheet-tab-pill[data-tab="ops"]');
+  await page.click('#inspectorModal .sheet-tab-pill[data-tab="ops"]');
   console.log('ops rows:', await page.locator('#opsContainer .perm-row').count());
   await page.click('#opsContainer .op-mode-btn.ignore[data-op="CAMERA"]'); await page.waitForTimeout(100);
   console.log('CAMERA mode now:', await page.locator('#opsContainer .op-mode-btn.on[data-op="CAMERA"]').innerText());
@@ -54,7 +54,7 @@ const manifest = fs.readFileSync(fixture('manifest.xml'), 'utf8').split('\n').sl
   await page.click('#opsFilterRow [data-filter="restricted"]');
   console.log('restricted ops:', await page.locator('#opsContainer .perm-name').allInnerTexts());
   await page.screenshot({ path: 'ops.png' });
-  await page.click('.sheet-tab-pill[data-tab="manifest"]'); await page.waitForTimeout(200);
+  await page.click('#inspectorModal .sheet-tab-pill[data-tab="manifest"]'); await page.waitForTimeout(200);
   console.log('manifest meta:', await page.locator('#manifestMeta').innerText());
   await page.screenshot({ path: 'manifest.png' });
   await page.fill('#manifestSearch', 'SCREEN_O');

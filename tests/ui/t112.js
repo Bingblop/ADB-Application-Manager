@@ -50,11 +50,11 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.goto(PAGE); await page.waitForTimeout(500);
   await page.evaluate(() => { window.__getAppExtras = window.AndroidBridge.getAppExtras; });
   const sleep = ms => page.waitForTimeout(ms);
-  const tab = async t => { await page.click('.sheet-tab-pill[data-tab="' + t + '"]'); await sleep(200); };
+  const tab = async t => { await page.click('#inspectorModal .sheet-tab-pill[data-tab="' + t + '"]'); await sleep(200); };
   const calls = () => page.evaluate(() => window.__calls.slice());
 
   await page.evaluate(() => openInspector('com.x')); await sleep(400);
-  console.log('tabs in order:', JSON.stringify((await page.locator('.sheet-tab-pill').allInnerTexts()).map(t => t.replace(/\s+/g, ' ').trim())));
+  console.log('tabs in order:', JSON.stringify((await page.locator('#inspectorModal .sheet-tab-pill').allInnerTexts()).map(t => t.replace(/\s+/g, ' ').trim())));
   console.log('copy chips (no Copy version):', JSON.stringify(await page.locator('.copy-row .copy-chip').allInnerTexts()));
   console.log('nothing read yet for the new tabs:', JSON.stringify(await calls()));
   await page.screenshot({ path: 'menu.png' });
@@ -138,7 +138,7 @@ const { chromium, PAGE } = require('./lib/pw');
     if (t === 'acts') { await page.evaluate(() => openInspector('com.x')); await sleep(300); }
     await tab(t);
     narrow[t] = await page.evaluate(t => {
-      const pane = document.querySelector('.sheet-tab-content.active'), bar = document.querySelector('.sheet-tabs'), pill = document.querySelector('.sheet-tab-pill[data-tab="' + t + '"]');
+      const pane = document.querySelector('#inspectorModal .sheet-tab-content.active'), bar = document.querySelector('#inspectorModal .sheet-tabs'), pill = document.querySelector('#inspectorModal .sheet-tab-pill[data-tab="' + t + '"]');
       const pr = pill.getBoundingClientRect(), br = bar.getBoundingClientRect();
       return { fits: pane.scrollWidth <= pane.clientWidth + 1, pillInView: pr.left >= br.left - 1 && pr.right <= br.right + 1 };
     }, t);
