@@ -15424,7 +15424,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const key = inp.dataset.saved ? '' : inp.value.trim();
             txRefreshVault();
             if (!key) {
-                if (txHasKey(ag.provider)) { agentTestRun(ag, 'akTest'); return; }          // the saved key: one sample question, as Test the Default Ask Agent asks
+                if (txHasKey(ag.provider) && txEngine(ag) !== 'cli') { agentTestRun(ag, 'akTest'); return; }          // the saved key: one sample question, as Test the Default Ask Agent asks
+                if (txHasKey(ag.provider)) { haptic(); errNote(res, txT('Paste the key again to test it: this agent works through its own tool in the Terminal.')); return; }
                 haptic(); errNote(res, txT('Enter the key first')); return;
             }
             haptic();
@@ -15447,19 +15448,21 @@ Type any command above (e.g. pm list packages -d)</div>
             if (res.ok && res.saved !== false) {
                 txStoreModels(ag, txParseModels(ag, res.body));
                 const inp = document.getElementById('akKeyInput');
-                if (inp) { inp.value = ''; inp.dataset.saved = '1'; if (document.activeElement === inp) inp.blur(); }
+                if (inp && akCur === ag.id) { inp.value = ''; inp.dataset.saved = '1'; if (document.activeElement === inp) inp.blur(); }
                 akMark(ag, true);
                 if (out && akCur === ag.id) { out.classList.remove('is-err'); out.textContent = txF('It works: the {0} key is saved, encrypted on this phone.', ag.name) + AK_OK_MARK; }
                 if (typeof txSyncUi === 'function' && txOpened) txSyncUi();
                 return;
             }
             const text = res.ok ? txT('The key works, but it could not be saved on this phone.') : txErrText(txMkErr(res.status, res.error, res.body, res.headers || {}));
+            if (!res.ok) akMark(ag, false);                                    // a key that failed its test leaves no ✅ (the same key may be the saved one)
             if (out && akCur === ag.id) errNote(out, text);
         }
         function akForget() {
             const ag = akAgent();
             if (!ag) return;
             haptic();
+            if (Object.values(akTests).some(t => t.agent === ag.id)) { showToast(txT('Wait for the key test to finish')); return; }          // the app saves a key that passes: removing it first would not stick
             nextDialogTitle('Remove key');
             if (!confirm(txF('Remove the saved {0} key from this phone?', ag.name))) return;
             try { window.AndroidBridge.aiForgetKey(ag.provider); } catch (e) {}
@@ -15492,10 +15495,10 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             askTestBusy = true; btn.disabled = true;
             out.style.display = '';
-            const t0 = Date.now();
+            const t0 = Date.now(), stamp0 = akStamp(ag);
             const ans = await aiExplainInto(out, agentSystem('package'), askTestSample(), () => askTestBusy, 'Only this sample question is sent to them: whether the Calculator package can be disabled.', null, ui, ag);
             const ok = !!ans && !out.classList.contains('is-err');
-            if (out.textContent !== txT('Stopped.')) akMark(ag, ok);          // ✅ in the agent lists follows the last test of the saved key
+            if (out.textContent !== txT('Stopped.') && akStamp(ag) === stamp0) akMark(ag, ok);          // not when the key was replaced while the question ran          // ✅ in the agent lists follows the last test of the saved key
             res.classList.toggle('is-err', !ok);
             res.textContent = ok ? txF('It works: {0} answered in {1} s.', ag.name, Math.max(1, Math.round((Date.now() - t0) / 1000)))
                 : (out.textContent === txT('Stopped.') ? '' : txT('It did not work. The message above says why.'));
@@ -29676,19 +29679,19 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         // Ask agent on a connected device's setting (v7.19.4): the same window as Hidden Settings, about that device, and no note is kept with the setting
         function cdSetWho() { const i = cd.info || {}; return 'Android ' + (i.release || '?') + (i.model ? ' on ' + ((i.maker || '') + ' ' + i.model).trim() : '') + ' (a device connected over ADB)'; }
-        function cdSetAskBtn(ns, key, value, hint) {
+        function cdSetAskBtn(ns, key, value, hint, who) {
             const v = value == null ? '' : String(value);
-            return agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (v === '' ? '(empty)' : sdbClip(v, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : ''], '', '', cdSetWho());
+            return agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (v === '' ? '(empty)' : sdbClip(v, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : ''], '', '', who || cdSetWho());
         }
         function cdSetEdit(key) {
-            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key], serial = cd.serial;
+            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key], serial = cd.serial, who = cdSetWho();          // who: the device the sheet was opened for
             cdSheetOpen({ title: key, sub: ns + ' setting', body: '<div class="sdb-about" style="margin-bottom:8px;">' + sdbAboutHtml(ns, key, val == null ? '' : String(val)) + '</div><textarea class="modal-text-input" id="cdSetVal" rows="3" translate="no" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%; font-family:monospace; resize:vertical;">' + escapeHtml(val == null ? '' : val) + '</textarea>' +
                 '<div class="cd-note">A wrong value can make the device misbehave. Delete takes the setting away so the system falls back to its default.</div>',
                 buttons: [
                     { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value, serial) },
                     { label: 'Delete', cls: 'danger', fn: () => cdSetDelete(ns, key, serial) },
                     { label: 'Copy value', fn: () => copyText(val == null ? '' : String(val)) },
-                    { label: 'Ask agent', fn: () => { const b = document.createElement('div'); b.innerHTML = cdSetAskBtn(ns, key, val, sdbHint(ns, key)); agentAskFromBtn(b.firstChild); } }
+                    { label: 'Ask agent', fn: () => { const b = document.createElement('div'); b.innerHTML = cdSetAskBtn(ns, key, val, sdbHint(ns, key), who); agentAskFromBtn(b.firstChild); } }
                 ] });
         }
         // serial: the device whose setting was opened; the sheet or question stays open while the device list may move to another device
@@ -37749,10 +37752,10 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('txKeyTestBtn');
             if (btn) btn.disabled = false;
             const status = document.getElementById('txConnectModal').classList.contains('show') && txConnectAgent === t.agent ? document.getElementById('txKeyStatus') : null;
+            akMark(ag, !!res.ok && res.saved !== false);
             if (res.ok) {
                 const list = txParseModels(ag, res.body);
                 txStoreModels(ag, list);
-                akMark(ag, true);
                 if (ag.id === 'copilot') {
                     txRenderConnect();
                     const st2 = document.getElementById('txKeyStatus');
@@ -37794,7 +37797,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ag = txAgentDef(t.agent);
             let r = '';
             try { r = String(window.AndroidBridge.aiSaveKey(ag.provider, t.key, t.base) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
-            txRefreshVault();
+            akMark(ag, false);                                                    // saved without a working test: no ✅
             if (r !== 'ok') { txAlert(ag.name, r.replace(/^error:\s*/, '') || 'It could not be saved'); return; }
             showToast('Saved without a working test');
             if (ag.askOnly) { txSettings.connect[ag.id] = 'key'; txSaveSettings(); txCloseConnect(); txAskOnlyConnected(ag); }
