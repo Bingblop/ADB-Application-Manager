@@ -37,6 +37,7 @@
 <tr><td><b>Extract...</b> or <b>Open as archive</b></td><td>Unpack an archive, or try to read any other file as one</td></tr>
 <tr><td><b>Compress...</b></td><td>Pack the item into a zip, 7z or tar file</td></tr>
 <tr><td><b>Rename</b>, <b>Copy</b>, <b>Move</b>, <b>Delete</b></td><td>Change the name, put a copy or the item itself in another folder, or remove it</td></tr>
+<tr><td><b>Permissions…</b></td><td>With Super User only (Root with su, or Shizuku as root): see and change the mode (read, write, run for owner, group and others) and the owner and group. See <a href="#rootfeatures-files">Root file management</a>.</td></tr>
 </tbody>
 </table>
 
@@ -545,7 +546,7 @@
 </table>
 
 <h4>The controls</h4>
-<p>Under the filter box is one row of small buttons that scrolls sideways: <b>Play</b> / <b>Stop</b>, the level and lines drop-downs, <b>All apps</b>, <b>Record to file</b>, <b>Recordings</b>, <b>Copy</b>, <b>Save</b> and <b>Share</b>.</p>
+<p>Under the filter box is one row of small buttons that scrolls sideways: <b>Play</b> / <b>Stop</b>, the level and lines drop-downs, <b>All apps</b>, <b>Record to file</b>, <b>Recordings</b>, <b>Copy</b>, <b>Save</b>, <b>Share</b> and <b>Row tints</b>.</p>
 <p>The tab remembers its choices from one launch of the app to the next: the level, the number of lines, the filter text and the app the log is limited to.</p>
 <table class="hg-table">
 <thead><tr><th>Control</th><th>What it does</th></tr></thead>
@@ -560,6 +561,7 @@
 <tr><td><b>Recordings</b></td><td>The list of recordings, newest first. Tap one to open it; the cross at the right deletes it.</td></tr>
 <tr><td><b>Clear</b> (the red cross at the right of the filter box)</td><td>Empties the phone's log buffer and the screen (<i>Log cleared</i>). It clears it for every app, not only the one you chose.</td></tr>
 <tr><td><b>Copy</b>, <b>Save</b>, <b>Share</b></td><td>Copy the lines as text; save them as a text file in <code>Download/ADB App Manager/</code> (on Android 9 and older, in the app's own folder instead), named <code>logcat_all_</code> plus the date and time, with the app's package name in place of <code>all</code> when you picked one app; or share that file with Android's share sheet. Lines of hidden levels are left out, and a short header says the filters used.</td></tr>
+<tr><td><b>Row tints</b></td><td>Opens a sheet with the <b>Row tints</b> slider (Off, Faint, Subtle, Normal, Vivid: how strongly each line is tinted in its level's colour) and the <b>Gradient</b> switch (off: each line one even colour; on: the tint fades across the line from its start). It is the same setting as <b>Row tints</b> in Settings and in the Apps tab's search menu, so a change here shows there too. Tap outside the sheet, ✕ or Back to close it.</td></tr>
 </tbody>
 </table>
 <p>Scrolling up stops the view from jumping to new lines. Scroll back to the bottom to follow the log again.</p>

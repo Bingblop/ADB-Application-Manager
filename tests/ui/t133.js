@@ -33,6 +33,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(500);
+  // Row tints > Gradient is off by default since v7.18.1; this script measures the gradient tints, so it turns the switch on (t549 covers the default)
+  await page.evaluate(() => setRowTintGrad(true));
   const sleep = ms => page.waitForTimeout(ms);
   const ev = (fn, arg) => page.evaluate(fn, arg);
 

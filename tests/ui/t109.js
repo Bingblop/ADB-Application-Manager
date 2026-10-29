@@ -67,6 +67,7 @@ const { chromium, PAGE } = require('./lib/pw');
         if (a[0] === 'pair') return reply(tag, a[2] === '000000' ? 'Failed: Wrong password or connection dropped' : 'Successfully paired to ' + a[1] + ' [guid=adb-AAA-bbb]');
         if (a[0] === 'connect') { if (!st.devs.includes('watch') && /192\.168\.1\.20/.test(a[1])) st.devs.push('watch'); if (a[1] === '127.0.0.1:4444') st.devs.push('bt'); return reply(tag, /192\.168\.1\.99/.test(a[1]) ? 'failed to connect to \'' + a[1] + '\': Connection refused' : 'connected to ' + a[1]); }
         if (a[0] === 'disconnect') { st.devs = st.devs.filter(d => d !== 'watch'); return reply(tag, 'disconnected ' + a[1]); }
+        if (a[0] === 'mdns' && window.__st.mdnsQuiet) return reply(tag, 'List of discovered mdns services\n');
         if (a[0] === 'mdns') return reply(tag, 'List of discovered mdns services\nadb-ABC-xyz\t_adb-tls-connect._tcp.\t192.168.1.20:41235\nadb-ABC-pair\t_adb-tls-pairing._tcp.\t192.168.1.21:37215\n');
         if (a[0] === 'forward') return reply(tag, '4444');
         if (a[0] === 'pull') return reply(tag, '/x: 1 file pulled, 0 skipped. 2.0 MB/s (2048 bytes in 0.001s)');
@@ -118,8 +119,11 @@ const { chromium, PAGE } = require('./lib/pw');
   check('a short pairing code is turned down before adb runs', /6 digits/.test(await toast()) && !(await calls()).some(c => /^pair/.test(c)));
   await ev(() => { document.getElementById('cdPairCode').value = '000000'; }); await page.click('#cdPairBtn'); await wait(150);
   check('a wrong code shows adb\'s answer', /Wrong password/.test(await ev(() => document.getElementById('cdAddLog').innerText)));
-  await ev(() => { document.getElementById('cdPairCode').value = '123456'; }); await page.click('#cdPairBtn'); await wait(150);
+  // v7.19.0: after pairing, the device's connect port is looked up (mDNS) and connected to when it is found; here nothing is announced
+  await ev(() => { window.__st.mdnsQuiet = true; document.getElementById('cdPairCode').value = '123456'; }); await page.click('#cdPairBtn'); await wait(3800);
   check('pairing sends the address and the code', (await calls()).includes('pair 192.168.1.20:37215 123456') && /Successfully paired/.test(await ev(() => document.getElementById('cdAddLog').innerText)));
+  check('then its connect port is looked up, and with none announced the Connect box waits for it', (await calls()).filter(c => c === 'mdns services').length >= 1 && !(await calls()).some(c => /^connect 192\.168\.1\.20:/.test(c)), JSON.stringify((await calls()).slice(-4)));
+  await ev(() => { window.__st.mdnsQuiet = false; });
   await ev(() => { document.getElementById('cdConnAddr').value = '192.168.1.99:5555'; }); await page.click('#cdConnBtn'); await wait(200);
   check('a refused connect says so and stays open', /Connection refused/.test(await ev(() => document.getElementById('cdAddLog').innerText)) && await ev(() => document.getElementById('cdAddModal').classList.contains('show')));
   await ev(() => { document.getElementById('cdConnAddr').value = '192.168.1.20:5555'; }); await page.click('#cdConnBtn'); await wait(600);

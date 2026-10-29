@@ -61,7 +61,7 @@
       <tr><td><b>Use regex matching</b></td><td>On</td><td>Reads what you type as a pattern. Off: the whole name (or the whole package name) has to be typed.</td></tr>
     </tbody>
   </table>
-  <p>The last row, <b>Row tints</b>, is not a switch (it has an arrow at its end). Tap it and the menu closes and <a href="#prefs">Settings</a> opens on the Row tints card, which lights up for a moment, so you can change how strongly the rows of this list are tinted without looking for it. <b>Back</b> brings you back to this tab.</p>
+  <p>The last two rows are the <b>Row tints</b> setting of <a href="#prefs">Settings</a>, right here: the <b>Row tints</b> slider (Off, Faint, Subtle, Normal, Vivid) sets how strongly the rows of this list are tinted, and the <b>Gradient</b> switch (off by default) makes each tint fade across the row instead of one even colour. The list behind the menu changes as you move them, and Settings shows the same choice.</p>
   <p>One of the first two always stays on: switching off the last one turns the other back on. A <b>regex</b> (regular expression) is a small pattern language that lets one search match many things. Plain words work as you would expect, and capital letters do not matter, so <code>cam</code> finds Camera. Special characters match more: <code>mail|chat</code> finds apps with either word, and <code>^com\.samsung</code> finds packages that start with <code>com.samsung</code>. You can ignore all of this and just type words. If a pattern is not valid, or could take too long, the app searches it as plain words and shows a note under the box. With regex off, <code>cam</code> finds nothing but <code>Camera</code> does. Your choices are remembered.</p>
 
   <h4>Sort and the Action Button</h4>
@@ -222,6 +222,7 @@
   <ul>
     <li><b>GRANTED</b> or <b>DENIED</b>: a runtime permission (the kind Android asks you about, like Camera or Location). Tap it to flip it. A message says "Revoked (name)" or "Granted (name)". Android can close the app when you take a permission away.</li>
     <li><b>A padlock with GRANTED or NOT GRANTED</b>: an install-time permission. Android fixed it when the app was installed and does not let anyone change it later, so this button does nothing. The padlock is the reason.</li>
+    <li><b>GRANTED or DENIED on a permission tagged "app op"</b> that <code>pm grant</code> cannot change (Display over other apps, Usage access, Modify system settings and others): the button switches its app op between allow and ignore instead (since 7.19.0).</li>
     <li><b>A padlock on a GRANTED / DENIED button</b>: you could change it, but you have no working mode right now. Set one up and the padlock goes.</li>
   </ul>
 
@@ -235,6 +236,7 @@
     <li><b>Deny</b>: the request is refused with an error.</li>
     <li><b>Reset</b>: back to Android's default for that op.</li>
   </ul>
+  <p>The ops behind the app's permissions are listed even when Android has not recorded a mode for them yet ("not set yet"). Android uses the stricter of an op's uid-level mode and its app-level mode, so when an op has a uid-level mode both are set. After a change the app reads the op back: if Android kept another mode, a message says so (<i>Android kept CAMERA at ignore</i>) instead of claiming the change. Some ops refuse the ADB shell: Super User, or Shizuku running as the system user (UID 1000), can change them. Large apps whose permission list was too big to read at once now show their permissions too.</p>
   <p>Under the list, a field "Other op, e.g. RUN_ANY_IN_BACKGROUND", a mode menu and a <b>Set</b> button let you set an op that is not listed.</p>
 
   <h5>Activities</h5>
@@ -596,7 +598,7 @@
       <tr><td>Widget</td><td><b>Kill Apps</b> button</td><td>The same as the Kill Apps tile.</td></tr>
     </tbody>
   </table>
-  <p>The widget is called <b>ADB/Root Full System Toolbox</b> (on a narrow widget the name ends in "…"). It shows its name (tap the name to open the app), a line "Mode: (current mode)" and a line "Quick list: (list name) ((number) apps)", or "Quick list: No quick list set". It can be made wider, and it refreshes itself after every action and about every half hour.</p>
+  <p>The widget is called <b>ADB/Root Toolbox</b> (on a narrow widget the name ends in "…"). It shows its name (tap the name to open the app), a line "Mode: (current mode)" and a line "Quick list: (list name) ((number) apps)", or "Quick list: No quick list set". It can be made wider, and it refreshes itself after every action and about every half hour.</p>
   <p>The answers of Kill Apps are short: "Force-stopped 5 apps" (with ", 1 failed" when some did not stop and ", 2 left alone" when the list holds apps it does not stop), "Cancelled after 3 of 12 apps", "No quick list set. Open Saved Applications in the app and tap Quick list.", or "Needs ADB, Shizuku or Root. Set up a working mode first."</p>
 
   <h4>The Kill Apps notification</h4>
@@ -606,17 +608,18 @@
     <li><b>Tapping the notification</b> opens this app on <b>Saved Applications</b> with the <b>Edit Saved List</b> sheet of the quick list (the same sheet as <b>Edit</b> on that list's card). The run is not touched: it goes on while you look, and its notification stays. If the Saved Applications tab was turned off, it is turned on again, and a message says so.</li>
     <li>On <b>Android 16 and newer</b> the notification is asked for as a <b>Live Update</b>: the phone may show it as a small chip in the status bar ("3/12"). That needs the <b>Live updates</b> row of the <a href="#app-permissions">permissions sheet</a> (Notifications as well). Where the phone does not show it as a Live Update, you get the same notification without the chip.</li>
     <li>Swiping the notification away does not stop the run; it just stays hidden until the run is over.</li>
+    <li>The run keeps going to the last app with the screen off or the app in the background: it runs as a foreground job, and the apps that draw the notification or that the run needs are stopped last, in this order: the keyboard, the home screen, System UI (stopping it earlier made the notification vanish mid-run), and Shizuku and the root manager at the very end (stopping the one the run goes through ends it). Back while a run is going leaves it running.</li>
     <li>A second tap while a run is going does not start another one: the message says "Kill Apps is already running. Tap Cancel in its notification to stop it."</li>
   </ul>
   <h4>Apps it never stops</h4>
-  <p>Whatever the list says, <b>Kill Apps</b> leaves three kinds of app alone, because stopping them would break the run or the window that shows it: <b>this app</b> (ADB/Root Full System Toolbox), the <b>app that draws its window</b> (the phone's WebView app, usually Android System WebView or Chrome), and <b>Media Picker</b> (<code>com.google.android.providers.media.module</code>). They stay in the list, they are not counted as stopped, and the message says how many were left alone ("Force-stopped 4 apps, 1 left alone").</p>
+  <p>Whatever the list says, <b>Kill Apps</b> leaves three kinds of app alone, because stopping them would break the run or the window that shows it: <b>this app</b> (ADB/Root Toolbox), the <b>app that draws its window</b> (the phone's WebView app, usually Android System WebView or Chrome), and <b>Media Picker</b> (<code>com.google.android.providers.media.module</code>). They stay in the list, they are not counted as stopped, and the message says how many were left alone ("Force-stopped 4 apps, 1 left alone").</p>
 
   <h4>Step by step: set up Kill Apps</h4>
   <ol class="hg-steps">
     <li>In the Application Manager, select the apps you want to stop together and tap <b>Save to List</b> in the batch sheet (see <a href="#apps-batch">batch actions</a>). Give the list a name.</li>
     <li>Open the <b>Saved Applications</b> tab and tap <b>Quick list</b> on that list. The button turns to "Quick list" with a tick, and a message says "(name) is now the quick list. Add the "Kill Apps" tile or the widget to use it."</li>
     <li>Add the tile: swipe down twice from the top of the screen to open the full Quick Settings panel, tap the pencil icon (edit), and drag <b>Working mode</b> and <b>Kill Apps</b> into your panel. The wording differs a little between phone makers.</li>
-    <li>Or add the widget: press and hold an empty spot on the home screen, tap <b>Widgets</b>, find <b>ADB/Root Full System Toolbox</b> and drag it onto a home screen page.</li>
+    <li>Or add the widget: press and hold an empty spot on the home screen, tap <b>Widgets</b>, find <b>ADB/Root Toolbox</b> and drag it onto a home screen page.</li>
     <li>Tap <b>Kill Apps</b>. A message says how many apps were force-stopped.</li>
   </ol>
   <p>To use a different list, tap <b>Quick list</b> on another list: only one list is the quick list. Tap the ticked button again to clear it. If you delete the quick list, it is cleared. If you edit it, the widget's number is refreshed.</p>

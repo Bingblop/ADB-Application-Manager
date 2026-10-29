@@ -24,6 +24,9 @@ public final class QuickStopRun {
         "com.google.android.webview", "com.android.webview",
     };
 
+    /** System UI: it draws the notification, its Live Update chip and the status bar; stopping it restarts all three. */
+    static final String SYSTEM_UI = "com.android.systemui";
+
     /** The notification is posted at most this often (the system drops updates above about five a second). */
     static final long MIN_POST_GAP_MS = 250;
     /** A run that has not ended after this long is taken to be dead (its process was killed): the next tap may start a new one. */
@@ -43,16 +46,43 @@ public final class QuickStopRun {
      * @param leaveAlone the package names that are never stopped (see {@link #protectedPackages})
      */
     public QuickStopRun(String listId, String listName, List<String> listed, Set<String> leaveAlone) {
+        this(listId, listName, listed, leaveAlone, null);
+    }
+
+    /**
+     * @param stopLast the package names that are stopped after all the others, in this order (see {@link #lastOrder}); the list's other apps keep
+     *                 the list's order before them
+     */
+    public QuickStopRun(String listId, String listName, List<String> listed, Set<String> leaveAlone, List<String> stopLast) {
         this.listId = listId == null ? "" : listId;
         this.listName = listName == null ? "" : listName.trim();
         Set<String> seen = new LinkedHashSet<String>();
+        List<String> late = new ArrayList<String>();
         if (listed != null) {
             for (String raw : listed) {
                 String p = raw == null ? "" : raw.trim();
                 if (p.isEmpty() || !seen.add(p)) continue;
-                if (leaveAlone != null && leaveAlone.contains(p)) skipped.add(p); else targets.add(p);
+                if (leaveAlone != null && leaveAlone.contains(p)) skipped.add(p);
+                else if (stopLast != null && stopLast.contains(p)) late.add(p);
+                else targets.add(p);
             }
         }
+        if (stopLast != null) for (String p : stopLast) if (late.contains(p)) targets.add(p);
+    }
+
+    /**
+     * The apps a run stops last, in this order (v7.19.0): the keyboard and the home screen (they come back at once and redraw what is on the screen),
+     * then System UI, which draws the notification and its Live Update chip (stopping it earlier made the notification vanish in the middle of the run),
+     * and the tools the run may go through (Shizuku, the root manager) at the very end, since stopping the one the run uses ends its shell. Blanks and
+     * repeats are dropped.
+     */
+    public static List<String> lastOrder(List<String> tools, String keyboard, String home) {
+        Set<String> s = new LinkedHashSet<String>();
+        if (keyboard != null && !keyboard.trim().isEmpty()) s.add(keyboard.trim());
+        if (home != null && !home.trim().isEmpty()) s.add(home.trim());
+        s.add(SYSTEM_UI);
+        if (tools != null) for (String t : tools) if (t != null && !t.trim().isEmpty() && !SYSTEM_UI.equals(t.trim())) { s.remove(t.trim()); s.add(t.trim()); }
+        return new ArrayList<String>(s);
     }
 
     /**

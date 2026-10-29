@@ -11,6 +11,8 @@ const LOG = ['V', 'D', 'I', 'W', 'E', 'F'].map((l, i) => '10-12 10:00:0' + i + '
   const page = await b.newPage({ viewport: { width: 390, height: 860 } });
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(PAGE); await page.waitForTimeout(400);
+  // Row tints > Gradient is off by default since v7.18.1; this script measures the gradient tints, so it turns the switch on (t549 covers the default)
+  await page.evaluate(() => setRowTintGrad(true));
   const ev = (fn, a) => page.evaluate(fn, a);
   // a device that answers: the log comes from the test, not adb
   await ev(log => { window.cdReady = () => true; window.cdSh = async () => log; switchView('devices'); cd.sub = 'logcat'; document.querySelectorAll('.cd-pane').forEach(p => p.classList.toggle('active', p.id === 'cdPane-logcat')); }, LOG);

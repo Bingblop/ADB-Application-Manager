@@ -39,6 +39,13 @@ public class QuickStopRunTest {
     check("skipped: this app, the WebView, Media Picker and its other name, each once, in the list's order", r.skipped().equals(list(OWN, WEBVIEW, MEDIA, "com.android.providers.media.module")), r.skipped().toString());
     check("a name that only starts like a protected one is stopped (exact match only)", run(MEDIA + ".extra", OWN + "2", "x" + WEBVIEW).total() == 3);
     check("package names are case-sensitive, as on Android", run(MEDIA.toUpperCase()).total() == 1);
+    // v7.19.0: the keyboard, the home screen, System UI (it draws the live notification) and the tools the run goes through are stopped last, tools at the very end
+    List<String> late = QuickStopRun.lastOrder(list("moe.shizuku.privileged.api", " ", null), "com.samsung.android.honeyboard", "com.sec.android.app.launcher");
+    check("lastOrder: keyboard, home, System UI, then the tools; blanks dropped", late.equals(list("com.samsung.android.honeyboard", "com.sec.android.app.launcher", "com.android.systemui", "moe.shizuku.privileged.api")), late.toString());
+    check("lastOrder: System UI named as a tool stays before the tools, and nulls do not throw", QuickStopRun.lastOrder(list("com.android.systemui", "a.b"), null, null).equals(list("com.android.systemui", "a.b")));
+    QuickStopRun ordered = new QuickStopRun("i", "n", list("com.android.systemui", "x.one", "moe.shizuku.privileged.api", "x.two"), QuickStopRun.protectedPackages(OWN, WEBVIEW), late);
+    check("the late apps go after the others, in lastOrder's order", ordered.targets().equals(list("x.one", "x.two", "com.android.systemui", "moe.shizuku.privileged.api")), ordered.targets().toString());
+    check("a late app not in the list is not added", !new QuickStopRun("i", "n", list("x.one"), null, late).targets().contains("com.android.systemui"));
     check("a null list or null protected set does not throw", new QuickStopRun("i", "n", null, null).total() == 0 && new QuickStopRun("i", "n", list("a.b"), null).total() == 1);
     check("the list id and name are kept (null become blank, the name trimmed)", r.listId().equals("list_1") && r.listName().equals("Game boost") && new QuickStopRun(null, " Mine ", null, null).listName().equals("Mine") && new QuickStopRun(null, null, null, null).listId().isEmpty());
     boolean readOnly = false;

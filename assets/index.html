@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="i18n.js"></script>
     <script src="monet.js"></script>
-    <title>ADB/Root Full System Toolbox</title>
+    <title>ADB/Root Toolbox</title>
     <style>
         /* =====================================================================================================================
            DESIGN TOKENS: every colour, space, radius, type size and weight the page is drawn from. A rule uses a token; it does not
@@ -362,7 +362,7 @@
         #execModeBadge[data-tone="none"] { background: color-mix(in srgb, var(--status-user) 15%, transparent); border-color: color-mix(in srgb, var(--status-user) 40%, transparent); color: var(--status-warn); }
         #execModeBadge[data-tone="none"] .status-dot { background: var(--status-warn); }
 
-        /* the title: "ADB/Root Full" over "System Toolbox" (two lines of near equal width, so it fits at 320 px and is largest at 412 px), every word in the text colour (the owner's wish, v7.15: one colour), heavy and tight. Solid colours only: a
+        /* the title: "ADB/Root" over "Toolbox" (v7.19.1; two lines of near equal width, so it fits at 320 px and is largest at 412 px), every word in the text colour (the owner's wish, v7.15: one colour), heavy and tight. Solid colours only: a
            gradient clipped to the text (background-clip: text with a transparent fill) came out invisible on some phones' WebView */
         .brand-text h1 {
             font-size: clamp(var(--fs-code), 4.1vw, 18px);
@@ -872,6 +872,7 @@
             border-radius: var(--radius-chip);
             box-shadow: var(--shadow-pop);
             padding: var(--space-1) var(--space-5);
+            overscroll-behavior: contain;          /* when it scrolls inside itself (a short screen: searchMenuPlace), the page behind it stays put */
         }
 
         .sm-row {
@@ -890,10 +891,10 @@
         .sm-sub { display: block; margin-top: var(--space-1); font-size: var(--fs-pill); line-height: 1.4; color: var(--text-muted); font-weight:var(--fw-semibold); }
         .sm-div { align-self: stretch; width: 1px; margin: 2px 0; background: var(--border-glass); flex: 0 0 auto; }
         .sm-row .switch-input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
-        /* the last row opens something (Row tints in Settings) instead of turning something on: a chevron where the others have a switch, the same focus ring */
-        .sm-go:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
-        .sm-chev { flex: 0 0 auto; display: block; color: var(--text-muted); }
-        [dir="rtl"] .sm-chev { transform: scaleX(-1); }
+        /* Row tints: the slider of Settings > Row tints under the row's name (the whole row is not a tap target, so no pointer) */
+        .sm-tint { cursor: default; }
+        .sm-tint .row-tint-slider { display: block; margin-top: var(--space-2); }
+        .sm-tint .row-tint-ticks { font-size: var(--fs-pill); }
 
         .search-note {
             margin: -4px 4px 10px;
@@ -3139,6 +3140,21 @@
         #fmList.fm-selecting .fm-more { display: none; }
         #fmList .perm-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
         #fmList .perm-row.fm-picked { background: var(--accent-glow); border-radius: var(--radius-md); }
+        /* v7.18.2 Root file management: the Permissions… panel of a file's sheet (read, write, run for owner, group and others; the mode; owner and group) */
+        .fm-perm-grid { display: grid; grid-template-columns: auto repeat(3, 1fr); gap: var(--space-1) var(--space-2); align-items: center; margin: var(--space-3) 0; }
+        .fm-perm-grid label { display: flex; align-items: center; justify-content: center; min-height: var(--tap); cursor: pointer; }
+        .fm-perm-grid input { width: 22px; height: 22px; accent-color: var(--accent); cursor: pointer; }
+        .fm-perm-head { font-size: var(--fs-caption); color: var(--text-muted); text-align: center; }
+        .fm-perm-who { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--text-main); }
+        .fm-perm-line { font-size: var(--fs-caption); color: var(--text-muted); word-break: break-all; margin-top: var(--space-2); }
+        .fm-perm-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-2); }
+        .fm-perm-two .modal-text-input, .fm-perm-mode .modal-text-input { margin: 0; min-width: 0; }
+        .fm-perm-mode { display: flex; align-items: center; gap: var(--space-2); }
+        .fm-perm-mode .modal-text-input { flex: 1 1 auto; font-family: monospace; }
+        .fm-perm-rec { display: flex; align-items: center; gap: var(--space-2); min-height: var(--tap); font-size: var(--fs-label); color: var(--text-main); cursor: pointer; }
+        .fm-perm-rec input { width: 20px; height: 20px; accent-color: var(--accent); }
+        .fm-perm-sub { font-size: var(--fs-label); font-weight: var(--fw-bold); color: var(--text-main); margin-top: var(--space-4); }
+        .fm-perm-go { width: 100%; justify-content: center; margin-top: var(--space-3); }
         .fm-opts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-5); margin-top: var(--space-3h); }
         .fm-opt { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--fs-body); font-weight:var(--fw-bold); cursor: pointer; }
         .fm-opt input { width: 18px; height: 18px; accent-color: var(--accent); }
@@ -3880,6 +3896,16 @@
             margin-top: 2px;
         }
 
+        /* v7.19.0: the "on mobile data" switch of App Stores and App Updater is one slim line at the top of its page, with no description.
+           v7.19.2 (the owner's wish): thinner, a button's height (the switch and 4px above and below it), and all of the card is the switch */
+        .color-card.mobile-slim { padding: 0; margin-bottom: var(--space-3); }
+        .mobile-slim .switch-row { margin-top: 0; padding: var(--space-1) var(--space-3); gap: var(--space-3); border-top: 0; }
+        .mobile-slim .switch-title { font-size: var(--fs-label); }
+        /* v7.19.2 (the owner's wish): a line that holds only the tab's ? (injectHelpLinks). On App Stores it sits above the mobile-data switch, outside
+           its card, so a tap meant for one never lands on the other (in v7.19.1 the ? was inside that card) */
+        .help-row { position: relative; height: var(--ctl-h); margin-bottom: var(--space-2); }
+        .help-row > .help-q { top: 0; right: var(--space-2); }
+
         .switch-input {
             position: absolute;
             opacity: 0;
@@ -4498,7 +4524,7 @@
     <header class="app-header">
         <div class="brand-box">
             <div class="brand-text">
-                <h1 translate="no"><span class="bt-line"><span>ADB/Root</span> <span>Full</span> </span><span class="bt-line"><span>System</span> <span>Toolbox</span></span></h1>
+                <h1 translate="no"><span class="bt-line"><span>ADB/Root</span> </span><span class="bt-line"><span>Toolbox</span></span></h1>
                 <p id="deviceInfoSubtitle"><span class="bt-sub" id="deviceInfoLine1">&nbsp;</span><span class="bt-sub" id="deviceInfoLine2">&nbsp;</span></p>
             </div>
         </div>
@@ -4601,11 +4627,17 @@
                         <span class="sm-div"></span>
                         <input type="checkbox" class="switch-input" id="searchOptRegex" checked onchange="setSearchOpt('regex', this.checked)"><span class="switch-track"></span>
                     </label>
-                    <div class="sm-row sm-go" id="searchMenuRowTints" role="button" tabindex="0" onclick="searchMenuRowTints()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();searchMenuRowTints();}">
-                        <span class="sm-text"><span class="sm-name">Row tints</span><span class="sm-sub">How strongly rows are tinted. Opens Settings.</span></span>
-                        <span class="sm-div"></span>
-                        <svg class="sm-chev" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                    <!-- Row tints right here (the owner's wish, v7.18.1): the slider and the Gradient switch of Settings > Row tints, the same setting (rowTintApply keeps both places in step) -->
+                    <div class="sm-row sm-tint" id="searchMenuRowTints">
+                        <span class="sm-text"><span class="sm-name">Row tints</span>
+                            <span class="row-tint-slider"><input type="range" id="searchRowTintRange" min="0" max="4" step="1" value="2" oninput="setRowTint(this.value)" aria-label="Row tints"><span class="row-tint-ticks"><span>Off</span><span>Faint</span><span>Subtle</span><span>Normal</span><span>Vivid</span></span></span>
+                        </span>
                     </div>
+                    <label class="sm-row" id="searchMenuRowGrad">
+                        <span class="sm-text"><span class="sm-name">Gradient</span></span>
+                        <span class="sm-div"></span>
+                        <input type="checkbox" class="switch-input" id="searchRowTintGrad" onchange="setRowTintGrad(this.checked)"><span class="switch-track"></span>
+                    </label>
                 </div>
             </div>
             <div class="search-note" id="searchNote" style="display:none;" role="status"></div>
@@ -4970,6 +5002,15 @@
                 .us-got b { word-break:break-all; }
                 .us-key-actions { display:flex; gap:var(--space-3); flex-wrap:wrap; margin-top:var(--space-3); }
             </style>
+            <!-- v7.18.1 (the owner's wish): the check goes online on Wi-Fi only unless this is on (kv 'updates_mobile_data'; enforced by the app's runUpdateCheck).
+                 v7.19.0: one slim line at the top of the pane, no description -->
+            <div class="color-card mobile-slim" id="updMobileCard">
+                <label class="switch-row">
+                    <div class="switch-title">Check for updates on mobile data</div>
+                    <input type="checkbox" class="switch-input" id="updMobileToggle" onchange="setMobileDataOk('updates_mobile_data', this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+            </div>
             <div class="color-card" id="usCard">
                 <div class="color-card-title">Find and download an app</div>
                 <div class="color-card-subtitle">Search by app name or package name. APKMirror is the default. Every source in the list serves the original file the developer signed, never a modified one.</div>
@@ -5018,7 +5059,7 @@
             </div>
             <div class="color-card" id="selfUpdateCard">
                 <div class="color-card-title">App update</div>
-                <div class="color-card-subtitle">Update ADB/Root Full System Toolbox itself, straight from its GitHub releases. The download is checked to be this app, a newer version and signed with the same key before installing.</div>
+                <div class="color-card-subtitle">Update ADB/Root Toolbox itself, straight from its GitHub releases. The download is checked to be this app, a newer version and signed with the same key before installing.</div>
                 <div class="uad-status" id="selfUpdStatus">Checking this app's version…</div>
                 <div class="mode-btn-row" style="margin-top:6px;">
                     <button class="mode-action-btn primary" id="selfUpdCheckBtn" onclick="checkSelfUpdateUI()">Check for app update</button>
@@ -5353,6 +5394,7 @@
                 </div>
                 <div class="cd-info" id="cdInfo"></div>
                 <div id="cdLost"></div>
+                <div id="cdNearby"></div>
                 <div id="cdSaved"></div>
             </div>
 
@@ -5788,6 +5830,8 @@
                 .sdb-key { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:var(--fs-code); font-weight:var(--fw-heavy); overflow-wrap:anywhere; line-height:1.3; }
                 .sdb-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent); margin-left:var(--space-2); vertical-align:middle; }
                 .sdb-hint { font-size:var(--fs-caption); color:var(--text-muted); margin-top:1px; line-height:1.35; }
+                /* v7.19.2 (the owner's wish): the short line Ask agent's answer left with a setting (sdbNoteSave), under its description, marked AI */
+                .sdb-note-tag { display:inline-block; font-size:var(--fs-overline); font-weight:var(--fw-heavy); line-height:1.35; color:var(--accent); background:var(--tint-accent); border-radius:var(--radius-sm); padding:0 var(--space-1); margin-right:var(--space-1); }
                 .sdb-val { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:var(--fs-body); color:var(--accent); color:color-mix(in srgb, var(--accent) 72%, var(--text-main)); margin-top:var(--space-1); overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:pre-wrap; line-height:1.35; }
                 .sdb-val.empty { color:var(--text-muted); font-style:italic; }
                 /* v7.15: the value and Ask agent on one line, so a row is a line shorter */
@@ -5833,6 +5877,7 @@
                 .sdb-about-h { font-size:var(--fs-pkg); font-weight:var(--fw-heavy); letter-spacing:.4px; text-transform:uppercase; color:var(--text-muted); margin:var(--space-2) 0 2px; }
                 .sdb-about-h:first-child { margin-top:0; }
                 .sdb-about-t b { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; }
+                .sdb-about-t { overflow-wrap:anywhere; }          /* v7.19.2: the line Ask agent left can start with a long setting name */
                 .sdb-about-now { margin-top:var(--space-2); color:var(--accent); color:color-mix(in srgb, var(--accent) 72%, var(--text-main)); font-weight:var(--fw-bold); }
                 .sdb-about-now:empty { display:none; }
                 .sdb-help h4 { margin:var(--space-4) 0 var(--space-1); font-size:var(--fs-item); }
@@ -6066,6 +6111,19 @@
                     <div class="sdb-note" id="ovlRootStale" style="display:none;"></div>
                     <div class="sdb-note" id="ovlRootOneUi" style="display:none;"></div>
                 </div>
+
+                <!-- v7.18.1 (the owner's wish): the custom theme of this tab backed up and restored the way the saved lists are (Saved Applications >
+                     Back up and restore): the same place for the file, Share, Restore from a file. A restore fills in the tab; Apply theme writes it -->
+                <div class="color-card" id="ovlBackupCard">
+                    <div class="color-card-title">Back up and restore</div>
+                    <div class="color-card-subtitle">Keep a copy of your custom theme (the color, the style and the Root-only theme controls) and bring it back from a backup file. Restoring fills in this tab; Apply theme writes it to the phone.</div>
+                    <div class="lb-where" id="ovlBkWhere"></div>
+                    <div class="mode-btn-row" style="margin:8px 0 0;">
+                        <button class="mode-action-btn primary" onclick="ovlBkNow()">Back up now</button>
+                        <button class="mode-action-btn" onclick="ovlBkShare()">Share…</button>
+                        <button class="mode-action-btn" onclick="ovlBkRestoreFile()">Restore from a file…</button>
+                    </div>
+                </div>
             </div>
 
             <div id="ovlListPanel" style="display:none;">
@@ -6117,6 +6175,18 @@
                 .store-more { text-align:center; margin:var(--space-3h) 0 var(--space-1); }
                 .store-prompt { display:flex; gap:var(--space-3h); align-items:center; background:var(--fill-2); border:1px dashed var(--accent); border-radius:var(--radius-md); padding:var(--space-3h) var(--space-4); margin-bottom:var(--space-3h); font-size:var(--fs-body); color:var(--text-main); }
             </style>
+
+            <!-- v7.19.2: the tab's ? on a line of its own, above the switch and outside its card -->
+            <div class="help-row" id="storeHelpRow"></div>
+            <!-- v7.18.1 (the owner's wish): catalogs go online on Wi-Fi only unless this is on (kv 'store_mobile_data'; the app enforces it: storeMobileBlocked).
+                 v7.19.0: one slim line at the top of the tab, no description -->
+            <div class="color-card mobile-slim" id="storeMobileCard">
+                <label class="switch-row">
+                    <div class="switch-title">Update stores on mobile data</div>
+                    <input type="checkbox" class="switch-input" id="storeMobileToggle" onchange="setMobileDataOk('store_mobile_data', this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+            </div>
 
             <div class="store-subtabs h-fade" id="storeSubtabs" role="tablist">
                 <button class="store-subtab active" data-store="shizu" onclick="switchStoreTab('shizu')">ShizuStore</button>
@@ -6290,7 +6360,7 @@
             </div>
             <div class="color-card cc" id="quickActionsHelp" data-cc="quickactions" data-cc-default="closed">
                 <div class="color-card-title">Quick actions</div>
-                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Kill Apps</b> into your panel; or long-press the home screen → Widgets → ADB/Root Full System Toolbox. They run without opening the app.</div>
+                <div class="color-card-subtitle">Tap <b>Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap the pencil icon and drag <b>Working mode</b> and <b>Kill Apps</b> into your panel; or long-press the home screen → Widgets → ADB/Root Toolbox. They run without opening the app.</div>
             </div>
         </section>
 
@@ -6596,9 +6666,9 @@
                 <label class="switch-row" id="rowTintGradRow">
                     <div>
                         <div class="switch-title">Gradient</div>
-                        <div class="switch-sub">On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. On by default.</div>
+                        <div class="switch-sub">On: each tint fades across the row, from a glow behind the app's icon or from the start of a Logcat line. Off: the whole row is one even colour. Off by default.</div>
                     </div>
-                    <input type="checkbox" class="switch-input" id="rowTintGradToggle" checked onchange="setRowTintGrad(this.checked)">
+                    <input type="checkbox" class="switch-input" id="rowTintGradToggle" onchange="setRowTintGrad(this.checked)">
                     <span class="switch-track"></span>
                 </label>
             </div>
@@ -6867,7 +6937,7 @@
                                 <div class="switch-title">Sort by speed</div>
                                 <div class="switch-sub">After a test, the fastest service comes first. Off keeps the list in its usual order.</div>
                             </div>
-                            <input type="checkbox" class="switch-input" id="pdnsSort" onchange="pdnsSortChange(this.checked)">
+                            <input type="checkbox" class="switch-input" id="pdnsSort" checked onchange="pdnsSortChange(this.checked)">
                             <span class="switch-track"></span>
                         </label>
                         <div class="pdns-list" id="pdnsList" role="group" aria-labelledby="pdnsServicesLabel"></div>
@@ -7944,6 +8014,15 @@
                 #view-fonts .color-card-subtitle { margin-bottom: 0; }
                 .fnt-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-1); }
                 .fnt-head .color-card-title { flex: 1 1 auto; margin: 0; min-width: 0; }
+                /* v7.19.1 Phone font: the drop-down (a button that opens #fntPhoneSheet), and its rows: held, not selected as text */
+                #fntChangerBody > .fnt-lab { margin-top: var(--space-3); }
+                .fnt-pick { width: 100%; font-size: var(--fs-item); padding: var(--space-3); margin: 0; }
+                .fnt-pick .fnt-pick-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+                .fnt-pick:disabled { opacity: 0.6; cursor: default; }
+                #fntPhoneList .fnt-pr { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+                #fntPhoneList .fnt-pr .ab-sheet-ic { margin-left: auto; flex: 0 0 auto; }
+                #fntPhoneList .fnt-pr-lock { color: var(--text-muted); }
+                #fntBuildActs .mode-btn-row { margin-top: var(--space-3); }
                 .fnt-note { font-size: var(--fs-body); line-height: 1.5; color: var(--text-muted); margin-top: var(--space-2); overflow-wrap: anywhere; }
                 .fnt-note b { color: var(--text-main); font-weight: var(--fw-bold); }
                 .fnt-note.is-warn { color: var(--text-main); margin-top: var(--space-3); padding: var(--space-3) var(--space-3h); border-radius: var(--radius-md); border: 1px solid var(--line-suspended); background: var(--tint-suspended); }
@@ -8118,28 +8197,26 @@
                 </div>
                 <div class="agent-ask-prog" id="fntBuildProg" role="progressbar" aria-label="Building the font" aria-valuemin="0" aria-valuemax="100"><div class="agent-ask-bar indet" id="fntBuildBar"><i id="fntBuildBarFill"></i></div><div class="agent-ask-prog-txt" id="fntBuildProgTxt"></div></div>
                 <div class="fnt-result" id="fntBuildResult" role="status" aria-live="polite"></div>
+                <div id="fntBuildActs"></div>
+            </div>
+
+            <!-- v7.19.1: one list of every font on the phone (it replaced My fonts and the Font changer's buttons). v7.19.2 (the owner's wish): above Emoji fonts. A tap uses the font: the font changer
+                 writes any font with Root, or Shizuku as the system user or root; without them Samsung's Font style takes the fonts Samsung or Monotype
+                 signed, and the others are refused with a warning. A press and hold uninstalls one (FONTS:JS, fntRenderPhone / #fntPhoneSheet) -->
+            <div class="color-card" id="fntChangerCard">
+                <div class="fnt-head">
+                    <div class="color-card-title">Phone font</div>
+                    <span class="mode-status-tag inactive" id="fntChangerTag">LOCKED</span>
+                </div>
+                <div class="color-card-subtitle">Every font installed on this phone, and the fonts made here. Any of them can be used with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).</div>
+                <div class="fnt-note is-warn" id="fntDeviceNote" style="display:none;"></div>
+                <div id="fntChangerBody"></div>
             </div>
 
             <div class="color-card" id="fntEmojiCard">
                 <div class="color-card-title">Emoji fonts</div>
                 <div class="color-card-subtitle">Download an emoji font to put it inside a font you make or, with root, to use it as the phone's emoji.</div>
                 <div id="fntEmojiList"></div>
-            </div>
-
-            <div class="color-card" id="fntLibCard">
-                <div class="color-card-title">My fonts</div>
-                <div class="color-card-subtitle">The fonts made on this phone.</div>
-                <div class="fnt-note is-warn" id="fntDeviceNote" style="display:none;"></div>
-                <div id="fntLibList"></div>
-            </div>
-
-            <div class="color-card" id="fntChangerCard">
-                <div class="fnt-head">
-                    <div class="color-card-title">Font changer</div>
-                    <span class="mode-status-tag inactive" id="fntChangerTag">LOCKED</span>
-                </div>
-                <div class="color-card-subtitle">Writes one of your fonts straight into the phone's font files. Unlocks with Root, or with Shizuku running as the system user (UID 1000) or as root (UID 0).</div>
-                <div id="fntChangerBody"></div>
             </div>
 
             <div class="color-card" id="fntSysCard">
@@ -8227,7 +8304,7 @@
             </style>
             <div class="color-card about-hero">
                 <div class="about-logo"><svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.2 2 4.5 13.4h5.6l-1.1 8.6 9-11.9h-5.7z"/></svg></div>
-                <div class="about-name">ADB/Root Full System Toolbox</div>
+                <div class="about-name">ADB/Root Toolbox</div>
                 <div class="about-ver" id="aboutVersion">Version …</div>
                 <div class="about-blurb">Freeze, debloat, install, back up and inspect every app on your phone, straight from the phone: through ADB, Wireless Debugging, Shizuku or Root. No computer, no account, no ads.</div>
                 <div class="mode-btn-row">
@@ -8555,7 +8632,7 @@
                     <button class="find-nav" onclick="shareTerminal()" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg></button>
                     <button class="find-nav danger" onclick="cnClearAll()" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                 </div>
-                <div class="cn-empty" id="termEmpty">ADB/Root Full System Toolbox Shell Terminal Ready.
+                <div class="cn-empty" id="termEmpty">ADB/Root Toolbox Shell Terminal Ready.
 Type any command above (e.g. pm list packages -d)</div>
                 <div class="cn-list" id="termOutput" translate="no"></div>
             </div>
@@ -8802,11 +8879,36 @@ Type any command above (e.g. pm list packages -d)</div>
                     <button class="batch-tool-link" onclick="logcatCopy()">Copy</button>
                     <button class="batch-tool-link" onclick="logcatSave()">Save</button>
                     <button class="batch-tool-link" onclick="logcatShare()">Share</button>
+                    <button type="button" class="batch-tool-link" id="lcTintBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="lcTintModal" onclick="lcTintOpen()">Row tints</button>
                 </div>
                 <div id="logcatScope"></div>
                 <!-- Color key. Each chip is also a switch: tap to hide / show that level. -->
                 <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
                 <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
+            </div>
+            <!-- Row tints as a sheet (the owner's wish, v7.18.3): the slider and the Gradient switch of Settings > Row tints, the same setting (rowTintApply keeps every place in step) -->
+            <div class="modal-overlay" id="lcTintModal" onclick="if(event.target===this) lcTintClose()">
+                <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="lcTintTitle">
+                    <div class="sheet-header">
+                        <div class="sheet-title">
+                            <h3 id="lcTintTitle">Row tints</h3>
+                        </div>
+                        <button type="button" class="sheet-close" aria-label="Close" onclick="lcTintClose()">✕</button>
+                    </div>
+                    <div class="modal-helper">How strongly each line is tinted in the colour of its level.</div>
+                    <div class="row-tint-slider">
+                        <input type="range" id="lcRowTintRange" min="0" max="4" step="1" value="2" oninput="setRowTint(this.value)" aria-label="Row tints">
+                        <div class="row-tint-ticks"><span>Off</span><span>Faint</span><span>Subtle</span><span>Normal</span><span>Vivid</span></div>
+                    </div>
+                    <label class="switch-row" id="lcRowTintGradRow">
+                        <div>
+                            <div class="switch-title">Gradient</div>
+                            <div class="switch-sub">On: each tint fades across the line from its start. Off: the whole line is one even colour.</div>
+                        </div>
+                        <input type="checkbox" class="switch-input" id="lcRowTintGrad" onchange="setRowTintGrad(this.checked)">
+                        <span class="switch-track"></span>
+                    </label>
+                </div>
             </div>
         </section>
 
@@ -9547,6 +9649,22 @@ Type any command above (e.g. pm list packages -d)</div>
         </div>
     </div>
 
+    <!-- v7.19.1 Custom Fonts, Phone font: every font on the phone. A tap uses it, a press and hold (or Delete) uninstalls it (fntPhoneInit) -->
+    <div class="modal-overlay" id="fntPhoneSheet" onclick="if(event.target===this) fntPhoneClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3>Phone font</h3>
+                    <p style="white-space:normal;">Choose a font to use it. Press and hold a font to uninstall it.</p>
+                </div>
+                <div class="sheet-header-actions">
+                    <button type="button" class="sheet-close" aria-label="Close" onclick="fntPhoneClose()">✕</button>
+                </div>
+            </div>
+            <div id="fntPhoneList" class="ab-sheet-list"></div>
+        </div>
+    </div>
+
     <!-- Permission Manager / Activity Launcher: a list sheet for one app, opened from the Apps list's Action Button -->
     <div class="modal-overlay" id="appListSheet" onclick="if(event.target===this) closeAppListSheet()">
         <div class="modal-sheet">
@@ -10120,7 +10238,7 @@ Type any command above (e.g. pm list packages -d)</div>
             <div class="font-sample" id="fontPvSample" translate="no" aria-label="Sample text in this font">
                 <div class="fs-big">Aa Bb 123</div>
                 <div class="fs-line">The quick brown fox jumps over the lazy dog.</div>
-                <div class="fs-line fs-bold">ADB/Root Full System Toolbox</div>
+                <div class="fs-line fs-bold">ADB/Root Toolbox</div>
             </div>
             <div class="color-card-subtitle" id="fontPvNote"></div>
             <div class="mode-btn-row" style="margin-top:10px;">
@@ -10146,6 +10264,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 <input class="modal-text-input" id="fmDestInput" placeholder="Destination path" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if (event.key === 'Enter') fmDestConfirm()">
                 <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:var(--space-3);" id="fmDestConfirm" onclick="fmDestConfirm()">Confirm</button>
             </div>
+            <div id="fmPermRow" style="display:none; margin-top:10px;"></div>
             <div id="fmViewer" class="terminal-box" style="display:none; max-height:50vh; overflow:auto; margin-top:10px;"></div>
         </div>
     </div>
@@ -10844,7 +10963,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <span class="mode-status-tag inactive" id="statusTagAuto">AUTO</span>
                 </div>
                 <div class="mode-card-desc">
-                    Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.
+                    Uses the best backend that is ready: Super User → Shizuku (UID 0 or 1000) → ADB TCP → Wireless Debugging → Shizuku (UID 2000). Pick a specific mode below to pin it instead.
                 </div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn mode-use-btn" data-mode="auto" onclick="selectModeUI('auto')">
@@ -12175,11 +12294,12 @@ Type any command above (e.g. pm list packages -d)</div>
             const w = window.innerWidth, h = Math.max(window.innerHeight, vv ? vv.height : 0);
             if (w !== bnavFullW) { bnavFullW = w; bnavFullH = 0; }                               // turned around, or a different window: measure again
             if (h > bnavFullH) bnavFullH = h;
-            const away = bnavAway();
+            const away = bnavAway(), was = document.documentElement.classList.contains('bnav-away');
             if (away) { bnavMenuClose(true); bnavTipHide(); }
             document.documentElement.classList.toggle('bnav-away', away);
             nav.classList.toggle('bnav-off', away);
             if (away) { nav.setAttribute('inert', ''); nav.setAttribute('aria-hidden', 'true'); } else { nav.removeAttribute('inert'); nav.removeAttribute('aria-hidden'); bnavPlace(false); }
+            if (away !== was && searchMenuOpen()) searchMenuPlace(document.getElementById('searchMenu'), true);          // the open search menu ends above the bar that came back, or takes the room it left
         }
         let bnavQueued = false;
         function bnavQueue() { if (bnavQueued) return; bnavQueued = true; requestAnimationFrame(() => { bnavQueued = false; bnavVisibility(); }); }
@@ -12703,7 +12823,7 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
+            if (viewName === 'prefs') { vtRefreshUi(); askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -12796,7 +12916,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // what Android or the lists of other people say. (A name that is also a word of the dictionary, like an app called Settings, would be translated otherwise.)
         if (LANG_ENGINE.skip) LANG_ENGINE.skip([
             '.app-name', '.app-pkg', '.app-version', '#sheetTitle', '#sheetPkg', '#deviceInfoSubtitle', '#aboutBuild dd', '#aboutVersion',
-            '.sdb-key', '.sdb-val', '.sdb-change em', '.sdb-sw', '#sdbEditKey',
+            '.sdb-key', '.sdb-val', '.sdb-change em', '.sdb-sw', '#sdbEditKey', '.sdb-note-t', '.sdb-note-at',
             '.ovl-group span', '#ovlDetailId', '.ovl-sw', '.bubble-hex',
             '.perm-name', '.perm-sub', '.apk-scan-name', '.apk-scan-pkg', '#fmCurrentPath', '#fmPathInput', '#fmActionName', '#fmActionPath', '#fmViewer', '#fmEditName', '#fmEditPath', '#fmMediaName', '#fmConflictNames', '.fm-hit-line',
             '#arcTitle', '#arcMeta', '.arc-crumb', '.arc-sep', '#arcModalName', '#arcModalPath', '#arcViewText', '#arcViewMeta', '.arc-meta b', '.dif-ctx',
@@ -14106,6 +14226,14 @@ Type any command above (e.g. pm list packages -d)</div>
             unprivileged: 'Read-Only'
         };
         let modeInputsPrefilled = false;
+        // Super User was the chosen mode and is gone (no su any more, or su said no): the app went back to Automatic by itself (v7.19.0). The app calls
+        // this when it switched; a probe that switched says rootFellBack. One toast for both, then the mode is read again.
+        let rootLostToastAt = 0;
+        window.onRootModeLost = function () {
+            const now = Date.now();
+            if (now - rootLostToastAt > 5000) { rootLostToastAt = now; showToast('Super User is no longer available. The working mode is back on Automatic.'); }
+            if ((lastModesData || {}).configuredMode === 'root') { checkAllWorkingModes(false); loadPackageData(); }
+        };
 
         function openWorkingModesModal() {
             haptic();
@@ -14161,6 +14289,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const dataStr = fresh && window.AndroidBridge.getWorkingModeFresh ? window.AndroidBridge.getWorkingModeFresh() : window.AndroidBridge.getWorkingMode();
                 const d = JSON.parse(dataStr);
                 lastModesData = d;
+                if (d.rootFellBack) window.onRootModeLost();
                 const configured = d.configuredMode || 'auto';
                 currentWorkingMode = d.activeMode || 'unprivileged';
                 isPrivilegedActive = !!d.isPrivileged;
@@ -14926,17 +15055,33 @@ Type any command above (e.g. pm list packages -d)</div>
             if (old >= 0 && old <= 2) kvSet('row_tint_lv', v);
             return v;
         }
-        // The Gradient switch under the slider (kv 'row_tint_grad', on by default): off makes each tinted row one even colour (html[data-row-grad="off"])
-        function rowTintGradOn() { return kvGet('row_tint_grad', true) !== false; }
+        // The Gradient switch under the slider (kv 'row_tint_grad', off by default since v7.18.1, the owner's wish; a choice saved before is kept):
+        // off makes each tinted row one even colour (html[data-row-grad="off"])
+        function rowTintGradOn() { return kvGet('row_tint_grad', false) === true; }
+        // The slider and the switch are in three places, Settings > Row tints, the Apps tab's search menu and Live Logcat's Row tints sheet: all show the setting as it is now
         function rowTintApply() {
             const v = rowTintLevel(), grad = rowTintGradOn();
             document.documentElement.setAttribute('data-row-tint', ROW_TINTS[v]);
             document.documentElement.setAttribute('data-row-grad', grad ? 'on' : 'off');
-            const r = document.getElementById('rowTintRange');
-            if (r) r.value = String(v);
-            const g = document.getElementById('rowTintGradToggle');
-            if (g) g.checked = grad;
+            ['rowTintRange', 'searchRowTintRange', 'lcRowTintRange'].forEach(id => { const r = document.getElementById(id); if (r) r.value = String(v); });
+            ['rowTintGradToggle', 'searchRowTintGrad', 'lcRowTintGrad'].forEach(id => { const g = document.getElementById(id); if (g) g.checked = grad; });
             return v;
+        }
+        // Live Logcat's Row tints button opens the same two controls as a sheet
+        function lcTintOpen() {
+            rowTintApply();
+            document.getElementById('lcTintModal').classList.add('show');
+            const b = document.getElementById('lcTintBtn');
+            if (b) b.setAttribute('aria-expanded', 'true');
+            const r = document.getElementById('lcRowTintRange');
+            if (r) r.focus({ preventScroll: true });
+        }
+        function lcTintClose() {
+            const m = document.getElementById('lcTintModal');
+            if (!m || !m.classList.contains('show')) return;
+            m.classList.remove('show');
+            const b = document.getElementById('lcTintBtn');
+            if (b) { b.setAttribute('aria-expanded', 'false'); if (currentViewName() === 'logcat') b.focus({ preventScroll: true }); }
         }
         function setRowTint(v) {
             v = parseInt(v, 10);
@@ -15061,6 +15206,8 @@ Type any command above (e.g. pm list packages -d)</div>
             tracker:    { title: 'About this tracker', label: 'Tracker', noun: 'one tracking or advertising library that Android apps embed' },
             item:       { title: 'Ask the agent', label: 'Item', noun: 'one item found on an Android phone' }
         };
+        // v7.19.2: an answer about a hidden setting ends with the one line that is kept with the setting (sdbNoteFrom reads it)
+        const SDB_NOTE_ASK = ' End with one more line, on its own, that starts with "In short:" and says in one sentence of at most 15 words what the setting does.';
         function agentSystem(kind) {
             const k = AGENT_KINDS[kind] || AGENT_KINDS.item;
             if (k.safety) return 'You help someone who is not a developer decide whether an Android app or system package can be disabled (frozen) or removed for the current user on their phone. '
@@ -15073,19 +15220,19 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         let agentAsk = null;             // { kind, name, text, web, answer, busy }
         // The button: kind and name from its data (nothing goes into an attribute that was not escaped), the rest of what the screen knows in data-ax (one line each).
-        function agentBtnHtml(kind, name, extra, cls) {
-            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '" data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">Ask agent</button>';
+        function agentBtnHtml(kind, name, extra, cls, ref) {          // ref: what the answer is kept with (a hidden setting's table, v7.19.2)
+            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '"' + (ref ? ' data-ar="' + escapeHtml(String(ref)) + '"' : '') + ' data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">Ask agent</button>';
         }
         function agentAskFromBtn(btn) {
             haptic();
-            askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : []);
+            askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : [], btn.dataset.ar || '');
         }
-        function askAgentAbout(kind, name, lines) {
+        function askAgentAbout(kind, name, lines, ref) {
             // no gate here: without a connected agent the window still opens and the built-in web lookup answers (aiExplainInto)
             const k = AGENT_KINDS[kind] || AGENT_KINDS.item, info = txInfo || {};
             const phone = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '');
             const text = phone + '\n' + k.label + ': ' + name + (lines && lines.length ? '\n' + lines.filter(Boolean).join('\n') : '');
-            agentAsk = { kind: kind, name: name, text: text, answer: '', busy: false, web: 'android ' + (kind === 'setting' ? 'settings ' : '') + name + (k.safety ? ' safe to disable' : '') };
+            agentAsk = { kind: kind, name: name, text: text, answer: '', busy: false, web: 'android ' + (kind === 'setting' ? 'settings ' : '') + name + (k.safety ? ' safe to disable' : ''), ref: ref || '' };
             document.getElementById('agentAskTitle').innerText = k.title;
             document.getElementById('agentAskSubject').innerText = name;
             document.getElementById('agentAskSent').innerText = askAgentReadyNow() ? text : agentAsk.web;          // with no agent only the search words are sent
@@ -15102,9 +15249,13 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('agentAskGo');
             cur.busy = true; btn.disabled = true;
             const wasAgent = askAgentReadyNow() ? askAgentDef().name.replace(/\s*\(.*\)$/, '') : '';
-            cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web, 'agentAsk');
+            const sys = agentSystem(cur.kind) + (cur.kind === 'setting' ? SDB_NOTE_ASK : '');          // v7.19.2: a setting's answer ends with the line kept with it
+            cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), sys, cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web, 'agentAsk');
             cur.busy = false; btn.disabled = false;
-            if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) askHistAdd('agentAsk', { id: cur.kind + '|' + cur.name, kind: cur.kind, name: cur.name, label: (AGENT_KINDS[cur.kind] || AGENT_KINDS.item).label, text: cur.text, web: cur.web || '', answer: cur.answer, agent: wasAgent });
+            if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) {
+                askHistAdd('agentAsk', { id: cur.kind + '|' + cur.name, kind: cur.kind, name: cur.name, label: (AGENT_KINDS[cur.kind] || AGENT_KINDS.item).label, text: cur.text, web: cur.web || '', answer: cur.answer, agent: wasAgent, ref: cur.ref || '' });
+                if (cur.kind === 'setting' && cur.ref && wasAgent) sdbNoteKept(document.getElementById('agentAskAi'), sdbNoteSave(cur.ref, cur.name, cur.answer, wasAgent));
+            }
         }
         // ---- a short history of the answers of the three windows that ask (Ask agent, log entry, Hidden Settings; kept on this phone only) ----
         // The last 12 answers of each window; an answer can be pinned, and a pinned answer stays when newer ones push the others out (up to 30 pins).
@@ -15166,7 +15317,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (ui === 'agentAsk') {
                 askStopRun('agentAsk');
                 const k = AGENT_KINDS[e.kind] || AGENT_KINDS.item;
-                agentAsk = { kind: e.kind, name: e.name, text: e.text, answer: e.answer, busy: false, web: e.web };
+                agentAsk = { kind: e.kind, name: e.name, text: e.text, answer: e.answer, busy: false, web: e.web, ref: typeof e.ref === 'string' ? e.ref : '' };
                 document.getElementById('agentAskTitle').innerText = k.title;
                 document.getElementById('agentAskSubject').innerText = e.name;
                 document.getElementById('agentAskSent').innerText = e.text;
@@ -15176,6 +15327,7 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             box.classList.remove('is-err');
             box.innerHTML = '<div class="lc-ent-ai-note"></div><span class="ai-out"></span>';
+            box.dataset.hist = '1';                                                   // sdbEditAsk: an answer still on its way is not this one
             box.firstChild.textContent = ui === 'agentAsk' ? txF('Saved answer from {0}. Ask again for a new one.', askHistWhen(e)) : txF('Saved answer about {0} from {1}.', e.name, askHistWhen(e));
             box.querySelector('.ai-out').textContent = e.answer;
             if (ui === 'lcEnt') lcEntAiText = e.answer;
@@ -16462,7 +16614,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 allSizes = null;
                 if (inspectedPkg) renderInspectorSizes(inspectedPkg);
             } else {
-                showToast('Turn on usage access for ADB/Root Full System Toolbox, then come back');
+                showToast('Turn on usage access for ADB/Root Toolbox, then come back');
             }
         }
 
@@ -16938,8 +17090,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 ? `<button class="batch-tool-link" onclick="storeShown += 60; renderStoreList()">Show ${Math.min(60, left)} more · ${left} left</button>` : '';
             const esc = escapeHtml;
             const rows = apps.slice(0, storeShown).map(a => {
-                const img = a.iconHash ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:var(--radius-md);object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
-                const fb = `<div style="width:46px;height:46px;border-radius:var(--radius-md);flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:var(--fw-heavy);color:var(--on-gradient);">${esc(firstChar(a.name))}</div>`;
+                const withIcon = a.iconHash && !storeIconsOff();
+                const img = withIcon ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:var(--radius-md);object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
+                const fb = `<div style="width:46px;height:46px;border-radius:var(--radius-md);flex-shrink:0;display:${withIcon ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:var(--fw-heavy);color:var(--on-gradient);">${esc(firstChar(a.name))}</div>`;
                 const chips = [];
                 if (a.stars != null) chips.push(esc(fmtCount(a.stars)) + ' stars');
                 if (a.versionName) chips.push('v' + esc(a.versionName));
@@ -17038,7 +17191,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function setStoreAvatar(iconHash, name) {
             const av = document.getElementById('storeDetailAvatar');
             const letter = firstChar(name, '?');
-            if (iconHash) av.innerHTML = `<img src="${storeBase}/icons/${escapeHtml(iconHash)}.png" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter;">`;
+            if (iconHash && !storeIconsOff()) av.innerHTML = `<img src="${storeBase}/icons/${escapeHtml(iconHash)}.png" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter;">`;
             else av.textContent = letter;
         }
 
@@ -17446,7 +17599,7 @@ Type any command above (e.g. pm list packages -d)</div>
         ];
         const PDNS_SAMPLES = 3, PDNS_TIMEOUT_MS = 3000, PDNS_MAX_HOSTS = 40, PDNS_ARM_MS = 10000;
         let PDNS_SILENCE_MS = 60000;                                               // a scan that says nothing for this long is given up (a native side that hangs)
-        let pdnsScan = null, pdnsScanN = 0, pdnsSortOn = false, pdnsArmed = null, pdnsArmTimer = 0, pdnsWatch = 0, pdnsTestMsgText = '';
+        let pdnsScan = null, pdnsScanN = 0, pdnsSortOn = kvGet('pdns_sort', true) !== false, pdnsArmed = null, pdnsArmTimer = 0, pdnsWatch = 0, pdnsTestMsgText = '';
         let pdnsSeq = 0, pdnsBusy = false, pdnsReading = false, pdnsState = null, pdnsAt = 0, pdnsBackend = null;   // pdnsSeq: the number of the newest thing the card asked; an answer to an older one is dropped
 
         // The host name that may be written, or why not. Pure: no page, no bridge. { ok: true, host } (lower case, one trailing dot dropped) or { ok: false, why }.
@@ -17861,7 +18014,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (f) { const n = document.createElement('span'); n.setAttribute('translate', 'no'); n.textContent = pdnsName(f); fv.appendChild(n); fv.appendChild(document.createTextNode(' · ' + txF('{0} ms', pdnsTotal(pdnsScan.res[f])))); }
             }
         }
-        function pdnsSortChange(on) { pdnsSortOn = !!on; pdnsScanRender(); }
+        // Sort by speed is remembered (kv 'pdns_sort'), on until it is turned off (v7.19.0)
+        function pdnsSortChange(on) { pdnsSortOn = !!on; kvSet('pdns_sort', pdnsSortOn); pdnsScanRender(); }
+        { const sw = document.getElementById('pdnsSort'); if (sw) sw.checked = pdnsSortOn; }
 
         function pdnsTestHosts() {
             const hosts = [];
@@ -19446,9 +19601,21 @@ Type any command above (e.g. pm list packages -d)</div>
         function showMoreSource(key) { haptic(); storeSrc[key].shown += STORE_PAGE; renderSource(key); }
 
         // ---- cards ----
+        // on mobile data while stores keep to Wi-Fi (App Stores > Update stores on mobile data off) the lists show letters, no icon is downloaded;
+        // asked of the app at most every few seconds, not for each row
+        var storeIconsOffAt = 0, storeIconsOffVal = false;   // var: the ShizuStore list above calls it too
+        function storeIconsOff() {
+            const now = Date.now();
+            if (now - storeIconsOffAt > 4000) {
+                storeIconsOffAt = now;
+                try { storeIconsOffVal = !!(window.AndroidBridge && window.AndroidBridge.storeMobileBlockedNow && window.AndroidBridge.storeMobileBlockedNow()); } catch (e) { storeIconsOffVal = false; }
+            }
+            return storeIconsOffVal;
+        }
         function srcIconHtml(a) {
             const esc = escapeHtml;
             const letter = esc(firstChar(a.name));
+            if (a.icon && storeIconsOff()) a = Object.assign({}, a, { icon: '' });
             const img = a.icon ? `<img class="sr-icon" loading="lazy" src="${esc(a.icon)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
             const fb = `<div class="sr-fallback"${a.icon ? ' style="display:none;"' : ''}>${letter}</div>`;
             return img + fb;
@@ -19632,12 +19799,6 @@ Type any command above (e.g. pm list packages -d)</div>
                 s.shown = STORE_PAGE; s.cat = ''; refreshCats('fdroid'); renderFdroid();
                 return;
             }
-            // Catalogs run from a few MB to tens of MB: ask first on mobile data
-            if (!s.meteredOk && window.AndroidBridge.isNetworkMetered && window.AndroidBridge.isNetworkMetered()) {
-                s.items = []; s.loaded = false; s.loading = false; s.error = ''; s.pendingMetered = true;
-                refreshCats('fdroid'); renderFdroid();
-                return;
-            }
             s.pendingMetered = false;
             s.items = []; s.keys = null; s.loaded = false; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE; s.cat = '';
             s.progress = 'Contacting ' + repo.name + '…'; s.meta = {};
@@ -19647,7 +19808,22 @@ Type any command above (e.g. pm list packages -d)</div>
             else window.AndroidBridge.storeSourceCatalog('fdroid-repo', repo.address);
         }
 
-        function fdroidAllowMetered() { storeSrc.fdroid.meteredOk = true; haptic(); fdroidLoadRepo(false); }
+        // "Update stores on mobile data" and "Check for updates on mobile data" (v7.18.1, off by default, remembered once turned on): the app only
+        // reads the stored value (mobileDataBlocked) before a catalog or an update check goes online. Turned on, the store tab open now loads again.
+        function mobileDataSync() {
+            [['storeMobileToggle', 'store_mobile_data'], ['updMobileToggle', 'updates_mobile_data']].forEach(([id, k]) => { const el = document.getElementById(id); if (el) el.checked = kvGet(k, false) === true; });
+        }
+        function setMobileDataOk(key, on) {
+            kvSet(key, !!on);
+            storeIconsOffAt = 0;
+            mobileDataSync();
+            haptic();
+            if (key === 'store_mobile_data') {
+                showToast(on ? 'Stores now update on mobile data too' : 'Stores update only on Wi-Fi');
+                if (on && currentViewName() === 'store') { if (currentStoreTab === 'fdroid') fdroidLoadRepo(false); else switchStoreTab(currentStoreTab); }
+            } else showToast(on ? 'Updates are now checked on mobile data too' : 'Updates are checked only on Wi-Fi');
+        }
+        mobileDataSync();
 
         function fdroidSelectRepo(id) {
             const s = storeSrc.fdroid;
@@ -19708,10 +19884,6 @@ Type any command above (e.g. pm list packages -d)</div>
                 return;
             }
             filters.style.display = '';
-            if (s.pendingMetered) {
-                extra.innerHTML = `<div class="store-prompt"><div style="flex:1;">You're on a metered connection (mobile data / hotspot). <b>${escapeHtml(repo ? repo.name : 'This repository')}</b>'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.</div>
-                    <button class="batch-tool-link" onclick="fdroidAllowMetered()">Download</button></div>`;
-            }
             const filtered = srcFiltered('fdroid');
             const shown = filtered.slice(0, s.shown);
             srcEl('fdroid', 'Count').innerText = (s.items.length ? filtered.length + (filtered.length !== s.items.length ? ' / ' + s.items.length : '') + ' apps' : '');
@@ -19984,7 +20156,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ver = item.ver || item.version;
             document.getElementById('storeDetailSub').innerText = (item.pkg || (item.owner ? item.owner + '/' + item.repo : '')) + (ver && String(ver).toLowerCase() !== 'latest' ? ' · v' + String(ver).replace(/^v/i, '') : '');
             const av = document.getElementById('storeDetailAvatar'), letter = firstChar(item.name, '?');
-            if (item.icon) av.innerHTML = `<img src="${escapeHtml(item.icon)}" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter">`;
+            if (item.icon && !storeIconsOff()) av.innerHTML = `<img src="${escapeHtml(item.icon)}" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter">`;
             else av.textContent = letter;
             storeGenericRender(item, memo || null, memo ? '' : 'Loading the full description and the screenshots…', false);
             if (memo) return;
@@ -20424,28 +20596,32 @@ Type any command above (e.g. pm list packages -d)</div>
             menu.style.display = '';
             document.getElementById('searchMenuBtn').setAttribute('aria-expanded', 'true');
             document.body.classList.add('search-menu-open');               // the batch button steps aside while the menu is open
-            // The menu hangs below the box: bring it all into view (above the bottom bar when that is on the screen), but not so far that the box itself goes under the tabs
-            // (or under the header, which is all there is at the top when the bottom bar is the navigation: the tab bar is not shown then)
-            const r = menu.getBoundingClientRect(), box = document.getElementById('searchBox').getBoundingClientRect();
-            const tabs = document.getElementById('tabBar').getBoundingClientRect(), hdr = document.querySelector('.app-header');
-            const bar = document.getElementById('bnav'), bb = bar && !bar.classList.contains('bnav-off') ? bar.getBoundingClientRect() : null;
-            const barH = bb && bb.height > 0 && bb.width >= window.innerWidth - 1 && bb.top < window.innerHeight ? window.innerHeight - bb.top : 0;          // (the rail of a wide screen stands at the left: it covers no row)
-            const need = r.bottom - (window.innerHeight - barH - 10), room = box.top - (Math.max(tabs.bottom, hdr ? hdr.getBoundingClientRect().bottom : 0) + 8);
-            if (need > 0 && room > 0) window.scrollBy({ top: Math.min(need, room), behavior: 'smooth' });
+            searchMenuPlace(menu, false);
         }
 
-        // The last row of the menu: Row tints is a setting of Settings, so the row closes the menu and goes there (Back comes back to the Apps tab, as from any other tab).
-        // Settings opens on the card, which is lit up for a moment like the sections the bottom bar's shortcuts go to (bnavReveal), and the slider has the focus for a keyboard.
-        function searchMenuRowTints() {
-            closeSearchMenu();
-            if (!switchView('prefs')) return;
-            setTimeout(() => {
-                if (currentViewName() !== 'prefs') return;                       // Back was pressed meanwhile
-                bnavReveal('#rowTintCard');
-                const r = document.getElementById('rowTintRange');
-                if (r) r.focus({ preventScroll: true });
-            }, 90);
+        // The menu hangs below the box: bring it all into view (above the bottom bar when that is on the screen), but not so far that the box itself goes under the tabs
+        // (or under the header, which is all there is at the top when the bottom bar is the navigation: the tab bar is not shown then)
+        function searchMenuPlace(menu, again) {
+            const kept = menu.scrollTop, se = document.scrollingElement || document.documentElement, y0 = window.scrollY;
+            // How far the page itself can still scroll, the menu aside (a short list: not always as far as the menu needs). Below 0 when the page stands
+            // where only the menu's earlier size let it go: once the menu is cut, the page drops back by that much
+            menu.style.overflowY = 'hidden'; menu.style.maxHeight = '0px';
+            const canScroll = se.scrollHeight - window.innerHeight - y0;
+            menu.style.maxHeight = ''; menu.style.overflowY = '';
+            const r = menu.getBoundingClientRect(), box = document.getElementById('searchBox').getBoundingClientRect();
+            const tabs = document.getElementById('tabBar').getBoundingClientRect(), hdr = document.querySelector('.app-header');
+            const barH = floatBase();          // the bottom bar as laid out (not where its slide-in has got to), 0 when it is away or is the rail of a wide screen
+            const need = r.bottom - (window.innerHeight - barH - 10), room = box.top - (Math.max(tabs.bottom, hdr ? hdr.getBoundingClientRect().bottom : 0) + 8);
+            const by = need <= 0 ? 0 : canScroll < 0 ? canScroll : room > 0 && canScroll > 0 ? Math.min(need, room, canScroll) : 0;
+            if (by > 0) window.scrollBy({ top: by, behavior: again ? 'auto' : 'smooth' });          // placed again (a turn, the bar): at once, as a smooth scroll still running would swallow it
+            // A screen too short for all of it (the Row tints slider made the menu taller, a phone turned sideways): the rest scrolls inside the menu,
+            // in whatever room there is down to 48 px (with less, the menu is left whole and the page scrolls)
+            const fit = Math.floor(window.innerHeight - barH - 10 - (r.top - by));
+            if (r.height > fit && fit >= 48) { menu.style.maxHeight = fit + 'px'; menu.style.overflowY = 'auto'; menu.scrollTop = kept; }
         }
+        // ...and again when the window changes size with the menu open (the phone turned, split screen). When the bottom bar comes back or goes away
+        // (the keyboard, the focus leaving the search box), bnavVisibility places it again
+        window.addEventListener('resize', () => { if (searchMenuOpen()) searchMenuPlace(document.getElementById('searchMenu'), true); });
 
         // The box says what it searches, and the menu shows the options as they are now
         function syncSearchUi() {
@@ -20924,7 +21100,7 @@ Type any command above (e.g. pm list packages -d)</div>
             try { d = JSON.parse(window.AndroidBridge.getAppDetails(pkg)); } catch (e) { showToast('Could not read this app'); return; }
             inspectedPkg = pkg;                       // the permission and component actions below work on the app named here
             inspectorData = d;
-            appOpsList = parseAppOps(d.appopsRaw || '');
+            appOpsList = withPermissionOps(parseAppOps(d.appopsRaw || ''));
             const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
             document.getElementById('alsSub').innerText = app.name + ' · ' + pkg;
             alsSel.clear();
@@ -20962,16 +21138,16 @@ Type any command above (e.g. pm list packages -d)</div>
             const d = inspectorData || {};
             const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
             return (d.permissions || []).filter(p => {
-                if (alsFilter === 'granted' && !p.granted) return false;
-                if (alsFilter === 'denied' && p.granted) return false;
-                if (alsFilter === 'changeable' && !p.changeable) return false;
-                if (alsFilter === 'locked' && p.changeable) return false;
+                if (alsFilter === 'granted' && !permOn(p)) return false;
+                if (alsFilter === 'denied' && permOn(p)) return false;
+                if (alsFilter === 'changeable' && !permCanChange(p)) return false;
+                if (alsFilter === 'locked' && permCanChange(p)) return false;
                 return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
             });
         }
         async function alsBulk(grant) {
             if (alsBulkBusy || alsKind !== 'perms') return;
-            const todo = alsVisiblePerms().filter(p => p.changeable && p.granted !== grant);
+            const todo = alsVisiblePerms().filter(p => permCanChange(p) && permOn(p) !== grant);
             if (!todo.length) { showToast(grant ? 'Nothing to grant here' : 'Nothing to revoke here'); return; }
             if (!guardPrivilege((grant ? 'Grant' : 'Revoke') + ' permissions')) return;
             const app = allApps.find(a => a.pkg === inspectedPkg) || { name: inspectedPkg };
@@ -20986,11 +21162,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 showToast((grant ? 'Granting ' : 'Revoking ') + (i + 1) + ' of ' + todo.length + '…');
                 await new Promise(r => setTimeout(r, 0));
                 let r;
-                try { r = parseActionResult(window.AndroidBridge.setPermission(pkg, todo[i].name, grant)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+                // A permission Android switches by its app op goes through the op, the rest through pm grant/revoke (v7.19.0)
+                const op = permOpToggle(todo[i]);
+                try { r = parseActionResult(op && window.AndroidBridge.setAppOp ? window.AndroidBridge.setAppOp(pkg, op, grant ? 'allow' : 'ignore') : window.AndroidBridge.setPermission(pkg, todo[i].name, grant)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
                 if (r.ok) done++; else failed.push({ name: todo[i].name.replace(/^android\.permission\./, ''), pkg: todo[i].name, output: r.output, success: false });
             }
             alsBulkBusy = false;
             showToast((grant ? 'Granted ' : 'Revoked ') + done + ' of ' + todo.length + (failed.length ? ' • ' + failed.length + ' failed' : ''));
+            if (todo.some(p => permOpToggle(p)) && typeof refreshAppOps === 'function') refreshAppOps();
             reloadInspectorDetails();
             alsRender();
             if (failed.length) showCommandResults('Permission Manager', grant ? 'grant' : 'revoke', failed);
@@ -21021,25 +21200,25 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             if (alsKind === 'perms') {
                 const perms = d.permissions || [];
-                const granted = perms.filter(p => p.granted).length;
-                sum.innerText = perms.length + ' declared · ' + granted + ' granted · ' + perms.filter(p => p.changeable).length + ' you can change';
+                const granted = perms.filter(permOn).length;
+                sum.innerText = perms.length + ' declared · ' + granted + ' granted · ' + perms.filter(permCanChange).length + ' you can change';
                 const rows = perms.filter(p => {
-                    if (alsFilter === 'granted' && !p.granted) return false;
-                    if (alsFilter === 'denied' && p.granted) return false;
-                    if (alsFilter === 'changeable' && !p.changeable) return false;
-                    if (alsFilter === 'locked' && p.changeable) return false;
+                    if (alsFilter === 'granted' && !permOn(p)) return false;
+                    if (alsFilter === 'denied' && permOn(p)) return false;
+                    if (alsFilter === 'changeable' && !permCanChange(p)) return false;
+                    if (alsFilter === 'locked' && permCanChange(p)) return false;
                     return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
-                }).sort((a, b) => (b.changeable - a.changeable) || a.name.localeCompare(b.name));
-                const toGrant = rows.filter(p => p.changeable && !p.granted).length, toRevoke = rows.filter(p => p.changeable && p.granted).length;
+                }).sort((a, b) => (permCanChange(b) - permCanChange(a)) || a.name.localeCompare(b.name));
+                const toGrant = rows.filter(p => permCanChange(p) && !permOn(p)).length, toRevoke = rows.filter(p => permCanChange(p) && permOn(p)).length;
                 document.getElementById('alsBulkRow').style.display = '';
                 const gb = document.getElementById('alsGrantAll'), rb = document.getElementById('alsRevokeAll');
                 gb.innerText = 'Grant all shown (' + toGrant + ')'; gb.disabled = !toGrant || alsBulkBusy;
                 rb.innerText = 'Revoke all shown (' + toRevoke + ')'; rb.disabled = !toRevoke || alsBulkBusy;
                 list.innerHTML = rows.length ? rows.map(p => {
                     const short = p.name.replace(/^android\.permission\./, '');
-                    const state = p.granted ? 'Granted' : 'Not granted';
-                    const how = p.changeable ? 'You can grant or revoke it here.' : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
-                    const btn = p.changeable
+                    const state = permOn(p) ? 'Granted' : 'Not granted';
+                    const how = p.changeable ? 'You can grant or revoke it here.' : permOpToggle(p) ? txT('Android controls it by its app op: allow or stop it here.') : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
+                    const btn = permOpToggle(p) ? permOpBtn(p) : p.changeable
                         ? `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (p.granted ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${lk(lockedNow())}${p.granted ? 'GRANTED' : 'REVOKED'}</button>`
                         : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                     return `<div class="perm-row als-row"><div class="perm-info">
@@ -21088,7 +21267,8 @@ Type any command above (e.g. pm list packages -d)</div>
         // the app op behind a permission, when this app has one recorded: CAMERA for android.permission.CAMERA, FINE_LOCATION for ACCESS_FINE_LOCATION
         function alsOpLine(permName) {
             const base = permName.replace(/^.*\./, '');
-            const op = (appOpsList || []).find(o => o.name === base || o.name === base.replace(/^ACCESS_/, ''));
+            const perm = ((inspectorData && inspectorData.permissions) || []).find(p => p.name === permName);
+            const op = (appOpsList || []).find(o => o.name === (perm && perm.op) || o.name === base || o.name === base.replace(/^ACCESS_/, ''));
             return op ? `<div class="als-detail" translate="no">App op ${escapeHtml(op.name)}: ${escapeHtml(op.mode)}</div>` : '';
         }
         function alsVisibleActs() {
@@ -21231,6 +21411,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         window.onTextFilePicked = function (r) {
             if (r && r.tag === 'lists-file') { listsOnFile(r); return; }
+            if (r && r.tag === 'monet-file') { if (r.error) showToast('Could not read that file: ' + r.error); else ovlBkRestoreFrom(r.text || '', r.name || 'that file'); return; }
             if (r && r.tag === 'hs-restore') { if (r.error) showToast('Could not read that file: ' + r.error); else sdbRestoreFrom(r.text || ''); return; }
             if (!r || !String(r.tag || '').startsWith('presets-')) return;
             if (r.error) { showToast('Could not read that file: ' + r.error); return; }
@@ -24459,6 +24640,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('fmActionPath').innerText = full;
             document.getElementById('fmDestRow').style.display = 'none';
             document.getElementById('fmViewer').style.display = 'none';
+            document.getElementById('fmPermRow').style.display = 'none';
             const isSaf = full.startsWith('content://');
             const kind = isDir ? 'dir' : fmKind(name);
             const btns = [];
@@ -24476,6 +24658,8 @@ Type any command above (e.g. pm list packages -d)</div>
             // added storage has no path to type: Copy and Move put the item on the clipboard, then Paste goes in the folder you open
             btns.push(isSaf ? `<button class="batch-grid-btn" onclick="fmClipOne('cp')">Copy</button>` : `<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
             btns.push(isSaf ? `<button class="batch-grid-btn" onclick="fmClipOne('mv')">Move</button>` : `<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
+            // v7.18.2 Root file management: the mode and owner, only as the root user (the same gate as the Root-only theme controls)
+            if (!isSaf && ovlCanWriteOverlays()) btns.push(`<button class="batch-grid-btn" onclick="fmPermOpen()">Permissions…</button>`);
             btns.push(`<button class="batch-grid-btn danger" onclick="fmStartDest('rm')">Delete</button>`);
             document.getElementById('fmActionBtns').innerHTML = btns.join('');
             haptic();
@@ -24483,10 +24667,138 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function closeFmAction() { haptic(); document.getElementById('fmActionModal').classList.remove('show'); }
 
+        // ---- v7.18.2 Root file management: Permissions… (read the mode, owner, group and SELinux label; change the mode or the owner) ----
+        let fmPerm = null;          // { full, isDir, mode: '0644' (4 digits), user, group, uid, gid, label, before: what it was before the last change here }
+        const FM_PERM_WHO = [['Owner', 6], ['Group', 3], ['Others', 0]], FM_PERM_BITS = [['Read', 4], ['Write', 2], ['Run', 1]];
+        function fmPermCall(op, a, b) {
+            try { return JSON.parse(window.AndroidBridge.fmOp(op, a, b)); } catch (e) { return { ok: false, output: String(e && e.message || e) }; }
+        }
+        function fmPermRwx(mode) {
+            const m = parseInt(mode, 8) || 0;
+            return FM_PERM_WHO.map(([, sh]) => FM_PERM_BITS.map(([, bit], i) => (m >> sh) & bit ? 'rwx'[i] : '-').join('')).join('');
+        }
+        function fmPermOpen() {
+            if (!fmActionTarget || !window.AndroidBridge || !window.AndroidBridge.fmOp) return;
+            haptic();
+            document.getElementById('fmDestRow').style.display = 'none';
+            document.getElementById('fmViewer').style.display = 'none';
+            const box = document.getElementById('fmPermRow');
+            box.style.display = '';
+            const t = fmActionTarget, r = fmPermCall('stat', t.full, null);
+            if (!r.ok || !/^[0-7]{1,4}$/.test(String(r.mode || ''))) {
+                fmPerm = null;
+                box.innerHTML = '<div class="fm-perm-line">' + escapeHtml(txF('Could not read the permissions: {0}', r.output || 'no answer')) + '</div>';
+                return;
+            }
+            const before = fmPerm && fmPerm.full === t.full ? fmPerm.before : '';
+            // an id with no name reads UNKNOWN in stat: the number stands in for it (it is what chown takes back)
+            const known = (n, id) => n && n !== 'UNKNOWN' ? n : String(id || '');
+            fmPerm = { full: t.full, isDir: !!t.isDir, isLink: r.type === 'symbolic link', mode: String(r.mode).padStart(4, '0'), user: known(r.user, r.uid), group: known(r.group, r.gid), uid: r.uid || '', gid: r.gid || '', label: r.label || '', before };
+            fmPermRender();
+        }
+        function fmPermRender() {
+            const p = fmPerm, box = document.getElementById('fmPermRow');
+            if (!p || !box) return;
+            const m = parseInt(p.mode, 8), esc = escapeHtml;
+            let grid = '<span></span>' + FM_PERM_BITS.map(([n]) => '<span class="fm-perm-head">' + esc(txT(n)) + '</span>').join('');
+            FM_PERM_WHO.forEach(([who, sh]) => {
+                grid += '<span class="fm-perm-who">' + esc(txT(who)) + '</span>' + FM_PERM_BITS.map(([n, bit]) => '<label><input type="checkbox" data-bit="' + (bit << sh) + '"' + ((m >> sh) & bit ? ' checked' : '')
+                    + ' aria-label="' + esc(txT(who) + ': ' + txT(n)) + '" onchange="fmPermTick()"></label>').join('');
+            });
+            const rec = id => p.isDir ? '<label class="fm-perm-rec"><input type="checkbox" id="' + id + '"> ' + esc(txT('Also everything inside this folder')) + '</label>' : '';
+            // a symbolic link's own mode is not used, and chmod would change what it points to: only its owner is offered here
+            const modePart = p.isLink ? '<div class="fm-perm-line" id="fmPermLink">' + esc(txT('This is a link: open the file it points to and change the permissions there')) + '</div>'
+                : '<div class="fm-perm-sub">' + esc(txT('Permissions')) + '</div>'
+                + '<div class="fm-perm-grid">' + grid + '</div>'
+                + '<div class="fm-perm-mode"><input class="modal-text-input" id="fmPermMode" inputmode="numeric" maxlength="4" value="' + esc(p.mode) + '" aria-label="' + esc(txT('Mode (octal)')) + '" autocomplete="off" oninput="fmPermTyped()">'
+                + '<span class="fm-perm-head" id="fmPermRwx">' + fmPermRwx(p.mode) + '</span></div>'
+                + rec('fmPermModeRec')
+                + '<button class="mode-action-btn primary fm-perm-go" id="fmPermModeBtn" onclick="fmPermApply(\'chmod\')">' + esc(txT('Apply permissions')) + '</button>';
+            box.innerHTML = '<div class="fm-perm-line" id="fmPermNow">' + esc(fmPermNowText()) + '</div>'
+                + modePart
+                + '<div class="fm-perm-sub">' + esc(txT('Owner and group')) + '</div>'
+                + '<div class="fm-perm-two"><input class="modal-text-input" id="fmPermUser" value="' + esc(p.user) + '" placeholder="' + esc(txT('Owner')) + '" aria-label="' + esc(txT('Owner')) + '" autocomplete="off" autocapitalize="off" spellcheck="false">'
+                + '<input class="modal-text-input" id="fmPermGroup" value="' + esc(p.group) + '" placeholder="' + esc(txT('Group')) + '" aria-label="' + esc(txT('Group')) + '" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'
+                + rec('fmPermOwnRec')
+                + '<button class="mode-action-btn primary fm-perm-go" id="fmPermOwnBtn" onclick="fmPermApply(\'chown\')">' + esc(txT('Apply owner')) + '</button>'
+                // v7.18.3: the SELinux label put back to what the system policy gives this place (restorecon), the fix for a file copied into another app's data
+                + '<div class="fm-perm-sub">' + esc(txT('SELinux label')) + '</div>'
+                + '<div class="fm-perm-line" id="fmPermLabel">' + esc(p.label || txT('Not shown')) + '</div>'
+                + rec('fmPermLabelRec')
+                + '<button class="mode-action-btn fm-perm-go" id="fmPermLabelBtn" onclick="fmPermApply(\'restorecon\')">' + esc(txT('Restore the default label')) + '</button>'
+                + (p.before ? '<div class="fm-perm-line" id="fmPermBefore">' + esc(p.before) + '</div>' : '');
+        }
+        function fmPermNowText() {
+            const p = fmPerm;
+            return txT('Now:') + ' ' + p.mode + ' (' + fmPermRwx(p.mode) + ') · ' + p.user + (p.uid ? ' (' + p.uid + ')' : '') + ':' + p.group + (p.gid ? ' (' + p.gid + ')' : '') + (p.label ? ' · ' + p.label : '');
+        }
+        function fmPermTick() {
+            if (!fmPerm) return;
+            const typed = document.getElementById('fmPermMode').value;
+            let m = parseInt(/^[0-7]{4}$/.test(typed) ? typed : fmPerm.mode, 8);   // three digits typed: the special bits are the file's own
+            m &= 0o7000;                                                 // setuid, setgid and sticky stay as they are
+            document.querySelectorAll('#fmPermRow .fm-perm-grid input').forEach(i => { if (i.checked) m |= +i.dataset.bit; });
+            const v = m.toString(8).padStart(4, '0');
+            document.getElementById('fmPermMode').value = v;
+            document.getElementById('fmPermRwx').textContent = fmPermRwx(v);
+        }
+        function fmPermTyped() {
+            const el = document.getElementById('fmPermMode'), v = el.value.replace(/[^0-7]/g, '').slice(0, 4);
+            if (v !== el.value) el.value = v;
+            if (!/^[0-7]{3,4}$/.test(v)) return;
+            const m = parseInt(v, 8);
+            document.querySelectorAll('#fmPermRow .fm-perm-grid input').forEach(i => { i.checked = !!(m & +i.dataset.bit); });
+            document.getElementById('fmPermRwx').textContent = fmPermRwx(v);
+        }
+        function fmPermApply(kind) {
+            const p = fmPerm;
+            if (!p) return;
+            const recEl = document.getElementById(kind === 'chmod' ? 'fmPermModeRec' : kind === 'restorecon' ? 'fmPermLabelRec' : 'fmPermOwnRec'), rec = !!(recEl && recEl.checked);
+            let b, what;
+            if (kind === 'restorecon') {
+                b = '';
+                what = txT('the default label');
+            } else if (kind === 'chmod') {
+                b = (document.getElementById('fmPermMode').value || '').trim();
+                if (!/^[0-7]{3,4}$/.test(b)) { showToast('The mode must be three or four digits from 0 to 7, such as 644'); return; }
+                if (b.length === 3) b = p.mode.charAt(0) + b;                // three digits keep setuid, setgid and sticky as they are
+                if (b === p.mode && !rec) { showToast('Nothing to change'); return; }
+                what = b + ' (' + fmPermRwx(b) + ')';
+            } else {
+                const u = (document.getElementById('fmPermUser').value || '').trim(), g = (document.getElementById('fmPermGroup').value || '').trim();
+                if (!u && !g) { showToast('Enter an owner or a group'); return; }
+                if ((u || p.user) === p.user && (g || p.group) === p.group && !rec) { showToast('Nothing to change'); return; }
+                b = u + ':' + g;
+                what = (u || p.user) + ':' + (g || p.group);
+            }
+            const name = fmBase(p.full) || p.full;
+            if (rec || kind === 'chown') {
+                nextDialogTitle(kind === 'chmod' ? 'Change permissions' : kind === 'restorecon' ? 'Restore the default label' : 'Change owner');
+                const q = rec ? 'Set {0} on {1} and everything inside it? What each item inside had before is not kept, and an app or Android can stop working when files it needs change.'
+                    : 'Set the owner {0} on {1}? An app or Android can stop working when files it needs change owner.';
+                if (!confirm(txF(q, what, name))) return;
+            }
+            haptic();
+            const before = kind === 'restorecon' ? txF('Label before the last change: {0}', p.label || '?')
+                : txF('Before the last change: {0} ({1}) {2}', p.mode, fmPermRwx(p.mode), p.user + ':' + p.group);
+            const r = fmPermCall(kind + (rec ? '-r' : ''), p.full, b);
+            if (!r.ok) {
+                const out = String(r.output || '');
+                showToast(out && out.length < 90 && !/\n/.test(out) ? out : 'Failed');
+                if (out.length >= 90 || /\n/.test(out)) showCommandResults('Permissions', kind, [{ name, pkg: p.full, output: out, success: false }]);
+                return;
+            }
+            p.before = before;
+            showToast(txF('Done: {0}', what));
+            fmPermOpen();                                                // read back what Android says now
+            fmRefresh();
+        }
+
         function fmStartDest(op) {
             if (!fmActionTarget) return;
             fmPendingOp = op;
             const row = document.getElementById('fmDestRow');
+            document.getElementById('fmPermRow').style.display = 'none';
             const input = document.getElementById('fmDestInput');
             const confirm = document.getElementById('fmDestConfirm');
             row.style.display = '';
@@ -24596,6 +24908,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!fmActionTarget) return;
             const v = document.getElementById('fmViewer');
             document.getElementById('fmDestRow').style.display = 'none';
+            document.getElementById('fmPermRow').style.display = 'none';
             let txt;
             try { txt = window.AndroidBridge.fmRead(fmActionTarget.full); } catch (e) { txt = 'Error: ' + (e && e.message || e); }
             const html = /^Error:/.test(txt || '') ? null : synFor(fmActionTarget.name, txt);
@@ -24627,6 +24940,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('fmActionBtns').innerHTML = '';
             document.getElementById('fmViewer').style.display = 'none';
             const row = document.getElementById('fmDestRow');
+            document.getElementById('fmPermRow').style.display = 'none';
             const input = document.getElementById('fmDestInput');
             const confirm = document.getElementById('fmDestConfirm');
             row.style.display = '';
@@ -24656,6 +24970,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('fmActionBtns').innerHTML = '';
             document.getElementById('fmViewer').style.display = 'none';
             const row = document.getElementById('fmDestRow');
+            document.getElementById('fmPermRow').style.display = 'none';
             const input = document.getElementById('fmDestInput');
             const confirm = document.getElementById('fmDestConfirm');
             row.style.display = '';
@@ -26531,7 +26846,7 @@ Type any command above (e.g. pm list packages -d)</div>
             Object.keys(HELP_LINKS).forEach(view => {
                 const sec = document.getElementById('view-' + view);
                 if (!sec || sec.querySelector(':scope > .color-card > .help-q, .help-q')) return;
-                const card = sec.querySelector('.sec-head, .color-card, .cn-tabs');   // Console and Live Logcat have no card: the ? sits on the tab row; a .sec-head (v7.15) takes it before any card
+                const card = sec.querySelector('.sec-head, .help-row, .color-card, .cn-tabs');   // Console and Live Logcat have no card: the ? sits on the tab row; a .sec-head (v7.15) or a .help-row (v7.19.2) takes it before any card
                 if (!card) return;
                 card.classList.add('has-help');
                 const b = document.createElement('button');
@@ -26884,6 +27199,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (d && d.state === 'device') { await cdLoadInfo(); cdSub(cd.sub); }
             }
             if (manual) showToast(cd.devices.length ? cd.devices.length + (cd.devices.length === 1 ? ' device' : ' devices') : 'No device found');
+            cdFindNearby(!!manual);
         }
 
         function cdRenderDevices() {
@@ -26897,6 +27213,7 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('cdWork').style.display = d && d.state === 'device' ? '' : 'none';
             cdRenderRecent();
             cdRenderLost();
+            cdRenderNearby();
         }
 
         function cdSelect(serial) {
@@ -27020,7 +27337,49 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function cdWaitList() { const k = kvGet('cd_retry', null), r = cdParseWaits(Array.isArray(k) ? k.join(',') : ''); return r.ok ? r.list : CD_AUTO_WAITS.slice(); }
         function cdWaitText(list) { return list.join(', '); }
-        function cdKnown() { const k = kvGet('cd_known', {}); return k && typeof k === 'object' && !Array.isArray(k) ? k : {}; }
+        function cdKnown() {
+            const k = kvGet('cd_known', {});
+            if (!k || typeof k !== 'object' || Array.isArray(k)) return {};
+            if (cdDedupeKnown(k)) kvSet('cd_known', k);
+            return k;
+        }
+        // The IP address of a Wi-Fi device ("192.168.1.20:5555" -> "192.168.1.20"); '' for USB, a Bluetooth link (a local port) and a Wireless
+        // debugging service name, which carry no address. Ports 5556 to 5585 keep the port ("10.0.2.2:5557"): there one computer serves several
+        // devices (emulators, forwarded ports), so the same address is not the same device.
+        function cdHostOf(serial) {
+            // A bare IPv4 address is that address on the default port 5555 (adb connect 192.168.1.20)
+            if (/^\d{1,3}(\.\d{1,3}){3}$/.test(String(serial || ''))) serial = serial + ':5555';
+            const m = /^([^\s:]+):(\d+)$/.exec(String(serial || ''));
+            if (!m || /^(127\.0\.0\.1|localhost)$/i.test(m[1]) || cd.bt.has(serial)) return '';
+            const port = +m[2];
+            return m[1].toLowerCase() + (port > 5555 && port <= 5585 ? ':' + port : '');
+        }
+        // One saved entry per Wi-Fi device (v7.19.0): the same IP address is the same device, whatever its port (Wireless debugging takes a new port
+        // every time it is switched on). Of the entries that share an address, the one connected now stays, else the newest. True when it dropped any.
+        function cdDedupeKnown(known) {
+            const best = {}, rank = s => (cdIsUp(s) ? 1e15 : 0) + ((known[s] || {}).at || 0);
+            Object.keys(known).forEach(s => { const h = cdHostOf(s); if (h && (!best[h] || rank(s) > rank(best[h]))) best[h] = s; });
+            let dropped = false;
+            Object.keys(known).forEach(s => {
+                const h = cdHostOf(s);
+                if (!h || best[h] === s) return;
+                const keep = known[best[h]] || {}, named = (e, key) => !!(e && e.name && e.name !== key);
+                if (!named(keep, best[h]) && named(known[s], s)) keep.name = known[s].name;      // a real name of the old entry is kept over an address
+                delete known[s]; dropped = true;
+            });
+            return dropped;
+        }
+        // The addresses typed or tapped before (kv 'cd_recent', newest first), one per IP address (v7.19.0)
+        function cdRecent() {
+            const r = kvGet('cd_recent', []), hosts = new Set();
+            return (Array.isArray(r) ? r : []).filter(x => {
+                if (!x || !x.addr) return false;
+                const h = cdHostOf(x.addr);
+                if (!h) return true;
+                if (hosts.has(h)) return false;
+                hosts.add(h); return true;
+            });
+        }
         const CD_SAVED_MAX = 20;                           // devices kept in the saved list
         function cdSaveOn() { return kvGet('cd_save', true) !== false; }
         function cdAutoOn() { return kvGet('cd_autore', true) !== false; }
@@ -27126,9 +27485,9 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- Saved devices: every device that was connected, kept until it is deleted here ----
         function cdSavedRows() {
             const known = cdKnown(), rows = [], seen = new Set();
-            Object.keys(known).forEach(s => { seen.add(s); rows.push({ serial: s, name: known[s].name || s, at: known[s].at || 0, up: cdIsUp(s) }); });
-            const r = kvGet('cd_recent', []);
-            (Array.isArray(r) ? r : []).forEach(x => { if (!x || !x.addr || seen.has(x.addr)) return; seen.add(x.addr); rows.push({ serial: x.addr, name: x.addr, at: x.at || 0, up: cdIsUp(x.addr) }); });
+            const hosts = new Set();
+            Object.keys(known).forEach(s => { seen.add(s); if (cdHostOf(s)) hosts.add(cdHostOf(s)); rows.push({ serial: s, name: known[s].name || s, at: known[s].at || 0, up: cdIsUp(s) }); });
+            cdRecent().forEach(x => { if (seen.has(x.addr) || hosts.has(cdHostOf(x.addr))) return; seen.add(x.addr); rows.push({ serial: x.addr, name: x.addr, at: x.at || 0, up: cdIsUp(x.addr) }); });
             return rows.sort((a, b) => (b.up - a.up) || (b.at - a.at));
         }
         function cdRenderSaved() {
@@ -27154,7 +27513,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function cdSavedToggle() { cd.savedOpen = !cd.savedOpen; cdRenderSaved(); }
         function cdSaveToggle() { kvSet('cd_save', !cdSaveOn()); cdRenderSaved(); haptic(); showToast(cdSaveOn() ? 'Devices you connect are saved' : 'Devices you connect are no longer saved'); }
         function cdSavedConnect(serial) {
-            if (cdKnown()[serial]) return cdReconnectSerial(serial, false);
+            if (cdKnown()[serial] || cdHostOf(serial)) return cdReconnectSerial(serial, false);     // a Wi-Fi address: a port that moved is looked up (mDNS)
             return cdConnect(serial);
         }
         function cdDeleteSaved(serial) {
@@ -27177,7 +27536,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const up = cdIsUp(serial);
             cdForget(serial, true);
             const r = kvGet('cd_recent', []);
-            if (Array.isArray(r)) kvSet('cd_recent', r.filter(x => x.addr !== serial));
+            const h = cdHostOf(serial);
+            if (Array.isArray(r)) kvSet('cd_recent', r.filter(x => x && x.addr !== serial && !(h && cdHostOf(x.addr) === h)));
             if (up) { cd.skip[serial] = true; cd.up.add(serial); }
         }
         function cdForget(serial, quiet) {
@@ -28568,8 +28928,8 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---- Add a device ----
         function cdAddOpen(tab) {
-            const recent = kvGet('cd_recent', []);
-            if (!document.getElementById('cdConnAddr').value && recent[0]) document.getElementById('cdConnAddr').value = recent[0].addr;
+            const recent = cdRecent(), near = cdNearbyRows()[0];
+            if (!document.getElementById('cdConnAddr').value && (near || recent[0])) document.getElementById('cdConnAddr').value = near ? near.addr : recent[0].addr;
             document.getElementById('cdAddLog').innerText = '';
             document.getElementById('cdAddModal').classList.add('show');
             cdAddTab(tab || cd.addTab || 'wifi');
@@ -28595,9 +28955,18 @@ Type any command above (e.g. pm list packages -d)</div>
             cd.pairing = false; btn.disabled = false;
             cdAddLog(out);
             if (/Successfully paired/i.test(out)) {
-                showToast('Paired. Now connect.');
                 const host = addr.replace(/:\d+$/, '');
                 const c = document.getElementById('cdConnAddr');
+                // v7.19.0: the device announces the port to connect to on this Wi-Fi (mDNS); look it up and connect, so no second address has to be typed
+                showToast('Paired. Looking for its connect port...');
+                let hit = null;
+                for (let n = 0; n < 3 && !hit; n++) {
+                    if (n) await cdSleep(1500);                          // the announcement can take a moment to appear after pairing
+                    await cdFindNearby(true, 5000);                         // short: a slow adb must not hold the pairing step for long
+                    hit = (cd.nearby || []).find(x => cdHostOf(x.addr) === host.toLowerCase());
+                }
+                if (hit) { c.value = hit.addr; cdConnect(hit.addr); return; }
+                showToast('Paired. Now connect.');
                 if (!c.value.trim()) c.value = host + ':';
                 c.focus();
             }
@@ -28626,15 +28995,16 @@ Type any command above (e.g. pm list packages -d)</div>
         function cdRemember(addr) {
             let r = kvGet('cd_recent', []);
             if (!Array.isArray(r)) r = [];
-            r = r.filter(x => x.addr !== addr);
+            const h = cdHostOf(addr);
+            r = r.filter(x => x && x.addr !== addr && !(h && cdHostOf(x.addr) === h));      // the same IP on another port is the same device (v7.19.0)
             r.unshift({ addr: addr, at: Date.now() });
             if (cdSaveOn()) kvSet('cd_recent', r.slice(0, 8));
         }
         function cdRenderRecent() {
             const el = document.getElementById('cdRecentWrap');
             if (!el) return;
-            const r = kvGet('cd_recent', []);
-            if (!Array.isArray(r) || !r.length || cdCur()) { el.style.display = 'none'; return; }
+            const r = cdRecent();
+            if (!r.length || cdCur()) { el.style.display = 'none'; return; }
             el.style.display = '';
             el.innerHTML = 'Recent: ' + r.map(x => '<button class="cd-chip" translate="no" data-a="' + escapeHtml(x.addr) + '" onclick="cdConnect(this.dataset.a)">' + escapeHtml(x.addr) + '</button>').join(' ');
         }
@@ -28645,6 +29015,44 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (m) res.push({ name: m[1], kind: /pairing/.test(m[2]) ? 'pair' : 'connect', addr: m[3] });
             });
             return res;
+        }
+        // ---- Found on this Wi-Fi (v7.19.0): devices that offer Wireless debugging on this network, with the address and port they announce now, so a
+        // paired device connects with one tap (Connect). Looked up when the tab opens (at most once a minute) and on Refresh; this phone's own
+        // announcement and devices connected now are left out. A device that was never paired answers Connect with a pairing error: pair it under + Add device.
+        const CD_NEARBY_GAP_MS = 60000;
+        async function cdFindNearby(force, timeoutMs) {
+            // a forced look while one is going waits for it (the pair step then looks again), instead of returning with nothing
+            if (cd.nearbyBusy) { if (force && cd.nearbyWait) await cd.nearbyWait; return; }
+            if (!force && Date.now() - (cd.nearbyAt || 0) < CD_NEARBY_GAP_MS) return;
+            cd.nearbyBusy = true; cd.nearbyAt = Date.now();
+            let done = null;
+            cd.nearbyWait = new Promise(r => { done = r; });
+            let found = [];
+            try {
+                const out = await cdRun(['mdns', 'services'], { serial: '', timeout: timeoutMs || 15000 });
+                if (!cdFail(out)) found = cdParseMdns(out).filter(x => x.kind === 'connect');
+            } finally { cd.nearbyBusy = false; done(); }
+            let own = '';
+            try { own = String((window.AndroidBridge && window.AndroidBridge.getDeviceIp && window.AndroidBridge.getDeviceIp()) || '').toLowerCase(); } catch (e) {}
+            const hosts = new Set();
+            cd.nearby = found.filter(x => { const h = cdHostOf(x.addr); if (!h || h === own || hosts.has(h)) return false; hosts.add(h); return true; });
+            cdRenderNearby();
+        }
+        // the ones not connected now (by address, or by the service name adb gives a device it connected to by itself)
+        function cdNearbyRows() {
+            return (cd.nearby || []).filter(x => !cd.devices.some(d => d.state === 'device' && (cdHostOf(d.serial) === cdHostOf(x.addr) || d.serial.indexOf(x.name + '.') === 0)));
+        }
+        function cdRenderNearby() {
+            const el = document.getElementById('cdNearby');
+            if (!el) return;
+            const rows = cdNearbyRows();
+            if (!rows.length) { el.innerHTML = ''; return; }
+            const known = cdKnown(), nameOf = addr => { const s = Object.keys(known).find(k => cdHostOf(k) === cdHostOf(addr)); return s ? known[s].name : ''; };
+            el.innerHTML = '<div class="cd-count" style="margin-top:var(--space-3h);">Found on this Wi-Fi</div>' + rows.map(x => {
+                const nm = nameOf(x.addr);
+                return '<div class="cd-found"><div class="cd-found-main" translate="no">' + escapeHtml(nm || x.addr) + '<span>' + escapeHtml((nm ? x.addr + ' \u00b7 ' : '') + txT('Wireless debugging')) + '</span></div>' +
+                    '<button class="cd-row-act" data-a="' + escapeHtml(x.addr) + '" onclick="cdConnect(this.dataset.a)">Connect</button></div>';
+            }).join('');
         }
         async function cdScan() {
             const btn = document.getElementById('cdScanBtn'), list = document.getElementById('cdScanList');
@@ -29060,7 +29468,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const level = document.getElementById('logcatLevel');
             const needle = (document.getElementById('logcatFilter').value || '').trim();
             const hidden = LC_LEVELS.filter(l => logcatHidden.has(l[0])).map(l => l[1]);
-            const head = ['# ADB/Root Full System Toolbox - log export', '# ' + new Date().toString(),
+            const head = ['# ADB/Root Toolbox - log export', '# ' + new Date().toString(),
                 '# Level: ' + level.options[level.selectedIndex].text + ' and above',
                 '# App: ' + (logcatApp ? logcatApp.name + ' (' + logcatApp.pkg + ')' : 'all apps')
                     + (needle ? ' | Text filter: "' + needle + '"' : '') + (hidden.length ? ' | Hidden levels: ' + hidden.join(', ') : ''),
@@ -29609,7 +30017,19 @@ Type any command above (e.g. pm list packages -d)</div>
             const managerHere = isRootActive() && !!d.rootAvailable;
             return rootFeatureRow('Super User for apps', 'Manage which apps get root in your manager.', 'Open manager', 'rfSuAppsBtn', 'rootManageSuperuser()', managerHere)
                 + rootFeatureRow('App components', 'Enable or disable activities, services, receivers and providers for any app.', 'Open apps', 'rfComponentsBtn', 'rootManageComponents()', isRootActive())
-                + rootFeatureRow('Trackers in apps', 'Switch off the tracker parts (ads, analytics) of any app.', 'Open apps', 'rfTrackersBtn', 'rootManageTrackers()', isRootActive());
+                + rootFeatureRow('Trackers in apps', 'Switch off the tracker parts (ads, analytics) of any app.', 'Open apps', 'rfTrackersBtn', 'rootManageTrackers()', isRootActive())
+                // v7.18.1 (the owner's wish): a signpost to the RRO/Monet Customization tab, whose Root-only theme controls write a color overlay
+                // (the UID-0 tier: Root with su, or Shizuku as root)
+                + rootFeatureRow('Additional Monet Customization', 'Pure black, more styles, intensity and your own accents for every app that uses Monet colors.', 'Open tab', 'rfMonetBtn', 'rootOpenMonet()', ovlCanWriteOverlays())
+                + rootFeatureRow('Root File Management', 'Open, change and delete any file, and set its permissions and owner (Permissions… on a file).', 'Open files', 'rfFilesBtn', 'rootOpenFiles()', ovlCanWriteOverlays());
+        }
+        // "Root File Management" (v7.18.2): the File Manager, where as root every path goes through su and a file's sheet has Permissions…
+        function rootOpenFiles() { switchView('files'); }
+        // "Additional Monet Customization": the RRO/Monet Customization tab on its Theme half, with the Root-only theme controls brought into view
+        function rootOpenMonet() {
+            if (!switchView('overlays')) return;
+            if (typeof ovlSub !== 'undefined' && ovlSub !== 'theme') ovlSetSub('theme');
+            setTimeout(() => { if (currentViewName() === 'overlays') bnavReveal('#ovlRootCard'); }, 90);
         }
         function renderRootFeatures() {
             const gate = document.getElementById('rootGate');
@@ -30952,7 +31372,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const mods = listed ? Array.from(new Set((listed.mods || []).concat(d.mods))) : [];
                 if (listed && mods.length > ((listed.mods && listed.mods.length) || 0)) { listed.mods = mods; renderApps(); }
             }
-            appOpsList = parseAppOps(d.appopsRaw || '');
+            appOpsList = withPermissionOps(parseAppOps(d.appopsRaw || ''));
             renderPermissionsList();
             renderAppOpsList();
 
@@ -31242,13 +31662,13 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             const q = (document.getElementById('permsSearch').value || '').toLowerCase().trim();
             const rows = perms.filter(p => {
-                if (permsFilter === 'granted' && !p.granted) return false;
-                if (permsFilter === 'denied' && p.granted) return false;
-                if (permsFilter === 'changeable' && !p.changeable) return false;
-                if (permsFilter === 'installtime' && p.changeable) return false;
+                if (permsFilter === 'granted' && !permOn(p)) return false;
+                if (permsFilter === 'denied' && permOn(p)) return false;
+                if (permsFilter === 'changeable' && !permCanChange(p)) return false;
+                if (permsFilter === 'installtime' && permCanChange(p)) return false;
                 if (q && !(p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q))) return false;
                 return true;
-            }).sort((a, b) => (b.changeable - a.changeable) || a.name.localeCompare(b.name));
+            }).sort((a, b) => (permCanChange(b) - permCanChange(a)) || a.name.localeCompare(b.name));
 
             if (!rows.length) {
                 container.innerHTML = '<div class="list-empty">No permissions match.</div>';
@@ -31258,14 +31678,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 const shortName = p.name.replace(/^android\.permission\./, '');
                 const kind = p.protection || 'unknown';
                 const sub = [p.label, p.name !== shortName ? p.name : ''].filter(Boolean).join(' • ');
-                const btn = p.changeable
+                const btn = permOpToggle(p) ? permOpBtn(p) : p.changeable
                     ? `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (p.granted ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${lk(lockedNow())}${p.granted ? 'GRANTED' : 'DENIED'}</button>`
                     : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                 return `
                     <div class="perm-row">
                         <div class="perm-info">
                             <div class="perm-name">${permWbr(shortName)}</div>
-                            <div class="perm-sub"><span class="perm-kind">${escapeHtml(kind)}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}${p.changeable ? '' : '<span class="perm-kind">locked</span>'}${permWbr(sub)}</div>
+                            <div class="perm-sub"><span class="perm-kind">${escapeHtml(kind)}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}${permCanChange(p) ? '' : '<span class="perm-kind">locked</span>'}${permWbr(sub)}</div>
                             ${agentBtnHtml('permission', p.name, ['Declared by the app: ' + inspectedPkg, 'Protection level: ' + kind, p.label ? 'Android calls it: ' + p.label : ''])}
                         </div>
                         ${btn}
@@ -31307,6 +31727,36 @@ Type any command above (e.g. pm list packages -d)</div>
                 }
             });
             return Array.from(ops.values()).sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        // The app ops behind the app's permissions are listed even when Android has no mode recorded for them yet, so they can be set (v7.19.0)
+        function withPermissionOps(list) {
+            const have = new Set(list.map(o => o.name));
+            ((inspectorData && inspectorData.permissions) || []).forEach(p => {
+                if (p && p.op && !have.has(p.op)) { have.add(p.op); list.push({ name: p.op, mode: 'default', detail: txT('not set yet'), uidMode: '', uidOnly: false }); }
+            });
+            return list.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        // A permission Android controls by its app op (Display over other apps, Usage access ...): pm grant cannot change it, the op can (v7.19.0)
+        // Also a development permission (Display over other apps, Usage access): pm grant changes its bit, but Android decides by the op
+        function permOpToggle(p) { return p && p.appOp && p.op && (!p.changeable || p.protection === 'development') ? p.op : ''; }
+        // Granted as Android applies it: by the op for a permission switched through its op, else the permission bit
+        function permOn(p) { return permOpToggle(p) ? permOpOn(p) : !!p.granted; }
+        function permCanChange(p) { return !!(p.changeable || permOpToggle(p)); }
+        // What Android applies: the stricter of an op's uid-level and package-level modes (v7.19.0)
+        const OP_STRICT = { allow: 0, default: 0, foreground: 1, ignore: 2, deny: 3 };
+        function opEffectiveMode(op) {
+            if (!op) return 'default';
+            if (!op.uidMode || op.uidOnly) return op.mode;
+            return (OP_STRICT[op.uidMode] || 0) > (OP_STRICT[op.mode] || 0) ? op.uidMode : op.mode;
+        }
+        function permOpOn(p) {
+            const mode = opEffectiveMode((appOpsList || []).find(o => o.name === p.op));
+            return mode === 'allow' || mode === 'foreground' || (mode === 'default' && !!p.granted);
+        }
+        function permOpBtn(p) {
+            const on = permOpOn(p);
+            return `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (on ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-op="${escapeHtml(p.op)}" data-on="${on}" onclick="setAppOpMode(this.getAttribute('data-op'), this.getAttribute('data-on') === 'true' ? 'ignore' : 'allow')">${lk(lockedNow())}${on ? 'GRANTED' : 'DENIED'}</button>`;
         }
 
         function setOpsFilter(f) {
@@ -31359,9 +31809,21 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!guardPrivilege('Change App Op')) return;
             haptic();
             if (!window.AndroidBridge || !inspectedPkg) return;
+            const cur = (appOpsList || []).find(o => o.name === op);
+            // Android applies the stricter of an op's uid-level and package-level modes, so an op with a uid-level mode gets both (v7.19.0)
+            if (cur && cur.uidMode && window.AndroidBridge.setAppOpUid) window.AndroidBridge.setAppOpUid(inspectedPkg, op, mode);
             const { ok, output } = parseActionResult(window.AndroidBridge.setAppOp(inspectedPkg, op, mode));
-            showToast(ok ? op + ' → ' + mode : (output.trim().split('\n')[0] || 'Could not change that app op'));
-            refreshAppOps();
+            const readOk = refreshAppOps();
+            if (!ok) {
+                const msg = output.trim().split('\n')[0] || 'Could not change that app op';
+                showToast(/SecurityException|not allowed|permission denial/i.test(output) && !isRootActive() ? txT('Android refused this app op from the shell. Super User, or Shizuku running as system (UID 1000), can change it.') : msg);
+                return;
+            }
+            // read it back: Android can keep another mode (a protected op, or a system app), and the toggle must not claim a change that did not happen
+            if (!readOk) { showToast(op + ' → ' + mode + ' · ' + txT('could not read it back')); return; }
+            const now = (appOpsList || []).find(o => o.name === op);
+            if (now && (mode !== 'default' ? opEffectiveMode(now) !== mode : (now.uidMode && now.uidMode !== 'default'))) showToast(txF('Android kept {0} at {1}', op, opEffectiveMode(now)));
+            else showToast(op + ' → ' + mode);
         }
 
         function setCustomAppOp() {
@@ -31375,12 +31837,16 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function refreshAppOps() {
-            if (!window.AndroidBridge || !inspectedPkg || !window.AndroidBridge.getAppOpsRaw) return;
+            if (!window.AndroidBridge || !inspectedPkg || !window.AndroidBridge.getAppOpsRaw) return false;
             const raw = window.AndroidBridge.getAppOpsRaw(inspectedPkg) || '';
+            // a failed read (an error or a timeout) keeps the list it had, so a toggle never reads back a list that is not there
+            if (/^\s*(Error|Exception|java\.|Timed out|Timeout)/i.test(raw)) return false;
             if (inspectorData) inspectorData.appopsRaw = raw;
-            appOpsList = parseAppOps(raw);
+            appOpsList = withPermissionOps(parseAppOps(raw));
             renderAppOpsList();
+            if (inspectorData) renderPermissionsList();
             if (alsIsOpen()) alsRender();
+            return true;
         }
 
         // ---------- Manifest viewer ----------
@@ -31944,7 +32410,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     bg: v('--bg-base'), card: v('--bg-card'), surface: v('--bg-surface'), text: v('--text-main'), muted: v('--text-muted'),
                     accent: v('--accent'), onAccent: v('--on-accent'), border: v('--border-glass'), radius: parseFloat(v('--radius-xl')) || 24,
                     light: document.documentElement.getAttribute('data-appearance') === 'light',
-                    alertTitle: tr('ADB/Root Full System Toolbox'), confirmTitle: tr('Confirm'), promptTitle: tr('Enter a value'), ok: tr('OK'), cancel: tr('Cancel')
+                    alertTitle: tr('ADB/Root Toolbox'), confirmTitle: tr('Confirm'), promptTitle: tr('Enter a value'), ok: tr('OK'), cancel: tr('Cancel')
                 }));
             } catch (e) {}
         }
@@ -35130,7 +35596,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 : b === 'priv' ? 'Android sh (mksh with toybox), running ' + (s.uid === 0 ? 'as root' : 'as the ADB shell user (uid 2000), so pm, am, cmd, dumpsys, settings and logcat work')
                 : 'Android sh (mksh with toybox) inside this app\'s private sandbox (it cannot reach other apps)';
             return [
-                'You are ' + ag.name.replace(/\s*\(.*\)$/, '') + ', a coding agent working inside the Terminal of an Android app (ADB/Root Full System Toolbox). The user chats with you on their phone.',
+                'You are ' + ag.name.replace(/\s*\(.*\)$/, '') + ', a coding agent working inside the Terminal of an Android app (ADB/Root Toolbox). The user chats with you on their phone.',
                 'Environment: Android ' + (i.release || '?') + ' (API ' + (i.sdk || '?') + ') on ' + ((i.manufacturer || '') + ' ' + (i.model || '')).trim() + ' (' + (i.abi || 'arm64-v8a') + '). Shell: ' + shell + '. Working folder: ' + (s.cwd || '?') + '. Date: ' + new Date().toISOString().slice(0, 10) + '.',
                 'You act through action blocks that the app carries out after the user approves them. Use at most ONE action block per reply, put it at the end, and stop writing after it. Write the block as plain text, not inside a code fence:',
                 '<run>shell command(s)</run> runs in the shell above. Non-interactive only: no editors, pagers, prompts or full-screen programs. Keep output short (head, tail, grep).',
@@ -36097,7 +36563,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function txCliLogin(ag) {
             const cli = TX_CLI[ag.cli];
             if (!cli) return;
-            const inner = 'export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"; echo "Signing in to ' + cli.name + '. Follow the link it shows; come back to ADB/Root Full System Toolbox when it says you are signed in."; ' + cli.login;
+            const inner = 'export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"; echo "Signing in to ' + cli.name + '. Follow the link it shows; come back to ADB/Root Toolbox when it says you are signed in."; ' + cli.login;
             const cmd = cli.where === 'debian' ? txDebianCmd(inner) : inner;
             txOpenTermux(cmd);
         }
@@ -37914,7 +38380,10 @@ Type any command above (e.g. pm list packages -d)</div>
             const known = sdbHint(ns, key);
             const h = known || sdbGuess(ns, key, value);
             const e = escapeHtml;
-            let out = '<div class="sdb-about-h">' + (known ? 'What it does' : 'What it probably is') + '</div><div class="sdb-about-t">' + e(h.t) + '</div>';
+            const note = sdbNote(ns, key);
+            const noteHtml = note ? '<div class="sdb-about-h">From Ask agent</div><div class="sdb-about-t"><span class="sdb-note-t">' + e(note.t) + '</span>'
+                + '<span class="sdb-note-at">' + e([note.by, isFinite(note.at) && note.at > 0 ? new Date(note.at).toLocaleDateString(langLocale(), { dateStyle: 'medium' }) : ''].filter(Boolean).map(x => ' · ' + x).join('')) + '</span></div>' : '';
+            let out = (known ? '' : noteHtml) + '<div class="sdb-about-h">' + (known ? 'What it does' : 'What it probably is') + '</div><div class="sdb-about-t">' + e(h.t) + '</div>';
             if (h.v) {
                 const lines = String(h.v).split(';').map(x => x.trim()).filter(Boolean).map(part => {
                     const m = /^(-?\d+(?:\.\d+)?|[A-Za-z][A-Za-z0-9_]*)\s=\s(.+)$/.exec(part);
@@ -37922,6 +38391,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 });
                 out += '<div class="sdb-about-h">Values</div><div class="sdb-about-t">' + lines.join('') + '</div>';
             }
+            if (known) out += noteHtml;
             const mean = known ? sdbMeaning(known, value) : '';
             out += '<div class="sdb-about-now" data-now="1">' + (mean ? 'Now: <b>' + e(String(value)) + '</b> = ' + e(mean) : '') + '</div>';
             return out;
@@ -38032,6 +38502,63 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // { t, r } (description and risk) for a setting, or null when nothing is known about it
+        // v7.19.2 (the owner's wish): each time Ask agent explains a hidden setting, the one short line the AI ended its answer with ("In short:", which the
+        // question asks for; else the answer's first sentence) is kept with that setting for good, by table and name: kv 'sdb_notes' { 'ns/key': { t, at, by } }.
+        // It shows under the setting in the list and in its sheet, the search finds it and Described counts it; a later answer replaces it. The free web
+        // lookup (no agent connected) keeps nothing: no AI wrote it.
+        const SDB_NOTES_KV = 'sdb_notes', SDB_NOTE_MAX = 160;
+        let sdbNotesMap = null;
+        function sdbNotes() {
+            if (!sdbNotesMap) { const o = kvGet(SDB_NOTES_KV, null); sdbNotesMap = o && typeof o === 'object' && !Array.isArray(o) ? o : {}; }
+            return sdbNotesMap;
+        }
+        function sdbNote(ns, key) {
+            const all = sdbNotes(), id = ns + '/' + key;
+            const n = Object.prototype.hasOwnProperty.call(all, id) ? all[id] : null;
+            return n && typeof n.t === 'string' && n.t ? n : null;
+        }
+        // the line to keep out of an answer: plain text (no Markdown, no source numbers like [1]), at most 160 characters, cut at a word
+        function sdbNoteFrom(answer) {
+            const plain = x => String(x).replace(/\[[\d,\s]+\]/g, '').replace(/\*+|`+/g, '').replace(/\s+/g, ' ').replace(/\s+([.,;:!?])/g, '$1').trim();          // [1], [2, 3]: one character class, so a long number in brackets never makes it slow
+            const text = String(answer || ''), lines = text.split('\n');
+            let t = '';
+            for (let i = lines.length - 1; i >= 0 && !t; i--) { const m = /^[\s>#*-]*in short\s*[:,\u2013\u2014-]+\s*(.+)$/i.exec(lines[i]); if (m) t = plain(m[1]); }
+            if (!t) {
+                const raw = text.split(/\n\s*\n/).find(x => plain(x.replace(/^[\s>#-]+/gm, ''))) || '';
+                const para = plain(raw.replace(/^[\s>#-]+/gm, ''));
+                const m = /^(.+?[.!?])(?=\s|$)/.exec(para);
+                t = m ? m[1] : para;
+            }
+            if (t.length > SDB_NOTE_MAX) {
+                const cut = t.slice(0, SDB_NOTE_MAX - 1), sp = cut.lastIndexOf(' ');
+                t = (sp > SDB_NOTE_MAX / 2 ? cut.slice(0, sp) : cut).replace(/[\s,;:.]+$/, '') + '…';
+            }
+            return t;
+        }
+        // keeps the line of one answer with ns/key, draws the list again and gives the line back ('' when there is nothing to keep)
+        function sdbNoteSave(ns, key, answer, by) {
+            const t = sdbNoteFrom(answer);
+            if (!t || !Object.prototype.hasOwnProperty.call(SDB_TITLES, ns) || !key) return '';
+            const all = sdbNotes();
+            all[ns + '/' + key] = { t: t, at: Date.now(), by: String(by || '').slice(0, 60) };
+            kvSet(SDB_NOTES_KV, all);
+            sdbDirty();
+            sdbRender();
+            return t;
+        }
+        // under the answer: what was kept
+        function sdbNoteKept(box, t) {
+            if (!box || !t) return;
+            const d = document.createElement('div');
+            d.className = 'lc-ent-ai-note sdb-note-kept';
+            d.style.marginTop = 'var(--space-3h)';
+            d.textContent = txF('Kept with this setting: {0}', t);
+            box.appendChild(d);
+        }
+        function sdbNoteHtml(note, terms) {
+            return '<div class="sdb-hint sdb-note"><span class="sdb-note-tag" translate="no">AI</span><span class="sdb-note-t">' + sdbMark(note.t, terms) + '</span></div>';
+        }
+
         function sdbHint(ns, key) {
             const tbl = SDB_HINTS[ns];
             const h = tbl && Object.prototype.hasOwnProperty.call(tbl, key) ? tbl[key] : null;       // a setting may be called "constructor"
@@ -38158,12 +38685,12 @@ Type any command above (e.g. pm list packages -d)</div>
             const terms = sdbTerms();
             const out = [];
             data.forEach((v, k) => {
-                const hint = sdbHint(ns, k);
+                const hint = sdbHint(ns, k), note = sdbNote(ns, k);
                 if (sdbFilter === 'switch' && !sdbSwitchOf(ns, k, v)) return;
-                if (sdbFilter === 'known' && !hint) return;
+                if (sdbFilter === 'known' && !hint && !note) return;
                 if (sdbFilter === 'edited' && !sdbEdited.has(ns + '/' + k)) return;
                 if (terms.length) {
-                    const hay = (k + '\n' + v + '\n' + (hint ? hint.t + '\n' + (hint.v || '') : '')).toLowerCase();
+                    const hay = (k + '\n' + v + '\n' + (hint ? hint.t + '\n' + (hint.v || '') : '') + (note ? '\n' + note.t : '')).toLowerCase();
                     for (let i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) < 0) return;
                 }
                 out.push(k);
@@ -38218,16 +38745,17 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function sdbRowHtml(ns, key, value, terms) {
             const sw = sdbSwitchOf(ns, key, value);
-            const hint = sdbHint(ns, key);
+            const hint = sdbHint(ns, key), note = sdbNote(ns, key);
             const id = ns + '/' + key;
             let h = '<div class="sdb-row' + (sdbBusy.has(id) ? ' busy' : '') + (hint && hint.r ? ' risky' : '') + '" role="listitem" tabindex="0" data-k="' + escapeHtml(key) + '">';
             h += '<div class="sdb-main"><div class="sdb-key">' + sdbMark(key, terms) + (sdbEdited.has(id) ? '<span class="sdb-dot" title="Changed with this app"></span>' : '') + '</div>';
             if (hint) h += '<div class="sdb-hint">' + sdbMark(hint.t, terms) + (hint.r ? ' · careful' : '') + '</div>';
-            else h += '<div class="sdb-hint">No description yet</div>';
+            else if (!note) h += '<div class="sdb-hint">No description yet</div>';
+            if (note) h += sdbNoteHtml(note, terms);
             if (hint && hint.v) h += '<div class="sdb-vals">' + sdbValsHtml(hint, value, terms) + '</div>';
             const blank = value === '' ? '(empty)' : /^\s+$/.test(value) ? '(blank)' : '';
             h += '<div class="sdb-valrow"><div class="sdb-val' + (blank ? ' empty' : '') + '">' + (blank || sdbMark(sdbClip(value), terms)) + '</div>';
-            h += agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (value === '' ? '(empty)' : sdbClip(value, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '']) + '</div></div>';
+            h += agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (value === '' ? '(empty)' : sdbClip(value, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : ''], '', ns) + '</div></div>';
             if (sw) h += '<button class="sdb-sw' + (sw.on ? ' on' : '') + '" role="switch" aria-checked="' + sw.on + '" aria-label="Flip ' + escapeHtml(key) + '"><span></span></button>';
             return h + '</div>';
         }
@@ -38239,11 +38767,11 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!sdbUsable()) { box.innerHTML = ''; more.innerHTML = ''; return; }
             const ae = document.activeElement;
             let refocus = null;                                      // a keyboard user pressing Enter on a switch must still be on it afterwards
-            if (ae && ae !== document.body && box.contains(ae)) { const rw = ae.closest('.sdb-row[data-k]'); if (rw) refocus = { k: rw.dataset.k, sw: ae.classList.contains('sdb-sw') }; }
+            if (ae && ae !== document.body && box.contains(ae)) { const rw = ae.closest('.sdb-row[data-k]'); if (rw) refocus = { k: rw.dataset.k, sw: ae.classList.contains('sdb-sw'), ag: ae.classList.contains('agent-btn') }; }
             try { sdbRenderListInner(box, more); } finally {
                 if (refocus) {
                     const rw = Array.from(box.querySelectorAll('.sdb-row')).find(x => x.dataset.k === refocus.k);
-                    const el = rw && ((refocus.sw && rw.querySelector('.sdb-sw')) || rw);
+                    const el = rw && ((refocus.sw && rw.querySelector('.sdb-sw')) || (refocus.ag && rw.querySelector('.agent-btn')) || rw);          // v7.19.2: Ask agent's answer draws the list again under its window
                     if (el && el.focus) el.focus({ preventScroll: true });
                 }
             }
@@ -38798,11 +39326,19 @@ Type any command above (e.g. pm list packages -d)</div>
             const q = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '') + '\nTable: ' + cur.ns + '\nSetting: ' + cur.key + '\nValue now: ' + (val === '' ? '(empty)' : val)
                 + (hint ? '\nThe app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '');
             const box = document.getElementById('sdbEditAi'), btn = document.getElementById('sdbEditAiBtn');
+            const by = askAgentReadyNow() ? askAgentDef().name.replace(/\s*\(.*\)$/, '') : '';          // the free web lookup answers without one: nothing is kept then
             box.style.display = ''; sdbAiBusy = true; btn.disabled = true;
-            await aiExplainInto(box, SDB_AI_SYSTEM, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key, 'sdbEdit');
+            delete box.dataset.hist;
+            const ans = await aiExplainInto(box, SDB_AI_SYSTEM + SDB_NOTE_ASK, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key, 'sdbEdit');
             sdbAiBusy = false; btn.disabled = false;
-            if (sdbEditing === cur && box.textContent && !box.classList.contains('is-err') && box.querySelector('.ai-out')) {
+            const shown = !box.dataset.hist;                                           // false: History put a saved answer (maybe about another setting) in the box meanwhile
+            if (sdbEditing === cur && shown && box.textContent && !box.classList.contains('is-err') && box.querySelector('.ai-out'))
                 askHistAdd('sdbEdit', { id: cur.ns + '/' + cur.key, kind: 'setting', name: cur.key, label: txT('Hidden Settings') + ' · ' + cur.ns, text: q, web: '', answer: box.querySelector('.ai-out').textContent, agent: '' });
+            if (sdbEditing === cur && by && ans && !box.classList.contains('is-err')) {
+                const t = sdbNoteSave(cur.ns, cur.key, ans, by);
+                if (shown) sdbNoteKept(box, t);
+                document.getElementById('sdbEditAbout').innerHTML = sdbAboutHtml(cur.ns, cur.key, cur.orig);
+                sdbEditInput();                                                        // the Now line follows what is typed, as before
             }
         }
 
@@ -40602,6 +41138,92 @@ Type any command above (e.g. pm list packages -d)</div>
             showToast('Copied the setting');
         }
 
+        // ---- Back up and restore the custom theme (v7.18.1) ----
+        // A backup is a small JSON file, as the saved lists' is: { app: 'adb-app-manager', format: 1, kind: 'monet-theme', exportedAt, theme: { source, color,
+        // style, recent, black, accurate, rootStyle, spec, adjust: { accentSat, bgSat, bgLight }, accents: { secondary, tertiary } } }. It goes where the saved
+        // lists' backups go (the folder chosen there, or Download/ADB App Manager); Share sends it anywhere else. A restore is checked value by value and
+        // fills in the tab (the editor and the Root-only controls' stored choices); nothing is written to the phone until Apply theme.
+        function ovlBkPayload() {
+            const spec = kvGet('ovl_spec', null);
+            return { app: 'adb-app-manager', format: 1, kind: 'monet-theme', exportedAt: new Date().toISOString(), theme: {
+                source: ovlSource, color: ovlColor, style: ovlStyle, recent: ovlRecent.slice(), black: ovlBlackOn(), accurate: ovlAccurateStored(),
+                rootStyle: String(kvGet('ovl_root_style', '') || ''), spec: typeof spec === 'string' && OVL_SPEC_IDS.includes(spec) ? spec : '',
+                adjust: Object.fromEntries(OVL_ADJ.map(o => [o.key, ovlAdjClamp(kvGet(o.kv, 100))])), accents: Object.fromEntries(OVL_ACC.map(o => [o.key, ovlAccStored(o)])) } };
+        }
+        function ovlBkText() { return JSON.stringify(ovlBkPayload(), null, 2) + '\n'; }
+        function ovlBkRender() {
+            const w = document.getElementById('ovlBkWhere');
+            if (!w) return;
+            const k = lbState();
+            w.innerHTML = '<span>' + (k.uri ? 'Backups go to the folder ' + escapeHtml(k.label || 'you chose') : 'Backups go to Download/ADB App Manager (the default)') + '</span>';
+        }
+        function ovlBkNow() {
+            ovlInit();
+            const k = lbState(), text = ovlBkText(), name = 'monet-theme-' + lbStamp(new Date()) + '.json';
+            let out = null;
+            try {
+                if (k.uri) {
+                    if (!lbHasBridge()) { showToast('Backing up to a folder needs the app build'); return; }
+                    const r = JSON.parse(window.AndroidBridge.treeWriteText(k.uri, name, text, false) || '{}');
+                    out = r.ok ? { where: (k.label || 'the folder') + '/' + (r.name || name) } : { error: r.error || 'the folder would not take the file' };
+                } else if (window.AndroidBridge && window.AndroidBridge.saveTextToDownloads) {
+                    const r = window.AndroidBridge.saveTextToDownloads(name, text) || '';
+                    out = /^Error/i.test(r) ? { error: r.replace(/^Error:\s*/i, '') } : { where: r };
+                } else { showToast('Saving is only available in the app'); return; }
+            } catch (e) { out = { error: String(e && e.message || e) }; }
+            haptic();
+            if (out.error) showToast('The backup failed: ' + out.error);
+            else showToast('Backed up the theme to ' + out.where);
+        }
+        function ovlBkShare() {
+            ovlInit();
+            haptic();
+            shareFileViaBridge('monet-theme-' + lbStamp(new Date()) + '.json', ovlBkText(), 'application/json');
+        }
+        function ovlBkRestoreFile() {
+            if (!window.AndroidBridge || !window.AndroidBridge.pickTextFile) { showToast('Restoring needs the app build'); return; }
+            haptic();
+            window.AndroidBridge.pickTextFile('monet-file');
+        }
+        // what a file may bring in, checked: only known styles and specs, six-digit colours, the sliders' range; anything else keeps the tab's own value
+        function ovlBkParse(text) {
+            let d;
+            try { d = JSON.parse(text); } catch (e) { return { error: 'That is not a backup file (it is not JSON).' }; }
+            if (!d || typeof d !== 'object' || d.app !== 'adb-app-manager' || d.kind !== 'monet-theme' || !d.theme || typeof d.theme !== 'object') return { error: 'That is not a Monet theme backup from this app.' };
+            if (d.format !== 1) return { error: 'That backup was made by a newer version of the app (format ' + d.format + ').' };
+            const t = d.theme, hex6 = v => typeof v === 'string' && /^[0-9A-Fa-f]{6}$/.test(v) ? v.toUpperCase() : '';
+            const adj = t.adjust && typeof t.adjust === 'object' ? t.adjust : {}, acc = t.accents && typeof t.accents === 'object' ? t.accents : {};
+            return {
+                source: t.source === 'preset' ? 'preset' : 'home_wallpaper', color: ovlNormalizeHex(t.color) || '', style: OVL_STYLE_IDS.includes(t.style) ? t.style : '',
+                recent: Array.isArray(t.recent) ? t.recent.map(ovlNormalizeHex).filter(Boolean).slice(0, OVL_RECENT_MAX) : [],
+                black: t.black === true, accurate: t.accurate !== false, spec: OVL_SPEC_IDS.includes(t.spec) ? t.spec : '',
+                rootStyle: OVL_ROOT_STYLE_IDS.includes(t.rootStyle) && (t.rootStyle !== 'CMF' || t.spec === '2026') ? t.rootStyle : '',
+                adjust: Object.fromEntries(OVL_ADJ.map(o => [o.key, ovlAdjClamp(Number(adj[o.key]))])), accents: Object.fromEntries(OVL_ACC.map(o => [o.key, hex6(acc[o.key])]))
+            };
+        }
+        function ovlBkRestoreFrom(text, name) {
+            const got = ovlBkParse(text);
+            if (got.error) { showToast(got.error); return; }
+            nextDialogTitle('Restore theme');
+            if (!confirm('Restore the theme from ' + name + '? Your choices in this tab are replaced. Nothing changes on the phone until you tap Apply theme.')) return;
+            ovlInit();
+            haptic();
+            ovlTouched = true;
+            ovlSource = got.source === 'preset' && got.color ? 'preset' : 'home_wallpaper';
+            if (got.color) ovlColor = got.color;
+            if (got.style) ovlStyle = got.style;
+            if (got.recent.length) { ovlRecent = got.recent.concat(ovlRecent.filter(h => !got.recent.includes(h))).slice(0, OVL_RECENT_MAX); kvSet('ovl_recent', ovlRecent); }
+            kvSet('ovl_black', got.black);
+            kvSet('ovl_accurate_shades', got.accurate ? '1' : '0');
+            kvSet('ovl_spec', got.spec || null);
+            kvSet('ovl_root_style', got.rootStyle);
+            OVL_ADJ.forEach(o => kvSet(o.kv, got.adjust[o.key]));
+            OVL_ACC.forEach(o => kvSet(o.kv, got.accents[o.key]));
+            ovlAdjMoving = null;
+            try { ovlRenderEditor(); ovlRenderRoot(); ovlRenderActions(); } catch (e) { console.error('Monet restore: ' + e); }
+            showToast('Theme restored from ' + name + '. Tap Apply theme to use it.');
+        }
+
         // ---- the overlay list ----
 
         function ovlReadList() {
@@ -40889,7 +41511,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function ovlRender() {
             ovlRenderChrome();
-            if (ovlSub === 'theme') { ovlRenderNow(); ovlRenderEditor(); ovlRenderThemeError(); ovlRenderRoot(); }
+            if (ovlSub === 'theme') { ovlRenderNow(); ovlRenderEditor(); ovlRenderThemeError(); ovlRenderRoot(); ovlBkRender(); }
             else ovlRenderList();
         }
 
@@ -41083,7 +41705,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function paypalDonateUrl(amount) {
             return 'https://www.paypal.com/donate?business=' + encodeURIComponent(DONATE_EMAIL)
                 + '&no_recurring=1'
-                + '&item_name=' + encodeURIComponent('Buy me a coffee - ADB/Root Full System Toolbox')
+                + '&item_name=' + encodeURIComponent('Buy me a coffee - ADB/Root Toolbox')
                 + '&amount=' + encodeURIComponent(Number(amount).toFixed(2))
                 + '&currency_code=USD';
         }
@@ -41129,7 +41751,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function contactDetailsText() {
             if (!aboutInfo || !aboutInfo.pkg) { try { renderAbout(); } catch (e) {} }
             const i = aboutInfo || {};
-            const l = ['App: ADB/Root Full System Toolbox ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
+            const l = ['App: ADB/Root Toolbox ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
             if (i.android) l.push('Android: ' + i.android + ' (API ' + i.sdk + ')');
             if (i.device) l.push('Phone: ' + i.device + (i.abi ? ' · ' + i.abi : ''));
             const mode = workingModeFullLabel();
@@ -41179,7 +41801,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function aboutShare() {
-            shareText('ADB/Root Full System Toolbox', 'ADB/Root Full System Toolbox: freeze, debloat, install, back up and inspect Android apps through ADB, Wireless Debugging, Shizuku or Root.\n' + ABOUT_REPO + '/releases/latest');
+            shareText('ADB/Root Toolbox', 'ADB/Root Toolbox: freeze, debloat, install, back up and inspect Android apps through ADB, Wireless Debugging, Shizuku or Root.\n' + ABOUT_REPO + '/releases/latest');
         }
 
         function aboutDate(ms) {
@@ -41309,7 +41931,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         function aboutDebugText() {
             const i = aboutInfo || {};
-            const lines = ['ADB/Root Full System Toolbox ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
+            const lines = ['ADB/Root Toolbox ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
             if (i.pkg) lines.push('Package: ' + i.pkg + (i.debuggable ? ' (debug build)' : ''));
             if (i.android) lines.push('Android: ' + i.android + ' (API ' + i.sdk + ')');
             if (i.device) lines.push('Device: ' + i.device + (i.abi ? ' · ' + i.abi : ''));
@@ -41321,7 +41943,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function aboutCopyDebug() { if (!aboutInfo || !aboutInfo.pkg) renderAbout(); copyText(aboutDebugText()); }
-        function aboutShareDebug() { if (!aboutInfo || !aboutInfo.pkg) renderAbout(); shareText('ADB/Root Full System Toolbox debug info', aboutDebugText()); }
+        function aboutShareDebug() { if (!aboutInfo || !aboutInfo.pkg) renderAbout(); shareText('ADB/Root Toolbox debug info', aboutDebugText()); }
         function aboutCopyFingerprint() {
             const h = aboutInfo && aboutInfo.signerSha256;
             if (!h) { showToast('The fingerprint is shown in the app build'); return; }
@@ -44924,14 +45546,17 @@ Type any command above (e.g. pm list packages -d)</div>
             coords: { regular: {}, bold: {} },                              // the chosen point on each variable font's axes ({ tag: value })
             boldMode: 'none', boldTouched: false, emoji: 'none', name: '', nameTouched: false,
             job: '', building: false, cancelling: false, picking: '',
-            rebuildId: '', buildFor: '',                                     // the My fonts entry being made again (its package is kept), and the one a running build makes
+            rebuildId: '', buildFor: '',                                     // the font of this app being made again (its package is kept), and the one a running build makes
+            resultId: '',                                                    // v7.19.1: the font the last build made (its buttons under the result)
             built: null,                                                     // what the last build was asked for: { emoji, variable: { Regular, Bold } } (fntTableTooBig)
-            lib: null, cat: null, dl: {}, emoErr: {}, libBusy: {}, libMsg: {}, exporting: '',
+            lib: null, cat: null, dl: {}, emoErr: {}, libBusy: {}, msg: null, exporting: '',
+            phone: null, phoneWarn: '', phoneBusy: '', styleAfter: '',       // v7.19.1 Phone font: the fonts on the phone, the warning of a font it does not take,
+                                                                             // the package being uninstalled, a font installed to be chosen in Font style next
             modeKey: '',                                                     // the working mode the two cards' status was asked in
             noAppFonts: false,                                               // a status that looked found no /data/app_fonts: kept when the status goes (fntSamsung)
             changer: null, changerBusy: false, changerRb: null, changerErr: '', changerStatusErr: '', applyId: '', changerStale: false,
             sys: null, sysBusy: false, sysRb: null, sysErr: '', sysStatusErr: '', sysStale: false,
-            faces: { regular: null, bold: null }, faceSeq: 0, libFaces: {},
+            faces: { regular: null, bold: null }, faceSeq: 0,
             reserved: [], reservedFamily: '',                                // v7.18.0: the Reserved Font Names of the Google Fonts family in the Regular slot
             reservedUfl: false,                                              // that family is under the Ubuntu Font Licence: its own name is kept the same way
             reservedBold: { names: [], family: '', ufl: false },             // the same for the family whose file is in the Bold slot (fntGfReserved)
@@ -44964,7 +45589,7 @@ Type any command above (e.g. pm list packages -d)</div>
             no_colr: 'This font has no color emoji (COLR). Choose a COLR emoji font.',
             too_many_glyphs: 'The font and the emoji together have more glyphs than one font can hold (65,535).',
             bad_font: 'The font file is damaged, or uses something the app cannot read.',
-            applied: 'Reset the font changer first.',
+            applied: 'This font is in use. Choose another font first, then delete it.',
             sha_mismatch: 'The downloaded file is not the expected one (its checksum differs), so it was not kept.',
             size_mismatch: 'The downloaded file has the wrong size, so it was not kept.',
             network: 'The download failed. Check the connection and try again.',
@@ -44981,7 +45606,7 @@ Type any command above (e.g. pm list packages -d)</div>
             cancelled: 'Cancelled.',
             busy: 'Wait for the current task to finish.',
             building: 'Wait for the font being made to finish.',
-            not_found: 'That font is not in My fonts any more.',
+            not_found: 'That font is not in this app any more.',
             changed: "This font's files changed since it was made. Make it again.",
             emoji_changed: 'The downloaded file changed on the phone. Delete it and download it again.',
             text_has_color: 'This font already has color glyphs, so emoji cannot be added to it. Set Emoji to None.',
@@ -44998,6 +45623,7 @@ Type any command above (e.g. pm list packages -d)</div>
             install_failed: 'The phone did not install the font.',
             uninstall_failed: 'The phone did not uninstall the font.',
             no_answer: 'The phone did not answer. Try again.',
+            bad_suffix: "The font changer cannot use this font package's name.",
             no_targets: "This phone's emoji font file was not found.",
             not_downloaded: 'Download the emoji font first.',
             not_usable: 'This emoji font needs a newer Android to show inside a font.',
@@ -45027,6 +45653,8 @@ Type any command above (e.g. pm list packages -d)</div>
             gf_changed: "This family's files changed on the phone. Delete it and download it again.",
             emo_changed: 'The iOS emoji file at its address is not the expected one, so its sample was not read. Update the app.',
             emo_no_sample: 'The sample could not be read from the emoji font.',
+            system: 'This font came with the phone, so it is not uninstalled.',
+            no_font: 'This font package does not say which of its files is the font, so the font changer cannot use it.',
             failed: 'Something went wrong.'
         };
         // Java's sentence, for a code that has more than one: [code, what Java says (after the face it names in front), the page's sentence]. A group
@@ -45047,6 +45675,8 @@ Type any command above (e.g. pm list packages -d)</div>
             ['read_failed', /^The Regular font file could not be read/, 'The Regular font file could not be read.'],
             ['read_failed', /^The Bold font file could not be read/, 'The Bold font file could not be read.'],
             ['locked', /system user/, 'Needs Root, or Shizuku running as the system user (UID 1000) or root (UID 0).'],
+            ['in_use', /^This font is in use\./, 'This font is in use. Choose another font first, then uninstall it.'],
+            ['not_found', /^That font is not installed any more/, 'That font is not installed any more.'],
             ['not_downloaded', /^Download (.+) first\./, m => txF('Download {0} first.', m[1])],
             ['not_usable', /^this COLRv1 emoji font needs Android 13/i, 'This COLRv1 emoji font needs Android 13 or newer to show inside a font.'],
             ['not_usable', /^(.+) needs a newer Android to show inside a font/, m => txF('{0} needs a newer Android to show inside a font.', m[1])],
@@ -45215,6 +45845,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- the tab is shown, the working mode changed ----
         function onFontsShown() {
             fntLoadLib();
+            fntLoadPhone();
             fntLoadCat();
             fnt.emoApple.asked = false;                                      // the iOS sample is looked for again (emojiSpecimenCached)
             if (!gfHasList()) gfLoadCat();                                   // the Google Fonts list on the phone (one another window got too), for the count
@@ -45231,15 +45862,15 @@ Type any command above (e.g. pm list packages -d)</div>
             const key = fntModeKey();
             if (key !== fnt.modeKey) { fnt.modeKey = key; fntForget(); }
             fntRenderLib();
-            fntRenderChanger();
             fntRenderSys();
             fntAskStatus();
         }
-        function fntRenderAll() { gfRenderEntry(); fntRenderMake(); fntRenderEmoji(); fntRenderLib(); fntRenderChanger(); fntRenderSys(); }
+        function fntRenderAll() { gfRenderEntry(); fntRenderMake(); fntRenderEmoji(); fntRenderLib(); fntRenderSys(); }
         // the two cards' status is dropped (and the errors, and the read-back box they explain), unless a change is running; a status being asked is asked
         // again when it answers, and the error and box of the change before it go now. A status keeps its own error (changerStatusErr, sysStatusErr): the
         // next status that answers clears it, never the error of an Apply or a Reset
         function fntForget() {
+            fnt.phoneWarn = '';                                              // "... The font was not changed." was about the mode before
             if (!fnt.changerBusy) { fnt.changer = null; fnt.changerErr = ''; fnt.changerStatusErr = ''; fnt.changerRb = null; }
             else if (fnt.changerBusy === 'status') { fnt.changerStale = true; fnt.changerErr = ''; fnt.changerRb = null; }
             if (!fnt.sysBusy) { fnt.sys = null; fnt.sysErr = ''; fnt.sysStatusErr = ''; fnt.sysRb = null; }
@@ -45628,12 +46259,12 @@ Type any command above (e.g. pm list packages -d)</div>
             const res = document.getElementById('fntBuildResult');
             if (!r.ok) { errNote(res, fntErrText(r, 'Could not start')); return; }
             haptic();
-            fnt.job = r.job || ''; fnt.building = true; fnt.cancelling = false; fnt.buildFor = remake || '';
+            fnt.job = r.job || ''; fnt.building = true; fnt.cancelling = false; fnt.buildFor = remake || ''; fnt.resultId = '';
             fnt.built = { emoji: !!emoji, variable: { Regular: !!req.regular.coords, Bold: !!(bold && bold.coords) } };
             res.innerHTML = '';
             fntProg(txT('Starting…'), -1);
             fntRenderMake();
-            if (remake) fntRenderLib();
+            fntRenderLib();                                         // the last font's buttons go with its result
         }
         function fntCancel() {
             if (!fnt.building || fnt.cancelling) return;
@@ -45657,8 +46288,10 @@ Type any command above (e.g. pm list packages -d)</div>
             const res = document.getElementById('fntBuildResult');
             if (r.ok && r.entry) {
                 if (remade && remade === r.entry.id) fnt.rebuildId = '';      // made again: the next build is a new font unless Make again is chosen again
-                res.innerHTML = '<div>' + escapeHtml(txF(remade ? '{0} is made again in My fonts.' : '{0} is ready in My fonts.', r.entry.name || '')) + '</div>' + fntWarnList(r.warnings);
+                res.innerHTML = '<div>' + escapeHtml(txF(remade ? '{0} is made again. Use it now, or choose it later under Phone font.' : '{0} is ready. Use it now, or choose it later under Phone font.', r.entry.name || '')) + '</div>' + fntWarnList(r.warnings);
+                fnt.resultId = r.entry.id; fnt.msg = null;
                 fntLoadLib();
+                fntLoadPhone();
             } else if (r.code === 'cancelled') res.textContent = 'The build was cancelled.';
             else errNote(res, fntErrText(r));
             fntRenderLib();
@@ -45857,116 +46490,288 @@ Type any command above (e.g. pm list packages -d)</div>
             fntRenderSys();
         };
 
-        // ---- My fonts ----
+        // ---- the fonts made here (fontMakerLibrary) and the Phone font card ----
         function fntLoadLib() {
             const r = fntCall('fontMakerLibrary', [], true);
             fnt.lib = r && r.ok ? r : (r ? { ok: false, entries: [], device: {}, error: fntErrText(r) } : null);
             if (!fnt.lib || fnt.lib.error) return;
-            // a font that is gone (deleted here or elsewhere) takes its preview face with it, and stops being made again
-            Object.keys(fnt.libFaces).forEach(id => { if (!fntEntry(id)) fntDropFace(id); });
+            // a font that is gone (deleted here or elsewhere) stops being made again, and its build result goes
             if (fnt.rebuildId && !fntEntry(fnt.rebuildId) && fnt.buildFor !== fnt.rebuildId) fnt.rebuildId = '';
+            if (fnt.resultId && !fntEntry(fnt.resultId)) {
+                fnt.resultId = '';
+                const res = document.getElementById('fntBuildResult');
+                if (res && !fnt.building) res.innerHTML = '';                 // "Lato is ready." and its warnings are about a font that is gone
+            }
         }
-        function fntDropFace(id) {
-            const k = fnt.libFaces[id];
-            if (k && k.face) { try { document.fonts.delete(k.face); } catch (e) {} }
-            delete fnt.libFaces[id];
+        // v7.19.1 the Phone font card: every font installed on the phone (fontMakerPhoneFonts), and the fonts of this app not installed yet
+        function fntLoadPhone() {
+            const r = fntCall('fontMakerPhoneFonts', [], true);
+            fnt.phone = r && r.ok ? r : (r ? { ok: false, fonts: [], error: fntErrText(r) } : null);
         }
-        function fntLibRow(e, dev) {
-            // a row whose font is being made again waits for it (the bridge refuses the rest with busy)
-            const sid = fntSafe(e.id), a = jsArg(e.id), busy = fnt.libBusy[e.id] || (fnt.building && fnt.buildFor === e.id ? 'make' : ''), samsung = fntSamsung(), open = fntChangerOpen();
-            const older = e.installed && e.installedVersion && e.installedVersion < e.versionCode;
-            const state = e.applied ? '<span class="is-on">' + escapeHtml(txT('In use')) + '</span>' : escapeHtml(e.installed ? (older ? txT('Installed, an older version') : txT('Installed')) : txT('Not installed'));
-            const meta = [formatBytes(e.sizes && e.sizes.apk), e.hasBold ? txT('Regular and Bold') : txT('Regular only'), e.emoji ? txF('Emoji: {0}', e.emoji.name || e.emoji.id) : '', txF('Version {0}', e.versionCode)].filter(Boolean).join(' · ');
-            const b = (label, on, onclick) => '<button type="button" class="mode-action-btn"' + (onclick ? ' onclick="' + onclick + '"' : '') + (on ? '' : ' disabled') + '>' + label + '</button>';
-            const install = busy === 'install' ? b('Installing…', false) : busy === 'uninstall' ? b('Uninstalling…', false)
-                : e.installed && !older ? b('Uninstall', !busy, 'fntUninstall(' + a + ')')
-                : b(older ? 'Update' : 'Install', samsung && !busy, 'fntInstall(' + a + ')');
-            const apply = !samsung ? b('Apply', false) : open ? b(fnt.changerBusy === 'apply' && fnt.applyId === e.id ? 'Applying…' : 'Apply', !e.applied && !fnt.changerBusy && busy !== 'make', 'fntApply(' + a + ')')
-                : '<button type="button" class="mode-action-btn locked" onclick="fntApply(' + a + ')" title="Needs Root or the system user"' + (busy === 'make' ? ' disabled' : '') + '>' + XQ_LOCK_SVG + ' <span>Apply</span></button>';
-            const msg = fnt.libMsg[e.id];
-            return '<div class="fnt-lib" id="fntLib_' + sid + '">'
-                + '<div class="fnt-lib-pv" id="fntLibPv_' + sid + '" translate="no" aria-hidden="true">The quick brown fox jumps over the lazy dog.</div>'
-                + '<div class="fnt-lib-name" translate="no">' + escapeHtml(e.name) + '</div>'
-                + '<div class="fnt-lib-meta" translate="no">' + escapeHtml(e.pkg) + '</div>'
-                + '<div class="fnt-lib-meta" translate="no">' + state + ' · ' + escapeHtml(meta) + '</div>'
-                + '<div class="mode-btn-row">' + install + apply + b('Export', !busy && !fnt.exporting && !gf.saving, 'fntExport(' + a + ')') + b('Delete', !busy, 'fntDeleteAsk(' + a + ')')
-                + b(busy === 'make' ? 'Making…' : 'Make again', !busy && !fnt.building && fnt.rebuildId !== e.id, 'fntRemake(' + a + ')') + '</div>'
-                + (msg ? '<div class="fnt-err">' + (msg.err ? '<span class="is-err">' + escapeHtml(msg.text) + '</span>' : escapeHtml(msg.text)) + '</div>' : '')
-                + '</div>';
+        // one message of the card (and of the build result's buttons, for the font they are about): { id, text, err }
+        function fntLibSay(id, text, err) { fnt.msg = text ? { id: id || '', text: text, err: !!err } : null; fntRenderLib(); }
+        function fntPhoneSay(text, err) { fntLibSay('', text, err); }
+        function fntMsgHtml(forId) {
+            const m = fnt.msg;
+            if (!m || (forId !== undefined ? m.id !== forId : (m.id && m.id === fnt.resultId))) return '';
+            return '<div class="fnt-err">' + (m.err ? '<span class="is-err">' + escapeHtml(m.text) + '</span>' : escapeHtml(m.text)) + '</div>';
         }
         function fntRenderLib() {
-            fntRenderBuildBtn();                                             // Build follows the jobs of the rows too (fntRemakeBusy)
-            const list = document.getElementById('fntLibList'), note = document.getElementById('fntDeviceNote');
-            if (!list) return;
-            const L = fnt.lib;
-            if (!L) { note.style.display = 'none'; list.innerHTML = '<div class="list-empty">Needs the app build</div>'; return; }
-            const dev = L.device || {};
-            // said once, above the rows: the phone cannot use Samsung's Font style setting for these fonts
+            fntRenderBuildBtn();                                             // Build follows the jobs of the font being made again too (fntRemakeBusy)
+            fntRenderActs();
+            fntRenderPhone();
+        }
+        function fntRenderChanger() { fntRenderPhone(); }
+        // the list: Default first, then the phone's fonts by name
+        const FNT_DEFAULT = { key: 'default', pkg: '', name: 'Default', system: true, recognized: true, installed: true };
+        function fntPhoneFonts() {
+            const list = ((fnt.phone && fnt.phone.fonts) || []).filter(f => f && f.pkg).map(f => Object.assign({ key: f.pkg }, f));
+            list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), langLocale() || undefined, { sensitivity: 'base' }));
+            return [FNT_DEFAULT].concat(list);
+        }
+        function fntPhoneFind(k) { return fntPhoneFonts().find(f => f.key === k) || null; }
+        function fntPhoneName(f) { return f.key === 'default' ? txT('Default') : String(f.name || f.suffix || f.pkg); }
+        // the phone's font as the font changer last read it (sans.loc): known only while it is open and has answered
+        function fntPhoneCurrent() {
+            const st = fnt.changer;
+            if (!fntChangerOpen() || !st || !st.ok || st.available === false) return { known: false, font: null };
+            const cur = st.current, s = cur && String(cur.suffix || '').toLowerCase();
+            if (!s) return { known: true, font: FNT_DEFAULT };
+            const f = fntPhoneFonts().find(x => x.key !== 'default' && String(x.suffix || '').toLowerCase() === s);
+            return { known: true, font: f || { key: '', name: cur.name || cur.suffix } };
+        }
+        function fntIsCurrent(f) { const c = fntPhoneCurrent(); return c.known && !!c.font && !!f && c.font.key === f.key; }
+        function fntChangeBusy() { return !!fnt.changerBusy && fnt.changerBusy !== 'status'; }
+        function fntRenderPhone() {
+            const body = document.getElementById('fntChangerBody'), note = document.getElementById('fntDeviceNote');
+            if (!body) return;
+            const dev = fntDevice(), P = fnt.phone, open = fntChangerOpen(), busy = fnt.changerBusy;
+            if (!fntHas('fontMakerPhoneFonts')) { setTag('fntChangerTag', 'inactive', txT('LOCKED')); note.style.display = 'none'; body.innerHTML = '<div class="list-empty">Needs the app build</div>'; return; }
+            // said once, above the list: what this phone does with fonts that Samsung did not sign
             let n = '';
-            if (dev.samsung === false) n = 'Font packages work only on Samsung phones. You can still export them.';
-            else if (!fntSamsung()) n = "This phone does not have Samsung's font folder (/data/app_fonts), so its font packages are not used here. You can still export them.";
-            else if (dev.appliesSelfSigned === false) n = dev.oneUi ? txF("On One UI {0}, Samsung's Font style setting does not apply fonts made on this phone. Use Apply instead: it needs Root, or the system user through Shizuku.", dev.oneUi)
-                : txT("On this phone, Samsung's Font style setting does not apply fonts made here. Use Apply instead: it needs Root, or the system user through Shizuku.");
+            if (dev.samsung === false) n = 'Font packages work only on Samsung phones. You can still make fonts and export them.';
+            else if (!fntSamsung()) n = "This phone does not have Samsung's font folder (/data/app_fonts), so its font packages are not used here.";
+            else if (!open && dev.appliesSelfSigned === false) n = dev.oneUi ? txF("On One UI {0}, Samsung's Font style takes only fonts signed by Samsung or Monotype. The others need Root, or Shizuku running as the system user (UID 1000) or root (UID 0).", dev.oneUi)
+                : txT("On this phone, Samsung's Font style takes only fonts signed by Samsung or Monotype. The others need Root, or Shizuku running as the system user (UID 1000) or root (UID 0).");
             note.textContent = n;
             note.style.display = n ? '' : 'none';
-            if (L.error) { errNote(list, L.error); return; }
-            const entries = L.entries || [];
-            list.innerHTML = entries.length ? entries.map(e => fntLibRow(e, dev)).join('') : '<div class="list-empty">No fonts yet. The fonts you make appear here.</div>';
-            entries.forEach(fntLibPreview);
+            if (!fntSamsung()) { setTag('fntChangerTag', 'inactive', txT('SAMSUNG ONLY')); body.innerHTML = fntMsgHtml(); return; }
+            // the tag is the working mode now (the system user is UID 1000, never called root), not the one a status was asked in
+            if (open) setTag('fntChangerTag', 'active', !ovlCanWriteOverlays() ? txT('SYSTEM USER') : txT('ROOT'));
+            else setTag('fntChangerTag', 'inactive', txT('LIMITED'));
+            const cur = fntPhoneCurrent();
+            const label = busy === 'apply' ? escapeHtml(txT('Applying…')) : busy === 'reset' ? escapeHtml(txT('Resetting…'))
+                : cur.known ? (cur.font.key === 'default' ? escapeHtml(txT('Default')) : '<bdi translate="no">' + escapeHtml(cur.font.name || '') + '</bdi>')
+                : escapeHtml(txT(open && busy === 'status' ? 'Checking…' : 'Choose a font'));
+            const off = fntChangeBusy() || !!fnt.phoneBusy || !P;           // a list that failed still offers Default: the way back from a font that went wrong
+            body.innerHTML = '<label class="fnt-lab" for="fntPhonePick">Font</label>'
+                + '<button type="button" class="op-select ab-pick fnt-pick" id="fntPhonePick" aria-haspopup="dialog" onclick="fntPhoneOpen()"' + (off ? ' disabled' : '') + '><span class="fnt-pick-txt">' + label + '</span><span class="ab-pick-chev" aria-hidden="true">&#9662;</span></button>'
+                + '<div class="fnt-note">' + (fnt.phoneBusy ? 'Uninstalling…' : 'Choose a font to use it. Press and hold a font in the list to uninstall it.') + '</div>'
+                + (fnt.phoneWarn ? '<div class="fnt-note is-warn" role="alert">' + escapeHtml(fnt.phoneWarn) + '</div>' : '')
+                + fntRbHtml(fnt.changerRb)
+                + [P && P.error, fnt.changerErr, fnt.changerStatusErr].filter(Boolean).map(t => '<div class="fnt-err"><span class="is-err">' + escapeHtml(t) + '</span></div>').join('')
+                + fntMsgHtml()
+                + (open && !fnt.changer && !busy ? '<div class="mode-btn-row fnt-sys-btns"><button type="button" class="mode-action-btn" id="fntChangerAgain" onclick="fntStatusAgain(\'changer\')">Try again</button></div>' : '');
+            if (fntPhoneIsOpen()) fntPhoneList();
         }
-        // the first line of a row in the font itself (its Regular), loaded once per version
-        function fntLibPreview(e) {
-            const el = document.getElementById('fntLibPv_' + fntSafe(e.id));
-            if (!el) return;
-            const key = e.id + ':' + e.versionCode, known = fnt.libFaces[e.id];
-            if (known && known.key === key) { if (known.family) el.style.fontFamily = "'" + known.family + "'"; return; }
-            const b64 = fntB64('fontMakerFontData', [e.id, 'regular']);
-            if (!b64) { fnt.libFaces[e.id] = { key: key, family: '' }; return; }
-            const family = 'FntLib' + (++fnt.faceSeq);
-            fnt.libFaces[e.id] = { key: key, family: '' };
-            fntFace(family, b64).then(face => {
-                const cur = fnt.libFaces[e.id];
-                if (!cur || cur.key !== key) { try { document.fonts.delete(face); } catch (x) {} return; }
-                if (known && known.face) { try { document.fonts.delete(known.face); } catch (x) {} }
-                cur.family = family; cur.face = face;
-                const now = document.getElementById('fntLibPv_' + fntSafe(e.id));
-                if (now) now.style.fontFamily = "'" + family + "'";
-            }, () => {});
+
+        // ---- the list (#fntPhoneSheet): a tap uses the font, a press and hold uninstalls it ----
+        const FNT_HOLD_MS = 550;
+        const fntPress = { timer: null, fired: false, x: 0, y: 0, ready: false };
+        function fntPhoneIsOpen() { const m = document.getElementById('fntPhoneSheet'); return !!(m && m.classList.contains('show')); }
+        function fntPhoneOpen() {
+            if (!fntSamsung() || fntChangeBusy() || fnt.phoneBusy) return;
+            fntLoadPhone();
+            if (!fnt.phone) { fntRenderPhone(); return; }
+            fntPhoneInit();
+            fntPress.fired = false;                                          // a hold that closed the list before its click came is over
+            fntPhoneList();
+            document.getElementById('fntPhoneSheet').classList.add('show');
+            haptic();
         }
-        function fntLibSay(id, text, err) { if (text) fnt.libMsg[id] = { text: text, err: !!err }; else delete fnt.libMsg[id]; fntRenderLib(); }
+        function fntPhoneClose() { fntPressCancel(); document.getElementById('fntPhoneSheet').classList.remove('show'); }
+        // what a row says under the name: where the font came from, whether this phone's Font style takes it, and the one in use
+        function fntPhoneSub(f) {
+            if (f.key === 'default') return txT("The phone's own font");
+            const bits = [f.system ? txT('Came with the phone') : f.madeHere ? (f.installed ? txT('Made on this phone') : txT('Made on this phone, not installed'))
+                : f.recognized ? txT('Installed') : txT('Not signed by Samsung or Monotype')];
+            if (f.madeHere && f.installed && fntOlder(f)) bits.push(txT('Installed, an older version'));
+            if (f.madeHere && !f.recognized && !f.system) bits.push(txT('Not signed by Samsung or Monotype'));
+            return bits.join(' · ');
+        }
+        // a font of this app whose installed package is older than the one made last (Font style would show the old one)
+        function fntOlder(f) {
+            const e = f && f.id ? fntEntry(f.id) : null;
+            return !!(e && e.installed && e.installedVersion && e.installedVersion < e.versionCode);
+        }
+        function fntPhoneList() {
+            const box = document.getElementById('fntPhoneList');
+            if (!box) return;
+            const open = fntChangerOpen(), cur = fntPhoneCurrent();
+            box.innerHTML = fntPhoneFonts().map(f => {
+                const isCur = cur.known && cur.font && cur.font.key === f.key, locked = !open && !f.recognized;
+                const sub = fntPhoneSub(f) + (isCur ? ' · ' + txT('In use') : '');
+                return '<button type="button" class="ab-sheet-row fnt-pr' + (isCur ? ' current' : '') + '" data-k="' + escapeHtml(f.key) + '"' + (isCur ? ' aria-current="true"' : '') + '>'
+                    + '<span class="ab-sheet-txt"><span' + (f.key === 'default' ? '' : ' translate="no"') + '>' + escapeHtml(fntPhoneName(f)) + '</span><span class="ab-sheet-sub">' + escapeHtml(sub) + '</span></span>'
+                    + (locked ? '<span class="ab-sheet-ic fnt-pr-lock" title="' + escapeHtml(txT('Needs Root or the system user')) + '">' + XQ_LOCK_SVG + '</span>' : isCur ? '<span class="ab-sheet-ic" aria-hidden="true">&#10003;</span>' : '')
+                    + '</button>';
+            }).join('');
+        }
+        function fntPressCancel() { if (fntPress.timer) { clearTimeout(fntPress.timer); fntPress.timer = null; } }
+        function fntPressStart(row, x, y) {
+            fntPress.fired = false; fntPress.x = x; fntPress.y = y;
+            fntPressCancel();
+            const k = row.dataset.k;
+            fntPress.timer = setTimeout(() => { fntPress.timer = null; fntPress.fired = true; haptic(); fntPhoneHold(k); }, FNT_HOLD_MS);
+        }
+        function fntPhoneInit() {
+            if (fntPress.ready) return;
+            const list = document.getElementById('fntPhoneList');
+            if (!list) return;
+            fntPress.ready = true;
+            const rowOf = e => (e.target && e.target.closest) ? e.target.closest('.fnt-pr[data-k]') : null;
+            let lastTouchAt = 0;                       // the mouse events a touch screen makes up after a touch are not a second press
+            const fromTouch = () => Date.now() - lastTouchAt < 700;
+            list.addEventListener('touchstart', e => { lastTouchAt = Date.now(); fntPress.fired = false; const row = rowOf(e), t = e.touches[0]; if (row && t) fntPressStart(row, t.clientX, t.clientY); }, { passive: true });
+            list.addEventListener('touchmove', e => {
+                const t = e.touches[0];
+                if (t && (Math.abs(t.clientX - fntPress.x) > 12 || Math.abs(t.clientY - fntPress.y) > 12)) fntPressCancel();
+            }, { passive: true });
+            list.addEventListener('touchend', e => {
+                lastTouchAt = Date.now();
+                fntPressCancel();
+                if (fntPress.fired && e.cancelable) e.preventDefault();       // the finger that asked to uninstall must not also choose the font
+            });
+            list.addEventListener('touchcancel', fntPressCancel);
+            list.addEventListener('mousedown', e => { if (fromTouch()) return; fntPress.fired = false; const row = rowOf(e); if (row && e.button === 0) fntPressStart(row, e.clientX, e.clientY); });
+            list.addEventListener('mouseup', fntPressCancel);
+            list.addEventListener('mouseleave', fntPressCancel);
+            list.addEventListener('scroll', fntPressCancel, { passive: true });
+            list.addEventListener('contextmenu', e => { if (rowOf(e)) e.preventDefault(); });
+            list.addEventListener('click', e => {
+                const row = rowOf(e);
+                if (!row) return;
+                if (fntPress.fired && e.detail !== 0) { fntPress.fired = false; return; }       // the press and hold already asked (Enter's click is never one)
+                fntPhonePick(row.dataset.k);
+            });
+            // the keyboard and screen readers: Enter or Space chooses the font, Delete asks to uninstall it
+            list.addEventListener('keydown', e => { const row = rowOf(e); if (row && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); fntPhoneHold(row.dataset.k); } });
+        }
+        // a tap: the font changer writes any font (Root, or Shizuku as the system user or root); without it Samsung's Font style takes a font Samsung or
+        // Monotype signed (opened on it), and one it does not take is refused here with a warning: the phone's font stays as it is
+        function fntPhonePick(k) {
+            const f = fntPhoneFind(k);
+            if (fntPhoneIsOpen()) fntPhoneClose();
+            if (!f || !fntSamsung() || fntChangeBusy() || fnt.phoneBusy) return;
+            fnt.phoneWarn = ''; fnt.msg = null;
+            if (fntIsCurrent(f)) { fntRenderLib(); return; }
+            const def = f.key === 'default';
+            if (fntChangerOpen()) {
+                if (def) fntReset(); else if (f.id) fntApply(f.id); else fntApplyPkg(f.pkg);
+                return;
+            }
+            if (!def && !f.recognized) {
+                fnt.phoneWarn = txF('{0} is not signed by Samsung or Monotype, so the phone takes it only with Root, or Shizuku running as the system user (UID 1000) or root (UID 0). The font was not changed.', fntPhoneName(f));
+                fntRenderLib();
+                return;
+            }
+            if (!def && (!f.installed || fntOlder(f))) { if (f.id) { fnt.styleAfter = f.id; fntInstall(f.id); } return; }
+            fntRenderLib();
+            fntOpenFontStyle(fntPhoneName(f));
+        }
+        // Samsung's own Font style screen (Display settings where the phone has none by that name), with the font to choose there
+        function fntOpenFontStyle(name) {
+            const r = fntCall('fontMakerOpenFontStyle', []);
+            if (!r) return;
+            haptic();
+            showToast(r.exact === false ? txF('Choose {0} in Font size and style, then Font style.', name) : txF('Choose {0} in Font style.', name));
+        }
+        // a press and hold: Default, a font that came with the phone and the font in use stay; a font of this app not installed is deleted from the app
+        async function fntPhoneHold(k) {
+            const f = fntPhoneFind(k);
+            if (!f) return;
+            const name = fntPhoneName(f);
+            if (f.key === 'default') { showToast(txT("Default is the phone's own font, so it cannot be uninstalled.")); return; }
+            if (f.system) { showToast(txF('{0} came with the phone, so it cannot be uninstalled.', name)); return; }
+            if (fntIsCurrent(f)) { showToast(f.installed ? txF('{0} is in use. Choose another font first, then uninstall it.', name) : txF('{0} is in use. Choose another font first, then delete it.', name)); return; }
+            if (fntChangeBusy() || fnt.phoneBusy || (f.id && (fnt.libBusy[f.id] || (fnt.building && fnt.buildFor === f.id)))) { showToast(txT('Wait for the change that is running to finish.')); return; }
+            fntPhoneClose();
+            if (!f.installed) { if (f.id) fntDeleteAsk(f.id); return; }
+            if (!fntHas('fontMakerUninstallPackage')) { showToast('Needs the app build'); return; }
+            if (!await mpAsk({ title: txF('Uninstall {0}?', name), text: f.id ? txT('The font package is removed from the phone. The font stays in this app, so you can install it again.') : txT('The font package is removed from the phone.'), ok: txT('Uninstall'), danger: true })) return;
+            const r = fntCall('fontMakerUninstallPackage', [f.pkg]);
+            if (!r) return;
+            if (!r.ok) { fntPhoneSay(fntErrText(r, 'Could not start'), true); return; }
+            haptic();
+            fnt.phoneBusy = f.pkg; fnt.msg = null; fnt.phoneWarn = '';
+            fntRenderLib();
+        }
+        // how 'settings': no working mode, so the app opened the font's App info for its Uninstall button
+        window.onFontMakerPkgUninstalled = function (pkg, json) {
+            const r = fntJson(json), f = fntPhoneFind(pkg);
+            if (fnt.phoneBusy === pkg) fnt.phoneBusy = '';
+            fntLoadPhone();
+            fntLoadLib();
+            if (r.ok) { if (r.how === 'settings') fntPhoneSay(r.note || txT("Tap Uninstall on the font's App info.")); else { fntPhoneSay(r.note || ''); showToast(f ? txF('Uninstalled {0}', fntPhoneName(f)) : txT('Uninstalled')); } }
+            else fntPhoneSay(fntErrText(r), true);
+        };
+
+        // ---- the font just made: use it, install it, export it, make it again ----
+        function fntRenderActs() {
+            const box = document.getElementById('fntBuildActs');
+            if (!box) return;
+            const e = fnt.resultId ? fntEntry(fnt.resultId) : null;
+            if (!e) { box.innerHTML = ''; return; }
+            const a = jsArg(e.id), busy = fnt.libBusy[e.id] || (fnt.building && fnt.buildFor === e.id ? 'make' : ''), samsung = fntSamsung();
+            const older = e.installed && e.installedVersion && e.installedVersion < e.versionCode;
+            const b = (label, on, onclick) => '<button type="button" class="mode-action-btn"' + (onclick ? ' onclick="' + onclick + '"' : '') + (on ? '' : ' disabled') + '>' + label + '</button>';
+            const use = b(fnt.changerBusy === 'apply' && fnt.applyId === e.id ? 'Applying…' : e.applied ? 'In use' : 'Use it', samsung && !busy && !fntChangeBusy() && !fnt.phoneBusy && !e.applied, 'fntPhonePick(' + jsArg(e.pkg) + ')');
+            // held in the Phone font sheet and uninstalling there: the same package
+            const install = busy === 'install' ? b('Installing…', false) : busy === 'uninstall' || fntPkgBusy(e) ? b('Uninstalling…', false)
+                : e.installed && !older ? b('Installed', false) : b(older ? 'Update' : 'Install', samsung && !busy, 'fntInstall(' + a + ')');
+            box.innerHTML = '<div class="mode-btn-row">' + use + install + b('Export', !busy && !fnt.exporting && !gf.saving, 'fntExport(' + a + ')')
+                + b('Make again', !busy && !fnt.building && fnt.rebuildId !== e.id, 'fntRemake(' + a + ')') + '</div>' + fntMsgHtml(e.id);
+        }
+        function fntPkgBusy(e) { return !!(e && e.pkg && fnt.phoneBusy === e.pkg); }
         function fntInstall(id) {
-            if (fnt.libBusy[id]) return;
+            if (fnt.libBusy[id] || fntPkgBusy(fntEntry(id))) return;
             const r = fntCall('fontMakerInstall', [id]);
             if (!r) return;
-            if (!r.ok) { fntLibSay(id, fntErrText(r, 'Could not start'), true); return; }
+            if (!r.ok) { if (fnt.styleAfter === id) fnt.styleAfter = ''; fntLibSay(id, fntErrText(r, 'Could not start'), true); return; }
             haptic();
             fnt.libBusy[id] = 'install';
-            delete fnt.libMsg[id];
+            fnt.msg = null;
             fntRenderLib();
         }
         function fntUninstall(id) {
-            if (fnt.libBusy[id]) return;
+            if (fnt.libBusy[id] || fntPkgBusy(fntEntry(id))) return;
             const r = fntCall('fontMakerUninstall', [id]);
             if (!r) return;
             if (!r.ok) { fntLibSay(id, fntErrText(r, 'Could not start'), true); return; }
             haptic();
             fnt.libBusy[id] = 'uninstall';
-            delete fnt.libMsg[id];
+            fnt.msg = null;
             fntRenderLib();
         }
+        // a font chosen in the list that had to be installed first (fnt.styleAfter) goes on to Samsung's Font style once it is
         window.onFontMakerInstalled = function (id, json) {
-            const r = fntJson(json);
+            const r = fntJson(json), after = fnt.styleAfter === id, e = fntEntry(id), name = e ? e.name : '';
+            if (after) fnt.styleAfter = '';
             delete fnt.libBusy[id];
             fntLoadLib();
-            if (r.ok) { if (r.how === 'installer') fntLibSay(id, r.note || txT("Sent to Android's installer.")); else { fntLibSay(id, r.note || ''); showToast(txT('Installed')); } }
+            fntLoadPhone();
+            if (r.ok) {
+                if (r.how === 'installer') fntLibSay(id, r.note || (after ? txF("Sent to Android's installer. Once it is installed, choose {0} in Font style.", name) : txT("Sent to Android's installer.")));
+                else { fntLibSay(id, r.note || ''); showToast(txT('Installed')); if (after) fntOpenFontStyle(name); }
+            }
             else if (r.code === 'cancelled') fntLibSay(id, '');
             else fntLibSay(id, fntErrText(r, 'Install failed'), true);
         };
-        // how 'settings': no working mode, so the app opened the font's App info for its Uninstall button
         window.onFontMakerUninstalled = function (id, json) {
             const r = fntJson(json);
             delete fnt.libBusy[id];
             fntLoadLib();
+            fntLoadPhone();
             if (r.ok) { if (r.how === 'settings') fntLibSay(id, r.note || txT("Tap Uninstall on the font's App info.")); else { fntLibSay(id, r.note || ''); showToast(txT('Uninstalled')); } }
             else fntLibSay(id, fntErrText(r), true);
         };
@@ -45990,21 +46795,21 @@ Type any command above (e.g. pm list packages -d)</div>
             const e = fntEntry(id);
             if (!e || fnt.libBusy[id] || (fnt.building && fnt.buildFor === id)) return;
             if (!fntHas('fontMakerDelete')) { showToast('Needs the app build'); return; }
+            if (e.applied) { showToast(txF('{0} is in use. Choose another font first, then delete it.', e.name)); return; }      // the app's own note: the font changer put it on the phone
             if (!await mpAsk({ title: txF('Delete {0}?', e.name), text: txT('The font is removed from this app. If it is installed, it stays installed until you uninstall it.'), ok: txT('Delete'), danger: true })) return;
             const r = fntCall('fontMakerDelete', [id]);
             if (!r) return;
             if (!r.ok) { fntLibSay(id, fntErrText(r), true); return; }
             haptic();
-            fntDropFace(id);
-            delete fnt.libMsg[id];
+            fnt.msg = null;
             if (fnt.rebuildId === id) { fnt.rebuildId = ''; fntRenderMake(); }
             fntLoadLib();
+            fntLoadPhone();
             fntRenderLib();
-            fntRenderChanger();
             showToast(txF('Deleted {0}', e.name));
         }
 
-        // ---- Font changer (RootGate.unlocked): the phone's font now, Apply from a row, Reset to Default ----
+        // ---- Font changer (RootGate.unlocked): the phone's font now, Apply from the list, Default ----
         function fntRbHtml(rb) {
             if (!rb) return '';
             const code = (t) => '<code>' + escapeHtml(t) + '</code>';
@@ -46017,56 +46822,35 @@ Type any command above (e.g. pm list packages -d)</div>
             const bad = Array.isArray(rb) && rb.some(x => x.ok === false);
             return '<div class="fnt-rb"><div>' + (bad ? '<span class="is-bad">Some files did not change.</span>' : 'Read back from the phone:') + '</div>' + lines + '</div>';
         }
-        function fntRenderChanger() {
-            const body = document.getElementById('fntChangerBody');
-            if (!body) return;
-            const dev = fntDevice(), st = fnt.changer;
-            if (!fntHas('fontMakerChangerStatus')) { setTag('fntChangerTag', 'inactive', txT('LOCKED')); body.innerHTML = '<div class="list-empty">Needs the app build</div>'; return; }
-            if (!fntSamsung()) {
-                setTag('fntChangerTag', 'inactive', txT('SAMSUNG ONLY'));
-                body.innerHTML = '<div class="fnt-note">' + (dev.samsung === false ? 'The font changer needs a Samsung phone.' : "The font changer needs Samsung's font folder (/data/app_fonts), which this phone does not have.") + '</div>';
-                return;
-            }
-            if (!fntChangerOpen()) {
-                setTag('fntChangerTag', 'inactive', txT('LOCKED'));
-                body.innerHTML = rootLockedRow('Apply a font', 'Put one of My fonts on the phone, or go back to Default', 'Needs Root or the system user');
-                return;
-            }
-            // the tag is the working mode now (the system user is UID 1000, never called root), not the one a status was asked in
-            const busy = fnt.changerBusy, sysUser = !ovlCanWriteOverlays();
-            setTag('fntChangerTag', 'active', sysUser ? txT('SYSTEM USER') : txT('ROOT'));
-            const cur = st && st.current;
-            const now = !st ? '<b>' + escapeHtml(txT(busy === 'status' ? 'Checking…' : 'Unknown')) + '</b>'
-                : cur ? '<b translate="no">' + escapeHtml(cur.name || cur.suffix || '') + '</b>' : '<b>Default</b>';
-            // Reset works while the phone's font is unknown (a status that failed): it is the way back from a font that went wrong
-            body.innerHTML = '<div class="fnt-now"><span>Phone font</span>' + now + '</div>'
-                + '<div class="fnt-note">Apply a font from My fonts. Reset to Default puts the phone\'s own font back.</div>'
-                + fntRbHtml(fnt.changerRb)
-                + [fnt.changerErr, fnt.changerStatusErr].filter(Boolean).map(t => '<div class="fnt-err"><span class="is-err">' + escapeHtml(t) + '</span></div>').join('')
-                + '<div class="mode-btn-row fnt-sys-btns"><button type="button" class="mode-action-btn" id="fntResetBtn" onclick="fntReset()"' + (busy || (st && !cur) ? ' disabled' : '') + '>' + (busy === 'reset' ? 'Resetting…' : 'Reset to Default') + '</button>'
-                + (!st && !busy ? '<button type="button" class="mode-action-btn" id="fntChangerAgain" onclick="fntStatusAgain(\'changer\')">Try again</button>' : '') + '</div>';
-        }
         function fntApply(id) {
             if (!fntSamsung() || (fnt.building && fnt.buildFor === id)) return;
-            if (!isRootActive()) { promptRootThenOpen(txT('The font changer')).then(ok => { fntRenderLib(); fntRenderChanger(); if (ok) fntApply(id); }); return; }
-            if (fnt.changerBusy && fnt.changerBusy !== 'status') return;
+            if (!isRootActive()) { promptRootThenOpen(txT('The font changer')).then(ok => { fntRenderLib(); if (ok) fntApply(id); }); return; }
+            if (fntChangeBusy()) return;
             const r = fntCall('fontMakerApply', [id]);
             if (!r) return;
-            if (!r.ok) { fnt.changerErr = fntErrText(r, 'Could not start'); fntLibSay(id, fnt.changerErr, true); fntRenderChanger(); return; }
+            if (!r.ok) { fnt.changerErr = fntErrText(r, 'Could not start'); fntRenderLib(); return; }
             haptic();
-            fnt.changerBusy = 'apply'; fnt.applyId = id; fnt.changerErr = ''; fnt.changerRb = null;
-            delete fnt.libMsg[id];
+            fnt.changerBusy = 'apply'; fnt.applyId = id; fnt.changerErr = ''; fnt.changerRb = null; fnt.msg = null;
             fntRenderLib();
-            fntRenderChanger();
         }
+        // a font package on the phone that is not one of this app's: the font changer reads its files from the package
+        function fntApplyPkg(pkg) {
+            if (!fntSamsung() || fntChangeBusy()) return;
+            const r = fntCall('fontMakerApplyPackage', [pkg]);
+            if (!r) return;
+            if (!r.ok) { fnt.changerErr = fntErrText(r, 'Could not start'); fntRenderLib(); return; }
+            haptic();
+            fnt.changerBusy = 'apply'; fnt.applyId = 'pkg:' + pkg; fnt.changerErr = ''; fnt.changerRb = null;
+            fntRenderLib();
+        }
+        // back to the phone's own font; it works while the phone's font is unknown (a status that failed): it is the way back from a font that went wrong
         function fntReset() {
-            if (!fntChangerOpen() || fnt.changerBusy) return;
+            if (!fntChangerOpen() || fntChangeBusy()) return;
             const r = fntCall('fontMakerReset', []);
             if (!r) return;
-            if (!r.ok) { fnt.changerErr = fntErrText(r, 'Could not start'); fntRenderChanger(); return; }
+            if (!r.ok) { fnt.changerErr = fntErrText(r, 'Could not start'); fntRenderLib(); return; }
             haptic();
             fnt.changerBusy = 'reset'; fnt.changerErr = ''; fnt.changerRb = null;
-            fntRenderChanger();
             fntRenderLib();
         }
         function fntChangerDone(r, okText) {
@@ -46076,8 +46860,8 @@ Type any command above (e.g. pm list packages -d)</div>
             else fnt.changerErr = fntErrText(r);
             fnt.changer = null;
             fntLoadLib();
+            fntLoadPhone();
             fntRenderLib();
-            fntRenderChanger();
             fntAskStatus();
         }
         window.onFontMakerChangerStatus = function (json) {
@@ -46085,7 +46869,6 @@ Type any command above (e.g. pm list packages -d)</div>
             if (fnt.changerBusy === 'status') fnt.changerBusy = false;
             if (fnt.changerStale) { fnt.changerStale = false; fnt.changer = null; fnt.changerStatusErr = ''; fntAskStatus(); }     // asked in the working mode before
             else if (r.ok) { fnt.changer = r; fnt.changerStatusErr = ''; if (r.unlocked) fnt.noAppFonts = r.available === false; } else fnt.changerStatusErr = fntErrText(r);
-            fntRenderChanger();
             fntRenderLib();
         };
         window.onFontMakerApplied = function (json) { fntChangerDone(fntJson(json), txT('The font is applied.')); };

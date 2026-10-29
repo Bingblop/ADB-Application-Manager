@@ -19,6 +19,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     await page.addInitScript(appsMock.initScript, opts);
     if (noColorMix) await page.route(u => u.href === PAGE, r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(fileURLToPath(PAGE), 'utf8').replace(/color-mix\(/g, 'no-color-mix(') }));
     await page.goto(PAGE); await page.waitForTimeout(600);
+    await page.evaluate(() => setRowTintGrad(true)); // Gradient is off by default since v7.18.1; these checks measure the gradient tints (t549 covers the default)
     await page.evaluate(() => switchView('apps')); await page.waitForTimeout(300);
     return page;
   };
@@ -113,7 +114,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const rm = await b.newPage({ viewport: { width: 400, height: 1200 }, reducedMotion: 'reduce' });
     rm.on('pageerror', e => errors.push(e.message));
     await rm.addInitScript(appsMock.initScript, { dark: true });
-    await rm.goto(PAGE); await rm.waitForTimeout(600); await rm.evaluate(() => switchView('apps')); await rm.waitForTimeout(300);
+    await rm.goto(PAGE); await rm.waitForTimeout(600); await rm.evaluate(() => setRowTintGrad(true)); await rm.evaluate(() => switchView('apps')); await rm.waitForTimeout(300);
     const r5 = await rm.evaluate(() => { toggleSelectPkg('com.whatsapp'); return getComputedStyle(document.getElementById('card_com.whatsapp'), '::after').animationName; });
     check('with reduced motion the row does not shine', r5 === 'none', r5);
     await rm.close();

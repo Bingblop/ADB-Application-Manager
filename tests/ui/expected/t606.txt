@@ -1,0 +1,7 @@
+ok   1. with a saved key, Settings' key field holds it as dots (a password field, not blank)
+ok      the status says a key is entered
+ok   2. after Remove the field is empty again, with its placeholder
+ok      opening Settings again shows the key it has now
+ok   3. with no key the field is empty
+ok   no page errors
+all passed

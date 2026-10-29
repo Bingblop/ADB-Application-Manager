@@ -39,9 +39,29 @@ final class QuickStopNotice {
                 if (!run.open()) return;
                 // named after the tile; the same CHANNEL id, so a channel made under the old name (Stop apps) is renamed in place
                 nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Kill Apps", NotificationManager.IMPORTANCE_LOW));
-                nm.notify(ID, build(app, nm, run));
+                Notification n = build(app, nm, run);
+                nm.notify(ID, n);
+                JobService.updateWith(ID, n);                  // the service holds the run with the notification as it is now, not as it began
             }
         } catch (Throwable ignored) {}               // a notification that cannot be shown (no permission, a restriction) never stops the run
+    }
+
+    /**
+     * The first look of the notification, for {@link JobService#beginWith}: the service holds the run's process in the foreground with it (v7.19.0), so the
+     * run goes on to its last app when its window is left. Null when it cannot be built.
+     */
+    static Notification first(Context c, QuickStopRun run) {
+        try {
+            Context app = c.getApplicationContext();
+            NotificationManager nm = (NotificationManager) app.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return null;
+            synchronized (run) {
+                nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Kill Apps", NotificationManager.IMPORTANCE_LOW));
+                return build(app, nm, run);
+            }
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     /** The run is over: the notification goes, and no update can bring it back. */

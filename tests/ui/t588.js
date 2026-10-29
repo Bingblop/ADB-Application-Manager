@@ -1,8 +1,10 @@
 // v7.17.0 Custom Fonts, Build: the request the page sends (fontMakerBuild: the name, the Regular's token and point, the Bold as the same variable
 // font at its own point, the emoji by catalog id, emojiScale 1, no rebuild), then the progress as the app reports it (onFontMakerProgress: a bar that
 // fills stage by stage, "Reading the font files… 1 of 2", "Putting the emoji in… 1,200 of 3,913", Cancel shown, Build and the choices locked), and the
-// result: "<name> is ready in My fonts." with the app's warnings, the new font first in My fonts. Cancel stops it ("Cancelling…", then "The build was
-// cancelled."); an error the page knows (too_many_glyphs) is said in the page's words. The mock holds each event until the script steps it.
+// result: "<name> is ready. Use it now, or choose it later under Phone font." with the app's warnings, under it the buttons for that font (Use it,
+// Install, Export, Make again), and the new font in the Phone font list, by its name and package, as made on this phone and not installed (v7.19.1:
+// My fonts is gone). Cancel stops it ("Cancelling…", then "The build was cancelled.", no buttons, nothing added to the list); an error the page knows
+// (too_many_glyphs) is said in the page's words. The mock holds each event until the script steps it.
 const fs = require('fs');
 const { chromium, PAGE, fixture } = require('./lib/pw');
 const fmk = require('./lib/fontmaker_mock');
@@ -32,8 +34,20 @@ const state = (page) => page.evaluate(() => {
     build: document.getElementById('fntBuildBtn').disabled, cancel: getComputedStyle(document.getElementById('fntCancelBtn')).display !== 'none',
     cancelOff: document.getElementById('fntCancelBtn').disabled, pick: document.getElementById('fntPick_regular').disabled, boldSel: document.getElementById('fntBoldSel').disabled,
     slider: document.getElementById('fntAxR_wght') ? document.getElementById('fntAxR_wght').disabled : null, name: document.getElementById('fntName').disabled,
-    result: document.getElementById('fntBuildResult').textContent.replace(/\s+/g, ' ').trim(), err: !!document.querySelector('#fntBuildResult .is-err') };
+    result: document.getElementById('fntBuildResult').textContent.replace(/\s+/g, ' ').trim(), err: !!document.querySelector('#fntBuildResult .is-err'),
+    acts: [...document.querySelectorAll('#fntBuildActs button')].map(x => x.textContent + (x.disabled ? ' (off)' : '')) };
 });
+// the Phone font list, opened from its drop-down and closed again: each row's key (data-k: 'default' or the package), name and line under the name
+async function phoneList(page) {
+  await page.click('#fntPhonePick');
+  await page.waitForTimeout(250);
+  const l = await page.evaluate(() => ({ open: document.getElementById('fntPhoneSheet').classList.contains('show'),
+    rows: [...document.querySelectorAll('#fntPhoneList .fnt-pr')].map(r => ({ k: r.dataset.k, name: r.querySelector('.ab-sheet-txt > span').textContent, sub: r.querySelector('.ab-sheet-sub').textContent })) }));
+  await page.click('#fntPhoneSheet .sheet-close');
+  await page.waitForTimeout(200);
+  return l;
+}
+const madeHere = (l) => l.rows.filter(r => /^Made on this phone/.test(r.sub)).map(r => r.k).join();
 
 (async () => {
   const b = await chromium.launch();
@@ -69,10 +83,18 @@ const state = (page) => page.evaluate(() => {
     await page.waitForTimeout(400);
     const s2 = await state(page);
     check('4. done: the progress goes, Build is back, Cancel hidden', !s2.on && !s2.build && !s2.cancel && !s2.pick, JSON.stringify(s2));
-    check('   the result names the font and lists the app\'s warning', /^Inter Plus is ready in My fonts\./.test(s2.result) && /positioning table \(GPOS\) was left out; its emoji do not need it to show\./.test(s2.result) && !s2.err, s2.result);
-    const first = await page.evaluate(() => { const r = document.querySelector('#fntLibList .fnt-lib'); return r ? r.textContent.replace(/\s+/g, ' ') : ''; });
-    check('   the new font is first in My fonts, not installed, with its emoji', /Inter Plus/.test(first) && /InterPlus_a1b2c3/.test(first) && /Not installed/.test(first) && /Emoji: Twemoji/.test(first) && /Regular and Bold/.test(first), first);
+    check('   the result names the font, says it can be chosen later under Phone font, and lists the app\'s warning', /^Inter Plus is ready\. Use it now, or choose it later under Phone font\./.test(s2.result)
+      && /positioning table \(GPOS\) was left out; its emoji do not need it to show\./.test(s2.result) && !s2.err, s2.result);
+    const made = await page.evaluate(() => ({ resultId: fnt.resultId, entry: window.__fmk.lib[0] }));
+    check('   under it, the buttons for that font: Use it, Install, Export, Make again, all on', s2.acts.join() === 'Use it,Install,Export,Make again'
+      && made.entry.name === 'Inter Plus' && made.resultId === made.entry.id, JSON.stringify([s2.acts, made.resultId, made.entry.id]));
+    await page.evaluate(() => document.getElementById('fntBuildResult').scrollIntoView({ block: 'center' }));
     await page.screenshot({ path: 'built.png', fullPage: false });
+    const l = await phoneList(page);
+    const row = l.rows.find(r => r.k === 'com.monotype.android.font.InterPlus_a1b2c3');
+    check('   the new font is in the Phone font list by its name and package, made on this phone and not installed, between Inter Display and Lato', l.open && row && row.name === 'Inter Plus'
+      && row.sub === 'Made on this phone, not installed · Not signed by Samsung or Monotype' && madeHere(l) === 'com.monotype.android.font.InterDisplay_3fa9c1,com.monotype.android.font.InterPlus_a1b2c3,com.monotype.android.font.Lato_8b21d0',
+      JSON.stringify(l.rows));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -89,7 +111,9 @@ const state = (page) => page.evaluate(() => {
     await page.evaluate(() => window.__fmk.stepAll());
     await page.waitForTimeout(200);
     const d = await state(page);
-    check('   the app\'s answer: "The build was cancelled.", nothing added to My fonts', !d.on && d.result === 'The build was cancelled.' && !d.err && await page.evaluate(() => document.querySelectorAll('#fntLibList .fnt-lib').length) === 2, JSON.stringify(d));
+    const l = await phoneList(page);
+    check('   the app\'s answer: "The build was cancelled.", no buttons under it, nothing added to the Phone font list', !d.on && d.result === 'The build was cancelled.' && !d.err && !d.acts.length
+      && madeHere(l) === 'com.monotype.android.font.InterDisplay_3fa9c1,com.monotype.android.font.Lato_8b21d0', JSON.stringify([d, madeHere(l)]));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }

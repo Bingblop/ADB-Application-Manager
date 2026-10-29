@@ -10,6 +10,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await tx.install(page, { real: true });
   await page.goto(PAGE); await page.waitForTimeout(400);
+  // Row tints > Gradient is off by default since v7.18.1; this script measures the gradient tints, so it turns the switch on (t549 covers the default)
+  await page.evaluate(() => setRowTintGrad(true));
   const sleep = ms => page.waitForTimeout(ms);
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const until = async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < (ms || 5000)) { if (await page.evaluate(fn)) return true; await sleep(25); } return false; };

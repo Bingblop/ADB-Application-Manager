@@ -23,7 +23,12 @@
 // opts.holdSave: the save screen stays open until the script calls window.__fmk.save()
 // While a file chooser or a save screen is open (until its answer) a second one is refused with busy, as the bridge does. A build with rebuildId keeps the
 // entry's id and package and takes the next versionCode (not_found for an id that is not in the library).
-// window.__fmk: { calls, requests, picks, step(), stepAll(), pending(), lib, cat, setMode(m), save() }
+// window.__fmk: { calls, requests, picks, step(), stepAll(), pending(), lib, cat, setMode(m), save(), phone }
+// v7.19.1 Phone font (fontMakerPhoneFonts, fontMakerApplyPackage, fontMakerUninstallPackage, fontMakerOpenFontStyle): opts.phone: the font packages on the
+// phone that are not the library's (default: three that came with it, Choco cooky from the Galaxy Store and Comic Neue that another app made, which
+// Samsung's Font style does not take on One UI 8.5); the library's entries are listed as the app lists them (installed or not); opts.currentPkg: a package
+// of those in use at the start; opts.fontStyleExact: false when the phone has no Font style screen by that name (Display settings open instead);
+// opts.pkgApplyError / opts.pkgUninstallError: { code, error } the job ends with
 // v7.18.0: Google Fonts (gfonts*) and the emoji samples (emojiSpecimen*), with the shapes of section 5 of the Google Fonts design
 // (/mnt/project-files/plans/google-fonts-v7.18.0.md). opts.gf:
 //   catalog: the compact list on the phone at the start (default none: at 0); stale: it is older than 7 days; remote: what a refresh brings (default the
@@ -150,6 +155,19 @@ exports.initScript = function (opts) {
   const catalog = () => ({ ok: true, sdk, items: CAT.map(it => Object.assign({}, it, { usable: !it.mergeable || sdk >= it.minApi, downloaded: downloaded.has(it.id) })) });
   st.cat = CAT;
   let current = opts.current !== undefined ? opts.current : ((lib.find(e => e.applied) || {}).id || null);
+  let curPkg = opts.currentPkg || null;                                // a package not of the library in use (fontMakerApplyPackage)
+  const phone = st.phone = (opts.phone || [
+    { pkg: 'com.monotype.android.font.samsungone', name: 'SamsungOne', system: true, recognized: true, madeHere: false },
+    { pkg: 'com.monotype.android.font.foundation', name: 'Gothic Bold', system: true, recognized: true, madeHere: false },
+    { pkg: 'com.monotype.android.font.rosemary', name: 'Rosemary', system: true, recognized: true, madeHere: false },
+    { pkg: 'com.monotype.android.font.chococooky', name: 'Choco cooky', system: false, recognized: true, madeHere: false },
+    { pkg: 'com.monotype.android.font.ComicNeue_9a1b2c', name: 'Comic Neue', system: false, recognized: false, madeHere: false },
+  ]).map(f => Object.assign({ suffix: f.pkg.split('.').pop(), id: null, installed: true }, f));
+  const phoneFonts = () => {
+    const self = opts.appliesSelfSigned === true;
+    const libRows = lib.map(e => ({ pkg: e.pkg, suffix: e.pkg.split('.').pop(), name: e.name, system: false, recognized: self, madeHere: true, id: e.id, installed: !!e.installed }));
+    return phone.map(f => Object.assign({}, f, self ? { recognized: true } : {})).concat(libRows);
+  };
   let sysActive = opts.sysActive || null;
   const dls = {};
 
@@ -321,7 +339,7 @@ exports.initScript = function (opts) {
     fontMakerFontData(id, face) { st.calls.push('fontMakerFontData:' + id + ':' + face); return face === 'bold' ? (b64.bold || '') : (b64.regular || ''); },
     fontMakerDelete(id) {
       st.calls.push('fontMakerDelete:' + id);
-      if (id === current) return J({ ok: false, code: 'applied', error: 'Reset the font changer first.' });
+      if (id === current) return J({ ok: false, code: 'applied', error: 'This font is in use. Choose another font first, then delete it.' });
       const i = lib.findIndex(e => e.id === id);
       if (i < 0) return J({ ok: false, code: 'not_found', error: 'That font is not in the library.' });
       lib.splice(i, 1);
@@ -359,8 +377,9 @@ exports.initScript = function (opts) {
         if (st.statusFails > 0) { st.statusFails--; window.onFontMakerChangerStatus(J({ ok: false, code: 'no_answer', error: 'The phone did not answer. Try again.' })); return; }
         const e = lib.find(x => x.id === current), on = !!(WM[asked] || {}).sysPrivActive;
         if (on && opts.noAppFonts) { window.onFontMakerChangerStatus(J({ ok: true, available: false, unlocked: true, lockReason: '', mode: asked === 'system' ? 'system' : 'root', current: null })); return; }
+        const sfx = curPkg ? curPkg.split('.').pop() : '';
         window.onFontMakerChangerStatus(J({ ok: true, available: samsung, unlocked: samsung && on, lockReason: on ? '' : lockReason,
-          mode: !on ? 'none' : asked === 'system' ? 'system' : 'root', current: e ? { suffix: e.pkg.split('.').pop(), id: e.id, name: e.name } : null }));
+          mode: !on ? 'none' : asked === 'system' ? 'system' : 'root', current: e ? { suffix: e.pkg.split('.').pop(), id: e.id, name: e.name } : curPkg ? { suffix: sfx, id: null, name: sfx } : null }));
       }]);
       return J({ ok: true, job: j });
     },
@@ -370,7 +389,7 @@ exports.initScript = function (opts) {
       const e = lib.find(x => x.id === id), j = job();
       run([() => {
         if (opts.applyError) { window.onFontMakerApplied(J(Object.assign({ ok: false }, opts.applyError))); return; }
-        current = id;
+        current = id; curPkg = null;
         const dir = '/data/app_fonts/0/' + e.pkg.split('.').pop();
         const files = [{ name: 'DroidSans.ttf', size: e.sizes.regular, sha256: '3f1c9a7e5b2d4c8f0a6e1b9d7c3f5a2e8b4d6c0f9a1e3b5d7c9f2a4e6b8d0c1f', label: 'u:object_r:app_fonts_data_file:s0' }];
         if (e.hasBold) files.push({ name: 'DroidSans-Bold.ttf', size: e.sizes.bold, sha256: '9e2b4d6f8a0c1e3b5d7f9a2c4e6b8d0f1a3c5e7b9d2f4a6c8e0b1d3f5a7c9e2b', label: 'u:object_r:app_fonts_data_file:s0' });
@@ -382,9 +401,40 @@ exports.initScript = function (opts) {
       st.calls.push('fontMakerReset');
       if (!unlocked()) return J({ ok: false, code: 'locked', error: lockReason });
       const j = job();
-      run([() => { if (opts.resetError) { window.onFontMakerReset(J(Object.assign({ ok: false }, opts.resetError))); return; } current = null; window.onFontMakerReset(J({ ok: true, readBack: { sansLoc: 'default#default', files: [] }, refreshed: true })); }]);
+      run([() => { if (opts.resetError) { window.onFontMakerReset(J(Object.assign({ ok: false }, opts.resetError))); return; } current = null; curPkg = null; window.onFontMakerReset(J({ ok: true, readBack: { sansLoc: 'default#default', files: [] }, refreshed: true })); }]);
       return J({ ok: true, job: j });
     },
+
+    // ---- v7.19.1 Phone font ----
+    fontMakerPhoneFonts() { st.calls.push('fontMakerPhoneFonts'); return J({ ok: true, fonts: phoneFonts(), device: device() }); },
+    fontMakerApplyPackage(pkg) {
+      st.calls.push('fontMakerApplyPackage:' + pkg);
+      if (!samsung) return J({ ok: false, code: 'not_samsung', error: 'Font packages work only on Samsung phones.' });
+      if (!unlocked()) return J({ ok: false, code: 'locked', error: lockReason });
+      const f = phone.find(x => x.pkg === pkg), j = job();
+      if (!f) return J({ ok: false, code: 'not_found', error: 'That font is not installed any more.' });
+      run([() => {
+        if (opts.pkgApplyError) { window.onFontMakerApplied(J(Object.assign({ ok: false }, opts.pkgApplyError))); return; }
+        current = null; curPkg = pkg;
+        const dir = '/data/app_fonts/0/' + f.suffix;
+        window.onFontMakerApplied(J({ ok: true, readBack: { sansLoc: dir + '#' + f.suffix, files: [{ name: 'DroidSans.ttf', size: 412360, sha256: '5d1e7a9c3b2f4e6d8a0c1b3e5f7a9c2d4e6b8a0f1c3e5d7b9a2c4e6f8b0d1a3c', label: 'u:object_r:app_fonts_data_file:s0' }] }, refreshed: true, styleIndex: 4 }));
+      }]);
+      return J({ ok: true, job: j });
+    },
+    fontMakerUninstallPackage(pkg) {
+      st.calls.push('fontMakerUninstallPackage:' + pkg);
+      const j = job(), priv = !!(WM[st.mode] || {}).isPrivileged;
+      run([() => {
+        if (opts.pkgUninstallError) { window.onFontMakerPkgUninstalled(pkg, J(Object.assign({ ok: false }, opts.pkgUninstallError))); return; }
+        const i = phone.findIndex(x => x.pkg === pkg), e = lib.find(x => x.pkg === pkg);
+        if (i >= 0 && phone[i].system) { window.onFontMakerPkgUninstalled(pkg, J({ ok: false, code: 'system', error: 'This font came with the phone, so it is not uninstalled.' })); return; }
+        if (unlocked() && ((curPkg && curPkg === pkg) || (e && e.id === current))) { window.onFontMakerPkgUninstalled(pkg, J({ ok: false, code: 'in_use', error: 'This font is in use. Choose another font first, then uninstall it.' })); return; }
+        if (priv) { if (i >= 0) phone.splice(i, 1); if (e) { e.installed = false; e.installedVersion = 0; } }
+        window.onFontMakerPkgUninstalled(pkg, J({ ok: true, how: priv ? 'pm' : 'settings', note: '' }));
+      }]);
+      return J({ ok: true, job: j });
+    },
+    fontMakerOpenFontStyle() { st.calls.push('fontMakerOpenFontStyle'); return J({ ok: true, exact: opts.fontStyleExact !== false }); },
 
     // ---- emoji downloads ----
     emojiCatalog() { st.calls.push('emojiCatalog'); return J(catalog()); },

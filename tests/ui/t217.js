@@ -169,8 +169,11 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await fail('dns.opendns.com', 'dns');
   await fail('dot.sb', 'tls');
   const swDefault = await ev(() => document.getElementById('pdnsSort').checked);
-  check('10. "Sort by speed" is off by default, and with it off the tiles keep the array order whatever the answers are', swDefault === false && (await order()).join() === HOSTS.join());
   await ev(() => document.getElementById('pdnsSort').click()); await sleep(40);
+  check('10. "Sort by speed" is on by default (v7.19.0); turned off it is remembered, and the tiles keep the array order whatever the answers are', swDefault === true
+    && (await ev(() => kvGet('pdns_sort', null))) === false && (await order()).join() === HOSTS.join());
+  await ev(() => document.getElementById('pdnsSort').click()); await sleep(40);
+  check('   on again: remembered as on', (await ev(() => kvGet('pdns_sort', null))) === true);
   const o1 = await order();
   check('   on: the ones that answered, quickest first (Cloudflare 39, AdGuard 40, Google 60, Quad9 90), then the ones not tested yet in array order, then the ones that failed (OpenDNS, DNS.SB)', o1.slice(0, 4).join() === 'one.one.one.one,dns.adguard-dns.com,dns.google,dns.quad9.net' && o1.slice(-2).join() === 'dns.opendns.com,dot.sb' && o1.slice(4, -2).join() === HOSTS.filter(h => !(h in speeds) && h !== 'dns.opendns.com' && h !== 'dot.sb').join(), o1.join());
   await ok('dns.nextdns.io', 1, 1, 1);

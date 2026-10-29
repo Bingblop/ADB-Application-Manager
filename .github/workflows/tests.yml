@@ -17,6 +17,8 @@ concurrency:
 jobs:
   ui:
     name: UI scripts
+    # ubuntu-24.04, not ubuntu-latest: ubuntu-latest moved to 26.04 on 2026-10-28 and Playwright 1.56.1 cannot install Chromium there;
+    # the expected outputs were recorded on 24.04. Moving needs a Playwright update and newly recorded outputs.
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

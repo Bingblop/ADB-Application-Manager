@@ -26,6 +26,9 @@ public class JobService extends Service {
     private static int active;                        // jobs that have begun and not ended: the notification stays until the last one is done
     private static volatile boolean running;          // the service has called startForeground
     private static boolean stopRequested;             // the last job ended before the service had started: it stops itself as soon as it has
+    private static int withActive;                    // of those, the runs with a notification of their own (beginWith)
+    private static int withId = ID;
+    private static Notification withNote;             // that notification: it holds the foreground while such a run goes on
 
     /** Starts (or joins) the notification. {@code onCancel} runs when the person taps Cancel in it. */
     public static void begin(Context c, String jobTitle, Runnable onCancel) {
@@ -34,6 +37,47 @@ public class JobService extends Service {
             title = jobTitle; text = ""; pct = -1; stopRequested = false;
             if (onCancel != null) cancelHooks.add(onCancel);
         }
+        start(c);
+    }
+
+    /**
+     * Like {@link #begin}, for a run that shows a notification of its own (Kill Apps, v7.19.0): the service holds the process in the foreground with
+     * that notification and id, so no second notification appears, and the run is neither frozen nor ended when its window goes to the background.
+     * {@link #endWith} ends it. A file job going on at the same time keeps its own notification (posted by {@link #progress}).
+     */
+    public static void beginWith(Context c, int noteId, Notification note) {
+        synchronized (JobService.class) {
+            withId = noteId; withNote = note;
+            withActive++;
+            active++;
+            stopRequested = false;
+        }
+        start(c);
+    }
+
+    /** The run's notification as it looks now: what the service shows if it starts again while the run goes on (a file job beginning). */
+    public static void updateWith(int noteId, Notification note) {
+        synchronized (JobService.class) { if (withNote != null && withId == noteId && note != null) withNote = note; }
+    }
+
+    /** The run that began with {@link #beginWith} is over. A file job still going takes the foreground back with its own notification. */
+    public static void endWith(Context c) {
+        boolean last, fileJobsLeft, wasRunning;
+        synchronized (JobService.class) {
+            withActive = Math.max(0, withActive - 1);
+            if (withActive == 0) { withNote = null; withId = ID; }
+            active = Math.max(0, active - 1);
+            last = active == 0;
+            fileJobsLeft = active > withActive;
+            wasRunning = running;
+            if (last) { text = ""; stopRequested = !running; }
+        }
+        if (last && wasRunning) {
+            try { c.stopService(new Intent(c, JobService.class)); } catch (RuntimeException ignored) {}
+        } else if (fileJobsLeft && withActive == 0) start(c);
+    }
+
+    private static void start(Context c) {
         try {
             Intent i = new Intent(c, JobService.class);
             if (Build.VERSION.SDK_INT >= 26) c.startForegroundService(i); else c.startService(i);
@@ -54,15 +98,21 @@ public class JobService extends Service {
     /** One job is done. The last one stops the service (after it has started, if it has not yet) and leaves a short "done" note headed by
      *  {@code jobTitle}, the title the job began with (the shared title is the newest job's, which is another job's when two overlap). */
     public static void end(Context c, Runnable onCancel, String jobTitle, String doneText) {
-        boolean last;
+        boolean last, dropFileNote;
         synchronized (JobService.class) {
             if (onCancel != null) cancelHooks.remove(onCancel);
             active = Math.max(0, active - 1);
             last = active == 0;
+            // the last file job is over while a run with its own notification holds the service: its "Working…" note goes, the run's stays
+            dropFileNote = !last && active <= withActive && withNote != null;
             if (last) { text = ""; stopRequested = !running; }
         }
         if (last && running) {
             try { c.stopService(new Intent(c, JobService.class)); } catch (RuntimeException ignored) {}
+        }
+        if (dropFileNote) {
+            NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) try { nm.cancel(ID); } catch (RuntimeException ignored) {}
         }
         if (doneText == null || doneText.isEmpty()) return;
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -105,9 +155,10 @@ public class JobService extends Service {
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             if (Build.VERSION.SDK_INT >= 26 && nm != null) nm.createNotificationChannel(new NotificationChannel(CHANNEL, "File jobs", NotificationManager.IMPORTANCE_LOW));
             Notification n;
-            synchronized (JobService.class) { n = build(this); }
-            if (Build.VERSION.SDK_INT >= 29) startForeground(ID, n, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-            else startForeground(ID, n);
+            int id;
+            synchronized (JobService.class) { id = withNote != null ? withId : ID; n = withNote != null ? withNote : build(this); }
+            if (Build.VERSION.SDK_INT >= 29) startForeground(id, n, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            else startForeground(id, n);
         } catch (RuntimeException e) {
             // not allowed to run in the foreground right now (a restriction of the phone): the job goes on without the notification
             stopSelf();
@@ -119,6 +170,7 @@ public class JobService extends Service {
         return START_NOT_STICKY;
     }
 
+    // the run's notification is not forgotten here: a run that began while this instance was stopping starts the next one with it
     @Override public void onDestroy() { synchronized (JobService.class) { running = false; } super.onDestroy(); }
 
     @Override public IBinder onBind(Intent intent) { return null; }

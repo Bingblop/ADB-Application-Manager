@@ -6,7 +6,8 @@
 // phone (never "check the connection"); one that fails after its page was left or the sheet closed says so in a toast ("Inter was not
 // downloaded. ..."; a cancel says nothing), and its page says why when opened again; one the app refuses (busy: already downloading,
 // downloading, being saved) says the app's sentence. Delete (gfontsDelete, no question first) goes back to Download with a toast. Save to phone (gfontsSave) waits for
-// Android's save screen ("Saving…"; Delete, another save and My fonts' Export wait too), then a toast with the file's name; closing the screen
+// Android's save screen ("Saving…"; Delete, another save and the Export under the build result of a font just made wait too, and while that Export's
+// save screen is open Save to phone waits and sends nothing), then a toast with the file's name; closing the screen
 // says nothing, a failure says why (the app's "The font family could not be saved: ..." as the page's sentence), in a toast ("Lato was not saved.
 // ...") when it comes after the page was left or the sheet closed. The list follows a Delete or a
 // download made on a family's page, or one that finishes while the list shows (the Downloaded filter, the count, the badges). A downloaded family the
@@ -197,6 +198,11 @@ const kb = n => (n * 1024);
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(150);
     check('   a full phone: "There is not enough free space on this phone."', (await get(page)).err === 'There is not enough free space on this phone.', (await get(page)).err);
     await page.evaluate(() => { __fmk.gfDownloadError = {}; });
+    // a font made in Make a font (the sheet closed meanwhile): the build result offers its Export, the other save screen
+    await page.evaluate(() => gfClose()); await page.waitForTimeout(100);
+    await page.click('#fntPick_regular'); await page.waitForTimeout(150);
+    await page.click('#fntBuildBtn'); await page.waitForTimeout(400);
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(200);
     // Delete
     await showFam(page, 'Lato');
     await page.evaluate(() => __fmk.gfStepAll()); await page.waitForTimeout(100);
@@ -205,15 +211,15 @@ const kb = n => (n * 1024);
     // Save to phone: the save screen
     await page.click('#gfSaveBtn');
     g = await get(page);
-    const exp = () => page.evaluate(() => [...document.querySelectorAll('#fntLibList button')].filter(x => x.textContent.trim() === 'Export').map(x => x.disabled));
+    const exp = () => page.evaluate(() => [...document.querySelectorAll('#fntBuildActs button')].filter(x => x.textContent.trim() === 'Export').map(x => x.disabled));
     check('8. Save to phone: gfontsSave, "Saving…" waits, Delete waits', (await calls(page, '^gfontsSave:')).join(',') === 'gfontsSave:Lato' && g.save === '-Saving…' && g.del === '-Delete', JSON.stringify(g));
     check('   the focus goes from Save to phone (waiting) to Use in Make a font', (await focused(page)) === 'gfUseBtn', await focused(page));
-    check('   My fonts\' Export waits too', (await exp()).length === 2 && (await exp()).every(Boolean), JSON.stringify(await exp()));
+    check('   the Export under the build result (the font just made) waits too', (await exp()).length === 1 && (await exp()).every(Boolean), JSON.stringify(await exp()));
     await page.evaluate(() => gfDelete());
     check('   Delete is not asked while it saves', !(await calls(page, '^gfontsDelete:')).length);
     await page.evaluate(() => __fmk.save()); await page.waitForTimeout(100);
     g = await get(page);
-    check('   saved: a toast with the file\'s name; the buttons back', g.toast === 'Saved Lato.zip' && g.save === 'Save to phone' && g.del === 'Delete' && (await exp()).every(x => !x), JSON.stringify([g, await exp()]));
+    check('   saved: a toast with the file\'s name; the buttons back', g.toast === 'Saved Lato.zip' && g.save === 'Save to phone' && g.del === 'Delete' && (await exp()).length === 1 && (await exp()).every(x => !x), JSON.stringify([g, await exp()]));
     check('   the focus stays on Use in Make a font', (await focused(page)) === 'gfUseBtn', await focused(page));
     await page.click('#gfDelBtn');
     g = await get(page);
@@ -223,11 +229,17 @@ const kb = n => (n * 1024);
     await page.evaluate(() => gfBackToList()); await page.waitForTimeout(100);
     const badge2 = await page.evaluate(() => [...document.querySelectorAll('#gfList .gf-card[data-f="Lato"] .uad-badge')].map(x => x.textContent).join(','));
     check('   its card has no Downloaded badge any more', badge2 === '', badge2);
-    // My fonts' Export open: Save to phone waits for it
+    // the build result's Export open (the sheet closed to reach it): Save to phone waits for it
+    await page.evaluate(() => gfClose()); await page.waitForTimeout(100);
+    await page.click('#fntBuildActs .mode-action-btn:text-is("Export")'); await page.waitForTimeout(100);
+    await page.click('#gfOpenBtn'); await page.waitForTimeout(200);
     await showFam(page, 'Roboto');
-    await page.evaluate(() => { fnt.exporting = 'x'; gfRenderGet(); });
-    check('   while My fonts saves a font: Save to phone waits', (await get(page)).save === '-Save to phone');
-    await page.evaluate(() => { fnt.exporting = ''; gfRenderGet(); });
+    check('   while the build result\'s Export saves the font just made: Save to phone waits', (await calls(page, '^fontMakerExport:')).length === 1 && (await get(page)).save === '-Save to phone', JSON.stringify([await calls(page, '^fontMakerExport:'), await get(page)]));
+    await page.evaluate(() => gfSave());
+    check('   Save to phone asked meanwhile sends nothing', (await calls(page, '^gfontsSave:')).join(',') === 'gfontsSave:Lato', JSON.stringify(await calls(page, '^gfontsSave:')));
+    await page.evaluate(() => __fmk.save()); await page.waitForTimeout(100);
+    g = await get(page);
+    check('   the font saved ("Saved Inter Variable.apk"): Save to phone on again', g.toast === 'Saved Inter Variable.apk' && g.save === 'Save to phone', JSON.stringify(g));
     check('   no page errors', !errors.length, errors.join(' | '));
     await ctx.close();
   }
@@ -375,7 +387,7 @@ const kb = n => (n * 1024);
       && use.toast === 'Lato is in Make a font' && !use.open, JSON.stringify(use));
     await page.click('#gfOpenBtn'); await page.waitForTimeout(200);
     await page.click('#gfList .gf-card[data-f="Lato"]'); await page.waitForTimeout(150);
-    // it cannot be downloaded again: Delete asks first (My fonts' question, over the sheet)
+    // it cannot be downloaded again: Delete asks first (the shared question sheet, over the sheet)
     const ask = () => page.evaluate(() => {
       const m = document.getElementById('mpAskModal'), hit = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
       return { show: m.classList.contains('show'), top: !!hit && !!hit.closest('#mpAskModal'), title: document.getElementById('mpAskTitle').textContent, text: document.getElementById('mpAskText').textContent,

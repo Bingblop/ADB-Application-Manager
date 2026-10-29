@@ -167,6 +167,11 @@ public final class SamsungFonts {
     private static final Pattern FONT_FILE = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,63}\\.ttf");
     private static final Pattern SHA256 = Pattern.compile("[0-9a-f]{64}");
 
+    /** Whether a font package suffix is one the scripts take (a letter, then letters, digits or _; at most 64). */
+    public static boolean isSuffix(String s) {
+        return s != null && SUFFIX.matcher(s).matches();
+    }
+
     private static String requireSuffix(String s) {
         if (s == null || !SUFFIX.matcher(s).matches()) throw new IllegalArgumentException("invalid font package suffix");
         return s;
