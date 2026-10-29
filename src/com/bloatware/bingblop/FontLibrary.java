@@ -1054,8 +1054,10 @@ public final class FontLibrary {
     public static void deleteTree(File f) {
         if (f == null) return;
         if (f.isDirectory() && !Files.isSymbolicLink(f.toPath())) {
-            File[] kids = f.listFiles();
-            if (kids != null) for (File k : kids) deleteTree(k);
+            // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+            // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+            String[] kids = f.list();
+            if (kids != null) for (String k : kids) deleteTree(new File(f, k));
         }
         f.delete();
     }
