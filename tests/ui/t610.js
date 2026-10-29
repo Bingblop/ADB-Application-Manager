@@ -18,7 +18,7 @@ const W = '192.168.1.30:5555';
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript((o) => {
       const W = '192.168.1.30:5555', PKG = 'com.wear.weather';
-      const st = window.__st = { log: [], su: o.su !== false, runtime: { 'android.permission.CAMERA': false, 'android.permission.POST_NOTIFICATIONS': true },
+      const st = window.__st = { log: [], su: o.su !== false, suStyle: o.suStyle || 'c', suRefuses: !!o.suRefuses, cancelled: [], runtime: { 'android.permission.CAMERA': false, 'android.permission.POST_NOTIFICATIONS': true },
         ops: { CAMERA: 'allow', RUN_IN_BACKGROUND: 'allow', WAKE_LOCK: 'allow', BOOT_COMPLETED: 'allow' }, uidOps: { WAKE_LOCK: 'allow' }, stuck: new Set(['BOOT_COMPLETED']),
         disabled: new Set([PKG + '.OldReceiver']) };
       const MAN = ['<?xml version="1.0" encoding="utf-8"?>',
@@ -59,7 +59,7 @@ const W = '192.168.1.30:5555';
       const one = (cmd, root) => {
         let m;
         if ((m = /^pm (grant|revoke) '([^']+)' '([^']+)'$/.exec(cmd))) { st.runtime[m[3]] = m[1] === 'grant'; return ''; }
-        if ((m = /^cmd appops set (--uid )?'([^']+)' (\w+) (\w+) 2>&1$/.exec(cmd))) { if (st.stuck.has(m[3])) return ''; (m[1] ? st.uidOps : st.ops)[m[3]] = m[4]; return ''; }
+        if ((m = /^cmd appops set (--uid )?'([^']+)' (\w+) (\w+)(?: >\/dev\/null)? 2>&1$/.exec(cmd))) { if (st.stuck.has(m[3])) return ''; (m[1] ? st.uidOps : st.ops)[m[3]] = m[4]; return ''; }
         if ((m = /^input keyevent KEYCODE_WAKEUP 2>\/dev\/null; am start -n '([^']+)' 2>&1$/.exec(cmd))) {
           if (/SettingsActivity/.test(m[1]) && !root) return 'Starting: Intent { cmp=' + m[1] + ' }\nSecurity exception: Permission Denial: starting Intent { cmp=' + m[1] + ' } from null (pid=1, uid=2000) not exported from uid 10123\njava.lang.SecurityException: Permission Denial: starting Intent';
           return 'Starting: Intent { cmp=' + m[1] + ' }';
@@ -77,13 +77,16 @@ const W = '192.168.1.30:5555';
         if (/^for p in/.test(cmd)) return ['ro.product.manufacturer=samsung', 'ro.product.model=SM-R930', 'ro.build.version.release=14', 'ro.build.version.sdk=34', 'ro.product.cpu.abilist=arm64-v8a',
           'ro.sf.lcd_density=320', 'ro.build.characteristics=watch', 'wmsize=Physical size: 450x450 ', 'wmdens=Physical density: 320 ', 'batt=  level: 83   status: 3 '].join('\n');
         if (/^echo '#ALL'/.test(cmd)) return ['#ALL', 'package:/data/app/~~ab==/' + PKG + '-1==/base.apk=' + PKG, 'package:/system/app/Clock/Clock.apk=com.google.android.deskclock', '#INST', 'package:' + PKG, 'package:com.google.android.deskclock', '#DIS', '#SYS', 'package:com.google.android.deskclock'].join('\n');
-        if ((m = /^dumpsys package '([^']+)' \| sed -n '\/\^Packages:\/,\/\^\[\^ \]\/p'; echo '#CDI-OPS'; cmd appops get '([^']+)' 2>&1; echo '#CDI-PATH'; pm path '([^']+)' 2>&1$/.exec(cmd))) {
+        if ((m = /^dumpsys package '([^']+)' \| sed -n '\/\^Packages:\/,\/\^\[\^ \]\/p; \/\^Shared users:\/,\/\^\[\^ \]\/p'; echo '#CDI-OPS'; cmd appops get '([^']+)' 2>&1; echo '#CDI-PATH'; pm path '([^']+)' 2>&1$/.exec(cmd))) {
           if (m[1] !== PKG) return 'Packages:\n#CDI-OPS\nError: No UID for ' + m[1] + ' in user 0\n#CDI-PATH\n';
           return dump().split('\nQueries:')[0] + '\nQueries:\n#CDI-OPS\n' + opsOut() + '\n#CDI-PATH\npackage:/data/app/~~ab==/' + PKG + '-1==/base.apk\npackage:/data/app/~~ab==/' + PKG + '-1==/split_config.arm64_v8a.apk';
         }
         if ((m = /^(cmd appops set .*); echo '#CDI-OPS'; cmd appops get '[^']+' 2>&1$/.exec(cmd))) { m[1].split('; ').forEach(c => one(c)); return '#CDI-OPS\n' + opsOut(); }
         if (cmd === 'command -v su 2>/dev/null') return st.su ? '/system/bin/su' : '';
-        if ((m = /^su -c '(.*)'$/s.exec(cmd))) { const inner = m[1].replace(/'\\''/g, "'"); return (r = one(inner, true)) === null ? 'sh: not found' : r; }
+        // the su of root managers (su -c), or of an Android userdebug build (su 0 sh -c, and -c is an unknown uid); a su that refuses
+        if ((m = /^su -c '(.*)'$/s.exec(cmd)) && st.suStyle === 'uid') return "su: invalid uid/gid '-c'";
+        if ((m = /^su -c '(.*)'$/s.exec(cmd)) || (m = /^su 0 sh -c '(.*)'$/s.exec(cmd))) { if (st.suRefuses) return 'Permission denied'; const inner = m[1].replace(/'\\''/g, "'"); return (r = one(inner, true)) === null ? 'sh: not found' : r; }
+        if (cmd === 'pm list features' && st.featFail) return 'Error: device offline';
         if (cmd === 'pm list features') return ['feature:reqGlEsVersion=0x30002', 'feature:android.hardware.type.watch', 'feature:android.hardware.wifi', 'feature:android.software.leanback=1'].join('\n');
         if ((r = one(cmd)) !== null) return r;
         return '';
@@ -104,7 +107,8 @@ const W = '192.168.1.30:5555';
           st.permAsked.forEach(n => { res[n] = known[n] || { protection: 'undefined', changeable: false, appOp: false, label: '' }; });
           return JSON.stringify(res);
         },
-        cdManifest(tag, serial, apk) { st.log.push('manifest ' + serial + ' ' + apk); setTimeout(() => window.onCdResult({ tag, out: st.manError || st.man, ms: 5 }), 20); },
+        cdManifest(tag, serial, apk) { st.log.push('manifest ' + serial + ' ' + apk); setTimeout(() => window.onCdResult({ tag, out: st.manError || st.man, ms: 5 }), st.manDelay || 20); },
+        cdCancel(tag) { st.cancelled.push(tag); },
         cdAdb(tag, serial, argsJson) {
           const a = JSON.parse(argsJson);
           if (a[0] === 'devices') return reply(tag, 'List of devices attached\n' + W + '\tdevice product:w model:Galaxy_Watch6 device:w transport_id:2\n');
@@ -174,7 +178,7 @@ const W = '192.168.1.30:5555';
   check('   a mode: cmd appops set, then read back, the mode is on', (await log(page))[0] === W + " cmd appops set 'com.wear.weather' RUN_IN_BACKGROUND ignore 2>&1; echo '#CDI-OPS'; cmd appops get 'com.wear.weather' 2>&1" && await ev(page, () => { const r = Array.from(document.querySelectorAll('#cdiOps .perm-row')).find(x => x.querySelector('.perm-name').innerText === 'RUN_IN_BACKGROUND'); return r.querySelector('.op-mode-btn.ignore').classList.contains('on'); }) && /RUN_IN_BACKGROUND → ignore/.test(await toast(page)), JSON.stringify(await log(page)));
   await clearLog(page);
   await press(page, 'cdiOps', 'WAKE_LOCK', 'Deny'); await page.waitForTimeout(400);
-  check('   an op with a uid mode: the uid mode is set too', /^192\.168\.1\.30:5555 cmd appops set --uid 'com\.wear\.weather' WAKE_LOCK deny 2>&1; cmd appops set 'com\.wear\.weather' WAKE_LOCK deny 2>&1; echo/.test((await log(page))[0]), JSON.stringify(await log(page)));
+  check('   an op with a uid mode: the uid mode is set too', /^192\.168\.1\.30:5555 cmd appops set --uid 'com\.wear\.weather' WAKE_LOCK deny >\/dev\/null 2>&1; cmd appops set 'com\.wear\.weather' WAKE_LOCK deny 2>&1; echo/.test((await log(page))[0]), JSON.stringify(await log(page)));
   await press(page, 'cdiOps', 'BOOT_COMPLETED', 'Ignore'); await page.waitForTimeout(400);
   check('   the device kept its mode: said so', /Android kept BOOT_COMPLETED at allow/.test(await toast(page)), await toast(page));
   await clearLog(page);
@@ -268,6 +272,64 @@ const W = '192.168.1.30:5555';
   check('    an unexported activity too', /only root or the system/.test(await toast(page)));
   await ev(page, () => { window.__st.manError = 'Error: failed to stat remote object'; cdInspOpen('com.wear.weather', 'manifest'); }); await page.waitForTimeout(500);
   check('    a manifest that could not be read: its reason, in the Manifest and Activities tabs', /failed to stat remote object/.test(await text(page, 'cdiManifest')) && /failed to stat remote object/.test(await text(page, 'cdiActs')), await text(page, 'cdiActs'));
+  await clearLog(page);
+  await ev(page, () => { window.__st.manError = ''; cdInspLoad(true); }); await page.waitForTimeout(500);
+  check('    Reload reads a manifest that failed once more', (await log(page)).some(l => /^manifest /.test(l)) && /AndroidManifest|<manifest/.test(await text(page, 'cdiManifest')), JSON.stringify(await log(page)));
+  await page.close();
+
+  // ---- 11. the su of an Android userdebug build (su 0 sh -c), a su that refuses, a manifest read stopped, a failed feature list asked again ----
+  page = await open({ suStyle: 'uid' });
+  await ev(page, () => cdInspOpen('com.wear.weather', 'comps')); await page.waitForTimeout(500);
+  await clearLog(page);
+  await press(page, 'cdiComps', 'SyncService', 'DISABLE'); await page.waitForTimeout(400);
+  let l11 = await log(page);
+  check('11. su that takes a uid: su -c is called an unknown uid, so su 0 sh -c, and it works', l11.length === 4 && /^192\.168\.1\.30:5555 su -c 'pm disable/.test(l11[2]) && /^192\.168\.1\.30:5555 su 0 sh -c 'pm disable/.test(l11[3]) && await toast(page) === 'Component disabled', JSON.stringify(l11) + ' ' + await toast(page));
+  await clearLog(page);
+  await press(page, 'cdiComps', 'SyncService', 'ENABLE'); await page.waitForTimeout(400);
+  l11 = await log(page);
+  check('    the next time straight to su 0 sh -c (remembered for the device)', l11.length === 2 && /^192\.168\.1\.30:5555 su 0 sh -c 'pm enable/.test(l11[1]) && await toast(page) === 'Component enabled', JSON.stringify(l11) + ' ' + await toast(page));
+  await clearLog(page);
+  await ev(page, () => { window.__st.manDelay = 3000; cdInspOpen('com.wear.weather', 'manifest'); }); await page.waitForTimeout(300);
+  await ev(page, () => cdInspClose()); await page.waitForTimeout(100);
+  check('    a manifest read still running when the sheet closes is stopped', (await ev(page, () => window.__st.cancelled)).length === 1 && await ev(page, () => !cdi.manBusy && !cdi.manTag), JSON.stringify(await ev(page, () => window.__st.cancelled)));
+  await ev(page, () => { window.__st.manDelay = 20; cdInspOpen('com.wear.weather', 'acts'); }); await page.waitForTimeout(600);
+  check('    ... and opened again the manifest is read anew', JSON.stringify(await btnOf(page, 'cdiActs', 'MainActivity')) === '["LAUNCH","DISABLE"]', JSON.stringify(await btnOf(page, 'cdiActs', 'MainActivity')));
+  await page.waitForTimeout(2600);
+  check('    the stopped read\'s late answer changes nothing', JSON.stringify(await btnOf(page, 'cdiActs', 'MainActivity')) === '["LAUNCH","DISABLE"]' && await ev(page, () => !cdi.manBusy));
+  await clearLog(page);
+  await ev(page, () => { window.__st.featFail = true; cdInspTab('features'); }); await page.waitForTimeout(400);
+  await ev(page, () => { window.__st.featFail = false; cdInspTab('perms'); cdInspTab('features'); }); await page.waitForTimeout(400);
+  check('    a feature list that failed is asked again the next time', (await log(page)).filter(l => / pm list features$/.test(l)).length === 2 && /on the device/i.test(await text(page, 'cdiFeatures')), JSON.stringify(await log(page)));
+  await page.close();
+
+  page = await open({ suRefuses: true });
+  await ev(page, () => cdInspOpen('com.wear.weather', 'acts')); await page.waitForTimeout(500);
+  await press(page, 'cdiActs', 'SettingsActivity', 'LAUNCH'); await page.waitForTimeout(400);
+  check('    su refuses: the activity is not reported as opened', await toast(page) === 'Permission denied', await toast(page));
+  await ev(page, () => cdInspTab('comps'));
+  await press(page, 'cdiComps', 'SyncService', 'DISABLE'); await page.waitForTimeout(400);
+  check('    ... nor the component as switched', await toast(page) === 'Permission denied' && JSON.stringify(await btnOf(page, 'cdiComps', 'SyncService')) === '["STOP","DISABLE"]', await toast(page));
+
+  // ---- 12. what the device answers, read right: errors on their own lines, a shared user's grants ----
+  const errs = await ev(page, () => [
+    cdiErr('Component {com.wear.weather/com.wear.weather.ExceptionReceiver} new state: disabled'),
+    String(cdiDenied('Component {com.wear.weather/com.wear.weather.SecurityExceptionReceiver} new state: disabled')),
+    cdiErr("Exception occurred while executing 'grant':\njava.lang.SecurityException: Permission android.permission.INTERNET requested by x is not a changeable permission type\n\tat com.android.server.pm.Foo(Foo.java:1)"),
+    cdiErr('Starting: Intent { cmp=x/.A }\nError type 3\nError: Activity class {x/x.A} does not exist.'),
+    cdiErr('Operation not allowed: java.lang.SecurityException: Package x has not requested permission y'),
+    cdiErr('/system/bin/sh: su: not found'),
+    cdiErr('Starting: Intent { cmp=x/.A }\nWarning: Activity not started, intent has been delivered to currently running top-most instance.')]);
+  check('12. a part named ...ExceptionReceiver is no error, and SecurityExceptionReceiver no refusal', errs[0] === '' && errs[1] === 'false', JSON.stringify(errs));
+  check('    an exception: the line after "Exception occurred", without its class', errs[2] === 'Permission android.permission.INTERNET requested by x is not a changeable permission type', errs[2]);
+  check('    am start: the Error line, not "Error type 3"', errs[3] === 'Activity class {x/x.A} does not exist.', errs[3]);
+  check('    older pm: "Operation not allowed" and the class taken off', errs[4] === 'Package x has not requested permission y', errs[4]);
+  check('    the shell\'s not found is one; am start\'s Warning is not', errs[5] === '/system/bin/sh: su: not found' && errs[6] === '', JSON.stringify(errs.slice(5)));
+  const sh = await ev(page, () => { const d = cdParsePkgDump(['Packages:', '  Package [com.wear.sys] (abc):', '    userId=1000', '    sharedUser=SharedUserSetting{9f8e android.uid.system/1000}', '    versionCode=34 minSdk=30 targetSdk=34',
+    '    requested permissions:', '      android.permission.WRITE_SECURE_SETTINGS', '      android.permission.CAMERA', '    User 0: ceDataInode=1 installed=true', '      firstInstallTime=2026-01-02 03:04:05',
+    'Shared users:', 'Shared users:', '  SharedUser [android.uid.system] (9f8e):', '    userId=1000', '    Packages', '      PackageSetting{1 com.wear.sys/1000}', '    install permissions:', '      android.permission.WRITE_SECURE_SETTINGS: granted=true',
+    '    User 0: ', '      gids=[1000]', '      runtime permissions:', '        android.permission.CAMERA: granted=true, flags=[ GRANTED_BY_DEFAULT ]', '    User 10: ', '      runtime permissions:', '        android.permission.CAMERA: granted=false, flags=[ ]'].join('\n'), 'com.wear.sys');
+    return { inst: d.install, rt: d.runtime, v: d.versionCode, raw: /SharedUser \[android\.uid\.system\]/.test(d.raw), su: d.sharedUser }; });
+  check('    an app with a sharedUserId: its grants from the shared user (user 0\'s), its own fields kept', sh.inst['android.permission.WRITE_SECURE_SETTINGS'] === true && sh.rt['android.permission.CAMERA'] && sh.rt['android.permission.CAMERA'].granted === true && sh.v === '34' && sh.raw && sh.su === 'android.uid.system', JSON.stringify(sh));
   await page.close();
 
   console.log('errors:', JSON.stringify(errors));

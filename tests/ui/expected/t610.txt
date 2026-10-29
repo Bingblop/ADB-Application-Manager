@@ -45,5 +45,20 @@ ok      an app the device does not have says so
 ok   10. no su on the device: the component stays, and the toast says only root or the system may
 ok       an unexported activity too
 ok       a manifest that could not be read: its reason, in the Manifest and Activities tabs
+ok       Reload reads a manifest that failed once more
+ok   11. su that takes a uid: su -c is called an unknown uid, so su 0 sh -c, and it works
+ok       the next time straight to su 0 sh -c (remembered for the device)
+ok       a manifest read still running when the sheet closes is stopped
+ok       ... and opened again the manifest is read anew
+ok       the stopped read's late answer changes nothing
+ok       a feature list that failed is asked again the next time
+ok       su refuses: the activity is not reported as opened
+ok       ... nor the component as switched
+ok   12. a part named ...ExceptionReceiver is no error, and SecurityExceptionReceiver no refusal
+ok       an exception: the line after "Exception occurred", without its class
+ok       am start: the Error line, not "Error type 3"
+ok       older pm: "Operation not allowed" and the class taken off
+ok       the shell's not found is one; am start's Warning is not
+ok       an app with a sharedUserId: its grants from the shared user (user 0's), its own fields kept
 errors: []
 ALL OK

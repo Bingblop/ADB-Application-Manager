@@ -28402,7 +28402,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // here, Activities that start on the device, Components, the Manifest, Features, Libraries and what dumpsys says. One shell command reads the
         // package (dumpsys package, cut to its own block), its app ops and its APK path; the manifest comes from the APK (AndroidBridge.cdManifest), and
         // the activities, receivers, services and providers from the manifest with the device's enabled / disabled lists over them. ----
-        const cdi = { serial: '', pkg: '', name: '', seq: 0, d: null, perms: [], ops: [], opsRaw: '', apk: '', man: '', manBusy: false, parts: null, feats: {}, su: {},
+        const cdi = { serial: '', pkg: '', name: '', seq: 0, d: null, perms: [], ops: [], opsRaw: '', apk: '', man: '', manBusy: false, manTag: '', manFor: '', why: '', parts: null, feats: {}, su: {},
             filters: { perms: 'all', ops: 'all', acts: 'all', comps: 'all', features: 'all' }, manOnly: true };
         const CDI_TABS = { perms: 'cdiTabPerms', ops: 'cdiTabOps', acts: 'cdiTabActs', comps: 'cdiTabComps', manifest: 'cdiTabManifest', features: 'cdiTabFeatures', libs: 'cdiTabLibs', raw: 'cdiTabRaw' };
         const CDI_SEARCH = ['cdiPermsSearch', 'cdiOpsSearch', 'cdiActsSearch', 'cdiCompsSearch', 'cdiManSearch', 'cdiFeaturesSearch', 'cdiLibsSearch'];
@@ -28411,7 +28411,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function cdInspOpen(pkg, tab) {
             if (!cdReady()) return;
             const a = cdApp(pkg), d = cdCur();
-            Object.assign(cdi, { serial: cd.serial, pkg: pkg, name: a.name, seq: cdi.seq + 1, d: null, perms: [], ops: [], opsRaw: '', apk: '', man: '', manBusy: false, parts: null });
+            cdiStopManifest();
+            Object.assign(cdi, { serial: cd.serial, pkg: pkg, name: a.name, seq: cdi.seq + 1, d: null, perms: [], ops: [], opsRaw: '', apk: '', man: '', manFor: '', why: '', parts: null });
             Object.keys(cdi.filters).forEach(k => { cdi.filters[k] = 'all'; });
             document.querySelectorAll('#cdInspModal .chip-row.h-fade .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === 'all'));
             CDI_SEARCH.forEach(id => { document.getElementById(id).value = ''; });
@@ -28442,6 +28443,7 @@ Type any command above (e.g. pm list packages -d)</div>
             sheetFullReset(m.querySelector('.modal-sheet'));
             m.classList.remove('show');
             cdi.seq++;                                          // an answer still on its way is for a sheet that is gone
+            cdiStopManifest();
             haptic();
         }
         function cdInspTab(tab, silent) {
@@ -28463,53 +28465,68 @@ Type any command above (e.g. pm list packages -d)</div>
         // the package's own block of dumpsys package, its app ops and its APK files, in one go
         function cdiCmd(pkg) {
             const q = cdQ(pkg);
-            return 'dumpsys package ' + q + " | sed -n '/^Packages:/,/^[^ ]/p'; echo '#CDI-OPS'; cmd appops get " + q + " 2>&1; echo '#CDI-PATH'; pm path " + q + ' 2>&1';
+            return 'dumpsys package ' + q + " | sed -n '/^Packages:/,/^[^ ]/p; /^Shared users:/,/^[^ ]/p'; echo '#CDI-OPS'; cmd appops get " + q + " 2>&1; echo '#CDI-PATH'; pm path " + q + ' 2>&1';
         }
         function cdiSplit(out) {
             const t = String(out || ''), a = t.indexOf('#CDI-OPS'), b = t.indexOf('#CDI-PATH');
             return { dump: a >= 0 ? t.slice(0, a) : t, ops: a >= 0 ? t.slice(a + 8, b >= 0 ? b : undefined).trim() : '', path: b >= 0 ? t.slice(b + 9).trim() : '' };
         }
         // dumpsys package <pkg>, the block "Package [pkg]": its fields, the permissions it asks for, has at install and at run time (user 0), its own
-        // permissions, the components user 0 turned off and on, the libraries Android links in
+        // permissions, the components user 0 turned off and on, the libraries Android links in. An app with a sharedUserId has its grants on the shared
+        // user (the block "SharedUser [name]" under "Shared users:"), read from there when its own block has none
         function cdParsePkgDump(txt, pkg) {
             const d = { found: false, requested: [], install: {}, runtime: {}, declared: {}, disabled: new Set(), enabled: new Set(), libs: [], optLibs: [], libFiles: [], raw: '' };
             const lines = String(txt || '').split('\n');
             const ind = l => l.length - l.replace(/^\s+/, '').length;
+            const blockAt = i => { const b = [lines[i]]; for (let j = i + 1; j < lines.length && !(lines[j].trim() && ind(lines[j]) <= ind(lines[i])); j++) b.push(lines[j]); return b; };
             const i = lines.findIndex(l => l.trim().startsWith('Package [' + pkg + ']'));
             if (i < 0) return d;
             d.found = true;
-            const block = [lines[i]];
-            for (let j = i + 1; j < lines.length && !(lines[j].trim() && ind(lines[j]) <= ind(lines[i])); j++) block.push(lines[j]);
+            const block = blockAt(i);
             d.raw = block.join('\n').replace(/\s+$/, '');
             const SECS = { 'requested permissions:': 'req', 'install permissions:': 'inst', 'runtime permissions:': 'rt', 'declared permissions:': 'decl', 'disabledComponents:': 'dis',
                 'enabledComponents:': 'en', 'usesLibraries:': 'libs', 'usesOptionalLibraries:': 'optLibs', 'usesLibraryFiles:': 'libFiles' };
-            let sec = '', user = -1, m;
-            block.slice(1).forEach(l => {
-                const t = l.trim();
-                if (!t) return;
-                if ((m = t.match(/^User (\d+):/))) { user = +m[1]; sec = ''; }
-                if ((m = t.match(/\bversionCode=(\d+)/))) d.versionCode = m[1];
-                if ((m = t.match(/\bminSdk=(\d+)/))) d.minSdk = +m[1];
-                if ((m = t.match(/\btargetSdk=(\d+)/))) d.targetSdk = +m[1];
-                if ((m = t.match(/^versionName=(.*)$/))) d.versionName = m[1];
-                if ((m = t.match(/\bfirstInstallTime=(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)/)) && (user <= 0 || !d.firstInstall)) d.firstInstall = m[1];
-                if ((m = t.match(/^lastUpdateTime=(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)/))) d.lastUpdate = m[1];
-                if ((m = t.match(/^installerPackageName=(\S+)/))) d.installer = m[1];
-                if ((m = t.match(/^primaryCpuAbi=(\S+)/)) && m[1] !== 'null') d.abi = m[1];
-                if ((m = t.match(/^pkgFlags=\[(.*)\]/))) d.system = /\bSYSTEM\b/.test(m[1]);
-                if (SECS[t]) { sec = SECS[t]; if (user > 0 && /^(rt|dis|en)$/.test(sec)) sec = 'skip'; return; }          // another user's grants and switches are not user 0's
-                if (!sec) return;
-                if (sec === 'libFiles') { if (/^\//.test(t)) { d.libFiles.push(t); return; } sec = ''; return; }
-                if (!/^[A-Za-z_][\w.$-]*(:|$)/.test(t) || /^[\w.]+=/.test(t)) { sec = ''; return; }
-                const name = t.split(':')[0], rest = t.slice(name.length + 1);
-                if (sec === 'req') { if (!d.requested.includes(name)) d.requested.push(name); }
-                else if (sec === 'inst') d.install[name] = /granted=true/.test(rest);
-                else if (sec === 'rt') d.runtime[name] = { granted: /granted=true/.test(rest), flags: ((rest.match(/flags=\[\s*([^\]]*?)\s*\]/) || [])[1] || '') };
-                else if (sec === 'decl') d.declared[name] = (rest.match(/prot=([\w|]+)/) || [])[1] || '';
-                else if (sec === 'dis') d.disabled.add(name);
-                else if (sec === 'en') d.enabled.add(name);
-                else if (sec === 'libs' || sec === 'optLibs') d[sec].push(name);
-            });
+            const scan = (blk, only) => {
+                let sec = '', user = -1, m;
+                blk.slice(1).forEach(l => {
+                    const t = l.trim();
+                    if (!t) return;
+                    if ((m = t.match(/^User (\d+):/))) { user = +m[1]; sec = ''; }
+                    if (!only) {
+                        if ((m = t.match(/\bversionCode=(\d+)/))) d.versionCode = m[1];
+                        if ((m = t.match(/\bminSdk=(\d+)/))) d.minSdk = +m[1];
+                        if ((m = t.match(/\btargetSdk=(\d+)/))) d.targetSdk = +m[1];
+                        if ((m = t.match(/^versionName=(.*)$/))) d.versionName = m[1];
+                        if ((m = t.match(/\bfirstInstallTime=(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)/)) && (user <= 0 || !d.firstInstall)) d.firstInstall = m[1];
+                        if ((m = t.match(/^lastUpdateTime=(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)/))) d.lastUpdate = m[1];
+                        if ((m = t.match(/^installerPackageName=(\S+)/))) d.installer = m[1];
+                        if ((m = t.match(/^primaryCpuAbi=(\S+)/)) && m[1] !== 'null') d.abi = m[1];
+                        if ((m = t.match(/^pkgFlags=\[(.*)\]/))) d.system = /\bSYSTEM\b/.test(m[1]);
+                    }
+                    if (SECS[t]) {                                                    // another user's grants and switches are not user 0's
+                        sec = SECS[t];
+                        if ((user > 0 && /^(rt|dis|en)$/.test(sec)) || (only && !only.includes(sec))) sec = 'skip';
+                        return;
+                    }
+                    if (!sec) return;
+                    if (sec === 'libFiles') { if (/^\//.test(t)) { d.libFiles.push(t); return; } sec = ''; return; }
+                    if (!/^[A-Za-z_][\w.$-]*(:|$)/.test(t) || /^[\w.]+=/.test(t)) { sec = ''; return; }
+                    const name = t.split(':')[0], rest = t.slice(name.length + 1);
+                    if (sec === 'req') { if (!d.requested.includes(name)) d.requested.push(name); }
+                    else if (sec === 'inst') d.install[name] = /granted=true/.test(rest);
+                    else if (sec === 'rt') d.runtime[name] = { granted: /granted=true/.test(rest), flags: ((rest.match(/flags=\[\s*([^\]]*?)\s*\]/) || [])[1] || '') };
+                    else if (sec === 'decl') d.declared[name] = (rest.match(/prot=([\w|]+)/) || [])[1] || '';
+                    else if (sec === 'dis') d.disabled.add(name);
+                    else if (sec === 'en') d.enabled.add(name);
+                    else if (sec === 'libs' || sec === 'optLibs') d[sec].push(name);
+                });
+            };
+            scan(block);
+            const su = (d.raw.match(/sharedUser=SharedUserSetting\{\w+ ([^\/\s}]+)/) || [])[1];
+            if (su && !Object.keys(d.install).length && !Object.keys(d.runtime).length) {
+                const k = lines.findIndex(l => l.trim().startsWith('SharedUser [' + su + ']'));
+                if (k >= 0) { const sb = blockAt(k); d.sharedUser = su; scan(sb, ['inst', 'rt']); d.raw += '\n\n' + sb.join('\n').replace(/\s+$/, ''); }
+            }
             return d;
         }
         // a protection as dumpsys writes it (signature|privileged|development) in the words of the app menu
@@ -28526,12 +28543,18 @@ Type any command above (e.g. pm list packages -d)</div>
             if (seq !== cdi.seq) return;
             const f = cdFail(out), parts = cdiSplit(out), d = cdParsePkgDump(parts.dump, pkg);
             if (f || !d.found) {
-                const why = escapeHtml(f || txT('Not installed for this user'));
+                const why = f || txT('Not installed for this user');
                 document.getElementById('cdiVersion').innerText = 'Version unavailable';
-                ['cdiPerms', 'cdiOps', 'cdiActs', 'cdiComps'].forEach(id => { document.getElementById(id).innerHTML = '<div class="list-empty">' + why + '</div>'; });
+                ['cdiPerms', 'cdiOps', 'cdiActs', 'cdiComps'].forEach(id => { document.getElementById(id).innerHTML = '<div class="list-empty">' + escapeHtml(why) + '</div>'; });
+                if (!cdi.d) {                                   // nothing read yet: the manifest's tabs say so too
+                    cdi.why = why;
+                    ['cdiFeatures', 'cdiLibs'].forEach(id => { document.getElementById(id).innerHTML = '<div class="list-empty">' + escapeHtml(why) + '</div>'; });
+                    if (!cdi.man) document.getElementById('cdiManifest').innerText = why;
+                }
                 return;
             }
             cdi.d = d;
+            cdi.why = '';
             cdi.opsRaw = parts.ops;
             const paths = parts.path.split('\n').map(l => l.trim()).filter(l => l.startsWith('package:')).map(l => l.slice(8));
             cdi.apk = paths.find(p => /\/base\.apk$/.test(p)) || paths[0] || '';
@@ -28545,7 +28568,8 @@ Type any command above (e.g. pm list packages -d)</div>
             document.getElementById('cdiRaw').innerText = d.raw + (parts.ops ? '\n\n# cmd appops get ' + pkg + '\n' + parts.ops : '') + (parts.path ? '\n\n# pm path ' + pkg + '\n' + parts.path : '');
             cdiRenderPerms();
             cdiRenderOps();
-            if (!cdi.man && !cdi.manBusy) cdiLoadManifest();
+            const manKey = cdi.apk + '|' + (d.versionCode || '');
+            if (!cdi.manBusy && (!cdi.man || cdi.manFor !== manKey || (again && /^Error:/.test(cdi.man)))) { cdi.manFor = manKey; cdiLoadManifest(); }
             else { cdiApplyStates(); cdiRenderActs(); cdiRenderComps(); }
         }
 
@@ -28598,21 +28622,30 @@ Type any command above (e.g. pm list packages -d)</div>
         function cdiErr(out) {
             const f = cdFail(out);
             if (f) return f;
-            const l = String(out || '').split('\n').map(x => x.trim()).find(x => /Exception|^Error|Permission Denial|not allowed|Unknown (package|permission)|does not exist|Bad component|inaccessible or not found/i.test(x));
-            return l ? l.replace(/^(java\.lang\.|android\.\w+\.)?\w*Exception:\s*/, '').replace(/^Error( type \d+)?:\s*/, '') : '';
+            const ls = String(out || '').split('\n').map(x => x.trim());
+            const i = ls.findIndex(x => /^(Exception occurred|([\w$]+\.)*[\w$]*Exception:|Error( type \d+)?:|Error type \d+$|Security exception:|Permission Denial|Operation not (allowed|permitted)|Unknown (package|permission)|Bad (component|argument)|su: |.*: inaccessible or not found$|.*: not found$|.*\bPermission denied$)/i.test(x));
+            if (i < 0) return '';
+            let l = ls[i];
+            if (/^(Exception occurred|Error type \d+$)/i.test(l) && ls[i + 1]) l = ls[i + 1];          // what went wrong is on the next line
+            return l.replace(/^Operation not allowed:\s*/i, '').replace(/^Error( type \d+)?:\s*/i, '').replace(/^Bad argument:\s*/i, '').replace(/^([\w$]+\.)*[\w$]*Exception:\s*/, '');
         }
-        function cdiDenied(out) { return /SecurityException|Permission Denial|Shell cannot|not allowed|does not have android\.permission|requires android\.permission|Operation not permitted/i.test(String(out || '')); }
+        function cdiDenied(out) { return /SecurityException:|Permission Denial|Shell cannot|not allowed|does not have android\.permission|requires android\.permission|Operation not permitted|Permission denied/i.test(String(out || '')); }
         // a command the shell user may not run (a part of an app, an activity that is not exported): once more through the device's su when it has one
         async function cdiPriv(cmd) {
             const serial = cdi.serial;
             let out = await cdSh(cmd, { serial: serial, timeout: 30000 });
             if (!cdiDenied(out)) return { out: out, su: false };
-            if (cdi.su[serial] === undefined) cdi.su[serial] = /\/su\s*$/.test(String(await cdSh('command -v su 2>/dev/null', { serial: serial, timeout: 15000 })).trim());
+            if (cdi.su[serial] === undefined) cdi.su[serial] = /\/su\s*$/.test(String(await cdSh('command -v su 2>/dev/null', { serial: serial, timeout: 15000 })).trim()) ? 'c' : '';
             if (!cdi.su[serial]) return { out: out, su: false, denied: true };
-            out = await cdSh('su -c ' + cdQ(cmd), { serial: serial, timeout: 60000 });
+            // most root managers take su -c <command>; the su of an Android userdebug build takes su <uid> <command> (and calls -c an unknown user)
+            const viaSu = style => cdSh({ c: 'su -c', uid: 'su 0 sh -c' }[style] + ' ' + cdQ(cmd), { serial: serial, timeout: 60000 });
+            out = await viaSu(cdi.su[serial]);
+            if (cdi.su[serial] === 'c' && /invalid uid|unknown (user|id)|usage: su/i.test(String(out))) { cdi.su[serial] = 'uid'; out = await viaSu('uid'); }
             return { out: out, su: true, denied: cdiDenied(out) };
         }
         const CDI_NEEDS_ROOT = 'Android lets only root or the system do this, and on this device adb runs as the shell user without su.';
+        // why a command did not go through: no su for what only root may do, else the line of the answer that says so, else its last line
+        function cdiWhy(r) { return r.denied && !r.su ? txT(CDI_NEEDS_ROOT) : cdiErr(r.out) || String(r.out || '').trim().split('\n').pop().trim() || 'Failed'; }
         async function cdiTogglePerm(perm, was) {
             haptic();
             const seq = cdi.seq;
@@ -28653,7 +28686,7 @@ Type any command above (e.g. pm list packages -d)</div>
         async function cdiSetOp(op, mode) {
             haptic();
             const seq = cdi.seq, q = cdQ(cdi.pkg), cur = cdi.ops.find(o => o.name === op);
-            const set = (cur && cur.uidMode ? 'cmd appops set --uid ' + q + ' ' + op + ' ' + mode + ' 2>&1; ' : '') + 'cmd appops set ' + q + ' ' + op + ' ' + mode + ' 2>&1';
+            const set = (cur && cur.uidMode ? 'cmd appops set --uid ' + q + ' ' + op + ' ' + mode + ' >/dev/null 2>&1; ' : '') + 'cmd appops set ' + q + ' ' + op + ' ' + mode + ' 2>&1';
             const out = await cdSh(set + "; echo '#CDI-OPS'; cmd appops get " + q + ' 2>&1', { serial: cdi.serial, timeout: 30000 });
             if (seq !== cdi.seq) return;
             const at = String(out).indexOf('#CDI-OPS'), bad = cdiErr(at >= 0 ? String(out).slice(0, at) : out);
@@ -28678,15 +28711,17 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- The manifest, and the activities, receivers, services and providers it lists ----
         function cdiLoadManifest() {
             const seq = cdi.seq, b = window.AndroidBridge;
-            const done = text => { cdi.manBusy = false; cdi.man = text; cdiParseManifest(); cdiRenderManifest(); cdiRenderActs(); cdiRenderComps(); cdiRenderFeatures(); cdiRenderLibs(); };
+            const done = text => { cdi.manBusy = false; cdi.manTag = ''; cdi.man = text; cdiParseManifest(); cdiRenderManifest(); cdiRenderActs(); cdiRenderComps(); cdiRenderFeatures(); cdiRenderLibs(); };
             if (!b || !b.cdManifest) { done('Error: ' + txT('Manifest viewer is only available in the app.')); return; }
             if (!cdi.apk) { done('Error: ' + txT('The device did not give the APK path')); return; }
             cdi.manBusy = true;
             document.getElementById('cdiManifest').innerText = 'Decoding AndroidManifest.xml...';
-            const tag = 'cd' + (++cdSeq);
+            const tag = cdi.manTag = 'cd' + (++cdSeq);
             cdWait[tag] = r => { if (seq === cdi.seq) done(String(r.out == null ? '' : r.out)); };
             try { b.cdManifest(tag, cdi.serial, cdi.apk); } catch (e) { delete cdWait[tag]; done('Error: ' + (e && e.message || e)); }
         }
+        // a read still on its way when the sheet closes or opens for another app is stopped (the phone reads one manifest at a time)
+        function cdiStopManifest() { if (cdi.manBusy && cdi.manTag) cdStop(cdi.manTag); cdi.manTag = ''; cdi.manBusy = false; }
         // what the manifest declares, read with the browser's XML parser: a name that starts with a dot (or has none) is in the app's package; an
         // activity, receiver or service without android:exported is exported when it has an intent filter, a provider when the app targets API 16 or lower
         function cdiParseManifest() {
@@ -28754,7 +28789,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (cdi.manBusy || (!cdi.man && cdi.d)) return true;                       // still on its way: the "Loading ..." line stays
             if (cdi.parts && cdi.parts.ok) return false;
             const m = String(cdi.man || '');
-            box.innerHTML = '<div class="list-empty">' + escapeHtml(/^Error:/.test(m) ? m.replace(/^Error:\s*/, '') : txT('Manifest not loaded')) + '</div>';
+            box.innerHTML = '<div class="list-empty">' + escapeHtml(/^Error:/.test(m) ? m.replace(/^Error:\s*/, '') : cdi.why || txT('Manifest not loaded')) + '</div>';
             return true;
         }
         function cdiMatch(tab, q) { const f = cdi.filters[tab]; return c => !(f === 'exported' && !c.exported) && !(f === 'unexported' && c.exported) && (!q || c.name.toLowerCase().includes(q)); }
@@ -28790,14 +28825,12 @@ Type any command above (e.g. pm list packages -d)</div>
         async function cdiLaunch(name) {
             haptic();
             const r = await cdiPriv('input keyevent KEYCODE_WAKEUP 2>/dev/null; am start -n ' + cdQ(cdi.pkg + '/' + name) + ' 2>&1');
-            const bad = cdiErr(r.out);
-            showToast(!bad ? 'Opened on the device' : r.denied && !r.su ? txT(CDI_NEEDS_ROOT) : bad);
+            showToast(/^Starting:/m.test(String(r.out)) && !cdiErr(r.out) && !r.denied ? 'Opened on the device' : cdiWhy(r));
         }
         async function cdiStopService(name) {
             haptic();
             const r = await cdiPriv('am stopservice -n ' + cdQ(cdi.pkg + '/' + name) + ' 2>&1');
-            const bad = cdiErr(r.out), line = String(r.out).trim().split('\n').pop();
-            showToast(bad ? (r.denied && !r.su ? txT(CDI_NEEDS_ROOT) : bad) : /Service stopped/i.test(r.out) ? 'Service stopped' : line);
+            showToast(/^Service stopped/m.test(String(r.out)) && !r.denied ? 'Service stopped' : cdiWhy(r));
         }
         // one part of the app on or off for user 0 of the device (pm enable / disable): the shell user may not, so the device's su when it has one
         async function cdiToggleComp(name, enable) {
@@ -28808,7 +28841,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const r = await cdiPriv('pm ' + (enable ? 'enable ' : 'disable ') + cdQ(cdi.pkg + '/' + name) + ' 2>&1');
             if (seq !== cdi.seq) return;
             const ok = /new state:/i.test(r.out) && !cdiErr(r.out);
-            if (!ok) { showToast(r.denied && !r.su ? txT(CDI_NEEDS_ROOT) : cdiErr(r.out) || 'Failed'); return; }
+            if (!ok) { showToast(cdiWhy(r)); return; }
             if (cdi.d) { cdi.d.disabled.delete(name); cdi.d.enabled.delete(name); (enable ? cdi.d.enabled : cdi.d.disabled).add(name); }
             if (c) c.enabled = !!enable;
             showToast(enable ? 'Component enabled' : 'Component disabled');
@@ -28857,6 +28890,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (g) { const n = parseInt(g[1], 16); F.gl = (n >> 16) + '.' + (n & 0xffff); } else F.set.add(m[1].split('=')[0]);
             });
             if (serial === cdi.serial) cdiRenderFeatures();
+            if (!F.ok) delete cdi.feats[serial];
         }
         function cdiRenderFeatures() {
             const box = document.getElementById('cdiFeatures');

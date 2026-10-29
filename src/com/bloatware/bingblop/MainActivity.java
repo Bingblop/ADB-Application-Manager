@@ -6703,6 +6703,9 @@ public class MainActivity extends Activity {
     private static final int REQ_PICK_CD = 4293;         // package files to send to a connected device
     private static final int REQ_BT_CONNECT = 9203;
     private final ExecutorService cdExecutor = Executors.newFixedThreadPool(3);
+    // the app details' manifest reads, one at a time on their own thread: pulling a whole APK from an older watch can take minutes, and must not hold
+    // the threads the device list, the stub's renewals and Disconnect run on (v7.19.3)
+    private final ExecutorService cdManifestExecutor = Executors.newSingleThreadExecutor();
     private final java.util.concurrent.ConcurrentHashMap<String, Process> cdProcs = new java.util.concurrent.ConcurrentHashMap<String, Process>();
     private final java.util.Set<String> cdCancelled = java.util.Collections.synchronizedSet(new HashSet<String>());
     private volatile String cdPickTag = "";
@@ -14288,10 +14291,10 @@ public class MainActivity extends Activity {
             final String t = tag == null ? "" : tag;
             cdCancelled.remove(t);
             try {
-                cdExecutor.submit(new Runnable() {
+                cdManifestExecutor.submit(new Runnable() {
                     @Override
                     public void run() {
-                        String out = RemoteManifest.read(new RemoteManifest.Adb() {
+                        String out = cdCancelled.contains(t) ? "Error: stopped" : RemoteManifest.read(new RemoteManifest.Adb() {
                             @Override
                             public byte[] bytes(List<String> args, int timeoutMs, int max) { return cdExecBytes(t, args, timeoutMs, max); }
                             @Override
@@ -21045,6 +21048,7 @@ public class MainActivity extends Activity {
             if (sdm != null) sdm.bridge().shutdown();
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
+        try { cdManifestExecutor.shutdownNow(); } catch (Throwable ignored) {}
         try { thumbExec.shutdownNow(); } catch (Throwable ignored) {}      // File Manager thumbnails: the page that asked for them is gone
         // the tracker scan: stop its pool FIRST (a trackerScan that comes in now is rejected), then the scan that runs, which would read
         // every app's dex for minutes and keep this activity alive; it ends after the app it is reading and saves what it found to the cache

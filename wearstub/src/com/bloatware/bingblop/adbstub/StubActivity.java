@@ -61,7 +61,7 @@ public final class StubActivity extends Activity {
         col.setGravity(Gravity.CENTER_HORIZONTAL);
         col.setPadding(pad, dp(28), pad, dp(36));
         TextView title = text(13, Color.parseColor("#B0B0B0"));
-        title.setText("ADB Stub");
+        title.setText("ADB Toolbox");
         state = text(20, Color.WHITE);
         state.setTypeface(Typeface.DEFAULT_BOLD);
         addr = text(15, Color.WHITE);

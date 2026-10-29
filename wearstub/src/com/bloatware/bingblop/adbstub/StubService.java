@@ -213,7 +213,7 @@ public final class StubService extends Service {
         Notification.Builder b;
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationChannel ch = new NotificationChannel(CHANNEL, "ADB Stub", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel ch = new NotificationChannel(CHANNEL, "ADB Toolbox", NotificationManager.IMPORTANCE_LOW);
             ch.setShowBadge(false);
             nm.createNotificationChannel(ch);
             b = new Notification.Builder(this, CHANNEL);
@@ -221,7 +221,7 @@ public final class StubService extends Service {
             b = new Notification.Builder(this);
         }
         return b.setSmallIcon(R.drawable.ic_stub)
-                .setContentTitle("ADB Stub")
+                .setContentTitle("ADB Toolbox")
                 .setContentText("Screen on, Wi-Fi held for ADB")
                 .setOngoing(true)
                 .setContentIntent(open)

@@ -160,6 +160,21 @@ public class WearStubTest {
             check("cdStub reads no stub state from a status adb could not get", ma.contains("if (WearStub.adbFailed(st)) {") && !ma.contains("st.startsWith(\"Error\")"));
             String rcv = read(new File(repo, "wearstub/src/com/bloatware/bingblop/adbstub/StopReceiver.java"));
             check("the receiver renews on Renew", rcv.contains("ACTION_RENEW.equals(intent.getAction())) StubService.renewNow()"));
+            // the watch shows the phone app's own icon: the same files, byte for byte, in every density
+            check("the stub's icon is its mipmap ic_launcher", m.contains("android:icon=\"@mipmap/ic_launcher\""));
+            check("the stub is called ADB Toolbox on the watch: its label, its screen's title and its notification", m.contains("android:label=\"ADB Toolbox\"")
+                && read(new File(repo, "wearstub/src/com/bloatware/bingblop/adbstub/StubActivity.java")).contains("title.setText(\"ADB Toolbox\")") && svc.contains(".setContentTitle(\"ADB Toolbox\")"));
+            int same = 0, all = 0;
+            for (String dir : new String[] { "mipmap-anydpi-v26", "mipmap-mdpi", "mipmap-hdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi" }) {
+                File[] icons = new File(repo, "res/" + dir).listFiles((d, f) -> f.startsWith("ic_launcher"));
+                for (File phone : icons == null ? new File[0] : icons) {
+                    all++;
+                    File watch = new File(repo, "wearstub/res/" + dir + "/" + phone.getName());
+                    if (watch.isFile() && java.util.Arrays.equals(Files.readAllBytes(phone.toPath()), Files.readAllBytes(watch.toPath()))) same++;
+                    else System.out.println("  differs from the phone app's: wearstub/res/" + dir + "/" + phone.getName());
+                }
+            }
+            check("... and each of its files is the phone app's (" + same + " of " + all + ")", all >= 11 && same == all);
         }
 
         System.out.println(fails == 0 ? "PASS WearStubTest: " + n + " checks" : "FAILED WearStubTest: " + fails + " of " + n);
