@@ -2,7 +2,7 @@
 
 <img src="assets/app_icon.png" width="112" height="112" alt="App icon: the Android robot in glasses and a tie, in a blue toolbox with a wrench">
 
-# ADB Application Manager Pro
+# ADB/Root Toolbox
 
 ### Take full control of your Android phone — from the phone itself.
 
