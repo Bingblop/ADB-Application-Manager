@@ -2,7 +2,7 @@
 // carries and starts it; when a watch with the stub connects, the stub is started once (not again on Reload details) unless "Start ADB Stub on connect" is
 // off; Disconnect stops the stub on the watch before adb lets go of it; a watch with an older stub is offered Update; a phone or tablet has no row, and
 // neither does a build without the stub. v7.19.3: a watch that connects while another device is the chosen one is started too, an older stub that
-// still lets go by itself (version 2) is started on connect, and the phone sends the watch's adb port with the start.
+// still lets go by itself (version 2) is started on connect, and the phone sends the watch's adb port with starts and renewals.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -29,6 +29,7 @@ const W = '192.168.1.30:5555';
           let ok = true, out = '';
           if (action === 'install') { st.inst = true; st.ver = 3; out = 'Performing Streamed Install\nSuccess'; }
           if (action === 'start') { st.run = true; out = 'Starting: Intent { cmp=com.bloatware.bingblop.adbstub/.StubActivity (has extras) }'; }
+          if (action === 'renew') out = 'Broadcast completed: result=0';
           if (action === 'stop') { st.run = false; out = 'stopped'; }
           reply({ tag, ok, out, installed: st.inst, version: st.inst ? st.ver : 0, running: st.inst && st.run });
         },
@@ -91,6 +92,11 @@ const W = '192.168.1.30:5555';
   await page.click('#cdStubBtn'); await page.waitForTimeout(300);
   r = await row(page);
   check('   Stop stops it; the row offers Start', /stub stop/.test(await log(page)) && r && r.btn === 'Start' && /Installed, not running/.test(r.text), JSON.stringify(r));
+  await page.close();
+
+  // ---- a running watch refreshes the supplied port as soon as it reconnects ----
+  page = await open({ inst: true, ver: 3, run: true });
+  check('   the already-running stub gets a renewal with the current endpoint on connect', await log(page) === ['stub status ' + W, 'stub renew ' + W].join(' | '), await log(page));
   await page.close();
 
   // ---- 4. start on connect switched off ----

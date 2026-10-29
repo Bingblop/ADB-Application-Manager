@@ -124,8 +124,8 @@ public final class WearStub {
      * Renews the stub's lease (version 2 and later): the stub lets go of the watch by itself when it has not heard from the phone for 5 minutes, so the
      * page sends this about once a minute while the stub runs on a connected watch. Only the shell and the system may send it (DUMP).
      */
-    static String renewCmd() {
-        return "am broadcast -a " + RENEW_ACTION + " -n " + RECEIVER;
+    static String renewCmd(String serial) {
+        return "am broadcast -a " + RENEW_ACTION + " -n " + RECEIVER + " --ei port " + portOf(serial);
     }
 
     /** am broadcast prints "Broadcast completed: result=0" when the broadcast was delivered (to the stub, or to nothing when it is not running). */

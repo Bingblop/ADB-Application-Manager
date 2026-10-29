@@ -6740,6 +6740,7 @@ public class MainActivity extends Activity {
             pb.redirectError(ProcessBuilder.Redirect.to(new File("/dev/null")));
             p = pb.start();
             if (tag != null && !tag.isEmpty()) cdProcs.put(tag, p);
+            if (tag != null && cdCancelled.contains(tag)) return null;
             final InputStream in = p.getInputStream();
             final java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
             FutureTask<Boolean> read = new FutureTask<Boolean>(new Callable<Boolean>() {
@@ -14504,7 +14505,7 @@ public class MainActivity extends Activity {
                                 out = cdExec(t, cdStubArgs(serial, "shell", WearStub.startCmd(name, serial)), 20000);
                                 ok = WearStub.started(out);
                             } else if (a.equals("renew")) {
-                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.renewCmd()), 15000);
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.renewCmd(serial)), 15000);
                                 ok = WearStub.renewed(out);
                             } else if (a.equals("stop")) {
                                 out = cdExec(t, cdStubArgs(serial, "shell", WearStub.stopCmd()), quick ? WearStub.QUICK_STOP_MS : 20000);

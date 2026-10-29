@@ -199,6 +199,10 @@ public class ActivityGuardsTest {
     List<String> loose = executorsNotStopped(main, pools);
     check("MainActivity: every executor field is shut down in onDestroy (found " + pools + "); not stopped: " + loose, pools.size() >= 8 && loose.isEmpty());
 
+    String manifestBytes = bodyOf(b, "private byte[] cdExecBytes(");
+    check("MainActivity: manifest reads recheck cancellation immediately after registering their process",
+        manifestBytes != null && Pattern.compile("cdProcs\\.put\\(tag, p\\);\\s*if\\s*\\(tag != null && cdCancelled\\.contains\\(tag\\)\\) return null;\\s*final InputStream").matcher(manifestBytes).find());
+
     // MA3-5: shutdown() lets a running job finish, and a tracker scan of a few hundred apps runs for minutes, keeping the destroyed activity
     // alive while the next window starts a second scan of the same apps: onDestroy stops the pool, then sets the flag the scan stops on
     // (in that order, so a scan accepted just before the pool stopped is still told to stop)

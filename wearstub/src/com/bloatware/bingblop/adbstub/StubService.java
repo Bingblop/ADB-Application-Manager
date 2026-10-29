@@ -101,7 +101,7 @@ public final class StubService extends Service {
             // a start from the phone says which phone and which port (0: the phone has none to tell, e.g. a Bluetooth link), so a port from an earlier start does not stay
             phone = clean(intent.getStringExtra(EXTRA_PHONE));
             int p = intent.getIntExtra(EXTRA_PORT, 0);
-            port = p >= 1 && p <= 65535 ? p : 0;
+            updatePort(p);
         }
         startForeground(NOTE_ID, note());
         renew();
@@ -113,6 +113,10 @@ public final class StubService extends Service {
         if (s == null) return "";
         String t = s.replaceAll("[\\p{Cntrl}]", " ").trim();
         return t.length() > 60 ? t.substring(0, 60) : t;
+    }
+
+    static void updatePort(int p) {
+        port = p >= 1 && p <= 65535 ? p : 0;
     }
 
     @SuppressWarnings("deprecation")

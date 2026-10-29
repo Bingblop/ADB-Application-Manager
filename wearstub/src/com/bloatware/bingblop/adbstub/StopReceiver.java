@@ -13,6 +13,9 @@ public final class StopReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (intent == null) return;
         if (StubService.ACTION_STOP.equals(intent.getAction())) StubService.stopNow(context);
-        else if (StubService.ACTION_RENEW.equals(intent.getAction())) StubService.renewNow();
+        else if (StubService.ACTION_RENEW.equals(intent.getAction())) {
+            if (intent.hasExtra(StubService.EXTRA_PORT)) StubService.updatePort(intent.getIntExtra(StubService.EXTRA_PORT, 0));
+            StubService.renewNow();
+        }
     }
 }

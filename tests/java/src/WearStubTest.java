@@ -111,8 +111,9 @@ public class WearStubTest {
         check("stop asks the stub first", stop.startsWith("am broadcast -a " + WearStub.PKG + ".STOP -n " + WearStub.PKG + "/.StopReceiver"));
         check("... then ends its process (the watch drops its locks and Wi-Fi request)", stop.contains("am force-stop " + WearStub.PKG + ";"));
         check("... and says it is done", stop.endsWith("echo stopped"));
-        String renew = WearStub.renewCmd();
-        check("renew is a broadcast to the stub's receiver", renew.equals("am broadcast -a " + WearStub.PKG + ".RENEW -n " + WearStub.PKG + "/.StopReceiver"));
+        String renew = WearStub.renewCmd("192.168.1.30:5555");
+        check("renew carries the current watch port", renew.equals("am broadcast -a " + WearStub.PKG + ".RENEW -n " + WearStub.PKG + "/.StopReceiver --ei port 5555")
+                && WearStub.renewCmd("adb-ABC123-xyz._adb-tls-connect._tcp").endsWith("--ei port 0"));
         check("am broadcast's answer: renewed", WearStub.renewed("Broadcasting: Intent { act=" + WearStub.PKG + ".RENEW flg=0x400000 cmp=" + WearStub.PKG + "/.StopReceiver }\nBroadcast completed: result=0"));
         check("an adb error: not renewed", !WearStub.renewed("error: device offline") && !WearStub.renewed("Error: timed out") && !WearStub.renewed(null));
 
@@ -159,7 +160,8 @@ public class WearStubTest {
             check("... and reads no status after it", ma.contains("final boolean quick = a.equals(\"stop\") && \"quick\".equals(phone);") && Pattern.compile("if \\(!quick\\) \\{\\s*String st = cdExec\\(t, cdStubArgs\\(serial, \"shell\", WearStub.statusCmd\\(\\)\\)").matcher(ma).find());
             check("cdStub reads no stub state from a status adb could not get", ma.contains("if (WearStub.adbFailed(st)) {") && !ma.contains("st.startsWith(\"Error\")"));
             String rcv = read(new File(repo, "wearstub/src/com/bloatware/bingblop/adbstub/StopReceiver.java"));
-            check("the receiver renews on Renew", rcv.contains("ACTION_RENEW.equals(intent.getAction())) StubService.renewNow()"));
+            check("the receiver updates the endpoint before renewing", rcv.contains("intent.hasExtra(StubService.EXTRA_PORT)") && rcv.contains("StubService.updatePort(intent.getIntExtra(StubService.EXTRA_PORT, 0))")
+                && rcv.contains("StubService.renewNow()") && svc.contains("static void updatePort(int p)"));
             // the watch shows the phone app's own icon: the same files, byte for byte, in every density
             check("the stub's icon is its mipmap ic_launcher", m.contains("android:icon=\"@mipmap/ic_launcher\""));
             check("the stub is called ADB Toolbox on the watch: its label, its screen's title and its notification", m.contains("android:label=\"ADB Toolbox\"")

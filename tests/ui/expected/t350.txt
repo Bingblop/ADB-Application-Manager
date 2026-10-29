@@ -10,6 +10,7 @@ ok      the row offers Stop: {"text":"ADB Stub The watch screen stays on and its
 ok      Reload details does not ask or start it again: stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
 ok      the watch dropped and came back: read and started again: stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555 | stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
 ok      Stop stops it; the row offers Start: {"text":"ADB Stub Installed, not running. Start","btn":"Start"}
+ok      the already-running stub gets a renewal with the current endpoint on connect: stub status 192.168.1.30:5555 | stub renew 192.168.1.30:5555
 ok   4. start on connect off: only the status is read: stub status 192.168.1.30:5555 | stub status 192.168.1.30:5555
 ok      the menu shows it off
 ok      and turns it back on: The ADB Stub starts when the watch connects
