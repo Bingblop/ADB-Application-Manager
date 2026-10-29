@@ -35,6 +35,8 @@ public final class StubService extends Service {
     /** The phone's renewal of the lease (am broadcast over adb, to the same receiver as Stop). */
     static final String ACTION_RENEW = "com.bloatware.bingblop.adbstub.RENEW";
     static final String EXTRA_PHONE = "phone";
+    /** The adb port the phone reached the watch on (version 3 and later), for the status screen. */
+    static final String EXTRA_PORT = "port";
     private static final String CHANNEL = "stub";
     private static final int NOTE_ID = 1;
 
@@ -44,6 +46,7 @@ public final class StubService extends Service {
     static volatile String phone = "";
     static volatile boolean wifiUp;
     static volatile String ip = "";
+    static volatile int port;
 
     private static volatile StubService instance;
 
@@ -94,7 +97,12 @@ public final class StubService extends Service {
             stopNow(this);
             return START_NOT_STICKY;
         }
-        if (intent != null && intent.hasExtra(EXTRA_PHONE)) phone = clean(intent.getStringExtra(EXTRA_PHONE));
+        if (intent != null && intent.hasExtra(EXTRA_PHONE)) {
+            // a start from the phone says which phone and which port (0: the phone has none to tell, e.g. a Bluetooth link), so a port from an earlier start does not stay
+            phone = clean(intent.getStringExtra(EXTRA_PHONE));
+            int p = intent.getIntExtra(EXTRA_PORT, 0);
+            port = p >= 1 && p <= 65535 ? p : 0;
+        }
         startForeground(NOTE_ID, note());
         renew();
         hold();

@@ -1,6 +1,10 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"Android lets only root or the system do this, and on this device adb runs as the shell user without su.": "Android에서는 루트나 시스템만 이 작업을 할 수 있으며, 이 기기에서는 adb가 su 없이 shell 사용자로 실행됩니다.",
+"Not on the device": "기기에 없음",
+"not on the device": "기기에 없음",
+"on the device": "기기에 있음",
 "End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "마지막에 \"In short:\"로 시작하는 별도의 줄을 하나 더 쓰고, 이 설정이 하는 일을 15단어 이내의 한 문장으로 말하세요.",
 "From Ask agent": "\"에이전트에게 묻기\"에서",
 "The font changer cannot use this font package's name.": "글꼴 변경기는 이 글꼴 패키지의 이름을 사용할 수 없습니다.",
@@ -2592,7 +2596,6 @@ x: {
 "No connection: the request did not go through": "연결할 수 없음: 요청이 전달되지 않았습니다",
 "No default (free web lookup only)": "기본값 없음(무료 웹 검색만)",
 "No description yet": "아직 설명이 없습니다",
-"No details": "상세 정보 없음",
 "No device": "기기 없음",
 "No device connected": "연결된 기기 없음",
 "No device found": "기기를 찾을 수 없음",
@@ -5694,6 +5697,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "선택한 파일을 아직 읽는 중입니다. 잠시 기다리세요."
 },
 p: [
+["version {0}", "버전 {0}"],
 ["Kept with this setting: {0}", "이 설정과 함께 저장됨: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0}은(는) 사용 중입니다. 먼저 다른 글꼴을 선택한 다음 삭제하세요."],
 ["Choose {0} in Font size and style, then Font style.", "‘글꼴 크기 및 스타일’에서 ‘글꼴 스타일’로 이동해 {0}을(를) 선택하세요."],

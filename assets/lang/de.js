@@ -1,6 +1,10 @@
 // Deutsch (de): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['de'] = {
 x: {
+"Android lets only root or the system do this, and on this device adb runs as the shell user without su.": "Android erlaubt das nur Root oder dem System, und auf diesem Gerät läuft adb als Shell-Benutzer ohne su.",
+"Not on the device": "Nicht auf dem Gerät",
+"not on the device": "nicht auf dem Gerät",
+"on the device": "auf dem Gerät",
 "End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "Schließe mit einer weiteren eigenen Zeile, die mit \"In short:\" beginnt und in einem Satz von höchstens 15 Wörtern sagt, was die Einstellung bewirkt.",
 "From Ask agent": "Aus „Agent fragen“",
 "The font changer cannot use this font package's name.": "Der Schriftart-Wechsler kann den Namen dieses Schriftpakets nicht verwenden.",
@@ -2592,7 +2596,6 @@ x: {
 "No connection: the request did not go through": "Keine Verbindung: Die Anfrage ist nicht durchgekommen",
 "No default (free web lookup only)": "Kein Standard (nur kostenlose Websuche)",
 "No description yet": "Noch keine Beschreibung",
-"No details": "Keine Details",
 "No device": "Kein Gerät",
 "No device connected": "Kein Gerät verbunden",
 "No device found": "Kein Gerät gefunden",
@@ -5694,6 +5697,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Die gewählten Dateien werden noch gelesen. Warten Sie kurz."
 },
 p: [
+["version {0}", "Version {0}"],
 ["Kept with this setting: {0}", "Bei dieser Einstellung gespeichert: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} ist in Verwendung. Wählen Sie zuerst eine andere Schriftart und löschen Sie sie dann."],
 ["Choose {0} in Font size and style, then Font style.", "Wählen Sie {0} unter „Schriftgröße und -stil“ und dann „Schriftstil“."],

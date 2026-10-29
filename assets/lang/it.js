@@ -1,6 +1,10 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+"Android lets only root or the system do this, and on this device adb runs as the shell user without su.": "Android consente questa operazione solo a root o al sistema, e su questo dispositivo adb funziona come utente shell senza su.",
+"Not on the device": "Non presente sul dispositivo",
+"not on the device": "non presente sul dispositivo",
+"on the device": "sul dispositivo",
 "End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "Termina con un’altra riga a sé, che inizi con \"In short:\" e dica in una frase di al massimo 15 parole che cosa fa l’impostazione.",
 "From Ask agent": "Da «Chiedi all’agente»",
 "The font changer cannot use this font package's name.": "Il cambio carattere non può usare il nome di questo pacchetto di carattere.",
@@ -2592,7 +2596,6 @@ x: {
 "No connection: the request did not go through": "Nessuna connessione: la richiesta non è andata a buon fine",
 "No default (free web lookup only)": "Nessun predefinito (solo ricerca web gratuita)",
 "No description yet": "Ancora nessuna descrizione",
-"No details": "Nessun dettaglio",
 "No device": "Nessun dispositivo",
 "No device connected": "Nessun dispositivo connesso",
 "No device found": "Nessun dispositivo trovato",
@@ -5694,6 +5697,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "I file che hai scelto sono ancora in lettura. Attendi un momento."
 },
 p: [
+["version {0}", "versione {0}"],
 ["Kept with this setting: {0}", "Salvato con questa impostazione: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} è in uso. Scegli prima un altro carattere, poi eliminalo."],
 ["Choose {0} in Font size and style, then Font style.", "Scegli {0} in Dimensione e stile carattere, poi in Stile carattere."],

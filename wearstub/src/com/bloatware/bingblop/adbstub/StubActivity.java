@@ -25,7 +25,7 @@ public final class StubActivity extends Activity {
     private static WeakReference<StubActivity> open = new WeakReference<StubActivity>(null);
 
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private TextView state, lines;
+    private TextView state, addr, lines;
     private final Runnable tick = new Runnable() {
         @Override
         public void run() {
@@ -64,10 +64,14 @@ public final class StubActivity extends Activity {
         title.setText("ADB Stub");
         state = text(20, Color.WHITE);
         state.setTypeface(Typeface.DEFAULT_BOLD);
+        addr = text(15, Color.WHITE);
+        addr.setTypeface(Typeface.DEFAULT_BOLD);
+        addr.setLineSpacing(0, 1.15f);
         lines = text(13, Color.parseColor("#E0E0E0"));
         lines.setLineSpacing(0, 1.25f);
         col.addView(title);
         col.addView(state);
+        col.addView(addr);
         col.addView(lines);
         ScrollView sv = new ScrollView(this);
         sv.setBackgroundColor(Color.BLACK);
@@ -86,7 +90,10 @@ public final class StubActivity extends Activity {
 
     private void startStub(Intent from) {
         Intent i = new Intent(this, StubService.class);
-        if (from != null && from.hasExtra(StubService.EXTRA_PHONE)) i.putExtra(StubService.EXTRA_PHONE, from.getStringExtra(StubService.EXTRA_PHONE));
+        if (from != null && from.hasExtra(StubService.EXTRA_PHONE)) {
+            i.putExtra(StubService.EXTRA_PHONE, from.getStringExtra(StubService.EXTRA_PHONE));
+            i.putExtra(StubService.EXTRA_PORT, from.getIntExtra(StubService.EXTRA_PORT, 0));
+        }
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(i);
         else startService(i);
     }
@@ -124,15 +131,37 @@ public final class StubActivity extends Activity {
             state.setText("Waiting for Wi-Fi");
             state.setTextColor(Color.parseColor("#FFB74D"));
         }
+        String ip = StubService.ip;
+        int port = adbPort();
+        addr.setText("IP: " + (wifi && !ip.isEmpty() ? ip : "no Wi-Fi yet") + "\nPort: " + (port > 0 ? String.valueOf(port) : "unknown"));
         StringBuilder b = new StringBuilder();
         if (!StubService.phone.isEmpty()) b.append("Phone: ").append(StubService.phone).append('\n');
-        b.append("Wi-Fi: ").append(wifi ? "connected" + (StubService.ip.isEmpty() ? "" : " · " + StubService.ip) : "not connected").append('\n');
+        b.append("Wi-Fi: ").append(wifi ? "connected" : "not connected").append('\n');
         String wd = wirelessDebugging();
         if (wd != null) b.append("Wireless debugging: ").append(wd).append('\n');
         b.append("Screen: ").append(on ? "kept on" : "normal").append('\n');
         if (on && StubService.since > 0) b.append("Since ").append(DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(StubService.since))).append('\n');
         b.append("\nDisconnect on the phone to stop.");
         lines.setText(b.toString());
+    }
+
+    /**
+     * The adb port: the one the phone reached the watch on (it says so when it starts the stub), else what the system tells an app (Wireless debugging's
+     * port, then adb over TCP's; most watches keep these from apps), else 0.
+     */
+    private int adbPort() {
+        if (StubService.port > 0) return StubService.port;
+        String[] keys = wirelessDebugging() != null && wirelessDebugging().equals("on")
+                ? new String[] {"service.adb.tls.port", "service.adb.tcp.port", "persist.adb.tcp.port"}
+                : new String[] {"service.adb.tcp.port", "persist.adb.tcp.port"};
+        for (String k : keys) {
+            try {
+                Object v = Class.forName("android.os.SystemProperties").getMethod("get", String.class).invoke(null, k);
+                int p = Integer.parseInt(String.valueOf(v).trim());
+                if (p >= 1 && p <= 65535) return p;
+            } catch (Throwable ignored) {}
+        }
+        return 0;
     }
 
     /** "on" / "off" from the system setting (Android 11 and later), or null when the watch has no such setting. */

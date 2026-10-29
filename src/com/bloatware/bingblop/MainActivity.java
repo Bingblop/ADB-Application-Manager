@@ -6724,6 +6724,46 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * The same adb, its standard output read as bytes (adb exec-out of a binary file), at most max of them; its error output is thrown away so it
+     * cannot land in the middle of the file. Null when it failed, ran out of time or went past max.
+     */
+    private byte[] cdExecBytes(String tag, List<String> args, int timeoutMs, final int max) {
+        if (tag != null && cdCancelled.contains(tag)) return null;
+        Process p = null;
+        try {
+            ProcessBuilder pb = buildAdbProcess(args.toArray(new String[0]));
+            pb.redirectErrorStream(false);
+            pb.redirectError(ProcessBuilder.Redirect.to(new File("/dev/null")));
+            p = pb.start();
+            if (tag != null && !tag.isEmpty()) cdProcs.put(tag, p);
+            final InputStream in = p.getInputStream();
+            final java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+            FutureTask<Boolean> read = new FutureTask<Boolean>(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    byte[] b = new byte[65536];
+                    int n;
+                    while ((n = in.read(b)) > 0) {
+                        if (buf.size() + n > max) return false;
+                        buf.write(b, 0, n);
+                    }
+                    return true;
+                }
+            });
+            Thread t = new Thread(read, "cd-bytes");
+            t.setDaemon(true);
+            t.start();
+            Boolean whole = read.get(timeoutMs, TimeUnit.MILLISECONDS);
+            return whole != null && whole ? buf.toByteArray() : null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (tag != null) cdProcs.remove(tag);
+            if (p != null) try { p.destroy(); } catch (Exception ignored) {}
+        }
+    }
+
     /** adb -s serial, then these arguments (the ADB Stub's calls). */
     private static List<String> cdStubArgs(String serial, String... rest) {
         List<String> a = new ArrayList<String>();
@@ -14239,6 +14279,61 @@ public class MainActivity extends Activity {
             if (p != null) try { p.destroy(); } catch (Exception ignored) {}
         }
 
+        /**
+         * The AndroidManifest.xml of an app on a connected device, decoded (Connected Devices app details, v7.19.3): RemoteManifest reads it out of the
+         * APK on the device (unzip -p) or pulls the APK into the cache. Answer: onCdResult({tag, out}), out the XML or "Error: ...".
+         */
+        @JavascriptInterface
+        public void cdManifest(final String tag, final String serial, final String apkPath) {
+            final String t = tag == null ? "" : tag;
+            cdCancelled.remove(t);
+            try {
+                cdExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        String out = RemoteManifest.read(new RemoteManifest.Adb() {
+                            @Override
+                            public byte[] bytes(List<String> args, int timeoutMs, int max) { return cdExecBytes(t, args, timeoutMs, max); }
+                            @Override
+                            public String run(List<String> args, int timeoutMs) { return cdExec(t, args, timeoutMs); }
+                        }, serial, apkPath, getCacheDir(), new RemoteManifest.Decoder() {
+                            @Override
+                            public String fromBytes(byte[] data) { return ManifestDecoder.decodeBytes(data, null); }
+                            @Override
+                            public String fromApk(String path) throws Exception { return ManifestDecoder.decodeApk(path, null); }
+                        });
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, out) + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
+        /**
+         * What this phone knows of these permissions (Connected Devices app details): for each name its protection, whether pm grant can change it,
+         * whether an app op decides it and which, and its label, as for an app of this phone (describePermission). Framework permissions are the same
+         * on the other device; one only the other device declares comes back as "undefined".
+         */
+        @JavascriptInterface
+        public String cdPermInfo(String namesJson) {
+            JSONObject res = new JSONObject();
+            try {
+                JSONArray a = new JSONArray(namesJson == null ? "[]" : namesJson);
+                PackageManager pm = getPackageManager();
+                for (int i = 0; i < a.length() && i < 2000; i++) {
+                    String name = a.optString(i, "");
+                    if (name.isEmpty() || name.length() > 300 || res.has(name)) continue;
+                    JSONObject o = new JSONObject();
+                    try { describePermission(pm, name, o); } catch (Exception ignored) {}
+                    o.remove("description");
+                    res.put(name, o);
+                }
+            } catch (Exception ignored) {}
+            return res.toString();
+        }
+
         /** The serials adb knows this phone by (its own ADB TCP and Wireless Debugging endpoints), so the tab leaves them out of the list of other devices. */
         @JavascriptInterface
         public String cdSelfSerials() {
@@ -14354,6 +14449,7 @@ public class MainActivity extends Activity {
             try {
                 o.put("bundled", cdStubApk() != null);
                 o.put("version", WearStub.VERSION);
+                o.put("auto", WearStub.MIN_AUTO);
             } catch (Exception ignored) {}
             return o.toString();
         }
@@ -14397,7 +14493,7 @@ public class MainActivity extends Activity {
                                 }
                             } else if (a.equals("start")) {
                                 String name = phone == null || phone.trim().isEmpty() ? (Build.MODEL == null ? "" : Build.MODEL) : phone;
-                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.startCmd(name)), 20000);
+                                out = cdExec(t, cdStubArgs(serial, "shell", WearStub.startCmd(name, serial)), 20000);
                                 ok = WearStub.started(out);
                             } else if (a.equals("renew")) {
                                 out = cdExec(t, cdStubArgs(serial, "shell", WearStub.renewCmd()), 15000);

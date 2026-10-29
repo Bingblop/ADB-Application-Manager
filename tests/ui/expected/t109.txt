@@ -23,12 +23,12 @@ ok   Uninstalled with System narrows to the removed system app
 ok   search finds an app by name or package
 ok   Freeze runs pm disable-user and the row changes
 ok   Reinstall runs install-existing and the app is back
-ok   the app menu has Open, Force stop, Clear data, Enable, Uninstall, Pull APK, Details, App page, Select, Copy
+ok   the app menu has Open, Force stop, Clear data, Enable, Uninstall, Pull APK, the app details tabs, App page, Select, Copy
 ok   Uninstall asks first and nothing runs until it is confirmed
 ok   confirmed, it runs pm uninstall --user 0 and the row says UNINSTALLED
 ok   an uninstalled app's menu offers Reinstall, not the running tools
 ok   Pull APK pulls the base and its splits to the phone's Download folder
-ok   Details shows what dumpsys says
+ok   Details opens the app details on its Raw tab with what dumpsys says
 ok   selecting shows the batch bar with a count
 ok   a batch with no failure toasts the count and clears the selection
 ok   freezing several asks first

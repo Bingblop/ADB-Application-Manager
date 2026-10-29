@@ -96,11 +96,11 @@
   </table>
 
   <h4>The ADB Stub (Wear OS watches)</h4>
-  <p>A watch turns its screen off after a few seconds and, to save battery, often turns Wi-Fi off and talks to its phone over Bluetooth instead. Both can drop the Wi-Fi connection this tab uses. The <b>ADB Stub</b> is a small app this app carries for that: installed on the watch, it keeps the watch's screen on and its Wi-Fi connected while it runs, and its one screen shows the state of the connection (Wi-Fi and its address, Wireless debugging, since when).</p>
+  <p>A watch turns its screen off after a few seconds and, to save battery, often turns Wi-Fi off and talks to its phone over Bluetooth instead. Both can drop the Wi-Fi connection this tab uses. The <b>ADB Stub</b> is a small app this app carries for that: installed on the watch, it keeps the watch's screen on and its Wi-Fi connected while it runs, and its one screen shows the state of the connection: the watch's <b>IP address</b> and the adb <b>port</b> this phone reached it on, in bold under the state at the top (handy when you connect from a computer too), then Wi-Fi, Wireless debugging and since when it runs. Over the Bluetooth link the phone has no port of the watch to send, so the stub shows the port the watch itself reports, or <b>unknown</b>.</p>
   <p>When the device is a Wear OS watch, a second card titled <b>ADB Stub</b> sits under the device card:</p>
   <ul>
     <li><b>Install</b> sends the stub to the watch with its permissions and starts it. <b>Update</b> shows instead when the watch has an older stub than the one in this app.</li>
-    <li>When the stub is installed, it starts by itself every time the watch connects (switch that off in the device menu), and the card shows <b>Running</b> with a <b>Stop</b> button. <b>Start</b> starts it by hand.</li>
+    <li>When the stub is installed, it opens on the watch by itself as soon as the watch connects, also when another device is the one chosen in the picker, and also when the watch still has the previous version of the stub, which lets go by itself when this phone goes away (switch this off in the device menu). Only the very first stub, which does not let go by itself, waits for <b>Update</b>. The card then shows <b>Running</b> with a <b>Stop</b> button. <b>Start</b> starts it by hand.</li>
     <li><b>Disconnect</b> in the device menu stops it before the connection is dropped. On the watch, its notification also has <b>Stop</b>.</li>
   </ul>
   <div class="hg-note"><b>Note.</b> A screen that stays on uses the watch's battery quickly; keep it on its charger for long sessions. If the connection is lost without Disconnect (the watch walked out of range), the stub keeps running until you stop it. The ADB Stub has not yet been tried on a real watch by the author.</div>
@@ -300,7 +300,7 @@
       <tr><td><b>None</b></td><td>Rows have no extra button.</td></tr>
     </tbody>
   </table>
-  <p>Whatever the choice, an <b>uninstalled</b> app's button is <b>Reinstall</b> (a down arrow): it brings back a removed system app from the copy still kept in the device's system. No download or file is needed. Suspending and the permission and activity lists are not offered here: use the device's menu (the three dots) for what a device allows.</p>
+  <p>Whatever the choice, an <b>uninstalled</b> app's button is <b>Reinstall</b> (a down arrow): it brings back a removed system app from the copy still kept in the device's system. No download or file is needed. Suspending is not offered here. The app's permissions, app ops, activities and the rest are in its three-dot menu (see "App details" below).</p>
   <p>After the command, the app asks the device what became of the app (it lists the apps again; <i>Checking the device&hellip;</i> shows meanwhile, unless you turned off <a href="#prefs">Progress messages</a>), and the answer is what the device says now, not what the command printed. A message such as <b>Disabled: Fit</b> appears and the row changes in place. If the app is not in the wanted state (<i>Still installed</i>, <i>Not disabled</i>, <i>Not installed</i>), the sheet <b>That did not work</b> opens with <i>Checked afterwards: still installed.</i> and the device's own answer, and a command that printed an error for an app that is in fact gone still counts as done. For several apps at once the device is looked at once for all of them, and the sheet names only those that are not as wanted.</p>
 
   <h4>The three-dot menu of an app</h4>
@@ -314,13 +314,33 @@
       <tr><td><b>Enable</b> / <b>Freeze</b></td><td>Same as the row button (Freeze is blue there too).</td></tr>
       <tr><td><b>Uninstall</b></td><td>Removes the app for the device's user. It asks first. For a system app that the device first refuses, the app tries a second way by itself (see "Uninstalling a system app" below).</td></tr>
       <tr><td><b>Pull APK</b></td><td>Copies the app's file (and its split files) from the device to this phone. See below.</td></tr>
-      <tr><td><b>Details</b></td><td>Shows what the device knows about the app: version, first install and last update times, the installer, the target and minimum Android versions, the user id, the app's folder and its flags. It is the device's own text, shortened to the first lines.</td></tr>
+      <tr><td><b>Permissions</b>, <b>App Ops</b>, <b>Activities</b>, <b>Components</b>, <b>Manifest</b></td><td>Open the app's details on that tab (see "App details" below).</td></tr>
+      <tr><td><b>Details</b></td><td>Opens the same details on the <b>Raw</b> tab: what the device's <code>dumpsys package</code> says about the app (version, install and update times, installer, flags, permissions), then its app ops and the paths of its APK files.</td></tr>
       <tr><td><b>App page on device</b></td><td>Opens that app's system settings page on the device's own screen.</td></tr>
       <tr><td><b>Select</b> / <b>Deselect</b></td><td>Adds or removes the app from the selection for a batch.</td></tr>
       <tr><td><b>Copy package</b></td><td>Copies the package name to the clipboard.</td></tr>
     </tbody>
   </table>
   <p>For an app that is already <b>uninstalled</b> the menu is shorter: <b>Reinstall</b>, <b>Select</b> and <b>Copy package</b>.</p>
+
+  <h4>App details: permissions, app ops, activities and more</h4>
+  <p>The app's details on the other device open in the same kind of sheet as an app of this phone in the <a href="#tab-apps">Application Manager</a>: the icon, the name, the package and the version at the top, then the device's name and address and the install and update dates, and a row of tabs. <b>Reload</b> reads the device again. Everything is read from the device and changed on the device; nothing here changes this phone.</p>
+  <table class="hg-table">
+    <thead><tr><th>Tab</th><th>What it shows and what you can do</th></tr></thead>
+    <tbody>
+      <tr><td><b>Permissions</b></td><td>Every permission the app asks for, with its kind (runtime, normal, signature, development) and a button. Tap <b>GRANTED</b> or <b>DENIED</b> to revoke or grant it (<code>pm revoke</code> / <code>pm grant</code>); the list is read again so it shows what the device says now. A permission such as <b>Display over other apps</b> is switched through its app op. A permission the app gets at install time shows a lock: Android does not let anyone change it. Filters: All, Granted, Denied, Changeable, Install-time.</td></tr>
+      <tr><td><b>App Ops</b></td><td>The app's app ops with the five modes <b>Allow</b>, <b>FG</b> (only while the app is in front), <b>Ignore</b>, <b>Deny</b> and <b>Reset</b>. Tap a mode to set it (<code>cmd appops set</code>; when the op also has a mode for the app's whole user id, that is set too). The list is read back, and if the device kept another mode a message says so (<i>Android kept ... at ...</i>). The field under the list sets any other op by its name, for example RUN_ANY_IN_BACKGROUND.</td></tr>
+      <tr><td><b>Activities</b></td><td>The app's screens, the one the launcher opens first. <b>LAUNCH</b> opens that screen on the device itself, on a watch too: the screen is woken first so it does not open behind the watch face. <b>DISABLE</b> / <b>ENABLE</b> switch it off or on.</td></tr>
+      <tr><td><b>Components</b></td><td>Receivers, services and providers, each with <b>exported</b> or <b>unexported</b>, <b>disabled</b> when the device switched it off, and <b>DISABLE</b> / <b>ENABLE</b>. A service also has <b>STOP</b>.</td></tr>
+      <tr><td><b>Manifest</b></td><td>The app's AndroidManifest.xml, read from its APK on the device (on Android 8 and older the whole APK is copied to this phone for a moment, then deleted). Find with ▲ ▼ and <b>Matches only</b>, <b>Copy</b>, <b>Share</b> and <b>Save to Downloads</b>.</td></tr>
+      <tr><td><b>Features</b></td><td>The hardware and software the app says it needs, each marked <b>on the device</b> or <b>not on the device</b> (from the device's own list). The filter <b>Not on the device</b> shows what the device lacks.</td></tr>
+      <tr><td><b>Libraries</b></td><td>The extra libraries the app asks for, the library files Android links into it and its processor type.</td></tr>
+      <tr><td><b>Raw</b></td><td>The device's own text about the app (see <b>Details</b> above).</td></tr>
+    </tbody>
+  </table>
+  <p>The square button next to a tab's search box makes that tab fill the whole screen, as in the Application Manager. The cross at the top, or <b>Back</b>, makes it a sheet again; Back once more closes the sheet.</p>
+  <p><b>What needs more than adb.</b> Granting and revoking permissions, setting app ops and opening an exported activity work with plain adb, which runs as the device's shell user. Android lets only root or the system switch a part of an app on or off, or open an activity that is not exported. For those the app tries once more through the device's <code>su</code> when the device has one; when it has none, a message says <i>Android lets only root or the system do this, and on this device adb runs as the shell user without su.</i> and nothing changes.</p>
+  <div class="hg-warn"><b>Careful.</b> Disabling a part of a system app can break the app or the device's system screens. For a system app the app asks first. You can switch the part back on in the same tab. Revoking a permission an app relies on can make it stop or close; grant it again to undo.</div>
 
   <h4>Selecting several apps</h4>
   <ol class="hg-steps">

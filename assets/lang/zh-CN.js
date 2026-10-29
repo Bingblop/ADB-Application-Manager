@@ -1,6 +1,10 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"Android lets only root or the system do this, and on this device adb runs as the shell user without su.": "Android 只允许 root 或系统执行此操作，而此设备上的 adb 以没有 su 的 shell 用户身份运行。",
+"Not on the device": "设备上没有",
+"not on the device": "设备上没有",
+"on the device": "设备上有",
 "End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "最后再单独写一行，以 \"In short:\" 开头，用一句不超过 15 个词的话说明这个设置的作用。",
 "From Ask agent": "来自“询问代理”",
 "The font changer cannot use this font package's name.": "字体更换器无法使用这个字体包的名称。",
@@ -2592,7 +2596,6 @@ x: {
 "No connection: the request did not go through": "无法连接：请求未能送达",
 "No default (free web lookup only)": "无默认（仅免费网页查询）",
 "No description yet": "暂无说明",
-"No details": "无详情",
 "No device": "无设备",
 "No device connected": "未连接设备",
 "No device found": "未找到设备",
@@ -5694,6 +5697,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "你选择的文件仍在读取中。请稍候。"
 },
 p: [
+["version {0}", "版本 {0}"],
 ["Kept with this setting: {0}", "已随此设置保存：{0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} 正在使用。请先选择另一个字体，然后再删除它。"],
 ["Choose {0} in Font size and style, then Font style.", "请在“字体大小和样式”中进入“字体样式”，然后选择 {0}。"],

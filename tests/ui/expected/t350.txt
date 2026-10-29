@@ -13,7 +13,15 @@ ok      Stop stops it; the row offers Start: {"text":"ADB Stub Installed, not ru
 ok   4. start on connect off: only the status is read: stub status 192.168.1.30:5555 | stub status 192.168.1.30:5555
 ok      the menu shows it off
 ok      and turns it back on: The ADB Stub starts when the watch connects
-ok   5. an older stub: Update, and it was not started: {"text":"ADB Stub A newer version comes with this app. Update","btn":"Update"} stub status 192.168.1.30:5555
+ok   5. an older stub without the lease: Update, and it was not started: {"text":"ADB Stub A newer version comes with this app. Update","btn":"Update"} stub status 192.168.1.30:5555
+ok      version 2 (it lets go by itself): started when the watch connects, and still offered Update: {"text":"ADB Stub A newer version comes with this app. RUNNING Update","btn":"Update"} stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      Update installs the newer one and starts it: {"text":"ADB Stub The watch screen stays on and its Wi-Fi stays connected. Disconnect stops it. RUNNING Stop","btn":"Stop"} stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555 | stub install 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok   5b. the phone is the chosen device (first in the list): 192.168.1.40:5555
+ok      the watch was asked what it is once, then its stub was read and started: probe 192.168.1.30:5555 | stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      the next lists do not ask or start again: probe 192.168.1.30:5555 | stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      the watch dropped and came back: asked and started again: probe 192.168.1.30:5555 | stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555 | probe 192.168.1.30:5555 | stub status 192.168.1.30:5555 | stub start 192.168.1.30:5555
+ok      start on connect off: the other watch is not even asked:
+ok      a second device that is no watch is asked once and gets no stub call: probe 192.168.1.30:5555
 ok   6. a tablet: no ADB Stub row and no stub call:
 ok      a build without the stub: no row and no stub call:
 errors: []

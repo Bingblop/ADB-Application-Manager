@@ -1,0 +1,49 @@
+ok   1. Permissions in the app menu opens the app details on that tab (the menu closes)
+ok      name, package, version (code), the device and the dates
+ok      one shell command read the package, its app ops and its APK path
+ok      the manifest came from the base APK on that device
+ok      this phone was asked about every permission the app asks for or holds
+ok      counts on the tabs
+ok   2. a run-time permission the app does not have: DENIED, a button
+ok      one it has: GRANTED
+ok      an install-time one is locked
+ok      the app's own permission, from its declared section: signature, locked
+ok      another user's grant is not user 0's: Display over other apps is DENIED (switched by its op)
+ok      tapped: pm grant on that device, then read back: GRANTED
+ok      and pm revoke
+ok      an app-op permission is switched through its op
+ok      the Install-time filter shows only the locked ones
+ok      the search finds by name
+ok   3. App Ops lists the device's ops and those of the app's permissions not set yet
+ok      a mode: cmd appops set, then read back, the mode is on
+ok      an op with a uid mode: the uid mode is set too
+ok      the device kept its mode: said so
+ok      another op by its name
+ok   4. Activities: the launcher one first, the alias, the unexported one; another user's switch is not user 0's
+ok      the alias says what it opens
+ok      LAUNCH: the screen is woken and the activity started on the device
+ok      an unexported one: refused to the shell user, so once more through the device's su
+ok   5. Components: receivers, services, providers; the one the device turned off says disabled
+ok      DISABLE: pm disable refused to the shell user, then through su (asked once per device): disabled
+ok      STOP: am stopservice
+ok      the Exported filter
+ok   6. Manifest: the decoded XML with its lines counted
+ok      find: Matches only shows the two lines, the count is of every hit in them
+ok      ▼ goes to the next hit
+ok      Copy copies the whole manifest
+ok   7. Features: against what the device has
+ok      read once with pm list features
+ok      Not on the device
+ok      Libraries: what the manifest asks for, the files Android links in, the CPU type
+ok   8. the maximize button: the tab fills the screen, titled with the tab and the app
+ok      another tab keeps the full screen and its title
+ok      Back comes out of the full screen, the sheet stays
+ok      Back again closes it
+ok      opened again it is not full screen; Details shows what dumpsys says
+ok   9. a part of a system app: asks first, and nothing runs when declined
+ok      an app the device does not have says so
+ok   10. no su on the device: the component stays, and the toast says only root or the system may
+ok       an unexported activity too
+ok       a manifest that could not be read: its reason, in the Manifest and Activities tabs
+errors: []
+ALL OK

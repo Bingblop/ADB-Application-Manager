@@ -1,6 +1,10 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"Android lets only root or the system do this, and on this device adb runs as the shell user without su.": "لا يسمح Android بهذا إلا للروت أو للنظام، وعلى هذا الجهاز يعمل adb كمستخدم shell دون su.",
+"Not on the device": "ليس على الجهاز",
+"not on the device": "ليس على الجهاز",
+"on the device": "على الجهاز",
 "End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "اختم بسطر إضافي مستقل يبدأ بـ \"In short:\" ويقول في جملة واحدة من 15 كلمة على الأكثر ما يفعله الإعداد.",
 "From Ask agent": "من «اسأل الوكيل»",
 "The font changer cannot use this font package's name.": "لا يستطيع مغيّر الخط استخدام اسم حزمة الخط هذه.",
@@ -2592,7 +2596,6 @@ x: {
 "No connection: the request did not go through": "لا يوجد اتصال: لم يصل الطلب",
 "No default (free web lookup only)": "بلا افتراضي (بحث ويب مجاني فقط)",
 "No description yet": "لا يوجد وصف بعد",
-"No details": "لا توجد تفاصيل",
 "No device": "لا يوجد جهاز",
 "No device connected": "لا يوجد جهاز متصل",
 "No device found": "لم يتم العثور على جهاز",
@@ -5694,6 +5697,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "لا تزال قراءة الملفات التي اخترتها جارية. انتظر لحظة."
 },
 p: [
+["version {0}", "الإصدار {0}"],
 ["Kept with this setting: {0}", "حُفظ مع هذا الإعداد: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} قيد الاستخدام. اختر خطًا آخر أولًا، ثم احذفه."],
 ["Choose {0} in Font size and style, then Font style.", "اختر {0} في «حجم الخط ونمطه»، ثم «نمط الخط»."],

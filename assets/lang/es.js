@@ -1,6 +1,10 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+"Android lets only root or the system do this, and on this device adb runs as the shell user without su.": "Android solo permite esto a root o al sistema, y en este dispositivo adb se ejecuta como el usuario shell sin su.",
+"Not on the device": "No está en el dispositivo",
+"not on the device": "no está en el dispositivo",
+"on the device": "en el dispositivo",
 "End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "Termina con una línea más, aparte, que empiece por \"In short:\" y diga en una frase de 15 palabras como máximo qué hace el ajuste.",
 "From Ask agent": "De «Preguntar al agente»",
 "The font changer cannot use this font package's name.": "El cambiador de fuente no puede usar el nombre de este paquete de fuentes.",
@@ -2592,7 +2596,6 @@ x: {
 "No connection: the request did not go through": "Sin conexión: la solicitud no se completó",
 "No default (free web lookup only)": "Sin predeterminado (solo búsqueda web gratuita)",
 "No description yet": "Aún sin descripción",
-"No details": "Sin detalles",
 "No device": "Sin dispositivo",
 "No device connected": "Ningún dispositivo conectado",
 "No device found": "No se encontró ningún dispositivo",
@@ -5694,6 +5697,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Todavía se están leyendo los archivos que elegiste. Espera un momento."
 },
 p: [
+["version {0}", "versión {0}"],
 ["Kept with this setting: {0}", "Guardado con este ajuste: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} está en uso. Elige primero otra fuente y luego elimínala."],
 ["Choose {0} in Font size and style, then Font style.", "Elige {0} en Tamaño y estilo de fuente y luego en Estilo de fuente."],

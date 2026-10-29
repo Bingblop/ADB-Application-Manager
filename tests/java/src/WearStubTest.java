@@ -96,6 +96,14 @@ public class WearStubTest {
         String longName = WearStub.quotedPhone(new String(new char[100]).replace('\0', 'a'));
         check("the phone's name is cut at 60 characters", longName.length() == 62);
         check("no name: an empty word", WearStub.quotedPhone(null).equals("''"));
+        // the port the phone reached the watch on goes to the stub's screen (version 3)
+        check("a watch's address: its port goes with the start", WearStub.startCmd("P", "192.168.1.30:5555").equals(WearStub.startCmd("P") + " --ei port 5555"));
+        check("another port", WearStub.startCmd("P", "10.0.0.7:41567").endsWith(" --ei port 41567"));
+        check("a Bluetooth link is a port on this phone: none sent", WearStub.portOf("127.0.0.1:5555") == 0 && WearStub.portOf("localhost:5555") == 0 && WearStub.startCmd("P", "127.0.0.1:5555").equals(WearStub.startCmd("P")));
+        check("a Wireless debugging service name and a USB serial have no port", WearStub.portOf("adb-ABC123-xyz._adb-tls-connect._tcp") == 0 && WearStub.portOf("R5CT1234ABC") == 0 && WearStub.portOf(null) == 0 && WearStub.portOf("") == 0);
+        check("a port out of range or not a number is none", WearStub.portOf("1.2.3.4:0") == 0 && WearStub.portOf("1.2.3.4:65536") == 0 && WearStub.portOf("1.2.3.4:99999") == 0 && WearStub.portOf("1.2.3.4:abc") == 0 && WearStub.portOf("1.2.3.4:65535") == 65535 && WearStub.portOf("1.2.3.4:1") == 1);
+        check("nothing in the serial reaches the shell command (only digits are sent)", !WearStub.startCmd("P", "1.2.3.4:5555; reboot").contains("reboot") && WearStub.portOf("1.2.3.4:5555; reboot") == 0);
+        check("started by itself from the first stub with a lease, and no later than the stub this app carries", WearStub.MIN_AUTO == 2 && WearStub.MIN_AUTO <= WearStub.VERSION);
         check("am start's answer: started", WearStub.started("Starting: Intent { cmp=" + WearStub.PKG + "/.StubActivity (has extras) }"));
         check("am start's answer: an error", !WearStub.started("Starting: Intent { cmp=x }\nError type 3\nError: Activity class {x} does not exist."));
         check("no answer: not started", !WearStub.started(null));
