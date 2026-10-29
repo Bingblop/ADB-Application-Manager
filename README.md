@@ -1,6 +1,8 @@
 <div align="center">
 
-# ⚡ ADB Application Manager Pro
+<img src="assets/app_icon.png" width="112" height="112" alt="App icon: the Android robot in glasses and a tie, in a blue toolbox with a wrench">
+
+# ADB Application Manager Pro
 
 ### Take full control of your Android phone — from the phone itself.
 
@@ -154,6 +156,7 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **SD Maid → Clear Data from Uninstalled Apps** clears the leftover data of apps removed with the keep-data flag. **Batch menu**: a pull handle, outlined Select All / Clear All, Show Applications, Keep selecting always on. **One VirusTotal key** in Settings for the Installer and Morphe Helper.
 - **v7.10.18**: outlined Select All / Clear All on the Selected apps list and the leftover-data sheet; a **bin button on a row of the Uninstalled filter** clears that one app's leftover data; the **VirusTotal card shows how many lookups are left today**.
 - **v7.18.3**: as root, a file's **Permissions…** also **restores the default SELinux label** (restorecon) of a file or of everything inside a folder: the fix for a file copied into another app's data that the app cannot use; a saved **VirusTotal API key** shows as dots in Settings instead of a blank field; Live Logcat has a **Row tints** button that opens the tint slider and Gradient switch as a sheet.
+- **v7.19.3**: a **new app icon**, the Android robot in glasses and a tie in a blue toolbox with a wrench, with **no background** behind it on the home screen (the launcher's circle or squircle never cuts it); the About tab shows it too.
 - **v7.19.2**: the Custom Fonts tab's **Phone font** card comes **before Emoji fonts**; on App Stores the **?** help button has a line of its own **above the mobile data switch**, outside it, and the switch (and App Updater's) is **thinner**; **Hidden Settings remember what Ask agent found**: every answer leaves one short AI-written line with that setting, shown on its row (marked AI) and in its sheet, searchable, kept for good.
 - **v7.19.1**: the app is renamed **ADB/Root Toolbox** (same package, installs over every earlier version). The Custom Fonts tab's **Phone font** card is a drop-down of **every font installed on the phone** and every font made there: choose one to use it, press and hold one to uninstall it (asked first; Default, the phone's own fonts and the font in use stay). A font **not signed by Samsung or Monotype** needs **Root, or Shizuku as the system user (UID 1000) or as root (UID 0)**; without them the app says so and changes nothing. The mobile data switches of App Stores and App Updater sit **below the ? help button** instead of over it.
 - **v7.19.0**: **Automatic** now tries **Super User first**, then Shizuku as UID 0 or 1000, ADB over TCP, Wireless Debugging and Shizuku as UID 2000, and a chosen Super User that goes away switches back to Automatic by itself; Connected Devices lists **paired devices found on your Wi-Fi** with their current IP and port (one tap to connect, and a new pairing connects by itself), and keeps **one saved entry per IP**; **Kill Apps** runs to the end with its live notification (System UI and the tools it needs are stopped last); app-op permissions such as Display over other apps get a working toggle and app-op changes are read back; DNS **Sort by speed** is on by default and remembered; slim mobile-data switches at the top of App Stores and the App Updater.

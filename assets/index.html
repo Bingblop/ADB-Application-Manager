@@ -32,7 +32,7 @@
             /* ---- Accent [theme] ---- */
             --accent: #00E5FF;                       /* active tab, selection, links, focus border, primary actions */
             --accent-glow: rgba(0, 229, 255, 0.35);  /* soft halo and selected-row tint; not for text */
-            --secondary: #7C4DFF;                    /* the end of the accent-to-secondary gradient on the logo and primary buttons */
+            --secondary: #7C4DFF;                    /* the end of the accent-to-secondary gradient on primary buttons */
             --on-accent: #000000;                    /* text and icons on a solid accent fill (black or white, whichever contrasts more) */
 
             /* ---- Status [theme]: always pair the colour with a text label ---- */
@@ -4358,13 +4358,9 @@
 
         /* About tab */
         .about-hero { text-align: center; }
-        .about-logo {
-            width: 64px; height: 64px; margin: 2px auto var(--space-3h); border-radius: var(--radius-chip);
-            background: linear-gradient(135deg, var(--accent), var(--secondary));
-            display: flex; align-items: center; justify-content: center; font-size: 32px;
-            color: var(--on-accent);
-            box-shadow: 0 0 22px var(--accent-glow);
-        }
+        /* the app icon itself (assets/app_icon.png): the robot in its toolbox, no tile behind it */
+        .about-logo { width: 64px; height: 64px; margin: 2px auto var(--space-3h); }
+        .about-logo img { display: block; width: 100%; height: 100%; }
         .about-name { font-size: 18px; font-weight:var(--fw-heavy); }
         .about-ver { font-size: var(--fs-body); color: var(--text-muted); font-weight:var(--fw-bold); margin: 2px 0 var(--space-3); }
         .about-blurb { font-size: var(--fs-body); color: var(--text-muted); line-height: 1.5; margin-bottom: var(--space-4); }
@@ -8303,7 +8299,7 @@
                 @keyframes authSpin { to { transform:rotate(360deg); } }
             </style>
             <div class="color-card about-hero">
-                <div class="about-logo"><svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.2 2 4.5 13.4h5.6l-1.1 8.6 9-11.9h-5.7z"/></svg></div>
+                <div class="about-logo"><img src="app_icon.png" width="64" height="64" alt="" draggable="false"></div>
                 <div class="about-name">ADB/Root Toolbox</div>
                 <div class="about-ver" id="aboutVersion">Version …</div>
                 <div class="about-blurb">Freeze, debloat, install, back up and inspect every app on your phone, straight from the phone: through ADB, Wireless Debugging, Shizuku or Root. No computer, no account, no ads.</div>

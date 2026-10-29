@@ -1,5 +1,12 @@
 # Changelog
 
+## v7.19.3-Pro (versionCode 873)
+
+A small release on top of v7.19.2, cut from `main`, with the one change the owner asked for on 2026-10-29: a new app icon. Package, signing certificate, APK file names, permissions and the name under the icon (**ADB/Root Toolbox**) are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone**; the icons were checked under the circle, squircle and rounded-square launcher masks and the About tab in a headless browser. `docs/PHONE-SCRIPT-v7.19.3.md` is the phone script.
+
+- **New app icon: the Android robot, in glasses and a tie, in a blue toolbox with a wrench.** It has **no background**: no tile or colour behind it on the home screen, in the app drawer, in Settings → Apps or in the recent apps. On Android 8 and later it is an adaptive icon whose background layer is see-through and whose picture stays inside the safe zone, so the launcher's shape (circle, squircle or rounded square) never cuts the lid, the antennas or the wrench; the older icon files (every density) and the round icon are the same picture. With no tile of its own the picture can look a touch smaller than icons drawn edge to edge.
+- **About tab** shows the new icon (in place of the lightning bolt on a coloured tile), and so do the README, the website's tab icon and the About screenshots in the guide. The small one-colour icon in the status bar, on the quick tiles and in notifications stays the bolt: Android draws those as a plain white shape, and the toolbox picture would turn into a blob there.
+
 ## v7.19.2-Pro (versionCode 872)
 
 A small release on top of v7.19.1, cut from `main`, with the three changes the owner asked for on 2026-10-29. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone**; the page was checked in a headless browser with a mock. `docs/PHONE-SCRIPT-v7.19.2.md` is the phone script.
