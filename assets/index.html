@@ -6612,6 +6612,23 @@
                 <div class="lc-ent-ai" id="askTestOut" style="display:none; margin-top:var(--space-3);"></div>
                 <div class="appearance-note" id="askTestRes"></div>
 
+                <!-- v7.19.4: agent API keys here as well as in Console → Terminal (one key per agent, the same encrypted store on the phone). The green check mark in the lists: a key that was tested and worked -->
+                <div class="cc-section" id="akCard">
+                    <div class="cc-section-title">Agent API keys</div>
+                    <div class="color-card-subtitle">Add the key of any agent. It is tested right away and kept encrypted on this phone; the Ask agent buttons and the Terminal both use it.</div>
+                    <select class="op-select lang-select" id="akAgentSelect" aria-label="Agent for the API key" onchange="akPick(this.value)"></select>
+                    <input class="modal-text-input" id="akKeyInput" type="password" style="margin-top:10px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" onfocus="akKeyFocus(this)" onblur="akKeyBlur(this)">
+                    <div class="mode-btn-row" style="margin-top:10px;">
+                        <button class="mode-action-btn primary" id="akTestBtn" onclick="akTestKey()">Test key</button>
+                        <button class="mode-action-btn" id="akTestStop" style="display:none;" onclick="askStopRun('akTest')">Stop</button>
+                        <button class="mode-action-btn" onclick="akGetKey()">Get a key</button>
+                        <button class="mode-action-btn" id="akForgetBtn" onclick="akForget()">Remove key</button>
+                    </div>
+                    <div class="agent-ask-prog" id="akTestProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="akTestBar"><i id="akTestBarFill"></i></div><div class="agent-ask-prog-txt" id="akTestProgTxt"></div></div>
+                    <div class="lc-ent-ai" id="akTestOut" style="display:none; margin-top:var(--space-3);"></div>
+                    <div class="appearance-note" id="akTestRes"></div>
+                </div>
+
                 <!-- the VirusTotal key, the other outside service the app can use: it is kept as before (vtKeyTyped -> kv 'vt_key', sealed in the Keystore vault on the phone), only its controls are here -->
                 <div class="cc-section" id="vtCard">
                     <div class="cc-section-title">VirusTotal API key</div>
@@ -6746,6 +6763,14 @@
                 </div>
                 <label class="switch-row" style="margin-top:12px;">
                     <div>
+                        <div class="switch-title">Smart Tabs</div>
+                        <div class="switch-sub">Puts the tabs you open most right after Application Manager, the most opened first, on the bottom bar and the top bar. About stays last. The order updates when you come back to the app.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="smartTabsToggle" onchange="setSmartTabs(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+                <label class="switch-row" style="margin-top:12px;">
+                    <div>
                         <div class="switch-title">Long-press shortcuts</div>
                         <div class="switch-sub">Hold a tab on the bottom bar for a small menu of quick destinations. They only open a screen or a section; none of them changes your phone.</div>
                     </div>
@@ -6766,6 +6791,7 @@
                 <div class="color-card-title">Feature List</div>
                 <div class="color-card-subtitle clamp-2">Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</div>
                 <div class="color-card-subtitle">Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.</div>
+                <div class="appearance-note" id="featureSmartNote" style="display:none;">Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.</div>
                 <div id="featureList" class="fl-list"></div>
                 <div class="mode-btn-row" style="margin-top:12px;">
                     <button class="mode-action-btn" id="featureResetBtn" onclick="featureReset()">Reset to Default</button>
@@ -12250,7 +12276,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function tabSaveConfig() { kvSet('tab_config', tabConfig); }
 
         // The tabs on the bar, left to right
-        function tabsShown() { return ['apps'].concat(tabConfig.order.filter(k => !tabConfig.off.includes(k)), ['about']); }
+        function tabsShown() { return ['apps'].concat(tabOrder().filter(k => !tabConfig.off.includes(k)), ['about']); }
         function tabIsOn(key) { if (key === 'updates') key = 'installer'; if (key === 'terminal') key = 'console'; return key === 'prefs' || !!tabDef(key) && (tabDef(key).fixed || !tabConfig.off.includes(key)); }
 
         function renderTabBar() {
@@ -12271,6 +12297,51 @@ Type any command above (e.g. pm list packages -d)</div>
             if (typeof featureRender === 'function') featureRender();
             if (typeof navScRender === 'function') navScRender();
         }
+
+        // ---- Settings > Navigation > Smart Tabs (v7.19.4, off by default: kv 'smart_tabs') ----
+        // The tabs between Application Manager and About go in the order of how often each one is opened, the most opened first, on the top bar and the bottom bar
+        // (and under More). Every opening of a tab is counted (kv 'tab_opens', { key: count }), with Smart Tabs on or off, so turning it on uses what is known already;
+        // when a count passes SMART_CAP every count is halved, so what is used now outweighs what was used months ago. The order is worked out when the page starts,
+        // when Smart Tabs is turned on and when the app comes back to the front, never while a tab is being tapped: a tab does not jump away under the thumb.
+        // The Feature List order breaks a tie and is the order again when Smart Tabs is turned off.
+        const SMART_CAP = 400;
+        let smartTabsOn = false, smartOrder = null;
+        function smartCounts() { const c = kvGet('tab_opens', null); return c && typeof c === 'object' && !Array.isArray(c) ? c : {}; }
+        function smartCompute() {
+            const c = smartCounts(), base = tabConfig.order, n = k => Number(c[k]) || 0;
+            return base.slice().sort((a, b) => n(b) - n(a) || base.indexOf(a) - base.indexOf(b));
+        }
+        function smartLoad() { smartTabsOn = kvGet('smart_tabs', false) === true; smartOrder = smartTabsOn ? smartCompute() : null; }
+        // The movable tabs in the order the bars show them
+        function tabOrder() {
+            if (!smartTabsOn || !smartOrder) return tabConfig.order;
+            return smartOrder.filter(k => tabConfig.order.includes(k)).concat(tabConfig.order.filter(k => !smartOrder.includes(k)));
+        }
+        function smartCount(key) {
+            if (!TAB_MOVABLE.includes(key)) return;
+            const c = smartCounts();
+            c[key] = (Number(c[key]) || 0) + 1;
+            if (c[key] > SMART_CAP) Object.keys(c).forEach(k => { c[k] = Math.floor((Number(c[k]) || 0) / 2); });
+            kvSet('tab_opens', c);
+        }
+        function smartRefresh() {
+            if (!smartTabsOn) return;
+            const next = smartCompute();
+            if (smartOrder && next.join() === smartOrder.join()) return;
+            smartOrder = next;
+            tabsApplyConfig();
+        }
+        function smartUi() { const t = document.getElementById('smartTabsToggle'); if (t) t.checked = smartTabsOn; }
+        function setSmartTabs(on) {
+            haptic();
+            smartTabsOn = !!on;
+            kvSet('smart_tabs', smartTabsOn);
+            smartOrder = smartTabsOn ? smartCompute() : null;
+            tabsApplyConfig();
+            smartUi();
+            showToast(smartTabsOn ? 'Smart Tabs on: the tabs you open most come first' : 'Smart Tabs off: the tabs are in the Feature List order');
+        }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) smartRefresh(); });
 
         // ---- Navigation: the bottom bar (a rail at the left on a wide screen) ----
         // Four pinned tabs and More. Which tabs are pinned is tabConfig.pinned (Settings > Feature List); Settings > Navigation chooses whether the bar, the top tab bar or both are on.
@@ -12579,6 +12650,7 @@ Type any command above (e.g. pm list packages -d)</div>
             bnavVisibility();
             bnavSync(false);
             navScRender();
+            smartUi();
         }
         function setNavMode(m) {
             if (m !== 'both' && m !== 'bottom' && m !== 'top') return;
@@ -12959,6 +13031,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (fromView === 'apps' && viewName !== 'apps' && selectedPkgs.size) clearBatchSelectionNow();       // the selection (and the checkmark button, and the batch menu) goes with the tab, at once
             if (fromView === 'prefs' && viewName !== 'prefs') fontScanClear(false);          // the list of fonts found is emptied when Settings is left
             if (!navFromBack && fromView && fromView !== viewName) {
+                smartCount(viewName);                                      // Smart Tabs: one more opening of this tab (Back to it is not one)
                 viewStack = viewStack.filter(v => v !== fromView);
                 viewStack.push(fromView);
                 if (viewStack.length > 8) viewStack.shift();
@@ -15258,7 +15331,8 @@ Type any command above (e.g. pm list packages -d)</div>
         function askAgentBuild() {
             const sel = document.getElementById('askAgentSelect');
             if (!sel) return;
-            const opt = a => '<option value="' + a.id + '" translate="no">' + escapeHtml(a.name) + '</option>';
+            txRefreshVault();
+            const opt = a => '<option value="' + a.id + '" translate="no">' + escapeHtml(a.name + (akOk(a) ? AK_OK_MARK : '')) + '</option>';
             const research = TX_AGENTS.filter(a => askAgentOk(a) && ASK_RESEARCH.includes(a.id)).sort((a, b) => ASK_RESEARCH.indexOf(a.id) - ASK_RESEARCH.indexOf(b.id));
             const chat = TX_AGENTS.filter(a => askAgentOk(a) && a.group === 'key' && !ASK_RESEARCH.includes(a.id));
             const own = TX_AGENTS.filter(a => askAgentOk(a) && a.group === 'oss' && !ASK_RESEARCH.includes(a.id));
@@ -15268,6 +15342,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 + '<optgroup label="' + escapeHtml('Free Open-Source') + '">' + own.map(opt).join('') + '</optgroup>';
             sel.value = askAgentDef() ? askAgentId : '';
             askAgentNote();
+            akBuild();
         }
         function askAgentNote() {
             const el = document.getElementById('askAgentNote');
@@ -15283,9 +15358,117 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             askAgentId = id || '';
             kvSet('ask_agent', askAgentId);
+            if (akAgents().some(a => a.id === askAgentId)) akCur = askAgentId;          // the key box below follows the choice
             askAgentBuild();
             const ag = askAgentDef();
             showToast(ag ? 'Default Ask Agent: ' + ag.name : 'No Default Ask Agent');
+        }
+        // ---- Agent API keys (v7.19.4, Settings > Default Ask Agent): the same keys as Console → Terminal's Connect sheets (AgentVault on the phone, never in the page) ----
+        // A green check mark (AK_OK_MARK, the one written in the page: the owner asked for it, t78) after an agent's name, here, in the Default Ask Agent list and in the Terminal's Coding Agents list: its saved key was tested and worked. kv 'agent_key_ok' =
+        // { provider: stamp }; the stamp is when the key was saved and its hint, so a key saved again without a test ("Save anyway") or removed loses the mark, and so does a failed test.
+        const AK_OK_MARK = ' \u2705';                    // the only emoji besides the gear, the lock and the emoji samples (t78)
+        let akCur = '';                                   // the agent the key box is for
+        const akTests = {};                               // the key tests started here: { reqId: { agent } }
+        function akAgents() {                             // every agent that takes a key: the web research ones first, as in the list above
+            const r = id => { const i = ASK_RESEARCH.indexOf(id); return i < 0 ? 99 : i; };
+            return TX_AGENTS.filter(a => a.keyUrl && a.provider).sort((a, b) => r(a.id) - r(b.id));
+        }
+        function akStamp(ag) { const v = ag && ag.provider && txVault[ag.provider]; return v && (v.key || v.base) && v.readable !== false ? String(v.savedAt || 0) + '|' + (v.hint || '') + '|' + (v.base || '') : ''; }
+        function akMarks() { const m = kvGet('agent_key_ok', null); return m && typeof m === 'object' && !Array.isArray(m) ? m : {}; }
+        function akOk(ag) { const s = akStamp(ag); return !!s && akMarks()[ag.provider] === s; }
+        function akMark(ag, ok) {
+            if (!ag || !ag.provider) return;
+            txRefreshVault();
+            const m = akMarks(), s = akStamp(ag);
+            if (ok && s) m[ag.provider] = s; else delete m[ag.provider];
+            kvSet('agent_key_ok', m);
+            akMarksRedraw();
+        }
+        // The lists that show the marks are drawn again (the Terminal's only once it has been opened: it is built then)
+        function akMarksRedraw() {
+            askAgentBuild();
+            if (txOpened) txBuildAgentSelect();
+        }
+        function akAgent() { return txAgentDef(akCur) || null; }
+        function akBuild() {
+            const sel = document.getElementById('akAgentSelect');
+            if (!sel) return;
+            const list = akAgents();
+            if (!list.some(a => a.id === akCur)) { const d = askAgentDef(); akCur = d && list.some(a => a.id === d.id) ? d.id : list[0].id; }
+            sel.innerHTML = list.map(a => '<option value="' + a.id + '" translate="no">' + escapeHtml(a.name + (akOk(a) ? AK_OK_MARK : '')) + '</option>').join('');
+            sel.value = akCur;
+            const ag = akAgent(), v = txVault[ag.provider] || {}, inp = document.getElementById('akKeyInput');
+            if (inp && document.activeElement !== inp) {                      // a saved key shows as dots, like the VirusTotal key (the key itself never comes to the page)
+                inp.dataset.saved = v.key ? '1' : '';
+                inp.value = v.key ? '\u2022'.repeat(16) : '';
+                inp.placeholder = ag.keyLook ? txF('Paste the key ({0})', ag.keyLook) : txT('Paste the key');
+            }
+            const fb = document.getElementById('akForgetBtn');
+            if (fb) fb.style.display = v.key ? '' : 'none';
+            const res = document.getElementById('akTestRes'), btn = document.getElementById('akTestBtn');
+            if (res && !(btn && btn.disabled)) {
+                res.classList.toggle('is-err', v.readable === false);
+                res.textContent = !v.key ? txF('No key saved for {0} yet.', ag.name)
+                    : v.readable === false ? txT('The saved key can no longer be read: enter it again.')
+                    : akOk(ag) ? txF('Saved key {0}: tested, it works.', v.hint || '')
+                    : txF('Saved key {0}: not tested yet. Press Test key.', v.hint || '');
+            }
+        }
+        function akPick(id) { haptic(); akCur = id; const o = document.getElementById('akTestOut'); if (o) o.style.display = 'none'; akBuild(); }
+        function akKeyFocus(inp) { if (inp.dataset.saved) { inp.value = ''; inp.placeholder = txT('Type a new key to replace the saved one'); } }
+        function akKeyBlur(inp) { if (inp.dataset.saved && !inp.value) akBuild(); else if (inp.value) inp.dataset.saved = ''; }
+        function akGetKey() { const ag = akAgent(); if (ag && ag.keyUrl) { haptic(); openUrlExternal(ag.keyUrl); } }
+        function akTestKey() {
+            const ag = akAgent(), inp = document.getElementById('akKeyInput'), res = document.getElementById('akTestRes'), btn = document.getElementById('akTestBtn');
+            if (!ag || !inp || !res || !btn || btn.disabled) return;
+            const key = inp.dataset.saved ? '' : inp.value.trim();
+            txRefreshVault();
+            if (!key) {
+                if (txHasKey(ag.provider) && txEngine(ag) !== 'cli') { agentTestRun(ag, 'akTest'); return; }          // the saved key: one sample question, as Test the Default Ask Agent asks
+                if (txHasKey(ag.provider)) { haptic(); errNote(res, txT('Paste the key again to test it: this agent works through its own tool in the Terminal.')); return; }
+                haptic(); errNote(res, txT('Enter the key first')); return;
+            }
+            haptic();
+            const id = 'ak' + (++txAiSeq);
+            akTests[id] = { agent: ag.id };
+            let st = '';
+            try { st = String(window.AndroidBridge.aiTestKey(id, ag.provider, key, '') || ''); } catch (e) { st = 'error: ' + (e && e.message || e); }
+            if (st !== 'started') { delete akTests[id]; errNote(res, st.replace(/^error:\s*/, '') || txT('The test could not start')); return; }
+            res.classList.remove('is-err');
+            res.textContent = txT('Testing…');
+            btn.disabled = true;
+        }
+        // The answer of a key test started here (window.onAiKeyTest hands it over): the app has saved the key when it worked
+        function akKeyDone(id, res) {
+            const t = akTests[id];
+            delete akTests[id];
+            const ag = txAgentDef(t.agent), btn = document.getElementById('akTestBtn'), out = document.getElementById('akTestRes');
+            if (btn) btn.disabled = false;
+            txRefreshVault();
+            if (res.ok && res.saved !== false) {
+                txStoreModels(ag, txParseModels(ag, res.body));
+                const inp = document.getElementById('akKeyInput');
+                if (inp && akCur === ag.id) { inp.value = ''; inp.dataset.saved = '1'; if (document.activeElement === inp) inp.blur(); }
+                akMark(ag, true);
+                if (out && akCur === ag.id) { out.classList.remove('is-err'); out.textContent = txF('It works: the {0} key is saved, encrypted on this phone.', ag.name); }
+                if (typeof txSyncUi === 'function' && txOpened) txSyncUi();
+                return;
+            }
+            const text = res.ok ? txT('The key works, but it could not be saved on this phone.') : txErrText(txMkErr(res.status, res.error, res.body, res.headers || {}));
+            if (!res.ok) akMark(ag, false);                                    // a key that failed its test leaves no check mark (the same key may be the saved one)
+            if (out && akCur === ag.id) errNote(out, text);
+        }
+        function akForget() {
+            const ag = akAgent();
+            if (!ag) return;
+            haptic();
+            if (Object.values(akTests).some(t => t.agent === ag.id)) { showToast(txT('Wait for the key test to finish')); return; }          // the app saves a key that passes: removing it first would not stick
+            nextDialogTitle('Remove key');
+            if (!confirm(txF('Remove the saved {0} key from this phone?', ag.name))) return;
+            try { window.AndroidBridge.aiForgetKey(ag.provider); } catch (e) {}
+            akMark(ag, false);
+            const o = document.getElementById('akTestOut'); if (o) o.style.display = 'none';
+            showToast(txF('{0} key removed', ag.name));
         }
         // "Test the Default Ask Agent" in Settings and "Test" in an agent's Connect sheet: one sample question, asked the way an Ask agent button asks
         let askTestBusy = false;
@@ -15312,9 +15495,10 @@ Type any command above (e.g. pm list packages -d)</div>
             }
             askTestBusy = true; btn.disabled = true;
             out.style.display = '';
-            const t0 = Date.now();
+            const t0 = Date.now(), stamp0 = akStamp(ag);
             const ans = await aiExplainInto(out, agentSystem('package'), askTestSample(), () => askTestBusy, 'Only this sample question is sent to them: whether the Calculator package can be disabled.', null, ui, ag);
             const ok = !!ans && !out.classList.contains('is-err');
+            if (out.textContent !== txT('Stopped.') && akStamp(ag) === stamp0) akMark(ag, ok);          // not when the key was replaced while the question ran          // the check mark follows the last test of the saved key
             res.classList.toggle('is-err', !ok);
             res.textContent = ok ? txF('It works: {0} answered in {1} s.', ag.name, Math.max(1, Math.round((Date.now() - t0) / 1000)))
                 : (out.textContent === txT('Stopped.') ? '' : txT('It did not work. The message above says why.'));
@@ -15372,17 +15556,17 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         let agentAsk = null;             // { kind, name, text, web, answer, busy }
         // The button: kind and name from its data (nothing goes into an attribute that was not escaped), the rest of what the screen knows in data-ax (one line each).
-        function agentBtnHtml(kind, name, extra, cls, ref) {          // ref: what the answer is kept with (a hidden setting's table, v7.19.2)
-            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '"' + (ref ? ' data-ar="' + escapeHtml(String(ref)) + '"' : '') + ' data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">Ask agent</button>';
+        function agentBtnHtml(kind, name, extra, cls, ref, who) {          // ref: what the answer is kept with (a hidden setting's table, v7.19.2); who: the device it is on when not this phone (v7.19.4)
+            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '"' + (ref ? ' data-ar="' + escapeHtml(String(ref)) + '"' : '') + (who ? ' data-aw="' + escapeHtml(String(who)) + '"' : '') + ' data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">Ask agent</button>';
         }
         function agentAskFromBtn(btn) {
             haptic();
-            askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : [], btn.dataset.ar || '');
+            askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : [], btn.dataset.ar || '', btn.dataset.aw || '');
         }
-        function askAgentAbout(kind, name, lines, ref) {
+        function askAgentAbout(kind, name, lines, ref, who) {
             // no gate here: without a connected agent the window still opens and the built-in web lookup answers (aiExplainInto)
             const k = AGENT_KINDS[kind] || AGENT_KINDS.item, info = txInfo || {};
-            const phone = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '');
+            const phone = who || 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '');
             const text = phone + '\n' + k.label + ': ' + name + (lines && lines.length ? '\n' + lines.filter(Boolean).join('\n') : '');
             agentAsk = { kind: kind, name: name, text: text, answer: '', busy: false, web: 'android ' + (kind === 'setting' ? 'settings ' : '') + name + (k.safety ? ' safe to disable' : ''), ref: ref || '' };
             document.getElementById('agentAskTitle').innerText = k.title;
@@ -15401,7 +15585,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('agentAskGo');
             cur.busy = true; btn.disabled = true;
             const wasAgent = askAgentReadyNow() ? askAgentDef().name.replace(/\s*\(.*\)$/, '') : '';
-            const sys = agentSystem(cur.kind) + (cur.kind === 'setting' ? SDB_NOTE_ASK : '');          // v7.19.2: a setting's answer ends with the line kept with it
+            const sys = agentSystem(cur.kind) + (cur.kind === 'setting' && cur.ref ? SDB_NOTE_ASK : '');          // v7.19.2: a setting's answer ends with the line kept with it (not for a connected device's setting: nothing is kept there)
             cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), sys, cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web, 'agentAsk');
             cur.busy = false; btn.disabled = false;
             if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) {
@@ -29490,17 +29674,24 @@ Type any command above (e.g. pm list packages -d)</div>
             const keys = Object.keys(data).sort().filter(k => !q || k.toLowerCase().includes(q) || String(data[k]).toLowerCase().includes(q));
             document.getElementById('cdSetCount').innerText = keys.length + (keys.length === 1 ? ' setting' : ' settings') + (q ? ' match' : ' in ' + ns);
             const shown = keys.slice(0, 400);
-            document.getElementById('cdSetList').innerHTML = shown.map(k => { const hn = sdbHint(ns, k); return '<div class="cd-set-row" data-k="' + escapeHtml(k) + '" onclick="cdSetEdit(this.dataset.k)"><div style="min-width:0; flex:1;"><div class="cd-set-key" translate="no">' + escapeHtml(k) + '</div>' + (hn ? '<div class="sdb-hint">' + escapeHtml(hn.t) + '</div>' + (hn.v ? '<div class="sdb-vals">' + escapeHtml(sdbClip(hn.v, 120)) + '</div>' : '') : '') + '<div class="cd-set-val" translate="no">' + escapeHtml(data[k]) + '</div></div></div>'; }).join('') +
+            document.getElementById('cdSetList').innerHTML = shown.map(k => { const hn = sdbHint(ns, k); return '<div class="cd-set-row" data-k="' + escapeHtml(k) + '" onclick="cdSetEdit(this.dataset.k)"><div style="min-width:0; flex:1;"><div class="cd-set-key" translate="no">' + escapeHtml(k) + '</div>' + (hn ? '<div class="sdb-hint">' + escapeHtml(hn.t) + '</div>' + (hn.v ? '<div class="sdb-vals">' + escapeHtml(sdbClip(hn.v, 120)) + '</div>' : '') : '') + '<div class="cd-set-val" translate="no">' + escapeHtml(data[k]) + '</div>' + cdSetAskBtn(ns, k, data[k], hn) + '</div></div>'; }).join('') +
                 (keys.length > shown.length ? '<div class="cd-note">' + (keys.length - shown.length) + ' more: search to find them.</div>' : '');
         }
+        // Ask agent on a connected device's setting (v7.19.4): the same window as Hidden Settings, about that device, and no note is kept with the setting
+        function cdSetWho() { const i = cd.info || {}; return 'Android ' + (i.release || '?') + (i.model ? ' on ' + ((i.maker || '') + ' ' + i.model).trim() : '') + ' (a device connected over ADB)'; }
+        function cdSetAskBtn(ns, key, value, hint, who) {
+            const v = value == null ? '' : String(value);
+            return agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (v === '' ? '(empty)' : sdbClip(v, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : ''], '', '', who || cdSetWho());
+        }
         function cdSetEdit(key) {
-            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key], serial = cd.serial;
+            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key], serial = cd.serial, who = cdSetWho();          // who: the device the sheet was opened for
             cdSheetOpen({ title: key, sub: ns + ' setting', body: '<div class="sdb-about" style="margin-bottom:8px;">' + sdbAboutHtml(ns, key, val == null ? '' : String(val)) + '</div><textarea class="modal-text-input" id="cdSetVal" rows="3" translate="no" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%; font-family:monospace; resize:vertical;">' + escapeHtml(val == null ? '' : val) + '</textarea>' +
                 '<div class="cd-note">A wrong value can make the device misbehave. Delete takes the setting away so the system falls back to its default.</div>',
                 buttons: [
                     { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value, serial) },
                     { label: 'Delete', cls: 'danger', fn: () => cdSetDelete(ns, key, serial) },
-                    { label: 'Copy value', fn: () => copyText(val == null ? '' : String(val)) }
+                    { label: 'Copy value', fn: () => copyText(val == null ? '' : String(val)) },
+                    { label: 'Ask agent', fn: () => { const b = document.createElement('div'); b.innerHTML = cdSetAskBtn(ns, key, val, sdbHint(ns, key), who); agentAskFromBtn(b.firstChild); } }
                 ] });
         }
         // serial: the device whose setting was opened; the sheet or question stays open while the device list may move to another device
@@ -33278,14 +33469,16 @@ Type any command above (e.g. pm list packages -d)</div>
         function featureRender() {
             const box = document.getElementById('featureList');
             if (!box) return;
-            const last = tabConfig.order.length - 1;
-            box.innerHTML = tabConfig.order.map((k, i) => {
+            const note = document.getElementById('featureSmartNote');
+            if (note) note.style.display = smartTabsOn ? '' : 'none';
+            const list = tabOrder(), last = list.length - 1;          // Smart Tabs on: listed in its order, the arrows rest
+            box.innerHTML = list.map((k, i) => {
                 const name = escapeHtml(tabDef(k).name), on = !tabConfig.off.includes(k), pin = tabConfig.pinned.includes(k);
                 return '<div class="fl-row' + (on ? '' : ' off') + '" data-tab="' + k + '">'
                     + '<div class="fl-name">' + name + '</div>'
                     + '<button type="button" class="fl-pin" aria-pressed="' + pin + '" aria-label="' + (pin ? 'Unpin ' + name + ' from the bottom bar' : 'Pin ' + name + ' to the bottom bar') + '"' + (on ? '' : ' disabled') + ' onclick="featurePin(\'' + k + '\')">' + bnavSvg(BNAV_ICON_PIN) + '</button>'
-                    + '<button type="button" class="fl-move" aria-label="Move ' + name + ' up"' + (i === 0 ? ' disabled' : '') + ' onclick="featureMove(\'' + k + '\', -1)">▲</button>'
-                    + '<button type="button" class="fl-move" aria-label="Move ' + name + ' down"' + (i === last ? ' disabled' : '') + ' onclick="featureMove(\'' + k + '\', 1)">▼</button>'
+                    + '<button type="button" class="fl-move" aria-label="Move ' + name + ' up"' + (i === 0 || smartTabsOn ? ' disabled' : '') + ' onclick="featureMove(\'' + k + '\', -1)">▲</button>'
+                    + '<button type="button" class="fl-move" aria-label="Move ' + name + ' down"' + (i === last || smartTabsOn ? ' disabled' : '') + ' onclick="featureMove(\'' + k + '\', 1)">▼</button>'
                     + '<label class="fl-switch"><input type="checkbox" class="switch-input" aria-label="' + name + '"' + (on ? ' checked' : '') + ' onchange="featureToggle(\'' + k + '\', this.checked)"><span class="switch-track"></span></label>'
                     + '</div>';
             }).join('');
@@ -36024,10 +36217,11 @@ Type any command above (e.g. pm list packages -d)</div>
         function txBuildAgentSelect() {
             const sel = document.getElementById('txAgent');
             if (!sel) return;
-            const opt = a => '<option value="' + a.id + '"' + (a.id === 'none' ? '' : ' translate="no"') + '>' + escapeHtml(a.name) + '</option>';      // names stay as they are; None and the headings are translated
+            const opt = a => '<option value="' + a.id + '"' + (a.id === 'none' ? '' : ' translate="no"') + '>' + escapeHtml(a.name + (akOk(a) ? AK_OK_MARK : '')) + '</option>';      // names stay as they are; None and the headings are translated. AK_OK_MARK: a key tested and working (v7.19.4)
             sel.innerHTML = opt(TX_AGENTS[0])
                 + '<optgroup label="' + escapeHtml('API Key Required') + '">' + TX_AGENTS.filter(a => a.group === 'key').map(opt).join('') + '</optgroup>'
                 + '<optgroup label="' + escapeHtml('Free Open-Source') + '">' + TX_AGENTS.filter(a => a.group === 'oss').map(opt).join('') + '</optgroup>';
+            if (txState && txState.agent) sel.value = txState.agent;          // drawn again when a mark changes: the choice stays
         }
 
         function txBuildEffortSelect() {
@@ -37548,6 +37742,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         window.onAiKeyTest = function (id, res) {
+            if (akTests[id]) { akKeyDone(id, res || {}); return; }          // a test from Settings > Agent API keys
             const t = txKeyTests[id];
             delete txKeyTests[id];
             if (!t) return;
@@ -37557,6 +37752,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const btn = document.getElementById('txKeyTestBtn');
             if (btn) btn.disabled = false;
             const status = document.getElementById('txConnectModal').classList.contains('show') && txConnectAgent === t.agent ? document.getElementById('txKeyStatus') : null;
+            akMark(ag, !!res.ok && res.saved !== false);
             if (res.ok) {
                 const list = txParseModels(ag, res.body);
                 txStoreModels(ag, list);
@@ -37601,7 +37797,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ag = txAgentDef(t.agent);
             let r = '';
             try { r = String(window.AndroidBridge.aiSaveKey(ag.provider, t.key, t.base) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
-            txRefreshVault();
+            akMark(ag, false);                                                    // saved without a working test: no check mark
             if (r !== 'ok') { txAlert(ag.name, r.replace(/^error:\s*/, '') || 'It could not be saved'); return; }
             showToast('Saved without a working test');
             if (ag.askOnly) { txSettings.connect[ag.id] = 'key'; txSaveSettings(); txCloseConnect(); txAskOnlyConnected(ag); }
@@ -37617,6 +37813,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!confirm('Forget the saved ' + ag.name + ' key' + (ag.api === 'openai-compat' ? ' and server address' : '') + '?')) return;
             try { window.AndroidBridge.aiForgetKey(ag.provider); } catch (e) {}
             txRefreshVault();
+            akMark(ag, false);
             txRenderConnect();
             txSyncUi();
             showToast('Forgotten');
@@ -48692,6 +48889,7 @@ Type any command above (e.g. pm list packages -d)</div>
         window.addEventListener('DOMContentLoaded', () => {
             tabLoadConfig();
             navLoad();
+            smartLoad();
             tabsApplyConfig();
             navApply();
             bnavInit();
