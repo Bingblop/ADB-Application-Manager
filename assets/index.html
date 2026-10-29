@@ -4561,7 +4561,7 @@
                     <div class="mode-alert-desc" id="driftDesc"></div>
                 </div>
                 <button class="mode-alert-btn" onclick="reviewDrift()">Review</button>
-                <button class="mode-alert-btn" onclick="dismissDrift()" style="margin-left:6px;">✕</button>
+                <button class="mode-alert-btn" onclick="dismissDrift()" style="margin-left:6px;" aria-label="Dismiss">✕</button>
             </div>
 
             <!-- Sort and export -->
@@ -5184,12 +5184,12 @@
                     <button class="batch-tool-link" onclick="fmClipSet('mv')">Move</button>
                     <button class="batch-tool-link" id="fmSelCompressBtn" onclick="czOpenSelected()">Compress</button>
                     <button class="batch-tool-link" style="color:var(--status-bloat);" onclick="fmDeleteSelected()">Delete</button>
-                    <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
+                    <button class="batch-tool-link" onclick="fmSelExit()" aria-label="Cancel">✕</button>
                 </div>
                 <div class="fm-selbar" id="fmClipBar" style="display:none;">
                     <span class="fm-count" id="fmClipText"></span>
                     <button class="batch-tool-link" id="fmPasteBtn" onclick="fmPaste()">Paste here</button>
-                    <button class="batch-tool-link" onclick="fmClipClear()">✕</button>
+                    <button class="batch-tool-link" onclick="fmClipClear()" aria-label="Cancel">✕</button>
                 </div>
                 <div id="fmBatchStatus" class="uad-status" style="display:none; margin-bottom:8px;"></div>
                 <div id="fmSearchStatus" class="uad-status" style="display:none; margin-bottom:8px;"></div>
@@ -26200,7 +26200,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     <div class="perm-name${e.d ? ' fm-dir' : ''}">${escapeHtml(flat ? e.p : e.n)}${e.d ? '/' : ''}</div>
                     <div class="perm-sub">${escapeHtml(sub)}</div>
                 </div>
-                <button class="perm-toggle-btn locked" onclick="arcMenu(${i})">⋯</button>
+                <button class="perm-toggle-btn locked" onclick="arcMenu(${i})" aria-label="Menu">⋯</button>
             </div>`;
         }
 

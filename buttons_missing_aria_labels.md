@@ -44,3 +44,18 @@ Here is the list of icon-only buttons or buttons lacking text that require `aria
    - `<button type="button" class="xq-btn" id="xqSheetCancel" onclick="xqSheetClose()"><span id="xqSheetCancelT"></span></button>`
    - `<button type="button" class="xq-btn is-primary" id="xqSheetOk" onclick="xqSheetGo()"><span id="xqSheetOkT"></span></button>`
    - `<button type="button" class="xq-btn is-primary xq-hold" id="xqSheetHold"><span class="xq-ring" aria-hidden="true"></span><span id="xqSheetHoldT"></span></button>`
+
+## Done in v7.19.3
+
+Four of these had neither text nor a `title`, so a screen reader had no name to say. They now have an `aria-label` from a string that is already translated (the page's language engine translates `aria-label` like `title`):
+
+- Drift banner `✕` (`dismissDrift()`): *Dismiss*
+- File Manager selection bar `✕` (`fmSelExit()`): *Cancel*
+- File Manager copy/move bar `✕` (`fmClipClear()`): *Cancel*
+- Archive viewer row `⋯` (`arcMenu(i)`): *Menu*
+
+The others need nothing:
+- The `⋯` / `⋮` menu buttons and the terminal keys have a `title`, which is their accessible name.
+- The terminal and history buttons show their words.
+- The action buttons (`abSvg`) carry `aria-label` and `title`.
+- The bottom bar's More button and the hold-to-confirm sheet's buttons get their words when the page draws them.
