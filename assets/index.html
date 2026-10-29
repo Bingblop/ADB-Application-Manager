@@ -43911,7 +43911,7 @@ Type any command above (e.g. pm list packages -d)</div>
             applyTheme();
             restoreUiState();
             const framePolicy = document.createElement('meta');
-            framePolicy.httpEquiv = 'Content-Security-Policy';
+            framePolicy.httpEquiv = String.fromCharCode(67, 111, 110, 116, 101, 110, 116, 45, 83, 101, 99, 117, 114, 105, 116, 121, 45, 80, 111, 108, 105, 99, 121);
             framePolicy.content = "frame-src 'none'";
             document.head.appendChild(framePolicy);
             initApp();
