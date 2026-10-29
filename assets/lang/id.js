@@ -1,6 +1,8 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "Akhiri dengan satu baris lagi yang berdiri sendiri, diawali \"In short:\" dan menyebutkan dalam satu kalimat paling banyak 15 kata apa fungsi pengaturan itu.",
+"From Ask agent": "Dari Tanya agen",
 "The font changer cannot use this font package's name.": "Pengganti font tidak dapat memakai nama paket font ini.",
 "This font is in use. Choose another font first, then delete it.": "Font ini sedang digunakan. Pilih font lain terlebih dahulu, lalu hapus font ini.",
 "Came with the phone": "Bawaan ponsel",
@@ -5692,6 +5694,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "File yang Anda pilih masih dibaca. Tunggu sebentar."
 },
 p: [
+["Kept with this setting: {0}", "Disimpan bersama pengaturan ini: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} sedang digunakan. Pilih font lain terlebih dahulu, lalu hapus font ini."],
 ["Choose {0} in Font size and style, then Font style.", "Pilih {0} di Ukuran dan gaya font, lalu Gaya font."],
 ["Choose {0} in Font style.", "Pilih {0} di Gaya font."],

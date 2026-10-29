@@ -1,6 +1,8 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "अंत में एक और अलग पंक्ति लिखें जो \"In short:\" से शुरू हो और अधिकतम 15 शब्दों के एक वाक्य में बताए कि यह सेटिंग क्या करती है।",
+"From Ask agent": "\"एजेंट से पूछें\" से",
 "The font changer cannot use this font package's name.": "फ़ॉन्ट चेंजर इस फ़ॉन्ट पैकेज के नाम का इस्तेमाल नहीं कर सकता।",
 "This font is in use. Choose another font first, then delete it.": "यह फ़ॉन्ट इस्तेमाल में है। पहले कोई दूसरा फ़ॉन्ट चुनें, फिर इसे हटाएँ।",
 "Came with the phone": "फ़ोन के साथ आया",
@@ -5692,6 +5694,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "आपकी चुनी हुई फ़ाइलें अभी पढ़ी जा रही हैं। थोड़ा रुकें।"
 },
 p: [
+["Kept with this setting: {0}", "इस सेटिंग के साथ सहेजा गया: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} इस्तेमाल में है। पहले कोई दूसरा फ़ॉन्ट चुनें, फिर इसे हटाएँ।"],
 ["Choose {0} in Font size and style, then Font style.", "फ़ॉन्ट आकार और स्टाइल में, फिर फ़ॉन्ट स्टाइल में {0} चुनें।"],
 ["Choose {0} in Font style.", "फ़ॉन्ट स्टाइल में {0} चुनें।"],

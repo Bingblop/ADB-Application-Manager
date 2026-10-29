@@ -1,6 +1,8 @@
 // Русский (ru): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ru'] = {
 x: {
+"End with one more line, on its own, that starts with \"In short:\" and says in one sentence of at most 15 words what the setting does.": "Закончи ещё одной отдельной строкой, которая начинается с \"In short:\" и одним предложением не длиннее 15 слов говорит, что делает настройка.",
+"From Ask agent": "Из «Спросить агента»",
 "The font changer cannot use this font package's name.": "Смена шрифта не может использовать имя этого пакета шрифта.",
 "This font is in use. Choose another font first, then delete it.": "Этот шрифт используется. Сначала выберите другой шрифт, затем удалите этот.",
 "Came with the phone": "Предустановлен на телефоне",
@@ -5692,6 +5694,7 @@ x: {
 "The files you chose are still being read. Wait a moment.": "Выбранные вами файлы ещё читаются. Подождите немного."
 },
 p: [
+["Kept with this setting: {0}", "Сохранено вместе с этой настройкой: {0}"],
 ["{0} is in use. Choose another font first, then delete it.", "{0} используется. Сначала выберите другой шрифт, затем удалите этот."],
 ["Choose {0} in Font size and style, then Font style.", "Выберите {0} в разделе «Размер и стиль шрифта», затем «Стиль шрифта»."],
 ["Choose {0} in Font style.", "Выберите {0} в разделе «Стиль шрифта»."],

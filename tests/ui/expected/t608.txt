@@ -1,7 +1,7 @@
-ok   1. App Stores at 360 px: the ? is in the mobile-data card and the switch sits below it, apart
+ok   1. App Stores at 360 px: the tab has its ? and the switch sits below it, apart
 ok      a tap on the switch turns it on; the Help Guide stays shut
 ok      no page errors
-ok   1. App Stores at 412 px: the ? is in the mobile-data card and the switch sits below it, apart
+ok   1. App Stores at 412 px: the tab has its ? and the switch sits below it, apart
 ok      a tap on the switch turns it on; the Help Guide stays shut
 ok      the ? still opens the Help Guide
 ok      no page errors
