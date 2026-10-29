@@ -1,0 +1,32 @@
+ok   1. Root: ROOT, the status being asked ("Checking…")
+ok      switched to the system user: the tag follows at once (SYSTEM USER), System emoji locks
+ok      the answer asked under Root is dropped and the status asked again
+ok      the new answer: the font in use, still SYSTEM USER
+ok      the same mode checked again: the status is kept, not asked again
+ok      back to Root: ROOT, the status asked again
+ok      no page errors
+ok   2. no answer: the drop-down says "Choose a font" and stays on, the reason, Try again
+ok      the list: no font marked In use (the font is unknown), nothing locked
+ok      Try again: asked once more, the error and the button go
+ok      unknown again: Default in the list still resets (fontMakerReset), the toast
+ok      no page errors
+ok   3. no /data/app_fonts: SAMSUNG ONLY, the note says why, no drop-down
+ok      the font just built: Use it and Install off, Export on
+ok      the system user, the status asked again and not answered yet: still SAMSUNG ONLY, Install still off
+ok      no working mode (nothing can look): what Root found stays, Install off, no One UI advice to use Root
+ok      no page errors
+ok   4. Default chosen, the Reset fails: the page's sentence, sans.loc as the phone reads it
+ok      the error stays after the status asked again answers
+ok      shown again: a fresh status, no read-back box and no error left
+ok      no page errors
+ok   5. a swap that half worked: the error, "Some files did not change.", ✓ and ✕ per file
+ok      the status asked after it: the swap is on, Undo is there
+ok      another working mode: the read-back box goes with its error
+ok      no page errors
+ok   6. Undo fails: the lead in the page's words, the shell's detail kept, the file read back
+ok      no page errors
+ok   7. both fail: each card has its error and its read-back box, the status asked after them not answered yet
+ok      another working mode meanwhile: the boxes go with their errors at once
+ok      the status asked again answers: the cards show it, still no error or box
+ok      no page errors
+all passed

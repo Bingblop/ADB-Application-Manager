@@ -1,5 +1,6 @@
 import com.bloatware.bingblop.ApkScan;
 import com.bloatware.bingblop.XapkInfo;
+import com.bloatware.bingblop.ApkSigner;
 import org.json.JSONObject;
 import java.io.*;
 import java.nio.file.*;
@@ -15,6 +16,24 @@ public class PureTest {
   }
 
   public static void main(String[] a) throws Exception {
+
+    // ---------- ApkSigner.isV1SignatureEntry ----------
+    check("isV1SignatureEntry MANIFEST.MF", ApkSigner.isV1SignatureEntry("META-INF/MANIFEST.MF"));
+    check("isV1SignatureEntry CERT.RSA", ApkSigner.isV1SignatureEntry("META-INF/CERT.RSA"));
+    check("isV1SignatureEntry CERT.SF", ApkSigner.isV1SignatureEntry("META-INF/CERT.SF"));
+    check("isV1SignatureEntry CERT.DSA", ApkSigner.isV1SignatureEntry("META-INF/CERT.DSA"));
+    check("isV1SignatureEntry CERT.EC", ApkSigner.isV1SignatureEntry("META-INF/CERT.EC"));
+    check("isV1SignatureEntry lowercase", ApkSigner.isV1SignatureEntry("meta-inf/cert.ec"));
+    check("isV1SignatureEntry SIG-FOO", ApkSigner.isV1SignatureEntry("META-INF/SIG-FOO"));
+    check("isV1SignatureEntry SIG-FOO.RSA", ApkSigner.isV1SignatureEntry("META-INF/SIG-FOO.RSA"));
+    check("isV1SignatureEntry BADSIG (not starting with SIG-)", !ApkSigner.isV1SignatureEntry("META-INF/BADSIG"));
+    check("META-INF/services/x is not a signature file", !ApkSigner.isV1SignatureEntry("META-INF/services/x.RSA"));
+    check("META-INF/com/android/build.gradle is kept", !ApkSigner.isV1SignatureEntry("META-INF/com/android/build.gradle"));
+    check("resources.arsc is kept", !ApkSigner.isV1SignatureEntry("resources.arsc"));
+    check("META-INF starts but no slash", !ApkSigner.isV1SignatureEntry("META-INF.RSA"));
+    check("META-INF/ with no name", !ApkSigner.isV1SignatureEntry("META-INF/"));
+    check("META-INF/.RSA (starts with .RSA)", ApkSigner.isV1SignatureEntry("META-INF/.RSA"));
+
     // ---------- XapkInfo.normalizeDest ----------
     check("normalize plain obb path", "Android/obb/com.foo/main.1.com.foo.obb".equals(XapkInfo.normalizeDest("Android/obb/com.foo/main.1.com.foo.obb")));
     check("normalize leading slash + sdcard/ prefix", "Android/obb/com.foo/x.obb".equals(XapkInfo.normalizeDest("/sdcard/Android/obb/com.foo/x.obb")));

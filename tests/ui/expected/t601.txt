@@ -1,0 +1,124 @@
+ok   1. Roboto, not on the phone: Download (primary), the number of files once the details came
+ok      the details: "2 font files"
+ok      the section drawn again with them: the focus stays on Download
+ok   2. Download: gfontsDownload, an open-ended bar, "Starting…", Cancel; no Download button
+ok      the focus goes from Download (gone) to Cancel, not to the body
+ok   3. progress: "File 1 of 2 · 150 KB of 300 KB", the bar at 25%
+ok      the first progress (the bar drawn again, no longer open-ended): the focus stays on Cancel
+ok      the first file done: 50%
+ok      the second file: "File 2 of 2", past 50%
+ok      left and opened again while it runs: the bar where it was
+ok   4. done: a toast, "Downloaded · 2 files · 621 KB"
+ok      About is not drawn again (its details came): the Licence text opened meanwhile stays open
+ok      a variable family: nothing to choose; Use in Make a font (the one primary), Save to phone, Delete
+ok      its card: Downloaded
+ok   5. Cancel: gfontsCancel, "Cancelling…", Cancel waits
+ok      later progress does not change it
+ok      cancelled: Download again, no error, not on the phone
+ok      the focus, which Cancel (waiting) could not keep, is on Download
+ok   6. a failed download: the page's sentence, Download again
+ok      its page shows it: no toast says it again
+ok      Download again: the error goes
+ok      a network failure: "The download failed (Connection reset). Check the connection and try again."
+ok   6b. failed after Back to the list: a toast "Inter was not downloaded. ..." with the reason; its card is not Downloaded
+ok      its page opened again says why, with Download
+ok      failed after the sheet closed: the same toast, and the reason kept for its page
+ok      the sheet and its page opened again: the reason, Download
+ok      cancelled, then the sheet closed: no toast, no error
+ok      a failure on the phone: "The app could not make the family's folder." as itself
+ok      a failure on the phone: "The family's old folder could not be moved aside." as itself
+ok      a failure on the phone: "The download could not be put in place." as itself
+ok      a full phone: "There is not enough free space on this phone."
+ok   7. Lato on the phone: "Downloaded · 10 files", the Regular and Bold choices
+ok   8. Save to phone: gfontsSave, "Saving…" waits, Delete waits
+ok      the focus goes from Save to phone (waiting) to Use in Make a font
+ok      the Export under the build result (the font just made) waits too
+ok      Delete is not asked while it saves
+ok      saved: a toast with the file's name; the buttons back
+ok      the focus stays on Use in Make a font
+ok   9. Delete: gfontsDelete, at once (no question), a toast, Download again
+ok      the focus goes from Delete (gone) to Download
+ok      its card has no Downloaded badge any more
+ok      while the build result's Export saves the font just made: Save to phone waits
+ok      Save to phone asked meanwhile sends nothing
+ok      the font saved ("Saved Inter Variable.apk"): Save to phone on again
+ok      no page errors
+ok   10. the save screen closed: nothing said, Save to phone again
+ok      no page errors
+ok      a failed save: the page's sentence
+ok      its page shows it: no toast says it again
+ok      no page errors
+ok   10b. failed after Back to the list: a toast "Lato was not saved. ..." with the reason
+ok      Lato's page opened again says why, Save to phone on
+ok      failed after the sheet closed: the same toast, the reason kept
+ok      failed while Roboto's page shows: the same toast; Roboto's Save to phone on again, no word of Lato's on its page
+ok      no page errors
+ok      the save screen closed after Back: nothing said
+ok      no page errors
+ok      the app's "The font family could not be saved: ..." is the page's sentence (not "Something went wrong")
+ok      no page errors
+ok   12. Downloaded: Roboto and Lato, "2 of 64"
+ok      Lato deleted on its page, then Back: Roboto alone, "1 of 64"
+ok      its download started, Back while it runs: still Roboto alone
+ok      it finishes while the list shows: Lato is back, Downloaded, "2 of 64"
+ok      a keyboard's focus on Roboto's card stays there when Lato's download finishes (not lost to the page)
+ok      without the filter: Inter's card gets Downloaded when its download finishes
+ok      the focus on Lato's card stays there, the list scrolled where it was
+ok      no page errors
+ok   13. the new list has 63 families and Lato is on the phone: the search button counts 64, as the sheet does
+ok      Lato left the list but is on the phone: under Downloaded, its card says so
+ok      its page: Downloaded with Use in Make a font, Save to phone and Delete, and a note that it left Google Fonts
+ok      its details and previews are not asked for (Google Fonts no longer knows it): "No preview", no error
+ok      About: its licence as the download has it, no link to fonts.google.com
+ok      Save to phone: gfontsSave, saved
+ok      Use in Make a font: its Regular and Bold go into Make a font
+ok      Delete asks first, over the sheet: "Delete Lato?", it cannot be downloaded again; nothing deleted yet
+ok      Cancel: nothing deleted, its page stays
+ok      Delete: gfontsDelete, back to the list, its card gone ("No fonts match.", "0 of 63")
+ok      the focus on the empty list's Clear filters (its card is gone), not left on the closed question
+ok      the search button counts 63 again
+ok      no page errors
+ok   13b. the tab shown, 63 families listed and Lato on the phone: the button says "64 families", as the sheet
+ok      no page errors
+ok   14. Arimo's page open while the stale list updates (its details asked)
+ok      the new list has no Arimo: back to the list, its card gone, "63 families"
+ok      its details answer late: the list stays
+ok      no page errors
+ok   15. Lato's page (on the phone), its details came: the link, no note; About with its description and Licence text
+ok      Refresh brings a list without Lato: the page stays, with the note, without the link; Use, Save and Delete
+ok      About: only the licence its download recorded; the details from before it left (description, Licence text, designer) are not shown
+ok      no page errors
+ok   15b. Lato's details asked, then the list without it and their error: the note; About only the licence, no reason or Retry
+ok      its page opened again: the same (the error from before it left is not shown)
+ok      no page errors
+ok   11. busy: "This font family is already downloading."
+ok      "This font family is being saved. Wait for it to finish."
+ok      "The save screen is already open."
+ok      "This font family is downloading. Cancel it first." is said as itself
+ok      no page errors
+ok   16. the Help Guide: the progress sizes are a file's as it comes over the network, the "Downloaded" size the space on the phone (not their sum)
+ok      the undo table has a row for a downloaded Google Fonts family: Delete on its page; a family no longer on Google Fonts asks first
+ok   17. Lato, not on the phone, its details not to be had: the reason and Retry, no Licence row
+ok      downloaded on its page: "Licence SIL Open Font License 1.1" from the download (no Licence text); the reason and Retry stay
+ok      deleted there: Download, and the Licence row goes
+ok      no page errors
+ok   18. a keyboard on Open on fonts.google.com while the details come (here their reason): About drawn again, the focus stays on the link
+ok      Retry: About holds the focus (read: "Getting the details from Google Fonts…"), not the body
+ok      they fail again: the focus on the new Retry
+ok      Retry, and the details come: About, then its first control (More, Lato's description is long)
+ok      More: the whole description, More gone, the focus on the description it opened
+ok      a newer list, its details still on their way: About keeps the older ones (no "Getting the details…"), the focus on the description
+ok      a newer list draws About again: the focus stays on the description (still open)
+ok      and on Licence text, opened: it stays open
+ok      a newer list whose details cannot be had: About keeps the older ones (no reason, no Retry), the focus on Licence text (still open)
+ok      a newer list whose details are refused at once (busy): About keeps the older ones (no reason, no Retry), the focus on Licence text
+ok      Lato opened again: About shows them at once and asks once more; the newer ones come
+ok      a family's page opened again starts with its Licence text closed, as its description
+ok      no page errors
+ok   19. Licence text opened, Tab: the focus on the text itself (it scrolls: a keyboard can read all of it), with no name in place of the text
+ok      a newer list draws About again: the focus stays on the text, read to where it was
+ok      Back, Lato again, then Inter again (their details came before): each page's Licence text closed, and opened at its top, not where the last page left it
+ok      a slider moved (wght), and a newer list changes Cairo's styles: the sliders from the defaults, the focus still on wght
+ok      one more that leaves Cairo with no axes: no sliders, the focus on the size slider
+ok      no page errors
+all passed

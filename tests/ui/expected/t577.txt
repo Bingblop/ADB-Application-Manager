@@ -1,0 +1,48 @@
+1) opened: {"shown":true,"title":"Edit Saved List","count":"3 apps in this list","diff":"","rows":["com.android.chrome*","com.gone.app*","com.whatsapp*","com.amazon.mShop.android.shopping","com.samsung.android.bixby.agent","com.facebook.katana","org.mozilla.firefox","com.microsoft.skydrive"],"checked":3,"text":["com.whatsapp","com.gone.app","com.android.chrome"],"chips":["All*","In this list","System","User"],"empty":"","more":""}
+1a. Edit opens "Edit Saved List": true
+1b. the list's apps are ticked and on top, the rest follow by name: true com.android.chrome* com.gone.app* com.whatsapp* com.amazon.mShop.android.shopping com.samsung.android.bixby.agent com.facebook.katana org.mozilla.firefox com.microsoft.skydrive
+1c. the tick boxes say which are ticked (aria-checked): true 3
+1d. the count line, and no change yet: true 3 apps in this list |
+1e. the chips: All (on), In this list, System, User (the Apps tab's order): true All*,In this list,System,User
+1f. the package that is not on this phone: a letter for its icon (as in Connected Devices) and NOT INSTALLED: true {"badge":"NOT INSTALLED","letter":"C","img":false}
+1g. an uninstalled and a frozen app keep the Apps tab's row tint: true app-card le-row uninstalled | app-card le-row frozen
+1h. the icons of the rows are asked for (not of the package that is not on this phone): true icons:com.amazon.mShop.android.shopping,com.samsung.android.bixby.agent,com.android.chrome,com.facebook.katana,org.mozilla.firefox,com.microsoft.skydrive,com.wh
+1i. an icon that arrives lands on its row: true
+2) after a tick and an untick: {"rows":["com.android.chrome","com.gone.app*","com.whatsapp*","com.amazon.mShop.android.shopping","com.samsung.android.bixby.agent","com.facebook.katana*","org.mozilla.firefox","com.microsoft.skydrive"],"text":["com.whatsapp","com.gone.app","com.facebook.katana"],"count":"3 apps in this list","diff":"1 added · 1 removed"}
+2a. nothing moved: true
+2b. Facebook ticked, Chrome not: true com.android.chrome com.gone.app* com.whatsapp* com.amazon.mShop.android.shopping com.samsung.android.bixby.agent com.facebook.katana* org.mozilla.firefox com.microsoft.skydrive
+2c. the package box: the list's order, the new one at the end: true com.whatsapp,com.gone.app,com.facebook.katana
+2d. the count line says what changed: true 3 apps in this list | 1 added · 1 removed
+2e. the row just ticked gets the sweep of light: true
+3a. In this list: only the ticked rows: true com.gone.app* com.whatsapp* com.facebook.katana*
+3b. a row unticked under In this list stays, so a second tap brings it back: true com.gone.app* com.whatsapp com.facebook.katana* | 2 apps in this list
+3c. User (by the keyboard): the user apps only, no system app and no package that is not on this phone: true com.whatsapp* com.amazon.mShop.android.shopping com.facebook.katana* org.mozilla.firefox com.microsoft.skydrive
+3d. System: the system apps only: true com.android.chrome com.samsung.android.bixby.agent
+4a. search by name: true org.mozilla.firefox
+4b. search by package: true com.facebook.katana*
+4c. nothing found: "No app matches.": true No app matches.
+4d. Clear search brings every row back: true 8
+5) after typing: {"rows":["com.android.chrome","com.gone.app*","com.typed.only*","com.whatsapp*","com.amazon.mShop.android.shopping","com.samsung.android.bixby.agent","com.facebook.katana*","org.mozilla.firefox*","com.microsoft.skydrive"],"count":"5 apps in this list","diff":"3 added · 1 removed"}
+5a. Firefox typed: ticked: true
+5b. a typed package that is not on this phone: a ticked row of its own: true com.android.chrome com.gone.app* com.typed.only* com.whatsapp* com.amazon.mShop.android.shopping com.samsung.android.bixby.agent com.facebook.katana* org.mozilla.firefox* com.microsoft.skydrive
+5c. the count line follows the text (duplicates and blank lines left out): true 5 apps in this list | 3 added · 1 removed
+5d. a tick rewrites the box, one package per line: true com.whatsapp,com.gone.app,com.facebook.katana,org.mozilla.firefox
+5e. an unticked package that is not on this phone keeps its row until the sheet closes: true com.android.chrome com.gone.app* com.typed.only com.whatsapp* com.amazon.mShop.android.shopping com.samsung.android.bixby.agent com.facebook.katana* org.mozilla.firefox* com.microsoft.skydrive
+6. a hold ticks the row and opens no app menu: true {"menu":false,"on":true}
+7) saved: {"shown":false,"lists":[{"id":"list_q","name":"Morning","packages":["com.whatsapp","com.gone.app","com.facebook.katana","org.mozilla.firefox","com.amazon.mShop.android.shopping"]}],"bridge":1,"calls":["quicklist:list_q"],"meta":"5 apps"}
+7a. saved in place: one list, its id, the new apps in the box's order: true [{"id":"list_q","name":"Morning","packages":["com.whatsapp","com.gone.app","com.facebook.katana","org.mozilla.firefox","com.amazon.mShop.android.shopping"]}]
+7b. written to the phone, the quick list nudged, the sheet closed, the card says 5 apps: true {"shown":false,"lists":[{"id":"list_q","name":"Morning","packages":["com.whatsapp","com.gone.app","com.facebook.katana","org.mozilla.firefox","com.amazon.mShop.android.shopping"]}],"bridge":1,"calls":["quicklist:list_q"],"meta":"5 apps"}
+8a. reopened: the list's five on top (by name), ticked, no change counted: true com.amazon.mShop.android.shopping* com.gone.app* com.facebook.katana* org.mozilla.firefox* com.whatsapp* com.samsung.android.bixby.agent com.android.chrome com.microsoft.skydrive
+8b. the sheet opens on All, an empty search and the text folded: true
+8c. Cancel: nothing saved: true
+9a. New List: "Create Saved List", nothing ticked, by name: true {"shown":true,"title":"Create Saved List","count":"No apps in this list yet","diff":"","rows":["com.amazon.mShop.android.shopping","com.samsung.android.bixby.agent","com.android.chrome","com.facebook.katana","org.mozilla.firefox","com.microsoft.skydrive","com.whatsapp"],"checked":0,"text":[],"chips":["All*","In this list","System","User"],"empty":"","more":""}
+9b. two ticks: 2 apps, and a new list counts no "added": true 2 apps in this list |
+9c. the new list is at the top with its two apps: true Social:com.whatsapp+com.facebook.katana | Morning:com.whatsapp+com.gone.app+com.facebook.katana+org.mozilla.firefox+com.amazon.mShop.android.shopping
+10. the rows fit the sheet, scroll inside it, and Save stays on screen: true {"wide":0,"overflowX":false,"scrolls":true,"listH":true,"saveOnScreen":true,"sheetInView":true}
+10b. the search box is one line high and the rows take the room that is left: true
+11a. 150 rows drawn, and Show more says what is left: true 150 | Show 150 more · 178 left
+11b. Show more: 300 rows: true 300 | Show 28 more · 28 left
+11c. search finds a row past the first page (after a pause in typing, on a long list): true 300 | com.bulk.app319
+12a. no apps, a new list: "No Applications Loaded", as on the Apps tab: true No Applications Loaded
+12b. no apps, a saved list: its packages keep ticked rows without a tag, under the empty state: true {"rows":["com.amazon.mShop.android.shopping*","com.facebook.katana*","com.gone.app*","com.whatsapp*","org.mozilla.firefox*"],"noTag":0,"firstIsEmpty":true,"empty":"No Applications Loaded"}
+page errors: none

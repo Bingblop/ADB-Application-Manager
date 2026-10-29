@@ -1,0 +1,17 @@
+ok   1. the request: name, Regular token and point, Bold same token at wght 700, Twemoji, scale 1, no rebuild
+ok   2. building: the progress shows, Cancel appears, Build and the choices are locked
+ok   3. every stage is named, with its counts where the app gives them
+ok      the bar fills stage by stage and never goes back
+ok   4. done: the progress goes, Build is back, Cancel hidden
+ok      the result names the font, says it can be chosen later under Phone font, and lists the app's warning
+ok      under it, the buttons for that font: Use it, Install, Export, Make again, all on
+ok      the new font is in the Phone font list by its name and package, made on this phone and not installed, between Inter Display and Lato
+ok      no page errors
+ok   5. Cancel: fontMakerCancel with the build's job, "Cancelling…", Cancel itself disabled
+ok      the app's answer: "The build was cancelled.", no buttons under it, nothing added to the Phone font list
+ok      no page errors
+ok   6. a static Regular: no point, no Bold, no emoji in the request
+ok      too_many_glyphs is said in the page's words, in the error colour
+ok   7. an app build without fontMakerBuild: "Needs the app build", no progress
+ok      no page errors
+all passed

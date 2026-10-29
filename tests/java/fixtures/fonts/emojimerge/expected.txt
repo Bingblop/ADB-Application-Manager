@@ -1,0 +1,385 @@
+# Written by make_fixtures.py (expect, verify): what fontTools and HarfBuzz say about the fixtures, for EmojiMergeTest. See README.md.
+font Lato-sub.ttf dbc59987fdcecdd8ccbac6abc3b68ee0fbe4f6bdfe76f754cac4bf85b093eb12 467 2000
+font Inter-sub.ttf f91fb1bca0019d0cea06423f3383fcc49597bda0a8dde8f1e0455a60b5bbfbd2 687 2048
+font NotoSans-kern.ttf 6af159b182811a8eafd14e8a82f7e3c90ed8e78cad9987331d468b01760a56c0 388 1000
+font Noto-sub.ttf 47eea8e4130f9dd733219dd2728e1717da33b9cdb87e46797602f26c21356bcd 772 1024
+font Twemoji-sub.ttf d9c8f2f447cd62ec1694b6fc77a64f17ccbef7199f231bf26bc3bc1675262ee2 624 512
+font Synth-COLRv1.ttf 324b257c18ae7e934f825e7570f1816fd94c13d0d4ef218f77c6aa66f9d345d0 13 1000
+font Synth-COLRv0.ttf 9f2199c07520b8a89921a066cdb9f59a776b2f00c326a543f41fe08d2827864c 7 2048
+seq Lato-sub.ttf 1F600 : 0
+seq Lato-sub.ttf 1F44D : 0
+seq Lato-sub.ttf 1F44D 1F3FD : 0 0
+seq Lato-sub.ttf 2764 : 0
+seq Lato-sub.ttf 2764 FE0F : 0
+seq Lato-sub.ttf 2764 FE0E : 0
+seq Lato-sub.ttf 263A : 0
+seq Lato-sub.ttf 263A FE0F : 0
+seq Lato-sub.ttf A9 : 182
+seq Lato-sub.ttf A9 FE0F : 182
+seq Lato-sub.ttf A9 FE0E : 182
+seq Lato-sub.ttf AE FE0F : 183
+seq Lato-sub.ttf 2122 : 184
+seq Lato-sub.ttf 2122 FE0F : 184
+seq Lato-sub.ttf 2122 FE0E : 184
+seq Lato-sub.ttf 2194 : 262
+seq Lato-sub.ttf 2194 FE0F : 262
+seq Lato-sub.ttf 2194 FE0E : 262
+seq Lato-sub.ttf 23 FE0F 20E3 : 192 0
+seq Lato-sub.ttf 31 FE0F 20E3 : 222 0
+seq Lato-sub.ttf 31 20E3 : 222 0
+seq Lato-sub.ttf 2A FE0F 20E3 : 173 0
+seq Lato-sub.ttf 31 : 222
+seq Lato-sub.ttf 31 FE0F : 222
+seq Lato-sub.ttf 1F468 200D 1F469 200D 1F467 200D 1F466 : 0 0 0 0
+seq Lato-sub.ttf 1F469 200D 1F4BB : 0 0
+seq Lato-sub.ttf 1F469 1F3FD 200D 2695 FE0F : 0 0 0
+seq Lato-sub.ttf 1F469 1F3FD 200D 2695 : 0 0 0
+seq Lato-sub.ttf 1F3C3 200D 2640 FE0F : 0 0
+seq Lato-sub.ttf 1F3C3 200D 2640 : 0 0
+seq Lato-sub.ttf 1F642 200D 2194 FE0F : 0 262
+seq Lato-sub.ttf 1F642 200D 2194 : 0 262
+seq Lato-sub.ttf 1F1FA 1F1F8 : 0 0
+seq Lato-sub.ttf 1F1EF 1F1F5 : 0 0
+seq Lato-sub.ttf 1F1FA : 0
+seq Lato-sub.ttf 1F3F4 E0067 E0062 E0065 E006E E0067 E007F : 0
+seq Lato-sub.ttf 1F3F4 E0067 E0062 E0073 E0063 E0074 E007F : 0
+seq Lato-sub.ttf 1F3F4 E0067 E007F : 0
+seq Lato-sub.ttf 1F3F4 : 0
+seq Lato-sub.ttf 2764 FE0F 200D 1F525 : 0 0
+seq Lato-sub.ttf 2764 200D 1F525 : 0 0
+seq Lato-sub.ttf 261D 1F3FD : 0 0
+seq Lato-sub.ttf 261D FE0F 1F3FD : 0 0
+seq Lato-sub.ttf 261D : 0
+seq Lato-sub.ttf 2640 : 0
+seq Lato-sub.ttf 2640 FE0F : 0
+seq Lato-sub.ttf 2B50 : 0
+seq Lato-sub.ttf 1F3F3 FE0F 200D 1F308 : 0 0
+seq Lato-sub.ttf 1F600 1F44D 1F3FF : 0 0 0
+seq Lato-sub.ttf 1F7E0 : 0
+seq Lato-sub.ttf 1F7E0 1F7E0 : 0 0
+seq Lato-sub.ttf 1F7E0 302 1F7E0 : 0 0 0
+seq Lato-sub.ttf 1F7E1 : 0
+seq Lato-sub.ttf 1F7E2 : 0
+seq Lato-sub.ttf 1F7E3 : 0
+seq Lato-sub.ttf 1F7E3 302 : 0 0
+seq Lato-sub.ttf 1F7E4 : 0
+seq Lato-sub.ttf 1F7E4 302 : 0 0
+seq Lato-sub.ttf 1F7E5 : 0
+seq Lato-sub.ttf 1F7E6 : 0
+seq Lato-sub.ttf 1F7E7 : 0
+seq Lato-sub.ttf 1F7E7 FE0F : 0
+seq Lato-sub.ttf 1F7E0 200D 1F7E1 : 0 0
+seq Inter-sub.ttf 1F600 : 0
+seq Inter-sub.ttf 1F44D : 0
+seq Inter-sub.ttf 1F44D 1F3FD : 0 0
+seq Inter-sub.ttf 2764 : 516
+seq Inter-sub.ttf 2764 FE0F : 516
+seq Inter-sub.ttf 2764 FE0E : 516
+seq Inter-sub.ttf 263A : 0
+seq Inter-sub.ttf 263A FE0F : 0
+seq Inter-sub.ttf A9 : 317
+seq Inter-sub.ttf A9 FE0F : 317
+seq Inter-sub.ttf A9 FE0E : 317
+seq Inter-sub.ttf AE FE0F : 316
+seq Inter-sub.ttf 2122 : 318
+seq Inter-sub.ttf 2122 FE0F : 318
+seq Inter-sub.ttf 2122 FE0E : 318
+seq Inter-sub.ttf 2194 : 497
+seq Inter-sub.ttf 2194 FE0F : 497
+seq Inter-sub.ttf 2194 FE0E : 497
+seq Inter-sub.ttf 23 FE0F 20E3 : 267 0
+seq Inter-sub.ttf 31 FE0F 20E3 : 176 0
+seq Inter-sub.ttf 31 20E3 : 176 0
+seq Inter-sub.ttf 2A FE0F 20E3 : 314 0
+seq Inter-sub.ttf 31 : 176
+seq Inter-sub.ttf 31 FE0F : 176
+seq Inter-sub.ttf 1F468 200D 1F469 200D 1F467 200D 1F466 : 0 0 0 0
+seq Inter-sub.ttf 1F469 200D 1F4BB : 0 0
+seq Inter-sub.ttf 1F469 1F3FD 200D 2695 FE0F : 0 0 0
+seq Inter-sub.ttf 1F469 1F3FD 200D 2695 : 0 0 0
+seq Inter-sub.ttf 1F3C3 200D 2640 FE0F : 0 0
+seq Inter-sub.ttf 1F3C3 200D 2640 : 0 0
+seq Inter-sub.ttf 1F642 200D 2194 FE0F : 0 497
+seq Inter-sub.ttf 1F642 200D 2194 : 0 497
+seq Inter-sub.ttf 1F1FA 1F1F8 : 0 0
+seq Inter-sub.ttf 1F1EF 1F1F5 : 0 0
+seq Inter-sub.ttf 1F1FA : 0
+seq Inter-sub.ttf 1F3F4 E0067 E0062 E0065 E006E E0067 E007F : 0
+seq Inter-sub.ttf 1F3F4 E0067 E0062 E0073 E0063 E0074 E007F : 0
+seq Inter-sub.ttf 1F3F4 E0067 E007F : 0
+seq Inter-sub.ttf 1F3F4 : 0
+seq Inter-sub.ttf 2764 FE0F 200D 1F525 : 516 0
+seq Inter-sub.ttf 2764 200D 1F525 : 516 0
+seq Inter-sub.ttf 261D 1F3FD : 0 0
+seq Inter-sub.ttf 261D FE0F 1F3FD : 0 0
+seq Inter-sub.ttf 261D : 0
+seq Inter-sub.ttf 2640 : 0
+seq Inter-sub.ttf 2640 FE0F : 0
+seq Inter-sub.ttf 2B50 : 0
+seq Inter-sub.ttf 1F3F3 FE0F 200D 1F308 : 0 0
+seq Inter-sub.ttf 1F600 1F44D 1F3FF : 0 0 0
+seq Inter-sub.ttf 1F7E0 : 0
+seq Inter-sub.ttf 1F7E0 1F7E0 : 0 0
+seq Inter-sub.ttf 1F7E0 302 1F7E0 : 0 0 0
+seq Inter-sub.ttf 1F7E1 : 0
+seq Inter-sub.ttf 1F7E2 : 0
+seq Inter-sub.ttf 1F7E3 : 0
+seq Inter-sub.ttf 1F7E3 302 : 0 0
+seq Inter-sub.ttf 1F7E4 : 0
+seq Inter-sub.ttf 1F7E4 302 : 0 0
+seq Inter-sub.ttf 1F7E5 : 0
+seq Inter-sub.ttf 1F7E6 : 0
+seq Inter-sub.ttf 1F7E7 : 0
+seq Inter-sub.ttf 1F7E7 FE0F : 0
+seq Inter-sub.ttf 1F7E0 200D 1F7E1 : 0 0
+seq NotoSans-kern.ttf 1F600 : 0
+seq NotoSans-kern.ttf 1F44D : 0
+seq NotoSans-kern.ttf 1F44D 1F3FD : 0 0
+seq NotoSans-kern.ttf 2764 : 0
+seq NotoSans-kern.ttf 2764 FE0F : 0
+seq NotoSans-kern.ttf 2764 FE0E : 0
+seq NotoSans-kern.ttf 263A : 0
+seq NotoSans-kern.ttf 263A FE0F : 0
+seq NotoSans-kern.ttf A9 : 105
+seq NotoSans-kern.ttf A9 FE0F : 105
+seq NotoSans-kern.ttf A9 FE0E : 105
+seq NotoSans-kern.ttf AE FE0F : 110
+seq NotoSans-kern.ttf 2122 : 206
+seq NotoSans-kern.ttf 2122 FE0F : 206
+seq NotoSans-kern.ttf 2122 FE0E : 206
+seq NotoSans-kern.ttf 2194 : 0
+seq NotoSans-kern.ttf 2194 FE0F : 0
+seq NotoSans-kern.ttf 2194 FE0E : 0
+seq NotoSans-kern.ttf 23 FE0F 20E3 : 4 0
+seq NotoSans-kern.ttf 31 FE0F 20E3 : 18 0
+seq NotoSans-kern.ttf 31 20E3 : 18 0
+seq NotoSans-kern.ttf 2A FE0F 20E3 : 11 0
+seq NotoSans-kern.ttf 31 : 18
+seq NotoSans-kern.ttf 31 FE0F : 18
+seq NotoSans-kern.ttf 1F468 200D 1F469 200D 1F467 200D 1F466 : 0 0 0 0
+seq NotoSans-kern.ttf 1F469 200D 1F4BB : 0 0
+seq NotoSans-kern.ttf 1F469 1F3FD 200D 2695 FE0F : 0 0 0
+seq NotoSans-kern.ttf 1F469 1F3FD 200D 2695 : 0 0 0
+seq NotoSans-kern.ttf 1F3C3 200D 2640 FE0F : 0 0
+seq NotoSans-kern.ttf 1F3C3 200D 2640 : 0 0
+seq NotoSans-kern.ttf 1F642 200D 2194 FE0F : 0 0
+seq NotoSans-kern.ttf 1F642 200D 2194 : 0 0
+seq NotoSans-kern.ttf 1F1FA 1F1F8 : 0 0
+seq NotoSans-kern.ttf 1F1EF 1F1F5 : 0 0
+seq NotoSans-kern.ttf 1F1FA : 0
+seq NotoSans-kern.ttf 1F3F4 E0067 E0062 E0065 E006E E0067 E007F : 0
+seq NotoSans-kern.ttf 1F3F4 E0067 E0062 E0073 E0063 E0074 E007F : 0
+seq NotoSans-kern.ttf 1F3F4 E0067 E007F : 0
+seq NotoSans-kern.ttf 1F3F4 : 0
+seq NotoSans-kern.ttf 2764 FE0F 200D 1F525 : 0 0
+seq NotoSans-kern.ttf 2764 200D 1F525 : 0 0
+seq NotoSans-kern.ttf 261D 1F3FD : 0 0
+seq NotoSans-kern.ttf 261D FE0F 1F3FD : 0 0
+seq NotoSans-kern.ttf 261D : 0
+seq NotoSans-kern.ttf 2640 : 0
+seq NotoSans-kern.ttf 2640 FE0F : 0
+seq NotoSans-kern.ttf 2B50 : 0
+seq NotoSans-kern.ttf 1F3F3 FE0F 200D 1F308 : 0 0
+seq NotoSans-kern.ttf 1F600 1F44D 1F3FF : 0 0 0
+seq NotoSans-kern.ttf 1F7E0 : 0
+seq NotoSans-kern.ttf 1F7E0 1F7E0 : 0 0
+seq NotoSans-kern.ttf 1F7E0 302 1F7E0 : 0 0 0
+seq NotoSans-kern.ttf 1F7E1 : 0
+seq NotoSans-kern.ttf 1F7E2 : 0
+seq NotoSans-kern.ttf 1F7E3 : 0
+seq NotoSans-kern.ttf 1F7E3 302 : 0 0
+seq NotoSans-kern.ttf 1F7E4 : 0
+seq NotoSans-kern.ttf 1F7E4 302 : 0 0
+seq NotoSans-kern.ttf 1F7E5 : 0
+seq NotoSans-kern.ttf 1F7E6 : 0
+seq NotoSans-kern.ttf 1F7E7 : 0
+seq NotoSans-kern.ttf 1F7E7 FE0F : 0
+seq NotoSans-kern.ttf 1F7E0 200D 1F7E1 : 0 0
+seq Noto-sub.ttf 1F600 : 202
+seq Noto-sub.ttf 1F44D : 43
+seq Noto-sub.ttf 1F44D 1F3FD : 46
+seq Noto-sub.ttf 2764 : 217
+seq Noto-sub.ttf 2764 FE0F : 217
+seq Noto-sub.ttf 2764 FE0E : 217
+seq Noto-sub.ttf 263A : 214
+seq Noto-sub.ttf 263A FE0F : 214
+seq Noto-sub.ttf A9 : 16
+seq Noto-sub.ttf A9 FE0F : 16
+seq Noto-sub.ttf A9 FE0E : 16
+seq Noto-sub.ttf AE FE0F : 17
+seq Noto-sub.ttf 2122 : 206
+seq Noto-sub.ttf 2122 FE0F : 206
+seq Noto-sub.ttf 2122 FE0E : 206
+seq Noto-sub.ttf 2194 : 207
+seq Noto-sub.ttf 2194 FE0F : 207
+seq Noto-sub.ttf 2194 FE0E : 207
+seq Noto-sub.ttf 23 FE0F 20E3 : 11
+seq Noto-sub.ttf 31 FE0F 20E3 : 15
+seq Noto-sub.ttf 31 20E3 : 15
+seq Noto-sub.ttf 2A FE0F 20E3 : 13
+seq Noto-sub.ttf 31 : 14
+seq Noto-sub.ttf 31 FE0F : 14
+seq Noto-sub.ttf 1F468 200D 1F469 200D 1F467 200D 1F466 : 115
+seq Noto-sub.ttf 1F469 200D 1F4BB : 196
+seq Noto-sub.ttf 1F469 1F3FD 200D 2695 FE0F : 149
+seq Noto-sub.ttf 1F469 1F3FD 200D 2695 : 149
+seq Noto-sub.ttf 1F3C3 200D 2640 FE0F : 34
+seq Noto-sub.ttf 1F3C3 200D 2640 : 34
+seq Noto-sub.ttf 1F642 200D 2194 FE0F : 204
+seq Noto-sub.ttf 1F642 200D 2194 : 204
+seq Noto-sub.ttf 1F1FA 1F1F8 : 225
+seq Noto-sub.ttf 1F1EF 1F1F5 : 221
+seq Noto-sub.ttf 1F1FA : 21
+seq Noto-sub.ttf 1F3F4 E0067 E0062 E0065 E006E E0067 E007F : 226
+seq Noto-sub.ttf 1F3F4 E0067 E0062 E0073 E0063 E0074 E007F : 227
+seq Noto-sub.ttf 1F3F4 E0067 E007F : 220
+seq Noto-sub.ttf 1F3F4 : 37
+seq Noto-sub.ttf 2764 FE0F 200D 1F525 : 218
+seq Noto-sub.ttf 2764 200D 1F525 : 218
+seq Noto-sub.ttf 261D 1F3FD : 211
+seq Noto-sub.ttf 261D FE0F 1F3FD : 211
+seq Noto-sub.ttf 261D : 208
+seq Noto-sub.ttf 2640 : 215
+seq Noto-sub.ttf 2640 FE0F : 215
+seq Noto-sub.ttf 2B50 : 219
+seq Noto-sub.ttf 1F3F3 FE0F 200D 1F308 : 36
+seq Noto-sub.ttf 1F600 1F44D 1F3FF : 202 48
+seq Twemoji-sub.ttf 1F600 : 35
+seq Twemoji-sub.ttf 1F44D : 27
+seq Twemoji-sub.ttf 1F44D 1F3FD : 148
+seq Twemoji-sub.ttf 2764 : 11
+seq Twemoji-sub.ttf 2764 FE0F : 605
+seq Twemoji-sub.ttf 2764 FE0E : 11
+seq Twemoji-sub.ttf 263A : 8
+seq Twemoji-sub.ttf 263A FE0F : 589
+seq Twemoji-sub.ttf A9 : 0
+seq Twemoji-sub.ttf A9 FE0F : 622
+seq Twemoji-sub.ttf A9 FE0E : 0
+seq Twemoji-sub.ttf AE FE0F : 623
+seq Twemoji-sub.ttf 2122 : 0
+seq Twemoji-sub.ttf 2122 FE0F : 568
+seq Twemoji-sub.ttf 2122 FE0E : 0
+seq Twemoji-sub.ttf 2194 : 6
+seq Twemoji-sub.ttf 2194 FE0F : 571
+seq Twemoji-sub.ttf 2194 FE0E : 6
+seq Twemoji-sub.ttf 23 FE0F 20E3 : 576
+seq Twemoji-sub.ttf 31 FE0F 20E3 : 619
+seq Twemoji-sub.ttf 31 20E3 : 617
+seq Twemoji-sub.ttf 2A FE0F 20E3 : 613
+seq Twemoji-sub.ttf 31 : 3
+seq Twemoji-sub.ttf 31 FE0F : 618
+seq Twemoji-sub.ttf 1F468 200D 1F469 200D 1F467 200D 1F466 : 327
+seq Twemoji-sub.ttf 1F469 200D 1F4BB : 527
+seq Twemoji-sub.ttf 1F469 1F3FD 200D 2695 FE0F : 448
+seq Twemoji-sub.ttf 1F469 1F3FD 200D 2695 : 447
+seq Twemoji-sub.ttf 1F3C3 200D 2640 FE0F : 128
+seq Twemoji-sub.ttf 1F3C3 200D 2640 : 127
+seq Twemoji-sub.ttf 1F642 200D 2194 FE0F : 564
+seq Twemoji-sub.ttf 1F642 200D 2194 : 563
+seq Twemoji-sub.ttf 1F1FA 1F1F8 : 74
+seq Twemoji-sub.ttf 1F1EF 1F1F5 : 57
+seq Twemoji-sub.ttf 1F1FA : 17
+seq Twemoji-sub.ttf 1F3F4 E0067 E0062 E0065 E006E E0067 E007F : 141
+seq Twemoji-sub.ttf 1F3F4 E0067 E0062 E0073 E0063 E0074 E007F : 142
+seq Twemoji-sub.ttf 1F3F4 E0067 E007F : 21
+seq Twemoji-sub.ttf 1F3F4 : 21
+seq Twemoji-sub.ttf 2764 FE0F 200D 1F525 : 606
+seq Twemoji-sub.ttf 2764 200D 1F525 : 604
+seq Twemoji-sub.ttf 261D 1F3FD : 582
+seq Twemoji-sub.ttf 261D FE0F 1F3FD : 582
+seq Twemoji-sub.ttf 261D : 7
+seq Twemoji-sub.ttf 2640 : 9
+seq Twemoji-sub.ttf 2640 FE0F : 593
+seq Twemoji-sub.ttf 2B50 : 12
+seq Twemoji-sub.ttf 1F3F3 FE0F 200D 1F308 : 138
+seq Twemoji-sub.ttf 1F600 1F44D 1F3FF : 35 150
+seq Synth-COLRv1.ttf 1F7E0 : 8
+seq Synth-COLRv1.ttf 1F7E0 1F7E0 : 12
+seq Synth-COLRv1.ttf 1F7E0 302 1F7E0 : 12 7
+seq Synth-COLRv1.ttf 1F7E1 : 9
+seq Synth-COLRv1.ttf 1F7E2 : 6
+seq Synth-COLRv1.ttf 1F7E3 : 10
+seq Synth-COLRv1.ttf 1F7E3 302 : 8
+seq Synth-COLRv1.ttf 1F7E4 : 9
+seq Synth-COLRv1.ttf 1F7E4 302 : 9 7
+seq Synth-COLRv1.ttf 1F7E5 : 0
+seq Synth-COLRv1.ttf 1F7E6 : 0
+seq Synth-COLRv1.ttf 1F7E7 : 0
+seq Synth-COLRv1.ttf 1F7E7 FE0F : 0
+seq Synth-COLRv1.ttf 1F7E0 200D 1F7E1 : 8 9
+seq Synth-COLRv0.ttf 1F7E0 : 0
+seq Synth-COLRv0.ttf 1F7E0 1F7E0 : 0 0
+seq Synth-COLRv0.ttf 1F7E0 302 1F7E0 : 0 0 0
+seq Synth-COLRv0.ttf 1F7E1 : 0
+seq Synth-COLRv0.ttf 1F7E2 : 0
+seq Synth-COLRv0.ttf 1F7E3 : 0
+seq Synth-COLRv0.ttf 1F7E3 302 : 0 0
+seq Synth-COLRv0.ttf 1F7E4 : 0
+seq Synth-COLRv0.ttf 1F7E4 302 : 0 0
+seq Synth-COLRv0.ttf 1F7E5 : 5
+seq Synth-COLRv0.ttf 1F7E6 : 6
+seq Synth-COLRv0.ttf 1F7E7 : 2
+seq Synth-COLRv0.ttf 1F7E7 FE0F : 2
+seq Synth-COLRv0.ttf 1F7E0 200D 1F7E1 : 0 0
+seq Synth-COLRv1.ttf/noGDEF 1F7E0 : 8
+seq Synth-COLRv1.ttf/noGDEF 1F7E0 1F7E0 : 12
+seq Synth-COLRv1.ttf/noGDEF 1F7E0 302 1F7E0 : 12 7
+seq Synth-COLRv1.ttf/noGDEF 1F7E1 : 9
+seq Synth-COLRv1.ttf/noGDEF 1F7E2 : 6
+seq Synth-COLRv1.ttf/noGDEF 1F7E3 : 10
+seq Synth-COLRv1.ttf/noGDEF 1F7E3 302 : 10 7
+seq Synth-COLRv1.ttf/noGDEF 1F7E4 : 9
+seq Synth-COLRv1.ttf/noGDEF 1F7E4 302 : 9 7
+seq Synth-COLRv1.ttf/noGDEF 1F7E5 : 0
+seq Synth-COLRv1.ttf/noGDEF 1F7E6 : 0
+seq Synth-COLRv1.ttf/noGDEF 1F7E7 : 0
+seq Synth-COLRv1.ttf/noGDEF 1F7E7 FE0F : 0
+seq Synth-COLRv1.ttf/noGDEF 1F7E0 200D 1F7E1 : 8 9
+run Lato-sub.ttf Latn 41 56 41 54 41 52 20 54 6F 79 6F 74 61 20 57 41 56 45 20 54 65 20 59 6F 20 4C 54 : 2 28 2 26 2 24 1 26 79 98 79 88 33 1 29 2 28 9 1 26 44 1 31 79 1 16 26
+run Lato-sub.ttf Zyyy 41 56 41 54 41 52 20 54 6F 79 6F 74 61 20 57 41 56 45 20 54 65 20 59 6F 20 4C 54 : 2 28 2 26 2 24 1 26 79 98 79 88 33 1 29 2 28 9 1 26 44 1 31 79 1 16 26
+run Lato-sub.ttf Latn 6F 66 66 69 63 65 20 61 66 66 6C 75 65 6E 74 20 66 6A 6F 72 64 20 66 66 69 20 66 66 6C 20 66 69 20 66 6C : 79 56 36 44 1 33 66 94 44 78 88 1 61 79 84 42 1 56 1 66 1 51 1 65
+run Lato-sub.ttf Zyyy 6F 66 66 69 63 65 20 61 66 66 6C 75 65 6E 74 20 66 6A 6F 72 64 20 66 66 69 20 66 66 6C 20 66 69 20 66 6C : 79 56 36 44 1 33 66 94 44 78 88 1 61 79 84 42 1 56 1 66 1 51 1 65
+run Lato-sub.ttf Latn 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 20 30 31 32 33 34 35 36 37 38 39 20 23 31 20 2A 32 : 12 44 272 272 79 145 1 29 79 84 272 42 143 1 221 222 223 224 225 226 273 227 274 228 1 192 222 1 173 223
+run Lato-sub.ttf Zyyy 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 20 30 31 32 33 34 35 36 37 38 39 20 23 31 20 2A 32 : 12 44 272 272 79 145 1 29 79 84 272 42 143 1 221 222 223 224 225 226 273 227 274 228 1 192 222 1 173 223
+run Lato-sub.ttf Latn 63 61 66 E9 20 6E 61 EF 76 65 20 C5 6E 67 73 74 72 F6 6D 20 E0 E9 EE F5 FC : 36 33 45 418 1 78 33 426 95 44 1 391 78 69 85 88 84 432 77 1 411 418 425 431 446
+run Lato-sub.ttf Zyyy 63 61 66 E9 20 6E 61 EF 76 65 20 C5 6E 67 73 74 72 F6 6D 20 E0 E9 EE F5 FC : 36 33 45 418 1 78 33 426 95 44 1 391 78 69 85 88 84 432 77 1 411 418 425 431 446
+run Lato-sub.ttf Latn A9 20 32 30 32 36 20 AE 20 2122 20 28 63 29 20 2194 20 2195 : 182 1 223 221 223 273 1 183 1 184 1 167 36 168 1 262 1 263
+run Lato-sub.ttf Zyyy A9 20 32 30 32 36 20 AE 20 2122 20 28 63 29 20 2194 20 2195 : 182 1 223 221 223 273 1 183 1 184 1 167 36 168 1 262 1 263
+run Lato-sub.ttf Latn 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 222 158 223 1 281 1 280 1 97 277 1 100 101
+run Lato-sub.ttf Zyyy 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 222 158 223 1 281 1 280 1 97 277 1 100 101
+run Lato-sub.ttf Zyyy AB BB 20 A1 BF 20 A7 B6 20 B0 20 B1 20 D7 20 F7 : 156 157 1 276 283 1 174 175 1 185 1 260 1 255 1 256
+run Inter-sub.ttf Latn 41 56 41 54 41 52 20 54 6F 79 6F 74 61 20 57 41 56 45 20 54 65 20 59 6F 20 4C 54 : 1 67 1 61 1 57 484 61 130 164 130 147 75 484 68 1 67 15 484 61 97 484 71 130 484 39 61
+run Inter-sub.ttf Zyyy 41 56 41 54 41 52 20 54 6F 79 6F 74 61 20 57 41 56 45 20 54 65 20 59 6F 20 4C 54 : 1 67 1 61 1 57 484 61 130 164 130 147 75 484 68 1 67 15 484 61 97 484 71 130 484 39 61
+run Inter-sub.ttf Latn 6F 66 66 69 63 65 20 61 66 66 6C 75 65 6E 74 20 66 6A 6F 72 64 20 66 66 69 20 66 66 6C 20 66 69 20 66 6C : 130 102 102 109 93 97 484 75 102 102 119 149 97 127 147 484 102 116 130 141 96 484 102 102 109 484 102 102 119 484 102 109 484 102 119
+run Inter-sub.ttf Zyyy 6F 66 66 69 63 65 20 61 66 66 6C 75 65 6E 74 20 66 6A 6F 72 64 20 66 66 69 20 66 66 6C 20 66 69 20 66 6C : 130 102 102 109 93 97 484 75 102 102 119 149 97 127 147 484 102 116 130 141 96 484 102 102 109 484 102 102 119 484 102 109 484 102 119
+run Inter-sub.ttf Latn 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 20 30 31 32 33 34 35 36 37 38 39 20 23 31 20 2A 32 : 25 97 119 119 130 285 484 68 130 141 119 96 247 484 175 176 177 178 179 180 181 182 183 184 484 267 176 484 315 177
+run Inter-sub.ttf Zyyy 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 20 30 31 32 33 34 35 36 37 38 39 20 23 31 20 2A 32 : 25 97 119 119 130 285 484 68 130 141 119 96 247 484 175 176 177 178 179 180 181 182 183 184 484 267 176 484 315 177
+run Inter-sub.ttf Latn 63 61 66 E9 20 6E 61 EF 76 65 20 C5 6E 67 73 74 72 F6 6D 20 E0 E9 EE F5 FC : 93 75 102 100 484 127 75 111 160 97 484 7 127 106 143 147 141 131 125 484 79 100 114 132 150
+run Inter-sub.ttf Zyyy 63 61 66 E9 20 6E 61 EF 76 65 20 C5 6E 67 73 74 72 F6 6D 20 E0 E9 EE F5 FC : 93 75 102 100 484 127 75 111 160 97 484 7 127 106 143 147 141 131 125 484 79 100 114 132 150
+run Inter-sub.ttf Latn A9 20 32 30 32 36 20 AE 20 2122 20 28 63 29 20 2194 20 2195 : 317 484 177 175 177 181 484 316 484 318 484 253 93 254 484 497 484 501
+run Inter-sub.ttf Zyyy A9 20 32 30 32 36 20 AE 20 2122 20 28 63 29 20 2194 20 2195 : 317 484 177 175 177 181 484 316 484 318 484 253 93 254 484 497 484 501
+run Inter-sub.ttf Latn 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 176 269 177 484 471 484 472 484 163 356 484 320 321
+run Inter-sub.ttf Zyyy 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 176 269 177 484 471 484 472 484 163 356 484 320 321
+run Inter-sub.ttf Zyyy AB BB 20 A1 BF 20 A7 B6 20 B0 20 B1 20 D7 20 F7 : 293 294 484 248 250 484 325 324 484 319 484 301 484 299 484 300
+run NotoSans-kern.ttf Latn 41 56 41 54 41 52 20 54 6F 79 6F 74 61 20 57 41 56 45 20 54 65 20 59 6F 20 4C 54 : 34 55 34 53 34 51 1 53 80 90 80 85 66 1 56 34 55 38 1 53 70 1 58 80 1 45 53
+run NotoSans-kern.ttf Zyyy 41 56 41 54 41 52 20 54 6F 79 6F 74 61 20 57 41 56 45 20 54 65 20 59 6F 20 4C 54 : 34 55 34 53 34 51 1 53 80 90 80 85 66 1 56 34 55 38 1 53 70 1 58 80 1 45 53
+run NotoSans-kern.ttf Latn 6F 66 66 69 63 65 20 61 66 66 6C 75 65 6E 74 20 66 6A 6F 72 64 20 66 66 69 20 66 66 6C 20 66 69 20 66 6C : 80 71 71 74 68 70 1 66 71 71 77 86 70 79 85 1 71 75 80 83 69 1 71 71 74 1 71 71 77 1 71 74 1 71 77
+run NotoSans-kern.ttf Zyyy 6F 66 66 69 63 65 20 61 66 66 6C 75 65 6E 74 20 66 6A 6F 72 64 20 66 66 69 20 66 66 6C 20 66 69 20 66 6C : 80 71 71 74 68 70 1 66 71 71 77 86 70 79 85 1 71 75 80 83 69 1 71 71 74 1 71 71 77 1 71 74 1 71 77
+run NotoSans-kern.ttf Latn 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 20 30 31 32 33 34 35 36 37 38 39 20 23 31 20 2A 32 : 41 70 77 77 80 13 1 56 80 83 77 69 2 1 17 18 19 20 21 22 23 24 25 26 1 4 18 1 11 19
+run NotoSans-kern.ttf Zyyy 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 20 30 31 32 33 34 35 36 37 38 39 20 23 31 20 2A 32 : 41 70 77 77 80 13 1 56 80 83 77 69 2 1 17 18 19 20 21 22 23 24 25 26 1 4 18 1 11 19
+run NotoSans-kern.ttf Latn 63 61 66 E9 20 6E 61 EF 76 65 20 C5 6E 67 73 74 72 F6 6D 20 E0 E9 EE F5 FC : 68 66 71 169 1 79 66 175 87 70 1 133 79 72 84 85 83 182 78 1 160 169 174 181 188
+run NotoSans-kern.ttf Zyyy 63 61 66 E9 20 6E 61 EF 76 65 20 C5 6E 67 73 74 72 F6 6D 20 E0 E9 EE F5 FC : 68 66 71 169 1 79 66 175 87 70 1 133 79 72 84 85 83 182 78 1 160 169 174 181 188
+run NotoSans-kern.ttf Latn A9 20 32 30 32 36 20 AE 20 2122 20 28 63 29 20 2194 20 2195 : 105 1 19 17 19 23 1 110 1 206 1 9 68 10 1 0 1 0
+run NotoSans-kern.ttf Zyyy A9 20 32 30 32 36 20 AE 20 2122 20 28 63 29 20 2194 20 2195 : 105 1 19 17 19 23 1 110 1 206 1 9 68 10 1 0 1 0
+run NotoSans-kern.ttf Latn 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 18 16 19 1 125 1 124 1 89 114 1 106 122
+run NotoSans-kern.ttf Zyyy 31 2F 32 20 BD 20 BC 20 78 B2 20 AA BA : 18 16 19 1 125 1 124 1 89 114 1 106 122
+run NotoSans-kern.ttf Zyyy AB BB 20 A1 BF 20 A7 B6 20 B0 20 B1 20 D7 20 F7 : 107 123 1 97 127 1 103 118 1 112 1 113 1 151 1 183
+verified Lato-sub+Noto-sub.ttf f1a8a2195fb5349b9739faffa02274e2838131cdbf433fdbe1fb06bc9c7a782c
+verified Lato-sub+Twemoji-sub.ttf f66dceb2eb876930a2cd8d5cb4cfbaa3581bdf4464aa7346fabb61acbce4191e
+verified Inter-sub+Noto-sub.ttf 756bba15de9829ba0a04adaf4c5def8759ff55265aada549338e2a6f07c1cc89
+verified Inter-sub+Twemoji-sub.ttf 8c28b4edc1780a045cb379e1d6b818de637ae283f2817b8590be997a2f8df740
+verified NotoSans-kern+Noto-sub.ttf 9eb642eb2d3b84bb8d13fe0e2d1582bfa78b2f261438ad1831b6ac7f224d7363
+verified NotoSans-kern+Twemoji-sub.ttf 566ea00aaa33db70a996d4ac3c82c30dfc0b8f6bedc3e976a2898232c054580b
+verified Inter-sub+Synth-COLRv1.ttf f3b71128265e3c47b230b86d4c948b887af794a75a7e0da724fb05033d222711
+verified NotoSans-kern+Synth-COLRv1.ttf 951c05288a58e2d7f14b32b92efe945d79d641d6d4350717bc1e1b45ee372f0c
+verified Lato-sub+Synth-COLRv0.ttf 46f0284819c93ab1dab4d7c7f64613f078c0e5409561b0485a0151f9fd8fb148

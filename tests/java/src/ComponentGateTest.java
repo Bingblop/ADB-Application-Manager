@@ -23,7 +23,7 @@ public class ComponentGateTest {
 
     // ---- the bridge: Root-only, success read back from the component's real state
     String setc = bodyOf(m, "String setComponentEnabled(String pkg, String component, boolean enable) {");
-    check("source: setComponentEnabled is Root only (the resolved backend must be root)", setc != null && setc.contains("!\"root\".equals(resolveExecMode())"));
+    check("source: setComponentEnabled unlocks for Root or a Shizuku server running as uid 0 or 1000 (compAllowed)", setc != null && setc.contains("boolean compAllowed = \"root\".equals(compMode)") && setc.contains("\"shizuku\".equals(compMode) && isShizukuAuthorized()") && setc.contains("compSzUid == 0 || compSzUid == 1000"));
     check("source: off root it answers with a Super User message and runs no pm command", setc != null && setc.contains("needs Super User (Root)") && setc.contains("needsRoot"));
     check("source: success is read from the component's real state, not pm's printed text", setc != null && setc.contains("componentOverrideState(") && !setc.contains("low.contains(\"new state\")"));
     check("source: a leading-dot class is resolved the same way for the read-back as for the command", setc != null && setc.contains("component.startsWith(\".\") ? pkg + component : component"));

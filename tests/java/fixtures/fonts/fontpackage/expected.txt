@@ -1,0 +1,50 @@
+# fontpackage suite: written by make_fixtures.py verify; the blocks are what this aapt2 printed
+aapt2 Android Asset Packaging Tool (aapt) 2.19-11948202
+font Inter-Bold-sub.ttf 0a1f197859b0ef964d241c9ee45d1e93728c453f68ea01adbc75fa007d283742
+font Inter-Regular-sub.ttf b95d0352a5af7c92269d0c94251e68d7f9f22c667f600c3223e9fb702dc5e8c8
+manifest basic 2eb23da432daf6aed7492d80338ec89bd08638c5f5c437bab3a52a4fcc762991
+manifest hostile cc1825395e17971bc01c4369e2c73bb34bf38856a966cdef71b50e49ea94dfc0
+manifest attrname 517392a8ee7c77ff4ea8fb06a8a2475a7d5f8a70fcd4ba8b42e9598e23bd0d40
+manifest shared 1b157e3a7b1d8ee2e6c33c5f06acb8deb56757c7957b186727acdeadfd83dab3
+manifest order a73431fac9667fc997ddd72bd0301b191039a21328bdc751110ce69e30813c73
+manifest cjk 1e0e63b49f34f82d21806318dffab76712b9aeddd4198318019451f2d33afda2
+manifest reference b0ad7ab30149e373cb624e26aba784093f6c17d3179ecdfce7cd6e2d61fa73db
+manifest question bbf69ea43213af3b68e15aa6320d1cd08fee0cc073a1d47faee3ee60492a1c4d
+manifest latin 54fafc3572005d8b9bd237571956c798a01312134d7d18470dd3661794ba645f
+manifest rtl 5da9e6d609695998b6796894343269dba434e81951d1d4563f44261cc39d01e7
+manifest backslash 61690eb8bc74c9ca7f6a8bde43e415c22d23fd74a3d698510a05e68aa21aaf93
+manifest elements 229966d5610ece6a1aac8833bf687a5bbc851582d4fce0d99aac22bea351d41f
+manifest pkglabel e5589e2a66a808b02c929dd5c452fc9163f79fe97014fc763fd5a61436d31a5a
+manifest long 64b0e8b0ead2aba362d226c1202de3b6b1910ceaf1a051169c05cc7b4bcc9126
+manifest dirty 872cb30bc4354832a84860f35cdafbc1b487b1683305a468f72cdaba2b7e4a6c
+manifest maxversion d589f346139d1525657090d83512a15456f27eec7ccdca85b47c66df7d64ba55
+manifest otherpkg a26bb339748065ac646dcb0c2103d356b085bfae15dffe310dc74e35db15b8dc
+manifest codepoint 527357d96d4ba048e13684b167e4ea2d3cbcf86c69fc24fc5eb4e33c2e5b9837
+manifest sample 9f9008a20eca11ef04dd97da6f26336fa8f754d155b71ad2446bbbbe0aa5ad55
+xmltree-begin
+N: android=http://schemas.android.com/apk/res/android (line=2)
+  E: manifest (line=2)
+    A: http://schemas.android.com/apk/res/android:versionCode(0x0101021b)=3
+    A: http://schemas.android.com/apk/res/android:versionName(0x0101021c)="3.0" (Raw: "3.0")
+    A: package="com.monotype.android.font.InterFriendsbUbx_b06075" (Raw: "com.monotype.android.font.InterFriendsbUbx_b06075")
+      E: uses-sdk (line=3)
+        A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=26
+        A: http://schemas.android.com/apk/res/android:targetSdkVersion(0x01010270)=34
+      E: application (line=4)
+        A: http://schemas.android.com/apk/res/android:label(0x01010001)="Inter & "Friends" <b>Ü</b> 'x' 漢字 😀" (Raw: "Inter & "Friends" <b>Ü</b> 'x' 漢字 😀")
+        A: http://schemas.android.com/apk/res/android:hasCode(0x0101000c)=false
+        A: http://schemas.android.com/apk/res/android:allowBackup(0x01010280)=false
+xmltree-end
+badging-begin
+package: name='com.monotype.android.font.InterFriendsbUbx_b06075' versionCode='3' versionName='3.0'
+minSdkVersion:'26'
+targetSdkVersion:'34'
+application: label='Inter & \"Friends\" <b>Ü</b> 'x' 漢字 😀' icon=''
+feature-group: label=''
+  uses-feature: name='android.hardware.faketouch'
+  uses-implied-feature: name='android.hardware.faketouch' reason='default feature for all apps'
+supports-screens: 'small' 'normal' 'large' 'xlarge'
+supports-any-density: 'true'
+locales:
+densities:
+badging-end

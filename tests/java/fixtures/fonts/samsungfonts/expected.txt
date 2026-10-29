@@ -1,0 +1,3 @@
+fonts15.xml: NotoColorEmoji.ttf NotoColorEmojiFlags.ttf
+fallback15.xml: NotoColorEmoji.ttf NotoColorEmojiFlags.ttf
+fonts12.xml: NotoColorEmoji.ttf NotoColorEmojiFlags.ttf

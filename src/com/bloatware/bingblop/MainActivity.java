@@ -50,7 +50,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -73,6 +72,9 @@ public class MainActivity extends Activity {
     private String pendingInstallRef = null;
     // The Stop apps notification was tapped: the id of the quick list whose sheet the page opens once it is ready (takeQuickOpen).
     private String pendingQuickOpen = null;
+    // Answers that came before the page loaded (notifyJsWhenReady), run once it has: a save screen answered into a window Android made
+    // again (v7.18.0, R4-03). The UI thread's only.
+    private final List<String> pendingPageScripts = new ArrayList<String>();
     private Vibrator vibrator;
     private SharedPreferences prefs;
     private boolean buildChangedThisLaunch = false;
@@ -91,6 +93,9 @@ public class MainActivity extends Activity {
     private static long renderGoneAt;
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
+    /** One screenshot or recording at a time (the Terminal's Screenshot and Record buttons); both run on the executor, which onDestroy shuts down. */
+    private final java.util.concurrent.atomic.AtomicBoolean screenBusy = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final java.util.concurrent.atomic.AtomicBoolean screenRecording = new java.util.concurrent.atomic.AtomicBoolean(false);
 
     /**
      * Hands a job to the executor. False when it refuses (shut down with the Activity): the caller then clears the
@@ -104,6 +109,9 @@ public class MainActivity extends Activity {
     private final Object trackerLock = new Object();
     private final ExecutorService trackerExecutor = Executors.newSingleThreadExecutor();
     private volatile boolean trackerBusy, trackerCancel;
+    // one switch of an app's tracker parts at a time (trackerPartsSet): a second tap while a run is going is told "busy"
+    private final Object trackerPartsLock = new Object();
+    private boolean trackerPartsBusy;
 
     private Trackers trackers() throws Exception {
         Trackers t = trackersLib;
@@ -302,6 +310,7 @@ public class MainActivity extends Activity {
                 pageReady = true;
                 deliverPendingInstall();
                 deliverPendingQuickOpen();
+                deliverPendingPageScripts();
             }
 
             // The page holds a powerful bridge (shell, files, installs), so it never navigates away from the
@@ -375,6 +384,20 @@ public class MainActivity extends Activity {
         if (savedInstanceState != null) {
             String kept = savedInstanceState.getString(STATE_PENDING_INSTALL);
             if (kept != null) pendingInstallRef = kept;                // arrived, but the page was not ready to take it yet
+            // a font package's "save as" that was open when Android ended the process: its answer comes to this window
+            String export = savedInstanceState.getString(STATE_FMK_EXPORT);
+            if (FontLibrary.isId(export)) {
+                synchronized (fmkLock) {
+                    fmkExportId = export;
+                }
+            }
+            // ... and a Google Fonts family's
+            String gfSave = savedInstanceState.getString(STATE_GF_SAVE);
+            if (GoogleFonts.isFamily(gfSave)) {
+                synchronized (fmkLock) {
+                    gfSaveFamily = gfSave;
+                }
+            }
         }
         Intent launch = getIntent();
         if (launch != null && IncomingInstall.handOverAtCreate(launch.getAction(), launch.getFlags(), savedInstanceState != null)) handleIncomingIntent(launch);
@@ -462,6 +485,10 @@ public class MainActivity extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (pendingInstallRef != null) outState.putString(STATE_PENDING_INSTALL, pendingInstallRef);
+        synchronized (fmkLock) {
+            if (fmkExportId != null) outState.putString(STATE_FMK_EXPORT, fmkExportId);
+            if (gfSaveFamily != null) outState.putString(STATE_GF_SAVE, gfSaveFamily);
+        }
     }
 
     @Override
@@ -707,6 +734,30 @@ public class MainActivity extends Activity {
         });
     }
 
+    /**
+     * Like {@link #notifyJs}, but an answer that comes before the page has loaded waits for onPageFinished: a save screen answered into a
+     * window Android made again (onCreate restores what it was for, onActivityResult comes before the page has its callbacks), whose answer
+     * nothing sends again.
+     */
+    private void notifyJsWhenReady(final String script) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (activityDestroyed || webView == null) return;
+                if (!pageReady) { pendingPageScripts.add(script); return; }     // pageReady is the UI thread's: read here, not where the answer was made
+                webView.evaluateJavascript(script, null);
+            }
+        });
+    }
+
+    /** Runs the answers that waited for the page (notifyJsWhenReady), in the order they came. */
+    private void deliverPendingPageScripts() {
+        if (!pageReady || pendingPageScripts.isEmpty()) return;
+        List<String> scripts = new ArrayList<String>(pendingPageScripts);
+        pendingPageScripts.clear();
+        for (String script : scripts) notifyJs(script);
+    }
+
     // The mode probe is a few process spawns and a socket check, and the page asks for it on most view changes.
     private static final Object modeCacheLock = new Object();
     private static String modeCacheJson;
@@ -719,6 +770,11 @@ public class MainActivity extends Activity {
     // Whether root was actually GRANTED to this app (su answers uid=0), not only that an su file exists. null: not asked yet. Asked only while Root is the chosen
     // mode (a root manager shows a prompt for it), kept until the person checks again (the mode buttons) or switches to Root.
     private static Boolean rootGrant;
+    // the last su answer was no answer (it timed out, or su could not run): a refusal kept in rootGrant then is not a clear "no", and a chosen Super User
+    // is not switched to Automatic for it (v7.19.0)
+    private static boolean rootGrantUnclear;
+    private static long suMissingSince;               // when su was first found missing while Super User is the chosen mode (0: it is there)
+    private static final java.util.concurrent.atomic.AtomicBoolean autoSuAsking = new java.util.concurrent.atomic.AtomicBoolean();   // one su question at a time, whichever window asks
 
     private static void invalidateModeCache() {
         synchronized (modeCacheLock) {
@@ -981,8 +1037,21 @@ public class MainActivity extends Activity {
         org.json.JSONArray pkgs = list.optJSONArray("packages");
         for (int i = 0; pkgs != null && i < pkgs.length(); i++) listed.add(pkgs.optString(i));
         final Context app = getApplicationContext();                 // the notification does not depend on this (headless) window staying
-        QuickStopRun run = new QuickStopRun(list.optString("id"), list.optString("name"), listed, QuickStopRun.protectedPackages(getPackageName(), webViewPackageName()));
+        // the apps whose stop would take the notification or the run's own tools with it go last, System UI last of all (QuickStopRun.lastOrder)
+        List<String> tools = new ArrayList<String>(java.util.Arrays.asList(SHIZUKU_PKG, SHIZUKU_PLUS_PKG));
+        for (RootManagers.Manager m : RootManagers.known()) tools.add(m.pkg);
+        QuickStopRun run = new QuickStopRun(list.optString("id"), list.optString("name"), listed, QuickStopRun.protectedPackages(getPackageName(), webViewPackageName()),
+                QuickStopRun.lastOrder(tools, keyboardPackage(), homePackage()));
         if (!QuickStopRun.begin(run, android.os.SystemClock.elapsedRealtime())) return "Kill Apps is already running. Tap Cancel in its notification to stop it.";
+        // held in the foreground by its own notification (JobService.beginWith), so the run reaches its last app when this window is left (v7.19.0)
+        android.app.Notification first = QuickStopNotice.first(app, run);
+        if (first != null) JobService.beginWith(app, QuickStopNotice.ID, first);
+        // and the CPU kept awake for the run (at most ten minutes), so a screen turned off does not pause it until the phone wakes
+        android.os.PowerManager.WakeLock wake = null;
+        try {
+            android.os.PowerManager pm = (android.os.PowerManager) app.getSystemService(Context.POWER_SERVICE);
+            if (pm != null) { wake = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "adbmanager:kill-apps"); wake.setReferenceCounted(false); wake.acquire(10 * 60 * 1000L); }
+        } catch (RuntimeException ignored) {}
         // No tile refresh here or in finishQuickAction: the Kill Apps tile is passive (no ACTIVE_TILE meta-data), and
         // TileService.requestListeningState does nothing for a passive tile. Android reads QuickStopRun.tileActive() in the tile's
         // onStartListening each time the panel opens, so the tile is lit when the panel is opened while a run is going. Making the tile
@@ -1004,8 +1073,32 @@ public class MainActivity extends Activity {
         } finally {
             QuickStopRun.end(run);
             QuickStopNotice.clear(app, run);
+            if (first != null) JobService.endWith(app);
+            if (wake != null) try { wake.release(); } catch (RuntimeException ignored) {}
         }
         return run.summary();
+    }
+
+    /** The package of the keyboard in use, or "" when the phone does not say. */
+    private String keyboardPackage() {
+        try {
+            String id = android.provider.Settings.Secure.getString(getContentResolver(), "default_input_method");
+            int slash = id == null ? -1 : id.indexOf('/');
+            return slash > 0 ? id.substring(0, slash) : "";
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** The package of the home screen in use, or "" when there is no default one. */
+    private String homePackage() {
+        try {
+            android.content.pm.ResolveInfo ri = getPackageManager().resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), PackageManager.MATCH_DEFAULT_ONLY);
+            String p = ri == null || ri.activityInfo == null ? null : ri.activityInfo.packageName;
+            return p == null || "android".equals(p) ? "" : p;                  // "android": no default, the chooser would answer
+        } catch (Throwable t) {
+            return "";
+        }
     }
 
     /** The package of the WebView this phone uses (Android System WebView, or Chrome on a phone that uses it), or "" when the phone does not say. */
@@ -1284,16 +1377,43 @@ public class MainActivity extends Activity {
         Log.d(TAG, "adb connect " + target + " -> " + output);
 
         boolean ready = isAdbTargetConnected(target);
+        String moved = null;
+        if (!ready && selectMode == null && port == adbWirelessPort && host.equals(adbWirelessHost) && !target.equals(tcpTarget())) {
+            moved = reconnectWirelessViaMdns(host, port);   // the saved Wireless Debugging port went stale: find the current one
+            ready = moved != null;
+        }
         if (ready && selectMode != null) {
             setConfiguredMode(selectMode);
         }
         cachedAutoMode = null;
         invalidateModeCache();                      // connected (or not) now: a probe that overlapped the connect must not keep the old picture
         if (output == null) output = "";
+        if (moved != null) return moved;
         if (!ready && !output.toLowerCase().contains("fail") && !output.toLowerCase().contains("error")) {
             output = output + (output.isEmpty() ? "" : "\n") + "Target " + target + " is not ready (check the authorization prompt on the device).";
         }
         return output;
+    }
+
+    /**
+     * Wireless Debugging takes a new random port each time it is switched on, so the saved one goes stale. Asks adb's mDNS for the phone's
+     * current connect endpoint (same host only, see {@link WirelessReconnect}), connects to it and, once it is ready, saves it. Returns a
+     * sentence for the person, or null when no endpoint was found or none would connect (the saved port is then left as it was).
+     */
+    private String reconnectWirelessViaMdns(String host, int stalePort) {
+        String raw = runProcessWithTimeout(buildAdbProcess("mdns", "services"), 4000);
+        List<String> tries = WirelessReconnect.candidates(WirelessReconnect.connectEndpoints(raw), host, stalePort, deviceWifiIp());
+        for (int i = 0; i < tries.size() && i < 2; i++) {
+            String ep = tries.get(i);
+            String out = runProcessWithTimeout(buildAdbProcess("connect", ep), 6000);
+            Log.d(TAG, "adb connect " + ep + " (mDNS) -> " + out);
+            if (!isAdbTargetConnected(ep)) continue;
+            adbWirelessHost = WirelessReconnect.hostOf(ep);
+            adbWirelessPort = WirelessReconnect.splitPort(ep);
+            prefs.edit().putString("adb_wireless_host", adbWirelessHost).putInt("adb_wireless_port", adbWirelessPort).apply();
+            return "Wireless Debugging moved from port " + stalePort + " to " + adbWirelessPort + "; connected to " + ep + " and saved the new port.";
+        }
+        return null;
     }
 
     private final java.util.concurrent.atomic.AtomicBoolean shizukuStarting = new java.util.concurrent.atomic.AtomicBoolean();
@@ -1415,10 +1535,12 @@ public class MainActivity extends Activity {
             boolean authorized = isShizukuAuthorized();
             boolean preV11 = false;
             int version = 0;
+            int uid = -1;
             if (running) {
                 try {
                     preV11 = Shizuku.isPreV11();
                     version = Shizuku.getVersion();
+                    uid = Shizuku.getUid();                 // 0 root, 1000 system, 2000 ADB shell; the gate (RootGate) reads it
                 } catch (Throwable ignored) {}
             }
             obj.put("installed", pkg != null || running);
@@ -1427,8 +1549,19 @@ public class MainActivity extends Activity {
             obj.put("authorized", authorized);
             obj.put("preV11", preV11);
             obj.put("version", version);
+            obj.put("uid", uid);
         } catch (Exception ignored) {}
         return obj;
+    }
+
+    /** The uid the Shizuku server runs as (0 root, 1000 system, 2000 ADB shell), or -1 when the binder is down or it cannot be read. */
+    private int shizukuServerUid() {
+        try {
+            if (!isShizukuBinderAlive()) return -1;
+            return Shizuku.getUid();
+        } catch (Throwable t) {
+            return -1;
+        }
     }
 
     private static Method shizukuNewProcessMethod;
@@ -1828,10 +1961,6 @@ public class MainActivity extends Activity {
         return new File(getApplicationInfo().nativeLibraryDir, "libptyexec.so");
     }
 
-    private static String shq(String s) {
-        return RishShell.quote(s);
-    }
-
     /** The process that runs a shell on a pty for {@code backend}: app (this app's sandbox), priv (the working mode: Shizuku, Root or ADB) or termux. */
     private Process ptyProcess(String backend, int rows, int cols) throws Exception {
         File helper = ptyHelper();
@@ -2020,19 +2149,51 @@ public class MainActivity extends Activity {
         synchronized (modeCacheLock) {
             if (rootGrant != null) return rootGrant;
         }
-        boolean ok;
+        boolean ok, unclear;
         try {
             ProcessBuilder pb = new ProcessBuilder("su", "-c", "id");
             pb.redirectErrorStream(true);
             String out = runProcessWithTimeout(pb, 8000);
             ok = out != null && out.contains("uid=0");
+            unclear = !ok && (out == null || out.startsWith("Error:") || out.contains("[Process timed out"));
         } catch (Exception e) {
             ok = false;
+            unclear = true;
         }
         synchronized (modeCacheLock) {
             rootGrant = ok;
+            rootGrantUnclear = unclear;
         }
         return ok;
+    }
+
+    /**
+     * Automatic's Super User check (v7.19.0). It never holds the page: an su answer already known is used, and one not known yet is asked once on a
+     * thread of its own (the root manager may show its prompt), after which the page reads the modes again. A tile tap's headless window never asks.
+     */
+    private boolean autoRootGranted() {
+        if (!isRootAvailable()) return false;
+        Boolean known;
+        synchronized (modeCacheLock) { known = rootGrant; }
+        if (known != null) return known;
+        if (!isHeadless() && autoSuAsking.compareAndSet(false, true)) {
+            Thread t = new Thread(new Runnable() {
+                @Override public void run() {
+                    try {
+                        if (isRootGranted()) {
+                            invalidateModeCache();
+                            cachedAutoMode = null;
+                            notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes()");
+                        }
+                    } finally {
+                        autoSuAsking.set(false);
+                    }
+                }
+            }, "auto-su");
+            t.setDaemon(true);
+            t.start();
+        }
+        return false;
     }
 
     /** The su verdict as already known, without asking (no prompt): not asked yet counts as not granted. */
@@ -2046,7 +2207,7 @@ public class MainActivity extends Activity {
         for (String path : SU_PATHS) {
             if (new File(path).exists()) return true;
         }
-        // "no su" rarely changes (Magisk can be installed while the app runs): ask the shell once a minute, not on every probe
+        // "no su" rarely changes (a root manager can be installed while the app runs): ask the shell once a minute, not on every probe
         synchronized (modeCacheLock) {
             if (rootChecked && System.nanoTime() / 1000000L - rootCheckedAt < 60000) return rootCached;
         }
@@ -2071,6 +2232,7 @@ public class MainActivity extends Activity {
 
     /** Backend used to execute commands right now: adb_tcp, adb_wireless, shizuku, root or standard. */
     private String resolveExecMode() {
+        fallBackFromLostRoot();
         String mode = activeWorkingMode;
         if (!"auto".equals(mode)) {
             return "unprivileged".equals(mode) ? "standard" : mode;
@@ -2080,32 +2242,61 @@ public class MainActivity extends Activity {
         if (cached != null && now - cachedAutoModeAt < 4000) {
             return cached;
         }
+        // Automatic's order (RootGate.autoPick): Super User, Shizuku as uid 0 or 1000, ADB over TCP, Wireless Debugging, Shizuku as uid 2000.
+        // su is asked at most once (its answer is kept until a fresh check); the headless window of a tile tap only reads an answer already known.
+        long gen;
+        synchronized (modeCacheLock) { gen = modeCacheGen; }
         String devices = adbDevicesOutput();
-        String resolved;
-        if (isTargetReady(devices, tcpTarget())) {
-            resolved = "adb_tcp";
-        } else if (adbWirelessPort > 0 && isTargetReady(devices, wirelessTarget())) {
-            resolved = "adb_wireless";
-        } else if (isShizukuAuthorized()) {
-            resolved = "shizuku";
-        } else if (isPortOpen(adbTcpHost, adbTcpPort, 200)) {
+        boolean suOk = autoRootGranted();
+        boolean szAuth = isShizukuAuthorized();
+        int szUid = szAuth ? shizukuUidOrUnknown() : -1;
+        boolean tcp = isTargetReady(devices, tcpTarget());
+        boolean wireless = adbWirelessPort > 0 && isTargetReady(devices, wirelessTarget());
+        if (!suOk && !(szAuth && (szUid == 0 || szUid == 1000)) && !tcp && isPortOpen(adbTcpHost, adbTcpPort, 200)) {
             // Port is open but not connected yet: connect quietly without changing the configured mode
             performConnect(adbTcpHost, adbTcpPort, null);
-            resolved = isAdbTargetConnected(tcpTarget()) ? "adb_tcp" : "standard";
-        } else {
-            resolved = "standard";
+            tcp = isAdbTargetConnected(tcpTarget());
+        }
+        String pick = RootGate.autoPick(suOk, szAuth, szUid, tcp, wireless);
+        String resolved = pick == null ? "standard" : pick;
+        // an invalidation meanwhile (su was granted on the auto-su thread) makes this answer old: use it once, do not keep it
+        synchronized (modeCacheLock) {
+            if (modeCacheGen != gen) return resolved;
         }
         cachedAutoMode = resolved;
         cachedAutoModeAt = now;
         return resolved;
     }
 
-    private static int parsePort(String value, int fallback) {
+    /** Shizuku's server uid (0 root, 1000 system, 2000 ADB shell), or -1 when it cannot be read. */
+    private static int shizukuUidOrUnknown() {
         try {
-            return Integer.parseInt(value.trim());
-        } catch (Exception e) {
-            return fallback;
+            return Shizuku.getUid();
+        } catch (Throwable t) {
+            return -1;
         }
+    }
+
+    /**
+     * Super User is the chosen mode but is no longer there (no su on the phone any more, or su said no the last time it was asked): the mode goes
+     * back to Automatic, which then picks the best mode that is ready, and the page is told so it can say it (v7.19.0). Returns true when it did.
+     */
+    private boolean fallBackFromLostRoot() {
+        if (!"root".equals(activeWorkingMode)) return false;
+        Boolean lastAnswer;
+        synchronized (modeCacheLock) { lastAnswer = rootGrantUnclear ? null : rootGrant; }      // a timed-out prompt is not a "no"
+        // su not found counts only once it has stayed missing for two minutes: on some root managers the check can miss for a moment (an update,
+        // early boot), and a one-off miss must not rewrite the chosen mode
+        boolean suFound = isRootAvailable();
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (suFound) suMissingSince = 0;
+        else if (suMissingSince == 0) suMissingSince = now;
+        if (!suFound && now - suMissingSince < 120000) suFound = true;
+        if (!RootGate.rootLost(activeWorkingMode, suFound, lastAnswer)) return false;
+        suMissingSince = 0;
+        setConfiguredMode("auto");
+        notifyJs("window.onRootModeLost && window.onRootModeLost()");
+        return true;
     }
 
     private static String deviceWifiIp() {
@@ -2139,6 +2330,29 @@ public class MainActivity extends Activity {
         int g = (int) (Color.green(a) * inv + Color.green(b) * ratio);
         int bl = (int) (Color.blue(a) * inv + Color.blue(b) * ratio);
         return Color.rgb(r, g, bl);
+    }
+
+    /**
+     * The package with its permissions and its four kinds of components, for the app's details. One call asks for all of it, but a big app (Play
+     * services, a system app with thousands of components) can be more than one answer of Android's package manager may carry: it then throws, and
+     * the details used to come with no permissions at all (v7.19.0). Then the permissions are read alone and each kind of component on its own;
+     * a kind that is still too big is left out.
+     */
+    private PackageInfo detailsPackageInfo(String pkg) throws PackageManager.NameNotFoundException {
+        PackageManager pm = getPackageManager();
+        int match = PackageManager.MATCH_DISABLED_COMPONENTS | PackageManager.MATCH_UNINSTALLED_PACKAGES;
+        try {
+            return pm.getPackageInfo(pkg, match | PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES
+                    | PackageManager.GET_PROVIDERS | PackageManager.GET_PERMISSIONS);
+        } catch (RuntimeException tooBig) {
+            Log.w(TAG, "app details of " + pkg + " in parts: " + tooBig.getClass().getSimpleName());
+        }
+        PackageInfo info = pm.getPackageInfo(pkg, match | PackageManager.GET_PERMISSIONS);
+        try { info.activities = pm.getPackageInfo(pkg, match | PackageManager.GET_ACTIVITIES).activities; } catch (RuntimeException ignored) {}
+        try { info.services = pm.getPackageInfo(pkg, match | PackageManager.GET_SERVICES).services; } catch (RuntimeException ignored) {}
+        try { info.receivers = pm.getPackageInfo(pkg, match | PackageManager.GET_RECEIVERS).receivers; } catch (RuntimeException ignored) {}
+        try { info.providers = pm.getPackageInfo(pkg, match | PackageManager.GET_PROVIDERS).providers; } catch (RuntimeException ignored) {}
+        return info;
     }
 
     /**
@@ -2179,6 +2393,16 @@ public class MainActivity extends Activity {
         out.put("protection", protection);
         out.put("changeable", changeable);
         out.put("appOp", appOp);
+        // the app op behind the permission, by the name appops uses (android:system_alert_window -> SYSTEM_ALERT_WINDOW), or none: the App Ops list
+        // shows it even before it was ever set, and an app-op permission (one pm grant cannot change) is switched through it (v7.19.0)
+        try {
+            String op = android.app.AppOpsManager.permissionToOp(permName);
+            if (op != null && op.startsWith("android:")) {
+                String name = op.substring(8).toUpperCase(java.util.Locale.ROOT);
+                if ("FINE_LOCATION".equals(name)) name = "COARSE_LOCATION";       // Android keeps the location mode under the coarse op (its switch op)
+                if (ShellArgs.isAppOp(name)) out.put("op", name);
+            }
+        } catch (Throwable ignored) {}
         out.put("label", label);
         out.put("description", description);
         out.put("group", group);
@@ -2598,6 +2822,7 @@ public class MainActivity extends Activity {
                         loadUpdateState();
                         before = updateLastSummary;
                         rowsBefore.putAll(updateResults);
+                        if (mobileDataBlocked("updates_mobile_data")) throw new java.io.IOException(UPDATES_WIFI_ONLY);
                         approvedUpdates.clear();            // a yes holds for the update it was given for, not for what a new check finds
                         retried = retryFailed && before != null ? pkgsOfArray(before.optJSONArray("failed")) : null;
                         if (retried != null) {
@@ -2611,7 +2836,9 @@ public class MainActivity extends Activity {
                             PackageManager pm = getPackageManager();
                             JSONObject sources = updateSources();
                             List<UpdateChecker.App> apps = new ArrayList<UpdateChecker.App>();
+                            Set<String> ownFonts = fmkMadeHere();          // font packages made in Custom Fonts: no store has them
                             for (ApplicationInfo ai : pm.getInstalledApplications(0)) {
+                                if (ownFonts.contains(ai.packageName)) continue;
                                 String inst = installerOf(ai.packageName);
                                 boolean os = isOpenSourceCandidate(ai, inst, sources);
                                 boolean gx = isGalaxyStoreCandidate(ai, inst);
@@ -2640,7 +2867,7 @@ public class MainActivity extends Activity {
                             };
                             if (retried == null) {
                                 PackageInfo me = pm.getPackageInfo(getPackageName(), 0);
-                                o.self = new UpdateChecker.App(getPackageName(), "ADB/Root Full System Toolbox", currentVersionName(), versionCodeOf(me), null, false, false, false);
+                                o.self = new UpdateChecker.App(getPackageName(), "ADB/Root Toolbox", currentVersionName(), versionCodeOf(me), null, false, false, false);
                             }
                             UpdateChecker checker = new UpdateChecker(UpdateManager.netHttp(5000, 8000), UpdateChecker.SYSTEM_CLOCK, updateCache());
                             updateCheckRun = checker;
@@ -3192,6 +3419,7 @@ public class MainActivity extends Activity {
             public void run() {
                 JSONObject o = new JSONObject();
                 try {
+                    storeNetGate();
                     JSONObject cat = ShizuStore.catalog(200, 2000);
                     o.put("status", "ok");
                     o.put("base", ShizuStore.BASE);
@@ -3468,11 +3696,48 @@ public class MainActivity extends Activity {
         return new File(d, key.replaceAll("[^A-Za-z0-9._-]", "_") + ".json");
     }
 
-    /** A cached catalog (JSON array of items) younger than {@code ttlMs}, or null. */
+    /** The page's message when a catalog would be downloaded on mobile data while "Update stores on mobile data" is off. */
+    private static final String STORE_WIFI_ONLY = "You are on mobile data, and stores update only on Wi-Fi. Turn on Update stores on mobile data (at the bottom of this tab) to allow it.";
+
+    /**
+     * v7.18.1, the owner's wish: the App Stores tab's "Update stores on mobile data" (the page's kv 'store_mobile_data', off by default). While it
+     * is off, a store catalog is not downloaded or refreshed unless the phone is on Wi-Fi or Ethernet: a catalog kept from before is shown instead,
+     * whatever its age, and without one the load ends with STORE_WIFI_ONLY. A VPN or another network counts as mobile data when it is metered.
+     * Offline (no network) is not blocked here: the download fails on its own, with its own message.
+     */
+    private boolean storeMobileBlocked() { return mobileDataBlocked("store_mobile_data"); }
+
+    /** The Application Updater's own switch of the same kind, "Check for updates on mobile data" (kv 'updates_mobile_data', off by default, v7.18.1). */
+    private static final String UPDATES_WIFI_ONLY = "You are on mobile data, and updates are checked only on Wi-Fi. Turn on Check for updates on mobile data (at the bottom of this tab) to allow it.";
+
+    /** True on mobile data (or a metered VPN / other network) while the page's switch under kv {@code kvKey} does not allow it; never offline. */
+    private boolean mobileDataBlocked(String kvKey) {
+        try {
+            if (prefs != null && "true".equals(prefs.getString("kv_" + kvKey, ""))) return false;
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return false;
+            android.net.Network n = cm.getActiveNetwork();
+            android.net.NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+            if (nc == null) return false;
+            if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) return false;
+            if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) return true;
+            return cm.isActiveNetworkMetered();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Called right before a catalog goes to the network: stops it on mobile data while that is not allowed (storeMobileBlocked). */
+    private void storeNetGate() throws java.io.IOException {
+        if (storeMobileBlocked()) throw new java.io.IOException(STORE_WIFI_ONLY);
+    }
+
+    /** A cached catalog (JSON array of items) younger than {@code ttlMs} (of any age on mobile data while stores update only on Wi-Fi), or null. */
     private JSONArray storeCacheRead(String key, long ttlMs) {
         try {
             File f = storeCacheFile(key);
-            if (!f.isFile() || System.currentTimeMillis() - f.lastModified() > ttlMs || f.length() > 40L * 1024 * 1024) return null;
+            if (!f.isFile() || f.length() > 40L * 1024 * 1024) return null;
+            if (System.currentTimeMillis() - f.lastModified() > ttlMs && !storeMobileBlocked()) return null;
             java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream((int) f.length());
             java.io.FileInputStream in = new java.io.FileInputStream(f);
             try {
@@ -3559,6 +3824,7 @@ public class MainActivity extends Activity {
         if (arg != null && arg.startsWith("q:")) {
             String q = arg.substring(2).trim();
             if (q.isEmpty()) { storeDeliver(source, arg, new JSONArray(), null); return; }
+            storeNetGate();
             JSONArray found = new JSONArray();
             Set<String> seen = new HashSet<String>();
             for (int page = 0; page < 2; page++) {
@@ -3583,6 +3849,7 @@ public class MainActivity extends Activity {
             storeDeliver(source, arg, cached, extra);
             return;
         }
+        storeNetGate();
 
         JSONArray all = new JSONArray();
         Set<String> seen = new HashSet<String>();
@@ -3635,6 +3902,7 @@ public class MainActivity extends Activity {
         if (force) storeCacheClear("orion");
         JSONArray cached = force ? null : storeCacheRead("orion", STORE_CACHE_TTL_MS);
         if (cached != null && cached.length() > 0) { storeDeliver("orion", null, cached, null); return; }
+        storeNetGate();
         storeProgress("orion", null, "Downloading the Orion catalog…");
         JSONArray items = Stores.orionCatalog(4000).optJSONArray("items");
         if (items == null) items = new JSONArray();
@@ -3669,6 +3937,7 @@ public class MainActivity extends Activity {
             storeDeliver(source, arg, cached, extra);
             return;
         }
+        storeNetGate();
         storeProgress(source, arg, "Contacting the repository…");
         final File detailTmp = new File(storeDetailFile(address).getPath() + ".tmp");
         final java.io.BufferedWriter dw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new FileOutputStream(detailTmp), "UTF-8"), 65536);
@@ -3715,6 +3984,7 @@ public class MainActivity extends Activity {
         if (force) storeCacheClear(ckey);
         JSONArray cached = force ? null : storeCacheRead(ckey, STORE_CACHE_TTL_MS);
         if (cached != null && cached.length() > 0) { storeDeliver(source, arg, cached, null); return; }
+        storeNetGate();
         storeProgress(source, arg, "Asking " + ("github-owner".equals(kind) || "github-repo".equals(kind) ? "GitHub" : "Codeberg") + "…");
         String token = secrets().get(SecretSettings.GITHUB_TOKEN);
         JSONArray items;
@@ -3735,11 +4005,13 @@ public class MainActivity extends Activity {
      * "q:<text>" = search), "orion", "fdroid-repos" (the known-repo directory) or "fdroid-repo" (arg = address).
      * {@code force} bypasses the on-disk cache.
      */
-    private void runStoreSourceCatalog(final String source, final String arg, final boolean force) {
+    private void runStoreSourceCatalog(final String source, final String arg, final boolean refresh) {
         executor.submit(new Runnable() {
             @Override
             public void run() {
                 try {
+                    // a Refresh on mobile data while stores update only on Wi-Fi does not clear the copy from before: it is shown again
+                    final boolean force = refresh && !storeMobileBlocked();
                     if ("github".equals(source)) loadGithubCatalog(arg, force);
                     else if ("orion".equals(source)) loadOrionCatalog(force);
                     else if ("fdroid-repos".equals(source)) {
@@ -4110,6 +4382,51 @@ public class MainActivity extends Activity {
         return null;
     }
 
+    /**
+     * The parts of an app that belong to a known tracker (TrackerParts.group), with each part's manifest default and its pm override. Disabled parts are
+     * listed too (MATCH_DISABLED_COMPONENTS): a part switched off must stay in the list so it can be switched back on.
+     */
+    private List<TrackerParts.Group> readTrackerParts(String pkg, Trackers t) throws PackageManager.NameNotFoundException {
+        int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES | PackageManager.GET_PROVIDERS
+                | PackageManager.MATCH_DISABLED_COMPONENTS;
+        PackageInfo info = getPackageManager().getPackageInfo(pkg, flags);
+        List<TrackerParts.Part> parts = new ArrayList<TrackerParts.Part>();
+        if (info.activities != null) for (ActivityInfo a : info.activities) addTrackerPart(parts, t, pkg, a.name, "activity", a.enabled);
+        if (info.services != null) for (ServiceInfo s : info.services) addTrackerPart(parts, t, pkg, s.name, "service", s.enabled);
+        if (info.receivers != null) for (ActivityInfo r : info.receivers) addTrackerPart(parts, t, pkg, r.name, "receiver", r.enabled);
+        if (info.providers != null) for (android.content.pm.ProviderInfo p : info.providers) addTrackerPart(parts, t, pkg, p.name, "provider", p.enabled);
+        return TrackerParts.group(t.db, pkg, parts);
+    }
+
+    /**
+     * The app's parts with these names, whatever the tracker list says of them now (name -> part, with its manifest default and pm override). The
+     * History's Undo names the parts its step switched, and a newer tracker list (Update the list, or a newer app) may no longer count one of them as a
+     * tracker's: it is still the app's part, and still switched. A name the app no longer has is left out.
+     */
+    private Map<String, TrackerParts.Part> readNamedParts(String pkg, Set<String> names) throws PackageManager.NameNotFoundException {
+        Map<String, TrackerParts.Part> out = new java.util.LinkedHashMap<String, TrackerParts.Part>();
+        if (names == null || names.isEmpty()) return out;
+        int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES | PackageManager.GET_PROVIDERS
+                | PackageManager.MATCH_DISABLED_COMPONENTS;
+        PackageInfo info = getPackageManager().getPackageInfo(pkg, flags);
+        List<String[]> all = new ArrayList<String[]>();                     // {name, kind, manifest enabled}
+        if (info.activities != null) for (ActivityInfo a : info.activities) all.add(new String[] { a.name, "activity", String.valueOf(a.enabled) });
+        if (info.services != null) for (ServiceInfo sv : info.services) all.add(new String[] { sv.name, "service", String.valueOf(sv.enabled) });
+        if (info.receivers != null) for (ActivityInfo rc : info.receivers) all.add(new String[] { rc.name, "receiver", String.valueOf(rc.enabled) });
+        if (info.providers != null) for (android.content.pm.ProviderInfo pv : info.providers) all.add(new String[] { pv.name, "provider", String.valueOf(pv.enabled) });
+        for (String[] c : all) {
+            if (c[0] == null || !names.contains(c[0]) || out.containsKey(c[0])) continue;
+            out.put(c[0], new TrackerParts.Part(c[0], c[1], Boolean.parseBoolean(c[2]), componentOverrideState(pkg, c[0])));
+        }
+        return out;
+    }
+
+    /** Adds one part when it belongs to a tracker; its pm override is asked only then (one call to the package manager per tracker part, not per part of the app). */
+    private void addTrackerPart(List<TrackerParts.Part> parts, Trackers t, String pkg, String name, String kind, boolean manifestEnabled) {
+        if (name == null || TrackerParts.trackerOf(t.db, pkg, name) < 0) return;
+        parts.add(new TrackerParts.Part(name, kind, manifestEnabled, componentOverrideState(pkg, name)));
+    }
+
     private JSONObject componentEntry(String pkg, String name, boolean exported, boolean manifestEnabled, String permission) throws Exception {
         JSONObject o = new JSONObject();
         o.put("name", name);
@@ -4235,11 +4552,6 @@ public class MainActivity extends Activity {
             int bad = res.optJSONArray("failed") == null ? 0 : res.optJSONArray("failed").length();
             return verb + " " + res.optInt("done") + " of " + res.optInt("total") + (bad > 0 ? " · " + bad + " failed" : "") + (res.optBoolean("cancelled") ? " · stopped" : "");
         } catch (Exception e) { return ""; }
-    }
-
-    private static String fmSizeText(long b) {
-        if (b >= 1048576L) return String.format(java.util.Locale.US, "%.1f MB", b / 1048576.0);
-        return Math.max(1, b / 1024) + " KB";
     }
 
     private static boolean fmProtectedPath(String p) {
@@ -4892,8 +5204,9 @@ public class MainActivity extends Activity {
      * "disable", their ids) with root, and reports it as window.onOverlayFab(json): req, op, ids (the overlay identifiers written or
      * switched off), ok, state (the first overlay as the list has it: 1 on, 0 off, -1 cannot be switched, -2 not listed), list, answer,
      * lookups (resource -> what Android printed for it), error, advice, needsPrivilege, unknown, mode.
-     * Root only (RootGate.active): cmd overlay fabricate turns away anyone but root, and Shizuku and ADB run as the shell user, so the
-     * gate is checked before any shell runs. Whether it worked is decided by the list and the lookups that follow the write
+     * The root user only (RootGate.uid0): cmd overlay fabricate turns away anyone but uid 0, so this is Root with su granted, or a
+     * Shizuku server started as root (uid 0). The system user (uid 1000) and the ADB shell user (uid 2000) are refused and stay
+     * locked. The gate is checked before any shell runs. Whether it worked is decided by the list and the lookups that follow the write
      * (OverlayRules.judgeFabricate), never by the commands' own text. {@code profile}: the build family the bridge checked the plan for
      * (MonetProfile's id), which also decides the entries looked up after the write.
      */
@@ -4909,11 +5222,16 @@ public class MainActivity extends Activity {
                 settingsReply("onOverlayFab", res);
                 return;
             }
-            String mode = activeWorkingMode;
+            String mode = resolveExecMode();
             res.put("mode", mode);
-            // su is asked only while Root is the chosen mode (probeWorkingMode does the same): a root manager's prompt must not pop up in another mode
+            // Writing a fabricated colour overlay needs the root user (uid 0): Android's overlay service refuses `cmd overlay fabricate`
+            // to anyone else, the ADB and system shell users included. That is Root with su, or a Shizuku server started as root (uid 0).
+            // Shizuku as the system user (uid 1000) is privileged but still refused here, and is kept locked on the page. su is asked only
+            // while Root is the mode (probeWorkingMode does the same), so no root-manager prompt pops up under Shizuku or ADB.
             boolean suGranted = "root".equals(mode) && isRootGranted();
-            if (!RootGate.active(mode, suGranted)) {
+            int fabSzUid = "shizuku".equals(mode) ? shizukuServerUid() : -1;
+            boolean fabShizuku = "shizuku".equals(mode) && isShizukuAuthorized();
+            if (!RootGate.uid0(mode, suGranted, fabShizuku, fabSzUid)) {
                 res.put("ok", false);
                 res.put("needsPrivilege", true);
                 res.put("error", "Needs Super User");
@@ -4925,7 +5243,7 @@ public class MainActivity extends Activity {
                 for (String id : wrote) idArr.put(id);
                 res.put("ids", idArr);
                 String script = disable ? OverlayRules.disableScript(ids) : OverlayRules.fabricateScript(sdk, profile, entries);
-                String out = runPrivilegedShell("root", script, 30000);
+                String out = runPrivilegedShell(mode, script, 30000);
                 // the script is long, not secret, but a release build logs sizes only (the rule is general); a debuggable build the whole exchange
                 if (isDebuggableBuild()) Log.d(TAG, "overlayFabricate [" + op + "]: " + script + " -> " + (out != null ? out.trim() : ""));
                 else Log.d(TAG, "overlayFabricate [" + op + "]: " + script.length() + " chars -> " + (out != null ? out.length() : 0) + " chars");
@@ -6130,7 +6448,9 @@ public class MainActivity extends Activity {
         try {
             File f = new File(path);
             if (hasStorageAccess()) {
-                if (folder && f.isDirectory()) { File[] kids = f.listFiles(); if (kids != null) for (File k : kids) k.delete(); }
+                if (folder && f.isDirectory()) { // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        String[] kids = f.list(); if (kids != null) for (String k : kids) new File(f, k).delete(); }
                 f.delete();
                 if (!f.exists()) return;
             }
@@ -6615,6 +6935,2178 @@ public class MainActivity extends Activity {
             @Override public String name() { return name; }
         }, FontScan.READ_TIMEOUT_MS);
     }
+
+    // FONTMAKER:BEGIN
+    // ---------------------------------------------------------------------------------------------
+    // Custom Fonts (v7.17.0): fonts made on the phone from the user's own files, the library of them (My fonts), the five emoji downloads,
+    // the Samsung font changer and the system emoji swap; the bridge is design section 6 (fontMaker*, emoji*, sysEmoji*, softRestart). What
+    // needs no Android classes is FontLibrary's (ids, tokens, the request, meta.json, jobs), the fonts are FontBuilder's and FontPackage's,
+    // the privileged scripts SamsungFonts', the downloads EmojiCatalog's: all tested on the JDK. v7.18.0 adds the Google Fonts browser
+    // (gfonts*: GoogleFonts') and the emoji fonts card's samples (emojiSpecimen*: EmojiSpecimen's).
+    // ---------------------------------------------------------------------------------------------
+
+    private static final int REQ_FONTMAKER_PICK = 4294;     // a font file for the font maker (Regular, Bold or emoji)
+    private static final int REQ_FONTMAKER_EXPORT = 4295;   // where an exported font package is saved
+    private static final int REQ_GFONTS_SAVE = 4296;        // where a downloaded Google Fonts family is saved (a .zip)
+    /** The options of every font package install: an update replaces, and Samsung's store is named as the installer (One UI lists fonts by it). */
+    private static final String FMK_INSTALL_FLAGS = "-r -i com.sec.android.app.samsungapps";
+    private static final String FMK_LOCK_CHANGER = "Needs Root, or Shizuku running as the system user (UID 1000) or root (UID 0).";
+    private static final String FMK_LOCK_SYS = "Needs Root, or Shizuku running as root (UID 0).";
+    private static final String FMK_NOT_SAMSUNG = "Font packages work only on Samsung phones.";
+    private static final String FMK_NOT_FOUND = "That font is not in this app any more.";
+    private static final String FMK_CHANGED = "This font's files changed since it was made. Make it again.";
+    private static final String FMK_NO_MEMORY = "The phone ran out of memory for this font. Close other apps and try again, or choose smaller fonts.";
+    private static final String FMK_EMOJI_UPDATED = "This phone's emoji were updated by Google Play services, and the swap cannot replace updated emoji safely. It does not run on this phone.";
+    private static final String FMK_NO_MOUNTS = "The app cannot read the phone's list of mounts, so it cannot tell its own emoji swap from another tool's and changes nothing. A restart of the phone always puts its own emoji back.";
+    // copies of picked files, builds, downloads, exports, installs (side by side); the font changer, the system emoji and Soft reboot one after
+    // the other, in the order they were asked for. Both are stopped in onDestroy.
+    private final ExecutorService fontExec = Executors.newCachedThreadPool();
+    private final ExecutorService fontPrivExec = Executors.newSingleThreadExecutor();
+    // Google Fonts previews (gfontsPreview): a css2 answer and its small faces each, at most four at a time; stopped in onDestroy, and the
+    // connections they have open (gfPreviewConns) are closed then
+    private final ExecutorService gfExec = Executors.newFixedThreadPool(4);
+    private final Set<java.net.HttpURLConnection> gfPreviewConns = Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<java.net.HttpURLConnection, Boolean>());
+    private final java.security.SecureRandom fmkRandom = new java.security.SecureRandom();
+    // The library, the jobs and the open downloads belong to the process, not to one window: a second window (an APK opened with this app from
+    // a file manager, a Quick Settings tile's long press) sees what the first one runs, and the folders are tidied once, before anything uses
+    // them. A window's picked files are in a folder of its own, and a window that closes stops only the jobs it started.
+    private static final FontLibrary.Jobs fmkJobs = new FontLibrary.Jobs();
+    // the open downloads by job id: Cancel (and the window closing) disconnects them, so a stalled connect or read ends at once
+    private static final java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection> fmkConns = new java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection>();
+    private static final Object fmkSharedLock = new Object();
+    private static FontLibrary.Dirs fmkSharedDirs;      // made on first use in the process: the files folder is not there before onCreate
+    // the system emoji's steps (status, Apply, Undo, a staged copy's delete) one at a time in the whole process: each window has a fontPrivExec
+    // of its own, and a step of one window must never read or delete what another window's Apply is staging or binding
+    private static final Object fmkSysLock = new Object();
+    private static final String STATE_FMK_EXPORT = "fontmaker_export_id";
+    private static final String STATE_GF_SAVE = "gfonts_save_family";
+    private final Object fmkLock = new Object();
+    private FontLibrary.Picks fmkPicks;
+    private String fmkPickSlot, fmkExportId;     // what the open file chooser / "save as" is for, one at a time (guarded by fmkLock)
+    private String gfSaveFamily;                 // the Google Fonts family the open "save as" is for: one save screen for both (guarded by fmkLock)
+    // The Google Fonts list belongs to the process: read from catalog.json once, replaced whole by a refresh (guarded by gfLock), with its
+    // families by name; and the details of the last 24 families asked for (gfontsInfo), least recently asked first, until a refresh replaces the
+    // list (Google may have changed a family's files, its licence or its Reserved Font Names since).
+    private static final String GF_CATALOG = "catalog.json";
+    private static final java.util.regex.Pattern GF_REQ_ID = java.util.regex.Pattern.compile("[A-Za-z0-9_-]{1,24}");
+    private static final Object gfLock = new Object();
+    private static boolean gfCatalogRead;
+    private static JSONObject gfCatalog;
+    private static Map<String, JSONObject> gfIndex = Collections.emptyMap();
+    private static final java.util.LinkedHashMap<String, JSONObject> gfInfos = new java.util.LinkedHashMap<String, JSONObject>(32, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, JSONObject> eldest) {
+            return size() > GoogleFonts.INFO_CACHE;
+        }
+    };
+    private volatile int fmkOneUiRaw = -1;       // ro.build.version.oneui (80500 = 8.5), read once
+    private volatile String fmkOneUiText;
+
+    private FontLibrary.Dirs fmkDirs() {
+        synchronized (fmkSharedLock) {
+            if (fmkSharedDirs == null) {
+                FontLibrary.Dirs d = new FontLibrary.Dirs(getFilesDir(), getCacheDir());
+                // once per process, before any job: what a crash, a power cut or a killed process left
+                FontLibrary.sweep(d);                       // staged folders, a folder a rebuild moved aside, an entry whose files did not reach the disk
+                EmojiCatalog.sweep(d.emoji);                // a download's .part file and Twemoji's zip
+                FontLibrary.deleteTree(d.work);
+                FontLibrary.deleteTree(d.in);               // picked copies: the pages that knew their tokens are gone
+                GoogleFonts.sweep(d.gfFamilies);            // a download's .part folder, a family moved aside or being deleted, one not whole
+                new File(d.gfonts, GF_CATALOG + ".part").delete();      // a list write cut short
+                fmkSharedDirs = d;
+            }
+            return fmkSharedDirs;
+        }
+    }
+
+    private FontLibrary.Picks fmkPicks() {
+        FontLibrary.Dirs d = fmkDirs();
+        synchronized (fmkLock) {
+            if (fmkPicks == null) fmkPicks = new FontLibrary.Picks(d.pickFolder(FontLibrary.newId(fmkRandom)));     // this window's own folder
+            return fmkPicks;
+        }
+    }
+
+    private static String fmkErr(String code, String message) {
+        return FontLibrary.error(code, message).toString();
+    }
+
+    private static String fmkOk(String key, String value) {
+        try {
+            JSONObject o = new JSONObject().put("ok", true);
+            if (key != null) o.put(key, value);
+            return o.toString();
+        } catch (Exception e) {
+            return "{\"ok\":true}";
+        }
+    }
+
+    /**
+     * Who may run the font scripts now, or null: the font changer needs the root user or the system user (RootGate.unlocked: Root with su
+     * granted, or Shizuku as uid 0 or 1000), the system emoji swap and Soft reboot the root user (RootGate.uid0), the same gates as the tracker
+     * switches and the overlay fabricate. The answer is the backend: "root" (su), "system" (Shizuku as uid 1000) or "uid0" (Shizuku as uid 0).
+     */
+    private String fmkGate(boolean rootUserOnly) {
+        String mode = resolveExecMode();
+        boolean suGranted = "root".equals(mode) && isRootGranted();
+        boolean sz = "shizuku".equals(mode) && isShizukuAuthorized();
+        int szUid = sz ? shizukuServerUid() : -1;
+        boolean open = rootUserOnly ? RootGate.uid0(mode, suGranted, sz, szUid) : RootGate.unlocked(mode, suGranted, sz, szUid);
+        if (!open) return null;
+        return "root".equals(mode) ? "root" : szUid == 1000 ? "system" : "uid0";
+    }
+
+    /**
+     * Runs one script through the backend fmkGate chose and returns what it printed (the script's own read-back decides what happened, never
+     * an exit text). A font for the script's stdin is streamed from this app's file: through the Shizuku API (the system user cannot read this
+     * app's files), or with su from the file itself.
+     */
+    private String fmkRun(String backend, String script, File stdin, int timeoutMs) throws Exception {
+        if ("root".equals(backend)) {
+            if (stdin == null) return runRootScript(script, timeoutMs);
+            File f = new File(getCacheDir(), "root_" + System.nanoTime() + ".sh");
+            try {
+                FileOutputStream out = new FileOutputStream(f);
+                try {
+                    out.write(script.getBytes("UTF-8"));
+                } finally {
+                    out.close();
+                }
+                f.setReadable(true, false);
+                ProcessBuilder pb = new ProcessBuilder("su", "-c", "sh " + BackupScripts.quote(f.getAbsolutePath()) + " < " + BackupScripts.quote(stdin.getAbsolutePath()));
+                pb.redirectErrorStream(true);
+                String r = runProcessWithTimeout(pb, timeoutMs);
+                return r == null ? "" : r;
+            } finally {
+                f.delete();
+            }
+        }
+        if (!"system".equals(backend) && !"uid0".equals(backend)) throw new IllegalStateException(FMK_LOCK_CHANGER);
+        InputStream in = stdin == null ? null : new java.io.FileInputStream(stdin);
+        try {
+            return shizukuPipe(script, in, timeoutMs);
+        } finally {
+            if (in != null) try { in.close(); } catch (IOException ignored) {}
+        }
+    }
+
+    private void fmkProgress(String job, String stage, long done, long total) {
+        notifyJs("window.onFontMakerProgress && window.onFontMakerProgress(" + JSONObject.quote(job) + ", " + JSONObject.quote(stage) + ", " + done + ", " + total + ")");
+    }
+
+    private void fmkPicked(String slot, JSONObject res) {
+        notifyJs("window.onFontMakerPicked && window.onFontMakerPicked(" + JSONObject.quote(slot) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    private void fmkExported(String id, JSONObject res) {
+        notifyJsWhenReady("window.onFontMakerExported && window.onFontMakerExported(" + JSONObject.quote(id) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /** The versionCode of an installed package, 0 when it is not installed. */
+    private long fmkInstalledVersion(String pkg) {
+        try {
+            PackageInfo pi = getPackageManager().getPackageInfo(pkg, 0);
+            return Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
+        } catch (Throwable notInstalled) {
+            return 0;
+        }
+    }
+
+    /** The installed FlipFont packages (com.monotype.android.font.*), for the row Settings > Font style highlights. */
+    private List<String> fmkFontPackages() {
+        List<String> out = new ArrayList<String>();
+        try {
+            for (PackageInfo pi : getPackageManager().getInstalledPackages(0)) {
+                if (pi.packageName != null && pi.packageName.startsWith(FontPackage.PACKAGE_PREFIX)) out.add(pi.packageName);
+            }
+        } catch (Throwable ignored) {}
+        return out;
+    }
+
+    /**
+     * The installed font packages this app made (FontPackage.madeHere: in My fonts, or signed with the app's key), which the update check
+     * leaves out. Install names Samsung's store as their installer, so the check would otherwise ask the Galaxy Store about each one, sending
+     * the font's name along with the phone's model and region, for a package no store has.
+     */
+    private Set<String> fmkMadeHere() {
+        Set<String> out = new HashSet<String>();
+        try {
+            Set<String> suffixes = new HashSet<String>();
+            for (FontLibrary.Entry e : FontLibrary.list(fmkDirs())) suffixes.add(e.suffix);
+            String key = null;
+            try {
+                SigningKey k = SigningKey.existing();
+                if (k != null) key = k.sha256();
+            } catch (Throwable noKey) {}
+            int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+            for (String pkg : fmkFontPackages()) {
+                try {
+                    PackageInfo pi = getPackageManager().getPackageInfo(pkg, sigFlags);
+                    boolean system = pi.applicationInfo != null && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+                    if (FontPackage.madeHere(pkg, system, suffixes, signerDigests(pi, true), key)) out.add(pkg);
+                } catch (Throwable gone) {}
+            }
+        } catch (Throwable ignored) {}
+        return out;
+    }
+
+    /** One UI as major*100 + minor*10 (8.5 is 850; 0 off Samsung or unreadable), from ro.build.version.oneui, else Build.VERSION.SEM_PLATFORM_INT. */
+    private int fmkOneUi100() {
+        if (!isSamsung()) return 0;
+        int raw = fmkOneUiRaw;
+        if (raw < 0) {
+            raw = 0;
+            try {
+                String line = runProcessWithTimeout(new ProcessBuilder("getprop", "ro.build.version.oneui"), 2000).trim();
+                if (line.matches("\\d{4,7}")) raw = Integer.parseInt(line);
+            } catch (Throwable ignored) {}
+            if (raw <= 0) {
+                try {
+                    int sem = Build.VERSION.class.getField("SEM_PLATFORM_INT").getInt(null);
+                    if (sem >= 100000) raw = sem - 90000;
+                } catch (Throwable ignored) {}
+            }
+            fmkOneUiRaw = raw;
+        }
+        return SamsungFonts.oneUiTimes100(raw);
+    }
+
+    /** {samsung, oneUi, appliesSelfSigned, sdk, userId}: what My fonts says about installing on this phone. */
+    private JSONObject fmkDevice() throws Exception {
+        String text = fmkOneUiText;
+        if (text == null) fmkOneUiText = text = oneUiVersion();
+        boolean samsung = isSamsung();
+        return new JSONObject().put("samsung", samsung).put("oneUi", text)
+                .put("appliesSelfSigned", samsung && SamsungFonts.appliesSelfSigned(fmkOneUi100(), Build.VERSION.SECURITY_PATCH))
+                .put("sdk", Build.VERSION.SDK_INT).put("userId", FontLibrary.userIdOf(android.os.Process.myUid()));
+    }
+
+    private String fmkLibraryJson() throws Exception {
+        FontLibrary.Dirs d = fmkDirs();
+        String applied = FontLibrary.readApplied(d);
+        JSONArray rows = new JSONArray();
+        for (FontLibrary.Entry e : FontLibrary.list(d)) rows.put(FontLibrary.entryJson(e, fmkInstalledVersion(e.pkg), applied != null && applied.equals(e.suffix)));
+        return new JSONObject().put("ok", true).put("entries", rows).put("device", fmkDevice()).toString();
+    }
+
+    /** A file as base64 for a FontFace preview; "" when it is missing or larger than 24 MB (the page then shows it in its own font). */
+    private String fmkBase64(File f) {
+        try {
+            long len = f.length();
+            if (!f.isFile() || len <= 0 || len > FontLibrary.MAX_PREVIEW_BYTES) return "";
+            return android.util.Base64.encodeToString(FontLibrary.readFile(f, FontLibrary.MAX_PREVIEW_BYTES), android.util.Base64.NO_WRAP);
+        } catch (Throwable e) {                                         // OutOfMemoryError on a small phone included
+            return "";
+        }
+    }
+
+    // ---- picking ----
+
+    /** The file chooser answered for a slot: the file is copied and read on fontExec. */
+    private void fmkPickResult(final String slot, final Uri uri) {
+        if (slot == null) return;
+        if (uri == null) { fmkPicked(slot, FontLibrary.error("cancelled", "No file was chosen.")); return; }
+        // the choices are numbered as they come in (fontMakerPick made the picks already, so nothing is read here, on the UI thread): a copy
+        // from a slow provider that ends after a later choice of the slot does not replace it
+        final int ask = fmkPicks().ask(slot);
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    fmkPicked(slot, fmkCopyPick(slot, uri, ask));
+                }
+            });
+        } catch (RejectedExecutionException closing) {}
+    }
+
+    /**
+     * Copies a font to this window's folder in cache/fontmaker/in/ (at most 96 MB: one byte more and the copy stops and is deleted), reads
+     * what it is with FontInspect and keeps it under a new random token, the only name the page gets for it, unless a later choice of the
+     * slot ({@code ask}) came in meanwhile. The font is a file the user chose ({@link #fmkCopyPick(String, Uri, int)}) or a downloaded Google
+     * Fonts file (gfontsUse), whose copy must also be the file its meta.json recorded ({@code wantSize}, {@code wantSha}; null for a chosen
+     * file): gf_changed. {@code in} is closed here. The emoji slot takes only a colour (COLR) font with TrueType outlines, and is not warned
+     * that it has no letters.
+     * {ok, token, fileName, size, info} or {ok:false, code, error} ("cancelled" for a choice a later one replaced).
+     */
+    private JSONObject fmkCopyPick(String slot, InputStream in, String name, int ask, long wantSize, String wantSha) {
+        FontLibrary.Picks picks = fmkPicks();
+        String token = FontLibrary.newToken(fmkRandom);
+        File f = picks.fileFor(slot, token);
+        boolean kept = false;
+        try {
+            File dir = f.getParentFile();
+            if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("The app has no room for a copy of the file.");
+            long size;
+            try {
+                FileOutputStream out = new FileOutputStream(f);
+                try {
+                    size = FontLibrary.copyCapped(in, out, FontLibrary.MAX_PICK_BYTES);
+                } finally {
+                    out.close();
+                }
+            } finally {
+                in.close();
+            }
+            if (size <= 0) throw new Sfnt.FontException("not_a_font", "This file is empty.");
+            byte[] data = FontLibrary.readFile(f, FontLibrary.MAX_PICK_BYTES);
+            if (wantSha != null && (size != wantSize || !wantSha.equals(FontLibrary.sha256(data)))) return FontLibrary.error("gf_changed", GoogleFonts.E_CHANGED);
+            FontInspect.Info info = FontInspect.inspect(data);
+            if ("emoji".equals(slot)) {
+                if ("CBDT".equals(info.color) || "sbix".equals(info.color))
+                    throw new Sfnt.FontException("bitmap_emoji", "This emoji font is made of pictures (" + info.color + "), which cannot be put inside a font. Choose a COLR emoji font.");
+                if (!info.color.startsWith("COLR")) throw new Sfnt.FontException("not_emoji", "This font has no colour emoji (COLR). Choose a COLR emoji font.");
+                // the merge takes only TrueType outlines (EmojiMerge.checkEmoji): refused here, not after the Regular is read
+                if (!"TrueType".equals(info.outlines))
+                    throw new Sfnt.FontException("emoji_outlines", "This emoji font's outlines are PostScript ones (" + info.outlines
+                            + "); only an emoji font with TrueType outlines (glyf) can be added. Choose another emoji font.");
+                info.warnings.remove(FontInspect.W_NO_LATIN);                 // an emoji font needs no letters
+            }
+            if (!picks.put(new FontLibrary.Pick(slot, token, name, f, size, info.color, info.outlines, info.variable), ask))
+                return FontLibrary.error("cancelled", "A later choice replaced this file.");
+            kept = true;
+            return new JSONObject().put("ok", true).put("token", token).put("fileName", name).put("size", size).put("info", FontLibrary.infoJson(info));
+        } catch (Sfnt.FontException fe) {
+            return FontLibrary.error(fe.code, fe.getMessage());
+        } catch (OutOfMemoryError oom) {
+            return FontLibrary.error("no_memory", FMK_NO_MEMORY);
+        } catch (Throwable t) {
+            return FontLibrary.error("unreadable", "The app could not read that file: " + errMsg(t));
+        } finally {
+            try { in.close(); } catch (IOException ignored) {}         // when the copy did not start
+            if (!kept) f.delete();
+        }
+    }
+
+    /** The file the user chose for a slot, copied by {@link #fmkCopyPick(String, InputStream, String, int, long, String)} under its own name. */
+    private JSONObject fmkCopyPick(String slot, Uri uri, int ask) {
+        String name;
+        InputStream in;
+        try {
+            name = cdSafeName(contentName(uri));
+            in = getContentResolver().openInputStream(uri);
+            if (in == null) throw new IOException("The app could not open that file.");
+        } catch (Throwable t) {
+            return FontLibrary.error("unreadable", "The app could not read that file: " + errMsg(t));
+        }
+        return fmkCopyPick(slot, in, name, ask, -1, null);
+    }
+
+    // ---- building ----
+
+    /** fontMakerBuild: the request and every input it names are checked here, then the font is made on fontExec. {ok, job} or {ok:false, code, error}. */
+    private String fmkStartBuild(String json) {
+        final FontLibrary.Request req;
+        try {
+            req = FontLibrary.parseRequest(json);
+        } catch (FontLibrary.BadRequest bad) {
+            return fmkErr(bad.code, bad.getMessage());
+        }
+        final FontLibrary.Dirs d = fmkDirs();
+        final FontLibrary.Picks picks = fmkPicks();
+        final FontLibrary.Pick reg = picks.get(req.regular.token);
+        if (reg == null || "emoji".equals(reg.slot)) return fmkErr("no_regular", "Choose the Regular font again.");
+        final FontLibrary.Pick bold = req.bold == null ? null : picks.get(req.bold.token);
+        if (req.bold != null && (bold == null || "emoji".equals(bold.slot))) return fmkErr("bad_request", "Choose the Bold font again.");
+        EmojiCatalog.Item item = null;
+        FontLibrary.Pick emo = null;
+        if (req.emojiCatalogId != null) {
+            item = EmojiCatalog.byId(req.emojiCatalogId);
+            if (item == null) return fmkErr("bad_request", "That emoji font is not in the list.");
+            if (!item.mergeable) return fmkErr("bitmap_emoji", "Emoji font: " + item.name + " is made of pictures, which cannot be put inside a font. It can only be the phone's emoji.");
+            EmojiCatalog.Item kept = FontLibrary.keptBuild(item, d.emojiFile(item.id));
+            if (kept == null) return fmkErr("not_downloaded", "Download " + item.name + " first.");
+            if (kept.minApiForMerge > Build.VERSION.SDK_INT) return fmkErr("not_usable", item.name + " needs a newer Android to show inside a font.");
+        } else if (req.emojiToken != null) {
+            emo = picks.get(req.emojiToken);
+            if (emo == null || !"emoji".equals(emo.slot)) return fmkErr("bad_request", "Choose the emoji font file again.");
+            // Android draws COLRv1 from 13 on: inside a font on an older phone, every emoji would be blank (the font's own emoji hide the phone's)
+            if (FontLibrary.minApiForEmoji(emo.color) > Build.VERSION.SDK_INT)
+                return fmkErr("not_usable", "Emoji font: this COLRv1 emoji font needs Android 13 or newer to show inside a font.");
+        }
+        FontLibrary.Entry rebuild = null;
+        if (req.rebuildId != null) {
+            rebuild = FontLibrary.read(d, req.rebuildId);
+            if (rebuild == null) return fmkErr("not_found", FMK_NOT_FOUND);
+        }
+        // one build at a time (a variable font made static twice and an emoji merge can take a few hundred MB). A font made again is not
+        // started while it is installed, uninstalled, applied or saved ("id:"), and holds "make:" so an install, an apply or a save does not
+        // start while its files are replaced.
+        final FontLibrary.Jobs.Job job = fmkJobs.startFor(this, rebuild == null ? null : "id:" + rebuild.id, "build", "only",
+                "tok:" + reg.token, bold == null ? null : "tok:" + bold.token, emo == null ? null : "tok:" + emo.token, item == null ? null : "cat:" + item.id,
+                rebuild == null ? null : "id:" + rebuild.id, rebuild == null ? null : "make:" + rebuild.id);
+        if (job == null) {
+            if (fmkJobs.running("build", "only") != null) return fmkErr("busy", "A font is being made. Wait for it to finish, or cancel it.");
+            return fmkErr("busy", "This font is busy. Wait for it to finish.");     // any of the jobs that hold "id:"
+        }
+        picks.hold(reg);
+        picks.hold(bold);
+        picks.hold(emo);
+        final EmojiCatalog.Item emojiItem = item;
+        final FontLibrary.Pick emojiPick = emo;
+        final FontLibrary.Entry again = rebuild;
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    fmkBuildJob(job, req, reg, bold, emojiPick, emojiItem, again);
+                }
+            });
+        } catch (RejectedExecutionException closing) {
+            picks.release(reg);
+            picks.release(bold);
+            picks.release(emo);
+            fmkJobs.finish(job);
+            return fmkErr("failed", "The app is closing.");
+        }
+        return fmkOk("job", job.id);
+    }
+
+    private static JSONObject fmkSource(FontLibrary.Pick p, Map<String, Double> location) throws Exception {
+        JSONObject c = null;
+        if (location != null) {
+            c = new JSONObject();
+            for (Map.Entry<String, Double> e : location.entrySet()) c.put(e.getKey(), e.getValue());
+        }
+        return new JSONObject().put("fileName", p.fileName).put("coords", c == null ? JSONObject.NULL : c);
+    }
+
+    private String fmkNewId(FontLibrary.Dirs d) {
+        for (int i = 0; ; i++) {
+            String id = FontLibrary.newId(fmkRandom);
+            if (!d.entryDir(id).exists() || i > 20) return id;
+        }
+    }
+
+    /**
+     * Makes the font: FontBuilder makes the faces (stages read, instance, convert, emoji), FontPackage writes the package (package), it is signed
+     * with this app's key (sign) and the entry is put in the library whole (save: staged, then renamed into place). A font made again keeps its
+     * package and gets the next versionCode, so it installs over the one on the phone. Answer: window.onFontMakerBuilt(job, {ok, entry, warnings}).
+     */
+    private void fmkBuildJob(final FontLibrary.Jobs.Job job, FontLibrary.Request req, FontLibrary.Pick reg, FontLibrary.Pick bold,
+                             FontLibrary.Pick emojiPick, EmojiCatalog.Item emojiItem, FontLibrary.Entry rebuild) {
+        final FontLibrary.Dirs d = fmkDirs();
+        final FontLibrary.Throttle throttle = new FontLibrary.Throttle(125);
+        FontProgress p = new FontProgress() {
+            @Override
+            public void step(String stage, int done, int total) {
+                if (throttle.due(stage, done, total, android.os.SystemClock.elapsedRealtime())) fmkProgress(job.id, stage, done, total);
+            }
+
+            @Override
+            public boolean cancelled() {
+                return job.cancelled() || activityDestroyed;
+            }
+        };
+        JSONObject res;
+        File staged = null, unsigned = null, prepared = null;
+        try {
+            FontBuilder.Request br = new FontBuilder.Request();
+            br.name = req.name;
+            byte[] regData = FontLibrary.readFile(reg.file, FontLibrary.MAX_PICK_BYTES);
+            br.regular = new FontBuilder.Face(regData, req.regular.coords);
+            if (bold != null) br.bold = new FontBuilder.Face(bold == reg ? regData : FontLibrary.readFile(bold.file, FontLibrary.MAX_PICK_BYTES), req.bold.coords);
+            if (emojiItem != null) {
+                // checked by SHA-256 when it was downloaded; checked again, since a build puts it inside a package the phone installs
+                File ef = d.emojiFile(emojiItem.id);
+                EmojiCatalog.Item kept = FontLibrary.keptBuild(emojiItem, ef);
+                byte[] em = kept == null ? null : FontLibrary.readFile(ef, FontLibrary.MAX_EMOJI_BYTES);
+                if (em == null || !kept.sha256.equals(FontLibrary.sha256(em)))
+                    throw new Sfnt.FontException("emoji_changed", "Emoji font: the downloaded file changed on the phone. Delete it and download it again.");
+                br.emoji = em;
+            } else if (emojiPick != null) {
+                br.emoji = FontLibrary.readFile(emojiPick.file, FontLibrary.MAX_PICK_BYTES);
+            }
+            br.emojiScale = req.emojiScale;
+            long now = System.currentTimeMillis();
+            br.time = now;
+            FontBuilder.Result out = FontBuilder.build(br, p);
+            br = null;                                                   // the sources can go before the package is written
+            regData = null;
+
+            FontLibrary.Entry e = FontLibrary.entryFor(req.name, rebuild, rebuild != null ? null : fmkNewId(d), now);
+            long installed = fmkInstalledVersion(e.pkg);
+            e.versionCode = FontLibrary.versionCodeFor(rebuild, installed);
+            e.hasBold = out.bold != null;
+            if (emojiItem != null) { e.emojiId = emojiItem.id; e.emojiName = emojiItem.name; }
+            else if (emojiPick != null) { e.emojiId = "own"; e.emojiName = emojiPick.fileName; }
+            e.sources = new JSONObject().put("regular", fmkSource(reg, out.regularLocation)).put("bold", bold == null ? JSONObject.NULL : fmkSource(bold, out.boldLocation));
+            e.warnings.addAll(out.warnings);
+
+            staged = FontLibrary.stageDir(d, e.id, fmkRandom);
+            File regFile = new File(staged, FontLibrary.REGULAR), boldFile = new File(staged, FontLibrary.BOLD);
+            java.nio.file.Files.write(regFile.toPath(), out.regular);
+            e.regularSize = out.regular.length;
+            e.regularSha = FontLibrary.sha256(out.regular);
+            out.regular = null;
+            if (e.hasBold) {
+                java.nio.file.Files.write(boldFile.toPath(), out.bold);
+                e.boldSize = out.bold.length;
+                e.boldSha = FontLibrary.sha256(out.bold);
+                out.bold = null;
+            }
+            FontPackage.Spec spec = new FontPackage.Spec();
+            spec.displayName = e.name;
+            spec.suffix = e.suffix;
+            spec.versionCode = e.versionCode;
+            spec.regularFile = regFile;
+            spec.boldFile = e.hasBold ? boldFile : null;
+            if (!d.work.isDirectory() && !d.work.mkdirs()) throw new IOException("There is no room in the app's cache for the package.");
+            unsigned = new File(d.work, e.id + "-" + System.nanoTime() + ".apk");
+            prepared = new File(d.work, "prep_" + unsigned.getName());
+            FontPackage.writeUnsigned(unsigned, spec, p);
+            FontProgress.Check.cancel(p);
+            fmkProgress(job.id, "sign", 0, 0);
+            SigningKey k = SigningKey.getOrCreate();
+            File apk = new File(staged, FontLibrary.APK);
+            ApkSigner.prepare(unsigned, prepared);
+            ApkSigner.signV2(prepared, apk, k.key, k.cert);
+            e.apkSize = apk.length();
+            e.apkSha = FontLibrary.sha256(apk);
+            FontProgress.Check.cancel(p);
+            fmkProgress(job.id, "save", 0, 0);
+            FontLibrary.commit(d, staged, e);
+            staged = null;
+            String applied = FontLibrary.readApplied(d);
+            res = new JSONObject().put("ok", true).put("entry", FontLibrary.entryJson(e, installed, applied != null && applied.equals(e.suffix))).put("warnings", new JSONArray(e.warnings));
+        } catch (Sfnt.FontException fe) {
+            res = FontLibrary.error(fe.code, fe.getMessage());
+        } catch (OutOfMemoryError oom) {
+            res = FontLibrary.error("no_memory", FMK_NO_MEMORY);
+        } catch (Throwable t) {
+            res = FontLibrary.error("failed", "The font could not be made: " + errMsg(t));
+        } finally {
+            if (staged != null) FontLibrary.deleteTree(staged);
+            if (unsigned != null) unsigned.delete();
+            if (prepared != null) prepared.delete();
+            FontLibrary.Picks picks = fmkPicks();
+            picks.release(reg);
+            picks.release(bold);
+            picks.release(emojiPick);
+            fmkJobs.finish(job);
+        }
+        if (!res.optBoolean("ok") && p.cancelled()) res = FontLibrary.error("cancelled", "The build was cancelled.");
+        notifyJs("window.onFontMakerBuilt && window.onFontMakerBuilt(" + JSONObject.quote(job.id) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    // ---- the library: delete, export, install, uninstall ----
+
+    private String fmkDelete(String id) {
+        if (!FontLibrary.isId(id)) return fmkErr("not_found", FMK_NOT_FOUND);
+        final FontLibrary.Dirs d = fmkDirs();
+        final FontLibrary.Entry e = FontLibrary.read(d, id);
+        if (e != null) {
+            String applied = FontLibrary.readApplied(d);
+            if (applied != null && applied.equals(e.suffix)) return fmkErr("applied", "This font is in use. Choose another font first, then delete it.");
+        }
+        if (fmkJobs.inUse("id:" + id)) {
+            if (fmkJobs.inUse("make:" + id)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
+            return fmkErr("busy", "This font is busy. Wait for it to finish.");     // an install, an uninstall, an apply or a save
+        }
+        if (!FontLibrary.delete(d, id)) return fmkErr("not_found", FMK_NOT_FOUND);
+        if (e != null) {
+            // the copy a font changer left in /data/app_fonts/<user>/<suffix>/ (applied once, then reset): removed when the changer is open, and
+            // only while the phone's sans.loc reads another font (the app's record of what it applied can be behind the phone)
+            try {
+                fontPrivExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (activityDestroyed || !isSamsung()) return;
+                        String backend = fmkGate(false);
+                        if (backend == null) return;
+                        try {
+                            SamsungFonts.Roots r = SamsungFonts.Roots.system();
+                            int user = FontLibrary.userIdOf(android.os.Process.myUid());
+                            String st = fmkRun(backend, SamsungFonts.statusScript(r, user), null, 20000);
+                            if (!st.contains(SamsungFonts.M_END) || e.suffix.equals(SamsungFonts.parseStatus(st).currentSuffix)) return;
+                            fmkRun(backend, SamsungFonts.removeSuffixScript(r, user, e.suffix), null, 30000);
+                        } catch (Throwable ignored) {}
+                    }
+                });
+            } catch (RejectedExecutionException closing) {}
+        }
+        return fmkOk(null, null);
+    }
+
+    /**
+     * The "save as" answered: the entry's font.apk is copied there, as a job that holds the entry ("id:"), so it is not made again or deleted
+     * while it is copied. {ok, name} or {ok:false, code, error}. A document nothing is copied into (an answer with no export waiting, a font
+     * being made again, the app closing) is deleted only when it is empty (fmkDeleteIfEmpty): Overwrite in the save screen hands over the
+     * user's own file.
+     */
+    private void fmkExportResult(final String id, final Uri uri) {
+        if (id == null) {
+            if (uri != null) fmkDropDocument(uri);
+            return;
+        }
+        if (uri == null) { fmkExported(id, FontLibrary.error("cancelled", "Nothing was saved.")); return; }
+        final FontLibrary.Jobs.Job job = fmkJobs.startFor(this, "make:" + id, "export", String.valueOf(System.nanoTime()), "id:" + id);
+        if (job == null) {
+            fmkDropDocument(uri);
+            fmkExported(id, FontLibrary.error("busy", "This font is being made again. Wait for it to finish, then save it."));
+            return;
+        }
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        fmkExported(id, fmkExportTo(id, uri));
+                    } finally {
+                        fmkJobs.finish(job);
+                    }
+                }
+            });
+        } catch (RejectedExecutionException closing) {
+            fmkJobs.finish(job);
+            fmkDeleteIfEmpty(uri);
+        }
+    }
+
+    /**
+     * Copies the entry's package into the document. Once it is open for writing (emptied), a copy that does not finish deletes it; a refusal
+     * before that (the font gone or changed, a document that cannot be written) deletes it only when it is empty.
+     */
+    private JSONObject fmkExportTo(String id, Uri uri) {
+        boolean opened = false, whole = false;
+        try {
+            FontLibrary.Dirs d = fmkDirs();
+            FontLibrary.Entry e = FontLibrary.read(d, id);
+            if (e == null) return FontLibrary.error("not_found", FMK_NOT_FOUND);
+            File apk = new File(d.entryDir(id), FontLibrary.APK);
+            if (!e.apkSha.equals(FontLibrary.sha256(apk))) return FontLibrary.error("changed", FMK_CHANGED);
+            OutputStream out;
+            try {
+                out = getContentResolver().openOutputStream(uri, "wt");
+            } catch (Exception noTruncate) {
+                out = getContentResolver().openOutputStream(uri, "w");
+            }
+            if (out == null) throw new IOException("The app could not write there.");
+            opened = true;
+            InputStream in = new java.io.FileInputStream(apk);
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            } finally {
+                in.close();
+                out.close();
+            }
+            whole = true;
+            return new JSONObject().put("ok", true).put("name", cdSafeName(contentName(uri)));
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font package could not be saved: " + errMsg(t));
+        } finally {
+            // a package cut short must not stay behind looking like one that installs; a file nothing was written into may be the user's own
+            if (opened && !whole) fmkDeleteDocument(uri);
+            else if (!whole) fmkDeleteIfEmpty(uri);
+        }
+    }
+
+    /** Deletes a document the system's "save as" handed over, best effort. */
+    private void fmkDeleteDocument(Uri uri) {
+        try {
+            android.provider.DocumentsContract.deleteDocument(getContentResolver(), uri);
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Deletes a document nothing was written into only when it is empty: the save screen makes a new, empty one, but Overwrite hands over the
+     * file the user tapped as it is, and that stays. A provider that does not give the size keeps the document.
+     */
+    private void fmkDeleteIfEmpty(Uri uri) {
+        android.database.Cursor c = null;
+        try {
+            c = getContentResolver().query(uri, new String[]{android.provider.OpenableColumns.SIZE}, null, null, null);
+            if (c == null || !c.moveToFirst() || c.isNull(0) || c.getLong(0) != 0) return;
+        } catch (Throwable unknown) {
+            return;
+        } finally {
+            if (c != null) try { c.close(); } catch (Exception ignored) {}
+        }
+        fmkDeleteDocument(uri);
+    }
+
+    /** {@link #fmkDeleteIfEmpty} off the UI thread (a provider can be slow to answer); in the window's last moments, at once. */
+    private void fmkDropDocument(final Uri uri) {
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    fmkDeleteIfEmpty(uri);
+                }
+            });
+        } catch (RejectedExecutionException closing) {
+            fmkDeleteIfEmpty(uri);
+        }
+    }
+
+    /** The first line that says what went wrong in a pm answer (a Failure [...] line), at most 300 characters. */
+    private static String fmkFailLine(String out) {
+        String o = out == null ? "" : out.trim();
+        for (String line : o.split("\n")) {
+            String t = line.trim();
+            if (t.startsWith("Failure") || t.startsWith("Error") || t.contains("INSTALL_FAILED") || t.contains("DELETE_FAILED")) { o = t; break; }
+        }
+        if (o.isEmpty()) o = "The phone gave no answer.";
+        return o.length() > 300 ? o.substring(0, 300) + "…" : o;
+    }
+
+    /**
+     * Installs an entry's package. A privileged mode installs through the app's own install path for that mode (pm with -r and Samsung's store
+     * as the installer), after the same native question every privileged install asks (InstallConfirm), and reads the versionCode back from the
+     * package manager; without one, Android's installer opens. {ok, how:"pm"|"installer", note} or {ok:false, code, error}.
+     */
+    private JSONObject fmkInstall(FontLibrary.Entry e) {
+        File copy = null;
+        try {
+            FontLibrary.Dirs d = fmkDirs();
+            File apk = new File(d.entryDir(e.id), FontLibrary.APK);
+            String mode = resolveExecMode();
+            if (!InstallGuards.isPrivilegedMode(mode)) {
+                if (!e.apkSha.equals(FontLibrary.sha256(apk))) return FontLibrary.error("changed", FMK_CHANGED);
+                launchSystemInstaller(apk);
+                return new JSONObject().put("ok", true).put("how", "installer").put("note", "");
+            }
+            if (!d.work.isDirectory() && !d.work.mkdirs()) throw new IOException("There is no room in the app's cache for the package.");
+            copy = new File(d.work, e.suffix + "-" + System.nanoTime() + ".apk");     // a copy: the root install makes its file readable to pm
+            java.nio.file.Files.copy(apk.toPath(), copy.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            // the file pm gets is the one checked against the SHA-256 recorded when the package was made (the question says so)
+            if (!e.apkSha.equals(FontLibrary.sha256(copy))) return FontLibrary.error("changed", FMK_CHANGED);
+            if (!confirmInMode(mode, null, InstallConfirm.messageFontPackage(e.name, e.pkg, FontPackage.versionName(e.versionCode),
+                    installedVersionOrNull(e.pkg), mode, FMK_INSTALL_FLAGS))) {
+                throw new InstallCancelled();
+            }
+            String out = installApksOptions(Collections.singletonList(copy), FMK_INSTALL_FLAGS, mode);
+            if (InstallHints.success(out) && fmkInstalledVersion(e.pkg) == e.versionCode) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            String advice = InstallHints.advice(out);
+            return FontLibrary.error("install_failed", fmkFailLine(out) + (advice.isEmpty() ? "" : " " + advice));
+        } catch (InstallCancelled c) {
+            return FontLibrary.error("cancelled", errMsg(c));
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be installed: " + errMsg(t));
+        } finally {
+            if (copy != null) copy.delete();
+        }
+    }
+
+    /**
+     * Uninstalls an entry's package: pm uninstall through the privileged mode, read back from the package manager; without one, the package's
+     * App info opens (the app holds no permission to ask Android to remove another package). {ok, how:"pm"|"settings", note}.
+     */
+    private JSONObject fmkUninstall(final FontLibrary.Entry e) {
+        if (!BackupScripts.isPackageName(e.pkg) || FontPackage.suffixOf(e.pkg) == null) return FontLibrary.error("not_found", FMK_NOT_FOUND);
+        return fmkUninstallPkg(e.pkg);
+    }
+
+    /** fmkUninstall for any font package (the Phone font card's press and hold too, fmkUninstallPackage, which checks the package first). */
+    private JSONObject fmkUninstallPkg(final String pkg) {
+        try {
+            String mode = resolveExecMode();
+            if (!InstallGuards.isPrivilegedMode(mode)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg));
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
+                });
+                return new JSONObject().put("ok", true).put("how", "settings").put("note", "");
+            }
+            if (fmkInstalledVersion(pkg) == 0) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            String out = shellVia(mode, "pm uninstall " + BackupScripts.quote(pkg));
+            if (fmkInstalledVersion(pkg) == 0) return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            return FontLibrary.error("uninstall_failed", fmkFailLine(out));
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be uninstalled: " + errMsg(t));
+        }
+    }
+
+    // ---- the font changer (RootGate.unlocked) ----
+
+    /** {sansLoc, files: [{name, size, sha256, label}]}: what the phone shows after an apply or a reset. */
+    private static JSONObject fmkReadBack(SamsungFonts.ApplyResult ar) throws Exception {
+        JSONArray files = new JSONArray();
+        for (SamsungFonts.FileInfo f : ar.files) {
+            files.put(new JSONObject().put("name", f.name).put("size", Math.max(0, f.size)).put("sha256", f.sha256 == null ? "" : f.sha256)
+                    .put("label", f.label == null ? "" : f.label));
+        }
+        return new JSONObject().put("sansLoc", ar.sansLoc).put("files", files);
+    }
+
+    /** Puts one Settings.Global value and reads it back; true when the key holds it afterwards. WRITE_SECURE_SETTINGS when the app has it, else the changer's shell. */
+    private boolean fmkGlobalPut(String backend, String key, int value) {
+        String v = String.valueOf(value);
+        if (hasWriteSecureSettingsAccess()) {
+            try {
+                android.provider.Settings.Global.putString(getContentResolver(), key, v);
+                if (v.equals(android.provider.Settings.Global.getString(getContentResolver(), key))) return true;
+            } catch (Throwable notThisWay) {}                            // Android 12+ may refuse to read a hidden key back: the shell reads it below
+        }
+        try {
+            String out = fmkRun(backend, SettingsDb.writeScript("put", "global", key, v), null, 15000);
+            return SettingsDb.judge("put", v, SettingsDb.parseWrite(out, key)).ok;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * Settings > Font style takes a new font up when flip_font_style and font_style_index change (design section 1): another value first, about
+     * 600 ms, then the target (0 Default, else 1 + the package's row; cosmetic, the font itself is sans.loc). True when both read back as the target.
+     */
+    private boolean fmkRefreshFontStyle(String backend, int target) {
+        String[] keys = { "flip_font_style", "font_style_index" };
+        int other = target == 0 ? 1 : 0;
+        for (String k : keys) fmkGlobalPut(backend, k, other);
+        try {
+            Thread.sleep(600);
+        } catch (InterruptedException closing) {
+            Thread.currentThread().interrupt();
+        }
+        boolean ok = true;
+        for (String k : keys) ok &= fmkGlobalPut(backend, k, target);
+        return ok;
+    }
+
+    /** {ok, available, unlocked, lockReason, mode:"root"|"system"|"none", current:{suffix, id, name}|null}; the phone's sans.loc decides "current". */
+    private JSONObject fmkChangerStatus() {
+        try {
+            JSONObject o = new JSONObject().put("ok", true);
+            if (!isSamsung()) return o.put("available", false).put("unlocked", false).put("lockReason", FMK_NOT_SAMSUNG).put("mode", "none").put("current", JSONObject.NULL);
+            String backend = fmkGate(false);
+            if (backend == null) return o.put("available", true).put("unlocked", false).put("lockReason", FMK_LOCK_CHANGER).put("mode", "none").put("current", JSONObject.NULL);
+            FontLibrary.Dirs d = fmkDirs();
+            String out = fmkRun(backend, SamsungFonts.statusScript(SamsungFonts.Roots.system(), FontLibrary.userIdOf(android.os.Process.myUid())), null, 20000);
+            if (out == null || !out.contains(SamsungFonts.M_END)) return FontLibrary.error("no_answer", "The phone did not answer. Try again.");
+            SamsungFonts.Status st = SamsungFonts.parseStatus(out);
+            o.put("available", st.available).put("unlocked", true).put("lockReason", "").put("mode", "system".equals(backend) ? "system" : "root");
+            if (!st.available) return o.put("current", JSONObject.NULL);
+            FontLibrary.writeApplied(d, st.currentSuffix, System.currentTimeMillis());
+            if (st.currentSuffix == null) return o.put("current", JSONObject.NULL);
+            FontLibrary.Entry e = FontLibrary.bySuffix(FontLibrary.list(d), st.currentSuffix);
+            return o.put("current", new JSONObject().put("suffix", st.currentSuffix).put("id", e == null ? JSONObject.NULL : e.id).put("name", e == null ? st.currentSuffix : e.name));
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", errMsg(t));
+        }
+    }
+
+    /**
+     * Applies an entry with the font changer: each font streamed into /data/app_fonts/<user>/<suffix>/ as DroidSans.ttf.new (and
+     * DroidSans-Bold.ttf.new) and checked there by size and SHA-256; only when every file has arrived does one install call move them into
+     * place together (taking away a Bold an earlier build left, for a font without one), point sans.loc at them, set the ownership and SELinux
+     * label, and read everything back. A step that fails leaves the font in use as it was: what it staged is cleared (fmkDiscard). The font is
+     * applied only when sans.loc and the hashes read back as asked. Then Settings is told (fmkRefreshFontStyle).
+     * {ok, readBack:{sansLoc, files}, refreshed, styleIndex} or {ok:false, code, error, readBack}.
+     */
+    private JSONObject fmkApply(String id) {
+        try {
+            String backend = fmkGate(false);
+            if (backend == null) return FontLibrary.error("locked", FMK_LOCK_CHANGER);
+            FontLibrary.Dirs d = fmkDirs();
+            FontLibrary.Entry e = FontLibrary.read(d, id);
+            if (e == null) return FontLibrary.error("not_found", FMK_NOT_FOUND);
+            File dir = d.entryDir(id);
+            File[] files = e.hasBold ? new File[] { new File(dir, FontLibrary.REGULAR), new File(dir, FontLibrary.BOLD) } : new File[] { new File(dir, FontLibrary.REGULAR) };
+            String[] names = e.hasBold ? new String[] { FontLibrary.DROID_REGULAR, FontLibrary.DROID_BOLD } : new String[] { FontLibrary.DROID_REGULAR };
+            String[] shas = e.hasBold ? new String[] { e.regularSha, e.boldSha } : new String[] { e.regularSha };
+            long[] sizes = e.hasBold ? new long[] { e.regularSize, e.boldSize } : new long[] { e.regularSize };
+            for (int i = 0; i < files.length; i++) if (!shas[i].equals(FontLibrary.sha256(files[i]))) return FontLibrary.error("changed", FMK_CHANGED);
+            return fmkPlace(backend, e.suffix, e.pkg, files, names, shas, sizes);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be applied: " + errMsg(t));
+        }
+    }
+
+    /**
+     * fmkApply's steps for any font, of My fonts or of a package on the phone (fmkApplyPackage): the files streamed in and checked, one install
+     * call, the read-back, Settings told. Without a Bold among {@code names}, a Bold an earlier font of that suffix left is taken away.
+     */
+    private JSONObject fmkPlace(String backend, String suffix, String pkg, File[] files, String[] names, String[] shas, long[] sizes) throws Exception {
+        boolean hasBold = false;
+        for (String n : names) hasBold |= FontLibrary.DROID_BOLD.equals(n);
+        FontLibrary.Dirs d = fmkDirs();
+        int user = FontLibrary.userIdOf(android.os.Process.myUid());
+        SamsungFonts.Roots r = SamsungFonts.Roots.system();
+        boolean placed = false;
+        try {
+            for (int i = 0; i < files.length; i++) {
+                String out = fmkRun(backend, SamsungFonts.writeFontScript(r, user, suffix, names[i], sizes[i], shas[i]), files[i], 180000);
+                SamsungFonts.WriteResult w = SamsungFonts.parseWrite(out, names[i]);
+                if (!w.ok || !shas[i].equals(w.sha256)) return FontLibrary.error("failed", w.ok ? "The font did not arrive whole on the phone." : w.error);
+            }
+            // a Bold an earlier build of this font left would be drawn for bold text: the install takes only that file away
+            String[] drop = hasBold ? new String[0] : new String[] { FontLibrary.DROID_BOLD };
+            SamsungFonts.ApplyResult ar = SamsungFonts.parseApply(fmkRun(backend, SamsungFonts.installScript(r, user, suffix, names, shas, drop), null, 60000));
+            JSONObject rb = fmkReadBack(ar);
+            boolean filesOk = true;
+            for (int i = 0; i < names.length; i++) {
+                boolean seen = false;
+                for (SamsungFonts.FileInfo f : ar.files) if (names[i].equals(f.name) && shas[i].equals(f.sha256)) seen = true;
+                filesOk &= seen;
+            }
+            if (!hasBold) for (SamsungFonts.FileInfo f : ar.files) if (FontLibrary.DROID_BOLD.equals(f.name)) filesOk = false;
+            String want = r.appFonts + "/" + user + "/" + suffix + "#" + suffix;
+            if (!ar.ok || !want.equals(ar.sansLoc) || !filesOk) {
+                String why = !ar.error.isEmpty() ? ar.error : "The phone did not take the font (sans.loc reads \"" + ar.sansLoc + "\").";
+                return FontLibrary.error("failed", why).put("readBack", rb);
+            }
+            placed = true;
+            FontLibrary.writeApplied(d, suffix, System.currentTimeMillis());
+            int target = SamsungFonts.styleIndex(fmkFontPackages(), pkg);
+            boolean refreshed = fmkRefreshFontStyle(backend, target);
+            return new JSONObject().put("ok", true).put("readBack", rb).put("refreshed", refreshed).put("styleIndex", target);
+        } finally {
+            if (!placed) fmkDiscard(backend, r, user, suffix);
+        }
+    }
+
+    /** What an Apply that stopped part way staged in the font's folder (.new and .part files, and the folder when it is then empty) goes; the font in use stays. */
+    private void fmkDiscard(String backend, SamsungFonts.Roots r, int user, String suffix) {
+        try {
+            fmkRun(backend, SamsungFonts.discardScript(r, user, suffix, new String[] { FontLibrary.DROID_REGULAR, FontLibrary.DROID_BOLD }), null, 30000);
+        } catch (Throwable ignored) {}                                  // a leftover .new is never drawn, and the next Apply writes over it
+    }
+
+    /** Back to the phone's own font: sans.loc is default#default again (read back), and Settings is told. {ok, readBack, refreshed}. */
+    private JSONObject fmkReset() {
+        try {
+            String backend = fmkGate(false);
+            if (backend == null) return FontLibrary.error("locked", FMK_LOCK_CHANGER);
+            SamsungFonts.ApplyResult ar = SamsungFonts.parseApply(fmkRun(backend, SamsungFonts.resetScript(SamsungFonts.Roots.system(), FontLibrary.userIdOf(android.os.Process.myUid())), null, 30000));
+            JSONObject rb = fmkReadBack(ar);
+            if (!ar.ok || !"default#default".equals(ar.sansLoc)) {
+                String why = !ar.error.isEmpty() ? ar.error : "The phone did not go back to Default (sans.loc reads \"" + ar.sansLoc + "\").";
+                return FontLibrary.error("failed", why).put("readBack", rb);
+            }
+            FontLibrary.writeApplied(fmkDirs(), null, System.currentTimeMillis());
+            boolean refreshed = fmkRefreshFontStyle(backend, 0);
+            return new JSONObject().put("ok", true).put("readBack", rb).put("refreshed", refreshed);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The default font could not be put back: " + errMsg(t));
+        }
+    }
+
+    // ---- the Phone font card (v7.19.1): every font package on the phone, switched to and uninstalled from one list ----
+
+    private static final String FMK_PKG_GONE = "That font is not installed any more.";
+    /** Each font package's XML, read once per version: package -> {lastUpdateTime, name, regular file, bold file} (PhoneFonts). */
+    private final Map<String, String[]> fmkXmlCache = new java.util.HashMap<String, String[]>();
+
+    /** A font package's name as the page may send it: com.monotype.android.font.<suffix>, and a suffix the font changer's scripts take. */
+    private static boolean fmkIsFontPkg(String pkg) {
+        return fmkIsFontPkgName(pkg) && SamsungFonts.isSuffix(pkg.substring(FontPackage.PACKAGE_PREFIX.length()));
+    }
+
+    /** A font package's name, whatever its suffix: enough for pm uninstall, which takes the name quoted (not for the font changer). */
+    private static boolean fmkIsFontPkgName(String pkg) {
+        return pkg != null && pkg.startsWith(FontPackage.PACKAGE_PREFIX) && BackupScripts.isPackageName(pkg);
+    }
+
+    /** At most {@code max} bytes of a stream (and the stream closed); one more than {@code max} when it is longer. */
+    private static byte[] fmkReadAtMost(InputStream in, int max) throws IOException {
+        try {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while (out.size() <= max && (n = in.read(buf, 0, Math.min(buf.length, max + 1 - out.size()))) > 0) out.write(buf, 0, n);
+            return out.toByteArray();
+        } finally {
+            in.close();
+        }
+    }
+
+    /**
+     * {name, regular, bold} from a package's font XML (assets/xml/<suffix>.xml, else its only or first XML there): the name Samsung's Font
+     * style shows and the asset files drawn as the Regular and the Bold; each null when not read. Read once per package version.
+     */
+    private String[] fmkFontXml(PackageInfo pi) {
+        String stamp = String.valueOf(pi.lastUpdateTime);
+        synchronized (fmkXmlCache) {
+            String[] c = fmkXmlCache.get(pi.packageName);
+            if (c != null && stamp.equals(c[0])) return new String[] { c[1], c[2], c[3] };
+        }
+        String[] out = new String[3];
+        String src = pi.applicationInfo == null ? null : pi.applicationInfo.sourceDir;
+        if (src != null && pi.packageName.startsWith(FontPackage.PACKAGE_PREFIX)) {
+            String own = "assets/xml/" + pi.packageName.substring(FontPackage.PACKAGE_PREFIX.length()) + ".xml";
+            java.util.zip.ZipFile z = null;
+            try {
+                z = new java.util.zip.ZipFile(src);
+                java.util.zip.ZipEntry best = null;
+                java.util.Enumeration<? extends java.util.zip.ZipEntry> en = z.entries();
+                for (int n = 0; en.hasMoreElements() && n < 4096; n++) {
+                    java.util.zip.ZipEntry ze = en.nextElement();
+                    String name = ze.getName();
+                    if (ze.isDirectory() || !name.startsWith("assets/xml/") || name.indexOf('/', 11) >= 0 || !name.toLowerCase(java.util.Locale.ROOT).endsWith(".xml")) continue;
+                    if (best == null || name.equalsIgnoreCase(own)) best = ze;
+                }
+                if (best != null) {
+                    byte[] b = fmkReadAtMost(z.getInputStream(best), PhoneFonts.MAX_XML);
+                    if (b.length <= PhoneFonts.MAX_XML) {
+                        String xml = new String(b, "UTF-8");
+                        String[] files = PhoneFonts.sansFiles(xml);
+                        out[0] = PhoneFonts.displayName(xml);
+                        out[1] = files[0];
+                        out[2] = files[1];
+                    }
+                }
+            } catch (Throwable unreadable) {
+                // a package the app cannot open: its label names it, and the font changer says what it could not read
+            } finally {
+                if (z != null) try { z.close(); } catch (IOException ignored) {}
+            }
+        }
+        synchronized (fmkXmlCache) {
+            fmkXmlCache.put(pi.packageName, new String[] { stamp, out[0], out[1], out[2] });
+        }
+        return out;
+    }
+
+    /**
+     * Every font on the phone for the Phone font card: {ok, fonts:[{pkg, suffix, name, system, recognized, madeHere, id, installed}], device}.
+     * The installed font packages (com.monotype.android.font.*), then the fonts of My fonts that are not installed. {@code recognized}: Samsung's
+     * Font style takes it by itself (PhoneFonts.recognized; the reference is the platform's signer and the signers of the font packages that came
+     * with the phone). {@code id}: its My fonts entry, which Apply then writes from the app's own copy.
+     */
+    private String fmkPhoneFontsJson() throws Exception {
+        PackageManager pm = getPackageManager();
+        JSONObject dev = fmkDevice();
+        boolean selfSignedOk = dev.optBoolean("appliesSelfSigned", false);
+        List<FontLibrary.Entry> entries = FontLibrary.list(fmkDirs());
+        Set<String> suffixes = new HashSet<String>();
+        for (FontLibrary.Entry e : entries) suffixes.add(e.suffix);
+        String key = null;
+        try {
+            SigningKey k = SigningKey.existing();
+            if (k != null) key = k.sha256();
+        } catch (Throwable noKey) {}
+        int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+        Set<String> reference = new HashSet<String>();
+        try {
+            reference.addAll(signerDigests(pm.getPackageInfo("android", sigFlags), true));
+        } catch (Throwable noPlatform) {}
+        List<PackageInfo> pkgs = new ArrayList<PackageInfo>();
+        for (String pkg : fmkFontPackages()) {
+            try {
+                PackageInfo pi = pm.getPackageInfo(pkg, sigFlags);
+                pkgs.add(pi);
+                if (pi.applicationInfo != null && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) reference.addAll(signerDigests(pi, true));
+            } catch (Throwable gone) {}
+        }
+        JSONArray fonts = new JSONArray();
+        Set<String> installed = new HashSet<String>();
+        for (PackageInfo pi : pkgs) {
+            String pkg = pi.packageName, suffix = pkg.substring(FontPackage.PACKAGE_PREFIX.length());
+            installed.add(pkg);
+            boolean system = pi.applicationInfo != null && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+            Set<String> signers = signerDigests(pi, true);
+            FontLibrary.Entry e = null;
+            for (FontLibrary.Entry x : entries) if (x.pkg.equals(pkg)) e = x;
+            String name = e != null ? e.name : fmkFontXml(pi)[0];
+            if (name == null && pi.applicationInfo != null) {
+                try {
+                    name = PhoneFonts.cleanName(String.valueOf(pm.getApplicationLabel(pi.applicationInfo)));
+                } catch (Throwable noLabel) {}
+            }
+            if (name == null || name.equals(pkg)) name = suffix;
+            fonts.put(new JSONObject().put("pkg", pkg).put("suffix", suffix).put("name", name).put("system", system)
+                    .put("recognized", PhoneFonts.recognized(selfSignedOk, system, signers, reference))
+                    .put("madeHere", FontPackage.madeHere(pkg, system, suffixes, signers, key))
+                    .put("id", e == null ? JSONObject.NULL : e.id).put("installed", true));
+        }
+        for (FontLibrary.Entry e : entries) {
+            if (installed.contains(e.pkg)) continue;
+            fonts.put(new JSONObject().put("pkg", e.pkg).put("suffix", e.suffix).put("name", e.name).put("system", false)
+                    .put("recognized", selfSignedOk).put("madeHere", true).put("id", e.id).put("installed", false));
+        }
+        return new JSONObject().put("ok", true).put("fonts", fonts).put("device", dev).toString();
+    }
+
+    /** One font file of a package's assets/fonts/ copied into the app's cache, checked to be one TrueType or OpenType font (PhoneFonts.isFont). */
+    private static File fmkExtractFont(java.util.zip.ZipFile z, String name, File to) throws IOException {
+        java.util.zip.ZipEntry ze = z.getEntry("assets/fonts/" + name);
+        if (ze == null || ze.isDirectory()) throw new IOException("The font package has no file " + name + ".");
+        InputStream in = z.getInputStream(ze);
+        long total = 0;
+        byte[] head = new byte[4];
+        int headLen = 0;
+        try {
+            OutputStream out = new FileOutputStream(to);
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    if ((total += n) > Sfnt.MAX_FONT_BYTES) throw new IOException("The font in this package is larger than " + (Sfnt.MAX_FONT_BYTES >> 20) + " MB.");
+                    for (int i = 0; i < n && headLen < 4; i++) head[headLen++] = buf[i];
+                    out.write(buf, 0, n);
+                }
+            } finally {
+                out.close();
+            }
+        } finally {
+            in.close();
+        }
+        if (!PhoneFonts.isFont(head)) throw new IOException(name + " in this package is not a TrueType or OpenType font.");
+        return to;
+    }
+
+    /**
+     * Applies an installed font package with the font changer: the files its font XML draws as the Regular and the Bold (or its only font file)
+     * are read from the package itself and written as My fonts' are (fmkPlace). {ok, readBack, refreshed, styleIndex} or {ok:false, code, error}.
+     */
+    private JSONObject fmkApplyPackage(String pkg) {
+        List<File> temp = new ArrayList<File>();
+        java.util.zip.ZipFile z = null;
+        try {
+            String backend = fmkGate(false);
+            if (backend == null) return FontLibrary.error("locked", FMK_LOCK_CHANGER);
+            if (!fmkIsFontPkg(pkg)) return FontLibrary.error("not_found", FMK_PKG_GONE);
+            PackageInfo pi;
+            try {
+                pi = getPackageManager().getPackageInfo(pkg, 0);
+            } catch (Throwable gone) {
+                return FontLibrary.error("not_found", FMK_PKG_GONE);
+            }
+            String suffix = pkg.substring(FontPackage.PACKAGE_PREFIX.length());
+            String[] x = fmkFontXml(pi);
+            String reg = x[1], bold = x[2];
+            z = new java.util.zip.ZipFile(pi.applicationInfo.sourceDir);
+            if (reg == null) {                                          // no XML that says: the package's only font file
+                java.util.Enumeration<? extends java.util.zip.ZipEntry> en = z.entries();
+                String only = null;
+                int count = 0;
+                for (int n = 0; en.hasMoreElements() && n < 4096; n++) {
+                    String name = en.nextElement().getName(), low = name.toLowerCase(java.util.Locale.ROOT);
+                    if (name.startsWith("assets/fonts/") && name.indexOf('/', 13) < 0 && (low.endsWith(".ttf") || low.endsWith(".otf"))) { only = name.substring(13); count++; }
+                }
+                if (count == 1 && PhoneFonts.isAssetName(only)) reg = only;
+            }
+            if (reg == null) return FontLibrary.error("no_font", "This font package does not say which of its files is the font, so the font changer cannot use it.");
+            if (bold != null && bold.equals(reg)) bold = null;          // the same file for bold text: Android makes bold from the Regular, as it would
+            FontLibrary.Dirs d = fmkDirs();
+            if (!d.work.isDirectory() && !d.work.mkdirs()) throw new IOException("There is no room in the app's cache for the font.");
+            String base = "pkg-" + System.nanoTime();
+            File regFile = new File(d.work, base + "-r.ttf");
+            temp.add(regFile);
+            fmkExtractFont(z, reg, regFile);
+            File boldFile = null;
+            if (bold != null) {
+                boldFile = new File(d.work, base + "-b.ttf");
+                temp.add(boldFile);
+                fmkExtractFont(z, bold, boldFile);
+            }
+            File[] files = boldFile == null ? new File[] { regFile } : new File[] { regFile, boldFile };
+            String[] names = boldFile == null ? new String[] { FontLibrary.DROID_REGULAR } : new String[] { FontLibrary.DROID_REGULAR, FontLibrary.DROID_BOLD };
+            String[] shas = new String[files.length];
+            long[] sizes = new long[files.length];
+            for (int i = 0; i < files.length; i++) { shas[i] = FontLibrary.sha256(files[i]); sizes[i] = files[i].length(); }
+            return fmkPlace(backend, suffix, pkg, files, names, shas, sizes);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be applied: " + errMsg(t));
+        } finally {
+            if (z != null) try { z.close(); } catch (IOException ignored) {}
+            for (File f : temp) f.delete();
+        }
+    }
+
+    /**
+     * Uninstalls a font package from the Phone font card. Refused for a font that came with the phone, and, where the font changer can read the
+     * phone's font (RootGate.unlocked), for the font in use; then as fmkUninstall: pm uninstall in a privileged mode, else the package's App info.
+     * {ok, how:"pm"|"settings", note} or {ok:false, code, error}.
+     */
+    private JSONObject fmkUninstallPackage(String pkg) {
+        try {
+            if (!fmkIsFontPkgName(pkg)) return FontLibrary.error("not_found", FMK_PKG_GONE);
+            PackageInfo pi;
+            try {
+                pi = getPackageManager().getPackageInfo(pkg, 0);
+            } catch (Throwable gone) {
+                return new JSONObject().put("ok", true).put("how", "pm").put("note", "");
+            }
+            if (pi.applicationInfo != null && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+                return FontLibrary.error("system", "This font came with the phone, so it is not uninstalled.");
+            }
+            String backend = isSamsung() ? fmkGate(false) : null;
+            if (backend != null) {
+                String out = fmkRun(backend, SamsungFonts.statusScript(SamsungFonts.Roots.system(), FontLibrary.userIdOf(android.os.Process.myUid())), null, 20000);
+                // no full answer: the font in use is not known, so nothing is uninstalled (the check would fail open)
+                if (out == null || !out.contains(SamsungFonts.M_END)) return FontLibrary.error("no_answer", "The phone did not answer. Try again.");
+                String cur = SamsungFonts.parseStatus(out).currentSuffix;
+                if (cur != null && cur.equalsIgnoreCase(pkg.substring(FontPackage.PACKAGE_PREFIX.length()))) {
+                    return FontLibrary.error("in_use", "This font is in use. Choose another font first, then uninstall it.");
+                }
+            }
+            return fmkUninstallPkg(pkg);
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font could not be uninstalled: " + errMsg(t));
+        }
+    }
+
+    /**
+     * Samsung's Font style screen (Settings > Display > Font size and style > Font style): the Settings activity named for it, found on this
+     * phone, since One UI does not publish one; null when there is none, and the page then opens Display settings.
+     */
+    private Intent fmkFontStyleIntent() {
+        try {
+            PackageInfo pi = getPackageManager().getPackageInfo("com.android.settings", PackageManager.GET_ACTIVITIES);
+            ActivityInfo best = null;
+            if (pi.activities != null) {
+                for (ActivityInfo a : pi.activities) {
+                    if (!a.exported || !a.enabled || a.name == null) continue;
+                    String n = a.name.toLowerCase(java.util.Locale.ROOT);
+                    if (!n.contains("fontstyle")) continue;
+                    if (best == null || n.endsWith("fontstyleactivity")) best = a;
+                }
+            }
+            if (best != null) return new Intent().setClassName(best.packageName, best.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        } catch (Throwable notFound) {}                                 // a list too large to pass, or no Settings by that name
+        return null;
+    }
+
+    // ---- emoji downloads ----
+
+    /** Disconnects the downloads of these jobs (a window that closes: the ones it started, which it has just cancelled). */
+    private static void fmkDisconnect(List<FontLibrary.Jobs.Job> jobs) {
+        final List<java.net.HttpURLConnection> open = new ArrayList<java.net.HttpURLConnection>();
+        for (FontLibrary.Jobs.Job j : jobs) {
+            java.net.HttpURLConnection c = fmkConns.remove(j.id);
+            if (c != null) open.add(c);
+        }
+        if (open.isEmpty()) return;
+        Thread t = new Thread(new Runnable() {                          // closing a TLS connection writes to the network: never on the UI thread
+            @Override
+            public void run() {
+                for (java.net.HttpURLConnection c : open) try { c.disconnect(); } catch (Throwable ignored) {}
+            }
+        }, "fontmaker-disconnect");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /**
+     * Downloads one catalog emoji font (the build this phone gets: OpenMoji's COLRv0 one below Android 13) through HttpSafe, which follows
+     * GitHub's redirect, into files/fontmaker/emoji/<id>.ttf. The file must have the exact size and SHA-256 the catalog gives; anything else
+     * is deleted (EmojiCatalog.download fails closed). Twemoji's zip is checked whole, then its font is taken out and checked too.
+     * Answer: window.onEmojiDone(id, {ok, size, sha256} | {ok:false, code, error}).
+     */
+    private void fmkDownloadJob(final FontLibrary.Jobs.Job job, final EmojiCatalog.Item item) {
+        final FontLibrary.Dirs d = fmkDirs();
+        final FontLibrary.Throttle throttle = new FontLibrary.Throttle(250);
+        EmojiCatalog.Item b = item.forSdk(Build.VERSION.SDK_INT);
+        final EmojiCatalog.Progress p = new EmojiCatalog.Progress() {
+            @Override
+            public void onProgress(long done, long total) {
+                if (throttle.due("download", done, total, android.os.SystemClock.elapsedRealtime()))
+                    notifyJs("window.onEmojiProgress && window.onEmojiProgress(" + JSONObject.quote(item.id) + ", " + done + ", " + total + ")");
+            }
+
+            @Override
+            public boolean cancelled() {
+                return job.cancelled() || activityDestroyed;
+            }
+        };
+        JSONObject res;
+        java.net.HttpURLConnection c = null;
+        File zip = null;
+        int status = 0;
+        try {
+            java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+            hdr.put("User-Agent", "ADB-Application-Manager");
+            c = HttpSafe.open(b.url, 15000, 30000, hdr, new HttpSafe.Hops() {
+                @Override
+                public void opened(java.net.HttpURLConnection hop) throws IOException {
+                    // each hop (the release address, then the one it redirects to) can be disconnected by Cancel while it connects or waits
+                    fmkConns.put(job.id, hop);
+                    if (p.cancelled()) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                }
+            });
+            fmkConns.put(job.id, c);
+            if (p.cancelled()) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+            int code = c.getResponseCode();
+            if (code != 200) {
+                status = code;
+                throw new IOException("the server answered HTTP " + code);
+            }
+            InputStream in = c.getInputStream();
+            try {
+                File dest = d.emojiFile(item.id);
+                if (b.isZip()) {
+                    zip = new File(d.emoji, "." + item.id + ".zip");
+                    EmojiCatalog.download(in, zip, b.zipSize, b.zipSha256, FontLibrary.MAX_EMOJI_BYTES, p);
+                    EmojiCatalog.extractEntry(zip, b.zipEntry, dest, b.size, b.sha256, FontLibrary.MAX_EMOJI_BYTES, p);
+                } else {
+                    EmojiCatalog.download(in, dest, b.size, b.sha256, FontLibrary.MAX_EMOJI_BYTES, p);
+                }
+            } finally {
+                try { in.close(); } catch (IOException ignored) {}
+            }
+            res = new JSONObject().put("ok", true).put("size", b.size).put("sha256", b.sha256);
+        } catch (EmojiCatalog.VerifyException ve) {
+            res = FontLibrary.error(ve.code, ve.getMessage());
+        } catch (Throwable t) {
+            res = p.cancelled() ? FontLibrary.error("cancelled", "The download was cancelled.") : FontLibrary.downloadError(status, errMsg(t));
+        } finally {
+            if (zip != null) zip.delete();
+            fmkConns.remove(job.id);
+            if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onEmojiDone && window.onEmojiDone(" + JSONObject.quote(item.id) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    // ---- the system emoji (RootGate.uid0), until the next restart ----
+
+    /** The boot this phone is in (/proc/sys/kernel/random/boot_id): a swap recorded in another boot was undone by that restart. "" when unreadable. */
+    private static String fmkBootId() {
+        try {
+            byte[] b = java.nio.file.Files.readAllBytes(new File("/proc/sys/kernel/random/boot_id").toPath());
+            return new String(b, "UTF-8").trim();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** A small system file (fonts.xml), read by the app, else through the backend's shell; "" when neither can. */
+    private String fmkReadSystemFile(String backend, File f) {
+        try {
+            if (f.isFile() && f.length() <= 4L * 1024 * 1024) return new String(java.nio.file.Files.readAllBytes(f.toPath()), "UTF-8");
+        } catch (Throwable unreadable) {}
+        try {
+            return fmkRun(backend, "cat " + BackupScripts.quote(f.getAbsolutePath()) + " 2>/dev/null", null, 15000);
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** The phone's emoji font files: the swap's targets (in /system/fonts or /product/fonts), and the updated ones its font map draws from instead. */
+    private static final class FmkEmoji {
+        final List<String> targets, updated;
+
+        FmkEmoji(List<String> targets, List<String> updated) {
+            this.targets = targets;
+            this.updated = updated;
+        }
+    }
+
+    /**
+     * The emoji files the swap binds over: every und-Zsye family's file in fonts.xml and font_fallback.xml that is on this phone (in
+     * /system/fonts or /product/fonts). And the updated emoji fonts under /data/fonts/files the phone draws from instead (listed with the
+     * backend's shell, the app cannot): the swap never binds over those, and while there is one it does not run.
+     */
+    private FmkEmoji fmkEmojiFiles(String backend) {
+        SamsungFonts.Roots r = SamsungFonts.Roots.system();
+        String fontsXml = fmkReadSystemFile(backend, new File("/system/etc/fonts.xml"));
+        String fallbackXml = fmkReadSystemFile(backend, new File("/system/etc/font_fallback.xml"));
+        List<String> updatable = new ArrayList<String>();
+        try {
+            String out = fmkRun(backend, "find " + BackupScripts.quote(r.dataFonts) + " -type f 2>/dev/null", null, 20000);
+            for (String line : out.split("\n")) {
+                String t = line.trim();
+                if (t.startsWith(r.dataFonts + "/")) updatable.add(t);
+            }
+        } catch (Throwable ignored) {}
+        // a file reached through a link (a /product that links to /system/product, an emoji file that links to another) is bound, and listed
+        // in the mount table, under its real path: the swap uses that path when it is a file in the font folders, each once
+        List<String> targets = new ArrayList<String>();
+        for (String t : SamsungFonts.emojiFiles(r, fontsXml, fallbackXml)) {
+            try {
+                File f = new File(t);
+                if (!f.exists()) continue;
+                String real = f.getCanonicalPath();
+                if (SamsungFonts.isSwapTarget(r, real) && !targets.contains(real)) targets.add(real);
+            } catch (IOException unreadable) {}
+        }
+        return new FmkEmoji(targets, SamsungFonts.updatedEmojiFiles(r, fontsXml, fallbackXml, updatable));
+    }
+
+    /** The swap's own binds, from init's mount table (/proc/1/mountinfo) read through the backend's shell. */
+    private SamsungFonts.Mounts fmkMounts(String backend) throws Exception {
+        return SamsungFonts.parseMounts(fmkRun(backend, SamsungFonts.emojiMountsScript(SamsungFonts.Roots.system()), null, 20000));
+    }
+
+    /**
+     * Takes the swap's own binds off: on this boot's recorded targets, and on every file the mount table shows a bind of the swap's own on (a
+     * swap whose record was lost). The script takes off only the swap's own binds on top of a file, never another tool's, and reads back each
+     * file's hash and how many of the swap's binds are left on it. Null when the mount table cannot be read: nothing is taken off then.
+     */
+    private List<SamsungFonts.BindResult> fmkTakeOff(String backend, FontLibrary.Swap active) throws Exception {
+        SamsungFonts.Mounts m = fmkMounts(backend);
+        if (!m.readable) return null;
+        List<String> targets = FontLibrary.undoTargets(active, m.targets);
+        if (targets.isEmpty()) return new ArrayList<SamsungFonts.BindResult>();
+        return SamsungFonts.parseSwap(fmkRun(backend, SamsungFonts.emojiUndoScript(SamsungFonts.Roots.system(), targets), null, 60000));
+    }
+
+    /** The names a staged emoji copy can have in /data/adb/adbmgr_fonts/: one per catalog font. */
+    private static List<String> fmkStagedNames() {
+        List<String> out = new ArrayList<String>();
+        for (EmojiCatalog.Item it : EmojiCatalog.ITEMS) out.add(it.id + ".ttf");
+        return out;
+    }
+
+    /**
+     * Deletes the staged copies among names that nothing is bound from any more (the script reads the mount table again, so a copy still in
+     * use stays) and reads back that they are gone. True when every one of them is gone.
+     */
+    private boolean fmkRemoveStaged(String backend, List<String> names) {
+        try {
+            Map<String, Boolean> gone = SamsungFonts.parseStaged(fmkRun(backend, SamsungFonts.removeStagedScript(SamsungFonts.Roots.system(), names), null, 30000));
+            for (String n : names) if (!Boolean.TRUE.equals(gone.get(n))) return false;
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** After a downloaded emoji font is deleted, its staged copy goes too, when the root user is on and nothing is bound from it. */
+    private void fmkDropStaged(final String id) {
+        try {
+            fontPrivExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (fmkSysLock) {
+                        if (activityDestroyed) return;
+                        String backend = fmkGate(true);
+                        if (backend != null) fmkRemoveStaged(backend, Collections.singletonList(id + ".ttf"));
+                    }
+                }
+            });
+        } catch (RejectedExecutionException closing) {}
+    }
+
+    /**
+     * {ok, unlocked, lockReason, targets, active:{id, name}|null, blocked:{code, error}|null}. Active is this boot's swap or, when its record
+     * was lost, the font a bind of the swap's own still shows (so Undo is offered). Blocked says why a swap would be refused now: the phone's
+     * emoji come from an update in /data/fonts/files, or the mount table cannot be read. It only reads, and waits for an Apply or Undo another
+     * window runs: a copy a restart left unused is deleted by the next Apply, or with its emoji font.
+     */
+    private JSONObject fmkSysStatus() {
+        synchronized (fmkSysLock) {
+            try {
+                JSONObject o = new JSONObject().put("ok", true);
+                String backend = fmkGate(true);
+                if (backend == null) return o.put("unlocked", false).put("lockReason", FMK_LOCK_SYS).put("targets", new JSONArray()).put("active", JSONObject.NULL).put("blocked", JSONObject.NULL);
+                FontLibrary.Swap s = FontLibrary.activeSwap(fmkDirs(), fmkBootId());
+                SamsungFonts.Mounts m = fmkMounts(backend);
+                String id = s != null ? s.id : m.showing();
+                FmkEmoji ef = fmkEmojiFiles(backend);
+                String code = !m.readable ? "mounts_unreadable" : !ef.updated.isEmpty() ? "emoji_updated" : null;
+                EmojiCatalog.Item it = id == null ? null : EmojiCatalog.byId(id);
+                return o.put("unlocked", true).put("lockReason", "").put("targets", new JSONArray(ef.targets))
+                        .put("active", id == null ? JSONObject.NULL : new JSONObject().put("id", id).put("name", it != null ? it.name : id))
+                        .put("blocked", code == null ? JSONObject.NULL : new JSONObject().put("code", code).put("error", "emoji_updated".equals(code) ? FMK_EMOJI_UPDATED : FMK_NO_MOUNTS));
+            } catch (Throwable t) {
+                return FontLibrary.error("failed", errMsg(t));
+            }
+        }
+    }
+
+    /**
+     * Uses a downloaded emoji font as the phone's emoji until the next restart: the file (its SHA-256 checked again) is streamed to
+     * /data/adb/adbmgr_fonts/<id>.ttf and checked there, then bind-mounted over each target, whose hash is read back before and after. It
+     * refuses, changing nothing, on a phone whose emoji come from an update in /data/fonts/files (never bound over) or whose mount table
+     * cannot be read. The swap's own binds still in place go first (fmkTakeOff), and the copies nothing is bound from any more are deleted.
+     * The swap is recorded with this boot's id before the bind, so Undo knows its targets even when the app dies right after, and again
+     * afterwards with what was bound and each target's hash before. {ok, readBack:[{target, sha256, ok}]} or {ok:false, code, error, readBack}.
+     */
+    private JSONObject fmkSysApply(EmojiCatalog.Item item) {
+        synchronized (fmkSysLock) {
+            // a step of a window that closed while another window's step held the lock does nothing: no page is left to report to
+            if (activityDestroyed) return FontLibrary.error("failed", "The app is closing.");
+            try {
+                String backend = fmkGate(true);
+                if (backend == null) return FontLibrary.error("locked", FMK_LOCK_SYS);
+                FontLibrary.Dirs d = fmkDirs();
+                File f = d.emojiFile(item.id);
+                EmojiCatalog.Item kept = FontLibrary.keptBuild(item, f);
+                if (kept == null) return FontLibrary.error("not_downloaded", "Download " + item.name + " first.");
+                // Android draws COLRv1 from 13 on: an older phone would show every emoji blank until the restart (the page offers only what it can draw)
+                if ("COLRv1".equals(kept.format) && Build.VERSION.SDK_INT < 33) return FontLibrary.error("not_usable", item.name + " needs Android 13 or newer.");
+                String sha = FontLibrary.sha256(f);
+                if (!kept.sha256.equals(sha)) return FontLibrary.error("emoji_changed", "The downloaded file changed on the phone. Delete it and download it again.");
+                SamsungFonts.Roots r = SamsungFonts.Roots.system();
+                // the phone draws its emoji from an update in /data/fonts/files: that file is never bound over, and a bind over the original would not show
+                FmkEmoji ef = fmkEmojiFiles(backend);
+                if (!ef.updated.isEmpty()) return FontLibrary.error("emoji_updated", FMK_EMOJI_UPDATED);
+                String boot = fmkBootId();
+                FontLibrary.Swap prev = FontLibrary.activeSwap(d, boot);       // a record from another boot: that restart took its binds away
+                // a swap on top of one still bound would stack, and Undo would take only the top one away: the swap's own binds go first (this
+                // boot's record and whatever the mount table shows), and one that stays stops it
+                List<SamsungFonts.BindResult> off = fmkTakeOff(backend, prev);
+                if (off == null) return FontLibrary.error("mounts_unreadable", FMK_NO_MOUNTS);
+                for (SamsungFonts.BindResult b : off) {
+                    if (b.own != 0) return FontLibrary.error("failed", "The emoji used before could not be taken away. Restart the phone, then try again.");
+                }
+                FontLibrary.clearSwap(d);
+                fmkRemoveStaged(backend, fmkStagedNames());
+                List<String> targets = ef.targets;
+                if (targets.isEmpty()) return FontLibrary.error("no_targets", "This phone's emoji font file was not found.");
+                String name = item.id + ".ttf";
+                SamsungFonts.WriteResult w = SamsungFonts.parseWrite(fmkRun(backend, SamsungFonts.stageEmojiScript(r, name, f.length(), sha), f, 180000), name);
+                if (!w.ok || !sha.equals(w.sha256)) return FontLibrary.error("failed", w.ok ? "The emoji font did not arrive whole on the phone." : w.error);
+                String bootTag = boot.isEmpty() ? "unknown" : boot;
+                // remembered before the bind: a bind the app could not record afterwards (the app killed, the storage full) is still known to Undo
+                FontLibrary.writeSwap(d, new FontLibrary.Swap(item.id, bootTag, sha, targets));
+                List<SamsungFonts.BindResult> bound = SamsungFonts.parseSwap(fmkRun(backend, SamsungFonts.emojiSwapScript(r, r.adbmgrFonts() + "/" + name, targets), null, 60000));
+                JSONArray rb = new JSONArray();
+                List<String> mounted = new ArrayList<String>();
+                Map<String, String> originals = new java.util.LinkedHashMap<String, String>();
+                boolean all = true, any = false;
+                for (SamsungFonts.BindResult b : bound) {
+                    if ("missing".equals(b.state)) continue;
+                    boolean good = "ok".equals(b.state) && sha.equals(b.sha256);
+                    if ("ok".equals(b.state)) {
+                        mounted.add(b.target);
+                        if (b.original != null) originals.put(b.target, b.original);
+                    }
+                    rb.put(new JSONObject().put("target", b.target).put("sha256", b.sha256 == null ? "" : b.sha256).put("ok", good));
+                    all &= good;
+                    any |= good;
+                }
+                if (mounted.isEmpty()) {
+                    FontLibrary.clearSwap(d);
+                    fmkRemoveStaged(backend, Collections.singletonList(name));          // nothing is bound from the copy
+                } else {
+                    try {
+                        FontLibrary.writeSwap(d, new FontLibrary.Swap(item.id, bootTag, sha, mounted, originals));   // even a part: Undo must know it
+                    } catch (IOException notNow) {}                                     // the record written before the bind still names every target
+                }
+                if (!any) return FontLibrary.error("failed", "No emoji file could be replaced.").put("readBack", rb);
+                if (!all) return FontLibrary.error("failed", "Some emoji files did not change.").put("readBack", rb);
+                return new JSONObject().put("ok", true).put("readBack", rb);
+            } catch (Throwable t) {
+                return FontLibrary.error("failed", "The emoji could not be swapped: " + errMsg(t));
+            }
+        }
+    }
+
+    /**
+     * Takes the swap off (fmkTakeOff: only the swap's own binds, on this boot's recorded targets and wherever the mount table shows one) and
+     * reads each file back: a file is back when none of the swap's binds is left on it and it hashes as it did before the swap (when that was
+     * recorded). Then the record goes, and the staged copy is deleted and read back. {ok, readBack, copyRemoved} or {ok:false, code, error, readBack}.
+     */
+    private JSONObject fmkSysUndo() {
+        synchronized (fmkSysLock) {
+            // a step of a window that closed while another window's step held the lock does nothing: no page is left to report to
+            if (activityDestroyed) return FontLibrary.error("failed", "The app is closing.");
+            try {
+                String backend = fmkGate(true);
+                if (backend == null) return FontLibrary.error("locked", FMK_LOCK_SYS);
+                FontLibrary.Dirs d = fmkDirs();
+                FontLibrary.Swap s = FontLibrary.activeSwap(d, fmkBootId());   // a record from another boot: that restart took its binds away
+                List<SamsungFonts.BindResult> undone = fmkTakeOff(backend, s);
+                if (undone == null) return FontLibrary.error("mounts_unreadable", FMK_NO_MOUNTS);
+                JSONArray rb = new JSONArray();
+                boolean all = true;
+                for (SamsungFonts.BindResult b : undone) {
+                    boolean good = b.back(s == null ? null : s.originals.get(b.target));
+                    rb.put(new JSONObject().put("target", b.target).put("sha256", b.sha256 == null ? "" : b.sha256).put("ok", good));
+                    all &= good;
+                }
+                if (!all) return FontLibrary.error("failed", "Some emoji files did not change. Restart the phone to undo the swap.").put("readBack", rb);
+                FontLibrary.clearSwap(d);
+                boolean removed = fmkRemoveStaged(backend, fmkStagedNames());
+                return new JSONObject().put("ok", true).put("readBack", rb).put("copyRemoved", removed);
+            } catch (Throwable t) {
+                return FontLibrary.error("failed", "The swap could not be undone: " + errMsg(t));
+            }
+        }
+    }
+
+    // ---- Google Fonts (v7.18.0, google-fonts-v7.18.0.md): the list, previews, details, downloads, Use and Save; the emoji samples ----
+    // What needs no Android classes is GoogleFonts' (the list cut down, the css2 request and its answer, the download plan and licence,
+    // meta.json, the zip) and EmojiSpecimen's (the iOS emoji pictures read out of their font by ranges), tested on the JDK. Every Google Fonts
+    // address is checked at each hop (GoogleFonts.allowed): fonts.google.com, fonts.googleapis.com and fonts.gstatic.com over https, nothing else.
+
+    /** A Google Fonts answer: its status and its body. */
+    private static final class GfAnswer {
+        final int status;
+        final byte[] body;
+        GfAnswer(int status, byte[] body) { this.status = status; this.body = body; }
+        String text() { return new String(body, java.nio.charset.StandardCharsets.UTF_8); }
+    }
+
+    /** An answer with another status than the one asked for: FontLibrary.downloadError says it (http). */
+    private static final class GfHttp extends IOException {
+        final int status;
+        GfHttp(int status) { super("the server answered HTTP " + status); this.status = status; }
+    }
+
+    /** A download that failed on the phone's own storage (a folder, a rename): FontLibrary.localError says it (no_space or failed), never network. */
+    private static final class GfLocal extends IOException {
+        GfLocal(String message) { super(message); }
+    }
+
+    /** A job that was cancelled, or (a preview, which is no job) the window closing. */
+    private boolean gfStopped(FontLibrary.Jobs.Job job) {
+        return activityDestroyed || (job != null && job.cancelled());
+    }
+
+    /**
+     * Opens a Google Fonts address through HttpSafe. Each hop must be a Google Fonts one: a redirect anywhere else is refused before it
+     * connects. css2 gets the Chrome user agent (it serves TrueType to anything it does not know), every other request the app's. A job's
+     * hops are kept in fmkConns (Cancel and the window closing disconnect them), a preview's in gfPreviewConns and {@code hops}; gfClose
+     * drops them. {@code gzip}: a download's font file (gfFetchFont) asks for gzip itself, so Android leaves the answer as it came, with its
+     * Content-Length (it drops that header from an answer it unzips for the caller), and the caller unzips it.
+     */
+    private java.net.HttpURLConnection gfOpen(String url, boolean chrome, final FontLibrary.Jobs.Job job, final List<java.net.HttpURLConnection> hops,
+            boolean gzip) throws IOException, GoogleFonts.GfException {
+        if (!GoogleFonts.allowed(url)) throw new GoogleFonts.GfException("gf_bad_answer");
+        java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+        hdr.put("User-Agent", chrome ? GoogleFonts.CHROME_UA : GoogleFonts.APP_UA);
+        if (gzip) hdr.put("Accept-Encoding", "gzip");                   // v7.18.0 (R4-02): the file's size reaches the progress
+        java.net.HttpURLConnection c = HttpSafe.open(url, 15000, 30000, hdr, new HttpSafe.Hops() {
+            @Override
+            public void opened(java.net.HttpURLConnection hop) throws IOException {
+                if (job != null) {
+                    fmkConns.put(job.id, hop);
+                } else {
+                    hops.add(hop);
+                    gfPreviewConns.add(hop);
+                }
+                if (!GoogleFonts.allowed(hop.getURL().toString())) throw new IOException("refused an address outside Google Fonts (" + hop.getURL().getHost() + ")");
+                if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+            }
+        });
+        if (job != null) fmkConns.put(job.id, c);
+        return c;
+    }
+
+    private void gfClose(java.net.HttpURLConnection c, FontLibrary.Jobs.Job job, List<java.net.HttpURLConnection> hops) {
+        if (job != null) fmkConns.remove(job.id);
+        else gfPreviewConns.removeAll(hops);
+        if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+    }
+
+    /**
+     * A GET of a Google Fonts address, its body read whatever the status (Google says "unknown family" in the body of a 400 and a 404), at
+     * most {@code cap} bytes: one more is {@code overCode}.
+     */
+    private GfAnswer gfGet(String url, boolean chrome, long cap, String overCode, FontLibrary.Jobs.Job job) throws IOException, GoogleFonts.GfException {
+        List<java.net.HttpURLConnection> hops = new ArrayList<java.net.HttpURLConnection>();
+        java.net.HttpURLConnection c = null;
+        try {
+            c = gfOpen(url, chrome, job, hops, false);
+            int code = c.getResponseCode();
+            InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+            if (in == null) return new GfAnswer(code, new byte[0]);
+            try {
+                if (c.getContentLengthLong() > cap) throw new GoogleFonts.GfException(overCode);
+                java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[65536];
+                long n = 0;
+                int r;
+                while ((r = in.read(buf)) > 0) {
+                    if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                    n += r;
+                    if (n > cap) throw new GoogleFonts.GfException(overCode);
+                    b.write(buf, 0, r);
+                }
+                return new GfAnswer(code, b.toByteArray());
+            } finally {
+                try { in.close(); } catch (IOException ignored) {}
+            }
+        } finally {
+            gfClose(c, job, hops);
+        }
+    }
+
+    /**
+     * What a Google Fonts request (or the iOS emoji sample) that failed answers: its own code (GfException, SpecimenException), cancelled,
+     * no_memory, a failure on the phone's storage (GfLocal: FontLibrary.localError, a full phone or failed), else FontLibrary.downloadError:
+     * the HTTP status, a full phone, or the network.
+     */
+    private JSONObject gfError(Throwable t, FontLibrary.Jobs.Job job) {
+        if (t instanceof GoogleFonts.GfException) return FontLibrary.error(((GoogleFonts.GfException) t).code, t.getMessage());
+        if (t instanceof EmojiSpecimen.SpecimenException) return FontLibrary.error(((EmojiSpecimen.SpecimenException) t).code, t.getMessage());
+        if (gfStopped(job) || t instanceof EmojiCatalog.VerifyException) return FontLibrary.error("cancelled", "The download was cancelled.");
+        if (t instanceof OutOfMemoryError) return FontLibrary.error("no_memory", FMK_NO_MEMORY);
+        if (t instanceof GfLocal) return FontLibrary.localError(t.getMessage(), getFilesDir().getUsableSpace());    // files/ always exists
+        return FontLibrary.downloadError(t instanceof GfHttp ? ((GfHttp) t).status : 0, errMsg(t));
+    }
+
+    /** The list, null when none is on the phone: read from catalog.json the first time it is asked for in the process. */
+    private JSONObject gfCatalog() {
+        File f = new File(fmkDirs().gfonts, GF_CATALOG);
+        synchronized (gfLock) {
+            if (!gfCatalogRead) {
+                gfCatalogRead = true;
+                gfSetCatalog(GoogleFonts.readCatalog(f));
+            }
+            return gfCatalog;
+        }
+    }
+
+    /** Under gfLock: the list and its families by name, replaced whole (a JSONObject handed out is never changed). */
+    private static void gfSetCatalog(JSONObject catalog) {
+        gfCatalog = catalog;
+        gfIndex = GoogleFonts.index(catalog);
+    }
+
+    /** The list's entry of a family, or null when it is not in the list (or there is none). */
+    private JSONObject gfEntry(String family) {
+        gfCatalog();
+        synchronized (gfLock) {
+            return gfIndex.get(family);
+        }
+    }
+
+    /**
+     * Gets the list (fonts.google.com/metadata/fonts, 2.7 MB), cuts it down (GoogleFonts.compact), writes catalog.json whole and keeps it in
+     * memory. A list with no family does not replace the one there. window.onGfCatalog({ok, at, count} | {ok:false, code, error}).
+     */
+    private void gfCatalogJob(FontLibrary.Jobs.Job job) {
+        JSONObject res;
+        try {
+            GfAnswer a = gfGet(GoogleFonts.CATALOG_URL, false, GoogleFonts.MAX_CATALOG, "gf_bad_answer", job);
+            if (a.status != 200) throw new GfHttp(a.status);
+            long at = System.currentTimeMillis();
+            JSONObject cat = GoogleFonts.compact(a.text(), at);
+            int count = cat.getJSONArray("families").length();
+            if (count == 0) throw new GoogleFonts.GfException("gf_bad_answer");
+            try {
+                GoogleFonts.writeWhole(new File(fmkDirs().gfonts, GF_CATALOG), cat.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            } catch (IOException notKept) {}                            // a full phone: the list serves this process, and is asked for again in the next
+            synchronized (gfLock) {
+                gfCatalogRead = true;
+                gfSetCatalog(cat);
+                // v7.18.0 (R7-02): the details asked of the old list are fetched again (a family turned variable, dropped its Reserved Font Name).
+                // A details job running across this may put its answer back: it was just fetched from Google
+                gfInfos.clear();
+            }
+            res = new JSONObject().put("ok", true).put("at", at).put("count", count);
+        } catch (Throwable t) {
+            res = gfError(t, job);
+        } finally {
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onGfCatalog && window.onGfCatalog(" + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /**
+     * A preview (gfontsPreview), as the answer's JSON: from the cache (cache/fontmaker/gfpv/, 30 days; GoogleFonts.previewFile names an answer by
+     * its css2 address, so a family whose styles or axes changed is fetched again), else the css2 answer for the family and the characters, and
+     * each face it names (a woff2 on fonts.gstatic.com): a face over 2 MB is left out, and so are the faces after 8 MB in all.
+     * {ok, family, mode, faces:[{style, weight, stretch, b64}]} is cached, and the cache trimmed to 24 MB, oldest first. An answer that lost a
+     * face to an HTTP status other than 200 or an empty body is returned but not cached.
+     */
+    private String gfPreview(JSONObject entry, String family, String mode, String text) {
+        try {
+            File dir = fmkDirs().gfPreviews, cached = GoogleFonts.previewFile(dir, entry, mode, text);     // named by the css2 address fetched below
+            String hit = GoogleFonts.readCached(cached, System.currentTimeMillis(), GoogleFonts.PREVIEW_CACHE_MS);
+            if (hit != null) return hit;
+            GfAnswer css = gfGet(GoogleFonts.css2Url(entry, mode, text), true, GoogleFonts.MAX_CSS, "gf_no_preview", null);
+            if (css.status == 400) throw new GoogleFonts.GfException("gf_no_preview");     // css2 refuses a family or a style it does not serve
+            if (css.status != 200) throw new GfHttp(css.status);
+            JSONArray faces = new JSONArray();
+            long total = 0;
+            boolean lostFace = false;
+            for (GoogleFonts.Face f : GoogleFonts.parseCss(css.text())) {
+                GfAnswer w;
+                try {
+                    w = gfGet(f.url, false, GoogleFonts.MAX_FACE, "gf_too_big", null);
+                } catch (GoogleFonts.GfException tooBig) {
+                    continue;
+                }
+                // a 503, a 429 or an empty answer may not happen next time: the faces that came are shown, but not kept for 30 days
+                if (w.status != 200 || w.body.length == 0) { lostFace = true; continue; }
+                if (total + w.body.length > GoogleFonts.MAX_PREVIEW) break;
+                total += w.body.length;
+                faces.put(new JSONObject().put("style", f.style).put("weight", f.weight).put("stretch", f.stretch)
+                        .put("b64", android.util.Base64.encodeToString(w.body, android.util.Base64.NO_WRAP)));
+            }
+            if (faces.length() == 0) throw new GoogleFonts.GfException("gf_no_preview");
+            String answer = new JSONObject().put("ok", true).put("family", family).put("mode", mode).put("faces", faces).toString();
+            if (!lostFace) {
+                try {
+                    GoogleFonts.writeWhole(cached, answer.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    GoogleFonts.trimCache(dir, GoogleFonts.PREVIEW_CACHE_BYTES);
+                } catch (IOException notCached) {}
+            }
+            return answer;
+        } catch (Throwable t) {
+            return gfError(t, null).toString();
+        }
+    }
+
+    /** A family's download list, read by GoogleFonts.plan: Google answers a family it does not have with a 400 that plan reads as gf_unknown. */
+    private GoogleFonts.Plan gfPlan(String family, FontLibrary.Jobs.Job job) throws IOException, GoogleFonts.GfException {
+        GfAnswer a = gfGet(GoogleFonts.listUrl(family), false, GoogleFonts.MAX_LIST, "gf_bad_answer", job);
+        GoogleFonts.Plan plan;
+        try {
+            plan = GoogleFonts.plan(a.text());
+        } catch (GoogleFonts.GfException e) {
+            if (a.status == 200 || "gf_unknown".equals(e.code)) throw e;
+            throw new GfHttp(a.status);
+        }
+        if (a.status != 200) throw new GfHttp(a.status);
+        return plan;
+    }
+
+    /**
+     * A family's details (gfontsInfo): its download list (the files, the licence and its Reserved Font Names) and its details page (the
+     * description, the designers), kept for the 24 families last asked for until a new list (gfCatalogJob). Google has no details page for
+     * some families it serves (the Material Symbols ones answer 404): the list's facts and the catalog's designers are then the answer.
+     * window.onGfInfo(family, {ok, family, description, license, licenseName, licenseText, reserved, designers, files} | {ok:false, code, error}).
+     */
+    private void gfInfoJob(FontLibrary.Jobs.Job job, String family, JSONObject entry) {
+        JSONObject res;
+        try {
+            synchronized (gfLock) {
+                res = gfInfos.get(family);
+            }
+            if (res == null) {
+                GoogleFonts.Plan plan = gfPlan(family, job);
+                GfAnswer a = gfGet(GoogleFonts.detailUrl(family), false, GoogleFonts.MAX_DETAIL, "gf_bad_answer", job);
+                GoogleFonts.Info info;
+                try {
+                    info = GoogleFonts.info(a.text());
+                } catch (GoogleFonts.GfException e) {
+                    // no details page (kept for the process) only when the answer and its HTTP status both say 404: a 5xx or a 429 is asked again
+                    if (!"gf_unknown".equals(e.code) || a.status != 404) {
+                        if (a.status != 200) throw new GfHttp(a.status);
+                        throw e;
+                    }
+                    info = null;
+                }
+                res = GoogleFonts.infoJson(family, plan, info, entry);
+                synchronized (gfLock) {
+                    gfInfos.put(family, res);
+                }
+            }
+        } catch (Throwable t) {
+            res = gfError(t, job);
+        } finally {
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onGfInfo && window.onGfInfo(" + JSONObject.quote(family) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    private void gfProgress(String family, int index, int count, long done, long total) {
+        notifyJs("window.onGfProgress && window.onGfProgress(" + JSONObject.quote(family) + ", " + index + ", " + count + ", " + done + ", " + total + ")");
+    }
+
+    /**
+     * Downloads a family (gfontsDownload) into fam/.&lt;slug&gt;.part/: each file of its download list (GoogleFonts.plan) streamed to the disk
+     * with its SHA-256, at most 64 MB a file and 160 MB in all (gf_too_big), and read by FontInspect (gf_not_a_font); then the licence file
+     * and meta.json, each flushed to the disk, and the folder renamed into place (GoogleFonts.commitDownload: a family downloaded again
+     * replaces the one there). A download that does not end so leaves nothing: its .part folder is deleted (and swept in the next process if
+     * this one ends first). window.onGfProgress(family, fileIndex, fileCount, done, total) for each file (its bytes as they come over the network:
+     * gzip, whose Content-Length Google sends; total 0 when Google does not say), then window.onGfDone(family, {ok, entry: its gfontsDownloads
+     * row} | {ok:false, code, error}).
+     */
+    private void gfDownloadJob(FontLibrary.Jobs.Job job, String family) {
+        FontLibrary.Dirs d = fmkDirs();
+        FontLibrary.Throttle throttle = new FontLibrary.Throttle(250);
+        File part = GoogleFonts.partDir(d.gfFamilies, family);
+        boolean placed = false;
+        JSONObject res;
+        try {
+            GoogleFonts.Plan plan = gfPlan(family, job);
+            FontLibrary.deleteTree(part);
+            if (!part.mkdirs()) throw new GfLocal("The app could not make the family's folder.");
+            List<GoogleFonts.MetaFile> files = new ArrayList<GoogleFonts.MetaFile>();
+            long left = GoogleFonts.MAX_FAMILY;
+            for (int i = 0; i < plan.files.size(); i++) {
+                GoogleFonts.MetaFile f = gfFetchFont(job, family, plan.files.get(i), part, i + 1, plan.files.size(), Math.min(GoogleFonts.MAX_FILE, left), throttle);
+                left -= f.size;
+                files.add(f);
+            }
+            if (!plan.licenseFile.isEmpty()) FontLibrary.writeAtomic(new File(part, plan.licenseFile), plan.licenseText.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            FontLibrary.writeAtomic(new File(part, GoogleFonts.META), GoogleFonts.metaJson(family, System.currentTimeMillis(), plan.licenseKind, plan.licenseFile,
+                    plan.reserved, files).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            FontLibrary.syncDir(part);
+            if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+            File dest;
+            try {
+                dest = GoogleFonts.commitDownload(d.gfFamilies, family);
+            } catch (IOException e) {
+                throw new GfLocal(errMsg(e));                           // a rename on the phone: its sentence, not "check the connection"
+            }
+            placed = true;
+            JSONObject meta = GoogleFonts.readMeta(dest);
+            if (meta == null) {                                         // what FontInspect read did not make a meta.json readMeta takes
+                FontLibrary.deleteTree(dest);
+                throw new GoogleFonts.GfException("gf_bad_answer");
+            }
+            res = new JSONObject().put("ok", true).put("entry", GoogleFonts.downloadsRow(meta, GoogleFonts.folderSize(dest)));
+        } catch (Throwable t) {
+            res = gfError(t, job);
+        } finally {
+            if (!placed) FontLibrary.deleteTree(part);
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onGfDone && window.onGfDone(" + JSONObject.quote(family) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /**
+     * One font file of a download, into {@code part}: streamed with its SHA-256 and flushed, then read by FontInspect for meta.json. It is asked
+     * for as gzip (gfOpen): the progress is of the bytes on the network against their Content-Length (GoogleFonts.CountingInput), the cap,
+     * the SHA-256 and the size of the file as it is unzipped.
+     */
+    private GoogleFonts.MetaFile gfFetchFont(FontLibrary.Jobs.Job job, String family, GoogleFonts.FileRef ref, File part, int index, int count, long cap,
+            FontLibrary.Throttle throttle) throws Exception {
+        File dest = new File(part, ref.name);
+        List<java.net.HttpURLConnection> hops = new ArrayList<java.net.HttpURLConnection>();
+        java.net.HttpURLConnection c = null;
+        long n = 0;
+        String sha;
+        try {
+            c = gfOpen(ref.url, false, job, hops, true);
+            int code = c.getResponseCode();
+            if (code != 200) throw new GfHttp(code);
+            String enc = c.getContentEncoding() == null ? "" : c.getContentEncoding().trim().toLowerCase(java.util.Locale.ROOT);
+            boolean gz = enc.equals("gzip");
+            if (!gz && !enc.isEmpty() && !enc.equals("identity")) throw new GoogleFonts.GfException("gf_bad_answer");
+            long total = Math.max(0, c.getContentLengthLong());
+            if (!gz && total > cap) throw new GoogleFonts.GfException("gf_too_big");     // a gzip answer's length is not the file's: n is checked below
+            gfProgress(family, index, count, 0, total);
+            throttle.due("file " + index, 0, total, android.os.SystemClock.elapsedRealtime());
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            GoogleFonts.CountingInput wire = new GoogleFonts.CountingInput(c.getInputStream());
+            InputStream in = wire;
+            try {
+                if (gz) in = new java.util.zip.GZIPInputStream(wire, 65536);     // a cut or broken stream is an IOException: "The download failed"
+                FileOutputStream out = new FileOutputStream(dest);
+                try {
+                    byte[] buf = new byte[65536];
+                    int r;
+                    while ((r = in.read(buf)) > 0) {
+                        if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                        n += r;
+                        if (n > cap) throw new GoogleFonts.GfException("gf_too_big");
+                        md.update(buf, 0, r);
+                        out.write(buf, 0, r);
+                        if (throttle.due("file " + index, wire.count(), total, android.os.SystemClock.elapsedRealtime())) gfProgress(family, index, count, wire.count(), total);
+                    }
+                    out.getFD().sync();
+                } finally {
+                    out.close();
+                }
+            } finally {
+                try { in.close(); } catch (IOException ignored) {}
+            }
+            sha = FontLibrary.hex(md.digest());
+        } finally {
+            gfClose(c, job, hops);
+        }
+        FontInspect.Info info;
+        try {
+            info = FontInspect.inspect(FontLibrary.readFile(dest, GoogleFonts.MAX_FILE));
+        } catch (Sfnt.FontException notAFont) {
+            throw new GoogleFonts.GfException("gf_not_a_font");
+        }
+        List<String> axes = new ArrayList<String>();
+        for (FontInspect.Axis a : info.axes) if (a.tag != null) axes.add(a.tag);
+        int weight = info.weight >= 1 && info.weight <= 1000 ? info.weight : 400;
+        return new GoogleFonts.MetaFile(ref.name, n, sha, info.variable, info.italic, weight, axes);
+    }
+
+    private void gfSaved(String family, JSONObject res) {
+        notifyJsWhenReady("window.onGfSaved && window.onGfSaved(" + JSONObject.quote(family) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /**
+     * The "save as" for a family answered: the family's zip is written there, as a job that holds the family ("gfsave:"), so it is not
+     * deleted or downloaded again while it is written. A document nothing is written into is deleted only when it is empty, as for a font
+     * package (fmkExportResult).
+     */
+    private void gfSaveResult(final String family, final Uri uri) {
+        if (family == null) {
+            if (uri != null) fmkDropDocument(uri);
+            return;
+        }
+        if (uri == null) { gfSaved(family, FontLibrary.error("cancelled", "Nothing was saved.")); return; }
+        final FontLibrary.Jobs.Job job = fmkJobs.startFor(this, "gf:" + family, "gfsave", String.valueOf(System.nanoTime()), "gfsave:" + family);
+        if (job == null) {
+            fmkDropDocument(uri);
+            gfSaved(family, FontLibrary.error("busy", "This font family is downloading. Cancel it first."));
+            return;
+        }
+        try {
+            fontExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        gfSaved(family, gfSaveTo(family, uri));
+                    } finally {
+                        fmkJobs.finish(job);
+                    }
+                }
+            });
+        } catch (RejectedExecutionException closing) {
+            fmkJobs.finish(job);
+            fmkDeleteIfEmpty(uri);
+        }
+    }
+
+    /** Writes the family's zip (GoogleFonts.writeZip) into the document: once it is open for writing, a zip that does not end whole deletes it. */
+    private JSONObject gfSaveTo(String family, Uri uri) {
+        boolean opened = false, whole = false;
+        try {
+            File famDir = fmkDirs().gfFamilies;
+            JSONObject meta = GoogleFonts.downloaded(famDir, family);
+            if (meta == null) return FontLibrary.error("gf_not_downloaded", GoogleFonts.E_NOT_DOWNLOADED);
+            OutputStream out;
+            try {
+                out = getContentResolver().openOutputStream(uri, "wt");
+            } catch (Exception noTruncate) {
+                out = getContentResolver().openOutputStream(uri, "w");
+            }
+            if (out == null) throw new IOException("The app could not write there.");
+            opened = true;
+            GoogleFonts.writeZip(GoogleFonts.familyDir(famDir, family), meta, out);
+            whole = true;
+            return new JSONObject().put("ok", true).put("name", cdSafeName(contentName(uri)));
+        } catch (GoogleFonts.GfException e) {
+            return FontLibrary.error(e.code, e.getMessage());
+        } catch (Throwable t) {
+            return FontLibrary.error("failed", "The font family could not be saved: " + errMsg(t));
+        } finally {
+            if (opened && !whole) fmkDeleteDocument(uri);
+            else if (!whole) fmkDeleteIfEmpty(uri);
+        }
+    }
+
+    /** Closes the previews' open connections (the window closes), off the UI thread: closing a TLS connection writes to the network. */
+    private void gfDisconnectPreviews() {
+        final List<java.net.HttpURLConnection> open = new ArrayList<java.net.HttpURLConnection>(gfPreviewConns);
+        gfPreviewConns.clear();
+        if (open.isEmpty()) return;
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (java.net.HttpURLConnection c : open) try { c.disconnect(); } catch (Throwable ignored) {}
+            }
+        }, "gfonts-disconnect");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** The sample's pictures for the page: [{cp, b64}]. */
+    private static JSONArray fmkImagesJson(List<EmojiSpecimen.Image> images) throws org.json.JSONException {
+        JSONArray a = new JSONArray();
+        for (EmojiSpecimen.Image i : images) a.put(new JSONObject().put("cp", i.cp).put("b64", android.util.Base64.encodeToString(i.png, android.util.Base64.NO_WRAP)));
+        return a;
+    }
+
+    /**
+     * Reads the iOS emoji sample (emojiSpecimenFetch): the 16 pictures of EmojiSpecimen.SAMPLE out of the iOS emoji font's CBDT table, from
+     * the downloaded file when it is kept (FontLibrary.keptBuild: its exact size; it was checked by SHA-256 when it was downloaded, and only
+     * pictures are read from it), else by HTTP ranges from the pinned address (FmkRanges: about 0.3 MB in 20 requests). The sample is kept in
+     * specimen/apple.json, so it is read once: a sample kept there is the answer (from:"cache"; another window of the app may have read it
+     * since this page asked emojiSpecimenCached). window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"|"cache"} | {ok:false,
+     * code, error}).
+     */
+    private void fmkSpecimenJob(final FontLibrary.Jobs.Job job, EmojiCatalog.Item item) {
+        FontLibrary.Dirs d = fmkDirs();
+        File kept = d.emojiFile(item.id), cache = new File(d.specimen, item.id + ".json");
+        boolean web = FontLibrary.keptBuild(item, kept) == null;
+        java.io.RandomAccessFile raf = null;
+        JSONObject res;
+        try {
+            List<EmojiSpecimen.Image> images = EmojiSpecimen.readCache(cache, item.sha256);
+            if (images != null && !images.isEmpty()) {                 // v7.18.0 (R4-12): read once, also when this page asked before it was kept
+                res = new JSONObject().put("ok", true).put("images", fmkImagesJson(images)).put("from", "cache");
+            } else {
+                if (web) {
+                    images = EmojiSpecimen.read(new FmkRanges(job, item), item.size);
+                } else {
+                    final java.io.RandomAccessFile file = raf = new java.io.RandomAccessFile(kept, "r");
+                    images = EmojiSpecimen.read(new EmojiSpecimen.Source() {
+                        @Override
+                        public byte[] read(long offset, int length) throws IOException {
+                            if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                            byte[] b = new byte[length];
+                            file.seek(offset);
+                            file.readFully(b);
+                            return b;
+                        }
+                    }, item.size);
+                }
+                try {
+                    FontLibrary.writeAtomic(cache, EmojiSpecimen.cacheJson(images, item.sha256).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                } catch (IOException notKept) {}                        // read again next time
+                res = new JSONObject().put("ok", true).put("images", fmkImagesJson(images)).put("from", web ? "web" : "file");
+            }
+        } catch (Throwable t) {
+            res = web || t instanceof EmojiSpecimen.SpecimenException || gfStopped(job) ? gfError(t, job)
+                    : FontLibrary.error("unreadable", "The app could not read that file: " + errMsg(t));
+        } finally {
+            if (raf != null) try { raf.close(); } catch (IOException ignored) {}
+            fmkJobs.finish(job);
+        }
+        notifyJs("window.onEmojiSpecimen && window.onEmojiSpecimen(" + JSONObject.quote(item.id) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /**
+     * The iOS emoji font by HTTP ranges, for EmojiSpecimen.read: one request a part (Range, no compression), each answer checked to be exactly
+     * that part of a file of exactly the pinned size (EmojiSpecimen.checkPart: emo_changed). GitHub answers the pinned address with a redirect
+     * to a signed address that also takes ranges: the next part is asked there, and once more from the pinned address when that one stops
+     * answering (its signature is short-lived). Each hop is in fmkConns, so the window closing disconnects it.
+     */
+    private final class FmkRanges implements EmojiSpecimen.Source {
+        private final FontLibrary.Jobs.Job job;
+        private final EmojiCatalog.Item item;
+        private String at;                                              // where the last part came from
+
+        FmkRanges(FontLibrary.Jobs.Job job, EmojiCatalog.Item item) {
+            this.job = job;
+            this.item = item;
+            this.at = item.url;
+        }
+
+        @Override
+        public byte[] read(long offset, int length) throws IOException {
+            for (int attempt = 0; ; attempt++) {
+                java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+                hdr.put("User-Agent", "ADB-Application-Manager");
+                hdr.put("Range", "bytes=" + offset + "-" + (offset + length - 1));
+                hdr.put("Accept-Encoding", "identity");
+                java.net.HttpURLConnection c = null;
+                try {
+                    c = HttpSafe.open(at, 15000, 30000, hdr, new HttpSafe.Hops() {
+                        @Override
+                        public void opened(java.net.HttpURLConnection hop) throws IOException {
+                            fmkConns.put(job.id, hop);
+                            if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                        }
+                    });
+                    fmkConns.put(job.id, c);
+                    int code = c.getResponseCode();
+                    if (code != 200 && code != 206) {
+                        if (attempt == 0 && !at.equals(item.url)) {
+                            at = item.url;
+                            continue;
+                        }
+                        throw new GfHttp(code);
+                    }
+                    EmojiSpecimen.checkPart(code, c.getHeaderField("Content-Range"), offset, length, item.size);
+                    byte[] b = new byte[length];
+                    InputStream in = c.getInputStream();
+                    try {
+                        for (int got = 0; got < length; ) {
+                            if (gfStopped(job)) throw new EmojiCatalog.VerifyException("cancelled", "The download was cancelled.");
+                            int r = in.read(b, got, length - got);
+                            if (r < 0) throw new IOException("the answer ended early");
+                            got += r;
+                        }
+                    } finally {
+                        try { in.close(); } catch (IOException ignored) {}
+                    }
+                    at = c.getURL().toString();
+                    return b;
+                } finally {
+                    fmkConns.remove(job.id);
+                    if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+                }
+            }
+        }
+    }
+    // FONTMAKER:END
 
     // ---------------------------------------------------------------------------------------------
     // Backup and restore
@@ -7216,8 +9708,10 @@ public class MainActivity extends Activity {
     }
 
     private static void deleteRecursively(File f) {
-        File[] kids = f.listFiles();
-        if (kids != null) for (File k : kids) deleteRecursively(k);
+        // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        String[] kids = f.list();
+        if (kids != null) for (String k : kids) deleteRecursively(new File(f, k));
         f.delete();
     }
 
@@ -7468,6 +9962,33 @@ public class MainActivity extends Activity {
             });
             return;
         }
+        if (requestCode == REQ_FONTMAKER_PICK) {
+            final String slot;
+            synchronized (fmkLock) {
+                slot = fmkPickSlot;
+                fmkPickSlot = null;
+            }
+            fmkPickResult(slot, (resultCode == RESULT_OK && data != null) ? data.getData() : null);
+            return;
+        }
+        if (requestCode == REQ_FONTMAKER_EXPORT) {
+            final String id;
+            synchronized (fmkLock) {
+                id = fmkExportId;
+                fmkExportId = null;
+            }
+            fmkExportResult(id, (resultCode == RESULT_OK && data != null) ? data.getData() : null);
+            return;
+        }
+        if (requestCode == REQ_GFONTS_SAVE) {
+            final String family;
+            synchronized (fmkLock) {
+                family = gfSaveFamily;
+                gfSaveFamily = null;
+            }
+            gfSaveResult(family, (resultCode == RESULT_OK && data != null) ? data.getData() : null);
+            return;
+        }
         if (requestCode == REQ_PICK_FONT) {
             final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
             if (picked == null) return;
@@ -7567,6 +10088,15 @@ public class MainActivity extends Activity {
                     && checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /** A Settings.Global number any app may read; -1 when the phone has no such setting or refuses the read. */
+    private int readGlobalInt(String name) {
+        try {
+            return android.provider.Settings.Global.getInt(getContentResolver(), name, -1);
+        } catch (Exception e) {
+            return -1;
         }
     }
 
@@ -8363,7 +10893,11 @@ public class MainActivity extends Activity {
                 root.mkdirs();
                 long old = System.currentTimeMillis() - 24L * 60 * 60 * 1000;
                 File[] dirs = root.listFiles();
-                if (dirs != null) for (File d : dirs) if (d.lastModified() < old) { File[] fs = d.listFiles(); if (fs != null) for (File f : fs) f.delete(); d.delete(); }
+                if (dirs != null) {
+                    java.util.List<File> toDelete = new java.util.ArrayList<File>();
+                    for (File d : dirs) if (d.lastModified() < old) toDelete.add(d);
+                    if (!toDelete.isEmpty()) FileOps.delete(toDelete, null);
+                }
                 for (Uri u : uris) {
                     try {
                         String nm = cdSafeName(cdDisplayName(u));
@@ -8626,6 +11160,59 @@ public class MainActivity extends Activity {
             postPairingNotification();
         }
 
+        /**
+         * What the "Connection check" card of Working Modes needs beyond the mode probe: the Wi-Fi address, the three Developer options switches
+         * (-1 when this phone does not say), whether this app holds WRITE_SECURE_SETTINGS, and the Android version. Reads only; connects and
+         * changes nothing.
+         */
+        @JavascriptInterface
+        public String getConnectionFacts() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("sdk", Build.VERSION.SDK_INT);
+                o.put("wifiIp", deviceWifiIp());
+                o.put("developerOptions", readGlobalInt("development_settings_enabled"));
+                o.put("usbDebugging", readGlobalInt("adb_enabled"));
+                o.put("wirelessDebugging", readGlobalInt("adb_wifi_enabled"));
+                o.put("secureSettings", hasWriteSecureSettingsAccess());
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /**
+         * Turns the Wireless debugging switch on or off (Settings.Global adb_wifi_enabled, Android 11 or newer). Only ever called from a button the user
+         * pressed: nothing in the app switches it by itself. Uses WRITE_SECURE_SETTINGS when this app holds it, else a privileged shell
+         * (ADB, Shizuku or root). The answer comes from reading the setting back, not from the command's text:
+         * "on" / "off" (the state now), "unsupported" (Android 10 or older, or the phone does not say), "no_wifi" (turning on without Wi-Fi:
+         * Android switches it straight off again), "no_access" (nothing to write with) or "failed" (the setting did not change).
+         */
+        @JavascriptInterface
+        public String setWirelessDebugging(boolean enable) {
+            if (Build.VERSION.SDK_INT < 30 || readGlobalInt("adb_wifi_enabled") < 0) return "unsupported";
+            int want = enable ? 1 : 0;
+            if (readGlobalInt("adb_wifi_enabled") == want) return enable ? "on" : "off";
+            if (enable && deviceWifiIp().isEmpty()) return "no_wifi";
+            boolean wrote = false;
+            if (hasWriteSecureSettingsAccess()) {
+                try {
+                    wrote = android.provider.Settings.Global.putInt(getContentResolver(), "adb_wifi_enabled", want);
+                } catch (Exception ignored) {}
+            }
+            if (!wrote && !"standard".equals(resolveExecMode())) {
+                executeShell("settings put global adb_wifi_enabled " + want);
+                wrote = true;
+            }
+            if (!wrote) return "no_access";
+            int now = readGlobalInt("adb_wifi_enabled");
+            for (int i = 0; i < 6 && now != want; i++) { // give the phone a moment to apply it
+                try { Thread.sleep(250); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+                now = readGlobalInt("adb_wifi_enabled");
+            }
+            if (now != want) return "failed";
+            invalidateModeCache();
+            return now == 1 ? "on" : "off";
+        }
+
         /** Read-only status report. Never connects, reconnects or changes the configured mode. */
         @JavascriptInterface
         public String getWorkingMode() {
@@ -8646,7 +11233,9 @@ public class MainActivity extends Activity {
             long gen;
             synchronized (modeCacheLock) {
                 gen = modeCacheGen;
-                if (recheckRoot) { rootChecked = false; rootGrant = null; }
+                // su is asked again only while Super User is the chosen mode: in Automatic a fresh check would bring the root manager's prompt
+                // back each time (Automatic keeps the answer it got, v7.19.0)
+                if (recheckRoot) { rootChecked = false; if ("root".equals(activeWorkingMode)) { rootGrant = null; rootGrantUnclear = false; } }
             }
             String json = probeWorkingMode();
             synchronized (modeCacheLock) {
@@ -8685,12 +11274,16 @@ public class MainActivity extends Activity {
 
                 boolean rootAvailable = isRootAvailable();
                 obj.put("rootAvailable", rootAvailable);
-                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode, and
-                // never from the headless window of a tile tap (QuickActionActivity): the root manager's prompt would come up behind the
-                // collapsing panel, and one left unanswered would be remembered as a refusal. There only a verdict already known counts; not
-                // asked yet reads as not granted (the tile stays dim) until the app is opened and asks.
-                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && (isHeadless() ? rootGrantedKnown() : isRootGranted());
-                if (rootAvailable && "root".equals(activeWorkingMode)) obj.put("rootGranted", rootGrantedNow);
+                // root counts as ready only when su really answers for this app, and that is asked while Root or Automatic is the chosen mode
+                // (Automatic tries Super User first, v7.19.0), and never from the headless window of a tile tap (QuickActionActivity): the
+                // root manager's prompt would come up behind the collapsing panel, and one left unanswered would be remembered as a refusal.
+                // There only a verdict already known counts; not asked yet reads as not granted (the tile stays dim) until the app is opened and asks.
+                boolean suAsked = "root".equals(activeWorkingMode) || "auto".equals(activeWorkingMode);
+                // Automatic never waits for su here (autoRootGranted asks it on a thread of its own); Root asks as before
+                boolean rootGrantedNow = rootAvailable && suAsked && ("auto".equals(activeWorkingMode) ? autoRootGranted() : (isHeadless() ? rootGrantedKnown() : isRootGranted()));
+                // Super User chosen, and gone (no su, or su said no): back to Automatic before the mode is read below
+                if (fallBackFromLostRoot()) obj.put("rootFellBack", true);
+                if (rootAvailable && suAsked) obj.put("rootGranted", rootGrantedNow);
                 else if (rootAvailable) {
                     // in another mode su is not asked, but its last answer is still known: a refusal (Request Super User puts the mode the user had back
                     // after one) reads as DENIED on Root Features until a fresh check forgets it (probeAndCacheMode(true) clears rootGrant)
@@ -8698,20 +11291,17 @@ public class MainActivity extends Activity {
                     synchronized (modeCacheLock) { lastAnswer = rootGrant; }
                     if (Boolean.FALSE.equals(lastAnswer)) obj.put("rootGranted", false);
                 }
-                // the Root Features gate (RootGate.active): Root is the chosen mode and su really granted it, as one verdict the page can read
-                obj.put("rootWorkingModeActive", rootGrantedNow);
                 obj.put("deviceIp", deviceWifiIp());
 
                 String configured = activeWorkingMode;
                 String resolved;
                 boolean available;
                 if ("auto".equals(configured)) {
-                    if (tcpConnected) resolved = "adb_tcp";
-                    else if (wirelessConnected) resolved = "adb_wireless";
-                    else if (shizukuAuthorized) resolved = "shizuku";
-                    else if (tcpPortOpen) resolved = "adb_tcp"; // connected lazily on the first command
-                    else resolved = "unprivileged";
-                    available = !"unprivileged".equals(resolved);
+                    // RootGate.autoPick: Super User, Shizuku as uid 0 or 1000, ADB over TCP (an open port is connected lazily on the first command),
+                    // Wireless Debugging, Shizuku as uid 2000
+                    String pick = RootGate.autoPick(rootGrantedNow, shizukuAuthorized, shizukuObj.optInt("uid", -1), tcpConnected || tcpPortOpen, wirelessConnected);
+                    resolved = pick == null ? "unprivileged" : pick;
+                    available = pick != null;
                 } else {
                     resolved = configured;
                     if ("adb_tcp".equals(configured)) available = tcpConnected || tcpPortOpen;
@@ -8720,6 +11310,17 @@ public class MainActivity extends Activity {
                     else if ("root".equals(configured)) available = rootGrantedNow;
                     else available = false;
                 }
+
+                // The privileged-feature gate the page reads. sysPrivActive unlocks the Root Features surface and the app-component
+                // toggle: Root with su, or Shizuku as the system user (uid 1000) or root (uid 0). rootUidActive is the stricter uid-0
+                // tier for writing colour overlays: Root with su, or Shizuku started as root (uid 0). Both key off the RESOLVED mode, so
+                // Auto that lands on a uid-1000 Shizuku unlocks too; a uid-2000 ADB-shell Shizuku and an unknown uid stay locked. See RootGate.
+                int szUid = shizukuObj.optInt("uid", -1);
+                // the Root Features gate (RootGate.active): Super User is the mode in use (chosen, or picked by Automatic) and su really granted it,
+                // as one verdict the page can read
+                obj.put("rootWorkingModeActive", RootGate.active(resolved, rootGrantedNow));
+                obj.put("sysPrivActive", RootGate.unlocked(resolved, rootGrantedNow, shizukuAuthorized, szUid));
+                obj.put("rootUidActive", RootGate.uid0(resolved, rootGrantedNow, shizukuAuthorized, szUid));
 
                 obj.put("configuredMode", configured);
                 obj.put("activeMode", resolved);
@@ -8784,7 +11385,8 @@ public class MainActivity extends Activity {
                     pb.redirectErrorStream(true);
                     String out = runProcessWithTimeout(pb, 15000);
                     ok = out != null && out.contains("uid=0");
-                    synchronized (modeCacheLock) { rootGrant = ok; }
+                    boolean unclear = !ok && (out == null || out.startsWith("Error:") || out.contains("[Process timed out"));
+                    synchronized (modeCacheLock) { rootGrant = ok; rootGrantUnclear = unclear; }
                     message = ok ? "Using Root (Superuser)" : "Root was denied or is not available";
                 } else if ("unprivileged".equals(mode)) {
                     message = "Switched to Read-Only Mode";
@@ -9012,6 +11614,102 @@ public class MainActivity extends Activity {
                 }
             });
             return "started";
+        }
+
+        /**
+         * Takes a screenshot through the working mode (screencap is a shell tool) after delaySec seconds (0..10, so you can open the screen you want),
+         * into Pictures/ADB App Manager. Answer: "started", "busy" or "no_access" (no ADB, Shizuku or Root); the outcome arrives as
+         * window.onScreenCaptureResult(json) with kind, status (ok, failed or no_access), path, bytes and text. "ok" means the phone reports a file above 0 bytes.
+         */
+        @JavascriptInterface
+        public String captureScreenshot(final int delaySec) {
+            final String mode = resolveExecMode();
+            if ("standard".equals(mode)) return "no_access";
+            if (!screenBusy.compareAndSet(false, true)) return "busy";
+            final int delay = ScreenCapture.clampDelay(delaySec);
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (delay > 0) Thread.sleep(delay * 1000L);
+                            String path = ScreenCapture.shotPath(System.currentTimeMillis(), java.util.TimeZone.getDefault());
+                            screenCaptureReply("shot", path, runPrivilegedShell(mode, ScreenCapture.shotCommand(path), 20000));
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } finally {
+                            screenBusy.set(false);
+                        }
+                    }
+                });
+            } catch (RuntimeException e) {          // the executor is already shut down: the app is closing
+                screenBusy.set(false);
+                return "no_access";
+            }
+            return "started";
+        }
+
+        /**
+         * Records the screen through the working mode (screenrecord) for at most `seconds` (5..180) into Movies/ADB App Manager. Same answers and the same
+         * window.onScreenCaptureResult(json) as captureScreenshot, with kind "record" when the file is finished. stopScreenRecord ends it early.
+         */
+        @JavascriptInterface
+        public String startScreenRecord(final int seconds) {
+            final String mode = resolveExecMode();
+            if ("standard".equals(mode)) return "no_access";
+            if (!screenBusy.compareAndSet(false, true)) return "busy";
+            final int secs = ScreenCapture.clampRecord(seconds);
+            screenRecording.set(true);
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String path = ScreenCapture.videoPath(System.currentTimeMillis(), java.util.TimeZone.getDefault());
+                            screenCaptureReply("record", path, runPrivilegedShell(mode, ScreenCapture.recordCommand(path, secs), (secs + 25) * 1000));
+                        } finally {
+                            screenRecording.set(false);
+                            screenBusy.set(false);
+                        }
+                    }
+                });
+            } catch (RuntimeException e) {
+                screenRecording.set(false);
+                screenBusy.set(false);
+                return "no_access";
+            }
+            return "started";
+        }
+
+        /** Asks a running recording to finish its file now. Answer: "stopping" or "idle" (nothing is recording). The file arrives through onScreenCaptureResult. */
+        @JavascriptInterface
+        public String stopScreenRecord() {
+            if (!screenRecording.get()) return "idle";
+            final String mode = resolveExecMode();
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        runPrivilegedShell(mode, ScreenCapture.stopCommand(), 6000);
+                    }
+                });
+            } catch (RuntimeException e) {
+                return "idle";
+            }
+            return "stopping";
+        }
+
+        private void screenCaptureReply(String kind, String path, String raw) {
+            ScreenCapture.Result r = ScreenCapture.parse(raw);
+            JSONObject o = new JSONObject();
+            try {
+                o.put("kind", kind);
+                o.put("status", ScreenCapture.status(raw, r));
+                o.put("path", path);
+                o.put("bytes", r.bytes);
+                o.put("text", r.text);
+            } catch (Exception ignored) {}
+            notifyJs("window.onScreenCaptureResult && window.onScreenCaptureResult(" + JSONObject.quote(o.toString()) + ")");
         }
 
         @JavascriptInterface
@@ -9624,7 +12322,7 @@ public class MainActivity extends Activity {
             };
             try {
                 checkTermuxReady();
-                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB/Root Full System Toolbox check", new TermuxLink.Callback() {
+                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB/Root Toolbox check", new TermuxLink.Callback() {
                     @Override
                     public void onResult(TermuxLink.Result r) {
                         if (!answered.compareAndSet(false, true)) return;
@@ -10389,6 +13087,12 @@ public class MainActivity extends Activity {
                 if (!BackupScripts.isPackageName(pkg)) return "Error: \"" + pkg + "\" is not a valid package name";
                 // Batch App Ops: "appops:OP=mode,OP=mode" sets each op on this app
                 if (action != null && action.startsWith("appops:")) return batchAppOps(action.substring(7), pkg);
+                // Disable / Enable Trackers: "trackers_off" or "trackers_on", or with ":id,id" for some trackers only, or ":parts=a.B,a.C" for some parts only (the
+                // History's Undo) (TrackerParts); success is read back per part
+                if (TrackerParts.isAction(action)) {
+                    JSONObject r = trackerAction(pkg, action);
+                    return flagged(r.optBoolean("ok", false), r.optString("output", ""));
+                }
                 // Batch Command: "custom:<command>" runs the user's command with $package replaced by this app's package name
                 if (action != null && action.startsWith("custom:")) {
                     String tpl = action.substring(7).trim();
@@ -10508,11 +13212,20 @@ public class MainActivity extends Activity {
                             notifyJs("window.onAppBatchProgress && window.onAppBatchProgress(" + i + "," + total + "," + JSONObject.quote(pkg) + ")");
                             String kind = clearKind(action);
                             long[] dataBefore = kind != null ? dataStatFor(kind, pkg) : null;       // Clear data: what is in the app's folder before (private folder in Root mode, its storage folder otherwise)
-                            String flagged = executeAppAction(action, pkg);
+                            JSONArray trkParts = null;
+                            String flagged;
+                            if (TrackerParts.isAction(action)) {
+                                // the tracker switches run here directly, so the row can carry the parts this app's run changed (the History's Undo switches back exactly those)
+                                JSONObject tr;
+                                try { tr = trackerAction(pkg, action); } catch (Exception e) { tr = new JSONObject().put("ok", false).put("output", "Error: " + errMsg(e)); }
+                                flagged = flagged(tr.optBoolean("ok", false), tr.optString("output", ""));
+                                trkParts = tr.optJSONArray("changedParts");
+                            } else flagged = executeAppAction(action, pkg);
                             boolean ok = flagOk(flagged);
                             String out = flagText(flagged);
                             if (ok) done++;
                             JSONObject row = new JSONObject().put("pkg", pkg).put("output", out).put("success", ok);
+                            if (trkParts != null) row.put("parts", trkParts);
                             if (dataBefore != null) { row.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1])); row.put("dataKind", kind); }
                             rows.put(row);
                         }
@@ -10894,10 +13607,7 @@ public class MainActivity extends Activity {
             try {
                 JSONObject obj = new JSONObject();
                 try {
-                    int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES
-                            | PackageManager.GET_PROVIDERS | PackageManager.GET_PERMISSIONS
-                            | PackageManager.MATCH_DISABLED_COMPONENTS | PackageManager.MATCH_UNINSTALLED_PACKAGES;
-                    PackageInfo info = getPackageManager().getPackageInfo(pkg, flags);
+                    PackageInfo info = detailsPackageInfo(pkg);
                     obj.put("versionName", info.versionName != null ? info.versionName : "N/A");
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         obj.put("versionCode", info.getLongVersionCode());
@@ -12337,6 +15047,753 @@ public class MainActivity extends Activity {
             return fontStore().clear();
         }
 
+        // FONTMAKER:BRIDGE:BEGIN
+        // ---- Custom Fonts (design section 6). Answers are JSON, {ok, ...} or {ok:false, code, error}, except fontMakerPreview, fontMakerFontData
+        // and emojiSpecimenFont (base64, "" when missing or over 24 MB). Ids, tokens and catalog ids are checked against FontLibrary's patterns
+        // and only looked up, so nothing the page sends names a path. The work itself is the activity's fmk* (and gf*) methods. ----
+
+        /**
+         * Opens Android's file chooser for one slot (regular, bold, emoji). Answer {ok}, or {ok:false, code:"busy"} while a chooser is already
+         * open (a second one's answer would have nothing to go to); then window.onFontMakerPicked(slot, {ok, token, fileName, size, info}).
+         */
+        @JavascriptInterface
+        public String fontMakerPick(final String slot) {
+            if (!FontLibrary.isSlot(slot)) return fmkErr("bad_request", "Choose Regular, Bold or Emoji.");
+            fmkPicks();                                                 // here, off the UI thread, where the answer only numbers the choice
+            synchronized (fmkLock) {
+                if (fmkPickSlot != null) return fmkErr("busy", "The file chooser is already open.");
+                fmkPickSlot = slot;
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    if (!startPicker(i, REQ_FONTMAKER_PICK)) {
+                        synchronized (fmkLock) {
+                            fmkPickSlot = null;
+                        }
+                        fmkPicked(slot, FontLibrary.error("no_picker", "No file picker available"));
+                    }
+                }
+            });
+            return fmkOk(null, null);
+        }
+
+        /** A picked file as base64 for its preview, by token. */
+        @JavascriptInterface
+        public String fontMakerPreview(String token) {
+            FontLibrary.Pick p = fmkPicks().get(token);
+            return p == null ? "" : fmkBase64(p.file);
+        }
+
+        /** Makes a font from {name, regular:{token, coords}, bold, emoji:{catalogId}|{token}|null, emojiScale, rebuildId}. Answer {ok, job}; window.onFontMakerProgress / onFontMakerBuilt. */
+        @JavascriptInterface
+        public String fontMakerBuild(String requestJson) {
+            try {
+                return fmkStartBuild(requestJson);
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /** Cancels a build; it ends at its next check with onFontMakerBuilt(job, {ok:false, code:"cancelled"}). */
+        @JavascriptInterface
+        public String fontMakerCancel(String jobId) {
+            boolean running = fmkJobs.cancel(jobId);
+            try {
+                return new JSONObject().put("ok", true).put("running", running).toString();
+            } catch (Exception e) {
+                return "{\"ok\":true}";
+            }
+        }
+
+        /** My fonts: {ok, entries:[{id, name, pkg, versionCode, created, hasBold, emoji, sizes, installed, installedVersion, applied}], device}. */
+        @JavascriptInterface
+        public String fontMakerLibrary() {
+            try {
+                return fmkLibraryJson();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /** One face of a library entry (regular, bold) as base64 for its preview line. */
+        @JavascriptInterface
+        public String fontMakerFontData(String id, String face) {
+            if (!FontLibrary.isId(id)) return "";
+            FontLibrary.Entry e = FontLibrary.read(fmkDirs(), id);
+            if (e == null || ("bold".equals(face) && !e.hasBold)) return "";
+            return fmkBase64(new File(fmkDirs().entryDir(id), "bold".equals(face) ? FontLibrary.BOLD : FontLibrary.REGULAR));
+        }
+
+        /** Removes an entry from My fonts (an installed package stays installed). Refused while the font changer has it applied, or while it is being made again. */
+        @JavascriptInterface
+        public String fontMakerDelete(String id) {
+            try {
+                return fmkDelete(id);
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /**
+         * Saves an entry's package where the user chooses (Android's "save as"). Answer {ok}, or {ok:false, code:"busy"} while a save screen is
+         * already open or the font is being made again; then window.onFontMakerExported(id, {ok, name}).
+         */
+        @JavascriptInterface
+        public String fontMakerExport(final String id) {
+            final FontLibrary.Entry e = FontLibrary.isId(id) ? FontLibrary.read(fmkDirs(), id) : null;
+            if (e == null) return fmkErr("not_found", FMK_NOT_FOUND);
+            if (fmkJobs.inUse("make:" + id)) return fmkErr("busy", "This font is being made again. Wait for it to finish, then save it.");
+            synchronized (fmkLock) {
+                if (fmkExportId != null || gfSaveFamily != null) return fmkErr("busy", "The save screen is already open.");
+                fmkExportId = id;
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("application/vnd.android.package-archive");
+                    i.putExtra(Intent.EXTRA_TITLE, FontLibrary.exportName(e.name));
+                    if (!startPicker(i, REQ_FONTMAKER_EXPORT)) {
+                        synchronized (fmkLock) {
+                            fmkExportId = null;
+                        }
+                        fmkExported(id, FontLibrary.error("no_picker", "No file picker available"));
+                    }
+                }
+            });
+            return fmkOk(null, null);
+        }
+
+        /** Installs an entry's package (Samsung only). Answer {ok, job}; then window.onFontMakerInstalled(id, {ok, how, note}). */
+        @JavascriptInterface
+        public String fontMakerInstall(final String id) {
+            return fmkLibraryJob("install", id);
+        }
+
+        /** Uninstalls an entry's package. Answer {ok, job}; then window.onFontMakerUninstalled(id, {ok, how, note}). */
+        @JavascriptInterface
+        public String fontMakerUninstall(final String id) {
+            return fmkLibraryJob("uninstall", id);
+        }
+
+        private String fmkLibraryJob(final String kind, final String id) {
+            if ("install".equals(kind) && !isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
+            final FontLibrary.Entry e = FontLibrary.isId(id) ? FontLibrary.read(fmkDirs(), id) : null;
+            if (e == null) return fmkErr("not_found", FMK_NOT_FOUND);
+            // a delete (and a build of it again) waits for it; an install does not start while the font's files are made again, and neither
+            // starts while the Phone font card applies or uninstalls the same package (and those wait for it)
+            final String pkgKey = e.pkg == null ? null : "pkg:" + e.pkg;
+            final FontLibrary.Jobs.Job job;
+            synchronized (fmkJobs) {
+                job = pkgKey != null && fmkJobs.inUse(pkgKey) ? null
+                        : fmkJobs.startFor(MainActivity.this, "install".equals(kind) ? "make:" + id : null, kind, id, "id:" + id, pkgKey);
+            }
+            if (job == null) {
+                if (fmkJobs.inUse("make:" + id)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
+                return fmkErr("busy", "This font is busy. Wait for it to finish.");
+            }
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res;
+                        try {
+                            res = "install".equals(kind) ? fmkInstall(e) : fmkUninstall(e);
+                        } finally {
+                            fmkJobs.finish(job);
+                        }
+                        if ("install".equals(kind)) notifyJs("window.onFontMakerInstalled && window.onFontMakerInstalled(" + JSONObject.quote(id) + ", " + JSONObject.quote(res.toString()) + ")");
+                        else notifyJs("window.onFontMakerUninstalled && window.onFontMakerUninstalled(" + JSONObject.quote(id) + ", " + JSONObject.quote(res.toString()) + ")");
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** The font changer's state, read from the phone. Answer {ok, job}; then window.onFontMakerChangerStatus({ok, available, unlocked, lockReason, mode, current}). */
+        @JavascriptInterface
+        public String fontMakerChangerStatus() {
+            return fmkPrivJob("status", null);
+        }
+
+        /** Applies an entry with the font changer (RootGate.unlocked). Answer {ok, job}; then window.onFontMakerApplied({ok, readBack, refreshed}). */
+        @JavascriptInterface
+        public String fontMakerApply(String id) {
+            if (!isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
+            if (fmkGate(false) == null) return fmkErr("locked", FMK_LOCK_CHANGER);
+            if (!FontLibrary.isId(id) || FontLibrary.read(fmkDirs(), id) == null) return fmkErr("not_found", FMK_NOT_FOUND);
+            return fmkPrivJob("apply", id);
+        }
+
+        /** Puts the phone's own font back (RootGate.unlocked). Answer {ok, job}; then window.onFontMakerReset({ok, readBack, refreshed}). */
+        @JavascriptInterface
+        public String fontMakerReset() {
+            if (!isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
+            if (fmkGate(false) == null) return fmkErr("locked", FMK_LOCK_CHANGER);
+            return fmkPrivJob("reset", null);
+        }
+
+        /** v7.19.1 Phone font: every font on the phone, {ok, fonts:[{pkg, suffix, name, system, recognized, madeHere, id, installed}], device} (fmkPhoneFontsJson). */
+        @JavascriptInterface
+        public String fontMakerPhoneFonts() {
+            try {
+                return fmkPhoneFontsJson();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /** Applies an installed font package with the font changer (RootGate.unlocked). Answer {ok, job}; then window.onFontMakerApplied({ok, readBack, refreshed}). */
+        @JavascriptInterface
+        public String fontMakerApplyPackage(String pkg) {
+            if (!isSamsung()) return fmkErr("not_samsung", FMK_NOT_SAMSUNG);
+            if (fmkGate(false) == null) return fmkErr("locked", FMK_LOCK_CHANGER);
+            if (!fmkIsFontPkgName(pkg) || fmkInstalledVersion(pkg) == 0) return fmkErr("not_found", FMK_PKG_GONE);
+            if (!fmkIsFontPkg(pkg)) return fmkErr("bad_suffix", "The font changer cannot use this font package's name.");
+            return fmkPrivJob("applypkg", pkg);
+        }
+
+        /** Uninstalls a font package (fmkUninstallPackage). Answer {ok, job}; then window.onFontMakerPkgUninstalled(pkg, {ok, how, note}). */
+        @JavascriptInterface
+        public String fontMakerUninstallPackage(final String pkg) {
+            if (!fmkIsFontPkgName(pkg)) return fmkErr("not_found", FMK_PKG_GONE);
+            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, "pkg:" + pkg, "uninstallpkg", pkg, "pkg:" + pkg);
+            if (job == null) return fmkErr("busy", "This font is busy. Wait for it to finish.");
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res;
+                        try {
+                            res = fmkUninstallPackage(pkg);
+                        } finally {
+                            fmkJobs.finish(job);
+                        }
+                        notifyJs("window.onFontMakerPkgUninstalled && window.onFontMakerPkgUninstalled(" + JSONObject.quote(pkg) + ", " + JSONObject.quote(res.toString()) + ")");
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** Opens Samsung's Font style screen, or Display settings where this phone has none by that name. {ok, exact}. */
+        @JavascriptInterface
+        public String fontMakerOpenFontStyle() {
+            final Intent exact = fmkFontStyleIntent();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        startActivity(exact != null ? exact : new Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                    } catch (Throwable t) {
+                        try {
+                            startActivity(new Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                        } catch (Throwable ignored) {}
+                    }
+                }
+            });
+            try {
+                return new JSONObject().put("ok", true).put("exact", exact != null).toString();
+            } catch (Exception e) {
+                return "{\"ok\":true}";
+            }
+        }
+
+        /** The five emoji downloads for this phone: {ok, sdk, items:[{id, name, version, format, mergeable, minApi, usable, size, sha256, license, ..., downloaded}]}. */
+        @JavascriptInterface
+        public String emojiCatalog() {
+            try {
+                FontLibrary.Dirs d = fmkDirs();
+                int sdk = Build.VERSION.SDK_INT;
+                JSONArray items = new JSONArray();
+                for (EmojiCatalog.Item it : EmojiCatalog.ITEMS) items.put(FontLibrary.catalogItemJson(it, sdk, FontLibrary.keptBuild(it, d.emojiFile(it.id)) != null));
+                return new JSONObject().put("ok", true).put("sdk", sdk).put("items", items).toString();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /** Downloads one catalog emoji font. Answer {ok, job}; window.onEmojiProgress(id, done, total), then window.onEmojiDone(id, {ok, size, sha256}). */
+        @JavascriptInterface
+        public String emojiDownload(String id) {
+            final EmojiCatalog.Item item = FontLibrary.isCatalogId(id) ? EmojiCatalog.byId(id) : null;
+            if (item == null) return fmkErr("unknown", "There is no such emoji font.");
+            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, null, "emoji", item.id);
+            if (job == null) return fmkErr("busy", "This emoji font is already downloading.");
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        fmkDownloadJob(job, item);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** Stops a download; it ends with onEmojiDone(id, {ok:false, code:"cancelled"}) and leaves no part file. */
+        @JavascriptInterface
+        public String emojiCancel(String id) {
+            FontLibrary.Jobs.Job job = FontLibrary.isCatalogId(id) ? fmkJobs.running("emoji", id) : null;
+            if (job != null) {
+                job.cancel();
+                final java.net.HttpURLConnection c = fmkConns.remove(job.id);
+                if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+            }
+            return fmkOk(null, null);
+        }
+
+        /**
+         * Deletes a downloaded emoji font, and with the root user on its staged copy for the system emoji when nothing is bound from it. Refused
+         * while it is the phone's emoji (this boot), while a build reads it, or while it downloads.
+         */
+        @JavascriptInterface
+        public String emojiDelete(String id) {
+            if (!FontLibrary.isCatalogId(id) || EmojiCatalog.byId(id) == null) return fmkErr("unknown", "There is no such emoji font.");
+            FontLibrary.Dirs d = fmkDirs();
+            String no = FontLibrary.emojiDeleteRefusal(id, FontLibrary.activeSwap(d, fmkBootId()), fmkJobs);
+            if ("in_use".equals(no)) return fmkErr("in_use", "Undo the system emoji first.");
+            if ("building".equals(no)) return fmkErr("building", "A font is being made with this emoji font. Wait for it to finish.");
+            if (fmkJobs.running("emoji", id) != null) return fmkErr("busy", "This emoji font is downloading. Cancel it first.");
+            if (fmkJobs.inUse("sys:" + id)) return fmkErr("busy", "This emoji font is being put on the phone. Wait for it to finish.");
+            File f = d.emojiFile(id);
+            if (f != null && f.exists() && !f.delete()) return fmkErr("failed", "The file could not be deleted.");
+            fmkDropStaged(id);
+            return fmkOk(null, null);
+        }
+
+        /** The system emoji's state. Answer {ok, job}; then window.onSysEmojiStatus({ok, unlocked, lockReason, targets, active, blocked}). */
+        @JavascriptInterface
+        public String sysEmojiStatus() {
+            return fmkPrivJob("sysstatus", null);
+        }
+
+        /** Uses a downloaded emoji font as the phone's emoji until the next restart (RootGate.uid0). Answer {ok, job}; then window.onSysEmojiApplied({ok, readBack}). */
+        @JavascriptInterface
+        public String sysEmojiApply(String id) {
+            if (fmkGate(true) == null) return fmkErr("locked", FMK_LOCK_SYS);
+            EmojiCatalog.Item item = FontLibrary.isCatalogId(id) ? EmojiCatalog.byId(id) : null;
+            if (item == null) return fmkErr("unknown", "There is no such emoji font.");
+            if (FontLibrary.keptBuild(item, fmkDirs().emojiFile(id)) == null) return fmkErr("not_downloaded", "Download " + item.name + " first.");
+            return fmkPrivJob("sysapply", id);
+        }
+
+        /** Undoes the swap (RootGate.uid0). Answer {ok, job}; then window.onSysEmojiUndone({ok, readBack, copyRemoved}). */
+        @JavascriptInterface
+        public String sysEmojiUndo() {
+            if (fmkGate(true) == null) return fmkErr("locked", FMK_LOCK_SYS);
+            return fmkPrivJob("sysundo", null);
+        }
+
+        /** Restarts Android's framework (zygote), not the phone (RootGate.uid0): only after the page's own confirm sheet. Answer {ok}, then the restart. */
+        @JavascriptInterface
+        public String softRestart() {
+            final String backend = fmkGate(true);
+            if (backend == null) return fmkErr("locked", FMK_LOCK_SYS);
+            try {
+                fontPrivExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (activityDestroyed) return;
+                        try {
+                            Thread.sleep(400);                              // the answer reaches the page first
+                            fmkRun(backend, SamsungFonts.softRestartScript(), null, 15000);
+                        } catch (Throwable ignored) {}
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk(null, null);
+        }
+
+        /**
+         * One font changer or system emoji step on fontPrivExec (one at a time, in order); "apply", "reset", "sysapply" and "sysundo" are one at
+         * a time, and a system emoji step also waits for another window's (fmkSysLock).
+         */
+        private String fmkPrivJob(final String kind, final String id) {
+            boolean single = "apply".equals(kind) || "applypkg".equals(kind) || "reset".equals(kind) || "sysapply".equals(kind) || "sysundo".equals(kind);
+            // what the step reads, so a delete waits for it: the entry an apply writes, the package an applypkg reads, the emoji file a swap streams
+            String uses = id == null ? null : ("sysapply".equals(kind) ? "sys:" : "applypkg".equals(kind) ? "pkg:" : "id:") + id;
+            // an apply does not start while the font's files are made again, nor an applypkg while its package is installed or uninstalled
+            String busyIf = id == null ? null : "apply".equals(kind) ? "make:" + id : "applypkg".equals(kind) ? "pkg:" + id : null;
+            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, busyIf, kind, single ? "only" : String.valueOf(System.nanoTime()), uses);
+            if (job == null) {
+                if (busyIf != null && fmkJobs.inUse(busyIf)) {
+                    if ("apply".equals(kind)) return fmkErr("busy", "This font is being made again. Wait for it to finish.");
+                    return fmkErr("busy", "This font is busy. Wait for it to finish.");
+                }
+                return fmkErr("busy", "The phone is still busy with the last change. Wait for it to finish.");
+            }
+            try {
+                fontPrivExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (activityDestroyed) return;                 // queued behind a step that ran while the window closed
+                            if ("status".equals(kind)) {
+                                notifyJs("window.onFontMakerChangerStatus && window.onFontMakerChangerStatus(" + JSONObject.quote(fmkChangerStatus().toString()) + ")");
+                            } else if ("apply".equals(kind)) {
+                                notifyJs("window.onFontMakerApplied && window.onFontMakerApplied(" + JSONObject.quote(fmkApply(id).toString()) + ")");
+                            } else if ("applypkg".equals(kind)) {
+                                notifyJs("window.onFontMakerApplied && window.onFontMakerApplied(" + JSONObject.quote(fmkApplyPackage(id).toString()) + ")");
+                            } else if ("reset".equals(kind)) {
+                                notifyJs("window.onFontMakerReset && window.onFontMakerReset(" + JSONObject.quote(fmkReset().toString()) + ")");
+                            } else if ("sysstatus".equals(kind)) {
+                                notifyJs("window.onSysEmojiStatus && window.onSysEmojiStatus(" + JSONObject.quote(fmkSysStatus().toString()) + ")");
+                            } else if ("sysapply".equals(kind)) {
+                                notifyJs("window.onSysEmojiApplied && window.onSysEmojiApplied(" + JSONObject.quote(fmkSysApply(EmojiCatalog.byId(id)).toString()) + ")");
+                            } else if ("sysundo".equals(kind)) {
+                                notifyJs("window.onSysEmojiUndone && window.onSysEmojiUndone(" + JSONObject.quote(fmkSysUndo().toString()) + ")");
+                            }
+                        } finally {
+                            fmkJobs.finish(job);
+                        }
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        // ---- Google Fonts (v7.18.0): a family is a plain name (GoogleFonts.isFamily) and, where it must be, one of the list's or a downloaded
+        // one; nothing the page sends names a path or an address. The work is the activity's gf* methods. ----
+
+        /** The list on the phone: {ok, at, stale, count, axes:{tag: name}, families:[...]} (at 0 and no families when there is none). */
+        @JavascriptInterface
+        public String gfontsCatalog() {
+            try {
+                JSONObject cat = gfCatalog();
+                long at = cat == null ? 0 : cat.optLong("at");
+                JSONArray families = cat == null ? new JSONArray() : cat.getJSONArray("families");
+                return new JSONObject().put("ok", true).put("at", at).put("stale", GoogleFonts.isStale(at, System.currentTimeMillis()))
+                        .put("count", families.length()).put("axes", cat == null ? new JSONObject() : cat.getJSONObject("axes"))
+                        .put("families", families).toString();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /**
+         * Gets the list again: {ok, job} (the running one's when this window asked for it already; busy while another window's runs), or {ok,
+         * fresh:true} without {@code force} while the one on the phone is younger than 7 days. Then window.onGfCatalog({ok, at, count}); the
+         * page then asks gfontsCatalog().
+         */
+        @JavascriptInterface
+        public String gfontsRefresh(boolean force) {
+            JSONObject cat = gfCatalog();
+            if (!force && cat != null && !GoogleFonts.isStale(cat.optLong("at"), System.currentTimeMillis())) {
+                try {
+                    return new JSONObject().put("ok", true).put("fresh", true).toString();
+                } catch (Exception e) {
+                    return "{\"ok\":true,\"fresh\":true}";
+                }
+            }
+            final FontLibrary.Jobs.Job job;
+            synchronized (fmkJobs) {                                    // a second ask of this window waits for the same answer
+                FontLibrary.Jobs.Job mine = fmkJobs.joinable(MainActivity.this, "gfcat", "only");
+                if (mine != null) return fmkOk("job", mine.id);
+                job = fmkJobs.startFor(MainActivity.this, null, "gfcat", "only");
+            }
+            // another window's job answers only that window (or ends cancelled with it): this one is told, and can ask again
+            if (job == null) return fmkErr("busy", "Another window of the app is getting the list of fonts. Try again in a moment.");
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        gfCatalogJob(job);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /**
+         * A preview of a family of the list for the characters of {@code text} (mode card, styles or axes; GoogleFonts.css2Url), on gfExec.
+         * Answer {ok}; then window.onGfPreview(reqId, {ok, family, mode, faces:[{style, weight, stretch, b64}]}).
+         */
+        @JavascriptInterface
+        public String gfontsPreview(final String reqId, final String family, final String mode, final String text) {
+            if (reqId == null || !GF_REQ_ID.matcher(reqId).matches() || !("card".equals(mode) || "styles".equals(mode) || "axes".equals(mode)))
+                return fmkErr("bad_request", "The page asked for a preview the app does not make.");
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            final JSONObject entry = gfEntry(family);
+            if (entry == null) return fmkErr("gf_unknown", GoogleFonts.E_UNKNOWN);
+            try {
+                gfExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        String res = gfPreview(entry, family, mode, text);
+                        notifyJs("window.onGfPreview && window.onGfPreview(" + JSONObject.quote(reqId) + ", " + JSONObject.quote(res) + ")");
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk(null, null);
+        }
+
+        /**
+         * A family's details: {ok, job} (the running one's when this window asked for them already; busy while another window's runs); then
+         * window.onGfInfo(family, {ok, family, description, license, licenseName, licenseText, reserved, designers, files:[{name, variable, italic}]}).
+         */
+        @JavascriptInterface
+        public String gfontsInfo(final String family) {
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            final JSONObject entry = gfEntry(family);
+            if (entry == null) return fmkErr("gf_unknown", GoogleFonts.E_UNKNOWN);
+            final FontLibrary.Jobs.Job job;
+            synchronized (fmkJobs) {
+                FontLibrary.Jobs.Job mine = fmkJobs.joinable(MainActivity.this, "gfinfo", family);
+                if (mine != null) return fmkOk("job", mine.id);
+                job = fmkJobs.startFor(MainActivity.this, null, "gfinfo", family);
+            }
+            if (job == null) return fmkErr("busy", "Another window of the app is getting the details of this family. Try again in a moment.");
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        gfInfoJob(job, family, entry);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** The downloaded families, newest first: {ok, families:[{family, at, size, license, licenseName, reserved, files:[{name, size, variable, italic, weight}]}]}. */
+        @JavascriptInterface
+        public String gfontsDownloads() {
+            try {
+                return new JSONObject().put("ok", true).put("families", GoogleFonts.downloads(fmkDirs().gfFamilies)).toString();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /**
+         * Downloads a family of the list (a downloaded one again replaces it). Answer {ok, job}; window.onGfProgress(family, fileIndex,
+         * fileCount, done, total), then window.onGfDone(family, {ok, entry}). Refused while it downloads or is being saved.
+         */
+        @JavascriptInterface
+        public String gfontsDownload(final String family) {
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            if (gfEntry(family) == null) return fmkErr("gf_unknown", GoogleFonts.E_UNKNOWN);
+            // "gf:" holds the family against a save, a Use and a delete; one download of a family at a time, none while it is saved
+            final FontLibrary.Jobs.Job job = fmkJobs.startFor(MainActivity.this, "gfsave:" + family, "gfdl", family, "gf:" + family);
+            if (job == null) {
+                if (fmkJobs.running("gfdl", family) != null) return fmkErr("busy", "This font family is already downloading.");
+                return fmkErr("busy", "This font family is being saved. Wait for it to finish.");
+            }
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        gfDownloadJob(job, family);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+
+        /** Stops a family's download; it ends with onGfDone(family, {ok:false, code:"cancelled"}) and leaves no .part folder. */
+        @JavascriptInterface
+        public String gfontsCancel(String family) {
+            FontLibrary.Jobs.Job job = GoogleFonts.isFamily(family) ? fmkJobs.running("gfdl", family) : null;
+            if (job != null) {
+                job.cancel();
+                final java.net.HttpURLConnection c = fmkConns.remove(job.id);
+                if (c != null) try { c.disconnect(); } catch (Throwable ignored) {}
+            }
+            return fmkOk(null, null);
+        }
+
+        /** Deletes a downloaded family. Refused while it downloads or is being saved. */
+        @JavascriptInterface
+        public String gfontsDelete(String family) {
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            File famDir = fmkDirs().gfFamilies;
+            final File aside = new File(famDir, "." + GoogleFonts.slug(family) + ".del-" + System.nanoTime());
+            synchronized (fmkJobs) {                                    // no download or save of it starts while its folder is moved aside
+                if (fmkJobs.running("gfdl", family) != null) return fmkErr("busy", "This font family is downloading. Cancel it first.");
+                if (fmkJobs.inUse("gfsave:" + family)) return fmkErr("busy", "This font family is being saved. Wait for it to finish.");
+                if (GoogleFonts.downloaded(famDir, family) == null) return fmkErr("gf_not_downloaded", GoogleFonts.E_NOT_DOWNLOADED);
+                if (!GoogleFonts.familyDir(famDir, family).renameTo(aside)) return fmkErr("failed", "The file could not be deleted.");
+            }
+            // gone from the list at once; its files are deleted off this thread (swept in the next process if this one ends first)
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        FontLibrary.deleteTree(aside);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                FontLibrary.deleteTree(aside);
+            }
+            return fmkOk(null, null);
+        }
+
+        /**
+         * Puts a file of a downloaded family in Make a font's Regular or Bold slot, as a chosen file is (fmkCopyPick: its checks and tokens,
+         * numbered with the file chooser's choices), checked against its meta.json (gf_changed). Answer {ok}; then
+         * window.onFontMakerPicked(slot, {ok, token, fileName, size, info, gf:{family, reserved}}). Refused while the file chooser is open or
+         * the family downloads.
+         */
+        @JavascriptInterface
+        public String gfontsUse(final String family, final String fileName, final String slot) {
+            if (!"regular".equals(slot) && !"bold".equals(slot)) return fmkErr("bad_request", "Choose Regular or Bold.");
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            if (fmkJobs.running("gfdl", family) != null) return fmkErr("busy", "This font family is downloading. Cancel it first.");
+            final File famDir = fmkDirs().gfFamilies;
+            final JSONObject meta = GoogleFonts.downloaded(famDir, family);
+            if (meta == null) return fmkErr("gf_not_downloaded", GoogleFonts.E_NOT_DOWNLOADED);
+            final JSONObject file = GoogleFonts.metaFile(meta, fileName);
+            if (file == null) return fmkErr("gf_bad_file", GoogleFonts.E_BAD_FILE);
+            final FontLibrary.Picks picks = fmkPicks();
+            final int ask;
+            synchronized (fmkLock) {
+                if (fmkPickSlot != null) return fmkErr("busy", "The file chooser is already open.");
+                ask = picks.ask(slot);
+            }
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res;
+                        try {
+                            InputStream in = new java.io.FileInputStream(new File(GoogleFonts.familyDir(famDir, family), file.getString("name")));
+                            res = fmkCopyPick(slot, in, file.getString("name"), ask, file.getLong("size"), file.getString("sha256"));
+                            if (res.optBoolean("ok")) res.put("gf", new JSONObject().put("family", family).put("reserved", meta.getJSONObject("license").getJSONArray("reserved")));
+                        } catch (Throwable gone) {                         // deleted since it was checked
+                            res = FontLibrary.error("gf_changed", GoogleFonts.E_CHANGED);
+                        }
+                        fmkPicked(slot, res);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk(null, null);
+        }
+
+        /**
+         * Saves a downloaded family where the user chooses, as one .zip of its fonts and licence (Android's "save as"). Answer {ok}, or
+         * {ok:false, code:"busy"} while a save screen is already open (a font package's or a family's) or the family downloads; then
+         * window.onGfSaved(family, {ok, name}).
+         */
+        @JavascriptInterface
+        public String gfontsSave(final String family) {
+            if (!GoogleFonts.isFamily(family)) return fmkErr("gf_bad_name", GoogleFonts.E_BAD_NAME);
+            if (fmkJobs.running("gfdl", family) != null) return fmkErr("busy", "This font family is downloading. Cancel it first.");
+            if (GoogleFonts.downloaded(fmkDirs().gfFamilies, family) == null) return fmkErr("gf_not_downloaded", GoogleFonts.E_NOT_DOWNLOADED);
+            synchronized (fmkLock) {
+                if (fmkExportId != null || gfSaveFamily != null) return fmkErr("busy", "The save screen is already open.");
+                gfSaveFamily = family;
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("application/zip");
+                    i.putExtra(Intent.EXTRA_TITLE, family + ".zip");
+                    if (!startPicker(i, REQ_GFONTS_SAVE)) {
+                        synchronized (fmkLock) {
+                            gfSaveFamily = null;
+                        }
+                        gfSaved(family, FontLibrary.error("no_picker", "No file picker available"));
+                    }
+                }
+            });
+            return fmkOk(null, null);
+        }
+
+        /** A cut-down sample font of the Emoji fonts card (assets/emoji/&lt;id&gt;.ttf: noto, twemoji, blobmoji, openmoji) as base64; "" for any other id. */
+        @JavascriptInterface
+        public String emojiSpecimenFont(String id) {
+            if (id == null || !EmojiSpecimen.SPECIMEN_IDS.contains(id)) return "";
+            try {
+                InputStream in = getAssets().open("emoji/" + id + ".ttf");
+                try {
+                    java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+                    FontLibrary.copyCapped(in, b, 1L << 20);
+                    return android.util.Base64.encodeToString(b.toByteArray(), android.util.Base64.NO_WRAP);
+                } finally {
+                    in.close();
+                }
+            } catch (Throwable t) {
+                return "";
+            }
+        }
+
+        /** The iOS emoji sample read before (specimen/apple.json): {ok, images:[{cp, b64}]}, no images for any other id or when there is none. */
+        @JavascriptInterface
+        public String emojiSpecimenCached(String id) {
+            try {
+                EmojiCatalog.Item item = "apple".equals(id) ? EmojiCatalog.byId(id) : null;
+                List<EmojiSpecimen.Image> images = item == null ? null : EmojiSpecimen.readCache(new File(fmkDirs().specimen, item.id + ".json"), item.sha256);
+                return new JSONObject().put("ok", true).put("images", images == null ? new JSONArray() : fmkImagesJson(images)).toString();
+            } catch (Throwable t) {
+                return fmkErr("failed", errMsg(t));
+            }
+        }
+
+        /**
+         * Reads the iOS emoji sample (apple only) from the downloaded file or by HTTP ranges, unless it is kept (specimen/apple.json). Answer
+         * {ok, job} (the running one's when this window asked for it already; busy while another window's runs); then
+         * window.onEmojiSpecimen(id, {ok, images:[{cp, b64}], from:"file"|"web"|"cache"}).
+         */
+        @JavascriptInterface
+        public String emojiSpecimenFetch(String id) {
+            final EmojiCatalog.Item item = "apple".equals(id) ? EmojiCatalog.byId(id) : null;
+            if (item == null) return fmkErr("unknown", "There is no such emoji font.");
+            final FontLibrary.Jobs.Job job;
+            synchronized (fmkJobs) {
+                FontLibrary.Jobs.Job mine = fmkJobs.joinable(MainActivity.this, "emospec", item.id);
+                if (mine != null) return fmkOk("job", mine.id);
+                job = fmkJobs.startFor(MainActivity.this, null, "emospec", item.id);
+            }
+            if (job == null) return fmkErr("busy", "Another window of the app is reading the iOS emoji. Try again in a moment.");
+            try {
+                fontExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        fmkSpecimenJob(job, item);
+                    }
+                });
+            } catch (RejectedExecutionException closing) {
+                fmkJobs.finish(job);
+                return fmkErr("failed", "The app is closing.");
+            }
+            return fmkOk("job", job.id);
+        }
+        // FONTMAKER:BRIDGE:END
+
         /**
          * Reads the package name and version of the found .apk files and finds identical copies (same size and SHA-256) and older versions of a package that is there
          * in a newer one (see ApkFlags). Nothing is changed. Answer: window.onApkAnalyze({files: [{path, pkg, vn, vc, dupOf, older, newest, newestPath}], ms}).
@@ -12636,7 +16093,13 @@ public class MainActivity extends Activity {
             if (source != null && !source.isEmpty()) runStoreSourceCatalog(source, arg, true);
         }
 
-        /** True on a metered connection (mobile data / hotspot) - the UI asks before a big catalog download. */
+        /** True while the store catalogs keep to Wi-Fi and the phone is on mobile data (v7.18.1): the page then shows the letters, not the icons. */
+        @JavascriptInterface
+        public boolean storeMobileBlockedNow() {
+            return storeMobileBlocked();
+        }
+
+        /** True on a metered connection (mobile data / hotspot). */
         @JavascriptInterface
         public boolean isNetworkMetered() {
             try {
@@ -12756,9 +16219,10 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Enables or disables one component (pm enable/disable pkg/component). Super User (Root) only in v7.15.1, for every app:
-         * the ADB/Shizuku shell uid cannot change components of apps it does not own (a system-app toggle from uid 2000 just fails),
-         * and the feature was scoped to Root. The page keeps the control locked off root; this is the enforcing floor for every caller.
+         * Enables or disables one component (pm enable/disable pkg/component). Android allows a single component's state change to the
+         * root user (uid 0) and the system user (uid 1000) but refuses it to the ADB shell (uid 2000: a system-app toggle from the shell
+         * just fails), so this unlocks in Root mode with su granted and under a Shizuku server running as uid 0 or uid 1000 (v7.16.1,
+         * widened from Root-only in v7.15.1). The page keeps the same gate (compToggleLocked -> sysPrivActive); this is the enforcing floor for every caller.
          * Success is read from the component's real state (AGENTS.md), not from pm's printed text.
          */
         @JavascriptInterface
@@ -12769,9 +16233,15 @@ public class MainActivity extends Activity {
                 if (cmd == null) {
                     r.put("ok", false); r.put("output", "Error: invalid component name"); return r.toString();
                 }
-                if (!"root".equals(resolveExecMode())) {
+                // Android refuses a single component's state change to the ADB shell user (uid 2000); it is allowed to root (uid 0) and
+                // to the system user (uid 1000). So this unlocks in Root mode and under a Shizuku server running as uid 0 or 1000.
+                String compMode = resolveExecMode();
+                int compSzUid = "shizuku".equals(compMode) ? shizukuServerUid() : -1;
+                boolean compAllowed = "root".equals(compMode)
+                        || ("shizuku".equals(compMode) && isShizukuAuthorized() && (compSzUid == 0 || compSzUid == 1000));
+                if (!compAllowed) {
                     r.put("ok", false); r.put("needsRoot", true);
-                    r.put("output", "Error: enabling or disabling a component needs Super User (Root)."); return r.toString();
+                    r.put("output", "Error: enabling or disabling a component needs Super User (Root) or the system user (UID 1000)."); return r.toString();
                 }
                 String out = executeShell(cmd);
                 // Decide success by reading the component's real state back: after the command the pm override must be exactly
@@ -12906,7 +16376,7 @@ public class MainActivity extends Activity {
                         @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
                     }, 2000, 25L * 1024 * 1024);
                     java.util.ArrayList<String> head = new java.util.ArrayList<String>();
-                    head.add("ADB/Root Full System Toolbox - log recording");
+                    head.add("ADB/Root Toolbox - log recording");
                     head.add("Started: " + new java.util.Date());
                     head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
                     head.add("Level: " + lv + " and above");
@@ -15144,11 +18614,56 @@ public class MainActivity extends Activity {
             try {
                 if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
                 a = fmCanonicalPath(a);
-                if (b != null && !b.isEmpty()) b = fmCanonicalPath(b);
+                // the second argument is a path for cp/mv only: for chmod/chown it is a mode or owner:group and stays as typed
+                if (b != null && !b.isEmpty() && !FileRules.isPermOp(op)) b = fmCanonicalPath(b);
                 // the same protection the batch operations have: removing or moving away a whole storage root, a top-level folder or a system tree
                 if (("rm".equals(op) || "mv".equals(op)) && !a.startsWith("content://") && fmProtectedPath(a)) { res.put("ok", false); res.put("output", "System location: not touched"); return res.toString(); }
                 // nothing is copied out of, moved, removed from or written into the app's own private data from here, also not to or from added storage
                 if (fmPrivate(a) || ((("cp".equals(op) || "mv".equals(op)) && b != null && !b.isEmpty() && fmPrivate(b)))) { res.put("ok", false); res.put("output", PRIVATE_WHY); return res.toString(); }
+                // v7.18.2 Root file management: the mode, owner and label of a path (stat), and changing them (chmod / chown, "-r" for everything
+                // inside a folder too), only as the root user (Root with su, or Shizuku as uid 0), through the privileged shell with a long timeout
+                if (FileRules.isPermOp(op)) {
+                    if (a.startsWith("content://")) { res.put("ok", false); res.put("output", "Added storage has no permissions to change"); return res.toString(); }
+                    if (fmkGate(true) == null) { res.put("ok", false); res.put("output", "Needs Super User (Root with su, or Shizuku as root)"); return res.toString(); }
+                    boolean rec = op.endsWith("-r");
+                    String cmd;
+                    if ("stat".equals(op)) cmd = FileRules.statCommand(a);
+                    else {
+                        String why = FileRules.permRefusal(a, rec);
+                        if (why != null) { res.put("ok", false); res.put("output", why); return res.toString(); }
+                        try {
+                            if ("chmod".equals(op) || "chmod-r".equals(op)) cmd = FileRules.chmodCommand(a, b, rec);
+                            else if ("restorecon".equals(op) || "restorecon-r".equals(op)) cmd = FileRules.restoreconCommand(a, rec);
+                            else if ("chown".equals(op) || "chown-r".equals(op)) {
+                                String w = b == null ? "" : b;
+                                int c = w.indexOf(':');
+                                cmd = FileRules.chownCommand(a, c < 0 ? w : w.substring(0, c), c < 0 ? "" : w.substring(c + 1), rec);
+                            } else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
+                        } catch (IllegalArgumentException bad) { res.put("ok", false); res.put("output", bad.getMessage()); return res.toString(); }
+                    }
+                    String out = batchShell(cmd);
+                    if (out == null) out = "";
+                    if ("stat".equals(op)) {
+                        boolean got = false;
+                        for (String line : out.split("\\r?\\n")) {
+                            line = line.trim();
+                            if (line.startsWith("FMSTAT ")) {
+                                String[] f = line.substring(7).split("\\|", -1);
+                                if (f.length >= 6) { res.put("mode", f[0]); res.put("user", f[1]); res.put("group", f[2]); res.put("uid", f[3]); res.put("gid", f[4]); res.put("type", f[5]); got = true; }
+                            } else if (got && !line.isEmpty() && !res.has("label")) {
+                                int sp = line.indexOf(' ');
+                                String lab = sp > 0 ? line.substring(0, sp) : line;
+                                if (lab.contains(":")) res.put("label", lab);
+                            }
+                        }
+                        res.put("ok", got);
+                        res.put("output", got ? "OK" : out.trim());
+                    } else {
+                        res.put("ok", FileRules.okLine(out, "FMOK"));
+                        res.put("output", out.replaceAll("(?m)^FMOK\\s*$", "OK").trim());
+                    }
+                    return res.toString();
+                }
                 if (a.startsWith("content://") || (b != null && b.startsWith("content://"))) {
                     String out = fmOpSaf(op, a, b);
                     res.put("ok", out.isEmpty());
@@ -16196,11 +19711,13 @@ public class MainActivity extends Activity {
                 }
                 if (f.isDirectory()) {
                     out.add(new ArchiveIo.Source(name + "/", f));
-                    File[] kids = f.listFiles();
+                    // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+        String[] kids = f.list();
                     long total = 0;
                     if (kids != null) {
-                        java.util.Arrays.sort(kids, new java.util.Comparator<File>() { @Override public int compare(File a, File b) { return a.getName().compareTo(b.getName()); } });
-                        for (File k : kids) total += czCollect(out, k, name + "/" + k.getName(), seen, problems, fileCount);
+                        java.util.Arrays.sort(kids);
+                        for (String k : kids) total += czCollect(out, new File(f, k), name + "/" + k, seen, problems, fileCount);
                     }
                     return total;
                 }
@@ -16830,6 +20347,173 @@ public class MainActivity extends Activity {
             return "ok";
         }
 
+        // ---- Tracker parts: the parts of an app (activities, services, receivers, providers) that belong to a known tracker, and their switches ----
+
+        /**
+         * The app's parts that belong to a known tracker (TrackerParts), read from Android's list of the app's components: no working mode needed.
+         * {ok, parts, on, off, trackers: [{id, name, categories, website, parts: [{name, kind, on, off}]}]}: on = the part runs now, off = it was
+         * switched off with pm (Enable Trackers can switch it back on); a part the manifest ships off has neither.
+         */
+        @JavascriptInterface
+        public String trackerParts(String pkg) {
+            try {
+                if (!BackupScripts.isPackageName(pkg)) return new JSONObject().put("ok", false).put("error", "not a package name").toString();
+                Trackers t = trackers();
+                List<TrackerParts.Group> groups = readTrackerParts(pkg, t);
+                JSONArray arr = new JSONArray();
+                int parts = 0, on = 0, off = 0;
+                for (TrackerParts.Group g : groups) {
+                    JSONObject o = t.db.info(g.index);
+                    JSONArray ps = new JSONArray();
+                    for (TrackerParts.Part p : g.parts) {
+                        ps.put(new JSONObject().put("name", p.name).put("kind", p.kind).put("on", p.on()).put("off", p.switchedOff()));
+                        parts++;
+                        if (p.on()) on++;
+                        if (p.switchedOff()) off++;
+                    }
+                    arr.put(o.put("parts", ps));
+                }
+                return new JSONObject().put("ok", true).put("parts", parts).put("on", on).put("off", off).put("trackers", arr).toString();
+            } catch (PackageManager.NameNotFoundException gone) {
+                return "{\"ok\":false,\"error\":\"not installed\"}";
+            } catch (Throwable th) {
+                try { return new JSONObject().put("ok", false).put("error", String.valueOf(th.getMessage())).toString(); } catch (Exception e) { return "{\"ok\":false}"; }
+            }
+        }
+
+        /**
+         * Switches the tracker parts of one app off (enable false) or back on, off the page's thread: every tracker of the app when idsJson is empty or
+         * "[]", only the trackers with these ids otherwise. Answers "started", "busy" while a run is going, or "error"; the result arrives as
+         * window.onTrackerPartsSet(token, {ok, needsRoot, changed, failed, output}). Behind the same gate as the component switch (trackerSwitchAllowed).
+         */
+        @JavascriptInterface
+        public String trackerPartsSet(final String pkg, final String idsJson, final boolean enable, final String token) {
+            synchronized (trackerPartsLock) {
+                if (trackerPartsBusy) return "busy";
+                trackerPartsBusy = true;
+            }
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res;
+                    try {
+                        int[] ids = null;
+                        JSONArray a = (idsJson == null || idsJson.trim().isEmpty()) ? new JSONArray() : new JSONArray(idsJson);
+                        if (a.length() > 0) {
+                            StringBuilder spec = new StringBuilder("x:");
+                            for (int i = 0; i < a.length(); i++) { if (i > 0) spec.append(','); spec.append(a.get(i)); }
+                            ids = TrackerParts.ids(spec.toString());
+                        }
+                        res = setTrackerParts(pkg, ids, null, enable);
+                    } catch (Throwable t) {
+                        res = new JSONObject();
+                        try { res.put("ok", false).put("output", "Error: " + errMsg(t)); } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (trackerPartsLock) { trackerPartsBusy = false; }
+                    }
+                    notifyJs("window.onTrackerPartsSet && window.onTrackerPartsSet(" + JSONObject.quote(token == null ? "" : token) + "," + res + ")");
+                }
+            })) {
+                synchronized (trackerPartsLock) { trackerPartsBusy = false; }
+                return "error";
+            }
+            return "started";
+        }
+
+        /**
+         * Android allows a single component's state change to the root user (uid 0) and the system user (uid 1000) but refuses it to the ADB shell
+         * (uid 2000), so the tracker switches open where the component switch does (setComponentEnabled): Root mode, or a Shizuku server running as
+         * uid 0 or 1000. The page keeps the same gate (compToggleLocked -> sysPrivActive); this is the enforcing floor for every caller.
+         */
+        private boolean trackerSwitchAllowed() {
+            String trkMode = resolveExecMode();
+            int trkSzUid = "shizuku".equals(trkMode) ? shizukuServerUid() : -1;
+            return "root".equals(trkMode) || ("shizuku".equals(trkMode) && isShizukuAuthorized() && (trkSzUid == 0 || trkSzUid == 1000));
+        }
+
+        /**
+         * The History's Undo of a tracker step, run at once (as executeAppAction is) but answering the whole result as JSON, so the page can keep the
+         * parts this Undo really changed: {ok, needsRoot, changed, changedParts, failed, output}.
+         */
+        @JavascriptInterface
+        public String trackerActionResult(String action, String pkg) {
+            try {
+                if (!BackupScripts.isPackageName(pkg)) return new JSONObject().put("ok", false).put("output", "Error: \"" + pkg + "\" is not a valid package name").toString();
+                if (!TrackerParts.isAction(action)) return new JSONObject().put("ok", false).put("output", "Error: not a tracker action").toString();
+                return trackerAction(pkg, action).toString();
+            } catch (Throwable e) {
+                try { return new JSONObject().put("ok", false).put("output", "Error: " + errMsg(e)).toString(); } catch (Exception x) { return "{\"ok\":false}"; }
+            }
+        }
+
+        /** A batch action string (trackers_off / trackers_on, with ids or part names after the colon: TrackerParts) run on one app. */
+        private JSONObject trackerAction(String pkg, String action) throws Exception {
+            return setTrackerParts(pkg, TrackerParts.ids(action), TrackerParts.parts(action), TrackerParts.enables(action));
+        }
+
+        /**
+         * Switches the tracker parts of one app off or back on (ids null: every tracker of the app; parts null: every part of those trackers), one pm
+         * command per part that needs it: to switch off, the parts that run; to switch on, the parts in the switched-off state (an explicit DISABLED,
+         * whoever set it; never one the manifest ships off). Success is each part's state read back afterwards (componentOverrideState), not what pm
+         * printed. Parts named by name (only: the History's Undo) are all accounted for: one the tracker list no longer counts is still switched
+         * (readNamedParts), one the app no longer has is reported as gone, never skipped in silence.
+         * {ok, needsRoot, parts, changed, changedParts: [names], failed, output}.
+         */
+        private JSONObject setTrackerParts(String pkg, int[] ids, List<String> only, boolean enable) throws Exception {
+            JSONObject r = new JSONObject();
+            if (!BackupScripts.isPackageName(pkg)) return r.put("ok", false).put("output", "Error: \"" + pkg + "\" is not a valid package name");
+            if (ids != null && ids.length == 0) return r.put("ok", false).put("output", "Error: no tracker was named");
+            if (only != null && only.isEmpty()) return r.put("ok", false).put("output", "Error: no tracker part was named");
+            if (!trackerSwitchAllowed()) {
+                return r.put("ok", false).put("needsRoot", true)
+                        .put("output", "Error: switching tracker parts on or off needs Super User (Root) or the system user (UID 1000).");
+            }
+            Trackers t = trackers();
+            List<TrackerParts.Group> groups = readTrackerParts(pkg, t);
+            List<String[]> changed = new ArrayList<String[]>(), failed = new ArrayList<String[]>();
+            List<String> failedOut = new ArrayList<String>();
+            int partsInApp = 0;
+            int[] already = { 0 };
+            Set<String> seen = new HashSet<String>();
+            for (TrackerParts.Group g : groups) {
+                partsInApp += g.parts.size();
+                if (!TrackerParts.wanted(t.db, g, ids)) continue;
+                String tracker = t.db.name[g.index];
+                for (TrackerParts.Part p : g.parts) {
+                    if (!TrackerParts.wanted(p, only)) continue;
+                    seen.add(p.name);
+                    switchTrackerPart(pkg, tracker, p, enable, changed, already, failed, failedOut);
+                }
+            }
+            // the names asked for that no tracker of the list covers now: the app's part all the same (readNamedParts), or no longer in the app
+            Set<String> missing = TrackerParts.missing(only, seen);
+            int gone = 0;
+            if (!missing.isEmpty()) {
+                Map<String, TrackerParts.Part> named = readNamedParts(pkg, missing);
+                for (String name : missing) {
+                    TrackerParts.Part p = named.get(name);
+                    if (p == null) gone++;
+                    else switchTrackerPart(pkg, TrackerParts.NOT_LISTED, p, enable, changed, already, failed, failedOut);
+                }
+            }
+            JSONArray names = new JSONArray();
+            for (String[] c : changed) names.put(c[1]);
+            return r.put("ok", failed.isEmpty()).put("parts", partsInApp).put("changed", changed.size()).put("changedParts", names).put("failed", failed.size())
+                    .put("output", TrackerParts.report(enable, partsInApp, changed, already[0], gone, failed, failedOut));
+        }
+
+        /** One part to the asked state when it needs it: the pm command, then the state read back; counted in changed, already or failed. */
+        private void switchTrackerPart(String pkg, String tracker, TrackerParts.Part p, boolean enable, List<String[]> changed, int[] already,
+                                       List<String[]> failed, List<String> failedOut) {
+            if (!TrackerParts.needs(p, enable)) { if (enable ? p.on() : !p.on()) already[0]++; return; }
+            String cmd = ShellArgs.componentCommand(pkg, p.name, enable);
+            if (cmd == null) { failed.add(new String[] { tracker, p.name }); failedOut.add("not a valid component name"); return; }
+            String out = executeShell(cmd);
+            Boolean state = componentOverrideState(pkg, p.name);
+            if (state != null && state.booleanValue() == enable) changed.add(new String[] { tracker, p.name });
+            else { failed.add(new String[] { tracker, p.name }); failedOut.add(out == null ? "" : out.trim()); }
+        }
+
         /** Saves an app's icon (256 px PNG) to Download/ADB App Manager/Icons. Result via window.onAppIconSaved(json{ok, pkg, path, error}). */
         @JavascriptInterface
         public String saveAppIcon(final String pkg, final String label, final String pack) {
@@ -16919,6 +20603,16 @@ public class MainActivity extends Activity {
         public String setAppOp(String pkg, String op, String mode) {
             if (!BackupScripts.isPackageName(pkg) || !ShellArgs.isAppOp(op) || !ShellArgs.isAppOpMode(mode)) return flagged(false, "Error: not a valid package, app op and value");
             return runShellAction("appops set " + pkg + " " + op + " " + mode);
+        }
+
+        /**
+         * The uid-level mode of an app op (appops set --uid). Android applies the stricter of an op's uid-level and package-level modes, so a
+         * package-level change under a stricter uid-level mode never took effect; the page sets both for an op that has a uid-level mode (v7.19.0).
+         */
+        @JavascriptInterface
+        public String setAppOpUid(String pkg, String op, String mode) {
+            if (!BackupScripts.isPackageName(pkg) || !ShellArgs.isAppOp(op) || !ShellArgs.isAppOpMode(mode)) return flagged(false, "Error: not a valid package, app op and value");
+            return runShellAction("appops set --uid " + pkg + " " + op + " " + mode);
         }
 
         @JavascriptInterface
@@ -17038,7 +20732,7 @@ public class MainActivity extends Activity {
                     try {
                         ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                         if (cm != null) {
-                            cm.setPrimaryClip(ClipData.newPlainText("ADB/Root Full System Toolbox", text));
+                            cm.setPrimaryClip(ClipData.newPlainText("ADB/Root Toolbox", text));
                             Toast.makeText(MainActivity.this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception e) {
@@ -17193,6 +20887,8 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
         if (isHeadless()) {                                // a tile / widget action has no page: Back just closes it
+            // while Kill Apps runs, Back only puts the window away: closing it would end the Shizuku shell the run's stops go through (v7.19.0)
+            if (QuickStopRun.active() != null) { moveTaskToBack(true); return; }
             super.onBackPressed();
             return;
         }
@@ -17307,6 +21003,19 @@ public class MainActivity extends Activity {
             closePtySessions();
             for (AiHttp c : aiCalls.values()) c.cancel();
             aiExecutor.shutdown();
+        } catch (Throwable ignored) {}
+        // Custom Fonts: no new work; this window's builds and downloads stop at their next check (their connections are closed now), a
+        // privileged step that runs ends (its files are written whole or not at all) and the ones queued behind it see the window gone; its
+        // picked copies go. Another window's jobs and files are its own.
+        try { fontExec.shutdownNow(); } catch (Throwable ignored) {}
+        try { fontPrivExec.shutdown(); } catch (Throwable ignored) {}
+        try { gfExec.shutdownNow(); } catch (Throwable ignored) {}         // Google Fonts previews: the page that asked for them is gone
+        gfDisconnectPreviews();
+        fmkDisconnect(fmkJobs.cancelAll(this));
+        try {
+            synchronized (fmkLock) {
+                if (fmkPicks != null) fmkPicks.clear();
+            }
         } catch (Throwable ignored) {}
         try {
             executor.shutdown();

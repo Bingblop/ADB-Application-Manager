@@ -21,7 +21,7 @@ public class PageDialogTextTest {
         // otherwise the word for the kind
         p = PageDialogText.split(PageDialogText.CONFIRM, null, "Uninstall Foo?", null);
         eq("one-line confirm", p.title, "Confirm"); eq("  body", p.body, "Uninstall Foo?");
-        eq("alert default", PageDialogText.split(PageDialogText.ALERT, null, "Done.", null).title, "ADB/Root Full System Toolbox");
+        eq("alert default", PageDialogText.split(PageDialogText.ALERT, null, "Done.", null).title, "ADB/Root Toolbox");
         eq("prompt default", PageDialogText.split(PageDialogText.PROMPT, null, "Name of this tab", null).title, "Enter a value");
         eq("the page's translated fallback", PageDialogText.split(PageDialogText.CONFIRM, null, "Sicher?", "Bestätigen").title, "Bestätigen");
         StringBuilder longLine = new StringBuilder(); for (int i = 0; i < 90; i++) longLine.append('x');

@@ -1,0 +1,26 @@
+ok   1. the Regular row names the file, family, glyphs and outline kind
+ok      a Style drop-down: Custom and the nine named styles, Regular chosen (the app's guess)
+ok      one slider per axis at the guess (opsz 14, wght 400), labelled
+ok      the name is filled from the family; Build is enabled
+ok   2. the preview shows, in the picked font (a FontFace from fontMakerPreview)
+ok      drawn at the chosen point (font-variation-settings)
+ok   3. Bold becomes the same variable font at the Bold guess (wght 700)
+ok      the bold line of the preview uses wght 700, without faux bold
+ok   4. Black draws wider than Regular, Thin narrower (the font really varies)
+ok      the slider and its value follow the named style
+ok   5. a slider off every named style: Style reads Custom, the value 650, the preview follows
+ok      back at 400 the Style reads Regular again
+ok   6. Bold None: the line that Android makes bold from the Regular, no Bold panel
+ok      the bold line is the Regular made bold (weight 700, the Regular's axes)
+ok   7. Bold from a file: a row to choose it, Build waits for it
+ok      the Bold file is shown and the bold line uses its own face
+ok      Build is enabled again
+ok   8. a WOFF file: the reason, in the error colour, and the variable file stays chosen
+ok      a closed chooser adds nothing (the last message stays as it was)
+ok   9. a static CFF font: CFF outlines, no axes, its warning listed, the error gone
+ok      no "same variable font" Bold; the name typed by hand stays
+ok   10. Emoji from an own file: a row and the note that picture emoji cannot go in
+ok       a CBDT emoji font is refused with the reason
+ok       a COLR one is taken (file, glyphs, COLRv0)
+ok   11. no page errors
+all passed

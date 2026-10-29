@@ -1,0 +1,27 @@
+ok   1. HTTP 404: the file moved away, the status kept, update the app
+ok      HTTP 503: the server answered, try again later
+ok      a network failure keeps its detail
+ok      a zip without the font keeps the file name
+ok      each line is in the error colour, and the rows offer Download again
+ok   2. pm's Failure line after "The phone did not install the font:", in the Phone font card
+ok      pm's exception over several lines: "The phone did not install the font:" and every detail, on one line, under the build result's buttons (not in the card)
+ok      the same for an uninstall: "The phone did not uninstall the font:" and the details
+ok      a failure whose message runs over two lines keeps the page's lead and both lines
+ok      a busy Export: the bridge's reason under the buttons; Export stays on (no save screen opened)
+ok      a second save screen: "The save screen is already open."
+ok   3. Lato chosen in the Phone font list: the changer's lock names the system user (UID 1000) and root (UID 0)
+ok      System emoji's lock: root only
+ok      no page errors
+ok   4. a script's ERROR line is a sentence of the page
+ok      what the phone read back is shown with it (sans.loc default#default)
+ok      no page errors
+ok      sans.loc read back over two lines: "The phone did not take the font (sans.loc reads "…")."
+ok      no page errors
+ok   5. German: the HTTP status stays, the sentence is German
+ok      the network detail stays as Java wrote it
+ok      no page errors
+ok   6. Arabic: the list runs right to left; the Arabic line is indented on the right
+ok      the English line runs left to right and is indented on its left, its bullet inside the list
+ok      the known warning is in Arabic (right to left), the unknown one stays English (left to right)
+ok      no page errors
+all passed

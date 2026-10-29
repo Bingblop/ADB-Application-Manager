@@ -61,7 +61,7 @@
       <tr><td><b>Use regex matching</b></td><td>On</td><td>Reads what you type as a pattern. Off: the whole name (or the whole package name) has to be typed.</td></tr>
     </tbody>
   </table>
-  <p>The last row, <b>Row tints</b>, is not a switch (it has an arrow at its end). Tap it and the menu closes and <a href="#prefs">Settings</a> opens on the Row tints card, which lights up for a moment, so you can change how strongly the rows of this list are tinted without looking for it. <b>Back</b> brings you back to this tab.</p>
+  <p>The last two rows are the <b>Row tints</b> setting of <a href="#prefs">Settings</a>, right here: the <b>Row tints</b> slider (Off, Faint, Subtle, Normal, Vivid) sets how strongly the rows of this list are tinted, and the <b>Gradient</b> switch (off by default) makes each tint fade across the row instead of one even colour. The list behind the menu changes as you move them, and Settings shows the same choice.</p>
   <p>One of the first two always stays on: switching off the last one turns the other back on. A <b>regex</b> (regular expression) is a small pattern language that lets one search match many things. Plain words work as you would expect, and capital letters do not matter, so <code>cam</code> finds Camera. Special characters match more: <code>mail|chat</code> finds apps with either word, and <code>^com\.samsung</code> finds packages that start with <code>com.samsung</code>. You can ignore all of this and just type words. If a pattern is not valid, or could take too long, the app searches it as plain words and shows a note under the box. With regex off, <code>cam</code> finds nothing but <code>Camera</code> does. Your choices are remembered.</p>
 
   <h4>Sort and the Action Button</h4>
@@ -168,6 +168,7 @@
 
   <h5>The Trackers chip</h5>
   <p>A tracker is a ready-made library that an app includes to show ads, count how it is used or report crashes (Google Firebase Analytics and AdMob are two). The chip says how many known trackers this app contains: green <b>0</b> when none was found, orange when there are some, grey <b>?</b> when the app's code could not be read (an app with no code of its own, or a file Android does not let this app open). Tap it for the list: each tracker's name, its kind (Advertisement, Analytics, Crash reporting, Location, Profiling) and its web address.</p>
+  <p><b>Switching trackers off.</b> Under each tracker the box also lists the app's own parts that belong to it (screens, services, receivers, providers), whether each one is off, and a <b>DISABLE</b> or <b>ENABLE</b> button; at the top, <b>Disable all trackers</b> and <b>Enable all trackers</b>. These switches need Super User (root) or Shizuku running as the system user (UID 1000); without that they carry a lock. What they do, what they do not do, and how to undo them: <a href="#rootfeatures-trackers">Switching trackers off in apps</a>.</p>
   <p><b>How it is found.</b> The app opens the app's installed files and reads the class names inside its code, then compares them with the <a href="https://exodus-privacy.eu.org">Exodus Privacy</a> list of about 430 trackers (licence: ODbL 1.0). Nothing is run, nothing is sent anywhere, and no working mode is needed. A result is kept until the app is updated.</p>
   <p><b>What it cannot tell.</b> Code that a shrinker (R8, ProGuard) has renamed hides the library's class names, and a tracker that is downloaded later or sits in native code is not seen. So a number is "trackers the code shows", never "no tracking at all". Apps that are uninstalled have no chip.</p>
   <p><b>Update the list.</b> The list inside the app is a copy from October 2026. In the Trackers box, <b>Update the list</b> downloads the current one from Exodus Privacy (a plain download of a public list, no key, nothing about you or your apps is sent), checks that it is whole (several hundred trackers, with code names) before it replaces the old one, and then looks at your apps again with it. If the download fails, the old list stays and the message says why.</p>
@@ -221,6 +222,7 @@
   <ul>
     <li><b>GRANTED</b> or <b>DENIED</b>: a runtime permission (the kind Android asks you about, like Camera or Location). Tap it to flip it. A message says "Revoked (name)" or "Granted (name)". Android can close the app when you take a permission away.</li>
     <li><b>A padlock with GRANTED or NOT GRANTED</b>: an install-time permission. Android fixed it when the app was installed and does not let anyone change it later, so this button does nothing. The padlock is the reason.</li>
+    <li><b>GRANTED or DENIED on a permission tagged "app op"</b> that <code>pm grant</code> cannot change (Display over other apps, Usage access, Modify system settings and others): the button switches its app op between allow and ignore instead (since 7.19.0).</li>
     <li><b>A padlock on a GRANTED / DENIED button</b>: you could change it, but you have no working mode right now. Set one up and the padlock goes.</li>
   </ul>
 
@@ -234,6 +236,7 @@
     <li><b>Deny</b>: the request is refused with an error.</li>
     <li><b>Reset</b>: back to Android's default for that op.</li>
   </ul>
+  <p>The ops behind the app's permissions are listed even when Android has not recorded a mode for them yet ("not set yet"). Android uses the stricter of an op's uid-level mode and its app-level mode, so when an op has a uid-level mode both are set. After a change the app reads the op back: if Android kept another mode, a message says so (<i>Android kept CAMERA at ignore</i>) instead of claiming the change. Some ops refuse the ADB shell: Super User, or Shizuku running as the system user (UID 1000), can change them. Large apps whose permission list was too big to read at once now show their permissions too.</p>
   <p>Under the list, a field "Other op, e.g. RUN_ANY_IN_BACKGROUND", a mode menu and a <b>Set</b> button let you set an op that is not listed.</p>
 
   <h5>Activities</h5>
@@ -241,14 +244,14 @@
   <p>Each row has small tags: <b>exported</b> (other apps may open it) or <b>unexported</b> (only the app itself normally can), <b>disabled</b> when it is off, and <b>protected</b> when using it needs a permission. The buttons are:</p>
   <ul>
     <li><b>LAUNCH</b>: opens that screen. For an unexported activity the button reads <b>LAUNCH (SHELL)</b>.</li>
-    <li><b>DISABLE</b> or <b>ENABLE</b>: switches that one screen off or on (<code>pm disable</code> or <code>pm enable</code> on the single component). <b>Root only:</b> Android refuses a change to a single part from the shell user, so in every mode but Root (Read-Only, ADB, Wireless Debugging and Shizuku) the button carries a padlock, which here means "Needs Super User (Root)", and a tap sends nothing to Android. Instead, on a phone with <code>su</code> the tap switches the working mode to Root and your root manager asks: a yes carries the tap through, a no puts back the mode you had and offers Root Features. On a phone without <code>su</code> the tap only offers Root Features. In Root mode, disabling a part of a system app asks you to confirm first. See <a href="#rootfeatures-components">App components under Super User</a>.</li>
+    <li><b>DISABLE</b> or <b>ENABLE</b>: switches that one screen off or on (<code>pm disable</code> or <code>pm enable</code> on the single component). Android refuses a single part's change to the ADB shell user (UID 2000) but allows the root user (UID 0) and the Android system user (UID 1000), so the button works in Root mode (su granted) and when Shizuku runs as UID 1000 or root (UID 0). For the ADB shell user (UID 2000), which is Shizuku started over ADB, ADB over TCP and Wireless Debugging, and in Read-Only the button carries a padlock, which here means "Needs Super User (Root)", and a tap sends nothing to Android. Instead, on a phone with <code>su</code> the tap switches the working mode to Root and your root manager asks: a yes carries the tap through, a no puts back the mode you had and offers Root Features. On a phone without <code>su</code> the tap only offers Root Features. In Root mode, disabling a part of a system app asks you to confirm first. See <a href="#rootfeatures-components">App components under Super User</a>.</li>
   </ul>
 
   <h5>Components</h5>
   <p>A component is one working part of an app that is not a screen. The tab lists three kinds: <b>Receivers</b> (parts that listen for events such as the phone starting up), <b>Services</b> (parts that work in the background) and <b>Providers</b> (parts that share data with other apps). Each heading shows how many there are, and the tab's pill shows the total. Use the search box and the chips <b>All</b>, <b>Exported</b> and <b>Unexported</b>. The tags are the same as on the Activities tab. The buttons are:</p>
   <ul>
     <li><b>STOP</b> (services only): stops that service.</li>
-    <li><b>DISABLE</b> or <b>ENABLE</b> (all three kinds): switches that one part off or on. Providers and receivers have only this button. Root only, as on the Activities tab: in every other mode it carries the padlock and a tap goes the Root way (<a href="#rootfeatures-components">App components under Super User</a>).</li>
+    <li><b>DISABLE</b> or <b>ENABLE</b> (all three kinds): switches that one part off or on. Providers and receivers have only this button. The same as on the Activities tab: Android allows it to the root user (UID 0) and the system user (UID 1000) but not the ADB shell user (UID 2000), so it works in Root mode and when Shizuku runs as UID 1000 or root (UID 0); for the ADB shell user (UID 2000) and in Read-Only it carries the padlock and a tap goes the Root way (<a href="#rootfeatures-components">App components under Super User</a>).</li>
   </ul>
 
   <h5>Launching hidden activities</h5>
@@ -320,7 +323,7 @@
       <tr><td>Logs</td><td>Opens Live Logcat, but it needs a working mode to read the log</td><td>Works</td></tr>
       <tr><td>Permissions</td><td>You can read the list. Toggles show a padlock.</td><td>Runtime ones can be changed</td></tr>
       <tr><td>App Ops</td><td>Not available</td><td>Works</td></tr>
-      <tr><td>Activities, Components</td><td>The lists work. LAUNCH works for exported screens only. STOP and ENABLE / DISABLE show a padlock.</td><td>LAUNCH and STOP work on exported parts, and LAUNCH (SHELL) on unexported screens; STOP on an unexported service is refused to the shell user too, so it needs Root. ENABLE / DISABLE on a single part works in Root mode only; in ADB, Wireless Debugging and Shizuku mode it keeps its padlock and sends nothing (<a href="#rootfeatures-components">why</a>)</td></tr>
+      <tr><td>Activities, Components</td><td>The lists work. LAUNCH works for exported screens only. STOP and ENABLE / DISABLE show a padlock.</td><td>LAUNCH and STOP work on exported parts, and LAUNCH (SHELL) on unexported screens; STOP on an unexported service is refused to the shell user too, so it needs Root. ENABLE / DISABLE on a single part works in Root mode or with Shizuku as UID 1000 or root (UID 0); for the ADB shell user (UID 2000: ADB, Wireless Debugging and Shizuku started over ADB) and in Read-Only it keeps its padlock and sends nothing (<a href="#rootfeatures-components">why</a>)</td></tr>
     </tbody>
   </table>
 
@@ -335,7 +338,7 @@
 
   <h4>If something is wrong</h4>
   <ul>
-    <li><b>A button shows a padlock, or the "Working Mode Required" box opens.</b> You have no working mode. See <a href="#modes-overview">Working modes</a>. A padlock on <b>ENABLE</b> or <b>DISABLE</b> of a screen or part is the exception: it stays until Root is the working mode (<a href="#rootfeatures-components">App components under Super User</a>).</li>
+    <li><b>A button shows a padlock, or the "Working Mode Required" box opens.</b> You have no working mode. See <a href="#modes-overview">Working modes</a>. A padlock on <b>ENABLE</b> or <b>DISABLE</b> of a screen or part is the exception: it stays for the ADB shell user (UID 2000) and Read-Only, and lifts in Root mode or with Shizuku as UID 1000 or root (UID 0) (<a href="#rootfeatures-components">App components under Super User</a>).</li>
     <li><b>Uninstall says it needs root.</b> Android only lets root remove a system app for one user. The app first tries another way through ADB or Shizuku. If that also fails, the result says so. Switch to <a href="#mode-root">Root</a> if your phone has it, or use Freeze, which hides the app but keeps it installed.</li>
     <li><b>The result mentions a device policy or a restriction.</b> A work profile, device owner or parental control blocks it. It cannot be bypassed from here.</li>
     <li><b>Launch does nothing, or reports a problem.</b> Some apps have no screen to open. Try <b>App Info</b>.</li>
@@ -369,7 +372,7 @@
     <li><b>Clear All</b> (outlined too): unselects everything.</li>
     <li>The <b>X</b>: closes the sheet but keeps the selection. The round button comes back.</li>
   </ul>
-  <p>Next come three buttons: <b>Save to List</b> (see <a href="#tab-saved-lists">Saved Applications</a>), <b>Copy Packages</b> (copies the package names, one per line) and <b>Show Applications</b> (lists the selected apps, see below). Then a switch, <b>Keep selection after running</b>: "Run another command on these same apps without reselecting them". It is <b>on every time</b>: each new selection starts with it on, whatever you did to it before. Then twelve action buttons. The ones that change the most are filled with a colour: <b>Freeze</b> ice blue, <b>Enable</b> your accent colour, <b>Uninstall</b> red and <b>Reinstall</b> green (and <b>Save to List</b> the accent too).</p>
+  <p>Next come three buttons: <b>Save to List</b> (see <a href="#tab-saved-lists">Saved Applications</a>), <b>Copy Packages</b> (copies the package names, one per line) and <b>Show Applications</b> (lists the selected apps, see below). Then a switch, <b>Keep selection after running</b>: "Run another command on these same apps without reselecting them". It is <b>on every time</b>: each new selection starts with it on, whatever you did to it before. Then twelve action buttons, and under them a row of two, <b>Disable Trackers</b> and <b>Enable Trackers</b>. The ones that change the most are filled with a colour: <b>Freeze</b> ice blue, <b>Enable</b> your accent colour, <b>Uninstall</b> red and <b>Reinstall</b> green (and <b>Save to List</b> the accent too).</p>
   <table class="hg-table">
     <thead><tr><th>Button</th><th>What it does to each app</th><th>Asks first?</th></tr></thead>
     <tbody>
@@ -385,24 +388,26 @@
       <tr><td><b>Batch Ops</b></td><td>Sets app ops on all of them. See below.</td><td>Its own box</td></tr>
       <tr><td><b>Backup</b></td><td>Opens the backup box for all of them: one choice about app data, then <b>Create backup</b> saves each app in turn. See <a href="#apps-backup">Backups and restore</a>.</td><td>Only to create the backups</td></tr>
       <tr><td><b>Command</b></td><td>Runs a command you type on each app. See below.</td><td>Its own box</td></tr>
+      <tr><td><b>Disable Trackers</b></td><td>Switches off the app's parts that belong to a known tracker. Needs Super User (root) or Shizuku as the system user (UID 1000): see <a href="#rootfeatures-trackers">Switching trackers off in apps</a>.</td><td>Yes</td></tr>
+      <tr><td><b>Enable Trackers</b></td><td>Switches those parts back on. Same need.</td><td>No</td></tr>
     </tbody>
   </table>
-  <div class="hg-danger"><b>Risky.</b> Clear Data, Force Stop, Enable, Unsuspend and Reinstall start at once when you tap them: there is no confirmation list. Clear Data on the wrong selection deletes the saved data of every app in it, and that cannot be undone. Tap <b>Show Apps</b> first to read the list of what is selected.</div>
+  <div class="hg-danger"><b>Risky.</b> Clear Data, Force Stop, Enable, Unsuspend, Reinstall and Enable Trackers start at once when you tap them: there is no confirmation list. Clear Data on the wrong selection deletes the saved data of every app in it, and that cannot be undone. Tap <b>Show Apps</b> first to read the list of what is selected.</div>
 
   <h4>The confirmation list, the progress bar and Stop</h4>
-  <p>Freeze, Suspend and Uninstall open a box first. Its title says "Confirm Freeze Selected Apps", "Confirm Suspend Selected Apps" or "Confirm Uninstall Selected Apps". It lists every app with its package name. Read it. Tap <b>Confirm Freeze</b> (or <b>Confirm Suspend</b>, <b>Confirm Uninstall</b>) to go on, or <b>Cancel</b> to stop with nothing changed.</p>
+  <p>Freeze, Suspend, Uninstall and Disable Trackers open a box first. Its title says "Confirm Freeze Selected Apps", "Confirm Suspend Selected Apps", "Confirm Uninstall Selected Apps" or "Confirm Disable Trackers". It lists every app with its package name. Read it. Tap <b>Confirm Freeze</b> (or <b>Confirm Suspend</b>, <b>Confirm Uninstall</b>, <b>Disable Trackers</b>) to go on, or <b>Cancel</b> to stop with nothing changed.</p>
   <p>While the batch runs, the same box shows a progress line, for example "2 of 5: Name (com.example.app)", a bar, and a <b>Stop</b> button. Stop (or the X at the top of the box) ends the batch once the app being worked on has finished. Every app not reached yet is left as it was. The button changes to "Stopping...", and a message later says how many succeeded, failed and were not run.</p>
 
   <h4>The results box</h4>
   <p>When the batch ends, a message such as "Batch Done: 5 succeeded, 0 failed" appears and a box called <b>Batch Results</b> opens. Its subtitle names the action and the count, for example "FREEZE &bull; 5 of 5 apps" (the action keeps the name of the button you tapped). Each app has a card with its name, package name, the answer Android gave (or "No output returned") and a tag, <b>Success</b> or <b>Failed</b>. At the bottom:</p>
   <p><b>The result comes from the phone, not from the command.</b> After <b>Uninstall</b>, <b>Uninstall (keep data)</b>, <b>Reinstall</b>, <b>Freeze</b>, <b>Unfreeze</b>, <b>Suspend</b> and <b>Unsuspend</b>, the app asks the phone what became of each app (the progress sheet says <b>Checking the phone&hellip; (N apps)</b> with a full bar while it does; it reads the list of installed and of frozen apps again, plus each app's suspended flag for Suspend, and waits a second and asks once more if an app is not yet in its new state). The tag then says what it found: <b>Uninstalled</b> or <b>Still installed</b>, <b>Installed</b> or <b>Not installed</b>, <b>Frozen</b> or <b>Not frozen</b>, <b>Enabled</b> or <b>Still frozen</b>, and the counts in the message follow it. Some phones make the uninstall command report a failure although the app is gone; the card then starts with <i>Checked afterwards: uninstalled. The command reported a failure, but the phone says it worked.</i> and the app counts as a success. If the phone cannot be asked (no working shell), the command's own answer is used, as before. <b>Force stop</b> (<i>Stopped</i> / <i>Still running</i>) and <b>Clear data</b> (file counts, see above) are checked the same way, with the same <i>Checking the phone&hellip;</i> step. <b>Batch Ops</b> and <b>Command</b> are not checked (the phone offers nothing to read their result from), so their tags come from the command. Every row of the batch shows the spinner and <i>Working&hellip;</i>, then <i>Checking&hellip;</i>, until the results open.</p>
   <ul>
-    <li><b>Run again</b>: runs the same action on the same apps (Freeze, Suspend and Uninstall ask first again).</li>
+    <li><b>Run again</b>: runs the same action on the same apps (Freeze, Suspend, Uninstall and Disable Trackers ask first again).</li>
     <li><b>Run again on the (number) that failed</b>: shown when some, but not all, failed.</li>
     <li><b>Share CSV</b>: shares the results as a CSV file (a plain table that opens in any spreadsheet) with the columns App, Package, Result, Output, Run and Command or action. This is how you export the results.</li>
     <li><b>Done</b>: closes the box.</li>
   </ul>
-  <p>The selection is cleared when the batch ends, unless <b>Keep selection after running</b> is on. The list refreshes by itself a moment later. Every batch is also written to a history: open the <a href="#tab-debloater">UAD-NG Debloater</a> tab and tap <b>History</b> (the clock button beside the search box) to see it. There, <b>Undo</b> reverses Freeze, Enable, Suspend, Unsuspend, Uninstall and Reinstall. Force Stop and Clear Data cannot be undone.</p>
+  <p>The selection is cleared when the batch ends, unless <b>Keep selection after running</b> is on. The list refreshes by itself a moment later. Every batch is also written to a history: open the <a href="#tab-debloater">UAD-NG Debloater</a> tab and tap <b>History</b> (the clock button beside the search box) to see it. There, <b>Undo</b> reverses Freeze, Enable, Suspend, Unsuspend, Uninstall, Reinstall, Disable Trackers and Enable Trackers. Force Stop and Clear Data cannot be undone.</p>
 
   <h4>Step by step: freeze five apps</h4>
   <p>You need a working mode. The example freezes five apps you do not use.</p>
@@ -593,7 +598,7 @@
       <tr><td>Widget</td><td><b>Kill Apps</b> button</td><td>The same as the Kill Apps tile.</td></tr>
     </tbody>
   </table>
-  <p>The widget is called <b>ADB/Root Full System Toolbox</b> (on a narrow widget the name ends in "…"). It shows its name (tap the name to open the app), a line "Mode: (current mode)" and a line "Quick list: (list name) ((number) apps)", or "Quick list: No quick list set". It can be made wider, and it refreshes itself after every action and about every half hour.</p>
+  <p>The widget is called <b>ADB/Root Toolbox</b> (on a narrow widget the name ends in "…"). It shows its name (tap the name to open the app), a line "Mode: (current mode)" and a line "Quick list: (list name) ((number) apps)", or "Quick list: No quick list set". It can be made wider, and it refreshes itself after every action and about every half hour.</p>
   <p>The answers of Kill Apps are short: "Force-stopped 5 apps" (with ", 1 failed" when some did not stop and ", 2 left alone" when the list holds apps it does not stop), "Cancelled after 3 of 12 apps", "No quick list set. Open Saved Applications in the app and tap Quick list.", or "Needs ADB, Shizuku or Root. Set up a working mode first."</p>
 
   <h4>The Kill Apps notification</h4>
@@ -603,17 +608,18 @@
     <li><b>Tapping the notification</b> opens this app on <b>Saved Applications</b> with the <b>Edit Saved List</b> sheet of the quick list (the same sheet as <b>Edit</b> on that list's card). The run is not touched: it goes on while you look, and its notification stays. If the Saved Applications tab was turned off, it is turned on again, and a message says so.</li>
     <li>On <b>Android 16 and newer</b> the notification is asked for as a <b>Live Update</b>: the phone may show it as a small chip in the status bar ("3/12"). That needs the <b>Live updates</b> row of the <a href="#app-permissions">permissions sheet</a> (Notifications as well). Where the phone does not show it as a Live Update, you get the same notification without the chip.</li>
     <li>Swiping the notification away does not stop the run; it just stays hidden until the run is over.</li>
+    <li>The run keeps going to the last app with the screen off or the app in the background: it runs as a foreground job, and the apps that draw the notification or that the run needs are stopped last, in this order: the keyboard, the home screen, System UI (stopping it earlier made the notification vanish mid-run), and Shizuku and the root manager at the very end (stopping the one the run goes through ends it). Back while a run is going leaves it running.</li>
     <li>A second tap while a run is going does not start another one: the message says "Kill Apps is already running. Tap Cancel in its notification to stop it."</li>
   </ul>
   <h4>Apps it never stops</h4>
-  <p>Whatever the list says, <b>Kill Apps</b> leaves three kinds of app alone, because stopping them would break the run or the window that shows it: <b>this app</b> (ADB/Root Full System Toolbox), the <b>app that draws its window</b> (the phone's WebView app, usually Android System WebView or Chrome), and <b>Media Picker</b> (<code>com.google.android.providers.media.module</code>). They stay in the list, they are not counted as stopped, and the message says how many were left alone ("Force-stopped 4 apps, 1 left alone").</p>
+  <p>Whatever the list says, <b>Kill Apps</b> leaves three kinds of app alone, because stopping them would break the run or the window that shows it: <b>this app</b> (ADB/Root Toolbox), the <b>app that draws its window</b> (the phone's WebView app, usually Android System WebView or Chrome), and <b>Media Picker</b> (<code>com.google.android.providers.media.module</code>). They stay in the list, they are not counted as stopped, and the message says how many were left alone ("Force-stopped 4 apps, 1 left alone").</p>
 
   <h4>Step by step: set up Kill Apps</h4>
   <ol class="hg-steps">
     <li>In the Application Manager, select the apps you want to stop together and tap <b>Save to List</b> in the batch sheet (see <a href="#apps-batch">batch actions</a>). Give the list a name.</li>
     <li>Open the <b>Saved Applications</b> tab and tap <b>Quick list</b> on that list. The button turns to "Quick list" with a tick, and a message says "(name) is now the quick list. Add the "Kill Apps" tile or the widget to use it."</li>
     <li>Add the tile: swipe down twice from the top of the screen to open the full Quick Settings panel, tap the pencil icon (edit), and drag <b>Working mode</b> and <b>Kill Apps</b> into your panel. The wording differs a little between phone makers.</li>
-    <li>Or add the widget: press and hold an empty spot on the home screen, tap <b>Widgets</b>, find <b>ADB/Root Full System Toolbox</b> and drag it onto a home screen page.</li>
+    <li>Or add the widget: press and hold an empty spot on the home screen, tap <b>Widgets</b>, find <b>ADB/Root Toolbox</b> and drag it onto a home screen page.</li>
     <li>Tap <b>Kill Apps</b>. A message says how many apps were force-stopped.</li>
   </ol>
   <p>To use a different list, tap <b>Quick list</b> on another list: only one list is the quick list. Tap the ticked button again to clear it. If you delete the quick list, it is cleared. If you edit it, the widget's number is refreshed.</p>
@@ -651,8 +657,8 @@
   <p>There are three ways.</p>
   <ol class="hg-steps">
     <li><b>From apps you selected.</b> In the Application Manager, select the apps, tap the round button, then <b>Save to List</b>. A box "Save Selected Apps" shows how many apps are selected. Type a <b>List name</b>, an optional description, and tap <b>Save Selected Apps</b>. A message says "Saved selected apps to (name)". The same idea works in the <a href="#tab-debloater">UAD-NG Debloater</a>, with its own <b>Save to List</b> button.</li>
-    <li><b>By typing.</b> In this tab tap <b>New List</b>. The box "Create Saved List" opens. Fill in the name and an optional description, then type the package names in the big box, one per line. Tap <b>Save List</b>. Double entries are removed by themselves. Names separated by commas also work.</li>
-    <li><b>By pasting.</b> Copy a list of package names from anywhere, open <b>New List</b> and paste it into the big box. This is how you bring in a list from another phone, a chat message or a note. A whole set of lists comes back from a backup file instead: see <a href="#tab-saved-lists">Back up and restore</a> further down this page.</li>
+    <li><b>By ticking apps.</b> In this tab tap <b>New List</b>. The box "Create Saved List" opens with every app of this phone in it, by name. Fill in the name and an optional description, then tap each app the list should hold: its icon gets a check mark and the row is outlined. Tap <b>Save List</b>. How to find an app quickly is under <a href="#tab-saved-lists">Edit a list</a> below.</li>
+    <li><b>By typing or pasting.</b> Open <b>New List</b>, tap <b>Edit as text</b> under the apps, and type or paste package names into the big box, one per line (names separated by commas also work; double entries are removed by themselves). Each name you type ticks its app above. This is how you bring in a list from another phone, a chat message or a note. A whole set of lists comes back from a backup file instead: see <a href="#tab-saved-lists">Back up and restore</a> further down this page.</li>
   </ol>
   <p>A name is required: without one the message says "Please enter a list name". The new list appears at the top.</p>
 
@@ -667,12 +673,26 @@
     <tbody>
       <tr><td><b>Recall</b></td><td>Selects the list's apps in the Application Manager (replacing any earlier selection) and takes you there. A message says "Recalled (number) apps from (name)". Open the round button to run any batch action on them. See <a href="#apps-batch">batch actions</a>. This is how you apply an action to a whole list.</td></tr>
       <tr><td><b>Quick list</b></td><td>Makes this the list that the Kill Apps tile and widget force-stop. The button then shows "Quick list" with a tick. Tap it again to clear it.</td></tr>
-      <tr><td><b>Edit</b></td><td>Opens "Edit Saved List" with the name, description and package names. Change them, then tap <b>Save List</b>.</td></tr>
+      <tr><td><b>Edit</b></td><td>Opens "Edit Saved List" with the name, the description and every app of this phone, the list's apps ticked and at the top. Tap an app to add it, tap a ticked one to take it out, then tap <b>Save List</b>. See <a href="#tab-saved-lists">Edit a list</a> below.</td></tr>
       <tr><td><b>Copy</b></td><td>Copies the package names, one per line, to the clipboard. A message says "Copied (name)". This is how you pass on one list as plain text, to paste into a note or a message. To keep all your lists in a file, use <b>Back up and restore</b>.</td></tr>
       <tr><td><b>Delete</b></td><td>Opens "Delete Saved List" with "Are you sure you want to delete this saved list?" and the name. Tap <b>Delete List</b> to go on, or <b>Cancel</b>. A deleted list cannot be recovered.</td></tr>
     </tbody>
   </table>
   <p>You can also run a command on a list without selecting it first: in the batch sheet's <b>Command</b> box, the menu <b>Run it on</b> offers each saved list.</p>
+
+  <h4>Edit a list</h4>
+  <p><b>Edit</b> on a list's card (and <b>New List</b>, for a new one) opens a box with the list's name and description at the top and the apps of this phone below, drawn like the rows of the <a href="#tab-apps">Application Manager</a>: the icon, the name, the package name and tags such as SYSTEM, USER, FROZEN or UNINSTALLED. The apps already in the list come first, ticked (a check mark on the icon and an outline round the row), then every other app, each part in alphabetical order. Pull the box up by its handle to give the apps the whole screen.</p>
+  <ul>
+    <li><b>Add or remove an app:</b> tap its row or its icon. A tap on an app that is not ticked adds it; a tap on a ticked one takes it out. The rows do not move when you tap, so a second tap puts back what the first one changed. Pressing and holding a row ticks it too (here it does not open the app's menu); pressing and holding the icon saves the icon as a picture, as in the Application Manager.</li>
+    <li><b>The line above the search box</b> says how many apps the list holds ("5 apps in this list"). While you edit an existing list it also says what you changed since the box opened, for example "2 added · 1 removed".</li>
+    <li><b>Search apps</b> finds an app by its name or its package name.</li>
+    <li><b>All</b>, <b>In this list</b>, <b>System</b> and <b>User</b> choose which rows are shown. <b>In this list</b> shows only the ticked apps, which is the quickest way to check the list; an app you untick there stays on screen (not ticked) until you change the choice or the search, so you can tick it again.</li>
+    <li>A package of the list that is <b>not installed on this phone</b> (a list made on another phone, or an app you uninstalled for good) keeps a row of its own with the tag NOT INSTALLED and the first letter of its package name instead of an icon. It stays in the list unless you untick it.</li>
+    <li>A phone with many apps shows 150 rows at a time: the button at the end of the rows (<b>Show 150 more</b>, with how many are left) adds the next ones, and the search finds any app at once.</li>
+    <li><b>Edit as text</b> (under the apps) opens the list as package names, one per line. A name you type or paste there is ticked above, and an app you tick above is added there.</li>
+    <li>If no app was read from this phone, the box says "No Applications Loaded" with a <b>Reload Packages</b> button, as the Application Manager does. The list's own packages still have their rows (without a tag, since the app cannot tell whether they are installed), and <b>Edit as text</b> still works.</li>
+  </ul>
+  <p>Nothing is saved until you tap <b>Save List</b>; <b>Cancel</b> or the close button leave the list as it was. Saving keeps the list's place, and if it is the quick list, the widget's number is refreshed.</p>
 
   <h4>Back up and restore</h4>
   <p>The card <b>Back up and restore</b> sits under the <b>New List</b> button. It keeps your lists in a small file (JSON) in a place you choose, and brings them back from such a file. Lists are only kept inside the app otherwise, so a backup is what saves them when you uninstall the app, clear its storage or change phone.</p>

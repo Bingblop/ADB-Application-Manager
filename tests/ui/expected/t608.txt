@@ -1,0 +1,44 @@
+ok   1. App Stores at 360 px: the tab has its ? and the switch sits below it, apart
+ok      a tap on the switch turns it on; the Help Guide stays shut
+ok      no page errors
+ok   1. App Stores at 412 px: the tab has its ? and the switch sits below it, apart
+ok      a tap on the switch turns it on; the Help Guide stays shut
+ok      the ? still opens the Help Guide
+ok      no page errors
+ok   2. Custom Fonts: My fonts is gone; the Phone font card, LIMITED without Root, says what One UI 8.5 takes, the drop-down asks for a font
+ok      the list: Default first, then every font on the phone by name, and the fonts made here
+ok      each says where it came from
+ok      a lock on the fonts this phone takes only with Root or the system user
+ok      a font Samsung did not sign: the list closes, a warning, nothing sent
+ok      a font Samsung or Monotype signed: Samsung's Font style opens, the toast names the font, the warning goes
+ok      Default: Font style too
+ok   3. hold Default: refused with a toast, the list stays
+ok      hold a font that came with the phone: refused
+ok      hold another font: the list closes and it asks first, in red
+ok      Cancel keeps it: nothing sent
+ok      Uninstall without a working mode: fontMakerUninstallPackage, then the font's App info
+ok      hold a font made here and not installed: it asks to delete it from the app
+ok      Delete: fontMakerDelete, Lato gone from the list, the toast
+ok      the keyboard: Delete on a row asks the same (Rosemary came with the phone: refused)
+ok      …and Enter chooses it
+ok      no page errors
+ok   4. Root: ROOT, no One UI note, the drop-down shows the font in use
+ok      the font in use is marked, and nothing is locked
+ok      hold the font in use: refused
+ok      a package of the phone: fontMakerApplyPackage, the read-back, the toast, and the drop-down shows it
+ok      a font made here: fontMakerApply with its id (not installed, it is written all the same)
+ok      Default: fontMakerReset, the toast, Default shown
+ok      Uninstall with Root: pm, the font gone from the list, the toast names it
+ok      an Install of a package the list is uninstalling waits: the button says Uninstalling…, nothing sent
+ok      no page errors
+ok   5. older One UI, none: no note, and no lock in the list
+ok      a font made here, not installed: installed first (Android's installer), then the way to Font style
+ok      no page errors
+ok   5. older One UI, shell: no note, and no lock in the list
+ok      installed by the app (pm), then Font style opens on it
+ok      no page errors
+ok   6. no Font style screen by that name: Display settings, and the toast says where to go
+ok      no page errors
+ok   7. not a Samsung: SAMSUNG ONLY, the note, no drop-down
+ok      no page errors
+all passed

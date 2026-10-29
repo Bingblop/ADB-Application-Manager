@@ -36,7 +36,7 @@ const add = (kind, key, ctx) => {
   if (ctx) m.get(key).ctx.add(ctx);
   return key;
 };
-// what the page itself hands to the translator (txT) or writes as a line of the Terminal (txNote) is text, whatever it looks like ("[shell closed]")
+// what the page itself hands to the translator (txT, txC for a word with its sense in brackets) or writes as a line of the Terminal (txNote) is text, whatever it looks like ("[shell closed]")
 const forced = { x: new Set(), p: new Set() };
 
 // ---------- markup: text between tags and the attributes that are shown ----------
@@ -115,7 +115,7 @@ const isTagged = (key) => /<\/?[A-Za-z0-9][^<>]*>/.test(key);
 
 walk.ancestor(ast, {
   CallExpression(node, st, anc) {
-    if (node.callee.type !== 'Identifier' || !/^(txT|txF|txNote)$/.test(node.callee.name) || !node.arguments.length) return;
+    if (node.callee.type !== 'Identifier' || !/^(txT|txF|txC|txNote)$/.test(node.callee.name) || !node.arguments.length) return;
     if (neverShown(anc)) return;
     const ctx = 'js ' + fnName(anc);
     alts(node.arguments[0]).forEach(parts => {

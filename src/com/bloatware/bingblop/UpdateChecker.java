@@ -981,7 +981,7 @@ public final class UpdateChecker {
                     if (UpdateManager.compareVersions(rel.optString("version"), me.versionName) > 0) {
                         row = new JSONObject();
                         row.put("pkg", me.pkg);
-                        row.put("name", "ADB/Root Full System Toolbox");
+                        row.put("name", "ADB/Root Toolbox");
                         row.put("installedVersion", me.versionName);
                         row.put("availableVersion", rel.optString("version"));
                         row.put("source", "self");

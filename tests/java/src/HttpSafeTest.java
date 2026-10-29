@@ -79,7 +79,44 @@ public class HttpSafeTest {
       check("an endless loop is cut", fails("/loop", base, h).contains("too many redirects"));
       check("a redirect to another scheme is refused before any connection", fails("/down", base, h).contains("refused a redirect"));
       check("a redirect without Location is an error", fails("/noloc", base, h).contains("without a Location"));
+
+      // DL-1: each hop's connection is handed out before it connects, so a Cancel can disconnect it
+      final java.util.List<HttpURLConnection> hops = new java.util.ArrayList<HttpURLConnection>();
+      c = HttpSafe.open(base + "/r1", 3000, 3000, null, hop -> hops.add(hop));
+      check("every hop is told: the redirect and the answer", c.getResponseCode() == 200 && hops.size() == 2 && hops.get(1) == c);
+      c.disconnect();
+      seenAuth = "unset";
+      String stopped;
+      try { HttpSafe.open(base + "/ok", 3000, 3000, h, hop -> { throw new IOException("cancelled"); }).disconnect(); stopped = "no error"; }
+      catch (IOException e) { stopped = String.valueOf(e.getMessage()); }
+      check("a hop that is refused is never sent", stopped.equals("cancelled") && "unset".equals(seenAuth));
     } finally { srv.stop(0); }
+
+    // a server that takes the connection and never answers: disconnecting the hop ends the wait at once, not at the 30 s read timeout
+    final java.net.ServerSocket mute = new java.net.ServerSocket(0, 50, java.net.InetAddress.getByName("127.0.0.1"));
+    final java.util.List<java.net.Socket> held = new java.util.concurrent.CopyOnWriteArrayList<java.net.Socket>();
+    Thread acceptor = new Thread(() -> { try { while (true) held.add(mute.accept()); } catch (IOException closed) {} });
+    acceptor.setDaemon(true);
+    acceptor.start();
+    try {
+      final java.util.concurrent.atomic.AtomicReference<HttpURLConnection> open = new java.util.concurrent.atomic.AtomicReference<HttpURLConnection>();
+      Thread cancel = new Thread(() -> {
+        try { Thread.sleep(500); } catch (InterruptedException e) { return; }
+        HttpURLConnection hop = open.get();
+        if (hop != null) hop.disconnect();
+      });
+      cancel.setDaemon(true);
+      cancel.start();
+      long t0 = System.nanoTime();
+      String err;
+      try { HttpSafe.open("http://127.0.0.1:" + mute.getLocalPort() + "/stall", 15000, 30000, null, hop -> open.set(hop)).disconnect(); err = "no error"; }
+      catch (IOException e) { err = String.valueOf(e); }
+      long ms = (System.nanoTime() - t0) / 1000000;
+      check("a stalled answer ends when its hop is disconnected (" + ms + " ms, " + err + ")", !err.equals("no error") && ms < 10000);
+    } finally {
+      mute.close();
+      for (java.net.Socket k : held) try { k.close(); } catch (IOException ignored) {}
+    }
     System.out.println(fails == 0 ? "PASS HttpSafeTest: " + n + " checks" : "FAILED HttpSafeTest: " + fails + " of " + n);
     if (fails != 0) System.exit(1);
   }

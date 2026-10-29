@@ -100,17 +100,21 @@ public final class SdmAutomation implements Sdm.Automation, SdmAcsPlan.Automatio
         return c.getPackageName() + "/" + SdmAccessService.class.getName();
     }
 
+
+    static boolean isEnabledInSettings(String v, String packageName) {
+        if (v == null) return false;
+        String me = packageName + "/" + SdmAccessService.class.getName();
+        String short1 = packageName + "/." + SdmAccessService.class.getSimpleName();
+        return SdmAcsStart.listed(v, me, short1);
+    }
     /** True when Android lists the service as switched on (it may still be starting). */
     public static boolean isEnabledInSettings(Context c) {
         try {
             String v = Settings.Secure.getString(c.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-            if (v == null) return false;
-            String me = componentName(c), short1 = c.getPackageName() + "/." + SdmAccessService.class.getSimpleName();
-            return SdmAcsStart.listed(v, me, short1);
+            return isEnabledInSettings(v, c.getPackageName());
         } catch (RuntimeException ignored) {}
         return false;
     }
-
     public static boolean isConnected() { return SdmAccessService.instance != null; }
 
     @Override

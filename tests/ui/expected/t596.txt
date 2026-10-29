@@ -1,0 +1,44 @@
+ok   1. the font just made has Make again under its build result
+ok      installed: version 1 on the phone
+ok      the Make card is on that font: "Making Inter Variable again", New font
+ok      its name is filled in, its Make again is off
+ok      a Regular chosen (Lato-Regular.ttf) keeps the name
+ok   2. Build sends rebuildId
+ok      while it is made again, the build result and its buttons are gone (nothing to install, use or save of that font)
+ok      a hold on it in the Phone font list waits: "Wait for the change that is running to finish."
+ok      a tap on it there sends nothing
+ok      New font is off while it is being made
+ok   3. made again: "Inter Variable is made again. Use it now, or choose it later under Phone font."
+ok      the same font, the same package, version 2; the phone has version 1: the build result offers Update
+ok      still three fonts made here, one row of it in the list; the Make card is a new font again, Make again on
+ok   4. Make again once more: "Making Inter Variable again", its name
+ok      New font: the link goes, Make again is on again
+ok      uninstalled (a hold in the list, then Uninstall): it is still being made again
+ok      deleted (a hold again: "Delete Inter Variable?", Delete): the Make card is a new font again, its build result gone
+ok      the next build is a new font (rebuildId null)
+ok      no page errors
+ok   5. while the chooser is open: Choose is off
+ok      a second pick sends nothing
+ok      the file is read: Change is on
+ok      a Regular is chosen: Build is on
+ok      Change, the new file not read yet: Build is off
+ok      a build asked for now sends nothing
+ok      the new file is read: Build is on, for the new file
+ok      no page errors
+ok   6. while the save screen is open: the build result's Export is off
+ok      another font's save asked meanwhile sends nothing
+ok      saved: a toast, Export on again
+ok      no page errors
+ok   7. making Inter Variable again, a Regular chosen: Build is on
+ok      while it installs: Build is off
+ok      a build asked for now sends nothing
+ok      installed: Build is on again
+ok      while the font changer applies it (Use it): Build is off
+ok      a build asked for now sends nothing
+ok      applied: Build is on again
+ok      while it is saved: Build is off
+ok      saved: Build is on again
+ok      a job of another font (the font changer writes Lato, chosen in the Phone font list) leaves Build on
+ok      Build sends rebuildId for Inter Variable
+ok      no page errors
+all passed

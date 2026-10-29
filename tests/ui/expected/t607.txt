@@ -1,0 +1,8 @@
+ok   1. the Row tints button is on the Live Logcat tab
+ok   2. it opens a sheet showing the setting as it is (Subtle, Gradient off)
+ok   3. the slider and the switch change the one setting, and the other two places follow
+ok      a change made elsewhere shows in the sheet
+ok   4. tapping outside closes the sheet
+ok      so does its close button
+ok   no page errors
+all passed

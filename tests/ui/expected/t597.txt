@@ -1,0 +1,26 @@
+ok   1. no Weight axis: Bold stays None, "Same variable font" can still be chosen
+ok      chosen anyway: the Bold would look like the Regular, None is the better way
+ok   2. a Weight axis that goes heavier: Bold is the same font at 700, nothing to say
+ok      a Bold set at Thin: bold text would look like the rest
+ok      at the Regular's own weight: the same
+ok      the Weight slider moved past the Regular: the line goes
+ok   3. a name of blank fillers (U+3164): named as such, Build waits
+ok      a letter after it: the line goes, Build is on
+ok      a name of only spaces: named as such too, Build waits
+ok      a name of an emoji newer than this Unicode (U+1F0F6, unknown here): no line, Build is on
+ok      the bridge takes that name: the font is made
+ok      an empty name: no line (nothing typed yet), Build waits
+ok   4. the font just made: the buttons for it under the build result, and a row of its own in the Phone font list
+ok      a press and hold on it (not installed): it asks to delete it from the app
+ok      deleted: fontMakerDelete with its id, it leaves the list, and the build result and its buttons go with it
+ok      no page errors
+ok   5. COLRv1 on Android 12: "Needs Android 13 to show inside a font.", Build waits
+ok      a COLRv0 file instead: no line, Build is on
+ok      no page errors
+ok   6. Root Features has its "?" in the top card, pointing at its topic
+ok      beside the status tag and the title, never over them, level with the tag
+ok      it opens the guide at Root Features
+ok   7. FULL-GUIDE: every "right before …" in the table of tabs matches the tab bar (Root Features right before Custom Fonts)
+ok      the Custom Fonts row gives the Phone font's gate with the system user (UID 1000) and root (UID 0)
+ok      no page errors
+all passed

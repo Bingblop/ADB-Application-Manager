@@ -28,6 +28,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     };
   }, apps);
   await page.goto(PAGE); await page.waitForTimeout(900);
+  // Row tints > Gradient is off by default since v7.18.1; this script measures the gradient tints, so it turns the switch on (t549 covers the default)
+  await page.evaluate(() => setRowTintGrad(true));
   const sleep = ms => page.waitForTimeout(ms);
   const ev = (fn, arg) => page.evaluate(fn, arg);
   await ev(() => { isPrivilegedActive = true; });
@@ -57,7 +59,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const bar = document.getElementById('floatingBatchBar'), cs = getComputedStyle(bar);
     const tools = Array.from(bar.querySelectorAll('.batch-sheet-tools .batch-tool-link')).map(e => ({ t: e.innerText.trim(), bw: getComputedStyle(e).borderTopWidth, bs: getComputedStyle(e).borderTopStyle }));
     return { show: bar.classList.contains('show'), handle: /linear-gradient/.test(cs.backgroundImage), pos: cs.backgroundPosition, tools,
-      copy: Array.from(bar.querySelectorAll('.copy-row button')).map(e => e.innerText.trim()), grid: Array.from(bar.querySelectorAll('.batch-actions-grid button')).map(e => e.innerText.trim()),
+      copy: Array.from(bar.querySelectorAll('.copy-row button')).map(e => e.innerText.trim()), grid: Array.from(bar.querySelectorAll('.batch-actions-grid:not(.batch-trk-row) button')).map(e => e.innerText.trim()),
       keep: document.getElementById('batchKeepSelectionToggle').checked };
   });
   check('2. the batch menu has the grab handle in the middle at the top, like the other sheets', bm.show && bm.handle && /50%|center/.test(bm.pos), bm.pos);

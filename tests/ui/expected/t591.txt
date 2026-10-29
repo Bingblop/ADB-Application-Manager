@@ -1,0 +1,29 @@
+ok   1. My fonts is gone: the fonts made here are rows of the Phone font list, and no font data is asked for (no row previews)
+ok   2. a hold on Lato (made here, not installed): the list closes and Delete asks first: "Delete Lato?", what happens, a red Delete and Cancel
+ok      Cancel keeps it, nothing sent
+ok      a tap beside the sheet keeps it too
+ok      Delete removes it: fontMakerDelete, gone from the list, a toast
+ok   3. a hold on the font in use is refused with a toast: no question, nothing sent
+ok   4. a font made: "Inter Variable is ready. ...", and under it Use it, Install, Export, Make again
+ok      Install: "Installing…" while it runs, then Installed (the app's pm install), the toast
+ok      the Phone font list has it: "Made on this phone"
+ok      a hold on it in the list: "Uninstall Inter Variable?", it stays in this app, a red Uninstall
+ok      Uninstall: "Uninstalling…" in the card while it runs (the drop-down off), then the toast names it
+ok      the build result offers Install again; the list: "Made on this phone, not installed"
+ok      Install: Installed again, the toast
+ok   5. Export (under the build result): the save-as of the app, the toast names the .apk
+ok   6. Use as the phone's emoji: sysEmojiApply, the read-back of each file, Undo appears
+ok      the toast: until the next restart
+ok      the emoji in use cannot be deleted: "Undo the system emoji first."
+ok      Undo: sysEmojiUndo, Default again, the toast
+ok   7. Soft reboot asks first: every app closes; after the Undo, apps start again with the phone's own emoji
+ok      Cancel: softRestart is not called
+ok      Soft reboot: softRestart is called once
+ok      no page errors
+ok   3b. no working mode, so the page cannot read the font in use, but the app's own note says Lato is: a hold on Lato asks nothing and sends no delete
+ok      it says so: "Lato is in use. Choose another font first, then delete it.", and Lato is kept
+ok      no page errors
+ok   8. without the font maker each card says "Needs the app build"
+ok      a tap on Choose says so too
+ok      no page errors
+all passed

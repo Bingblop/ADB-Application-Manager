@@ -1,0 +1,72 @@
+ok   1. only cards in view ask, 6 of them at most
+ok      in the card mode, with the sample text
+ok      a card waits with its text in the app font (translate="no")
+ok   2. answered: every card in view asked once, none past it, never more than 6 on their way
+ok      the card is drawn in its face (gfpv<n>)
+ok      the drawn lines (28 px) clip .55em or more above and below the line, so marks past it show, inside their cards; the lines where they were
+ok      one face per card in document.fonts
+ok   3. scrolled: the cards now in view ask, the ones drawn before do not
+ok      scrolled back: nothing asked again
+ok   3b. "The lazy dog" (all of it in the sample): a card shows it at once in the face it had, until its new one comes
+ok      then in its own
+ok   4. typing waits 400 ms; then the cards in view ask for the last text only
+ok      "Hello" ("H" is not in the face shown): the card has the new text at once, blank (gf-wait) until its face comes, never in the app's font
+ok   5. answers of an older text are dropped: no face made of them
+ok      the new text's answers draw the cards in view
+ok      never more than 6 on their way
+ok   6. the size slider: 50, every line at 50 px
+ok      at 50 px a tap in the gap between two cards opens neither (it lands on the list); one on the first card's line opens that card
+ok      at 72 px the room above and below grows with the line, inside the card, which grows by what its padding cannot hold; the lines where they were
+ok      at 72 px too, a tap in the gap lands on the list, one on the line opens the card
+ok   7. a search took the cards out: their answers are dropped
+ok      the one card left asks and is drawn
+ok   8. closed with previews on their way: no face made of them
+ok      no page errors
+ok   9. no preview (gf_no_preview): the name in the app font and "No preview"
+ok      a failed preview (network): the same
+ok      the room above and below follows the name's smaller size; the cards and the lines where they were
+ok      the others are drawn
+ok      scrolled away and back: not asked again
+ok      a new text asks again (and it fails again: "No preview" under the name)
+ok   10. Noto Sans JP (Jpan): the Japanese sample, asked with it
+ok      Cairo (Arab): the Arabic sample, its direction from the text (dir="auto")
+ok      Sunflower (Hang, no sample in the table): its own name
+ok      no script: Latin
+ok      Noto Color Emoji (no script, emoji only): the emoji fonts' sixteen, asked with them
+ok      Chenla (no script, khmer only): the Khmer sample, asked with it
+ok      Noto Sans Lycian (no script, lycian only: no sample): its name and "No preview", nothing asked
+ok      Playwrite US Trad (no script, no subsets listed): Latin
+ok      gfSample: Noto Serif Myanmar Myanmar, Siemreap Khmer, Noto Emoji the emoji, Libertinus Math and Lato Latin, Noto Sans Khmer its script; an empty text keeps its key
+ok      its page: the tester starts with the sixteen, and its line and style row ask with them
+ok      Noto Sans Lycian's page: the tester empty, its line and style row "No preview", only its heading asked
+ok      no page errors
+ok   11. 64 cards in view: 64 faces, never more than 6 asked at a time
+ok      three texts later: at most 150 faces kept, the oldest taken out of document.fonts
+ok      every card still drawn in its newest face
+ok      never more than 6 asked at a time
+ok      no page errors
+ok   12. answers after 30 s: every card first asked is drawn in its face
+ok      a late failure says "No preview"
+ok      the slow ones stopped counting (5 of them), and none is left once all came
+ok      Roboto's page, its previews late: the head, the tester line and all 18 style rows drawn
+ok      Back and Roboto again: drawn at once, nothing asked again
+ok      no page errors
+ok   13. Inter answered with a face that draws none of the Latin sample: its name in the app font and "No preview"
+ok      that face is not kept (gf.faces, document.fonts), the others are drawn
+ok      scrolled away and back: not asked again
+ok      Noto Color Emoji, the same face: its sixteen emoji are drawn in it
+ok      its page: the heading (its name) "No preview" in the app font
+ok      the tester line and its style row (the emoji) drawn in the face
+ok      "Hello" typed: Noto Color Emoji "No preview", Noto Sans drawn
+ok      no page errors
+ok   14. a failed card ("RobotoNo preview"), then "Hello": blank (gf-wait, no font) while its preview is asked
+ok      it fails again: "RobotoNo preview"
+ok      a card keeping its face for "The lazy dog", that face taken out: blank (gf-wait, no font) until its own comes
+ok      then drawn in its own
+ok      no page errors
+ok   15. Noto Color Emoji drawn in its emoji face, then "Hello": blank (gf-wait, no font) until its answer
+ok      then "No preview" (its face draws no letter)
+ok      its page, the tester line and the style row in the emoji face, then "Hello" in the tester: both blank (gf-wait, no font) until their answers
+ok      then "No preview"
+ok      no page errors
+all passed

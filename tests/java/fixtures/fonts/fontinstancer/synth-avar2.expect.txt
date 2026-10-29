@@ -1,0 +1,80 @@
+# synth-avar2.ttf: fontinstancer expectations, written by make_fixtures.py expect (fontTools 4.67.0, HarfBuzz 0.57.0). Do not edit by hand.
+MF OS/2.xAvgCharWidth,OS/2.usWeightClass,OS/2.usWidthClass,OS/2.ySubscriptXSize,OS/2.ySubscriptYSize,OS/2.ySubscriptXOffset,OS/2.ySubscriptYOffset,OS/2.ySuperscriptXSize,OS/2.ySuperscriptYSize,OS/2.ySuperscriptXOffset,OS/2.ySuperscriptYOffset,OS/2.yStrikeoutSize,OS/2.yStrikeoutPosition,OS/2.sTypoAscender,OS/2.sTypoDescender,OS/2.sTypoLineGap,OS/2.usWinAscent,OS/2.usWinDescent,OS/2.sxHeight,OS/2.sCapHeight,hhea.ascent,hhea.descent,hhea.lineGap,hhea.advanceWidthMax,hhea.minLeftSideBearing,hhea.minRightSideBearing,hhea.xMaxExtent,hhea.caretSlopeRise,hhea.caretSlopeRun,hhea.caretOffset,hhea.numberOfHMetrics,post.italicAngle,post.underlinePosition,post.underlineThickness,head.xMin,head.yMin,head.xMax,head.yMax,maxp.numGlyphs,maxp.maxPoints,maxp.maxContours,maxp.maxCompositePoints,maxp.maxCompositeContours,maxp.maxComponentElements,maxp.maxComponentDepth
+font synth-avar2.ttf c6119aadcc0feb4aa51f2935727e5d4547f3f3c0f908f2620e2da2bfa316876f 3
+loc default wght=400.0,wdth=100.0
+norm 0,0
+ftnorm 0,0
+g 0 500 0 0 0 400 500 df9741e4
+g 1 500 50 50 0 450 700 14acb3fe
+g 2 600 100 100 0 500 700 0f028813
+P 1 2 50,0,1;250,700,1;450,0,1
+P 2 3 100,0,1;100,700,1;500,700,1;500,0,1
+M 533 400 5 0 0 0 0 0 0 0 0 0 0 800 -200 0 800 200 0 0 800 -200 0 600 0 50 500 1 0 0 3 0 0 0 0 0 500 700 3 4 1 0 0 0 0
+T OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
+end
+loc min wght=100.0,wdth=75.0
+norm -16384,-13107
+ftnorm -16384,-13107
+g 0 500 0 0 0 400 500 df9741e4
+g 1 436 82 82 0 418 700 42a014a6
+g 2 520 105 105 0 415 700 4366a698
+P 1 2 82,0,1;250,700,1;418,0,1
+P 2 3 105,0,1;105,700,1;415,700,1;415,0,1
+M 485 100 3 0 0 0 0 0 0 0 0 0 0 800 -200 0 800 200 0 0 800 -200 0 520 0 18 418 1 0 0 3 0 0 0 0 0 418 700 3 4 1 0 0 0 0
+T OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
+end
+loc max wght=900.0,wdth=125.0
+norm 16384,12288
+ftnorm 16384,12288
+g 0 500 0 0 0 400 500 df9741e4
+g 1 585 8 8 0 493 708 42a115f9
+g 2 600 100 100 0 500 700 0f028813
+P 1 2 8,0,1;250,708,1;493,0,1
+P 2 3 100,0,1;100,700,1;500,700,1;500,0,1
+M 562 900 7 0 0 0 0 0 0 0 0 0 0 800 -200 0 800 200 0 0 800 -200 0 600 0 92 500 1 0 0 3 0 0 0 0 0 500 708 3 4 1 0 0 0 0
+T OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
+end
+loc #0 wght=900.0,wdth=100.0
+norm 16384,-4096
+ftnorm 16384,-4096
+g 0 500 0 0 0 400 500 df9741e4
+g 1 520 40 40 0 460 700 43ad947a
+g 2 575 100 100 0 475 700 07e2516a
+P 1 2 40,0,1;250,700,1;460,0,1
+P 2 3 100,0,1;100,700,1;475,700,1;475,0,1
+M 532 900 5 0 0 0 0 0 0 0 0 0 0 800 -200 0 800 200 0 0 800 -200 0 575 0 60 475 1 0 0 3 0 0 0 0 0 475 700 3 4 1 0 0 0 0
+T OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
+end
+loc wght=100 wght=100.0,wdth=100.0
+norm -16384,3277
+ftnorm -16384,3277
+g 0 500 0 0 0 400 500 df9741e4
+g 1 512 44 44 0 456 702 77b5f34b
+g 2 600 105 105 0 495 700 f11f1905
+P 1 2 44,0,1;250,702,1;456,0,1
+P 2 3 105,0,1;105,700,1;495,700,1;495,0,1
+M 537 100 5 0 0 0 0 0 0 0 0 0 0 800 -200 0 800 200 0 0 800 -200 0 600 0 56 495 1 0 0 3 0 0 0 0 0 495 702 3 4 1 0 0 0 0
+T OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
+end
+loc wdth=125 wght=400.0,wdth=125.0
+norm 1638,16384
+ftnorm 1638,16384
+g 0 500 0 0 0 400 500 df9741e4
+g 1 564 18 18 0 482 710 2a55cec5
+g 2 600 100 100 0 500 700 0f028813
+P 1 2 18,0,1;250,710,1;482,0,1
+P 2 3 100,0,1;100,700,1;500,700,1;500,0,1
+M 555 400 7 0 0 0 0 0 0 0 0 0 0 800 -200 0 800 200 0 0 800 -200 0 600 0 82 500 1 0 0 3 0 0 0 0 0 500 710 3 4 1 0 0 0 0
+T OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
+end
+loc wght=650,wdth=110 wght=650.0,wdth=110.0
+norm 7209,4915
+ftnorm 7209,4916
+g 0 500 0 0 0 400 500 df9741e4
+g 1 536 32 32 0 468 703 2bb6a7fd
+g 2 600 100 100 0 500 700 0f028813
+P 1 2 32,0,1;250,703,1;468,0,1
+P 2 3 100,0,1;100,700,1;500,700,1;500,0,1
+M 545 650 6 0 0 0 0 0 0 0 0 0 0 800 -200 0 800 200 0 0 800 -200 0 600 0 68 500 1 0 0 3 0 0 0 0 0 500 703 3 4 1 0 0 0 0
+T OS/2,cmap,glyf,head,hhea,hmtx,loca,maxp,name,post
+end

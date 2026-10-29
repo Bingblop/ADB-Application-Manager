@@ -1,0 +1,10 @@
+# Measured size and SHA-256 of each EmojiCatalog download (and, for Twemoji, the zip it comes in).
+# Recomputed from the live files by make_fixtures.py on 2026-10-26. CI has no network, so the
+# EmojiCatalog class carries these same values and the suite compares them to this record.
+# Format: id size sha256 [zipSize zipSha256 zipEntry]
+noto 5038236 b8e25ea68db82f9e4d0aee921f4420be2be39887bd5c893a2ad98710531f9d0c
+twemoji 2003200 d2d721abc0ab04c0f40673e4b521e8b580a6b31d1018b7f2dcb438fdae4c265e 1541484 d4e9b55a4e57dcedeab2b024d790a10d59656a21804957aefb9a3cccec865bd2 fonts/twemoji.ttf
+blobmoji 4444184 be12a85b4ac069ef07541e861f96e99710ad4f5264600aff2dd396a640dbfb7f
+openmoji 2401396 b6c86e3d95f557dae9a7d59a993b5a6f2274c401d6d975747d43612c6fab236d
+openmoji-colrv0 2681320 8376fee074649ece235faba0d157d851f3d93632f0540ad1165feba1aba9ba37
+apple 43877492 e7b5f998812d9ab50d32f5626cb1e88edea345d725f8edf44a7ec3333b81043d

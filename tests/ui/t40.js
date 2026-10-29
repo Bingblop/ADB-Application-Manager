@@ -72,15 +72,15 @@ const { chromium, PAGE } = require('./lib/pw');
   // 5) Search + sort.
   await page.fill('#githubSearch', 'app 007'); await page.waitForTimeout(40);
   const found = await page.locator('#githubList .store-row').count();
-  const firstName = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const firstName = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   console.log('5. search "app 007" -> 1 match:', found === 1 && firstName === 'App 007');
   await page.fill('#githubSearch', ''); await page.waitForTimeout(30);
   await page.selectOption('#githubSort', 'name'); await page.waitForTimeout(30);
-  const nameFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const nameFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   await page.selectOption('#githubSort', 'stars'); await page.waitForTimeout(30);
-  const starFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const starFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   await page.selectOption('#githubSort', 'updated'); await page.waitForTimeout(30);
-  const updFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const updFirst = await page.locator('#githubList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   console.log('   sort name -> App 000 first, stars -> App 000 (most), updated -> newest (App 500):', nameFirst === 'App 000' && starFirst === 'App 000' && updFirst === 'App 500', nameFirst, starFirst, updFirst);
   await page.selectOption('#githubSort', 'stars');
 
@@ -160,7 +160,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev({ source: 'fdroid-repo', arg: 'https://f-droid.org/repo', status: 'ok', items: fdItems.slice(400), append: true, done: true, total: 450, repoName: 'F-Droid', format: 'v2', skipped: 12 });
   await page.waitForTimeout(80);
   const fdCount = await text('#fdroidCount');
-  const fdFirst = await page.locator('#fdroidList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const fdFirst = await page.locator('#fdroidList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   const fdStatus = await text('#fdroidStatus');
   console.log('13. progress text shown while reading:', /Reading the catalog… 12\.3 MB · 840 apps/.test(fdProg));
   console.log('    whole catalog loaded (450 apps), newest first by default, hidden-apps note:', /450 apps/.test(fdCount) && fdFirst === 'FApp 0449' && /12 apps hidden/.test(fdStatus), '|', JSON.stringify(fdCount), fdFirst, JSON.stringify(fdStatus));
@@ -204,18 +204,25 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.waitForTimeout(40);
   console.log('    error from a repo is shown plainly:', /no browsable catalog/.test(await text('#fdroidStatus')));
 
-  // 17) Metered connection: asks before downloading a catalog.
+  // 17) Mobile data (7.18.1): no prompt in the page any more; the app itself keeps catalogs to Wi-Fi unless the App Stores switch allows mobile data.
   await page.evaluate(() => { window.__metered = true; });
   const mAsk0 = await page.evaluate(() => window.__src.filter(c => c[0] === 'fdroid-repo').length);
-  await page.selectOption('#fdroidRepo', 'izzyondroid'); await page.waitForTimeout(40);   // cached from earlier -> no prompt needed
-  await page.selectOption('#fdroidRepo', 'fdroid'); await page.waitForTimeout(40);
   await page.evaluate(() => { storeSrc.fdroid.cache = {}; });   // simulate a fresh session
-  await page.selectOption('#fdroidRepo', 'guardian'); await page.waitForTimeout(40);
+  await page.selectOption('#fdroidRepo', 'izzyondroid'); await page.waitForTimeout(40);
   const mAsk1 = await page.evaluate(() => window.__src.filter(c => c[0] === 'fdroid-repo').length);
-  const mPrompt = await text('#fdroidExtra');
-  await page.locator('#fdroidExtra button').click(); await page.waitForTimeout(40);
+  const noPrompt = !/metered connection/i.test(await text('#fdroidExtra'));
+  await ev({ source: 'fdroid-repo', arg: 'https://apt.izzysoft.de/fdroid/repo', status: 'error', error: 'You are on mobile data, and stores update only on Wi-Fi. Turn on Update stores on mobile data (at the bottom of this tab) to allow it.' });
+  await page.waitForTimeout(40);
+  const saysWhy = /only on Wi-Fi/.test(await text('#fdroidStatus'));
+  const mSw = page.locator('#storeMobileToggle');
+  const offAtFirst = (await mSw.count()) === 1 && !(await mSw.isChecked());
+  await page.evaluate(() => setMobileDataOk('store_mobile_data', true)); await page.waitForTimeout(40);
   const mAsk2 = await page.evaluate(() => window.__src.filter(c => c[0] === 'fdroid-repo').length);
-  console.log('17. metered: prompt shown, no download until confirmed, then requested:', mAsk1 === mAsk0 && /metered connection/.test(mPrompt) && mAsk2 === mAsk1 + 1, mAsk0, mAsk1, mAsk2);
+  const kept = await page.evaluate(() => kvGet('store_mobile_data', false) === true && document.getElementById('storeMobileToggle').checked);
+  await page.evaluate(() => setMobileDataOk('store_mobile_data', false)); await page.waitForTimeout(40);
+  const offAgain = await page.evaluate(() => kvGet('store_mobile_data', true) === false && !document.getElementById('storeMobileToggle').checked);
+  console.log('17. mobile data: no prompt, the catalog is asked for (the app decides and says why), the switch is off at first, on reloads the catalog and is kept, off again:',
+    noPrompt && saysWhy && mAsk1 === mAsk0 + 1 && offAtFirst && mAsk2 === mAsk1 + 1 && kept && offAgain, mAsk0, mAsk1, mAsk2);
 
   // ===== Orion =====
   await page.evaluate(() => switchStoreTab('orion')); await page.waitForTimeout(50);
@@ -226,7 +233,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.waitForTimeout(50);
   const oOpts = await page.locator('#orionCat option').allInnerTexts();
   await page.selectOption('#orionSort', 'name-desc'); await page.waitForTimeout(30);
-  const oFirst = await page.locator('#orionList .store-row').first().locator('div[style*="font-weight:700"]').first().innerText();
+  const oFirst = await page.locator('#orionList .store-row').first().locator('div[style*="font-weight:var(--fw-bold)"]').first().innerText();
   await page.selectOption('#orionCat', 'Automation'); await page.waitForTimeout(30);
   console.log('18. orion requested, categories (incl. multi-tag) + Z–A sort + filter:', orionAsked === 1 && oOpts.length === 4 && oFirst === 'Zed Utility' && (await page.locator('#orionList .store-row').count()) === 1, JSON.stringify(oOpts));
 

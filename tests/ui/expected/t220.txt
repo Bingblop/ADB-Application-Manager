@@ -1,0 +1,14 @@
+ok   1. switch off with a working mode: CHECK with a Turn on button and the Wi-Fi/port warning in words
+ok      nothing called the phone side before the press
+ok      one press, one setWirelessDebugging(true), the row reads OK from the read-back and no button is left
+ok      the toast names Auto-Detect Ports as the next step
+ok      no page errors
+ok   2. the permission held, no mode: the Turn on button is offered
+ok   3. answer "no_wifi": /Connect to Wi-Fi first/
+ok   3. answer "no_access": /working mode/
+ok   3. answer "unsupported": /does not allow/
+ok   3. answer "failed": /did not switch it on/
+ok   3. answer "(nothing)": /did not switch it on/
+ok   4. no mode and no permission: Open Developer Options, as before
+ok      the press opens Developer Options and never calls setWirelessDebugging
+all ok

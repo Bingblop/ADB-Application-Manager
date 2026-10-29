@@ -1,0 +1,671 @@
+# Written by make_fixtures.py expect: what fontTools reads in every fixture font, for FontInspectTest. See README.md.
+font cfftoglyf/cjk-subset.otf c198beede492ad6a7d81d3fe7d8b2fea28bbf8da6b29e4f8017331fb25cdb83d
+family CffToGlyf Fixture CJK
+subfamily Regular
+fullName CffToGlyf Fixture CJK
+postScriptName CffToGlyfFixtureCJK-Regular
+version Version 2.004;hotconv 1.0.118;makeotfexe 2.5.65603
+copyright © 2014-2021 Adobe (http://www.adobe.com/).
+designer Ryoko NISHIZUKA 西塚涼子 (kana, bopomofo & ideographs); Paul D. Hunt (Latin, Greek & Cyrillic); Sandoll Communications 산돌커뮤니케이션, Soo-young JANG 장수영 & Joo-yeon KANG 강주연 (hangul elements, letters & syllables)
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This Font Software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+licenseUrl http://scripts.sil.org/OFL
+weight 400
+width 5
+fsType 0
+italic false
+outlines CFF
+glyphs 37
+upem 1000
+codepoints 36
+latin false
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning nolatin
+end
+font cfftoglyf/ss3-subset.otf aff889e2cc9905d3f5e7d1432a5899f74cc28e9880277f93ab1dbdbe291da6c2
+family CffToGlyf Fixture Sans
+subfamily Regular
+fullName CffToGlyf Fixture Sans
+postScriptName CffToGlyfFixtureSans-Regular
+version Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+copyright © 2023 Adobe (http://www.adobe.com/), with Reserved Font Name ‘Source’
+designer Paul D. Hunt
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL. This Font Software is distributed on an ‘AS IS’ BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+licenseUrl http://scripts.sil.org/OFL
+weight 400
+width 5
+fsType 0
+italic false
+outlines CFF
+glyphs 169
+upem 1000
+codepoints 167
+latin true
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+end
+font cfftoglyf/ss3vf-subset.otf bb708f1c806028956746bb4b8a6a612c59bab25c2643c11596bfcc863fc369c0
+family CffToGlyfFixtureSansVF
+subfamily Regular
+fullName CffToGlyfFixtureSansVF
+postScriptName CffToGlyfFixtureSansVF-ExtraLight
+version Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+copyright © 2023 Adobe (http://www.adobe.com/), with Reserved Font Name ‘Source’
+designer Paul D. Hunt
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL. This Font Software is distributed on an ‘AS IS’ BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+licenseUrl http://scripts.sil.org/OFL
+weight 200
+width 5
+fsType 0
+italic false
+outlines CFF2
+glyphs 171
+upem 1000
+codepoints 168
+latin true
+symbol false
+color none
+variable true
+avar2 false
+axis wght 200 200 900 false Weight
+instance wght=200 ExtraLight
+instance wght=300 Light
+instance wght=400 Regular
+instance wght=500 Medium
+instance wght=600 Semibold
+instance wght=700 Bold
+instance wght=900 Black
+guessRegular wght=400
+guessBold wght=700
+end
+font cfftoglyf/synth-cff.otf d21aa0a6d6cf909f875e411f9d307a96ca08de7ce8e98c24ac8f88bcc6674f42
+family CffToGlyf Synth
+subfamily Regular
+fullName CffToGlyf Synth
+postScriptName CffToGlyfSynth-Regular
+version Version 1.000
+copyright Test font made for the CffToGlyf tests; public domain.
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 4
+italic false
+outlines CFF
+glyphs 19
+upem 1000
+codepoints 17
+latin false
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning nolatin
+end
+font cfftoglyf/synth-cff2.otf ceefcf3dee0b0b532bccae93af0089109e9cea0cd931fc6be640f33ed29ed955
+family CffToGlyf Synth VF
+subfamily Regular
+fullName CffToGlyf Synth VF
+postScriptName CffToGlyfSynthVF-Regular
+version Version 1.000
+copyright Test font made for the CffToGlyf tests; public domain.
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 4
+italic false
+outlines CFF2
+glyphs 8
+upem 1000
+codepoints 7
+latin false
+symbol false
+color none
+variable true
+avar2 false
+axis wght 100 400 900 false Weight
+axis wdth 75 100 125 false Width
+guessRegular wght=400 wdth=100
+guessBold wght=700 wdth=100
+warning nolatin
+end
+font cfftoglyf/synth-cid.otf 0fdd205677f0c474df4211f8b6b7aafaada9e9ee2f11a59b58e99fcfc4715732
+family CffToGlyf Synth CID
+subfamily Regular
+fullName CffToGlyf Synth CID
+postScriptName CffToGlyfSynthCID-Regular
+version Version 1.000
+copyright Test font made for the CffToGlyf tests; public domain.
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 4
+italic false
+outlines CFF
+glyphs 7
+upem 1000
+codepoints 6
+latin false
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning nolatin
+end
+font cmap/Inter-cmap.ttf f38135e18da436fa8edf185f151aaef35591d05362e5da56caf612283c2238cb
+family Inter
+subfamily Regular
+fullName Inter Regular
+postScriptName Inter-Regular
+version Version 4.001;git-66647c0bb
+copyright Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+designer Rasmus Andersson
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org
+licenseUrl https://openfontlicense.org
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 2933
+upem 2048
+codepoints 2849
+latin true
+symbol false
+color none
+variable true
+avar2 false
+axis opsz 14 14 32 false Optical size
+axis wght 100 400 900 false Weight
+instance opsz=14 wght=100 Thin
+instance opsz=14 wght=200 ExtraLight
+instance opsz=14 wght=300 Light
+instance opsz=14 wght=400 Regular
+instance opsz=14 wght=500 Medium
+instance opsz=14 wght=600 SemiBold
+instance opsz=14 wght=700 Bold
+instance opsz=14 wght=800 ExtraBold
+instance opsz=14 wght=900 Black
+guessRegular opsz=14 wght=400
+guessBold opsz=14 wght=700
+end
+font cmap/Lato-cmap.ttf 69697ecd2897365ea26dc716d7ecb4e6bff7461a1b0a903af61c4591558d6023
+family Fixture L
+subfamily Regular
+fullName Fixture L Regular
+postScriptName Fixture L-Regular
+version Version 2.015; 2015-08-06; http://www.latofonts.com/
+copyright Copyright (c) 2011-2015 by tyPoland Lukasz Dziedzic (http://www.typoland.com/) with Reserved Font Name "Lato". Licensed under the SIL Open Font License, Version 1.1 (http://scripts.sil.org/OFL).
+designer Lukasz Dziedzic with Adam Twardoch and Botio Nikoltchev
+license Copyright (c) 2011-2015 by tyPoland Lukasz Dziedzic (http://www.typoland.com/) with Reserved Font Name "Lato". Licensed under the SIL Open Font License, Version 1.1 (http://scripts.sil.org/OFL).
+licenseUrl http://scripts.sil.org/OFL
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 3023
+upem 2000
+codepoints 2164
+latin true
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+end
+font cmap/NotoColorEmoji-cmap.ttf a06b0074ec3c234619f322df8eff37d1b2e353f0576e4dbd2c0e8ffec131d702
+family Noto Color Emoji
+subfamily Regular
+fullName Noto Color Emoji
+postScriptName NotoColorEmoji
+version Version 2.057;GOOG;noto-emoji:20260911:fc4ca365e7c20e78278ae702aa20434bfe704c8f
+copyright Copyright 2022 Google Inc.
+designer Google, Inc.
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This Font Software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+licenseUrl http://scripts.sil.org/OFL
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 1509
+upem 1024
+codepoints 1508
+latin false
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning nolatin
+end
+font cmap/Symbol-cmap.ttf d38dc87b0295585409797a43428cbd1e495b6d9c79bbbe27c07eda6fb1661422
+family Fixture Symbol
+subfamily Regular
+fullName Fixture Symbol Regular
+postScriptName Fixture Symbol-Regular
+version Version 2.015; 2015-08-06; http://www.latofonts.com/
+copyright Copyright (c) 2011-2015 by tyPoland Lukasz Dziedzic (http://www.typoland.com/) with Reserved Font Name "Lato". Licensed under the SIL Open Font License, Version 1.1 (http://scripts.sil.org/OFL).
+designer Lukasz Dziedzic with Adam Twardoch and Botio Nikoltchev
+license Copyright (c) 2011-2015 by tyPoland Lukasz Dziedzic (http://www.typoland.com/) with Reserved Font Name "Lato". Licensed under the SIL Open Font License, Version 1.1 (http://scripts.sil.org/OFL).
+licenseUrl http://scripts.sil.org/OFL
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 96
+upem 2000
+codepoints 95
+latin false
+symbol true
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning symbol
+end
+font cmap/Twemoji-cmap.ttf d30f578e8b37ef6bbdb6f2b337d3904b0aee5edb9b06fa7172545f9594e5011c
+family Twemoji Mozilla
+subfamily Regular
+fullName Twemoji Mozilla
+postScriptName TwemojiMozilla
+version Version 1.0.4
+copyright 
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 16107
+upem 512
+codepoints 1448
+latin false
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning nolatin
+end
+font fontinspect/FixtureSans-SemiboldIt.otf ef4b884a1410791c6428d29523b778a9fd7f60a56c8e11a3b5a46b479126019e
+family Fixture Sans 3
+subfamily Semibold Italic
+fullName Fixture Sans 3 Semibold Italic
+postScriptName FixtureSans3-SemiboldIt
+version Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+copyright © 2023 Adobe (http://www.adobe.com/), with Reserved Font Name ‘Source’
+designer Paul D. Hunt
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL. This Font Software is distributed on an ‘AS IS’ BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+licenseUrl http://scripts.sil.org/OFL
+weight 600
+width 5
+fsType 0
+italic true
+outlines CFF
+glyphs 96
+upem 1000
+codepoints 95
+latin true
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+end
+font fontinspect/FixtureSansVF.otf 1a77d3b980449bf68f6943835fedf1447a9af40116bea6e241d0a1d6d5542f7e
+family FixtureSans3VF
+subfamily Regular
+fullName FixtureSans3VF
+postScriptName FixtureSans3VF-ExtraLight
+version Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0
+copyright © 2023 Adobe (http://www.adobe.com/), with Reserved Font Name ‘Source’
+designer Paul D. Hunt
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL. This Font Software is distributed on an ‘AS IS’ BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+licenseUrl http://scripts.sil.org/OFL
+weight 200
+width 5
+fsType 0
+italic false
+outlines CFF2
+glyphs 96
+upem 1000
+codepoints 95
+latin true
+symbol false
+color none
+variable true
+avar2 false
+axis wght 200 200 900 false Weight
+instance wght=200 ExtraLight
+instance wght=300 Light
+instance wght=400 Regular
+instance wght=500 Medium
+instance wght=600 Semibold
+instance wght=700 Bold
+instance wght=900 Black
+guessRegular wght=400
+guessBold wght=700
+end
+font fontinspect/NotoColorEmoji-CBDT.ttf 5a6d9cde0c32755a14ba2d83c74432ba432ac5a39d50d54adc93f168b3cf3282
+error bitmap_emoji
+end
+font fontinspect/NotoColorEmoji-COLRv1.ttf 4e4b382a4d55cf6a235339af5e602ef14c81dbce2659062bdadc219d2cbb22ab
+family Noto Color Emoji
+subfamily Regular
+fullName Noto Color Emoji
+postScriptName NotoColorEmoji
+version Version 2.057;GOOG;noto-emoji:20260911:fc4ca365e7c20e78278ae702aa20434bfe704c8f
+copyright Copyright 2022 Google Inc.
+designer Google, Inc.
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This Font Software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the SIL Open Font License for the specific language, permissions and limitations governing your use of this Font Software.
+licenseUrl http://scripts.sil.org/OFL
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 24
+upem 1024
+codepoints 4
+latin false
+symbol false
+color COLRv1
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning nolatin
+end
+font fontinspect/Twemoji-COLRv0.ttf 52538cf103a1110a2140c0108f368ba3f6b73c4f8aa8210c77dc2c5fc37d0cd9
+family Twemoji Mozilla
+subfamily Regular
+fullName Twemoji Mozilla
+postScriptName TwemojiMozilla
+version Version 1.0.4
+copyright 
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 13
+upem 512
+codepoints 4
+latin false
+symbol false
+color COLRv0
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning nolatin
+end
+font fontpackage/Inter-Bold-sub.ttf 0a1f197859b0ef964d241c9ee45d1e93728c453f68ea01adbc75fa007d283742
+family Inter
+subfamily Bold
+fullName Inter Bold
+postScriptName Inter-Bold
+version Version 4.001;git-66647c0bb
+copyright Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+designer Rasmus Andersson
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org
+licenseUrl https://openfontlicense.org
+weight 700
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 101
+upem 2048
+codepoints 95
+latin true
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+end
+font fontpackage/Inter-Regular-sub.ttf b95d0352a5af7c92269d0c94251e68d7f9f22c667f600c3223e9fb702dc5e8c8
+family Inter
+subfamily Regular
+fullName Inter Regular
+postScriptName Inter-Regular
+version Version 4.001;git-66647c0bb
+copyright Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+designer Rasmus Andersson
+license This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org
+licenseUrl https://openfontlicense.org
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 101
+upem 2048
+codepoints 95
+latin true
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+end
+font otlayout/Inter-sub.ttf cc6315f64a30946f846135237cd7eee7734806beaf3eeec4e373725f4339be98
+family Inter
+subfamily Regular
+fullName Inter Regular
+postScriptName Inter-Regular
+version Version 4.001;git-66647c0bb
+copyright Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 1073
+upem 2048
+codepoints 178
+latin true
+symbol false
+color none
+variable true
+avar2 false
+axis opsz 14 14 32 false Optical size
+axis wght 100 400 900 false Weight
+instance opsz=14 wght=100 Thin
+instance opsz=14 wght=200 ExtraLight
+instance opsz=14 wght=300 Light
+instance opsz=14 wght=400 Regular
+instance opsz=14 wght=500 Medium
+instance opsz=14 wght=600 SemiBold
+instance opsz=14 wght=700 Bold
+instance opsz=14 wght=800 ExtraBold
+instance opsz=14 wght=900 Black
+guessRegular opsz=14 wght=400
+guessBold opsz=14 wght=700
+end
+font otlayout/NotoColorEmoji-sub.ttf e923e7a7e73091947b05f2fbfb4d93ba58d20bcc36729b417db6e12c7d7f6d67
+family Noto Color Emoji
+subfamily Regular
+fullName Noto Color Emoji
+postScriptName NotoColorEmoji
+version Version 2.057;GOOG;noto-emoji:20260911:fc4ca365e7c20e78278ae702aa20434bfe704c8f
+copyright Copyright 2022 Google Inc.
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 809
+upem 1024
+codepoints 99
+latin false
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning nolatin
+end
+font otlayout/NotoSans-sub.ttf 5a5b8879dd82da6ccb17eb0dbfec0f28ebed2dc5c60b1cbec904a679833ecc18
+family Noto Sans
+subfamily Regular
+fullName Noto Sans Regular
+postScriptName NotoSans-Regular
+version Version 2.015
+copyright Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 698
+upem 1000
+codepoints 201
+latin true
+symbol false
+color none
+variable true
+avar2 false
+axis wght 100 400 900 false Weight
+axis wdth 62.5 100 100 false Width
+instance wght=100 wdth=100 Thin
+instance wght=200 wdth=100 ExtraLight
+instance wght=300 wdth=100 Light
+instance wght=400 wdth=100 Regular
+instance wght=500 wdth=100 Medium
+instance wght=600 wdth=100 SemiBold
+instance wght=700 wdth=100 Bold
+instance wght=800 wdth=100 ExtraBold
+instance wght=900 wdth=100 Black
+guessRegular wght=400 wdth=100
+guessBold wght=700 wdth=100
+end
+font otlayout/RobotoFlex-sub.ttf 6b20bdec3c51ad80a9bce4304b3f41d37240d39893621c0194f8f5ac59a6e103
+family Roboto Flex
+subfamily Regular
+fullName Roboto Flex Regular
+postScriptName RobotoFlex-Regular
+version Version 3.200;gftools[0.9.32]
+copyright Copyright 2017 The Roboto Flex Project Authors (https://github.com/TypeNetwork/Roboto-Flex)
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 148
+upem 2048
+codepoints 106
+latin true
+symbol false
+color none
+variable true
+avar2 false
+axis opsz 8 14 144 false Optical Size
+axis wght 100 400 1000 false Weight
+axis GRAD -200 0 150 false Grade
+axis wdth 25 100 151 false Width
+axis slnt -10 0 0 false Slant
+axis XOPQ 27 96 175 true Parametric Thick Stroke
+axis YOPQ 25 79 135 true Parametric Thin Stroke
+axis XTRA 323 468 603 true Parametric Counter Width
+axis YTUC 528 712 760 true Parametric Uppercase Height
+axis YTLC 416 514 570 true Parametric Lowercase Height
+axis YTAS 649 750 854 true Parametric Ascender Height
+axis YTDE -305 -203 -98 true Parametric Descender Depth
+axis YTFI 560 738 788 true Parametric Figure Height
+instance opsz=14 wght=100 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Thin
+instance opsz=14 wght=200 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 ExtraLight
+instance opsz=14 wght=300 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Light
+instance opsz=14 wght=400 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Regular
+instance opsz=14 wght=500 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Medium
+instance opsz=14 wght=600 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 SemiBold
+instance opsz=14 wght=700 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Bold
+instance opsz=14 wght=800 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 ExtraBold
+instance opsz=14 wght=900 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Black
+instance opsz=14 wght=1000 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 ExtraBlack
+instance opsz=14 wght=100 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Thin Italic
+instance opsz=14 wght=200 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 ExtraLight Italic
+instance opsz=14 wght=300 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Light Italic
+instance opsz=14 wght=400 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Italic
+instance opsz=14 wght=500 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Medium Italic
+instance opsz=14 wght=600 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 SemiBold Italic
+instance opsz=14 wght=700 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Bold Italic
+instance opsz=14 wght=800 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 ExtraBold Italic
+instance opsz=14 wght=900 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 Black Italic
+instance opsz=14 wght=1000 GRAD=0 wdth=100 slnt=-10 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738 ExtraBlack Italic
+guessRegular opsz=14 wght=400 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738
+guessBold opsz=14 wght=700 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738
+end
+font otlayout/Twemoji-sub.ttf f9337ba9736a73ed25b4fc2e8048e91cf7226db2e1f40957302455bf8cb714cc
+family Twemoji Mozilla
+subfamily Regular
+fullName Twemoji Mozilla
+postScriptName TwemojiMozilla
+version Version 1.0.4
+copyright 
+designer 
+license 
+licenseUrl 
+weight 400
+width 5
+fsType 0
+italic false
+outlines TrueType
+glyphs 1053
+upem 512
+codepoints 81
+latin false
+symbol false
+color none
+variable false
+avar2 false
+guessRegular none
+guessBold none
+warning nolatin
+end

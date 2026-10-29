@@ -23,7 +23,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // a v7.13 choice: Terminal pinned, its shortcuts and Console's chosen
   let page = await open({ order: V13, off: [], pinned: ['apps', 'installer', 'terminal', 'console'], shortcuts: { terminal: ['termux', 'settings'], console: ['log', 'shell'], taskmgr: ['cpu'] } });
   let r = await st(page);
-  check('1. Live Logcat takes the place of Terminal in the order', r.order === V13.join().replace('terminal', 'logcat') + ',rootfeatures', r.order);
+  check('1. Live Logcat takes the place of Terminal in the order', r.order === V13.join().replace('terminal', 'logcat') + ',rootfeatures,fonts', r.order);
   check('   and its pin on the bottom bar', r.pinned === 'apps,installer,logcat,console' && r.bnav === 'apps,installer,console,logcat', JSON.stringify(r));
   check('   Terminal\'s chosen shortcuts join Console\'s (its Live Logcat entry goes), other tabs keep theirs, Live Logcat starts with its defaults', r.sc === JSON.stringify({ console: ['shell', 'termux', 'settings'], taskmgr: ['cpu'] }), r.sc);
   check('   the Console menu then lists them', await page.evaluate(() => bnavScList('console').map(i => i.id).join()) === 'shell,termux,settings');
@@ -67,7 +67,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const NEW = ['logcat', 'saved-lists', 'debloater', 'installer', 'files', 'console', 'settings', 'extrasettings', 'overlays', 'store', 'taskmgr', 'devices', 'morphe', 'sdm'];
   page = await open({ order: NEW, off: ['console'], pinned: ['apps', 'logcat'], shortcuts: { console: ['full'], logcat: ['recordings'] } });
   r = await st(page);
-  check('6. a choice in the new shape is not touched', r.order === NEW.join() + ',rootfeatures' && r.off === 'console' && r.pinned === 'apps,logcat' && r.sc === JSON.stringify({ console: ['full'], logcat: ['recordings'] }), JSON.stringify(r));
+  check('6. a choice in the new shape is not touched', r.order === NEW.join() + ',rootfeatures,fonts' && r.off === 'console' && r.pinned === 'apps,logcat' && r.sc === JSON.stringify({ console: ['full'], logcat: ['recordings'] }), JSON.stringify(r));
   await page.close();
 
   // damaged

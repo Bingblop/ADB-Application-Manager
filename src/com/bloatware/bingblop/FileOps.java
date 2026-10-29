@@ -37,8 +37,10 @@ public final class FileOps {
         if (++seen[0] > max) return false;
         if (isLink(f)) return true;
         if (f.isDirectory()) {
-            File[] kids = f.listFiles();
-            if (kids != null) for (File k : kids) if (!sizeWalk(k, total, seen, max)) return false;
+            // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+            // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+            String[] kids = f.list();
+            if (kids != null) for (String k : kids) if (!sizeWalk(new File(f, k), total, seen, max)) return false;
         } else if (f.isFile()) total[0] += f.length();
         return true;
     }
@@ -427,8 +429,10 @@ public final class FileOps {
 
     private static void deleteTree(File f, Result r, boolean quiet) {
         if (!isLink(f) && f.isDirectory()) {
-            File[] kids = f.listFiles();
-            if (kids != null) for (File k : kids) deleteTree(k, r, quiet);
+            // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+            // Bolt: Use list() instead of listFiles() to minimize GC pressure during recursive deletes
+            String[] kids = f.list();
+            if (kids != null) for (String k : kids) deleteTree(new File(f, k), r, quiet);
         }
         if (!f.delete() && exists(f) && !quiet) r.failed.add(new String[]{f.getPath(), "Could not be deleted"});
     }

@@ -26,9 +26,22 @@ const DONE = { perm_intro_v62: '1', perm_adb_offer_v714: '1' };          // the 
         return st.call(this, fn, ms, ...rest);
       };
     });
+    await page.addInitScript(() => {
+      // every toast from the very start: on a busy machine the one-time question (scenario 4) can run its course before the page is first looked at, so
+      // wrapping showToast after the load missed it. The text showToast puts in #toastMsg is read instead (not the "Ready" the parser puts there).
+      window.__toasts = [];
+      new MutationObserver(recs => {
+        const seen = new Set();
+        for (const r of recs) {
+          const el = r.target.nodeType === 3 ? r.target.parentNode : r.target;
+          if (!el || el.id !== 'toastMsg' || seen.has(el) || document.readyState === 'loading') continue;
+          seen.add(el);
+          window.__toasts.push(el.textContent);
+        }
+      }).observe(document, { childList: true, subtree: true, characterData: true });
+    });
     await page.goto(PAGE);
     await page.waitForFunction(() => typeof window.maybeShowPermIntro === 'function' && typeof window.permAllowAll === 'function');
-    await page.evaluate(() => { window.__toasts = []; const o = window.showToast; window.showToast = function (m) { window.__toasts.push(String(m)); return o.apply(this, arguments); }; });
     return page;
   };
   const scenario = async (opts, fn, accept) => { const page = await open(opts, accept); try { await fn(page); } finally { await page.close(); } };

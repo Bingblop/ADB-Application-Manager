@@ -1,5 +1,5 @@
 app menu: no Backup button: true | buttons: Launch,App Info,Logs,Force Stop,Freeze,Enable,Suspend,Unsuspend,Clear Data,Optimize,Standby,Extract APK,Rem Updates,Uninstall,Reinstall
-batch menu: Freeze,Enable,Force Stop,Suspend,Unsuspend,Clear Data,Optimize,Uninstall,Reinstall,Batch Ops,Backup,Command,Replace,Skip,Keep both,Reload all,Changes,Copy shown,Share shown | Backup in place of Share List: true
+batch menu: Freeze,Enable,Force Stop,Suspend,Unsuspend,Clear Data,Optimize,Uninstall,Reinstall,Batch Ops,Backup,Command,Disable Trackers,Enable Trackers,Replace,Skip,Keep both,Reload all,Changes,Copy shown,Share shown | Backup in place of Share List: true
 nothing selected: box closed: true
 box open: true
 card: Back up 5 apps Alpha, Bravo, Charlie, Delta, … Include app data Uses Root. The app is stopped while its data is copied. Create backup

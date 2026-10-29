@@ -1,0 +1,5 @@
+🧪 Refactor SdmAutomation.isEnabledInSettings for better testability
+
+🎯 **What:** Extracted the string matching logic from `SdmAutomation.isEnabledInSettings(Context)` into a package-private method that takes the string and package name directly.
+📊 **Coverage:** Added tests to cover the extracted method (empty, matches, multiple, cases) in `SdmAutomationTest.java`.
+✨ **Result:** The logic for checking if the accessibility service is enabled is now fully unit tested.

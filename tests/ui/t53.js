@@ -76,7 +76,8 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { window.logcatFetch(true); window.logcatFetch(true); window.logcatFetch(true); });
   console.log('10. polling an unchanged log (live) redraws nothing:', (await page.evaluate(() => window.__draws)) === 0, String(await page.evaluate(() => window.__draws)));
   await page.evaluate(() => { window.__logText += '\n10-03 12:01:00.000  100  200 E NewTag: a brand new line'; window.logcatFetch(true); });
-  console.log('    a new line makes it draw once and shows it:', (await page.evaluate(() => window.__draws)) === 1 && /a brand new line/.test(await page.locator('#logcatOutput').innerText()));
+  // the box's text is read from the DOM: a row far below the fold is a placeholder until it scrolls near (content-visibility, v7.16.2), so innerText leaves it out
+  console.log('    a new line makes it draw once and shows it:', (await page.evaluate(() => window.__draws)) === 1 && await page.evaluate(() => /a brand new line/.test(document.getElementById('logcatOutput').textContent)));
   console.log('errors:', JSON.stringify(errors));
   await b.close();
 })();

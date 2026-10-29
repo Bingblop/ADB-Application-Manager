@@ -1,4 +1,4 @@
-1. a Live Logcat tab right after Console, in the place of the Terminal tab: true {"def":{"key":"logcat","label":"Live\nLogcat","name":"Live Logcat"},"bar":"apps,saved-lists,debloater,installer,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,about","btn":"Live\nLogcat"}
+1. a Live Logcat tab right after Console, in the place of the Terminal tab: true {"def":{"key":"logcat","label":"Live\nLogcat","name":"Live Logcat"},"bar":"apps,saved-lists,debloater,installer,files,console,logcat,settings,extrasettings,overlays,store,taskmgr,devices,morphe,sdm,rootfeatures,fonts,about","btn":"Live\nLogcat"}
    Console no longer has a Live Logcat segment: true
    the log is not read before the tab is opened: true
 2. opening the tab starts the log (Play turns into Stop) and shows its lines: true {"view":"logcat","timer":true,"n":1,"rows":1,"play":"Stop","shown":true}

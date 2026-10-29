@@ -5,9 +5,9 @@
 // The bulk activity toggle (Activity Launcher) is Root-gated the same way. T-054: without su the funnel offers the Root Features tab, and a yes
 // closes the sheet the tap came from (the app sheet, the Activity Launcher) so the tab is on screen; a no leaves the sheet open. T-055: with su on
 // the phone the funnel switches to Root, and the rows are drawn unlocked then even when the retried toggle stops at a Cancel. T-051: the Help
-// Guide (built assets/guide.js), FULL-GUIDE.md and the device checklist describe this control as it is: padlocked with "Needs Super User (Root)"
-// in every mode but Root (Shizuku started with root included), nothing sent off Root, the Root way on a tap, the system-app confirm, each
-// quoted as the page shows it; no "runs, says Failed" off Root.
+// Guide (built assets/guide.js), FULL-GUIDE.md and the device checklist describe this control as it is: unlocked in Root mode and when Shizuku
+// runs as the system user (UID 1000) or root (UID 0), padlocked with "Needs Super User (Root)" for the ADB shell user (UID 2000) and Read-Only,
+// nothing sent while locked, the Root way on a tap, the system-app confirm, each quoted as the page shows it; no "runs, says Failed" off Root.
 // Deterministic ok/FAIL lines and a summary.
 const fs = require('fs');
 const path = require('path');
@@ -176,13 +176,13 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('8. T-051 the guide\'s app menu topic: ENABLE/DISABLE carries the padlock ' + lockQ + ' in every mode but Root and sends nothing, a tap goes the Root way; no "runs, says Failed", no "(started by ADB)"',
     gMenu.includes('padlock, which here means ' + lockQ) && /sends nothing to Android/.test(gMenu) && /switches the working mode to Root/.test(gMenu) && !/runs, says "Failed"/.test(gMenu) && !/started by ADB/.test(gMenu), (gMenu.match(/DISABLE or ENABLE: switches that one screen.{0,300}/) || [''])[0]);
   check('   its App components under Super User topic: the same padlock, Shizuku started with root included; the switch to Root, the refusal toast and the Root Features offer as the page words them; the system-app question; no "fail with Failed"',
-    gComp.includes('padlock, which here means ' + lockQ) && /Shizuku started with root is no exception/.test(gComp) && gComp.includes(refusal) && pageSrc.includes("'" + refusal + " {0}.'") && rootOffer.length > 0 && gComp.includes('"' + rootOffer + '"')
+    gComp.includes('padlock, which here means ' + lockQ) && /the ENABLE and DISABLE buttons on a part unlock in Root mode \(with su granted\) and when your Shizuku server runs as the system user \(UID 1000\) or as root \(UID 0\)/.test(gComp) && gComp.includes(refusal) && pageSrc.includes("'" + refusal + " {0}.'") && rootOffer.length > 0 && gComp.includes('"' + rootOffer + '"')
       && sysTail.length > 0 && sysTail !== sysConfirm && gComp.includes('of the system app') && gComp.includes(sysTail + '"') && !/fail with "Failed"/.test(gComp) && !/counts as root for this/.test(gComp), JSON.stringify([rootOffer, sysTail, (gComp.match(/Why this is a root feature.{0,200}/) || [''])[0]]));
   const ckl = fs.readFileSync(path.join(REPO, 'docs', 'DEVICE-TEST-CHECKLIST.md'), 'utf8');
   const fullG = fs.readFileSync(path.join(REPO, 'docs', 'FULL-GUIDE.md'), 'utf8').replace(/\s+/g, ' ');
   check('   the other lock paragraphs (Read-Only\'s lock symbol, the quick start, Troubleshooting), FULL-GUIDE.md and the device checklist name the ENABLE/DISABLE padlock as Root-only',
     (g['mode-readonly'] || '').includes(lockQ) && !/the ENABLE, DISABLE and STOP buttons/.test(g['mode-readonly'] || '') && (g['quick-start'] || '').includes(lockQ) && (g['troubleshooting'] || '').includes(lockQ)
-      && fullG.includes(lockQ) && /Enable \/ Disable\*\* on an activity or component works in Root mode only/.test(fullG) && ckl.includes(lockQ) && !/only install-time permissions keep the lock\./.test(ckl), lockQ);
+      && fullG.includes(lockQ) && /Enable \/ Disable\*\* on an activity or component works in Root mode \(su granted\) or with Shizuku running as root \(UID 0\) or the system user \(UID 1000\)/.test(fullG) && ckl.includes(lockQ) && !/only install-time permissions keep the lock\./.test(ckl), lockQ);
 
   check('9. no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
