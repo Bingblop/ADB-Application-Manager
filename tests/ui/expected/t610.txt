@@ -1,11 +1,13 @@
 ok   1. Permissions in the app menu opens the app details on that tab (the menu closes)
 ok      name, package, version (code), the device and the dates
 ok      one shell command read the package, its app ops and its APK path
+ok      the app ops began with the uid's modes: the uid's own list was read too (its uid from the dump)
 ok      the manifest came from the base APK on that device
 ok      this phone was asked about every permission the app asks for or holds
 ok      counts on the tabs
 ok   2. a run-time permission the app does not have: DENIED, a button
 ok      one it has: GRANTED
+ok      another user's install-time grant is not user 0's: WAKE_LOCK stays granted
 ok      an install-time one is locked
 ok      the app's own permission, from its declared section: signature, locked
 ok      another user's grant is not user 0's: Display over other apps is DENIED (switched by its op)
@@ -15,8 +17,9 @@ ok      an app-op permission is switched through its op
 ok      the Install-time filter shows only the locked ones
 ok      the search finds by name
 ok   3. App Ops lists the device's ops and those of the app's permissions not set yet
+ok      the uid's modes (only the first marked "Uid mode:"): each with its uid note, the package's own mode shown
 ok      a mode: cmd appops set, then read back, the mode is on
-ok      an op with a uid mode: the uid mode is set too
+ok      an op with a uid mode (the second of the uid's): the uid mode is set too, and read back it is on
 ok      the device kept its mode: said so
 ok      another op by its name
 ok   4. Activities: the launcher one first, the alias, the unexported one; another user's switch is not user 0's
@@ -52,6 +55,9 @@ ok       a manifest read still running when the sheet closes is stopped
 ok       ... and opened again the manifest is read anew
 ok       the stopped read's late answer changes nothing
 ok       a feature list that failed is asked again the next time
+ok       adb got no answer on su: the refusal is shown (not "no su") and nothing is remembered
+ok       ... so the next time su is looked for again, and used
+ok       a device that left the list: its su and feature list are forgotten
 ok       su refuses: the activity is not reported as opened
 ok       ... nor the component as switched
 ok   12. a part named ...ExceptionReceiver is no error, and SecurityExceptionReceiver no refusal

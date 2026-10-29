@@ -16,6 +16,7 @@ A release on top of v7.19.2, cut from `main`, with the changes the owner asked f
   - **Components:** receivers, services (with **STOP**) and providers, exported or not, and switched on or off.
   - **Manifest:** the AndroidManifest.xml read straight from the APK on the device (a pulled copy on Android 8 and older, deleted afterwards), with find, Copy, Share and Save to Downloads. **Features** marks what the device has (`pm list features`); **Libraries** and **Raw** (the device's `dumpsys package`) complete it.
   - What Android lets only root or the system do (switching a part of an app, opening an unexported activity) is tried once more through the device's `su` when it has one; otherwise the app says so and nothing changes. A part of a system app asks first. **Details** now opens this sheet on its Raw tab.
+- **App Ops read the uid's modes right, here and in the Application Manager.** Since Android 10, `cmd appops get` lists an app's uid-level modes first but marks only the first of them, so every other uid-level mode was shown, and set, as the app's own (and the app's own mode for that op was dropped). The uid's list is now read as well (`cmd appops get <uid>`) to tell where it ends, so each op shows its mode with its *uid:* note, and setting an op also sets its uid mode when it has one.
 - **Help Guide** (Connected Devices: the ADB Stub, App details) and every new text in all 14 languages.
 
 ## v7.19.2-Pro (versionCode 872)

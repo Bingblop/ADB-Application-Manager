@@ -133,7 +133,7 @@ public final class StubActivity extends Activity {
         }
         String ip = StubService.ip;
         int port = adbPort();
-        addr.setText("IP: " + (wifi && !ip.isEmpty() ? ip : "no Wi-Fi yet") + "\nPort: " + (port > 0 ? String.valueOf(port) : "unknown"));
+        addr.setText("IP: " + (!wifi ? "no Wi-Fi yet" : ip.isEmpty() ? "unknown" : ip) + "\nPort: " + (port > 0 ? String.valueOf(port) : "unknown"));
         StringBuilder b = new StringBuilder();
         if (!StubService.phone.isEmpty()) b.append("Phone: ").append(StubService.phone).append('\n');
         b.append("Wi-Fi: ").append(wifi ? "connected" : "not connected").append('\n');

@@ -189,6 +189,9 @@ public final class StubService extends Service {
         running = false;
         wifiUp = false;
         ip = "";
+        // the next start says its own phone and port; until then the screen says the port is unknown (or what the system tells) and names no phone
+        port = 0;
+        phone = "";
         try { stopForeground(true); } catch (Exception ignored) {}
         stopSelf();
     }

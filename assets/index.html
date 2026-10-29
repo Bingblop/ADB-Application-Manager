@@ -27558,6 +27558,7 @@ Type any command above (e.g. pm list packages -d)</div>
             Object.keys(cd.skip).forEach(k => { if (!now.has(k)) delete cd.skip[k]; });
             Object.keys(cd.stub).forEach(k => { if (!now.has(k) && !(cd.stub[k] || {}).busy) delete cd.stub[k]; });   // checked (and started) again when it is back
             Object.keys(cd.stubProbed).forEach(k => { if (!now.has(k)) delete cd.stubProbed[k]; });
+            try { Object.keys(cdi.su).concat(Object.keys(cdi.feats)).forEach(k => { if (!now.has(k)) cdiForget(k); }); } catch (e) {}
             if (changed) {
                 const keys = Object.keys(known);
                 if (keys.length > CD_SAVED_MAX) keys.sort((a, b) => known[a].at - known[b].at).slice(0, keys.length - CD_SAVED_MAX).forEach(k => { if (!now.has(k)) delete known[k]; });
@@ -27863,7 +27864,9 @@ Type any command above (e.g. pm list packages -d)</div>
         async function cdStubProbeOthers() {
             if (!cdStubBundled() || !cdStubAutoOn()) return;
             for (const d of cd.devices.slice()) {
-                if (d.state !== 'device' || d.serial === cd.serial || cd.stub[d.serial] || cd.stubProbed[d.serial]) continue;
+                if (d.state !== 'device' || d.serial === cd.serial) continue;
+                if (cd.stub[d.serial]) { if (!cd.stub[d.serial].checked) cdStubOnConnect(d.serial); continue; }   // a watch already: its stub's status once more if it failed
+                if (cd.stubProbed[d.serial]) continue;
                 cd.stubProbed[d.serial] = true;
                 const out = await cdRun(['shell', 'getprop ro.build.characteristics'], { serial: d.serial, timeout: 15000 });
                 if (cdFail(out)) { delete cd.stubProbed[d.serial]; continue; }      // adb could not ask: asked again on the next list
@@ -28404,6 +28407,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // the activities, receivers, services and providers from the manifest with the device's enabled / disabled lists over them. ----
         const cdi = { serial: '', pkg: '', name: '', seq: 0, d: null, perms: [], ops: [], opsRaw: '', apk: '', man: '', manBusy: false, manTag: '', manFor: '', why: '', parts: null, feats: {}, su: {},
             filters: { perms: 'all', ops: 'all', acts: 'all', comps: 'all', features: 'all' }, manOnly: true };
+        // the line cdExec adds to what a command printed before it was cut off: a part of an answer, not an answer
+        const CD_TIMED_OUT = /\[Process timed out after \d+ms\]/;
+        // what was learnt of a device (its su, its feature list) is forgotten when it leaves the list or is connected anew: the address may be another device then
+        function cdiForget(serial) { try { delete cdi.su[serial]; delete cdi.feats[serial]; } catch (e) {} }
         const CDI_TABS = { perms: 'cdiTabPerms', ops: 'cdiTabOps', acts: 'cdiTabActs', comps: 'cdiTabComps', manifest: 'cdiTabManifest', features: 'cdiTabFeatures', libs: 'cdiTabLibs', raw: 'cdiTabRaw' };
         const CDI_SEARCH = ['cdiPermsSearch', 'cdiOpsSearch', 'cdiActsSearch', 'cdiCompsSearch', 'cdiManSearch', 'cdiFeaturesSearch', 'cdiLibsSearch'];
         function cdiOpen() { return document.getElementById('cdInspModal').classList.contains('show'); }
@@ -28502,6 +28509,7 @@ Type any command above (e.g. pm list packages -d)</div>
                         if ((m = t.match(/^installerPackageName=(\S+)/))) d.installer = m[1];
                         if ((m = t.match(/^primaryCpuAbi=(\S+)/)) && m[1] !== 'null') d.abi = m[1];
                         if ((m = t.match(/^pkgFlags=\[(.*)\]/))) d.system = /\bSYSTEM\b/.test(m[1]);
+                        if (!d.uid && (m = t.match(/^(?:userId|appId)=(\d+)/))) d.uid = m[1];      // appId= since Android 12; user 0's uid is the app id
                     }
                     if (SECS[t]) {                                                    // another user's grants and switches are not user 0's
                         sec = SECS[t];
@@ -28513,7 +28521,7 @@ Type any command above (e.g. pm list packages -d)</div>
                     if (!/^[A-Za-z_][\w.$-]*(:|$)/.test(t) || /^[\w.]+=/.test(t)) { sec = ''; return; }
                     const name = t.split(':')[0], rest = t.slice(name.length + 1);
                     if (sec === 'req') { if (!d.requested.includes(name)) d.requested.push(name); }
-                    else if (sec === 'inst') d.install[name] = /granted=true/.test(rest);
+                    else if (sec === 'inst') { if (!/,\s*userId=(?!0\b)\d+\s*$/.test(rest)) d.install[name] = /granted=true/.test(rest); }    // Android 12+ adds other users' lines
                     else if (sec === 'rt') d.runtime[name] = { granted: /granted=true/.test(rest), flags: ((rest.match(/flags=\[\s*([^\]]*?)\s*\]/) || [])[1] || '') };
                     else if (sec === 'decl') d.declared[name] = (rest.match(/prot=([\w|]+)/) || [])[1] || '';
                     else if (sec === 'dis') d.disabled.add(name);
@@ -28549,9 +28557,16 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (!cdi.d) {                                   // nothing read yet: the manifest's tabs say so too
                     cdi.why = why;
                     ['cdiFeatures', 'cdiLibs'].forEach(id => { document.getElementById(id).innerHTML = '<div class="list-empty">' + escapeHtml(why) + '</div>'; });
+                    document.getElementById('cdiRaw').innerText = why;
                     if (!cdi.man) document.getElementById('cdiManifest').innerText = why;
                 }
                 return;
+            }
+            // Android 10+ writes "Uid mode:" only before the first of the uid's modes: the uid's own list tells how many there are (parseAppOps)
+            if (/^Uid mode:/.test(parts.ops) && d.uid) {
+                const u = String(await cdSh('cmd appops get ' + d.uid + ' 2>&1', { serial: serial, timeout: 30000 })).trim();
+                if (seq !== cdi.seq) return;
+                if (/^Uid mode:/.test(u) && !CD_TIMED_OUT.test(u)) parts.ops += '\n#UID-OPS\n' + u;
             }
             cdi.d = d;
             cdi.why = '';
@@ -28565,7 +28580,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const ms = s => { const t = s ? Date.parse(s.replace(' ', 'T')) : NaN; return isNaN(t) ? '' : formatDate(t); };
             const inst = ms(d.firstInstall), upd = d.lastUpdate && d.lastUpdate !== d.firstInstall ? ms(d.lastUpdate) : '';
             document.getElementById('cdiDates').innerText = inst && upd ? 'Installed ' + inst + ' • Updated ' + upd : inst ? 'Installed ' + inst : upd ? 'Last updated ' + upd : '';
-            document.getElementById('cdiRaw').innerText = d.raw + (parts.ops ? '\n\n# cmd appops get ' + pkg + '\n' + parts.ops : '') + (parts.path ? '\n\n# pm path ' + pkg + '\n' + parts.path : '');
+            document.getElementById('cdiRaw').innerText = d.raw + (parts.ops ? '\n\n# cmd appops get ' + pkg + '\n' + parts.ops.replace(/^#UID-OPS$/m, '\n# cmd appops get ' + d.uid) : '') + (parts.path ? '\n\n# pm path ' + pkg + '\n' + parts.path : '');
             cdiRenderPerms();
             cdiRenderOps();
             const manKey = cdi.apk + '|' + (d.versionCode || '');
@@ -28635,7 +28650,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const serial = cdi.serial;
             let out = await cdSh(cmd, { serial: serial, timeout: 30000 });
             if (!cdiDenied(out)) return { out: out, su: false };
-            if (cdi.su[serial] === undefined) cdi.su[serial] = /\/su\s*$/.test(String(await cdSh('command -v su 2>/dev/null', { serial: serial, timeout: 15000 })).trim()) ? 'c' : '';
+            if (cdi.su[serial] === undefined) {
+                const su = String(await cdSh('command -v su 2>/dev/null', { serial: serial, timeout: 15000 })).trim();
+                if (cdFail(su) || CD_TIMED_OUT.test(su)) return { out: out, su: false, denied: true, unasked: true };    // adb could not ask: asked again the next time
+                cdi.su[serial] = /\/su$/.test(su) ? 'c' : '';
+            }
             if (!cdi.su[serial]) return { out: out, su: false, denied: true };
             // most root managers take su -c <command>; the su of an Android userdebug build takes su <uid> <command> (and calls -c an unknown user)
             const viaSu = style => cdSh({ c: 'su -c', uid: 'su 0 sh -c' }[style] + ' ' + cdQ(cmd), { serial: serial, timeout: 60000 });
@@ -28645,7 +28664,7 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         const CDI_NEEDS_ROOT = 'Android lets only root or the system do this, and on this device adb runs as the shell user without su.';
         // why a command did not go through: no su for what only root may do, else the line of the answer that says so, else its last line
-        function cdiWhy(r) { return r.denied && !r.su ? txT(CDI_NEEDS_ROOT) : cdiErr(r.out) || String(r.out || '').trim().split('\n').pop().trim() || 'Failed'; }
+        function cdiWhy(r) { return r.denied && !r.su && !r.unasked ? txT(CDI_NEEDS_ROOT) : cdiErr(r.out) || String(r.out || '').trim().split('\n').pop().trim() || 'Failed'; }
         async function cdiTogglePerm(perm, was) {
             haptic();
             const seq = cdi.seq;
@@ -28687,7 +28706,7 @@ Type any command above (e.g. pm list packages -d)</div>
             haptic();
             const seq = cdi.seq, q = cdQ(cdi.pkg), cur = cdi.ops.find(o => o.name === op);
             const set = (cur && cur.uidMode ? 'cmd appops set --uid ' + q + ' ' + op + ' ' + mode + ' >/dev/null 2>&1; ' : '') + 'cmd appops set ' + q + ' ' + op + ' ' + mode + ' 2>&1';
-            const out = await cdSh(set + "; echo '#CDI-OPS'; cmd appops get " + q + ' 2>&1', { serial: cdi.serial, timeout: 30000 });
+            const out = await cdSh(set + "; echo '#CDI-OPS'; cmd appops get " + q + ' 2>&1' + (cdi.d && cdi.d.uid ? "; echo '#UID-OPS'; cmd appops get " + cdi.d.uid + ' 2>&1' : ''), { serial: cdi.serial, timeout: 30000 });
             if (seq !== cdi.seq) return;
             const at = String(out).indexOf('#CDI-OPS'), bad = cdiErr(at >= 0 ? String(out).slice(0, at) : out);
             if (at >= 0) {
@@ -28786,7 +28805,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(short)}</div><div class="perm-sub">${badges}${permWbr(sub)}</div></div><div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">${btns}</div></div>`;
         }
         function cdiNoParts(box) {
-            if (cdi.manBusy || (!cdi.man && cdi.d)) return true;                       // still on its way: the "Loading ..." line stays
+            if (cdi.manBusy || (!cdi.man && (cdi.d || !cdi.why))) return true;        // still on its way: the "Loading ..." line stays
             if (cdi.parts && cdi.parts.ok) return false;
             const m = String(cdi.man || '');
             box.innerHTML = '<div class="list-empty">' + escapeHtml(/^Error:/.test(m) ? m.replace(/^Error:\s*/, '') : cdi.why || txT('Manifest not loaded')) + '</div>';
@@ -28882,7 +28901,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (cdi.feats[serial]) { cdiRenderFeatures(); return; }
             cdi.feats[serial] = { busy: true, set: new Set(), gl: '' };
             const out = await cdSh('pm list features', { serial: serial, timeout: 30000 });
-            const F = cdi.feats[serial] = { set: new Set(), gl: '', ok: !cdFail(out) };
+            const F = cdi.feats[serial] = { set: new Set(), gl: '', ok: !cdFail(out) && !CD_TIMED_OUT.test(String(out)) && /^\s*feature:/m.test(String(out)) };
             String(out).split('\n').forEach(l => {
                 const m = l.trim().match(/^feature:(.+)$/);
                 if (!m) return;
@@ -29670,11 +29689,12 @@ Type any command above (e.g. pm list packages -d)</div>
             cdAddLog(out);
             if (/connected to|already connected/i.test(out) && !/cannot|failed|unable/i.test(out)) {
                 const serial = /(?:connected to|already connected to)\s+(\S+)/i.exec(out);
+                const s = serial ? serial[1].replace(/[.,]$/, '') : addr;
+                cdiForget(s); cdiForget(addr);
                 cdRemember(addr);
                 cdAddClose();
                 cd.lastKey = ''; cd.sig = '';
                 await cdRefreshDevices(false);
-                const s = serial ? serial[1].replace(/[.,]$/, '') : addr;
                 if (cd.devices.some(d => d.serial === s)) cdSelect(s);
                 showToast('Connected to ' + s);
             } else showToast(cdFail(out) || String(out).trim().split('\n')[0] || 'Could not connect');
@@ -29777,6 +29797,7 @@ Type any command above (e.g. pm list packages -d)</div>
             cdAddLog(out + '\nIf nothing shows up, check that Debugging over Bluetooth is on in the Wear OS app and on the watch, then try again.');
             if (/connected to|already connected/i.test(out) && !/cannot|failed|unable/i.test(out)) {
                 cd.bt.add(addr); kvSet('cd_bt', Array.from(cd.bt));
+                cdiForget(addr);                                // every Bluetooth-linked watch is 127.0.0.1:<port>
                 cdAddClose();
                 cd.lastKey = ''; cd.sig = '';
                 await cdRefreshDevices(false);
@@ -32397,14 +32418,27 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         // ---------- App Ops list ----------
-        // Parses `cmd appops get <pkg>` lines such as "CAMERA: allow; time=+2h ago" and "Uid mode: COARSE_LOCATION: foreground"
+        // Parses `cmd appops get <pkg>` lines such as "CAMERA: allow; time=+2h ago" and "Uid mode: COARSE_LOCATION: foreground". Since Android 10 the
+        // uid's modes come first, with "Uid mode:" written only before the first of them; the uid's own list (cmd appops get <uid>) may follow after a
+        // "#UID-OPS" line, and then that many lines at the top are the uid's. Without it the uid's block ends at a name seen again or at a line with
+        // times (the uid's entries carry none) (v7.19.3)
         function parseAppOps(raw) {
-            const ops = new Map();
-            String(raw || '').split('\n').forEach(line => {
-                const m = line.trim().match(/^(Uid mode:\s*)?([A-Z][A-Z0-9_]+):\s*([a-z_]+)(.*)$/);
-                if (!m) return;
+            const OP_LINE = /^(Uid mode:\s*)?([A-Z][A-Z0-9_]+):\s*([a-z_]+)(.*)$/, ops = new Map();
+            const parts = String(raw || '').split(/\r?\n#UID-OPS\r?\n/);
+            const lines = parts[0].split('\n').map(l => l.trim()).filter(l => OP_LINE.test(l));
+            let uidLeft = parts.length > 1 && /^Uid mode:/.test(lines[0] || '') ? parts[1].split('\n').filter(l => OP_LINE.test(l.trim())).length : 0, inUid = false;
+            const counted = uidLeft > 0, uidSeen = new Set();
+            lines.forEach(line => {
+                const m = line.match(OP_LINE);
                 const name = m[2];
-                const isUid = !!m[1];
+                let isUid;
+                if (counted) { isUid = uidLeft > 0; uidLeft--; }
+                else {
+                    if (m[1]) inUid = true;
+                    else if (inUid && (uidSeen.has(name) || /;\s*(time|rejectTime|duration)=|\(running\)/.test(m[4]))) inUid = false;
+                    isUid = inUid;
+                }
+                if (isUid) uidSeen.add(name);
                 const prev = ops.get(name);
                 // Package-level mode wins over uid-level for display; keep a note of the uid mode
                 if (prev && !isUid && prev.uidOnly) {

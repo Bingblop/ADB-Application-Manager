@@ -6759,6 +6759,11 @@ public class MainActivity extends Activity {
             t.start();
             Boolean whole = read.get(timeoutMs, TimeUnit.MILLISECONDS);
             return whole != null && whole ? buf.toByteArray() : null;
+        } catch (InterruptedException stopped) {
+            // the app is closing (onDestroy, shutdownNow): the read is over, and so is what would follow it (RemoteManifest's adb pull)
+            if (tag != null) cdCancelled.add(tag);
+            Thread.currentThread().interrupt();
+            return null;
         } catch (Exception e) {
             return null;
         } finally {
@@ -13750,7 +13755,7 @@ public class MainActivity extends Activity {
                 }
 
                 try {
-                    String appops = BackupScripts.isPackageName(pkg) ? executeShell("cmd appops get " + pkg) : "";
+                    String appops = BackupScripts.isPackageName(pkg) ? appOpsWithUid(pkg) : "";
                     obj.put("appopsRaw", appops != null ? appops : "");
                 } catch (Exception ignored) {}
 
@@ -20695,7 +20700,23 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getAppOpsRaw(String pkg) {
             if (!BackupScripts.isPackageName(pkg)) return "Error: not a package name";
-            return executeShell("cmd appops get " + pkg);
+            return appOpsWithUid(pkg);
+        }
+
+        /**
+         * cmd appops get <pkg>. Since Android 10 it lists the uid's modes first, but writes "Uid mode:" only before the first of them, so when it
+         * starts so, the uid's own list (cmd appops get <uid>) follows after a "#UID-OPS" line: the page counts it off to tell where the uid's
+         * modes end and the package's begin (parseAppOps).
+         */
+        private String appOpsWithUid(String pkg) {
+            String raw = executeShell("cmd appops get " + pkg);
+            if (raw == null || !raw.trim().startsWith("Uid mode:")) return raw;
+            try {
+                int uid = getPackageManager().getApplicationInfo(pkg, 0).uid;
+                String u = executeShell("cmd appops get " + uid);
+                if (u != null && u.trim().startsWith("Uid mode:")) return raw.replaceAll("\\s+$", "") + "\n#UID-OPS\n" + u.trim();
+            } catch (Exception ignored) {}
+            return raw;
         }
 
         @JavascriptInterface

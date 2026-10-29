@@ -18,8 +18,8 @@ const W = '192.168.1.30:5555';
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript((o) => {
       const W = '192.168.1.30:5555', PKG = 'com.wear.weather';
-      const st = window.__st = { log: [], su: o.su !== false, suStyle: o.suStyle || 'c', suRefuses: !!o.suRefuses, cancelled: [], runtime: { 'android.permission.CAMERA': false, 'android.permission.POST_NOTIFICATIONS': true },
-        ops: { CAMERA: 'allow', RUN_IN_BACKGROUND: 'allow', WAKE_LOCK: 'allow', BOOT_COMPLETED: 'allow' }, uidOps: { WAKE_LOCK: 'allow' }, stuck: new Set(['BOOT_COMPLETED']),
+      const st = window.__st = { log: [], su: o.su !== false, suStyle: o.suStyle || 'c', suRefuses: !!o.suRefuses, suProbeFail: o.suProbeFail || 0, cancelled: [], runtime: { 'android.permission.CAMERA': false, 'android.permission.POST_NOTIFICATIONS': true },
+        ops: { CAMERA: 'allow', RUN_IN_BACKGROUND: 'allow', WAKE_LOCK: 'allow', BOOT_COMPLETED: 'allow' }, uidOps: { COARSE_LOCATION: 'ignore', WAKE_LOCK: 'allow' }, stuck: new Set(['BOOT_COMPLETED']),
         disabled: new Set([PKG + '.OldReceiver']) };
       const MAN = ['<?xml version="1.0" encoding="utf-8"?>',
         '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.wear.weather" android:versionCode="12" android:versionName="2.4.1">',
@@ -47,19 +47,25 @@ const W = '192.168.1.30:5555';
         '    timeStamp=2026-01-02 03:04:05', '    lastUpdateTime=2026-02-03 04:05:06', '    installerPackageName=com.android.vending', '    pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ]',
         '    declared permissions:', '      com.wear.weather.permission.SYNC: prot=signature, INSTALLED',
         '    requested permissions:', '      android.permission.INTERNET', '      android.permission.CAMERA', '      android.permission.POST_NOTIFICATIONS', '      android.permission.SYSTEM_ALERT_WINDOW', '      android.permission.WAKE_LOCK', '      com.wear.weather.permission.SYNC',
-        '    install permissions:', '      android.permission.INTERNET: granted=true', '      android.permission.WAKE_LOCK: granted=true', '      com.wear.weather.permission.SYNC: granted=true',
+        '    install permissions:', '      android.permission.INTERNET: granted=true', '      android.permission.WAKE_LOCK: granted=true', '      com.wear.weather.permission.SYNC: granted=true', '      android.permission.WAKE_LOCK: granted=false, userId=10',
         '    User 0: ceDataInode=1 installed=true hidden=false suspended=false stopped=false notLaunched=false enabled=0', '      firstInstallTime=2026-01-02 03:04:05', '      gids=[3003]',
         '      runtime permissions:'].concat(Object.keys(st.runtime).map(n => '        ' + n + ': granted=' + st.runtime[n] + ', flags=[ USER_SENSITIVE_WHEN_GRANTED ]'),
         st.disabled.size ? ['      disabledComponents:'].concat(Array.from(st.disabled).map(c => '        ' + c)) : [],
         ['    User 10: ceDataInode=2 installed=true', '      runtime permissions:', '        android.permission.SYSTEM_ALERT_WINDOW: granted=true, flags=[ ]', '      disabledComponents:', '        com.wear.weather.MainActivity',
           'Queries:', '  system apps queryable: false']).join('\n');
-      const opsOut = () => Object.keys(st.ops).map(k => (st.uidOps[k] ? 'Uid mode: ' + k + ': ' + st.uidOps[k] + '\n' : '') + k + ': ' + st.ops[k] + (k === 'CAMERA' ? '; time=+2h ago' : '')).join('\n');
+      // as Android 10+ writes it: the uid's modes first, "Uid mode: " only before the first of them, then the package's (cmd appops get <uid>: the uid's alone)
+      const uidOut = () => Object.keys(st.uidOps).sort().map((k, i) => (i ? '' : 'Uid mode: ') + k + ': ' + st.uidOps[k]).join('\n');
+      const opsOut = () => [uidOut()].concat(Object.keys(st.ops).map(k => k + ': ' + st.ops[k] + (k === 'CAMERA' ? '; time=+2h ago' : ''))).filter(Boolean).join('\n');
       const reply = (tag, out) => setTimeout(() => window.onCdResult({ tag, out, ms: 4 }), 8);
       const denied = 'Exception occurred while executing:\njava.lang.SecurityException: Shell cannot change component state for x to 2';
       const one = (cmd, root) => {
         let m;
         if ((m = /^pm (grant|revoke) '([^']+)' '([^']+)'$/.exec(cmd))) { st.runtime[m[3]] = m[1] === 'grant'; return ''; }
-        if ((m = /^cmd appops set (--uid )?'([^']+)' (\w+) (\w+)(?: >\/dev\/null)? 2>&1$/.exec(cmd))) { if (st.stuck.has(m[3])) return ''; (m[1] ? st.uidOps : st.ops)[m[3]] = m[4]; return ''; }
+        if ((m = /^cmd appops set (--uid )?'([^']+)' (\w+) (\w+)(?: >\/dev\/null)? 2>&1$/.exec(cmd))) {
+          if (st.stuck.has(m[3])) return '';
+          if (m[1] && m[4] === 'default') delete st.uidOps[m[3]]; else (m[1] ? st.uidOps : st.ops)[m[3]] = m[4];
+          return '';
+        }
         if ((m = /^input keyevent KEYCODE_WAKEUP 2>\/dev\/null; am start -n '([^']+)' 2>&1$/.exec(cmd))) {
           if (/SettingsActivity/.test(m[1]) && !root) return 'Starting: Intent { cmp=' + m[1] + ' }\nSecurity exception: Permission Denial: starting Intent { cmp=' + m[1] + ' } from null (pid=1, uid=2000) not exported from uid 10123\njava.lang.SecurityException: Permission Denial: starting Intent';
           return 'Starting: Intent { cmp=' + m[1] + ' }';
@@ -81,8 +87,9 @@ const W = '192.168.1.30:5555';
           if (m[1] !== PKG) return 'Packages:\n#CDI-OPS\nError: No UID for ' + m[1] + ' in user 0\n#CDI-PATH\n';
           return dump().split('\nQueries:')[0] + '\nQueries:\n#CDI-OPS\n' + opsOut() + '\n#CDI-PATH\npackage:/data/app/~~ab==/' + PKG + '-1==/base.apk\npackage:/data/app/~~ab==/' + PKG + '-1==/split_config.arm64_v8a.apk';
         }
-        if ((m = /^(cmd appops set .*); echo '#CDI-OPS'; cmd appops get '[^']+' 2>&1$/.exec(cmd))) { m[1].split('; ').forEach(c => one(c)); return '#CDI-OPS\n' + opsOut(); }
-        if (cmd === 'command -v su 2>/dev/null') return st.su ? '/system/bin/su' : '';
+        if ((m = /^(cmd appops set .*); echo '#CDI-OPS'; cmd appops get '[^']+' 2>&1(; echo '#UID-OPS'; cmd appops get 10123 2>&1)?$/.exec(cmd))) { m[1].split('; ').forEach(c => one(c)); return '#CDI-OPS\n' + opsOut() + (m[2] ? '\n#UID-OPS\n' + (uidOut() || 'No operations.') : ''); }
+        if (cmd === 'cmd appops get 10123 2>&1') return uidOut() || 'No operations.';
+        if (cmd === 'command -v su 2>/dev/null') { if (st.suProbeFail) { st.suProbeFail--; return '[Process timed out after 15000ms]'; } return st.su ? '/system/bin/su' : ''; }
         // the su of root managers (su -c), or of an Android userdebug build (su 0 sh -c, and -c is an unknown uid); a su that refuses
         if ((m = /^su -c '(.*)'$/s.exec(cmd)) && st.suStyle === 'uid') return "su: invalid uid/gid '-c'";
         if ((m = /^su -c '(.*)'$/s.exec(cmd)) || (m = /^su 0 sh -c '(.*)'$/s.exec(cmd))) { if (st.suRefuses) return 'Permission denied'; const inner = m[1].replace(/'\\''/g, "'"); return (r = one(inner, true)) === null ? 'sh: not found' : r; }
@@ -142,6 +149,7 @@ const W = '192.168.1.30:5555';
   check('   name, package, version (code), the device and the dates', head.title === 'Weather' && head.pkg === 'com.wear.weather' && head.ver === 'Version 2.4.1 (12)' && /192\.168\.1\.30:5555/.test(head.dev) && /^Installed .+ • Updated /.test(head.dates), JSON.stringify(head));
   const read = (await log(page)).filter(l => /dumpsys package/.test(l));
   check('   one shell command read the package, its app ops and its APK path', read.length === 1 && read[0].startsWith(W + " dumpsys package 'com.wear.weather' | sed -n"), JSON.stringify(read));
+  check('   the app ops began with the uid\'s modes: the uid\'s own list was read too (its uid from the dump)', (await log(page)).filter(l => l === W + ' cmd appops get 10123 2>&1').length === 1, JSON.stringify(await log(page)));
   check('   the manifest came from the base APK on that device', (await log(page)).includes('manifest ' + W + ' /data/app/~~ab==/com.wear.weather-1==/base.apk'), JSON.stringify(await log(page)));
   check('   this phone was asked about every permission the app asks for or holds', await ev(page, () => window.__st.permAsked.slice().sort().join(',')) === ['android.permission.CAMERA', 'android.permission.INTERNET', 'android.permission.POST_NOTIFICATIONS', 'android.permission.SYSTEM_ALERT_WINDOW', 'android.permission.WAKE_LOCK', 'com.wear.weather.permission.SYNC'].join(','));
   check('   counts on the tabs', await text(page, 'cdiPermsCount') === '6' && await text(page, 'cdiActsCount') === '3' && await text(page, 'cdiCompsCount') === '4', [await text(page, 'cdiPermsCount'), await text(page, 'cdiActsCount'), await text(page, 'cdiCompsCount')].join(' '));
@@ -150,6 +158,7 @@ const W = '192.168.1.30:5555';
   // ---- 2. Permissions ----
   check('2. a run-time permission the app does not have: DENIED, a button', JSON.stringify(await btnOf(page, 'cdiPerms', 'CAMERA')) === '["DENIED"]', JSON.stringify(await btnOf(page, 'cdiPerms', 'CAMERA')));
   check('   one it has: GRANTED', JSON.stringify(await btnOf(page, 'cdiPerms', 'POST_NOTIFICATIONS')) === '["GRANTED"]');
+  check('   another user\'s install-time grant is not user 0\'s: WAKE_LOCK stays granted', /GRANTED/.test(String(await btnOf(page, 'cdiPerms', 'WAKE_LOCK'))) && !/NOT GRANTED/.test(String(await btnOf(page, 'cdiPerms', 'WAKE_LOCK'))), JSON.stringify(await btnOf(page, 'cdiPerms', 'WAKE_LOCK')));
   check('   an install-time one is locked', /GRANTED/.test((await btnOf(page, 'cdiPerms', 'INTERNET'))[0]) && await ev(page, () => !!document.querySelector('#cdiPerms .perm-toggle-btn.locked')));
   check('   the app\'s own permission, from its declared section: signature, locked', await ev(page, () => { const r = Array.from(document.querySelectorAll('#cdiPerms .perm-row')).find(x => /SYNC/.test(x.innerText)); return !!r && /signature/i.test(r.innerText) && !!r.querySelector('.locked'); }));
   check('   another user\'s grant is not user 0\'s: Display over other apps is DENIED (switched by its op)', JSON.stringify(await btnOf(page, 'cdiPerms', 'SYSTEM_ALERT_WINDOW')) === '["DENIED"]');
@@ -161,7 +170,7 @@ const W = '192.168.1.30:5555';
   check('   and pm revoke', (await log(page))[0] === W + " pm revoke 'com.wear.weather' 'android.permission.POST_NOTIFICATIONS'" && JSON.stringify(await btnOf(page, 'cdiPerms', 'POST_NOTIFICATIONS')) === '["DENIED"]');
   await clearLog(page);
   await press(page, 'cdiPerms', 'SYSTEM_ALERT_WINDOW', 'DENIED'); await page.waitForTimeout(400);
-  check('   an app-op permission is switched through its op', (await log(page))[0] === W + " cmd appops set 'com.wear.weather' SYSTEM_ALERT_WINDOW allow 2>&1; echo '#CDI-OPS'; cmd appops get 'com.wear.weather' 2>&1" && JSON.stringify(await btnOf(page, 'cdiPerms', 'SYSTEM_ALERT_WINDOW')) === '["GRANTED"]', JSON.stringify(await log(page)));
+  check('   an app-op permission is switched through its op', (await log(page))[0] === W + " cmd appops set 'com.wear.weather' SYSTEM_ALERT_WINDOW allow 2>&1; echo '#CDI-OPS'; cmd appops get 'com.wear.weather' 2>&1; echo '#UID-OPS'; cmd appops get 10123 2>&1" && JSON.stringify(await btnOf(page, 'cdiPerms', 'SYSTEM_ALERT_WINDOW')) === '["GRANTED"]', JSON.stringify(await log(page)));
   await ev(page, () => cdiFilter('perms', 'installtime'));
   check('   the Install-time filter shows only the locked ones', await ev(page, () => Array.from(document.querySelectorAll('#cdiPerms .perm-name')).map(x => x.innerText.replace(/\s/g, '')).join(',')) === 'INTERNET,WAKE_LOCK,com.wear.weather.permission.SYNC');
   await ev(page, () => cdiFilter('perms', 'all'));
@@ -173,17 +182,19 @@ const W = '192.168.1.30:5555';
   await ev(page, () => cdInspTab('ops'));
   const opNames = await ev(page, () => Array.from(document.querySelectorAll('#cdiOps .perm-name')).map(x => x.innerText));
   check('3. App Ops lists the device\'s ops and those of the app\'s permissions not set yet', ['BOOT_COMPLETED', 'CAMERA', 'POST_NOTIFICATION', 'RUN_IN_BACKGROUND', 'SYSTEM_ALERT_WINDOW', 'WAKE_LOCK'].every(n => opNames.includes(n)), opNames.join(','));
+  const subOf = name => ev(page, n => { const r = Array.from(document.querySelectorAll('#cdiOps .perm-row')).find(x => x.querySelector('.perm-name').innerText === n); return r ? ((r.querySelector('.perm-sub') || {}).innerText || '') + '|' + ((r.querySelector('.op-mode-btn.on') || {}).innerText || '') : null; }, name);
+  check('   the uid\'s modes (only the first marked "Uid mode:"): each with its uid note, the package\'s own mode shown', await subOf('COARSE_LOCATION') === 'uid-level mode|Ignore' && await subOf('WAKE_LOCK') === 'uid: allow|Allow' && await subOf('RUN_IN_BACKGROUND') === '|Allow', [await subOf('COARSE_LOCATION'), await subOf('WAKE_LOCK'), await subOf('RUN_IN_BACKGROUND')].join(' '));
   await clearLog(page);
   await press(page, 'cdiOps', 'RUN_IN_BACKGROUND', 'Ignore'); await page.waitForTimeout(400);
-  check('   a mode: cmd appops set, then read back, the mode is on', (await log(page))[0] === W + " cmd appops set 'com.wear.weather' RUN_IN_BACKGROUND ignore 2>&1; echo '#CDI-OPS'; cmd appops get 'com.wear.weather' 2>&1" && await ev(page, () => { const r = Array.from(document.querySelectorAll('#cdiOps .perm-row')).find(x => x.querySelector('.perm-name').innerText === 'RUN_IN_BACKGROUND'); return r.querySelector('.op-mode-btn.ignore').classList.contains('on'); }) && /RUN_IN_BACKGROUND → ignore/.test(await toast(page)), JSON.stringify(await log(page)));
+  check('   a mode: cmd appops set, then read back, the mode is on', (await log(page))[0] === W + " cmd appops set 'com.wear.weather' RUN_IN_BACKGROUND ignore 2>&1; echo '#CDI-OPS'; cmd appops get 'com.wear.weather' 2>&1; echo '#UID-OPS'; cmd appops get 10123 2>&1" && await ev(page, () => { const r = Array.from(document.querySelectorAll('#cdiOps .perm-row')).find(x => x.querySelector('.perm-name').innerText === 'RUN_IN_BACKGROUND'); return r.querySelector('.op-mode-btn.ignore').classList.contains('on'); }) && /RUN_IN_BACKGROUND → ignore/.test(await toast(page)), JSON.stringify(await log(page)));
   await clearLog(page);
   await press(page, 'cdiOps', 'WAKE_LOCK', 'Deny'); await page.waitForTimeout(400);
-  check('   an op with a uid mode: the uid mode is set too', /^192\.168\.1\.30:5555 cmd appops set --uid 'com\.wear\.weather' WAKE_LOCK deny >\/dev\/null 2>&1; cmd appops set 'com\.wear\.weather' WAKE_LOCK deny 2>&1; echo/.test((await log(page))[0]), JSON.stringify(await log(page)));
+  check('   an op with a uid mode (the second of the uid\'s): the uid mode is set too, and read back it is on', /^192\.168\.1\.30:5555 cmd appops set --uid 'com\.wear\.weather' WAKE_LOCK deny >\/dev\/null 2>&1; cmd appops set 'com\.wear\.weather' WAKE_LOCK deny 2>&1; echo/.test((await log(page))[0]) && await subOf('WAKE_LOCK') === 'uid: deny|Deny' && /WAKE_LOCK → deny/.test(await toast(page)), JSON.stringify(await log(page)) + ' ' + await subOf('WAKE_LOCK') + ' ' + await toast(page));
   await press(page, 'cdiOps', 'BOOT_COMPLETED', 'Ignore'); await page.waitForTimeout(400);
   check('   the device kept its mode: said so', /Android kept BOOT_COMPLETED at allow/.test(await toast(page)), await toast(page));
   await clearLog(page);
   await ev(page, () => { document.getElementById('cdiOpName').value = 'run any in background'; document.getElementById('cdiOpMode').value = 'ignore'; cdiSetCustomOp(); }); await page.waitForTimeout(400);
-  check('   another op by its name', (await log(page))[0] === W + " cmd appops set 'com.wear.weather' RUN_ANY_IN_BACKGROUND ignore 2>&1; echo '#CDI-OPS'; cmd appops get 'com.wear.weather' 2>&1", JSON.stringify(await log(page)));
+  check('   another op by its name', (await log(page))[0] === W + " cmd appops set 'com.wear.weather' RUN_ANY_IN_BACKGROUND ignore 2>&1; echo '#CDI-OPS'; cmd appops get 'com.wear.weather' 2>&1; echo '#UID-OPS'; cmd appops get 10123 2>&1", JSON.stringify(await log(page)));
 
   // ---- 4. Activities: they start on the device (its screen woken first), an unexported one through su ----
   await ev(page, () => cdInspTab('acts'));
@@ -300,6 +311,18 @@ const W = '192.168.1.30:5555';
   await ev(page, () => { window.__st.featFail = true; cdInspTab('features'); }); await page.waitForTimeout(400);
   await ev(page, () => { window.__st.featFail = false; cdInspTab('perms'); cdInspTab('features'); }); await page.waitForTimeout(400);
   check('    a feature list that failed is asked again the next time', (await log(page)).filter(l => / pm list features$/.test(l)).length === 2 && /on the device/i.test(await text(page, 'cdiFeatures')), JSON.stringify(await log(page)));
+  await page.close();
+
+  page = await open({ suProbeFail: 1 });
+  await ev(page, () => cdInspOpen('com.wear.weather', 'comps')); await page.waitForTimeout(500);
+  await clearLog(page);
+  await press(page, 'cdiComps', 'SyncService', 'DISABLE'); await page.waitForTimeout(400);
+  check('    adb got no answer on su: the refusal is shown (not "no su") and nothing is remembered', /Shell cannot change component state/.test(await toast(page)) && await ev(page, () => cdi.su[cd.serial] === undefined), await toast(page));
+  await clearLog(page);
+  await press(page, 'cdiComps', 'SyncService', 'DISABLE'); await page.waitForTimeout(400);
+  check('    ... so the next time su is looked for again, and used', (await log(page)).some(l => / command -v su /.test(l + ' ')) && await toast(page) === 'Component disabled', JSON.stringify(await log(page)) + ' ' + await toast(page));
+  await ev(page, () => { cd.devices = []; cdNoteDevices(); }); await page.waitForTimeout(100);
+  check('    a device that left the list: its su and feature list are forgotten', await ev(page, () => cdi.su['192.168.1.30:5555'] === undefined), await ev(page, () => JSON.stringify(cdi.su)));
   await page.close();
 
   page = await open({ suRefuses: true });

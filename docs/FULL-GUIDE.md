@@ -16,7 +16,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v7.19.0-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v7.19.3-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
