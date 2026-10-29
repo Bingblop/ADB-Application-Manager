@@ -10,7 +10,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const b = await chromium.launch();
   const errors = [];
   const page = await b.newPage({ viewport: { width: 360, height: 800 } });
-  page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
   const journal = [1, 2].map(i => ({ n: i, t: Date.now() - i * 1000, ns: 'secure', k: 'saved_key_' + i, f: '0', v: '1' }));
   await page.addInitScript(kv => { window.__kvInit = JSON.parse(kv); }, JSON.stringify({ sdb_ui: JSON.stringify({ ns: 'secure', filter: 'switch', sort: 'za' }), sdb_journal: JSON.stringify(journal) }));
   await page.addInitScript(sdb.initScript); await page.addInitScript(ovl.initScript);

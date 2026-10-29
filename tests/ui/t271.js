@@ -11,7 +11,7 @@ const updates = [1, 2, 3, 4].map(i => ({ pkg: 'org.example.app' + i, name: 'App 
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 360, height: 740 } });
   page.bottomNav = true; page.errors = [];
-  page.on('pageerror', e => page.errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') page.errors.push('console: ' + m.text()); });
+  page.on('pageerror', e => page.errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) page.errors.push('console: ' + m.text()); });
   await page.addInitScript(mock.initScript, { kv: { bnav_tip: 'true' }, updates });
   // a Morphe bridge that counts what the page asks for (the engine answers nothing here)
   await page.addInitScript(() => { window.__mpOps = []; window.AndroidBridge.morphe = (tag, op) => { window.__mpOps.push(op); setTimeout(() => window.onMorphe({ tag, ok: false, error: 'no engine in this mock' }), 5); }; });

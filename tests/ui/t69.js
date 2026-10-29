@@ -13,7 +13,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     const tag = `${w}x${h}`;
     const ctx = await b.newContext({ viewport: { width: w, height: h }, hasTouch: true, colorScheme: 'dark' });
     const page = await ctx.newPage();
-    page.on('pageerror', e => errors.push(tag + ' ' + e.message)); page.on('console', m => { if (m.type() === 'error') errors.push(tag + ' console: ' + m.text()); });
+    page.on('pageerror', e => errors.push(tag + ' ' + e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(tag + ' console: ' + m.text()); });
     await page.addInitScript(mock.initScript, { dark: true });
     await page.goto(URL); await page.waitForTimeout(450);
     const ev = (fn, arg) => page.evaluate(fn, arg);

@@ -99,7 +99,7 @@ const Q_FID_GREEN_KEY2 = '038E00', Q_TS_KEY3 = '996A79';
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 360, height: 800 } });
-  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
   const dialogs = [];
   page.on('dialog', d => { dialogs.push(d.message()); d.accept(); });
   await page.addInitScript(sdb.initScript);

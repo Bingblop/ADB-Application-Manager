@@ -2,7 +2,7 @@
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch(); const page = await b.newPage({ viewport: { width: 400, height: 860 } });
-  page.on('console', m => console.log('console:', m.text()));
+  page.on('console', m => { if (!/Failed to load resource/.test(m.text())) console.log('console:', m.text()); });   // (the page's template images CI's Chromium 141 tries to load from a file are not ours)
   page.on('pageerror', e => console.log('pageerror', e.message));
   await page.addInitScript(() => { window.__calls = []; window.AndroidBridge = {
       vibrate() {}, loadPreferences() { return '{}'; }, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; }, loadPackages() { return '[]'; },

@@ -42,7 +42,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
 
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 360, height: 800 } });
-  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
   page.on('dialog', d => d.accept());
   await page.addInitScript(mock.initScript);
   await page.addInitScript(() => {
