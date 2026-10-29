@@ -16,8 +16,8 @@ import java.util.regex.Pattern;
  * private app data as root) is read and removed through the working mode. Commands are plain toybox/mksh ones, no busybox and no
  * {@code find -printf}: a tree is {@code find ... -exec stat -c '%f %s %Y %u %n' {} +} streamed line by line while it runs, a listing is
  * {@code ls -1A}, a hash {@code sha256sum --}, a head {@code head -c | od}, a delete {@code rm -rf --} followed by an existence check.
- * Every path is quoted with {@link BackupScripts#quote} and never goes through {@code eval}; every script ends with the line
- * {@code __SDM_END__}, because the old adb protocol loses the exit code and a missing sentinel therefore means truncated output.
+ * Every path is quoted with {@link BackupScripts#quote} and never goes through {@code eval}; every script ends with a sentinel line,
+ * because the old adb protocol loses the exit code and a missing sentinel therefore means truncated output.
  *
  * <p>Ported from SD Maid SE by darken (d4rken-org/sdmaid-se), GPL-3.0, https://github.com/d4rken-org/sdmaid-se; upstream reads and deletes through
  * its own root/ADB gateways, this class is the port's replacement. Pure Java, no android.* classes.
@@ -74,8 +74,10 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
     @Override
     public String[] list(String dir) throws IOException {
         String d = q(dir);
-        List<String> l = lines("if [ -d " + d + " ]; then ls -1A " + d + " 2>/dev/null && echo " + OK + " || echo " + NO + "; else echo " + NO + "; fi; echo " + END,
-                T_SHORT, null, "list " + dir);
+        SdmStatFrame frame = new SdmStatFrame();
+        String end = frame.endMarker();
+        List<String> l = lines("if [ -d " + d + " ]; then ls -1A " + d + " 2>/dev/null && echo " + OK + " || echo " + NO + "; else echo " + NO + "; fi; echo " + end,
+                T_SHORT, null, "list " + dir, end);
         if (l.isEmpty() || !l.get(l.size() - 1).equals(OK)) return null;
         l.remove(l.size() - 1);
         return l.toArray(new String[0]);
