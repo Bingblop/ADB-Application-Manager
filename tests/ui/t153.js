@@ -16,6 +16,37 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
 
+  const frameResult = await page.evaluate(async () => {
+    let violation = '';
+    let message = false;
+    window.addEventListener('securitypolicyviolation', e => {
+      if (e.effectiveDirective === 'frame-src') violation = e.effectiveDirective;
+    });
+    window.addEventListener('message', e => { if (e.data === 'frame-csp-probe') message = true; });
+    const frame = document.createElement('iframe');
+    frame.src = "data:text/html,<script>parent.postMessage('frame-csp-probe','*')</script>";
+    document.body.appendChild(frame);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    frame.remove();
+    return { violation, message };
+  });
+  check("the page CSP blocks iframe navigation", frameResult.violation === 'frame-src' && !frameResult.message, JSON.stringify(frameResult));
+  const controlPage = await b.newPage();
+  await controlPage.setContent('<!doctype html><html><body></body></html>');
+  const controlMessage = await controlPage.evaluate(async () => {
+    let message = false;
+    window.addEventListener('message', e => { if (e.data === 'frame-csp-probe') message = true; });
+    const frame = document.createElement('iframe');
+    frame.src = "data:text/html,<script>parent.postMessage('frame-csp-probe','*')</script>";
+    document.body.appendChild(frame);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    frame.remove();
+    return message;
+  });
+  check("control: the same iframe navigation succeeds without the page policy", controlMessage);
+  await controlPage.close();
+  await page.goto(PAGE); await page.waitForTimeout(300);
+
   const hostile = [
     "x');AndroidBridge.executeShell('id');//",
     'x");AndroidBridge.executeShell("id");//',
