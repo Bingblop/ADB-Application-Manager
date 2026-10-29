@@ -6718,6 +6718,8 @@ public class MainActivity extends Activity {
             Process p = buildAdbProcess(args.toArray(new String[0])).start();
             if (tag != null && !tag.isEmpty()) cdProcs.put(tag, p);
             try {
+                // stopped between the check above and putting p where cdCancel finds it: cdCancel had nothing to end, so it ends here
+                if (tag != null && cdCancelled.contains(tag)) { p.destroy(); return "Error: stopped"; }
                 return readProcessWithTimeout(p, timeoutMs);
             } finally {
                 if (tag != null) cdProcs.remove(tag);

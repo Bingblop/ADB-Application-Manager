@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -45,6 +46,8 @@ public final class RemoteManifest {
                 && java.nio.ByteBuffer.wrap(b).order(java.nio.ByteOrder.LITTLE_ENDIAN).getInt(4) == b.length;
     }
 
+    private static final Pattern PULL_ERROR = Pattern.compile("(?im)^(?:adb(?:\\.exe)?: )?error: (.+)$");
+
     /** The decoded manifest, or "Error: ..." in words. The pulled copy is deleted again whatever happens. */
     public static String read(Adb adb, String serial, String apkPath, File cacheDir, Decoder dec) {
         if (!DeviceLink.validSerial(serial)) return "Error: That device name is not valid.";
@@ -66,9 +69,13 @@ public final class RemoteManifest {
         }
         try {
             String out = adb.run(new ArrayList<String>(Arrays.asList("-s", serial, "pull", apkPath, f.getPath())), PULL_MS);
-            if (!f.isFile() || f.length() == 0) {
-                String first = out == null ? "" : out.trim().split("\n")[0].replaceFirst("^(adb(\\.exe)?: )?(error: )?", "");
-                return "Error: " + (first.isEmpty() ? "The APK could not be copied from the device." : first);
+            String said = out == null ? "" : out.trim();
+            // a copy that broke off (adb's error line, the app's "Error: stopped", a time-out) can leave part of the APK: its reason, not a decoder's
+            Matcher err = PULL_ERROR.matcher(said);
+            boolean broke = err.find(), late = said.contains("[Process timed out after");
+            if (broke || late || !f.isFile() || f.length() == 0) {
+                String first = broke ? err.group(1).trim() : late ? "" : said.split("\n")[0].replaceFirst("^(adb(\\.exe)?: )?(error: )?", "");
+                return "Error: " + (!first.isEmpty() ? first : late ? "The APK could not be copied from the device in time." : "The APK could not be copied from the device.");
             }
             try {
                 return dec.fromApk(f.getPath());

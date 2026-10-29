@@ -77,6 +77,17 @@ public class RemoteManifestTest {
         f = new Fake(); f.execOut = null; f.pullMakesFile = false; f.pullSays = ""; d = new Dec();
         check("   and in words when adb said nothing", RemoteManifest.read(f, S, P, cache, d).equals("Error: The APK could not be copied from the device."));
 
+        // 4b. the copy broke off part-way: what arrived is not decoded, adb's (or the app's) reason is given, and the part is deleted
+        f = new Fake(); f.execOut = null; f.pullSays = "[ 40%] " + P + "\nadb: error: failed to read copy response"; d = new Dec();
+        out = RemoteManifest.read(f, S, P, cache, d);
+        check("4b. a pull that broke off: its reason, the part not decoded", out.equals("Error: failed to read copy response") && d.how.isEmpty() && !new File(f.calls.get(1).get(4)).exists());
+        f = new Fake(); f.execOut = null; f.pullSays = "Error: stopped"; d = new Dec();
+        check("   a pull stopped when the sheet closed", RemoteManifest.read(f, S, P, cache, d).equals("Error: stopped") && d.how.isEmpty());
+        f = new Fake(); f.execOut = null; f.pullSays = "[ 70%] " + P + "\n[Process timed out after 120000ms]"; d = new Dec();
+        check("   a pull that ran out of time", RemoteManifest.read(f, S, P, cache, d).equals("Error: The APK could not be copied from the device in time.") && d.how.isEmpty());
+        f = new Fake(); f.execOut = null; f.pullSays = "/data/app/com.error.app-1/base.apk: 1 file pulled, 0 skipped. 9.1 MB/s (1024 bytes in 0.001s)"; d = new Dec();
+        check("   'error' in the path of a pull that worked is no error", RemoteManifest.read(f, S, P, cache, d).startsWith("<manifest from") && d.fileThere);
+
         // 5. a decoder that throws: its message, the copy still deleted
         f = new Fake(); f.execOut = null;
         out = RemoteManifest.read(f, S, P, cache, new RemoteManifest.Decoder() {
