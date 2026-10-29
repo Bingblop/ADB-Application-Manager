@@ -58,8 +58,12 @@ public final class RemoteManifest {
             }
         }
         // no unzip on the device (before Android 9), or it could not read the APK: the APK comes here
-        File f = new File(cacheDir, "cd-manifest.apk");
-        f.delete();
+        File f;
+        try {
+            f = File.createTempFile("cd-manifest-", ".apk", cacheDir);
+        } catch (java.io.IOException e) {
+            return "Error: " + e.getMessage();
+        }
         try {
             String out = adb.run(new ArrayList<String>(Arrays.asList("-s", serial, "pull", apkPath, f.getPath())), PULL_MS);
             if (!f.isFile() || f.length() == 0) {
