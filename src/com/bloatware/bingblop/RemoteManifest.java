@@ -41,7 +41,8 @@ public final class RemoteManifest {
 
     /** The start of compiled XML: chunk type RES_XML_TYPE (0x0003) with an 8-byte header. */
     public static boolean isBinaryXml(byte[] b) {
-        return b != null && b.length >= 8 && b[0] == 0x03 && b[1] == 0x00 && b[2] == 0x08 && b[3] == 0x00;
+        return b != null && b.length >= 8 && b[0] == 0x03 && b[1] == 0x00 && b[2] == 0x08 && b[3] == 0x00
+                && java.nio.ByteBuffer.wrap(b).order(java.nio.ByteOrder.LITTLE_ENDIAN).getInt(4) == b.length;
     }
 
     /** The decoded manifest, or "Error: ..." in words. The pulled copy is deleted again whatever happens. */
