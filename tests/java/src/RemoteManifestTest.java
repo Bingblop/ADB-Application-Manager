@@ -60,9 +60,10 @@ public class RemoteManifestTest {
         // 2. no unzip (Android 8): the APK is pulled into the cache, read there and deleted
         f = new Fake(); f.execOut = "/system/bin/sh: unzip: not found\n".getBytes(StandardCharsets.UTF_8); d = new Dec();
         out = RemoteManifest.read(f, S, P, cache, d);
-        check("2. no unzip: read from the pulled APK", out.equals("<manifest from=\"apk\" />") && d.how.equals("apk:cd-manifest.apk") && d.fileThere);
-        check("   adb pull of that APK into the cache", f.calls.size() == 2 && f.calls.get(1).toString().equals("[-s, " + S + ", pull, " + P + ", " + new File(cache, "cd-manifest.apk").getPath() + "]"));
-        check("   the pulled copy is gone afterwards", !new File(cache, "cd-manifest.apk").exists());
+        File pulled = f.calls.size() == 2 ? new File(f.calls.get(1).get(4)) : null;
+        check("2. no unzip: read from the pulled APK", out.equals("<manifest from=\"apk\" />") && pulled != null && d.how.equals("apk:" + pulled.getName()) && d.fileThere);
+        check("   adb pull of that APK into the cache", pulled != null && f.calls.get(1).equals(java.util.Arrays.asList("-s", S, "pull", P, pulled.getPath())) && pulled.getParentFile().equals(cache) && pulled.getName().startsWith("cd-manifest-") && pulled.getName().endsWith(".apk"));
+        check("   the pulled copy is gone afterwards", pulled != null && !pulled.exists());
 
         // 3. exec-out failed outright (null): the pull is tried too
         f = new Fake(); f.execOut = null; d = new Dec();
@@ -82,7 +83,7 @@ public class RemoteManifestTest {
             public String fromBytes(byte[] data) throws Exception { throw new IllegalStateException("x"); }
             public String fromApk(String path) throws Exception { throw new IllegalStateException("AndroidManifest.xml not found in " + path); }
         });
-        check("5. a decoder failure is an Error line", out.startsWith("Error: AndroidManifest.xml not found in ") && !new File(cache, "cd-manifest.apk").exists());
+        check("5. a decoder failure is an Error line", out.startsWith("Error: AndroidManifest.xml not found in ") && f.calls.size() == 2 && !new File(f.calls.get(1).get(4)).exists());
 
         // 6. a bad serial or path never reaches adb
         f = new Fake(); f.execOut = AXML;
