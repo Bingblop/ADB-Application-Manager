@@ -5935,6 +5935,7 @@ p: [
 ["Cleared {0} selections", "{0} pilihan dihapus"],
 ["Cluster {0} · {1} core", "Cluster {0} · {1} inti"],
 ["Cluster {0} · {1} cores", "Cluster {0} · {1} inti"],
+["Color {0}", "Warna {0}"],
 ["Command for {0}", "Perintah untuk {0}"],
 ["Configuration {0}", "Konfigurasi {0}"],
 ["Confirm apply ({0})", "Konfirmasi terapkan ({0})"],

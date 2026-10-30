@@ -5795,6 +5795,7 @@
 {"k":"Cleared {0} selections","ctx":"built by the code of: fab hold start"},
 {"k":"Cluster {0} · {1} core","ctx":"built by the code of: tm render cpu"},
 {"k":"Cluster {0} · {1} cores","ctx":"built by the code of: tm render cpu"},
+{"k":"Color {0}","ctx":"built by the code of: ovl render recent"},
 {"k":"Command for {0}","ctx":"built by the code of: tx sync ui"},
 {"k":"Configuration {0}","ctx":"built by the code of: render configs"},
 {"k":"Confirm apply ({0})","ctx":"built by the code of: preview profile"},

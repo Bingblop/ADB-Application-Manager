@@ -5935,6 +5935,7 @@ p: [
 ["Cleared {0} selections", "{0} seçim temizlendi"],
 ["Cluster {0} · {1} core", "Küme {0} · {1} çekirdek"],
 ["Cluster {0} · {1} cores", "Küme {0} · {1} çekirdek"],
+["Color {0}", "Renk {0}"],
 ["Command for {0}", "{0} için komut"],
 ["Configuration {0}", "Yapılandırma {0}"],
 ["Confirm apply ({0})", "Onayla ve uygula ({0})"],

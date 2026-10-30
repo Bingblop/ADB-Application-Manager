@@ -5935,6 +5935,7 @@ p: [
 ["Cleared {0} selections", "{0}件の選択を解除しました"],
 ["Cluster {0} · {1} core", "クラスター{0}・{1}コア"],
 ["Cluster {0} · {1} cores", "クラスター{0}・{1}コア"],
+["Color {0}", "色 {0}"],
 ["Command for {0}", "{0}で実行するコマンド"],
 ["Configuration {0}", "構成 {0}"],
 ["Confirm apply ({0})", "適用を確認（{0}）"],

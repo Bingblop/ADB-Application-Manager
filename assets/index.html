@@ -17696,7 +17696,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const out = []; let para = [], list = '', fence = false;
             const flush = () => { if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para = []; } };
             const endList = () => { if (list) { out.push('</' + list + '>'); list = ''; } };
-            text.replace(/<!--[\s\S]*?-->/g, '').split(/\r?\n/).forEach((line) => {
+            let bare = String(text), prev; do { prev = bare; bare = bare.replace(/<!--[\s\S]*?-->/g, ''); } while (bare !== prev); do { prev = bare; bare = bare.replace(/<!--|-->/g, ''); } while (bare !== prev);       // comments go, and so does a bare marker left behind
+            bare.split(/\r?\n/).forEach((line) => {
                 if (/^\s*```/.test(line)) { flush(); endList(); out.push(fence ? '</pre>' : '<pre>'); fence = !fence; return; }
                 if (fence) { out.push(esc(line) + '\n'); return; }
                 if (/^\s*\[[^\]]+\]:\s*\S+/.test(line)) return;
@@ -24574,7 +24575,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (window.AndroidBridge && window.AndroidBridge.loadSetting) { try { legacy = String(window.AndroidBridge.loadSetting('vt_api_key') || ''); } catch (e) {} }
                 vtKeyCache = (k || legacy).trim();
                 // vt_key wins; the older copy is only a fallback, and goes away once the one key is kept (an older key is moved first)
-                if (legacy && vtKeyCache && (k || kvSet('vt_key', vtKeyCache)) && window.AndroidBridge && window.AndroidBridge.saveSetting) { try { window.AndroidBridge.saveSetting('vt_api_key', ''); } catch (e) {} }
+                if (legacy && vtKeyCache && window.AndroidBridge && window.AndroidBridge.saveSetting) { let moved = !!k; if (!moved) { try { moved = window.AndroidBridge.saveSetting('vt_key', JSON.stringify(vtKeyCache)) !== false; } catch (e) {} } if (moved) { try { window.AndroidBridge.saveSetting('vt_api_key', ''); } catch (e) {} } }
             }
             return vtKeyCache;
         }
@@ -26645,7 +26646,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function synGenericRe(key, o) {
             if (SYN_RE[key]) return SYN_RE[key];
             const parts = [];
-            if (o.block) parts.push('(' + o.block + ')'); else parts.push('(?!)()'.replace('()', '()'));
+            if (o.block) parts.push('(' + o.block + ')'); else parts.push('(?!)()');
             // groups: 1 block comment, 2 line comment, 3 string, 4 meta, 5 number, 6 word
             parts[0] = o.block ? '(' + o.block + ')' : '((?!))';
             parts.push(o.line ? '(' + o.line + ')' : '((?!))');
@@ -28157,10 +28158,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- search: the topics that hold every word, best first, each with a snippet; a tap opens the topic ----
         function hgPlainText() {
             if (hg.plain) return;
-            const ta = document.createElement('textarea');
+            const parser = new DOMParser();
             hg.data.sections.forEach(s => {
-                ta.innerHTML = s.html.replace(/<\/(p|li|td|th|tr|div|h4|h5|ul|ol|table)>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '');
-                const t = ta.value.replace(/\s+/g, ' ').trim();
+                const doc = parser.parseFromString('<!doctype html><body>' + s.html.replace(/<\/(p|li|td|th|tr|div|h4|h5|ul|ol|table)>/gi, '$& ').replace(/<br\s*\/?>/gi, ' '), 'text/html');
+                const t = (doc.body ? doc.body.textContent : '').replace(/\s+/g, ' ').trim();
                 hg.raw[s.id] = t;
                 hg.text[s.id] = (s.title + ' ' + s.group + ' ' + t).toLowerCase();
             });
@@ -31487,7 +31488,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const r2 = await wlGet('https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=5&srsearch=' + encodeURIComponent(q), 15000, run);
             const j = JSON.parse(r2.body);
             return ((j.query && j.query.search) || []).map(x => ({ title: x.title, url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(String(x.title).replace(/ /g, '_')),
-                snippet: String(x.snippet || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#039;/g, "'") }));
+                snippet: (new DOMParser().parseFromString('<!doctype html><body>' + String(x.snippet || ''), 'text/html').body || {}).textContent || '' }));
         }
         // the words that tell a passage is about the item: its name and the other longer words of the search
         function wlWords(q) {
@@ -38717,7 +38718,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const start = cp + ' >>> ADB App Manager starter >>>', end = cp + ' <<< ADB App Manager starter <<<';
             const b64 = btoa(unescape(encodeURIComponent(text)));
             const f = '"$HOME/' + file + '"';
-            return 'f=' + f + '; touch "$f"; sed -i ' + txQ('/^' + start.replace(/[\/.*[\]^$]/g, '\\$&') + '/,/^' + end.replace(/[\/.*[\]^$]/g, '\\$&') + '/d') + ' "$f"; ' +
+            return 'f=' + f + '; touch "$f"; sed -i ' + txQ('/^' + start.replace(/[\\\/.*[\]^$]/g, '\\$&') + '/,/^' + end.replace(/[\\\/.*[\]^$]/g, '\\$&') + '/d') + ' "$f"; ' +
                 '[ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; printf %s ' + txQ(b64) + ' | base64 -d >> "$f" && echo "wrote the starter block of ~/' + file + '"';
         }
         // login shells (the real terminal runs bash -l) read ~/.bash_profile, not ~/.bashrc: make that file pass on to ~/.profile and ~/.bashrc, unless the person has one
@@ -42829,7 +42830,15 @@ Type any command above (e.g. pm list packages -d)</div>
             const box = document.getElementById('ovlRecent');
             if (!box) return;
             box.style.display = ovlRecent.length ? '' : 'none';
-            ovlKeepFocus(box, () => { box.innerHTML = ovlRecent.length ? '<span>Recent</span>' + ovlRecent.map(h => '<button type="button" class="ovl-sw" style="background:#' + h + '" data-hex="' + h + '" title="#' + h + '" aria-label="Color ' + h + '"></button>').join('') : ''; });
+            ovlKeepFocus(box, () => {
+                box.textContent = '';
+                if (!ovlRecent.length) return;
+                const lab = document.createElement('span'); lab.textContent = 'Recent'; box.appendChild(lab);
+                ovlRecent.forEach(h => {
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'ovl-sw'; b.style.background = '#' + h; b.dataset.hex = h; b.title = '#' + h; b.setAttribute('aria-label', 'Color ' + h);
+                    box.appendChild(b);
+                });
+            });
         }
 
         // ---- the preset colours ----

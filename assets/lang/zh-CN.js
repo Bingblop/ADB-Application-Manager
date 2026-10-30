@@ -5935,6 +5935,7 @@ p: [
 ["Cleared {0} selections", "已取消选择 {0} 项"],
 ["Cluster {0} · {1} core", "集群 {0} · {1} 个核心"],
 ["Cluster {0} · {1} cores", "集群 {0} · {1} 个核心"],
+["Color {0}", "颜色 {0}"],
 ["Command for {0}", "命令（{0}）"],
 ["Configuration {0}", "配置 {0}"],
 ["Confirm apply ({0})", "确认应用（{0}）"],

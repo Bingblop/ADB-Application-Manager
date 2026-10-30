@@ -5935,6 +5935,7 @@ p: [
 ["Cleared {0} selections", "Se borró la selección ({0})"],
 ["Cluster {0} · {1} core", "Clúster {0} · {1} núcleo"],
 ["Cluster {0} · {1} cores", "Clúster {0} · {1} núcleos"],
+["Color {0}", "Color {0}"],
 ["Command for {0}", "Comando para {0}"],
 ["Configuration {0}", "Configuración {0}"],
 ["Confirm apply ({0})", "Confirmar aplicación ({0})"],

@@ -5935,6 +5935,7 @@ p: [
 ["Cleared {0} selections", "선택 {0}개 해제됨"],
 ["Cluster {0} · {1} core", "클러스터 {0} · 코어 {1}개"],
 ["Cluster {0} · {1} cores", "클러스터 {0} · 코어 {1}개"],
+["Color {0}", "색상 {0}"],
 ["Command for {0}", "{0}에서 실행할 명령어"],
 ["Configuration {0}", "구성 {0}"],
 ["Confirm apply ({0})", "적용 확인 ({0})"],
