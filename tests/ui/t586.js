@@ -64,9 +64,9 @@ async function shot(page, file) {
   {
     const { ctx, page, errors } = await open(b, { mode: 'root' }, 412);
     const reg = await page.evaluate(() => ({ def: TAB_DEFS.find(t => t.key === 'fonts'), shortL: BNAV_SHORT.fonts, icon: !!BNAV_ICONS.fonts,
-      top: [...document.querySelectorAll('#tabBar .tab-btn')].map(x => x.dataset.tab), before: TAB_DEFS.map(t => t.key).slice(-3) }));
+      top: [...document.querySelectorAll('#tabBar .tab-btn')].map(x => x.dataset.tab), before: TAB_DEFS.map(t => t.key).slice(-4) }));
     check('1. TAB_DEFS has fonts, label "Custom\\nFonts", name "Custom Fonts"', reg.def && reg.def.label === 'Custom\nFonts' && reg.def.name === 'Custom Fonts', JSON.stringify(reg.def));
-    check('   it sits after Root Features, before About', reg.before.join(',') === 'rootfeatures,fonts,about', reg.before.join(','));
+    check('   it sits after Root Features, before Android Firewall and About', reg.before.join(',') === 'rootfeatures,fonts,firewall,about', reg.before.join(','));
     check('   the bottom bar names it "Fonts" and has an icon for it', reg.shortL === 'Fonts' && reg.icon, JSON.stringify(reg));
     check('   the top bar shows it', reg.top.includes('fonts'), reg.top.join(','));
     const s = await shape(page);

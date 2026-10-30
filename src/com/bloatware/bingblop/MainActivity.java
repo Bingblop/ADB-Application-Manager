@@ -27,6 +27,7 @@ import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -7141,6 +7142,45 @@ public class MainActivity extends Activity {
         }
     }
 
+    // ---- Android Firewall (v7.21.0): the page's rule set goes through FirewallRules into one script, run by su or by Shizuku as the system
+    // user / root (the fmkGate tiers). What happened is read back by the script's own status lines, never taken from exit text. ----
+    private final ExecutorService fwExec = Executors.newSingleThreadExecutor();
+    private static final int FW_TIMEOUT_MS = 90000;
+    private android.net.ConnectivityManager.NetworkCallback fwNetCb;
+    private volatile String fwLastScript;  // the last apply script of this window, the one Apply on boot keeps
+
+    /** Who may write netfilter rules now: "root" (su), "system" (Shizuku as uid 1000) or "uid0" (Shizuku as root); null when nobody. */
+    private String fwGate() { return fmkGate(false); }
+
+    private String fwRunScript(String backend, String script) throws Exception {
+        if ("root".equals(backend)) return runRootScript(script, FW_TIMEOUT_MS);
+        if ("system".equals(backend) || "uid0".equals(backend)) return shizukuPipe(script, null, FW_TIMEOUT_MS);
+        throw new IllegalStateException("The firewall needs Super User, or Shizuku as the system user or root.");
+    }
+
+    private void fwReply(String id, JSONObject res) {
+        notifyJs("window.onFwDone && window.onFwDone(" + JSONObject.quote(id) + ", " + JSONObject.quote(res.toString()) + ")");
+    }
+
+    private File fwBootFile() { return new File(getFilesDir(), FirewallRules.BOOT_SCRIPT); }
+
+    /** Tells the page the default network changed (roaming, Wi-Fi to mobile ...) so it can re-apply when the Roaming column is in use. */
+    private void fwWatchNetwork() {
+        if (fwNetCb != null) return;
+        try {
+            final android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return;
+            fwNetCb = new android.net.ConnectivityManager.NetworkCallback() {
+                @Override public void onAvailable(android.net.Network n) { notifyJs("window.onFwNet && window.onFwNet()"); }
+                @Override public void onLost(android.net.Network n) { notifyJs("window.onFwNet && window.onFwNet()"); }
+                @Override public void onCapabilitiesChanged(android.net.Network n, android.net.NetworkCapabilities c) { notifyJs("window.onFwNet && window.onFwNet()"); }
+            };
+            cm.registerDefaultNetworkCallback(fwNetCb);
+        } catch (Throwable t) {
+            fwNetCb = null;
+        }
+    }
+
     private void fmkProgress(String job, String stage, long done, long total) {
         notifyJs("window.onFontMakerProgress && window.onFontMakerProgress(" + JSONObject.quote(job) + ", " + JSONObject.quote(stage) + ", " + done + ", " + total + ")");
     }
@@ -11480,6 +11520,215 @@ public class MainActivity extends Activity {
                 }
             });
             return "started";
+        }
+
+        // ---- Android Firewall (v7.21.0) ----
+
+        /**
+         * The apps the firewall can name: every installed package with its uid, label, system flag and whether it asks for INTERNET at all,
+         * plus this app's own uid and the pseudo apps (kernel, root, system, DNS resolver ...). Shared uids are kept as they are: the page
+         * groups packages by uid, since netfilter sees the uid.
+         */
+        @JavascriptInterface
+        public String fwApps() {
+            // the walk over every package (labels, permissions) takes a while on a full phone: off the bridge thread, answered as window.onFwApps(json)
+            fwExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    final String json = fwAppsJson();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (webView != null) webView.evaluateJavascript("window.onFwApps && window.onFwApps(" + JSONObject.quote(json) + ")", null);
+                        }
+                    });
+                }
+            });
+            return "started";
+        }
+
+        private String fwAppsJson() {
+            JSONObject res = new JSONObject();
+            try {
+                PackageManager pm = getPackageManager();
+                JSONArray apps = new JSONArray();
+                for (ApplicationInfo ai : pm.getInstalledApplications(0)) {
+                    JSONObject o = new JSONObject();
+                    o.put("pkg", ai.packageName);
+                    o.put("uid", ai.uid);
+                    CharSequence label = null;
+                    try { label = ai.loadLabel(pm); } catch (Throwable ignored) {}
+                    o.put("name", label == null ? ai.packageName : label.toString());
+                    o.put("isSystem", (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0);
+                    o.put("enabled", ai.enabled);
+                    boolean net;
+                    try { net = pm.checkPermission("android.permission.INTERNET", ai.packageName) == PackageManager.PERMISSION_GRANTED; } catch (Throwable t) { net = true; }
+                    o.put("net", net);
+                    apps.put(o);
+                }
+                res.put("apps", apps);
+                res.put("selfUid", getApplicationInfo().uid);
+                res.put("selfPkg", getPackageName());
+                JSONArray sp = new JSONArray();
+                for (FirewallRules.Special s : FirewallRules.SPECIALS) {
+                    JSONObject o = new JSONObject();
+                    o.put("key", s.key); o.put("uid", s.uid); o.put("name", s.name); o.put("why", s.why);
+                    sp.put(o);
+                }
+                res.put("specials", sp);
+                res.put("ok", true);
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (JSONException ignored) {}
+            }
+            return res.toString();
+        }
+
+        /**
+         * Runs one firewall job off the page's thread: "apply" (arg: the rule set JSON), "disable", "status", "list" (the active rules),
+         * "log", "logclear". Returns "started" or "error: ..."; the answer arrives as window.onFwDone(id, json) with ok, status, output.
+         */
+        @JavascriptInterface
+        public String fwRun(final String id, final String kind, final String arg) {
+            final String backend = fwGate();
+            if (backend == null) return "error: " + "The firewall needs Super User, or Shizuku as the system user (UID 1000) or root (UID 0).";
+            final String script;
+            try {
+                if ("apply".equals(kind)) {
+                    FirewallRules.Cfg cfg = FirewallRules.parse(arg == null ? "{}" : arg);
+                    script = FirewallRules.applyScript(cfg);
+                } else if ("disable".equals(kind)) script = FirewallRules.disableScript();
+                else if ("status".equals(kind)) script = FirewallRules.statusScript();
+                else if ("list".equals(kind)) script = FirewallRules.listScript();
+                else if ("log".equals(kind) || "logclear".equals(kind)) script = FirewallRules.logScript("logclear".equals(kind));
+                else return "error: unknown job " + kind;
+            } catch (JSONException e) {
+                return "error: " + e.getMessage();
+            }
+            try {
+                fwExec.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res = new JSONObject();
+                        try {
+                            String out = fwRunScript(backend, script);
+                            if (out == null) out = "";
+                            res.put("ok", true);
+                            res.put("backend", backend);
+                            res.put("kind", kind);
+                            if ("log".equals(kind) || "logclear".equals(kind)) {
+                                java.util.List<FirewallRules.LogEntry> entries = FirewallRules.parseLog(out);
+                                res.put("log", FirewallRules.groupLog(entries));
+                                res.put("lines", entries.size());
+                            } else if ("list".equals(kind)) {
+                                res.put("output", out.length() > 60000 ? out.substring(0, 60000) : out);
+                            } else {
+                                FirewallRules.Status st = FirewallRules.parseStatus(out);
+                                res.put("status", st.toJson());
+                                if ("apply".equals(kind)) {
+                                    // believed only when the read-back shows what was asked: the jump, every network chain with exactly the rules of the
+                                    // set (a refused rule is a rule not in force), and each requested family and feature in place
+                                    FirewallRules.Cfg cfg = FirewallRules.parse(arg == null ? "{}" : arg);
+                                    String mismatch = FirewallRules.countMismatch(cfg, st);
+                                    String missing = !st.jump4 ? "the jump from OUTPUT" : mismatch != null ? mismatch
+                                            : cfg.ipv6 && !(st.jump6 && st.rules6 > 0) ? "the ip6tables rules (IPv6 too)"
+                                            : cfg.inbound && !st.inbound ? "the inbound chain" : cfg.tether && !st.tether ? "the tethering chain"
+                                            : cfg.tor && !cfg.ticked("tor").isEmpty() && !cfg.ticked("tor").equals(java.util.Collections.singleton(String.valueOf(FirewallRules.UID_KERNEL))) && !st.tor ? "the Tor redirects" : null;
+                                    boolean good = st.applied && st.jump4 && st.rules4 > 0 && !st.staged && missing == null;
+                                    res.put("ok", good);
+                                    if (good) fwLastScript = script;
+                                    // the apply's own messages (an iptables line that was refused) come back for the status line, without the status block
+                                    int at = out.indexOf("__ATBX_STATUS__");
+                                    String msgs = (at > 0 ? out.substring(0, at) : out).replace("__ATBX_APPLIED__", "").trim();
+                                    if (msgs.length() > 4000) msgs = msgs.substring(msgs.length() - 4000);
+                                    res.put("output", msgs);
+                                    if (st.noBin) res.put("error", "No iptables binary was found on this phone.");
+                                    else if (!good) res.put("error", (st.jump4 && missing != null ? "Not every rule took (" + missing + "). " : "The rules did not take: iptables accepted nothing (is the working mode really root or the system user?). ") + msgs);
+                                } else if ("disable".equals(kind)) {
+                                    // removed only when no hook of this app is left: both families' OUTPUT, INPUT, FORWARD and the Tor nat chain
+                                    boolean gone = st.cleared && !st.jump4 && !st.jump6 && !st.inbound && !st.tether && !st.tor && !st.staged;
+                                    res.put("ok", gone);
+                                    if (!gone) res.put("error", st.cleared ? "A hook of this app is still in the kernel; read Active rules and try again." : "The remove script did not run to its end.");
+                                    if (gone) fwLastScript = null;
+                                }
+                            }
+                        } catch (Throwable t) {
+                            try { res.put("ok", false); res.put("error", errMsg(t)); } catch (JSONException ignored) {}
+                        }
+                        fwReply(id, res);
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                return "error: the app is closing";
+            }
+            return "started";
+        }
+
+        /** What the phone is on right now: roaming, the transport of the default network (wifi, mobile, vpn, none) and the gate. */
+        @JavascriptInterface
+        public String fwNetState() {
+            JSONObject o = new JSONObject();
+            try {
+                fwWatchNetwork();
+                boolean roaming = false;
+                try {
+                    android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+                    roaming = tm != null && tm.isNetworkRoaming();
+                } catch (Throwable ignored) {}
+                String transport = "none";
+                boolean vpn = false;
+                try {
+                    android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                    android.net.Network n = cm == null ? null : cm.getActiveNetwork();
+                    android.net.NetworkCapabilities c = n == null ? null : cm.getNetworkCapabilities(n);
+                    if (c != null) {
+                        vpn = c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN);
+                        if (c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)) transport = "wifi";
+                        else if (c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) transport = "mobile";
+                        else if (c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) transport = "ethernet";
+                        else if (vpn) transport = "vpn";
+                        if (c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) && Build.VERSION.SDK_INT >= 28
+                                && !c.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)) roaming = true;
+                    }
+                } catch (Throwable ignored) {}
+                o.put("roaming", roaming);
+                o.put("transport", transport);
+                o.put("vpn", vpn);
+                o.put("gate", fwGate());
+                o.put("boot", QuickActions.prefs(MainActivity.this).getBoolean("fw_boot", false) && fwBootFile().exists());
+            } catch (JSONException ignored) {}
+            return o.toString();
+        }
+
+        /**
+         * Apply on boot: with on, the last applied rule set (or the one the page hands over as JSON) is written to this app's files as a script
+         * the boot receiver runs through su after the delay; with off, the script is removed. Returns {ok, boot, error}.
+         */
+        @JavascriptInterface
+        public String fwBoot(boolean on, String cfgJson, int delaySec) {
+            JSONObject o = new JSONObject();
+            try {
+                File f = fwBootFile();
+                android.content.SharedPreferences p = QuickActions.prefs(MainActivity.this);
+                if (!on) {
+                    f.delete();
+                    p.edit().putBoolean("fw_boot", false).apply();
+                    o.put("ok", true); o.put("boot", false);
+                    return o.toString();
+                }
+                String apply = fwLastScript;
+                if (cfgJson != null && !cfgJson.isEmpty()) apply = FirewallRules.applyScript(FirewallRules.parse(cfgJson));
+                if (apply == null) { o.put("ok", false); o.put("error", "Apply the rules once first."); return o.toString(); }
+                File dir = f.getParentFile();
+                if (dir != null && !dir.isDirectory() && !dir.mkdirs()) throw new IOException("Could not make " + dir);
+                FileOutputStream out = new FileOutputStream(f);
+                try { out.write(FirewallRules.bootScript(apply, delaySec, f.getAbsolutePath()).getBytes("UTF-8")); } finally { out.close(); }
+                // owner-readable only: root reads it regardless, and the file holds the user's own iptables lines
+                p.edit().putBoolean("fw_boot", true).putInt("fw_boot_delay", delaySec).apply();
+                o.put("ok", true); o.put("boot", true);
+            } catch (Throwable t) {
+                try { o.put("ok", false); o.put("error", errMsg(t)); } catch (JSONException ignored) {}
+            }
+            return o.toString();
         }
 
         /**
@@ -21080,6 +21329,14 @@ public class MainActivity extends Activity {
         trackerCancel = true;
         // the DNS speed test: stop its pool FIRST (a dnsProbeStart that comes in now is rejected, so no scan can begin behind the runner's shutdown), then cancel the scan and close its sockets
         try { dnsProbeExec.shutdownNow(); } catch (Throwable ignored) {}
+        try { fwExec.shutdownNow(); } catch (Throwable ignored) {}
+        try {
+            if (fwNetCb != null) {
+                android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                if (cm != null) cm.unregisterNetworkCallback(fwNetCb);
+                fwNetCb = null;
+            }
+        } catch (Throwable ignored) {}
         try { dnsProbe.shutdown(); } catch (Throwable ignored) {}
         // the internet speed test: refuse new tests and close the running one's connections, then stop its pool
         try { speedTest.shutdown(); } catch (Throwable ignored) {}
