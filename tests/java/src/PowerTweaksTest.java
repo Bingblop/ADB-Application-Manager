@@ -215,7 +215,7 @@ public class PowerTweaksTest {
     String[] cmds = { "reboot", "setprop ctl.restart zygote", "reboot recovery", "reboot -p", "reboot bootloader", "am crash com.android.systemui",
         "dumpsys deviceidle force-idle deep", "dumpsys deviceidle step deep", "dumpsys deviceidle unforce", "dumpsys deviceidle motion", "echo 3 > /proc/sys/vm/drop_caches", "echo 1 > /proc/sys/vm/drop_caches",
         "device_config put device_idle {key} {ms}", "device_config delete device_idle {key}", "settings put global device_idle_constants {kv}", "settings delete global device_idle_constants",
-        "echo {gov} > $p/scaling_governor", "swapoff /dev/block/zram0; echo 1 > /sys/block/zram0/reset; echo {bytes} > /sys/block/zram0/disksize; mkswap /dev/block/zram0; swapon /dev/block/zram0",
+        "echo {gov} > $p/scaling_governor", "swapoff /dev/block/zram0 && echo 1 > /sys/block/zram0/reset && echo {bytes} > /sys/block/zram0/disksize && mkswap /dev/block/zram0 && swapon /dev/block/zram0",
         "echo {n} > /proc/sys/vm/swappiness", "device_config put lmkd_native {key} {val}", "device_config delete lmkd_native {key}", "setprop lmkd.reinit 1" };
     for (String c : cmds) {
       boolean inTable = false;

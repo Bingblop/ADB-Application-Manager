@@ -77,7 +77,7 @@ module.exports.initScript = function (fixtures) {
       shift('Cached', -614400); shift('MemFree', 614400); shift('MemAvailable', 307200);
       return '';
     }
-    if ((m = /^swapoff \/dev\/block\/zram0; echo 1 > \/sys\/block\/zram0\/reset; echo (\d+) > \/sys\/block\/zram0\/disksize; mkswap \/dev\/block\/zram0; swapon \/dev\/block\/zram0$/.exec(bare))) { P.disksize = m[1] + '\n'; P.mm = '0 0 0 0 0 0 0 0 0\n'; return 'Setting up swapspace version 1, size = ' + Math.round(+m[1] / 1024 - 4) + 'KiB\n'; }
+    if ((m = /^swapoff \/dev\/block\/zram0 && echo 1 > \/sys\/block\/zram0\/reset && echo (\d+) > \/sys\/block\/zram0\/disksize && mkswap \/dev\/block\/zram0 && swapon \/dev\/block\/zram0$/.exec(bare))) { P.disksize = m[1] + '\n'; P.mm = '0 0 0 0 0 0 0 0 0\n'; return 'Setting up swapspace version 1, size = ' + Math.round(+m[1] / 1024 - 4) + 'KiB\n'; }
     if ((m = /^echo (\d+) > \/proc\/sys\/vm\/swappiness$/.exec(bare))) { P.swappiness = m[1] + '\n'; return ''; }
     if ((m = /^device_config put lmkd_native (swap_free_low_percentage|thrashing_limit) (\d+)$/.exec(bare))) { P.lmk[m[1]] = m[2]; return ''; }
     if ((m = /^device_config delete lmkd_native (swap_free_low_percentage|thrashing_limit)$/.exec(bare))) { delete P.lmk[m[1]]; return ''; }

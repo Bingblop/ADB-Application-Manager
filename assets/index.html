@@ -19767,6 +19767,8 @@ Type any command above (e.g. pm list packages -d)</div>
                 return steps;
             }
             const all = [];
+            const rowKeys = new Set(XDZ_TUNE.flatMap(r => r.keys));
+            Object.keys(xdz.dc || {}).forEach(key => { if (!rowKeys.has(key) && /^\d+$/.test(String(xdz.dc[key]))) all.push(key + '=' + xdz.dc[key]); });       // constants of no row (sensing_to, an OEM's) stay as they are
             XDZ_TUNE.forEach(row => {
                 const t = xdzTarget(row);
                 if (t === 'own') return;
@@ -19855,10 +19857,15 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (gen !== xqGen) return null;
                 if (r.ok === false || /error|exception|not found|inapplicable|permission denied/i.test(r.output || '')) { fail = { step: xdzStepCmd(st), why: (r.output || '').trim() || xqFailText(r) }; break; }
             }
-            const back = await xdzReadBack();
+            let back = await xdzReadBack();
             if (gen !== xqGen) return null;
-            xdzBusy = null;
             xdz = Object.assign({}, xdz, back, { read: true });
+            if (!fail && !back.err && rows.some(id => xdzCur(xdzTuneRow(id)) !== wanted[id])) {           // DeviceIdleController picks a put up a moment later: read once more before calling it off
+                const again = await xdzReadBack();
+                if (gen !== xqGen) return null;
+                if (!again.err) { back = again; xdz = Object.assign({}, xdz, again, { read: true }); }
+            }
+            xdzBusy = null;
             xdzPend = {};
             xdzRender();
             let res;
@@ -19868,7 +19875,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const done = rows.filter(id => xdzCur(xdzTuneRow(id)) === wanted[id]).map(id => xdzTuneTitle(id) + ': ' + xdzLive(xdzTuneRow(id)).text);
                 if (fail) res = { ok: false, text: txF('Could not apply it: {0} failed: {1}', fail.step, fail.why) + (done.length ? ' ' + txF('Applied before that: {0}.', done.join(' · ')) : '') };
                 else if (off.length) res = { ok: false, text: txF('Not all of it took: {0}.', off.join(' · ')) + (done.length ? ' ' + txF('Applied: {0}.', done.join(' · ')) : '') };
-                else { res = { ok: true, text: txF('Applied and read back from the phone: {0}.', done.join(' · ')) }; xdzSaveTune(wanted); }
+                else { res = { ok: true, text: txF('Applied and read back from the phone: {0}.', done.join(' · ')) }; const prev = (kvGet('xdz_tune', null) || {}).rows || {}; xdzSaveTune(Object.assign({}, prev, Object.fromEntries(rows.map(id => [id, wanted[id]])))); }
             }
             xqSetStatus('xdzStatus', res.text, res.ok ? 'ok' : 'bad');
             return res;
@@ -20093,7 +20100,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (seq !== xdzSeq || gen !== xqGen) return;
             xdzReading = false;
             xdz = Object.assign({}, xdz, back, prof, { read: true });
-            if (!back.err && xdz.cpu && xdz.cpu.length && !xdzOwnGov()) { const g = xdzCommonGov(xdz.cpu) || xdz.cpu[0].governor; if (g) kvSet('xdz_gov_own', g); }          // the first governor seen is the phone's own
+            if (!back.err && xdz.cpu && xdz.cpu.length && !xdzOwnGov()) { const g = xdzCommonGov(xdz.cpu); if (g) kvSet('xdz_gov_own', g); }          // the first governor seen is the phone's own; clusters that disagree have no single own governor to write back
             xdzRender();
         }
         async function xdzReadBack() {
@@ -20254,7 +20261,7 @@ Type any command above (e.g. pm list packages -d)</div>
             reclaim:    { cmd: 'sync; echo 3 > /proc/sys/vm/drop_caches', hue: 200, needsRoot: true },
             drop:       { cmd: 'sync; echo 1 > /proc/sys/vm/drop_caches', hue: 170, needsRoot: true },
             trim:       { cmd: 'pm trim-caches 128G', hue: 40, via: 'trim' },                     // the Settings page's own path (trimCachesStart): see "Trim Caches in All Applications"
-            zramSize:   { cmd: 'swapoff /dev/block/zram0; echo 1 > /sys/block/zram0/reset; echo {bytes} > /sys/block/zram0/disksize; mkswap /dev/block/zram0; swapon /dev/block/zram0', vars: { bytes: /^\d{9,12}$/ }, hue: 255, needsRoot: true },
+            zramSize:   { cmd: 'swapoff /dev/block/zram0 && echo 1 > /sys/block/zram0/reset && echo {bytes} > /sys/block/zram0/disksize && mkswap /dev/block/zram0 && swapon /dev/block/zram0', vars: { bytes: /^\d{7,12}$/ }, hue: 255, needsRoot: true },
             swappiness: { cmd: 'echo {n} > /proc/sys/vm/swappiness', vars: { n: /^(\d{1,2}|1\d\d|200)$/ }, hue: 200, needsRoot: true },
             lmkPut:     { cmd: 'device_config put lmkd_native {key} {val}', vars: { key: /^(swap_free_low_percentage|thrashing_limit)$/, val: /^\d{1,3}$/ }, hue: 40 },
             lmkDel:     { cmd: 'device_config delete lmkd_native {key}', vars: { key: /^(swap_free_low_percentage|thrashing_limit)$/ }, hue: 40 },
@@ -20471,7 +20478,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const softNote = soft.length ? ' ' + txT('lmkd could not be restarted in this mode: the low-memory killer reads the new values at the next restart.') : '';
                 if (fail) res = { ok: false, text: txF('Could not apply it: {0} failed: {1}', fail.step, fail.why) + (done.length ? ' ' + txF('Applied before that: {0}.', done.join(' · ')) : '') };
                 else if (off.length) res = { ok: false, text: txF('Not all of it took: {0}.', off.join(' · ')) + (done.length ? ' ' + txF('Applied: {0}.', done.join(' · ')) : '') + softNote };
-                else { res = { ok: true, text: txF('Applied and read back from the phone: {0}.', done.join(' · ')) + softNote }; const own = Object.keys(wanted).every(k => wanted[k] === 'own'); kvSet('xzr_set', own ? null : { at: Date.now(), rows: wanted }); }
+                else { res = { ok: true, text: txF('Applied and read back from the phone: {0}.', done.join(' · ')) + softNote }; const prev = (kvGet('xzr_set', null) || {}).rows || {}, keep = Object.assign({}, prev, Object.fromEntries(ids.map(id => [id, wanted[id]]))); const own = Object.keys(keep).every(k => keep[k] === 'own'); kvSet('xzr_set', own ? null : { at: Date.now(), rows: keep }); }
             }
             xqSetStatus('xzrDelta', res.text, res.ok ? 'ok' : 'bad');
             return res;
@@ -20596,9 +20603,9 @@ Type any command above (e.g. pm list packages -d)</div>
             if (seq !== xzrSeq || gen !== xqGen) return;
             xzrReading = false;
             xzr = got;
-            if (!got.err && (got.disk != null || got.swappiness >= 0)) {                 // the first values seen are the phone's own: the Phone's own chips bring them back
+            if (!got.err && (got.disk > 0 || got.swappiness >= 0)) {                 // the first values seen are the phone's own: the Phone's own chips bring them back
                 const own = xzrOwn(), next = Object.assign({}, own);
-                if (own.disksize == null && got.disk != null) next.disksize = got.disk;
+                if (own.disksize == null && got.disk > 0) next.disksize = got.disk;                 // a zram device that is not set up reads 0: that is not the phone's own size
                 if (own.swappiness == null && got.swappiness >= 0) next.swappiness = got.swappiness;
                 if (next.disksize !== own.disksize || next.swappiness !== own.swappiness) kvSet('xzr_own', next);
             }
