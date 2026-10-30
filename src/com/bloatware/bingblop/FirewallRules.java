@@ -191,6 +191,7 @@ public final class FirewallRules {
         // Tor apps: only Orbot's local ports and DNS, in the filter table; the nat table redirects below (IPv4 only: Orbot's transparent proxy is IPv4)
         if (c.tor && !v6) {
             for (String uid : c.ticked("tor")) {
+                if (uid.equals(String.valueOf(UID_KERNEL))) continue; // packets no app owns cannot go through Orbot, and iptables refuses the pseudo-uid
                 s.append(I).append(" -A atbx -m owner --uid-owner ").append(uid).append(" -d 127.0.0.1 -p tcp -m multiport --dports ")
                         .append(TOR_TCP_PORT).append(',').append(TOR_SOCKS_PORT).append(',').append(TOR_HTTP_PORT).append(" -j RETURN\n");
                 s.append(I).append(" -A atbx -m owner --uid-owner ").append(uid).append(" -d 127.0.0.1 -p udp --dport ").append(TOR_DNS_PORT).append(" -j RETURN\n");
@@ -199,7 +200,12 @@ public final class FirewallRules {
         }
         // Wi-Fi interfaces: the LAN ranges to the LAN chain when LAN is a column of its own, the rest to the Wi-Fi chain
         for (String itf : IF_WIFI) {
-            if (c.lan) for (String range : lan) s.append(I).append(" -A atbx -o ").append(itf).append(" -d ").append(range).append(" -j atbx-lan\n");
+            // a LAN packet is decided by atbx-lan alone: what that chain lets through RETURNs here and leaves atbx on the next line, so the
+            // Wi-Fi chain never sees it (RETURN cannot leave two chains at once; a LAN tick without a Wi-Fi tick must still work)
+            if (c.lan) for (String range : lan) {
+                s.append(I).append(" -A atbx -o ").append(itf).append(" -d ").append(range).append(" -j atbx-lan\n");
+                s.append(I).append(" -A atbx -o ").append(itf).append(" -d ").append(range).append(" -j RETURN\n");
+            }
             s.append(I).append(" -A atbx -o ").append(itf).append(" -j atbx-wifi\n");
         }
         // mobile interfaces: the roaming chain while the phone roams (and Roaming is a column), the mobile chain otherwise
@@ -232,7 +238,8 @@ public final class FirewallRules {
             s.append("while ").append(I).append(" -t nat -D OUTPUT -j atbx-tor 2>/dev/null; do :; done\n");
             s.append(I).append(" -t nat -N atbx-tor 2>/dev/null\n").append(I).append(" -t nat -F atbx-tor\n");
             if (c.tor) {
-                Set<String> torUids = c.ticked("tor");
+                Set<String> torUids = new java.util.TreeSet<String>(c.ticked("tor"));
+                torUids.remove(String.valueOf(UID_KERNEL));
                 if (!torUids.isEmpty()) {
                     s.append(I).append(" -t nat -I OUTPUT 1 -j atbx-tor\n");
                     for (String uid : torUids) {

@@ -4392,6 +4392,7 @@ x: {
 "The app could not read that file.": "アプリがそのファイルを読み込めませんでした。",
 "The app is closing.": "アプリを終了しています。",
 "The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!": "このアプリは無料で、これからも無料です。お役に立てたなら、コーヒーを1杯いただけると改善を続ける励みになります。もちろん任意です。ありがとうございます！",
+"The app list is not read yet; try again in a moment.": "アプリ一覧はまだ読み込まれていません。しばらくしてからもう一度お試しください。",
 "The app list is read in the app": "アプリ一覧はアプリ内で読み込まれます",
 "The app version, Android version and phone model, so a problem is easier to find.": "問題を見つけやすくするための、アプリのバージョン、Android のバージョン、端末のモデル。",
 "The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.": "パッチを適用したアプリが、各実行のログとともにここに表示されます。再インストール、共有、Downloads への保存ができます。",

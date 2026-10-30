@@ -4392,6 +4392,7 @@ x: {
 "The app could not read that file.": "تعذّر على التطبيق قراءة ذلك الملف.",
 "The app is closing.": "التطبيق يُغلق.",
 "The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!": "التطبيق مجاني وسيبقى كذلك. إذا وفّر عليك الوقت، فإن فنجان قهوة يساعدني على مواصلة تحسينه. الأمر اختياري تمامًا، وشكرًا لك!",
+"The app list is not read yet; try again in a moment.": "لم تُقرأ قائمة التطبيقات بعد؛ حاول مجددًا بعد لحظة.",
 "The app list is read in the app": "تُقرأ قائمة التطبيقات داخل التطبيق",
 "The app version, Android version and phone model, so a problem is easier to find.": "إصدار التطبيق وإصدار Android وطراز الهاتف، ليسهل العثور على المشكلة.",
 "The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.": "تُدرج هنا التطبيقات التي تصحّحها مع سجل كل تشغيل، لتتمكن من تثبيتها مجددًا أو مشاركتها أو حفظها في التنزيلات.",

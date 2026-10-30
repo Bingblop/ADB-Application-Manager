@@ -4392,6 +4392,7 @@ x: {
 "The app could not read that file.": "应用无法读取该文件。",
 "The app is closing.": "应用正在关闭。",
 "The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!": "本应用免费，而且会一直免费。如果它为你节省了时间，一杯咖啡能帮助我继续改进它。完全自愿，谢谢！",
+"The app list is not read yet; try again in a moment.": "应用列表尚未读取；请稍后重试。",
 "The app list is read in the app": "应用列表需在应用内读取",
 "The app version, Android version and phone model, so a problem is easier to find.": "应用版本、Android 版本和手机型号，便于更容易找出问题。",
 "The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.": "你打过补丁的应用及每次运行的日志都列在这里，可重新安装、分享或保存到“下载”。",

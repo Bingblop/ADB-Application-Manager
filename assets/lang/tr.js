@@ -4392,6 +4392,7 @@ x: {
 "The app could not read that file.": "Uygulama bu dosyayı okuyamadı.",
 "The app is closing.": "Uygulama kapanıyor.",
 "The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!": "Uygulama ücretsiz ve öyle kalacak. Size zaman kazandırdıysa, bir kahve onu geliştirmeye devam etmeme yardımcı olur. Tamamen isteğe bağlı, teşekkürler!",
+"The app list is not read yet; try again in a moment.": "Uygulama listesi henüz okunmadı; birazdan yeniden deneyin.",
 "The app list is read in the app": "Uygulama listesi uygulama içinde okunur",
 "The app version, Android version and phone model, so a problem is easier to find.": "Bir sorunun bulunmasını kolaylaştırmak için uygulama sürümü, Android sürümü ve telefon modeli.",
 "The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.": "Yamaladığınız uygulamalar, her çalıştırmanın günlüğüyle birlikte burada listelenir; böylece onları yeniden yükleyebilir, paylaşabilir veya İndirilenler’e kaydedebilirsiniz.",

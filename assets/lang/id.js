@@ -4392,6 +4392,7 @@ x: {
 "The app could not read that file.": "Aplikasi tidak bisa membaca file itu.",
 "The app is closing.": "Aplikasi sedang ditutup.",
 "The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!": "Aplikasi ini gratis, dan akan tetap begitu. Jika aplikasi ini menghemat waktu Anda, secangkir kopi membantu saya terus menyempurnakannya. Sepenuhnya opsional, dan terima kasih!",
+"The app list is not read yet; try again in a moment.": "Daftar aplikasi belum terbaca; coba lagi sebentar lagi.",
 "The app list is read in the app": "Daftar aplikasi dibaca di dalam aplikasi",
 "The app version, Android version and phone model, so a problem is easier to find.": "Versi aplikasi, versi Android, dan model ponsel, agar masalah lebih mudah ditemukan.",
 "The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.": "Aplikasi yang Anda patch tercantum di sini, beserta log tiap proses, sehingga Anda dapat memasangnya lagi, membagikannya, atau menyimpannya ke Unduhan.",

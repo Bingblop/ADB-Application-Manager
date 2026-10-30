@@ -80,6 +80,8 @@ public class FirewallRulesTest {
     check("apply: VPN interfaces are not filtered while VPN is not a column", !s.contains("-o tun+"));
     check("allow list: a ticked uid RETURNs in its chains and nowhere else", hasLine(s, "iptables -w 5 -A atbx-wifi -m owner --uid-owner 10123 -j RETURN") && hasLine(s, "iptables -w 5 -A atbx-mobile -m owner --uid-owner 10123 -j RETURN") && !s.contains("-A atbx-lan -m owner --uid-owner 10123"));
     check("allow list: the resolver's LAN tick lands in the LAN chain", hasLine(s, "iptables -w 5 -A atbx-lan -m owner --uid-owner 1051 -j RETURN"));
+    check("a LAN packet the LAN chain let through leaves atbx on the next line and never reaches the Wi-Fi chain (a LAN tick without a Wi-Fi tick works)",
+        hasLine(s, "iptables -w 5 -A atbx -o wlan+ -d 192.168.0.0/16 -j RETURN") && s.indexOf("-o wlan+ -d 192.168.0.0/16 -j atbx-lan") < s.indexOf("-o wlan+ -d 192.168.0.0/16 -j RETURN") && s.indexOf("-o wlan+ -d 192.168.0.0/16 -j RETURN") < s.indexOf("-o wlan+ -j atbx-wifi"));
     check("allow list: the kernel's packets are matched as 'no owner' and RETURN", hasLine(s, "iptables -w 5 -A atbx-wifi -m owner ! --uid-owner 0-999999999 -j RETURN"));
     check("allow list: every network chain ends in the reject chain", hasLine(s, "iptables -w 5 -A atbx-wifi -j atbx-reject") && hasLine(s, "iptables -w 5 -A atbx-mobile -j atbx-reject") && hasLine(s, "iptables -w 5 -A atbx-lan -j atbx-reject"));
     check("allow list: the ticked uid's RETURN comes before the chain's reject", s.indexOf("-A atbx-wifi -m owner --uid-owner 10123 -j RETURN") < s.indexOf("-A atbx-wifi -j atbx-reject"));
@@ -93,8 +95,9 @@ public class FirewallRulesTest {
     check("no rule of the script touches Android's own chains (only -I/-D of the jumps in OUTPUT/INPUT/FORWARD)", !s.matches("(?s).*-A (OUTPUT|INPUT|FORWARD)\\b.*") && !s.contains("-F OUTPUT") && !s.contains("-F INPUT") && !s.contains("-F FORWARD") && !s.contains("-P "));
 
     // ---- block list with every option ----
-    FirewallRules.Cfg b = cfg("{\"mode\":\"block\",\"uids\":{\"10050\":[\"wifi\",\"mobile\",\"roam\",\"vpn\",\"lan\"],\"10060\":[\"tor\"],\"-11\":[\"mobile\"]},\"lan\":true,\"vpn\":true,\"roam\":true,\"tor\":true,\"ipv6\":true,\"log\":false,\"drop\":true,\"inbound\":true,\"tether\":true,\"roamingNow\":true,\"post\":\"iptables -A atbx -j RETURN\\n\"}");
+    FirewallRules.Cfg b = cfg("{\"mode\":\"block\",\"uids\":{\"10050\":[\"wifi\",\"mobile\",\"roam\",\"vpn\",\"lan\"],\"10060\":[\"tor\"],\"-11\":[\"mobile\",\"tor\"]},\"lan\":true,\"vpn\":true,\"roam\":true,\"tor\":true,\"ipv6\":true,\"log\":false,\"drop\":true,\"inbound\":true,\"tether\":true,\"roamingNow\":true,\"post\":\"iptables -A atbx -j RETURN\\n\"}");
     String t = FirewallRules.applyScript(b);
+    check("Tor: the kernel pseudo-uid is never written as --uid-owner -11 (iptables refuses it; kernel packets cannot go through Orbot)", !t.contains("--uid-owner -11") && t.contains("--uid-owner 10060 -p tcp --syn -j REDIRECT"));
     check("block list: the ticked uid is rejected in every column's chain", hasLine(t, "iptables -w 5 -A atbx-wifi -m owner --uid-owner 10050 -j atbx-reject") && hasLine(t, "iptables -w 5 -A atbx-lan -m owner --uid-owner 10050 -j atbx-reject") && hasLine(t, "iptables -w 5 -A atbx-roam -m owner --uid-owner 10050 -j atbx-reject") && hasLine(t, "iptables -w 5 -A atbx-vpn -m owner --uid-owner 10050 -j atbx-reject"));
     check("block list: no chain ends in the reject chain (everyone else gets out)", !t.contains("-A atbx-wifi -j atbx-reject") && !t.contains("-A atbx-mobile -j atbx-reject") && !t.contains("-A atbx-vpn -j atbx-reject"));
     check("block list: the kernel's packets on mobile are rejected with the no-owner match", hasLine(t, "iptables -w 5 -A atbx-mobile -m owner ! --uid-owner 0-999999999 -j atbx-reject"));
@@ -179,7 +182,8 @@ public class FirewallRulesTest {
       check("the boot file is the app's own files/firewall/boot.sh, written with the boot script", main.contains("FirewallRules.BOOT_SCRIPT") && main.contains("FirewallRules.bootScript("));
       String boot = new String(Files.readAllBytes(new File(dir, "BootReceiver.java").toPath()), StandardCharsets.UTF_8);
       check("the boot receiver runs the firewall only when Apply on boot is on and the file exists", boot.contains("p.getBoolean(\"fw_boot\", false)") && boot.contains("FirewallRules.BOOT_SCRIPT") && boot.contains("isFile()"));
-      check("the boot receiver runs that file through su and nothing else", Pattern.compile("new ProcessBuilder\\(\"su\", \"-c\", \"sh \" \\+ BackupScripts\\.quote\\(f\\.getAbsolutePath\\(\\)\\)\\)").matcher(boot).find() && count(boot, "ProcessBuilder(") == 1);
+      check("the boot receiver runs that file through su and nothing else", Pattern.compile("new ProcessBuilder\\(\"su\", \"-c\", cmd\\)").matcher(boot).find() && boot.contains("\"( sh \" + BackupScripts.quote(f.getAbsolutePath()) + \" </dev/null >/dev/null 2>&1 & )\"") && count(boot, "ProcessBuilder(") == 1);
+      check("the boot receiver finishes the broadcast as soon as su took the script (no pipe to drain, nothing held for the delay)", !boot.contains("getInputStream()") && boot.contains("Redirect.to(new java.io.File(\"/dev/null\"))"));
       check("the boot receiver finishes its async result on every path", count(boot, "pending.finish()") >= 2);
       File page = new File(dir.getParentFile().getParentFile().getParentFile().getParentFile(), "assets/index.html");
       if (page.isFile()) {

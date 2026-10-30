@@ -48,17 +48,19 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
         final java.io.File f = new java.io.File(ctx.getFilesDir(), FirewallRules.BOOT_SCRIPT);
+        // The script sleeps its delay before the first iptables line, far longer than a receiver may hold a broadcast, so it is started in
+        // the background of su's shell with no pipe to this process (an output pipe would break it when this process is gone) and the
+        // broadcast is finished as soon as su has taken it: the script outlives this receiver on its own.
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    ProcessBuilder pb = new ProcessBuilder("su", "-c", "sh " + BackupScripts.quote(f.getAbsolutePath()));
+                    String cmd = "( sh " + BackupScripts.quote(f.getAbsolutePath()) + " </dev/null >/dev/null 2>&1 & )";
+                    ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd);
                     pb.redirectErrorStream(true);
+                    pb.redirectOutput(ProcessBuilder.Redirect.to(new java.io.File("/dev/null")));
                     Process proc = pb.start();
                     proc.getOutputStream().close();
-                    java.io.InputStream in = proc.getInputStream();
-                    byte[] buf = new byte[4096];
-                    while (in.read(buf) > 0) { /* drain */ }
                     proc.waitFor();
                 } catch (Throwable ignored) {
                 } finally {

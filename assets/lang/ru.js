@@ -4392,6 +4392,7 @@ x: {
 "The app could not read that file.": "Приложению не удалось прочитать этот файл.",
 "The app is closing.": "Приложение закрывается.",
 "The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!": "Приложение бесплатное и останется таким. Если оно сэкономило вам время, чашка кофе поможет мне развивать его дальше. Это совершенно необязательно — и спасибо!",
+"The app list is not read yet; try again in a moment.": "Список приложений ещё не прочитан; повторите через мгновение.",
 "The app list is read in the app": "Список приложений читается в приложении",
 "The app version, Android version and phone model, so a problem is easier to find.": "Версия приложения, версия Android и модель телефона — чтобы проблему было проще найти.",
 "The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.": "Здесь перечислены пропатченные вами приложения вместе с журналом каждого запуска, чтобы их можно было установить снова, поделиться ими или сохранить в «Загрузки».",

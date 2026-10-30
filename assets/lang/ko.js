@@ -4392,6 +4392,7 @@ x: {
 "The app could not read that file.": "앱이 그 파일을 읽지 못했습니다.",
 "The app is closing.": "앱을 닫는 중입니다.",
 "The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!": "이 앱은 무료이며 앞으로도 그렇습니다. 시간을 아끼셨다면 커피 한 잔이 앱을 계속 개선하는 데 큰 힘이 됩니다. 선택 사항이며, 감사합니다!",
+"The app list is not read yet; try again in a moment.": "앱 목록을 아직 읽지 못했습니다. 잠시 후 다시 시도하세요.",
 "The app list is read in the app": "앱 목록은 앱에서 읽습니다",
 "The app version, Android version and phone model, so a problem is easier to find.": "문제를 더 쉽게 찾을 수 있도록 앱 버전, Android 버전, 휴대폰 모델.",
 "The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.": "패치한 앱이 각 실행 로그와 함께 여기에 표시되어 다시 설치하거나 공유하거나 Downloads에 저장할 수 있습니다.",

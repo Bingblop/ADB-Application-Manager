@@ -4392,6 +4392,7 @@ x: {
 "The app could not read that file.": "ऐप वह फ़ाइल नहीं पढ़ सका।",
 "The app is closing.": "ऐप बंद हो रहा है।",
 "The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!": "यह ऐप मुफ़्त है और हमेशा रहेगा। अगर इससे आपका समय बचा, तो एक कॉफ़ी मुझे इसे और बेहतर बनाने में मदद करती है। यह पूरी तरह वैकल्पिक है, और धन्यवाद!",
+"The app list is not read yet; try again in a moment.": "ऐप सूची अभी पढ़ी नहीं गई है; एक पल में फिर से कोशिश करें।",
 "The app list is read in the app": "ऐप सूची ऐप में पढ़ी जाती है",
 "The app version, Android version and phone model, so a problem is easier to find.": "ऐप का संस्करण, Android का संस्करण और फ़ोन का मॉडल, ताकि समस्या ढूँढना आसान हो।",
 "The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.": "आपके पैच किए ऐप यहाँ हर रन के लॉग के साथ सूचीबद्ध हैं, ताकि आप उन्हें फिर इंस्टॉल करें, शेयर करें या डाउनलोड में सहेजें।",

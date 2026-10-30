@@ -7147,7 +7147,7 @@ public class MainActivity extends Activity {
     private final ExecutorService fwExec = Executors.newSingleThreadExecutor();
     private static final int FW_TIMEOUT_MS = 90000;
     private android.net.ConnectivityManager.NetworkCallback fwNetCb;
-    private String fwLastScript;           // the last apply script of this window, the one Apply on boot keeps
+    private volatile String fwLastScript;  // the last apply script of this window, the one Apply on boot keeps
 
     /** Who may write netfilter rules now: "root" (su), "system" (Shizuku as uid 1000) or "uid0" (Shizuku as root); null when nobody. */
     private String fwGate() { return fmkGate(false); }
@@ -11531,6 +11531,23 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public String fwApps() {
+            // the walk over every package (labels, permissions) takes a while on a full phone: off the bridge thread, answered as window.onFwApps(json)
+            fwExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    final String json = fwAppsJson();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (webView != null) webView.evaluateJavascript("window.onFwApps && window.onFwApps(" + JSONObject.quote(json) + ")", null);
+                        }
+                    });
+                }
+            });
+            return "started";
+        }
+
+        private String fwAppsJson() {
             JSONObject res = new JSONObject();
             try {
                 PackageManager pm = getPackageManager();
@@ -11599,8 +11616,9 @@ public class MainActivity extends Activity {
                             res.put("backend", backend);
                             res.put("kind", kind);
                             if ("log".equals(kind) || "logclear".equals(kind)) {
-                                res.put("log", FirewallRules.groupLog(FirewallRules.parseLog(out)));
-                                res.put("lines", FirewallRules.parseLog(out).size());
+                                java.util.List<FirewallRules.LogEntry> entries = FirewallRules.parseLog(out);
+                                res.put("log", FirewallRules.groupLog(entries));
+                                res.put("lines", entries.size());
                             } else if ("list".equals(kind)) {
                                 res.put("output", out.length() > 60000 ? out.substring(0, 60000) : out);
                             } else {
@@ -11693,7 +11711,7 @@ public class MainActivity extends Activity {
                 if (dir != null && !dir.isDirectory() && !dir.mkdirs()) throw new IOException("Could not make " + dir);
                 FileOutputStream out = new FileOutputStream(f);
                 try { out.write(FirewallRules.bootScript(apply, delaySec).getBytes("UTF-8")); } finally { out.close(); }
-                f.setReadable(true, false);
+                // owner-readable only: root reads it regardless, and the file holds the user's own iptables lines
                 p.edit().putBoolean("fw_boot", true).putInt("fw_boot_delay", delaySec).apply();
                 o.put("ok", true); o.put("boot", true);
             } catch (Throwable t) {

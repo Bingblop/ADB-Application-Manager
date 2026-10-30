@@ -4392,6 +4392,7 @@ x: {
 "The app could not read that file.": "La app no pudo leer ese archivo.",
 "The app is closing.": "La app se está cerrando.",
 "The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!": "La app es gratis y seguirá siéndolo. Si te ahorró tiempo, un café me ayuda a seguir mejorándola. Es totalmente opcional, ¡y gracias!",
+"The app list is not read yet; try again in a moment.": "La lista de aplicaciones aún no se ha leído; inténtalo de nuevo en un momento.",
 "The app list is read in the app": "La lista de apps se lee en la app",
 "The app version, Android version and phone model, so a problem is easier to find.": "La versión de la app, la versión de Android y el modelo del teléfono, para que sea más fácil encontrar el problema.",
 "The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.": "Aquí se listan las apps que parcheas, con el registro de cada ejecución, para que puedas instalarlas de nuevo, compartirlas o guardarlas en Descargas.",

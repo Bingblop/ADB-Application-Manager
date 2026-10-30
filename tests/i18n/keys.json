@@ -4389,6 +4389,7 @@
 {"k":"The app could not read that file.","ctx":"built by the code of: top level"},
 {"k":"The app is closing.","ctx":"built by the code of: top level"},
 {"k":"The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!","ctx":"in the About tab"},
+{"k":"The app list is not read yet; try again in a moment.","ctx":"built by the code of: fw apply"},
 {"k":"The app list is read in the app","ctx":"built by the code of: fw render list"},
 {"k":"The app version, Android version and phone model, so a problem is easier to find.","ctx":"in a sheet (contact)"},
 {"k":"The apps you patch are listed here, with the log of each run, so you can install them again, share them or save them to Downloads.","ctx":"built by the code of: mp patched render"},

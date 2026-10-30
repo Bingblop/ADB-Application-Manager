@@ -104,7 +104,7 @@ exports.initScript = function (opts) {
     getUpdateState() { return J({ running: false, checkedAt: 0, updates: [], checked: 0, errors: 0, selfStatus: 'ok' }); },
     checkForUpdates() {}, endUpdateAll() {}, openUrl() {}, copyToClipboard(t) { window.__calls.push('copy:' + t.length); },
     // ---- the firewall ----
-    fwApps() { return J({ ok: true, apps: PKGS.map(p => Object.assign({ enabled: true }, p)), selfUid: 10200, selfPkg: 'com.bloatware.bingblop', specials: SPECIALS }); },
+    fwApps() { const json = J({ ok: true, apps: PKGS.map(p => Object.assign({ enabled: true }, p)), selfUid: 10200, selfPkg: 'com.bloatware.bingblop', specials: SPECIALS }); setTimeout(() => { try { window.onFwApps(json); } catch (e) {} }, 0); return 'started'; },
     fwRun(id, kind, arg) {
       let cfg = null; try { cfg = kind === 'apply' ? JSON.parse(arg) : null; } catch (e) {}
       window.__fw.calls.push({ id, kind, cfg });

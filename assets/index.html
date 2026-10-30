@@ -49977,15 +49977,24 @@ Type any command above (e.g. pm list packages -d)</div>
         function fwCanRun() { return !!(window.AndroidBridge && window.AndroidBridge.fwRun) && isRootActive(); }
 
         // ---- the apps ----
+        let fwAppsWaiting = false;     // fwApps() is answered as window.onFwApps(json): the walk over every package runs off the page's thread
         function fwLoadApps() {
             fwData = null;
             if (!window.AndroidBridge || !window.AndroidBridge.fwApps) return;
+            let r = null;
+            try { r = window.AndroidBridge.fwApps(); } catch (e) { r = null; }
+            if (r === 'started') { fwAppsWaiting = true; return; }
+            window.onFwApps(r);
+        }
+        window.onFwApps = function (json) {
+            fwAppsWaiting = false;
             try {
-                const d = JSON.parse(window.AndroidBridge.fwApps() || '{}');
-                if (d && d.ok) fwData = d;
+                const d = JSON.parse(json || '{}');
+                fwData = d && d.ok ? d : null;
             } catch (e) { fwData = null; }
             fwBuildRows();
-        }
+            if (currentViewName() === 'firewall') { fwRenderList(); fwRenderTop(); }
+        };
         function fwBuildRows() {
             fwRows = [];
             if (!fwData) return;
@@ -50192,7 +50201,11 @@ Type any command above (e.g. pm list packages -d)</div>
             return o;
         }
         /** what Apply would send, as a string: the master row says "changes not applied" when it differs from the last apply */
-        function fwKey() { return JSON.stringify(fwCfgJson()); }
+        function fwKey() {
+            const o = fwCfgJson();
+            if (!o.roam) delete o.roamingNow; // without a Roaming column the script is the same either way: a roaming change is not a change of the rules
+            return JSON.stringify(o);
+        }
         function fwDirty() { fwRenderTop(); }
 
         // ---- the jobs: apply, disable, status, list, log ----
@@ -50217,7 +50230,13 @@ Type any command above (e.g. pm list packages -d)</div>
         async function fwApply() {
             if (fwBusy) return;
             if (!fwCanRun()) { guardPrivilege(txT('Android Firewall')); fwRenderTop(); return; }
-            if (!fwData) fwLoadApps();
+            if (!fwData && !fwAppsWaiting) fwLoadApps();
+            if (!fwData) {
+                // without the package list the rule set would be empty: an allow list of nothing would stop every app, this one included
+                xqSetStatus('fwStatus', txT('The app list is not read yet; try again in a moment.'), 'bad');
+                fwRenderTop();
+                return;
+            }
             fwNetRead();
             const key = fwKey();
             const cfg = fwCfgJson();
