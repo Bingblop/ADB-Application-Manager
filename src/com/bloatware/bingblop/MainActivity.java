@@ -20966,7 +20966,7 @@ public class MainActivity extends Activity {
         // adbd gone) must dim the header badge and the Working mode tile now, not when the Working Modes sheet is next opened. The quiet
         // check reuses a probe from the last 2.5 s (MODE_CACHE_MS), so a quick back-and-forth costs nothing.
         notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes(false)");
-        notifyJs("window.onAppResume && window.onAppResume()");
+        notifyJs("window.onAppResume && window.onAppResume(true)");          // true: the app itself came back (Smart Tabs works out the tab order again); the wallpaper listener passes nothing
     }
 
     private Object wallpaperColorsListener;

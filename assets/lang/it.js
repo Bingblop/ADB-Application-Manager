@@ -3909,7 +3909,7 @@ x: {
 "Smaller text": "Testo più piccolo",
 "Smallest width it needs": "Larghezza minima richiesta",
 "Smart Tabs": "Smart Tabs",
-"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.": "Smart Tabs è attivo (Navigazione, sopra), quindi le schede seguono l'ordine in cui le apri di più. Disattivalo per ordinarle con le frecce.",
+"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.": "Smart Tabs è attivo (Navigazione, sopra), quindi le schede seguono l'ordine in cui le apri di più e la barra in basso contiene quelle che apri di più. Disattivalo per ordinarle e fissarle tu.",
 "Smart Tabs off: the tabs are in the Feature List order": "Smart Tabs disattivato: le schede seguono l'ordine dell'Elenco funzioni",
 "Smart Tabs on: the tabs you open most come first": "Smart Tabs attivo: le schede che apri di più vengono prima",
 "SoC": "SoC",

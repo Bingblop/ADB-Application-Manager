@@ -6791,7 +6791,7 @@
                 <div class="color-card-title">Feature List</div>
                 <div class="color-card-subtitle clamp-2">Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</div>
                 <div class="color-card-subtitle">Tap the pin to keep a tab on the bottom bar. It holds four, with Application Manager as the first; the others wait under More.</div>
-                <div class="appearance-note" id="featureSmartNote" style="display:none;">Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.</div>
+                <div class="appearance-note" id="featureSmartNote" style="display:none;">Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.</div>
                 <div id="featureList" class="fl-list"></div>
                 <div class="mode-btn-row" style="margin-top:12px;">
                     <button class="mode-action-btn" id="featureResetBtn" onclick="featureReset()">Reset to Default</button>
@@ -12300,16 +12300,21 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // ---- Settings > Navigation > Smart Tabs (v7.19.4, off by default: kv 'smart_tabs') ----
         // The tabs between Application Manager and About go in the order of how often each one is opened, the most opened first, on the top bar and the bottom bar
-        // (and under More). Every opening of a tab is counted (kv 'tab_opens', { key: count }), with Smart Tabs on or off, so turning it on uses what is known already;
-        // when a count passes SMART_CAP every count is halved, so what is used now outweighs what was used months ago. The order is worked out when the page starts,
-        // when Smart Tabs is turned on and when the app comes back to the front, never while a tab is being tapped: a tab does not jump away under the thumb.
-        // The Feature List order breaks a tie and is the order again when Smart Tabs is turned off.
+        // (and under More). On the bottom bar that means its slots too (v7.19.5): Application Manager and the three tabs opened most, whether pinned or not, the rest
+        // under More; the pins rest while it is on and are the bar again when it is turned off (in v7.19.4 the bar kept its pins, so a tab opened most that was not
+        // pinned only went first under More and the bar looked the same). Every opening of a tab is counted (kv 'tab_opens', { key: count }), with Smart Tabs on or
+        // off, so turning it on uses what is known already; when a count passes SMART_CAP every count is halved, so what is used now outweighs what was used months ago.
+        // The order is worked out when the page starts, when Smart Tabs is turned on and when the app comes back to the front (the page's visibilitychange, and
+        // onAppResume(true), which the app calls from onResume only: a web view does not always hide the page when the app goes to the back; a theme or wallpaper
+        // change calls onAppResume() too, while the app is in front, and does not reorder), and an open More sheet is filled again with it; never while a tab is being
+        // tapped: a tab does not jump away under the thumb. A tie goes to a pinned tab first, then to the Feature List order, so turning it on with nothing counted
+        // yet leaves the bottom bar as it was; the Feature List order is the order again when Smart Tabs is turned off.
         const SMART_CAP = 400;
         let smartTabsOn = false, smartOrder = null;
         function smartCounts() { const c = kvGet('tab_opens', null); return c && typeof c === 'object' && !Array.isArray(c) ? c : {}; }
         function smartCompute() {
-            const c = smartCounts(), base = tabConfig.order, n = k => Number(c[k]) || 0;
-            return base.slice().sort((a, b) => n(b) - n(a) || base.indexOf(a) - base.indexOf(b));
+            const c = smartCounts(), base = tabConfig.order, n = k => Number(c[k]) || 0, pin = k => tabConfig.pinned.includes(k) ? 0 : 1;
+            return base.slice().sort((a, b) => n(b) - n(a) || pin(a) - pin(b) || base.indexOf(a) - base.indexOf(b));
         }
         function smartLoad() { smartTabsOn = kvGet('smart_tabs', false) === true; smartOrder = smartTabsOn ? smartCompute() : null; }
         // The movable tabs in the order the bars show them
@@ -12330,6 +12335,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (smartOrder && next.join() === smartOrder.join()) return;
             smartOrder = next;
             tabsApplyConfig();
+            const m = document.getElementById('bnavMoreModal');
+            if (m && m.classList.contains('show')) bnavMoreFill();          // the app came back with More open: its tiles follow the bar
         }
         function smartUi() { const t = document.getElementById('smartTabsToggle'); if (t) t.checked = smartTabsOn; }
         function setSmartTabs(on) {
@@ -12398,8 +12405,9 @@ Type any command above (e.g. pm list packages -d)</div>
 
         const bnavEl = () => document.getElementById('bnav');
         const bnavWide = () => window.matchMedia ? window.matchMedia('(min-width: 720px)').matches : window.innerWidth >= 720;
-        function bnavPinnedShown() { return tabsShown().filter(k => tabConfig.pinned.includes(k)); }                    // on the bar, in the Feature List order
-        function bnavMoreKeys() { return tabsShown().filter(k => !tabConfig.pinned.includes(k)); }                     // under More
+        // On the bar, in the order of the tabs: the pinned tabs, or with Smart Tabs on Application Manager and the tabs opened most (About is never one, it stays last under More)
+        function bnavPinnedShown() { return smartTabsOn && smartOrder ? tabsShown().filter(k => k !== 'about').slice(0, BNAV_MAX) : tabsShown().filter(k => tabConfig.pinned.includes(k)); }
+        function bnavMoreKeys() { const bar = bnavPinnedShown(); return tabsShown().filter(k => !bar.includes(k)); }          // under More
         function bnavBadgeHtml(v) { return v ? (v === true ? '<span class="bn-badge dot" aria-hidden="true"></span>' : '<span class="bn-badge">' + escapeHtml(String(v > 99 ? '99+' : v)) + '</span>') : ''; }
         function bnavSetBadge(key, v) {
             if (key === 'updates') key = 'installer';
@@ -12465,15 +12473,23 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- More: the tabs that are on but not pinned ----
         function bnavMoreOpen() {
             haptic();
-            const grid = document.getElementById('bnavMoreGrid'), cur = currentViewName();
-            if (!grid) return;
-            grid.innerHTML = bnavMoreKeys().map(k => '<button type="button" class="bn-tile' + (k === cur ? ' current' : '') + '" data-tab="' + k + '"' + (k === cur ? ' aria-current="page"' : '') + ' onclick="bnavMoreGo(\'' + k + '\')">'
-                + '<span class="bn-ico">' + bnavIcon(k) + bnavBadgeHtml(bnavBadges[k]) + '</span><span class="bn-tl">' + escapeHtml(tabDef(k).label) + '</span><span class="bn-tl bn-tl-short">' + escapeHtml(bnavShort(k)) + '</span></button>').join('');
+            if (!bnavMoreFill()) return;
             document.getElementById('bnavMoreModal').classList.add('show');
             const mb = document.querySelector('#bnav .bn-item[data-more]');
             if (mb) mb.setAttribute('aria-expanded', 'true');
-            const first = grid.querySelector('.bn-tile');
+            const first = document.querySelector('#bnavMoreGrid .bn-tile');
             if (first) first.focus({ preventScroll: true });
+        }
+        // The tiles of More (also again while it is open, when Smart Tabs changes the bar); a tile that had the focus keeps it, if it is still there
+        function bnavMoreFill() {
+            const grid = document.getElementById('bnavMoreGrid'), cur = currentViewName();
+            if (!grid) return false;
+            const had = grid.contains(document.activeElement) && document.activeElement.dataset ? document.activeElement.dataset.tab : '';
+            grid.innerHTML = bnavMoreKeys().map(k => '<button type="button" class="bn-tile' + (k === cur ? ' current' : '') + '" data-tab="' + k + '"' + (k === cur ? ' aria-current="page"' : '') + ' onclick="bnavMoreGo(\'' + k + '\')">'
+                + '<span class="bn-ico">' + bnavIcon(k) + bnavBadgeHtml(bnavBadges[k]) + '</span><span class="bn-tl">' + escapeHtml(tabDef(k).label) + '</span><span class="bn-tl bn-tl-short">' + escapeHtml(bnavShort(k)) + '</span></button>').join('');
+            const back = had && grid.querySelector('.bn-tile[data-tab="' + had + '"]');
+            if (back) back.focus({ preventScroll: true });
+            return true;
         }
         function bnavMoreClose() {
             document.getElementById('bnavMoreModal').classList.remove('show');
@@ -33471,12 +33487,12 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!box) return;
             const note = document.getElementById('featureSmartNote');
             if (note) note.style.display = smartTabsOn ? '' : 'none';
-            const list = tabOrder(), last = list.length - 1;          // Smart Tabs on: listed in its order, the arrows rest
+            const list = tabOrder(), last = list.length - 1, bar = bnavPinnedShown();          // Smart Tabs on: listed in its order, the arrows and the pins rest, a pin lit for each tab it put on the bottom bar
             box.innerHTML = list.map((k, i) => {
-                const name = escapeHtml(tabDef(k).name), on = !tabConfig.off.includes(k), pin = tabConfig.pinned.includes(k);
+                const name = escapeHtml(tabDef(k).name), on = !tabConfig.off.includes(k), pin = smartTabsOn ? bar.includes(k) : tabConfig.pinned.includes(k);
                 return '<div class="fl-row' + (on ? '' : ' off') + '" data-tab="' + k + '">'
                     + '<div class="fl-name">' + name + '</div>'
-                    + '<button type="button" class="fl-pin" aria-pressed="' + pin + '" aria-label="' + (pin ? 'Unpin ' + name + ' from the bottom bar' : 'Pin ' + name + ' to the bottom bar') + '"' + (on ? '' : ' disabled') + ' onclick="featurePin(\'' + k + '\')">' + bnavSvg(BNAV_ICON_PIN) + '</button>'
+                    + '<button type="button" class="fl-pin" aria-pressed="' + pin + '" aria-label="' + (pin ? 'Unpin ' + name + ' from the bottom bar' : 'Pin ' + name + ' to the bottom bar') + '"' + (on && !smartTabsOn ? '' : ' disabled') + ' onclick="featurePin(\'' + k + '\')">' + bnavSvg(BNAV_ICON_PIN) + '</button>'
                     + '<button type="button" class="fl-move" aria-label="Move ' + name + ' up"' + (i === 0 || smartTabsOn ? ' disabled' : '') + ' onclick="featureMove(\'' + k + '\', -1)">▲</button>'
                     + '<button type="button" class="fl-move" aria-label="Move ' + name + ' down"' + (i === last || smartTabsOn ? ' disabled' : '') + ' onclick="featureMove(\'' + k + '\', 1)">▼</button>'
                     + '<label class="fl-switch"><input type="checkbox" class="switch-input" aria-label="' + name + '"' + (on ? ' checked' : '') + ' onchange="featureToggle(\'' + k + '\', this.checked)"><span class="switch-track"></span></label>'
@@ -33507,7 +33523,7 @@ Type any command above (e.g. pm list packages -d)</div>
 
         // Pin a tab to the bottom bar, or take it off (at most four, Application Manager is one of them)
         function featurePin(key) {
-            if (!TAB_MOVABLE.includes(key) || tabConfig.off.includes(key)) return;
+            if (!TAB_MOVABLE.includes(key) || tabConfig.off.includes(key) || smartTabsOn) return;          // Smart Tabs on: the tabs opened most are the bar
             haptic();
             if (tabConfig.pinned.includes(key)) tabConfig.pinned = tabConfig.pinned.filter(k => k !== key);
             else if (tabConfig.pinned.length >= BNAV_MAX) { showToast('The bottom bar holds ' + BNAV_MAX + ' tabs. Unpin one first.'); return; }
@@ -34352,8 +34368,10 @@ Type any command above (e.g. pm list packages -d)</div>
             szAutoAsk();
         }
 
-        function onAppResume() {
+        // resumed: true only from the app's onResume; a theme or wallpaper change calls this without it, while the app is in front
+        function onAppResume(resumed) {
             if (typeof rootGrantReadBack === 'function') { try { rootGrantReadBack(); } catch (e) {} }     // back from a root-manager hand-off without being hidden
+            if (resumed === true) { try { smartRefresh(); } catch (e) {} }          // Smart Tabs: the order of the tabs opened meanwhile, also when the web view never hid the page
             permOnChange();
             if (typeof mpHResumed === 'function') { try { mpHResumed(); } catch (e) {} }
             // Material You follows the wallpaper: re-read the dynamic colors whenever the app comes back

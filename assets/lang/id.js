@@ -3909,7 +3909,7 @@ x: {
 "Smaller text": "Teks lebih kecil",
 "Smallest width it needs": "Lebar terkecil yang diperlukan",
 "Smart Tabs": "Smart Tabs",
-"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.": "Smart Tabs aktif (Navigasi, di atas), jadi tab mengikuti urutan seberapa sering Anda membukanya. Matikan untuk mengurutkannya dengan panah.",
+"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.": "Smart Tabs aktif (Navigasi, di atas), jadi tab mengikuti urutan seberapa sering Anda membukanya dan bilah bawah berisi tab yang paling sering Anda buka. Matikan untuk mengurutkan dan menyematkannya sendiri.",
 "Smart Tabs off: the tabs are in the Feature List order": "Smart Tabs nonaktif: tab mengikuti urutan Daftar Fitur",
 "Smart Tabs on: the tabs you open most come first": "Smart Tabs aktif: tab yang paling sering Anda buka ada di depan",
 "SoC": "SoC",

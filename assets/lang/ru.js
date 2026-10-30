@@ -3909,7 +3909,7 @@ x: {
 "Smaller text": "Мельче текст",
 "Smallest width it needs": "Наименьшая нужная ширина",
 "Smart Tabs": "Smart Tabs",
-"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.": "Smart Tabs включены (Навигация, выше), поэтому вкладки идут в порядке того, как часто вы их открываете. Выключите, чтобы упорядочить их стрелками.",
+"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.": "Smart Tabs включены (Навигация, выше), поэтому вкладки идут в порядке того, как часто вы их открываете, а на нижней панели — те, что вы открываете чаще всего. Выключите, чтобы упорядочить и закрепить их самостоятельно.",
 "Smart Tabs off: the tabs are in the Feature List order": "Smart Tabs выключены: вкладки идут в порядке списка функций",
 "Smart Tabs on: the tabs you open most come first": "Smart Tabs включены: чаще всего открываемые вкладки идут первыми",
 "SoC": "SoC",

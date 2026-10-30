@@ -3909,7 +3909,7 @@ x: {
 "Smaller text": "小さい文字",
 "Smallest width it needs": "必要な最小幅",
 "Smart Tabs": "Smart Tabs",
-"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.": "Smart Tabs がオン（上のナビゲーション）のため、タブはよく開く順に並びます。矢印で並べ替えるにはオフにしてください。",
+"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.": "Smart Tabs がオン（上のナビゲーション）のため、タブはよく開く順に並び、下のバーにはよく開くタブが入ります。自分で並べ替えたり固定したりするにはオフにしてください。",
 "Smart Tabs off: the tabs are in the Feature List order": "Smart Tabs オフ：タブは機能リストの順です",
 "Smart Tabs on: the tabs you open most come first": "Smart Tabs オン：よく開くタブが先に来ます",
 "SoC": "SoC",

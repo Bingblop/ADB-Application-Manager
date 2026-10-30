@@ -2,7 +2,7 @@ ok   1. Smart Tabs is a switch in the Navigation card, off by default, with a li
 ok      opening tabs while it is off changes nothing on the bar
 ok      but each opening is counted
 ok      turned on: most opened right after Application Manager, About last
-ok      the bottom bar follows the same order (More lists Custom Fonts first)
+ok      the bottom bar holds the tabs opened most, pinned or not (v7.19.5), then a pinned tab on a tie
 ok      the Feature List shows that order, says why, and its arrows rest
 ok      no tab moves while tabs are being opened
 ok      coming back to the app puts the new favourite first

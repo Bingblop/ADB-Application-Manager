@@ -3909,7 +3909,7 @@ x: {
 "Smaller text": "छोटा टेक्स्ट",
 "Smallest width it needs": "ज़रूरी सबसे छोटी चौड़ाई",
 "Smart Tabs": "Smart Tabs",
-"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most. Turn it off to order them with the arrows.": "Smart Tabs चालू है (नेविगेशन, ऊपर), इसलिए टैब उसी क्रम में हैं जिसमें आप उन्हें सबसे ज़्यादा खोलते हैं। तीरों से क्रम बदलने के लिए इसे बंद करें।",
+"Smart Tabs is on (Navigation, above), so the tabs go in the order you open them most and the bottom bar holds the ones you open most. Turn it off to order and pin them yourself.": "Smart Tabs चालू है (नेविगेशन, ऊपर), इसलिए टैब उसी क्रम में हैं जिसमें आप उन्हें सबसे ज़्यादा खोलते हैं, और नीचे की पट्टी में वही टैब हैं जिन्हें आप सबसे ज़्यादा खोलते हैं। खुद क्रम बदलने और पिन करने के लिए इसे बंद करें।",
 "Smart Tabs off: the tabs are in the Feature List order": "Smart Tabs बंद: टैब फ़ीचर सूची के क्रम में हैं",
 "Smart Tabs on: the tabs you open most come first": "Smart Tabs चालू: सबसे ज़्यादा खोले गए टैब पहले आते हैं",
 "SoC": "SoC",

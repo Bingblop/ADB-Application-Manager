@@ -1,0 +1,18 @@
+ok   1. Bottom bar only: Application Manager and the three pinned tabs
+ok      tabs opened from More and left with Back are counted in the app's settings store
+ok      with Smart Tabs off the bar keeps its pins
+ok   2. turned on: the tabs opened most are on the bottom bar right after Application Manager, a pinned tab fills the last slot
+ok      the other pinned tabs wait first under More, About last
+ok      the choice is saved in the store
+ok      the Feature List lists that order, its pins rest and light the tabs on the bar
+ok      a pin cannot change the bar while it is on
+ok      the tab opened is lit on the bar itself, not under More
+ok   3. no tab moves while tabs are being opened
+ok      nor after a theme or wallpaper change while the app is in front (onAppResume without true)
+ok      back in the app (onResume, no visibilitychange): Live Logcat is first on the bar
+ok      More, left open, follows the bar: Live Logcat is gone from it, Installer is first in it
+ok   4. after a restart Smart Tabs is still on, with the same bar
+ok      the top bar has the same order: Application Manager first, About last
+ok   5. turned off: the pinned tabs are the bar again and the pins work
+ok   6. turned on with nothing counted yet: the bottom bar stays as it was
+ok   no page errors
