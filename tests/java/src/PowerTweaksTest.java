@@ -116,6 +116,79 @@ public class PowerTweaksTest {
     eq("saver wins over a stale fixed flag", PowerTweaks.profileOf("1", Boolean.TRUE), "saver");
     eq("an odd low_power value marks nothing", PowerTweaks.profileOf("2", null), null);
 
+    // ---- v7.20: durations, the Settings block, the state lines ----
+    eq("+4m0s0ms", PowerTweaks.parseDuration("+4m0s0ms"), 240000L); eq("+1h0m0s0ms", PowerTweaks.parseDuration("+1h0m0s0ms"), 3600000L); eq("+30s0ms", PowerTweaks.parseDuration("+30s0ms"), 30000L);
+    eq("+500ms", PowerTweaks.parseDuration("+500ms"), 500L); eq("+1d2h37m40s0ms", PowerTweaks.parseDuration("+1d2h37m40s0ms"), 86400000L + 2 * 3600000L + 37 * 60000L + 40000L); eq("-6m12s500ms (an alarm in the past)", PowerTweaks.parseDuration("-6m12s500ms"), -372500L);
+    eq("+7m30s0ms", PowerTweaks.parseDuration("+7m30s0ms"), 450000L); eq("bare milliseconds (device_config)", PowerTweaks.parseDuration("120000"), 120000L); eq("a factor is no duration", PowerTweaks.parseDuration("2.0"), -1L);
+    eq("an accuracy is no duration", PowerTweaks.parseDuration("20.0m"), -1L); eq("true is no duration", PowerTweaks.parseDuration("true"), -1L); eq("empty", PowerTweaks.parseDuration(""), -1L); eq("null", PowerTweaks.parseDuration(null), -1L); eq("a sign alone", PowerTweaks.parseDuration("+"), -1L);
+    java.util.Map<String, String> ca = PowerTweaks.parseConstants(fixture("deviceidle-active.txt"));
+    eq("the Settings block: 34 constants on the Pixel-like report", ca.size(), 34); eq("light_after_inactive_to as printed", ca.get("light_after_inactive_to"), "+3m0s0ms"); eq("as ms", PowerTweaks.constantMs(ca, "light_after_inactive_to"), 180000L);
+    eq("inactive_to", PowerTweaks.constantMs(ca, "inactive_to"), 1800000L); eq("idle_to", PowerTweaks.constantMs(ca, "idle_to"), 3600000L); eq("max_idle_to", PowerTweaks.constantMs(ca, "max_idle_to"), 21600000L); eq("light_idle_factor is kept as text", ca.get("light_idle_factor"), "2.0");
+    eq("a factor asked as ms is -1", PowerTweaks.constantMs(ca, "light_idle_factor"), -1L); eq("a key the phone does not print is -1", PowerTweaks.constantMs(ca, "nonsense_to"), -1L); eq("null map", PowerTweaks.constantMs(null, "idle_to"), -1L);
+    is("the whitelist after the block is not read as constants", !ca.containsKey("com.whatsapp") && !ca.containsValue("com.whatsapp"));
+    java.util.Map<String, String> co = PowerTweaks.parseConstants(fixture("deviceidle-old-pending.txt"));
+    eq("the older report: 20 constants", co.size(), 20); eq("old light_after_inactive_to", PowerTweaks.constantMs(co, "light_after_inactive_to"), 300000L);
+    java.util.Map<String, String> ct = PowerTweaks.parseConstants(fixture("deviceidle-s-tuned.txt"));
+    eq("the tuned phone: light 2 min", PowerTweaks.constantMs(ct, "light_after_inactive_to"), 120000L); eq("inactive 7.5 min", PowerTweaks.constantMs(ct, "inactive_to"), 450000L); eq("idle_to 2 h", PowerTweaks.constantMs(ct, "idle_to"), 7200000L); eq("max_idle_to 12 h", PowerTweaks.constantMs(ct, "max_idle_to"), 43200000L);
+    is("a report without the block gives nothing", PowerTweaks.parseConstants("  mState=ACTIVE\n").isEmpty() && PowerTweaks.parseConstants(null).isEmpty() && PowerTweaks.parseConstants("").isEmpty());
+    PowerTweaks.DozeNow na = PowerTweaks.parseNow(fixture("deviceidle-active.txt"));
+    is("active phone now: screen on, not charging, network, both Doze kinds enabled, no alarm line", Boolean.TRUE.equals(na.screenOn) && Boolean.FALSE.equals(na.charging) && Boolean.TRUE.equals(na.network) && Boolean.TRUE.equals(na.lightEnabled) && Boolean.TRUE.equals(na.deepEnabled) && na.nextAlarmMs == -1 && na.quickDoze == null && na.inactiveTimeoutMs == 1800000L);
+    PowerTweaks.DozeNow nt = PowerTweaks.parseNow(fixture("deviceidle-s-tuned.txt"));
+    is("tuned phone now: screen off, next step in 6 min 12.5 s, light alarm in 3 min 2 s, next idle period 2 h, quick doze off", Boolean.FALSE.equals(nt.screenOn) && nt.nextAlarmMs == 372500L && nt.nextLightAlarmMs == 182000L && nt.nextIdleDelayMs == 7200000L && nt.nextIdlePendingMs == 300000L && Boolean.FALSE.equals(nt.quickDoze) && nt.inactiveTimeoutMs == 450000L);
+    PowerTweaks.DozeNow no = PowerTweaks.parseNow(fixture("deviceidle-old-pending.txt"));
+    is("old phone now: screen off, next alarm 4 min 12 s", Boolean.FALSE.equals(no.screenOn) && no.nextAlarmMs == 252000L);
+    is("an empty report: nothing known", PowerTweaks.parseNow("").screenOn == null && PowerTweaks.parseNow(null).nextAlarmMs == -1);
+    java.util.Map<String, String> dc = PowerTweaks.parseDeviceConfigList(fixture("device_config-device_idle.txt"));
+    is("device_config list: three keys, bare ms", dc.size() == 3 && "120000".equals(dc.get("light_after_inactive_to")) && "450000".equals(dc.get("inactive_to")));
+    is("an empty list, an error and junk give nothing", PowerTweaks.parseDeviceConfigList("").isEmpty() && PowerTweaks.parseDeviceConfigList("Error: Unknown command: list\n").isEmpty() && PowerTweaks.parseDeviceConfigList("/system/bin/sh: device_config: inaccessible or not found\n").isEmpty() && PowerTweaks.parseDeviceConfigList(null).isEmpty());
+    long[] sp = PowerTweaks.deepSplit(15 * 60000L);
+    is("15 minutes to deep Doze: 7.5 + 7.5 min, motion wait 7.5 min", sp[0] == 450000L && sp[1] == 450000L && sp[2] == 450000L);
+    long[] sp60 = PowerTweaks.deepSplit(60 * 60000L);
+    is("60 minutes: 30 + 30, motion wait stays at its 10-minute default", sp60[0] == 1800000L && sp60[1] == 1800000L && sp60[2] == 600000L);
+    long[] sp1 = PowerTweaks.deepSplit(10000L);
+    is("under two minutes is lifted to two: 1 + 1 min", sp1[0] == 60000L && sp1[1] == 60000L && sp1[2] == 60000L);
+    long[] sp5 = PowerTweaks.deepSplit(5 * 60000L);
+    is("5 minutes: 2.5 + 2.5", sp5[0] == 150000L && sp5[1] == 150000L && sp5[0] + sp5[1] == 300000L);
+
+    // ---- the CPU clusters, the battery, the saver, swappiness, pressure, the zram sizes ----
+    java.util.List<PowerTweaks.CpuPolicy> cps = PowerTweaks.parseCpuPolicies(fixture("cpufreq-policies.txt"));
+    eq("three policies", cps.size(), 3); eq("policy0 name", cps.get(0).name, "policy0"); eq("policy0 governor", cps.get(0).governor, "schedutil"); eq("policy0 cur kHz", cps.get(0).curKhz, 1804800L); eq("policy0 min", cps.get(0).minKhz, 400000L); eq("policy0 cpus", cps.get(0).cpus, "0-3");
+    eq("policy7 governor", cps.get(2).governor, "performance"); eq("policy7 max", cps.get(2).maxKhz, 3187200L); eq("four available governors on policy0", cps.get(0).available.length, 4);
+    eq("the clusters differ: no common governor", PowerTweaks.commonGovernor(cps), null);
+    eq("the union of the governors offered", String.join(",", PowerTweaks.availableGovernors(cps)), "conservative,powersave,performance,schedutil");
+    java.util.List<PowerTweaks.CpuPolicy> same = PowerTweaks.parseCpuPolicies("policy0|performance|1|1|1|0-3|performance schedutil\npolicy4|performance|2|2|2|4-7|performance schedutil\n");
+    eq("every cluster on performance: the common governor", PowerTweaks.commonGovernor(same), "performance");
+    java.util.List<PowerTweaks.CpuPolicy> den = PowerTweaks.parseCpuPolicies(fixture("cpufreq-denied.txt"));
+    is("a shell that may not read the folder: the ls error is skipped and the unexpanded glob line is no policy", den.isEmpty());
+    is("an unreadable governor on one cluster: no common governor", PowerTweaks.commonGovernor(PowerTweaks.parseCpuPolicies("policy0||||||\npolicy4|schedutil|1|1|1|4|schedutil")) == null);
+    is("empty and null", PowerTweaks.parseCpuPolicies("").isEmpty() && PowerTweaks.parseCpuPolicies(null).isEmpty() && PowerTweaks.commonGovernor(null) == null && PowerTweaks.availableGovernors(null).isEmpty());
+    PowerTweaks.Battery bu = PowerTweaks.parseBattery(fixture("dumpsys-battery-usb.txt"));
+    is("USB powered, 87 %, status 2 (charging)", bu.read && bu.plugged() && bu.usb && !bu.ac && !bu.wireless && bu.level == 87 && bu.status == 2);
+    PowerTweaks.Battery bn = PowerTweaks.parseBattery(fixture("dumpsys-battery-unplugged.txt"));
+    is("unplugged, 54 %, status 3 (discharging)", bn.read && !bn.plugged() && bn.level == 54 && bn.status == 3);
+    is("no battery service: nothing read", !PowerTweaks.parseBattery("Can't find service: battery\n").read && !PowerTweaks.parseBattery("").read && !PowerTweaks.parseBattery(null).read);
+    PowerTweaks.Saver sv = PowerTweaks.parseSaver(fixture("dumpsys-power-saver.txt"));
+    is("the saver block: not in force, powered, the setting off, automatic 0", Boolean.FALSE.equals(sv.enabled) && Boolean.TRUE.equals(sv.powered) && Boolean.FALSE.equals(sv.setting) && Integer.valueOf(0).equals(sv.automatic));
+    PowerTweaks.Saver sn = PowerTweaks.parseSaver("POWER MANAGER (dumpsys power)\n  mWakefulness=Awake\n");
+    is("a dumpsys power without the saver block: nothing known (never false)", sn.enabled == null && sn.powered == null && sn.setting == null && sn.automatic == null);
+    is("  full enabled= is not Enabled=", PowerTweaks.parseSaver("  Enabled=true\n    full enabled=false\n").enabled == Boolean.TRUE);
+    eq("swappiness 100", PowerTweaks.parseSwappiness("100\n"), 100); eq("swappiness 60", PowerTweaks.parseSwappiness(" 60 "), 60); eq("swappiness 200", PowerTweaks.parseSwappiness("200"), 200); eq("201 is out of range", PowerTweaks.parseSwappiness("201"), -1);
+    eq("swappiness denied", PowerTweaks.parseSwappiness("cat: /proc/sys/vm/swappiness: Permission denied"), -1); eq("swappiness empty", PowerTweaks.parseSwappiness(""), -1); eq("swappiness null", PowerTweaks.parseSwappiness(null), -1);
+    double[] ps = PowerTweaks.parsePressure(fixture("pressure-memory.txt"));
+    is("memory pressure: some 0.00, full 0.00", ps != null && ps[0] == 0 && ps[1] == 0);
+    double[] ps2 = PowerTweaks.parsePressure("some avg10=12.50 avg60=3.00 avg300=1.00 total=1\nfull avg10=4.25 avg60=1.00 avg300=0.50 total=1\n");
+    is("some 12.5, full 4.25", ps2 != null && ps2[0] == 12.5 && ps2[1] == 4.25);
+    is("no PSI file: null", PowerTweaks.parsePressure("cat: /proc/pressure/memory: No such file or directory") == null && PowerTweaks.parsePressure("") == null && PowerTweaks.parsePressure(null) == null);
+    eq("zram sizes for 7.5 GB of RAM: up to 8 GB (1.5x)", java.util.Arrays.toString(PowerTweaks.zramSizeChoicesGb(7818100L)), "[1, 2, 3, 4, 6, 8]");
+    eq("zram sizes for 12 GB: up to 16", java.util.Arrays.toString(PowerTweaks.zramSizeChoicesGb(12L * 1048576L)), "[1, 2, 3, 4, 6, 8, 12, 16]");
+    eq("zram sizes for 2 GB: 1, 2, 3", java.util.Arrays.toString(PowerTweaks.zramSizeChoicesGb(2L * 1048576L)), "[1, 2, 3]");
+    eq("zram sizes with no RAM figure: at least 1", java.util.Arrays.toString(PowerTweaks.zramSizeChoicesGb(0)), "[1]");
+    is("/proc/swaps names zram0 as swap", PowerTweaks.zramSwapOn(fixture("proc-swaps.txt")) && !PowerTweaks.zramSwapOn("Filename\tType\tSize\tUsed\tPriority\n") && !PowerTweaks.zramSwapOn(null));
+    eq("profile: every cluster on performance reads as Performance even with no fixed line", PowerTweaks.profileOf("0", null, "performance"), "performance");
+    eq("profile: the saver wins over the governor", PowerTweaks.profileOf("1", null, "performance"), "saver");
+    eq("profile: schedutil everywhere is Balanced", PowerTweaks.profileOf("0", null, "schedutil"), "balanced");
+    eq("profile: no common governor, no fixed line: Balanced", PowerTweaks.profileOf("null", null, null), "balanced");
+
     // ---- the page: commands only from the tables, run only from the confirm sheet, Root-only rows marked ----
     File repo = repo();
     if (repo == null) System.out.println("SKIP the page was not found (assets/index.html)");
@@ -140,29 +213,45 @@ public class PowerTweaksTest {
     String[] tables = { between(block, "const XPW_ACTS = {", "};"), between(block, "const XDZ_ACTS = {", "};"), between(block, "const XZR_ACTS = {", "};") };
     is("the three tables were found", !tables[0].isEmpty() && !tables[1].isEmpty() && !tables[2].isEmpty());
     String[] cmds = { "reboot", "setprop ctl.restart zygote", "reboot recovery", "reboot -p", "reboot bootloader", "am crash com.android.systemui",
-        "dumpsys deviceidle force-idle deep", "dumpsys deviceidle step deep", "dumpsys deviceidle unforce", "dumpsys deviceidle motion", "echo 3 > /proc/sys/vm/drop_caches", "echo 1 > /proc/sys/vm/drop_caches" };
+        "dumpsys deviceidle force-idle deep", "dumpsys deviceidle step deep", "dumpsys deviceidle unforce", "dumpsys deviceidle motion", "echo 3 > /proc/sys/vm/drop_caches", "echo 1 > /proc/sys/vm/drop_caches",
+        "device_config put device_idle {key} {ms}", "device_config delete device_idle {key}", "settings put global device_idle_constants {kv}", "settings delete global device_idle_constants",
+        "echo {gov} > $p/scaling_governor", "swapoff /dev/block/zram0; echo 1 > /sys/block/zram0/reset; echo {bytes} > /sys/block/zram0/disksize; mkswap /dev/block/zram0; swapon /dev/block/zram0",
+        "echo {n} > /proc/sys/vm/swappiness", "device_config put lmkd_native {key} {val}", "device_config delete lmkd_native {key}", "setprop lmkd.reinit 1" };
     for (String c : cmds) {
       boolean inTable = false;
-      for (String t : tables) if (t.contains("'" + c) || t.contains(c + "'") || t.contains(c + " ")) inTable = true;
+      for (String t : tables) if (t.contains("'" + c) || t.contains(c + "'") || t.contains(c + " ") || t.contains(c + ";")) inTable = true;
       is("the command is a row of a table: " + c, inTable);
     }
-    // the block's own code never hands a command literal of its own to xqRun: every xqRun of an action takes a.cmd / st.cmd (reads are dumpsys get / cat / pidof / help only)
+    // a row with {name} holes declares the pattern of every hole, and the holes are filled by xqRowCmd only (a value that fails its pattern gives no command at all)
+    Matcher holes = Pattern.compile("cmd: '([^']*\\{[a-z]+\\}[^']*)'([^\n]*)").matcher(String.join("\n", tables));
+    int holeRows = 0;
+    while (holes.find()) {
+      holeRows++;
+      Matcher h = Pattern.compile("\\{([a-z]+)\\}").matcher(holes.group(1));
+      while (h.find()) is("the hole has a pattern in the row: {" + h.group(1) + "} of " + holes.group(1), holes.group(2).contains(h.group(1) + ": /"));
+    }
+    is("the rows with holes were found (Doze constants, governor, zram size, swappiness, lmkd)", holeRows >= 8);
+    is("xqRowCmd fills only the row's own holes and checks every value against the row's pattern", block.contains("function xqRowCmd(a, vars)") && block.contains("if (!re || v == null || !re.test(String(v))) { bad = true; return m; }") && block.contains("return bad || /\\{[a-z]+\\}/.test(cmd) ? null : cmd;"));
+    is("xqRun refuses a command that did not pass (null)", block.contains("if (cmd == null) { done({ ok: false, output: '', error: txT('It did not work.') }); return; }"));
+    // the block's own code never hands a command literal of its own to xqRun: every xqRun of an action takes a.cmd / st.cmd / a row through xqRowCmd (reads are dumpsys get / cat / pidof / help only)
     Matcher runs = Pattern.compile("xqRun\\(([^,)]+)").matcher(block);
     int actionRuns = 0;
     while (runs.find()) {
       if (block.substring(Math.max(0, runs.start() - 9), runs.start()).equals("function ")) continue;        // the definition itself
       String arg = runs.group(1).trim();
-      boolean fromTable = arg.equals("a.cmd") || arg.equals("st.cmd");
-      boolean readOnly = arg.equals("XDZ_READ_CMD") || arg.equals("XZR_READ_CMD") || arg.startsWith("'pidof ") || arg.startsWith("'cmd power help") || arg.startsWith("\"dumpsys power | grep") || (arg.startsWith("'settings ") && arg.contains("op === 'put'")) || arg.startsWith("op === 'put'");
+      boolean fromTable = arg.equals("a.cmd") || arg.equals("st.cmd") || arg.startsWith("xqRowCmd(");
+      boolean readOnly = arg.equals("XDZ_READ_CMD") || arg.equals("XZR_READ_CMD") || arg.equals("XDZ_POWER_CMD") || arg.startsWith("'pidof ") || arg.startsWith("'cmd power help") || (arg.startsWith("'settings ") && arg.contains("op === 'put'")) || arg.startsWith("op === 'put'");
       if (fromTable) actionRuns++;
       is("xqRun runs a table row or a read, never a literal action: " + arg, fromTable || readOnly);
     }
-    is("the rows are run (three sections)", actionRuns >= 3);
+    is("the rows are run (three sections, the settings rows, the governor)", actionRuns >= 6);
     // the read commands change nothing
     String reads = between(block, "const XDZ_READ_CMD = ", ";\n") + between(block, "const XZR_READ_CMD = ", ";\n");
-    is("the read commands are dumpsys get / cat / grep only", !reads.contains("force-idle") && !reads.contains("unforce") && !reads.contains(" step") && !reads.contains("settings put") && !reads.contains("reboot") && !reads.contains("drop_caches") && !reads.contains("echo 1") && !reads.contains("echo 3"));
+    is("the read commands are dumpsys get / cat / getprop / device_config list / settings get only", !reads.isEmpty() && !reads.contains("force-idle") && !reads.contains("unforce") && !reads.contains(" step") && !reads.contains("settings put") && !reads.contains("device_config put") && !reads.contains("reboot") && !reads.contains("drop_caches") && !reads.contains(" > ") && !reads.contains("echo 1") && !reads.contains("echo 3"));
+    String power = between(block, "const XDZ_POWER_CMD = ", ";\n");
+    is("the power read is dumpsys / cat / settings get only (no redirection, no set)", !power.isEmpty() && !power.contains(" > ") && !power.contains("settings put") && !power.contains("set-") && !power.contains("reboot") && power.contains("scaling_governor 2>/dev/null"));
     // 2. the perform functions (the only readers of the tables' cmd) are called from xqSheetGo's spec.run only
-    for (String fn : new String[] { "xpwPerform", "xdzPerform", "xdzProfPerform", "xzrPerform" }) {
+    for (String fn : new String[] { "xpwPerform", "xdzPerform", "xdzProfPerform", "xzrPerform", "xdzTunePerform", "xdzGovPerform", "xzrSetPerform" }) {
       Matcher calls = Pattern.compile("\\b" + fn + "\\(").matcher(block);
       int defs = 0, inRun = 0, other = 0;
       while (calls.find()) {
@@ -186,12 +275,14 @@ public class PowerTweaksTest {
       if (line.contains("needsRoot: true")) { boolean known = false; for (String root : PowerTweaks.ROOT_ONLY) if (line.contains(root)) known = true; is("a row marked needsRoot really is one: " + line.trim(), known); }
     }
     is("the lock: a row that needs Root is locked unless the active mode is root", block.contains("if (a && a.needsRoot && !xqIsRoot()) return 'root';") && block.contains("function xqIsRoot() { return !!isPrivilegedActive && currentWorkingMode === 'root'; }"));
-    for (String fn : new String[] { "xpwPerform", "xdzPerform", "xzrPerform" }) is(fn + " refuses a locked row", between(block, "async function " + fn + "(", "\n        }\n").contains("xqActLock(a)) return { ok: false"));
-    is("the profile apply refuses without a mode", between(block, "async function xdzProfPerform(", "\n        }\n").contains("xqActLock(null)) return { ok: false"));
+    for (String fn : new String[] { "xpwPerform", "xdzPerform", "xzrPerform", "xdzGovPerform" }) is(fn + " refuses a locked row", between(block, "async function " + fn + "(", "\n        }\n").contains("xqActLock(a)) return { ok: false"));
+    for (String fn : new String[] { "xdzProfPerform", "xdzTunePerform", "xzrSetPerform" }) is(fn + " refuses without a mode", between(block, "async function " + fn + "(", "\n        }\n").contains("xqActLock(null)) return { ok: false"));
+    for (String fn : new String[] { "xdzTunePerform", "xzrSetPerform" }) is(fn + " checks every row's lock again before it runs it", between(block, "async function " + fn + "(", "\n        }\n").contains("if (!a || xqActLock(a)) { fail = {"));
     // 4. the rest of the page does not run these commands on this phone outside their tables: a line of the rest that names one may be the sections' own
     //    notes, a word list (the ADB console's autocompletion, the Connected Devices quick commands, which go to ANOTHER device through cdSh with their own
     //    question), but never a shell call of this phone (executeShell, execShellOk, xqRun). am crash: Task Manager's renderer switch is the known other place.
-    for (String c : new String[] { "setprop ctl.restart zygote", "reboot recovery", "reboot bootloader", "reboot -p", "force-idle", "deviceidle unforce", "deviceidle step", "deviceidle motion", "drop_caches" }) {
+    for (String c : new String[] { "setprop ctl.restart zygote", "reboot recovery", "reboot bootloader", "reboot -p", "force-idle", "deviceidle unforce", "deviceidle step", "deviceidle motion", "drop_caches",
+        "scaling_governor", "zram0/reset", "/proc/sys/vm/swappiness", "device_config put device_idle", "device_idle_constants", "lmkd_native", "lmkd.reinit" }) {
       for (String line : rest.split("\n")) {
         if (!line.contains(c)) continue;
         boolean shell = line.contains("executeShell") || line.contains("execShellOk(") || line.contains("xqRun(") || line.contains("runTerminalCmd(");

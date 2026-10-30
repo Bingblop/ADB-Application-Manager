@@ -1,0 +1,3 @@
+policy0|schedutil|1804800|400000|1804800|0-3|conservative powersave performance schedutil
+policy4|schedutil|2515200|672000|2515200|4-6|conservative powersave performance schedutil
+policy7|performance|3187200|787200|3187200|7|conservative powersave performance schedutil

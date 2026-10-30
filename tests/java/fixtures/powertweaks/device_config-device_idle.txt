@@ -1,0 +1,3 @@
+light_after_inactive_to=120000
+inactive_to=450000
+idle_after_inactive_to=450000
