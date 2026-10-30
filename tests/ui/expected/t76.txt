@@ -61,7 +61,7 @@
     pressed again it turns on, still focused: true
     Enter on an arrow: the row moves to the top and the focus goes to the other arrow (the one pressed has nowhere to go): true {"row":"debloater","label":"Move UAD-NG Debloater down","first":"debloater"}
     and that one keeps working: true
-    after a tap on an arrow the row is where it was on the screen (677 px, now 677 px), so the next tap moves the same row: true
+    after a tap on an arrow the row is where it was on the screen (672 px, now 672 px), so the next tap moves the same row: true
 13. [320 px, scrolled] the tab bar sticks right under the header (header 82 px), and the top of its first line is not covered: true {"hdr":82,"tabs":58,"tabTop":82,"hdrBottom":82,"firstLineUncovered":true,"uadTop":"144px","pad":"148px"}
     the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":82,"tabs":58,"tabTop":82,"hdrBottom":82,"firstLineUncovered":true,"uadTop":"144px","pad":"148px"}
 13. [360 px, scrolled] the tab bar sticks right under the header (header 82 px), and the top of its first line is not covered: true {"hdr":82,"tabs":58,"tabTop":82,"hdrBottom":82,"firstLineUncovered":true,"uadTop":"144px","pad":"148px"}
