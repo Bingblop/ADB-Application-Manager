@@ -1,4 +1,4 @@
-1. the tab bar names it "Hidden Settings": true ["Application Manager","Saved Applications","UAD-NG Debloater","Installer/ Updater","File Manager","Console","Live Logcat","Hidden Settings","Extra Settings","RRO/Monet Customization","App Stores","Task Manager","Connected Devices","Morphe Patcher","SD Maid","Root Features","Custom Fonts","About"]
+1. the tab bar names it "Hidden Settings": true ["Application Manager","Saved Applications","UAD-NG Debloater","Installer/ Updater","File Manager","Console","Live Logcat","Hidden Settings","Extra Settings","RRO/Monet Customization","App Stores","Task Manager","Connected Devices","Morphe Patcher","SD Maid","Root Features","Custom Fonts","Android Firewall","About"]
    it sits after Live Logcat, with the Extra Settings tab and then RRO/Monet Customization behind it: true ["Live Logcat","Hidden Settings","Extra Settings","RRO/Monet Customization","App Stores"]
 2. the button opens it and becomes the active one: true
 3. its card says what it is: true
