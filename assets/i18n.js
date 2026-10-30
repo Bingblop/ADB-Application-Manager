@@ -308,9 +308,10 @@
   function load(code) {
     return new Promise(function (resolve, reject) {
       if (window.__LANGS[code]) { resolve(window.__LANGS[code]); return; }
-      if (!/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(String(code))) { reject(new Error('bad code')); return; }      // only a language code of the list reaches the script path
+      var L = find(code);                                   // only a code of the list reaches the script path, and the path is built from the list's own entry
+      if (!L) { reject(new Error('bad code')); return; }
       var s = document.createElement('script');
-      s.src = 'lang/' + code + '.js';
+      s.src = 'lang/' + L.code + '.js';
       s.onload = function () { window.__LANGS[code] ? resolve(window.__LANGS[code]) : reject(new Error('empty')); };
       s.onerror = function () { reject(new Error('missing')); };
       document.head.appendChild(s);

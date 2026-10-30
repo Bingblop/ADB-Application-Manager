@@ -17696,7 +17696,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const out = []; let para = [], list = '', fence = false;
             const flush = () => { if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para = []; } };
             const endList = () => { if (list) { out.push('</' + list + '>'); list = ''; } };
-            let bare = String(text), prev; do { prev = bare; bare = bare.replace(/<!--[\s\S]*?-->/g, ''); } while (bare !== prev); do { prev = bare; bare = bare.replace(/<!--|-->/g, ''); } while (bare !== prev);       // comments go, and so does a bare marker left behind
+            let bare = String(text), prev; do { prev = bare; bare = bare.replace(/<!--[\s\S]*?--!?>/g, ''); } while (bare !== prev); do { prev = bare; bare = bare.replace(/<!--|--!?>/g, ''); } while (bare !== prev);       // comments go, and so does a bare marker left behind
             bare.split(/\r?\n/).forEach((line) => {
                 if (/^\s*```/.test(line)) { flush(); endList(); out.push(fence ? '</pre>' : '<pre>'); fence = !fence; return; }
                 if (fence) { out.push(esc(line) + '\n'); return; }
