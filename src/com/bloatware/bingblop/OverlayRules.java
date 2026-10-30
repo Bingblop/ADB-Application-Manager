@@ -851,8 +851,9 @@ final class OverlayRules {
     // ---- root-only theme: this app's fabricated colour overlay ----
     //
     // `cmd overlay fabricate` writes a colour overlay straight into the overlay manager, and refuses anyone but root (the shell
-    // user Shizuku and ADB run as is turned away with "must be root"). The page hands over a plan of {resource, argb} entries; what
-    // is written, in which of the three command forms Android has had, and how the result is read back is decided here.
+    // user Shizuku and ADB run as is turned away with "must be root"). The page hands over a plan of {resource, argb, config?} entries
+    // (config "night" for a dark-mode colour); what is written, in which of the three command forms Android has had, and how the result
+    // is read back is decided here.
 
     /** The shell registers every fabricated overlay under its own package, so this app's overlay is com.android.shell:aam_monet (the Help Guide names it so the user can find it in the overlay list). */
     static final String FAB_OWNER = "com.android.shell";
@@ -867,14 +868,15 @@ final class OverlayRules {
     static final String FAB_FILE = "/data/system/aam_monet.xml";
     static final String FAB_HEREDOC = "AAM_OVL_EOF";
     /**
-     * The most entries a plan may have. Android 17 takes the most: 65 palette shades as {@code _light} and as {@code _dark} (130), the 55
-     * roles as {@code _light} and {@code _dark} (110) and the 12 fixed colours as {@code _light} and {@code _dark} (24), 264 in all, and 318
-     * with the 27 custom colour pairs SystemUI also writes there (not written yet). Android 16 QPR1 and QPR2 write the fixed colours once,
-     * unsuffixed: 252, and 296 with their 22 custom colour pairs. 320 leaves a margin. The Android 14+ form puts the whole plan in one file written
-     * by a heredoc inside the {@code su -c} argument: 320 entries make about 24,000 characters, far under the 131,072 bytes Linux allows one
-     * argument (MAX_ARG_STRLEN; OverlayRulesTest builds the script to check).
+     * The most entries a plan may have. The page's plan follows ColorBlendr's framework writer: 78 palette shades (6 rows of 13) as
+     * {@code _light} and as {@code _dark} and, on Android 14 to 16, unsuffixed too (up to 234), 59 system and 23 custom colours as
+     * {@code _light} and {@code _dark} (164), the 12 fixed colours unsuffixed, with their {@code night} configuration and as {@code _light}
+     * and {@code _dark} (48), the device-default accent, the surface effects and a few extras (about 20): about 470 at most before the
+     * names the phone's framework lacks are dropped. 512 leaves a margin. The Android 14+ form puts the whole plan in one file written by a
+     * heredoc inside the {@code su -c} argument: 512 entries with the longest names make about 60,000 characters, under the 131,072 bytes
+     * Linux allows one argument (MAX_ARG_STRLEN; OverlayRulesTest builds the script to check).
      */
-    static final int MAX_FAB_ENTRIES = 320;
+    static final int MAX_FAB_ENTRIES = 512;
     /** How many of a plan's entries are looked up after the write (the first ones: the page puts the entries that matter most first); see {@link #lookupEntries(String, List)} for Android 16 QPR1, QPR2 and 17. */
     static final int FAB_LOOKUPS = 4;
     /**
@@ -907,12 +909,15 @@ final class OverlayRules {
     /** The first Android whose fabricate option parser has no {@code --user} (an unknown option is an error there). */
     static final int FAB_NO_USER_SDK = 36;
 
-    private static final Pattern FAB_RESOURCE = Pattern.compile("android:color/system_[a-z0-9_]+");
+    /** A framework colour by name: the Material You names (system_...) and the device-default ones ColorBlendr writes too (accent_device_default_dark, background_dark). */
+    private static final Pattern FAB_RESOURCE = Pattern.compile("android:color/[a-z0-9_]+");
     private static final Pattern FAB_VALUE = Pattern.compile("0x[0-9A-Fa-f]{8}");
     private static final Pattern FAB_OVERLAY_NAME = Pattern.compile("aam_monet(_[a-z0-9_]+)?");
     /** What a lookup prints for a colour: Integer.toHexString pads nothing, so an alpha below 0x10 prints fewer than eight digits. */
     private static final Pattern LOOKUP_COLOR = Pattern.compile("#[0-9a-f]{1,8}");
-    private static final String FAB_RESOURCE_PREFIX = "android:color/system_";
+    private static final String FAB_RESOURCE_PREFIX = "android:color/";
+    /** The one resource configuration an entry may carry: the colour the framework shows in dark mode (values-night). */
+    static final String FAB_CONFIG_NIGHT = "night";
     /** A palette shade by its unsuffixed name (system_accent1_500, system_error_0): on Android 16 QPR1, QPR2 and 17 an alias of the _light or _dark name. */
     private static final Pattern FAB_PALETTE_ALIAS = Pattern.compile("android:color/system_(accent[1-3]|neutral[12]|error)_[0-9]+");
     /**
@@ -922,21 +927,38 @@ final class OverlayRules {
      */
     private static final Pattern FAB_FIXED_ALIAS = Pattern.compile("android:color/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)");
 
-    /** One entry of a plan: a framework colour resource and the colour it is to show. */
+    /**
+     * One entry of a plan: a framework colour resource, the colour it is to show and, when the colour is for dark mode only, the
+     * configuration {@code night}. An entry with no configuration and one with {@code night} on the same resource make the pair a
+     * day/night colour needs (the unqualified one is what the framework shows in light mode, and in dark mode too on Android 12 and 13,
+     * whose fabricate has no configuration).
+     */
     static final class FabEntry {
         final String resource;      // android:color/system_neutral1_900
         final String argb;          // 0xAARRGGBB
+        final String config;        // null, or "night"
 
         FabEntry(String resource, String argb) {
+            this(resource, argb, null);
+        }
+
+        FabEntry(String resource, String argb, String config) {
             this.resource = resource;
             this.argb = argb;
+            this.config = config;
+        }
+
+        /** Whether this entry is for one configuration only (dark mode), not for the one the framework resolves in. */
+        boolean configured() {
+            return config != null;
         }
     }
 
     /**
-     * Null when the plan can be written, else why not: a resource that is not {@code android:color/system_<name>}, a value that is not
-     * {@code 0xAARRGGBB}, a resource named twice (on Android 12 and 13 the second would replace the first), no entries, or more than
-     * {@link #MAX_FAB_ENTRIES}. Nothing of the entry itself is echoed back: the words name the entry by its number.
+     * Null when the plan can be written, else why not: a resource that is not {@code android:color/<name>}, a value that is not
+     * {@code 0xAARRGGBB}, a configuration other than none or {@code night}, a resource named twice for the same configuration (on
+     * Android 12 and 13 the second would replace the first), no entries, or more than {@link #MAX_FAB_ENTRIES}. Nothing of the entry
+     * itself is echoed back: the words name the entry by its number.
      */
     static String fabricatePlanProblem(List<FabEntry> plan) {
         return fabricatePlanProblem(null, plan);
@@ -948,8 +970,10 @@ final class OverlayRules {
      * ({@code system_accent1_500}, {@code system_error_0}) is refused too: there it is an alias of the {@code _light} and {@code _dark}
      * names, and an overlay on the alias would show one colour in both modes over SystemUI's two (the plan writes the suffixed names, as
      * SystemUI does). On a profile whose fixed colours are suffixed (MonetProfile.suffixedFixed: Android 17) an unsuffixed fixed colour
-     * ({@code system_primary_fixed}) is refused for the same reason. Those are the only names this checks per profile: a name the build does
-     * not have is skipped by Android, not refused.
+     * ({@code system_primary_fixed}) is refused for the same reason, unless the plan also has that resource with the {@code night}
+     * configuration: the pair gives each mode its colour (the unqualified entry resolves in light mode, the night one in dark mode), which is
+     * what the two suffixed names do, so Android takes it. Those are the only names this checks per profile: a name the build does not have
+     * is skipped by Android, not refused.
      */
     static String fabricatePlanProblem(String profile, List<FabEntry> plan) {
         if (plan == null || plan.isEmpty()) return "The plan has no entries";
@@ -957,9 +981,11 @@ final class OverlayRules {
         java.util.HashSet<String> seen = new java.util.HashSet<String>();
         for (int i = 0; i < plan.size(); i++) {
             FabEntry e = plan.get(i);
-            if (e == null || e.resource == null || !FAB_RESOURCE.matcher(e.resource).matches()) return "Entry " + (i + 1) + " does not name a system colour (android:color/system_...)";
+            if (e == null || e.resource == null || !FAB_RESOURCE.matcher(e.resource).matches()) return "Entry " + (i + 1) + " does not name a framework colour (android:color/...)";
             if (e.argb == null || !FAB_VALUE.matcher(e.argb).matches()) return "Entry " + (i + 1) + " is not a colour (0xAARRGGBB)";
-            if (!seen.add(e.resource)) return "Entry " + (i + 1) + " names a resource twice";
+            if (e.config != null && !FAB_CONFIG_NIGHT.equals(e.config)) return "Entry " + (i + 1) + " names a configuration other than night";
+            // the key holds the configuration too: the unqualified entry and the night one of a resource are two different items
+            if (!seen.add(e.resource + (e.config == null ? "" : "|" + e.config))) return "Entry " + (i + 1) + " names a resource twice";
         }
         if (MonetProfile.suffixedPalettes(profile)) {
             for (int i = 0; i < plan.size(); i++) {
@@ -967,8 +993,12 @@ final class OverlayRules {
             }
         }
         if (MonetProfile.suffixedFixed(profile)) {
+            java.util.HashSet<String> night = new java.util.HashSet<String>();
+            for (FabEntry e : plan) if (e.configured()) night.add(e.resource);
             for (int i = 0; i < plan.size(); i++) {
-                if (FAB_FIXED_ALIAS.matcher(plan.get(i).resource).matches()) return "Entry " + (i + 1) + " names a fixed color without _light or _dark, which this Android version does not take";
+                FabEntry e = plan.get(i);
+                // paired with its night entry the alias shows one colour per mode, as SystemUI's two names do, and is taken
+                if (!e.configured() && !night.contains(e.resource) && FAB_FIXED_ALIAS.matcher(e.resource).matches()) return "Entry " + (i + 1) + " names a fixed color without _light or _dark, which this Android version does not take";
             }
         }
         return null;
@@ -1006,28 +1036,45 @@ final class OverlayRules {
         }
     }
 
-    /** The overlay name an entry gets on Android 12 and 13 (one overlay per entry): aam_monet_neutral1_900 for android:color/system_neutral1_900. */
+    /** The overlay name an entry gets on Android 12 and 13 (one overlay per entry): the resource's name after android:color/, so aam_monet_system_neutral1_900 for android:color/system_neutral1_900. */
     static String entryOverlayName(FabEntry e) {
         return FAB_NAME + "_" + e.resource.substring(FAB_RESOURCE_PREFIX.length());
     }
 
-    /** The identifiers a plan is written under: one (com.android.shell:aam_monet) from Android 14, one per entry before it. Checks the plan first. */
+    /**
+     * The entries the Android 12 and 13 form writes: those with no configuration. Their fabricate takes a resource and a value, nothing
+     * else, so a {@code night} entry has no place there; its pair, the unqualified entry, is what the framework shows in both modes.
+     * Throws IllegalArgumentException when nothing is left (a plan of night entries alone).
+     */
+    static List<FabEntry> perEntryPlan(List<FabEntry> plan) {
+        List<FabEntry> out = new ArrayList<FabEntry>();
+        for (FabEntry e : plan) if (!e.configured()) out.add(e);
+        if (out.isEmpty()) throw new IllegalArgumentException("The plan has only night colours, which this Android version cannot take");
+        return out;
+    }
+
+    /** The identifiers a plan is written under: one (com.android.shell:aam_monet) from Android 14, one per unconfigured entry before it ({@link #perEntryPlan}). Checks the plan first. */
     static List<String> fabricateIds(int sdk, List<FabEntry> plan) {
         fabricatePlanOk(plan);
         List<String> ids = new ArrayList<String>();
         if (sdk >= FAB_FILE_SDK) {
             ids.add(FAB_ID);
         } else {
-            for (FabEntry e : plan) ids.add(FAB_OWNER + ":" + entryOverlayName(e));
+            for (FabEntry e : perEntryPlan(plan)) ids.add(FAB_OWNER + ":" + entryOverlayName(e));
         }
         return ids;
     }
 
-    /** The XML the Android 14+ form reads: one item per entry, the target without its package (the shell prefixes android:). */
+    /**
+     * The XML the Android 14+ form reads: one item per entry, the target without its package (the shell prefixes android:), and
+     * {@code config="night"} on an entry that has it (the shell's parser reads that attribute on 14, 16 and 17 and keys the item by it).
+     */
     static String fabricateXml(List<FabEntry> plan) {
         StringBuilder sb = new StringBuilder("<overlay>\n");
         for (FabEntry e : plan) {
-            sb.append("  <item target=\"").append(e.resource.substring("android:".length())).append("\" value=\"").append(e.argb).append("\"/>\n");
+            sb.append("  <item target=\"").append(e.resource.substring("android:".length())).append("\" value=\"").append(e.argb).append('"');
+            if (e.configured()) sb.append(" config=\"").append(e.config).append('"');
+            sb.append("/>\n");
         }
         return sb.append("</overlay>\n").toString();
     }
@@ -1037,18 +1084,24 @@ final class OverlayRules {
         return "echo " + GET_MARK + "; " + listCommand() + "; echo " + END_MARK + "\n";
     }
 
-    /** The entries whose colour is looked up after the write: the first {@link #FAB_LOOKUPS} of the plan. */
+    /** The entries whose colour is looked up after the write: the first {@link #FAB_LOOKUPS} of the plan without a configuration. */
     static List<FabEntry> lookupEntries(List<FabEntry> plan) {
         return lookupEntries(null, plan);
     }
 
     /**
-     * The entries looked up after the write on the phone's build family. On a profile whose palettes are suffixed
-     * (MonetProfile.suffixedPalettes) the entries of {@link #QPR_LOOKUPS} the plan has (of {@link #P17_LOOKUPS} on Android 17), in that
-     * order, then the plan's first other entries until there are {@link #FAB_LOOKUPS} (a plan with Pure black only has one of them): at most
-     * five (six on Android 17). Elsewhere (and with no profile) the first {@link #FAB_LOOKUPS} of the plan, as before.
+     * The entries looked up after the write on the phone's build family. A {@code night} entry is never one of them: {@code cmd overlay
+     * lookup} resolves in the configuration system_server is in, so what it prints for the resource is the unqualified entry's colour (in
+     * light mode) or Android's own (in dark mode, when the plan has no unqualified entry), never the night one's by name. Of the rest, on a
+     * profile whose palettes are suffixed (MonetProfile.suffixedPalettes) the entries of {@link #QPR_LOOKUPS} the plan has (of
+     * {@link #P17_LOOKUPS} on Android 17), in that order, then the plan's first other entries until there are {@link #FAB_LOOKUPS} (a plan
+     * with Pure black only has one of them): at most five (six on Android 17). Elsewhere (and with no profile) the first {@link #FAB_LOOKUPS}
+     * of the plan, as before.
      */
     static List<FabEntry> lookupEntries(String profile, List<FabEntry> plan) {
+        List<FabEntry> current = new ArrayList<FabEntry>();
+        for (FabEntry e : plan) if (!e.configured()) current.add(e);
+        plan = current;
         if (!MonetProfile.suffixedPalettes(profile)) return plan.size() <= FAB_LOOKUPS ? plan : new ArrayList<FabEntry>(plan.subList(0, FAB_LOOKUPS));
         List<FabEntry> out = new ArrayList<FabEntry>();
         for (String want : MonetProfile.suffixedFixed(profile) ? P17_LOOKUPS : QPR_LOOKUPS) {
@@ -1101,10 +1154,12 @@ final class OverlayRules {
      * The script that writes a plan and reads back what became of it; {@code file} is where the Android 14+ form puts its XML
      * ({@link #FAB_FILE} in the app; a path of its own in the test). Three forms:
      * <ul>
-     * <li>Android 12 and 13: one fabricate per entry, each its own overlay named for the entry, then one enable per overlay (one
-     *     name cannot hold two entries there, and registering a name again replaces it).</li>
+     * <li>Android 12 and 13: one fabricate per entry without a configuration ({@link #perEntryPlan}: the night entries are left out,
+     *     that form has no configuration), each its own overlay named for the entry, then one enable per overlay (one name cannot hold
+     *     two entries there, and registering a name again replaces it).</li>
      * <li>Android 14 and 15: the XML written by a heredoc whose delimiter is quoted (nothing in the body is expanded), made readable
-     *     to everyone (chmod 644), one fabricate with {@code --file}, one enable, the file removed.</li>
+     *     to everyone (chmod 644), one fabricate with {@code --file}, one enable, the file removed. The night entries are items with
+     *     {@code config="night"}.</li>
      * <li>Android 16: the same without {@code --user current} on the fabricate (its parser has no such option; list, enable
      *     and lookup keep it).</li>
      * </ul>
@@ -1134,12 +1189,13 @@ final class OverlayRules {
             sb.append(changeCommand("enable", FAB_ID)).append('\n');
             sb.append("rm -f ").append(BackupScripts.quote(file)).append('\n');
         } else {
-            for (FabEntry e : plan) {
+            List<FabEntry> written = perEntryPlan(plan);
+            for (FabEntry e : written) {
                 // 0x1c is TYPE_INT_COLOR_ARGB8, the type the shell's own help example uses
                 sb.append(head).append(BackupScripts.quote(entryOverlayName(e))).append(' ').append(BackupScripts.quote(e.resource))
                         .append(" 0x1c ").append(BackupScripts.quote(e.argb)).append('\n');
             }
-            for (FabEntry e : plan) sb.append(changeCommand("enable", FAB_OWNER + ":" + entryOverlayName(e))).append('\n');
+            for (FabEntry e : written) sb.append(changeCommand("enable", FAB_OWNER + ":" + entryOverlayName(e))).append('\n');
         }
         sb.append(readBackTail());
         sb.append(lookupBlock(profile, plan));

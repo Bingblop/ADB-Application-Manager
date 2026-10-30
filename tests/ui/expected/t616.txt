@@ -1,0 +1,33 @@
+0. Root and Android 17: the controls are live: true
+1. Apply writes the theme setting first (wallpaper, Tonal Spot), then one fabricate: true [{"source":"home_wallpaper","hex":"","style":"TONAL_SPOT"}]
+   the plan is MonetPlan.cb.entries for Android 17: 372 entries, every one android:color/<name> with 0xAARRGGBB: true 372
+   the same entries as the maths give, in the same order, the night configuration passed through unchanged: true
+   system_primary_fixed comes once plain and once with config night: true [{"resource":"android:color/system_primary_fixed","argb":"0xFFB5F1BC"},{"resource":"android:color/system_primary_fixed","argb":"0xFFB5F1BC","config":"night"}]
+   with Tint text color on, the text on dark surfaces is tinted (not plain white): true 0xFFDFE4DC
+   the record keeps the ids, the options, the Android level and the build: true {"ids":["com.android.shell:aam_monet"],"t":<epoch ms>,"black":false,"style":"TONAL_SPOT","opts":{"style":"TONAL_SPOT","seed":"4F8A5B","spec":"2021","contrast":0,"dark":true,"secondary":null,"tertiary":null,"accentSaturation":100,"backgroundSaturation":100,"backgroundLightness":100,"accurate":true,"black":false,"tintText":true},"sdk":37,"build":"google/mock/mock:17/ZP1A.250905.001/1234567:user/release-keys"}
+   the toast: true
+2. the Tint text color switch goes off and is remembered; nothing is written yet: true
+   the plan: system_on_surface_dark is plain white, 0xFFFFFFFF: true 0xFFFFFFFF
+   and system_on_surface_light plain black: true 0xFF000000
+   the record carries tintText false: true
+3. Contrast High is chosen and remembered as 1: true
+   system_primary_light differs from the Standard one: true 0xFF003414 vs 0xFF336940
+   as the maths say for contrast 1: true
+4. Pure black: system_surface_dark is 0xFF000000, the record says black: true 0xFF000000 [true,true,true]
+5. the Secondary accent is set, shown as #FF0000 with Clear: true
+   the accent2 shades move, accent1 stays: true 0xFFAD6257 vs 0xFF697C69
+   the record carries the accent: true
+   Clear puts it back to From the style: true
+6. Monochrome chosen: the preview names it, the hint stays: true
+   the theme setting gets Tonal Spot, the overlay the Monochrome colours (accent1 500 grey), the record the style: true [{"source":"home_wallpaper","hex":"","style":"TONAL_SPOT"},{"resource":"android:color/system_accent1_500_light","argb":"0xFF777777"}]
+   Colors in use still reads the setting (Tonal Spot), the preview the overlay: true From your wallpaper
+Tonal Spot style · just now
+7. CMF is greyed at spec 2021: true
+   at 2026 it opens: true
+   Apply with CMF at 2026: the record carries it, the plan has its 372 entries: true ["CMF","2026"]
+   back to 2021 with CMF chosen: Tonal Spot is chosen instead and CMF greyed again: true
+8. Android 13: 168 entries, none with a configuration, one overlay per colour named after it (the 17-era overlay kept in the record while the list shows it on): true [168,["com.android.shell:aam_monet_system_accent1_0","com.android.shell:aam_monet_system_accent1_10"]]
+   with the phone on Android 14 now the note says the colours were written for another version: true
+   Android 14: 181 entries (13 with night), one overlay, the 13-era ids kept with it while the list shows them on, the note gone: true [181,169]
+no page errors: true
+all passed

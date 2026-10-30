@@ -11806,14 +11806,15 @@ public class MainActivity extends Activity {
 
         /**
          * Writes this app's fabricated colour overlay with root, or switches it off. The plan is JSON: {"action":"fabricate",
-         * "entries":[{"resource":"android:color/system_neutral1_900","argb":"0xFF000000"}, ...]} (action may be left out), or
-         * {"action":"disable","ids":["com.android.shell:aam_monet", ...]}. It is checked here, before anything is queued: a resource
-         * outside android:color/system_*, a value that is not 0xAARRGGBB, a resource named twice, more than OverlayRules.MAX_FAB_ENTRIES
-         * (320) entries or ids, an unsuffixed palette shade on Android 16 QPR1, QPR2 and 17 or an unsuffixed fixed colour on Android 17
-         * (the phone's profile, MonetProfile, as getSystemPalette reports it; the script is built and its lookups chosen for the same
-         * profile), or an id that is not one of this
-         * app's overlays is refused with "error: ...". Returns "started". The answer arrives as window.onOverlayFab(json); without Super
-         * User it says needsPrivilege.
+         * "entries":[{"resource":"android:color/system_neutral1_900","argb":"0xFF000000"}, {"resource":"android:color/system_primary_fixed",
+         * "argb":"0xFF4F378B","config":"night"}, ...]} (action may be left out; config only on a dark-mode colour, which pairs with the
+         * unqualified entry of the same resource), or {"action":"disable","ids":["com.android.shell:aam_monet", ...]}. It is checked here,
+         * before anything is queued: a resource outside android:color/*, a value that is not 0xAARRGGBB, a config other than "night", a
+         * resource named twice for the same config, more than OverlayRules.MAX_FAB_ENTRIES (512) entries or ids, an unsuffixed palette shade
+         * on Android 16 QPR1, QPR2 and 17 or an unsuffixed fixed colour on Android 17 (the phone's profile, MonetProfile, as getSystemPalette
+         * reports it; the script is built and its lookups chosen for the same profile), or an id that is not one of this app's overlays is
+         * refused with "error: ...". Returns "started". The answer arrives as window.onOverlayFab(json); without Super User it says
+         * needsPrivilege.
          */
         @JavascriptInterface
         public String overlayFabricate(final int req, final String planJson) {
@@ -11838,7 +11839,9 @@ public class MainActivity extends Activity {
                     int n = a == null ? 0 : Math.min(a.length(), OverlayRules.MAX_FAB_ENTRIES + 1);
                     for (int i = 0; i < n; i++) {
                         JSONObject e = a.optJSONObject(i);
-                        entries.add(new OverlayRules.FabEntry(e == null ? null : e.optString("resource", null), e == null ? null : e.optString("argb", null)));
+                        // a config left out or null is "the configuration the phone is in"; any text (even an unknown one) is kept for the check to refuse
+                        String config = e == null || e.isNull("config") ? null : e.optString("config", null);
+                        entries.add(new OverlayRules.FabEntry(e == null ? null : e.optString("resource", null), e == null ? null : e.optString("argb", null), config));
                     }
                     OverlayRules.fabricatePlanOk(profile, entries);
                 } else {

@@ -1,0 +1,31 @@
+1. one flow: Colors in use, Color, Style, Color spec, Contrast, Intensity, Shades and text, How this works, Back up and restore: true ["Colors in use\nRefresh","Color","Style","🔒 Color spec","🔒 Contrast","🔒 Intensity","Shades and text","How this works","Back up and restore"]
+   one sticky bar at the very end holds the only Apply theme, Reset and the hint; How this works is collapsed: true {"cards":["Colors in use\nRefresh","Color","Style","🔒 Color spec","🔒 Contrast","🔒 Intensity","Shades and text","How this works","Back up and restore"],"applies":1,"resets":1,"barLast":true,"sticky":true,"barHolds":true,"apply":"Apply theme","reset":"Reset","how":false,"note":"Shizuku and ADB cannot write these colors; Super User (uid 0) can.","hint":"This is already what the phone uses."}
+   the seven root-only rows are locked rows: accents, spec, contrast, intensity, Accurate shades, Pure black, Tint text color: true ["🔒 Secondary and tertiary accents","🔒 Color spec","🔒 Contrast","🔒 Intensity","🔒 Accurate shades","🔒 Pure black","🔒 Tint text color"]
+   each with the reason for uid 2000: true ["Needs Super User (uid 0) to write Material You colors","Needs Super User (uid 0) to write Material You colors","Needs Super User (uid 0) to write Material You colors","Needs Super User (uid 0) to write Material You colors","Needs Super User (uid 0) to write Material You colors","Needs Super User (uid 0) to write Material You colors","Needs Super User (uid 0) to write Material You colors"]
+   the rows sit in their cards: the accents in Color, then one card each: true ["ovlAccents","ovlSpecRow","ovlContrastRow","ovlAdjust","ovlSwitches","ovlSwitches","ovlSwitches"]
+   the note under the switches says who can write them: true Shizuku and ADB cannot write these colors; Super User (uid 0) can.
+   the hint says nothing about the overlay: true This is already what the phone uses.
+   the Style grid holds all ten styles, Android's six open: true ["TONAL_SPOT","VIBRANT","EXPRESSIVE","FRUIT_SALAD","RAINBOW","SPRITZ","FIDELITY","CONTENT","MONOCHROMATIC","CMF"]
+   Fidelity, Content, Monochrome and CMF greyed, with the lock glyph and the uid 0 reason: true [{"id":"FIDELITY","locked":true,"disabled":true,"name":"🔒 Fidelity","why":"Needs Super User (uid 0) to write Material You colors","active":false},{"id":"CONTENT","locked":true,"disabled":true,"name":"🔒 Content","why":"Needs Super User (uid 0) to write Material You colors","active":false},{"id":"MONOCHROMATIC","locked":true,"disabled":true,"name":"🔒 Monochrome","why":"Needs Super User (uid 0) to write Material You colors","active":false},{"id":"CMF","locked":true,"disabled":true,"name":"🔒 CMF","why":"Needs Super User (uid 0) to write Material You colors","active":false}]
+   a tap on a greyed style changes nothing: true
+   nothing of the locked rows is interactive: true
+   no root call went out: true
+2. Shizuku at uid 1000: the rows stay locked, the reason names the system user: true [{"box":"ovlAccents","locked":true,"name":"🔒 Secondary and tertiary accents","btn":"Locked","disabled":true,"why":"Shizuku runs as the system user (uid 1000); writing these colors needs uid 0"},{"id":"FIDELITY","locked":true,"disabled":true,"name":"🔒 Fidelity","why":"Shizuku runs as the system user (uid 1000); writing these colors needs uid 0","active":false}]
+   the theme half itself is usable there (Apply is enabled): true
+3. with Root: no locked row left; the accents, spec, contrast and intensity rows and the three switches are live: true ["Secondary and tertiary accents","Color spec","Contrast","Intensity","Accurate shades","Pure black","Tint text color"]
+   the ten styles are open, except CMF, which needs spec 2026: true {"id":"CMF","locked":true,"disabled":true,"name":"🔒 CMF","why":"Needs Color spec 2026","active":false}
+   defaults as ColorBlendr: 2021, Standard, 100% x3, Accurate shades on, Pure black off, Tint text color on, accents from the style: true {"spec":"2021*,2025,2026","con":"Standard*,Medium,High","sliders":"accentSaturation=100,backgroundSaturation=100,backgroundLightness=100","sw":"ovlAccurateSw:true,ovlBlackSw:false,ovlTintSw:true","acc":"From the style|From the style","preview":"Preview of what Apply theme writes: #4F8A5B from your wallpaper, Tonal Spot, dark","chips":55}
+   the preview shows what Apply writes: the wallpaper colour, Tonal Spot, 55 chips: true ["Preview of what Apply theme writes: #4F8A5B from your wallpaper, Tonal Spot, dark",55]
+   the hint says the colours are written with Super User as ColorBlendr computes them: true Android repaints in a moment, and apps may restart. Also writes these colors into Android with Super User: the same palettes as ColorBlendr.
+   the note under the switches is empty while nothing is written: true
+   the Root Features row is "Monet theme — ColorBlendr palettes", unlocked, Open tab: true {"name":"Monet theme — ColorBlendr palettes","sub":"Color spec, contrast, intensity, accents, Pure black, Tint text color. Written with Super User.","btn":"Open tab","locked":false}
+   Open tab opens the Theme half of the RRO tab: true
+4. the mode changes back: every row locked again: true [true,true,true,true,true,true,true]
+   the Root Features row is locked there: true
+5. without MonetPlan.cb the rows are locked with "Not available in this build", and so are the four styles: true ["Not available in this build","Not available in this build"]
+   the note says so too: true Not available in this build
+   with the maths back the rows are live again: true
+6. an app without the bridge: locked with "Update the app", and the note says to update: true ["Update the app","This version of the app cannot write color overlays. Update it, then come back."]
+7. on Android 11 the Color spec, Contrast, Intensity and Shades and text cards are hidden: true
+no page errors: true
+all passed

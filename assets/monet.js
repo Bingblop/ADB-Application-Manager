@@ -574,7 +574,19 @@
  *   MonetPlan.lib                          the ported classes, for tests (lib.mcu is part 2). lib.adjustOf, lib.accentsOf and
  *                                          lib.accurateOf are what the page tests to know that this file has opts.adjust, opts.accents
  *                                          and opts.accurate (an older monet.js would ignore them)
- * Colours go in as 0xAARRGGBB numbers or 'RRGGBB' / '#RRGGBB' strings and come out as '0xAARRGGBB' or 'RRGGBB' strings.
+ *   MonetPlan.cb                           the ColorBlendr-identical engine (its own section after part 2; tests/monet/cb.test.js).
+ *                                          cb.STYLES (the ten styles), cb.SPECS, cb.CONTRASTS ([0, 0.5, 1]), cb.SHADES / cb.TONES (13
+ *                                          each, shade 500 = tone 50), cb.ROLES (accent1-3, neutral1-2, error). cb.defaults() and
+ *                                          cb.normalize(opts): { style, seed, secondary, tertiary, spec, contrast, accentSaturation,
+ *                                          backgroundSaturation, backgroundLightness (0..200, 100 = as computed), accurate, black,
+ *                                          tintText, dark }. cb.scheme(opts, isDark): the MCU scheme (CMF always at 2026; a second /
+ *                                          third colour's primary palette in place of accent2 / accent3). cb.palettes(opts, isDark):
+ *                                          the six tuned rows as MonetPlan.palettes shapes them (error added). cb.tokens(opts, isDark):
+ *                                          [{ name, group: 'SYSTEM' | 'FIXED' | 'CUSTOM', argb: '#AARRGGBB' }] with the rules applied.
+ *                                          cb.entries(opts, sdk): the framework plan [{ resource: 'android:color/<name>', argb:
+ *                                          '#AARRGGBB', config?: 'night' }] for that SDK, only names the framework has (cb.exists(name,
+ *                                          sdk); 34 for older, 37 for newer), cb.count(opts, sdk) its length; cb.lib the pieces, for tests
+ * Colours go in as 0xAARRGGBB numbers or 'RRGGBB' / '#RRGGBB' strings and come out as '0xAARRGGBB' or 'RRGGBB' strings (cb: '#AARRGGBB').
  */
 (function (root, factory) {
     const api = factory();
@@ -3231,6 +3243,450 @@
     })();
 
     // ==========================================================================================================================
+    // MonetPlan.cb — ColorBlendr-identical palettes. What ColorBlendr (github.com/Mahmud0808/ColorBlendr at f610931, read as a
+    // behavioural reference; its code is GPL-3 and none of it is copied) writes into the framework overlay, computed on part 2's
+    // Material Color Utilities (ColorBlendr ships the same upstream commit) with ColorBlendr's own steps written anew here: one scheme
+    // per style with no libmonet profile, no grey-seed remap and no chroma floor (the seed is taken as it is); a second and third accent
+    // colour as the primary palette of a scheme built from that colour; the three Intensity sliders and Accurate shades as a tuning of
+    // each palette (a tone curve, a chroma factor, and a gamut search that moves the tone towards the middle when the chroma asked for
+    // does not fit); its token list (Material's roles, Android's control/text roles, SystemUI's custom colours); its two rules (Pure
+    // black, tintless text); its writers' names, configurations and order; and the framework's colour names per Android version, so
+    // that only names the framework has are written. The old profile engine above stays for its tests; the page writes with this one.
+    // ==========================================================================================================================
+    const CB = (function () {
+        const Hct = MCU.Hct, TonalPalette = MCU.TonalPalette, DynamicColor = MCU.DynamicColor, colorSpec = MCU.colorSpec, Variant = MCU.Variant;
+        const STYLES = ['TONAL_SPOT', 'SPRITZ', 'VIBRANT', 'RAINBOW', 'EXPRESSIVE', 'FRUIT_SALAD', 'MONOCHROMATIC', 'FIDELITY', 'CONTENT', 'CMF'];
+        const STYLE_ALIASES = { NEUTRAL: 'SPRITZ', MONOCHROME: 'MONOCHROMATIC' };
+        const SPECS = ['2021', '2025', '2026'];
+        const CONTRASTS = [0, 0.5, 1];
+        // model/ShadeScale: shade 500 is tone 50 (part 1's Android shades: 49.6)
+        const SHADES = [0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+        const TONES = [100, 99, 95, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0];
+        const SHADE_900 = 11;
+        // model/PaletteRole: the six palettes, their scheme field and their framework name
+        const ROLES = ['accent1', 'accent2', 'accent3', 'neutral1', 'neutral2', 'error'];
+        const ROLE_PALETTE = { accent1: 'primaryPalette', accent2: 'secondaryPalette', accent3: 'tertiaryPalette', neutral1: 'neutralPalette', neutral2: 'neutralVariantPalette', error: 'errorPalette' };
+        const ROLE_RESOURCE = { accent1: 'system_accent1', accent2: 'system_accent2', accent3: 'system_accent3', neutral1: 'system_neutral1', neutral2: 'system_neutral2', error: 'system_error' };
+        const isAccent = role => role === 'accent1' || role === 'accent2' || role === 'accent3';
+        const isNeutral = role => role === 'neutral1' || role === 'neutral2';
+        // the sliders' range in ColorBlendr's theme screen (0 to 200, 100 = as computed)
+        const SLIDER_MIN = 0, SLIDER_MAX = 200, NEUTRAL_LEVEL = 100;
+        const BLACK = 0xFF000000, WHITE = 0xFFFFFFFF;
+        const hex8 = argb => '#' + (argb >>> 0).toString(16).toUpperCase().padStart(8, '0');
+        const withAlpha = (argb, alpha) => ((clampInt(0, 255, alpha) << 24) | (argb & 0xFFFFFF)) >>> 0;
+
+        // ---------- the options: ColorBlendr's defaults (style Tonal Spot, spec 2021, contrast Standard, sliders at 100, Accurate shades
+        // on, Pure black off, tinted text on, no second or third colour), filled and clamped ----------
+        function defaults() {
+            return { style: 'TONAL_SPOT', seed: '6750A4', secondary: null, tertiary: null, spec: '2021', contrast: 0,
+                accentSaturation: 100, backgroundSaturation: 100, backgroundLightness: 100, accurate: true, black: false, tintText: true, dark: false };
+        }
+        const given = v => v !== undefined && v !== null && v !== '';
+        // a colour as 'RRGGBB' or '#RRGGBB' (any case) or a 0xAARRGGBB number, kept as six upper-case digits; nothing given is the fallback
+        function colorOf(v, fallback, what) {
+            if (!given(v)) return fallback;
+            const argb = parseArgb(v);
+            if (!argb) throw new Error('Bad ' + what + ' colour: ' + v);
+            return hex6(argb);
+        }
+        function sliderOf(v, what) {
+            if (!given(v)) return NEUTRAL_LEVEL;
+            const n = Number(v);
+            if (!Number.isFinite(n)) throw new Error('Bad ' + what + ': ' + v);
+            return clampInt(SLIDER_MIN, SLIDER_MAX, Math.round(n));
+        }
+        const flagOf = (v, fallback) => (v === undefined || v === null ? fallback : !!v);
+        function normalize(opts) {
+            const d = defaults(), o = opts && typeof opts === 'object' ? opts : {};
+            const name = String(given(o.style) ? o.style : d.style).toUpperCase(), style = STYLE_ALIASES[name] || name;
+            if (STYLES.indexOf(style) < 0) throw new Error('Unknown style: ' + o.style);
+            const spec = String(given(o.spec) ? o.spec : d.spec);
+            if (SPECS.indexOf(spec) < 0) throw new Error('Unknown spec: ' + o.spec);
+            const contrast = given(o.contrast) ? Number(o.contrast) : d.contrast;
+            if (!Number.isFinite(contrast)) throw new Error('Bad contrast: ' + o.contrast);
+            return {
+                style, seed: colorOf(o.seed, d.seed, 'seed'), secondary: colorOf(o.secondary, null, 'secondary'), tertiary: colorOf(o.tertiary, null, 'tertiary'),
+                spec, contrast: clampDouble(0, 1, contrast),
+                accentSaturation: sliderOf(o.accentSaturation, 'accent saturation'), backgroundSaturation: sliderOf(o.backgroundSaturation, 'background saturation'),
+                backgroundLightness: sliderOf(o.backgroundLightness, 'background lightness'),
+                accurate: flagOf(o.accurate, d.accurate), black: flagOf(o.black, d.black), tintText: flagOf(o.tintText, d.tintText), dark: flagOf(o.dark, d.dark)
+            };
+        }
+        const modeOf = (o, isDark) => (isDark === undefined || isDark === null ? o.dark : !!isDark);
+
+        // ---------- scheme/SchemeFactory: upstream's scheme of the style's variant (Spritz is Neutral, Monochromatic is Monochrome; CMF
+        // always at spec 2026, the only one it has), the seed as given, the contrast level as given. A second or third colour replaces the
+        // secondary or tertiary palette by the primary palette of the scheme that colour gives with the same style, contrast, spec and
+        // mode; the other palettes and the spec (after upstream's fallback) stay the base scheme's ----------
+        function baseScheme(style, seed, isDark, contrast, spec) {
+            return MCU.schemeOf(variantOf(style), Hct.fromInt(parseArgb(seed)), isDark, contrast, spec);
+        }
+        function schemeOf(o, isDark) {
+            const spec = o.style === 'CMF' ? '2026' : o.spec;
+            const base = baseScheme(o.style, o.seed, isDark, o.contrast, spec);
+            if (o.secondary === null && o.tertiary === null) return base;
+            const accent = color => baseScheme(o.style, color, isDark, o.contrast, spec).primaryPalette;
+            return new MCU.DynamicScheme({
+                sourceColorHct: base.sourceColorHct, variant: base.variant, isDark: base.isDark, contrastLevel: base.contrastLevel, specVersion: base.specVersion,
+                primaryPalette: base.primaryPalette, secondaryPalette: o.secondary !== null ? accent(o.secondary) : base.secondaryPalette,
+                tertiaryPalette: o.tertiary !== null ? accent(o.tertiary) : base.tertiaryPalette,
+                neutralPalette: base.neutralPalette, neutralVariantPalette: base.neutralVariantPalette, errorPalette: base.errorPalette
+            });
+        }
+
+        // ---------- palette/PaletteTuning: what the sliders and Accurate shades do to one palette. The saturation is the Accent
+        // saturation slider for an accent palette and the Background saturation slider for a neutral one (100 for every palette of
+        // Monochromatic and for the neutral palettes of Rainbow); the lightness is the Background lightness slider for a neutral palette
+        // (and for Monochromatic's accents), 100 otherwise. Accurate shades off ("vivid") only concerns the accent palettes: it raises the
+        // chroma factor by a quarter and pulls the light tones down a little. The lightness slider moves a tone along one of two curves
+        // (darker below 100, brighter above), by the slider's distance from 100 ----------
+        const DARKEST_CURVE = [[0, 0], [6, 0], [12, 2], [90, 80], [100, 100]];
+        const BRIGHTEST_CURVE = [[0, 0], [10, 20], [88, 98], [100, 100]];
+        const VIVID_CHROMA = 1.25, VIVID_SHIFT = 6, VIVID_TAPER = 10, MID_TONE = 50;
+        // piecewise-linear: the segment that ends at the first point whose x is not below the tone (the first segment for tone 0)
+        function curveMap(curve, tone) {
+            let upper = curve.findIndex(p => p[0] >= tone);
+            if (upper < 1) upper = 1;
+            const [fromA, toA] = curve[upper - 1], [fromB, toB] = curve[upper];
+            return toA + (toB - toA) * (tone - fromA) / (fromB - fromA);
+        }
+        function vividTone(tone) {
+            if (tone <= MID_TONE) return tone;
+            const fromWhite = clampDouble(0, 1, (100 - tone) / VIVID_TAPER), fromMid = clampDouble(0, 1, (tone - MID_TONE) / VIVID_TAPER);
+            return tone - VIVID_SHIFT * fromWhite * fromMid;
+        }
+        class Tuning {
+            constructor(saturation, lightness, accurateShades) {
+                this.saturation = saturation; this.lightness = lightness; this.vivid = !accurateShades;
+                this.chromaFactor = saturation / NEUTRAL_LEVEL * (this.vivid ? VIVID_CHROMA : 1);
+                this.isIdentity = lightness === NEUTRAL_LEVEL && this.chromaFactor === 1 && !this.vivid;
+                this.toneBlend = (NEUTRAL_LEVEL - lightness) / NEUTRAL_LEVEL;
+            }
+            lightnessTone(tone) {
+                if (this.lightness === NEUTRAL_LEVEL) return tone;
+                const clamped = clampDouble(0, 100, tone), curve = this.toneBlend > 0 ? DARKEST_CURVE : BRIGHTEST_CURVE;
+                return clamped + Math.abs(this.toneBlend) * (curveMap(curve, clamped) - clamped);
+            }
+            tone(tone) { const shifted = this.lightnessTone(tone); return this.vivid ? vividTone(shifted) : shifted; }
+            static forRole(role, style, o) {
+                const monochrome = style === 'MONOCHROMATIC';
+                const saturation = monochrome ? NEUTRAL_LEVEL : isNeutral(role) ? (style === 'RAINBOW' ? NEUTRAL_LEVEL : o.backgroundSaturation) : o.accentSaturation;
+                const lightness = monochrome || isNeutral(role) ? o.backgroundLightness : NEUTRAL_LEVEL;
+                return new Tuning(saturation, lightness, o.accurate || monochrome || !isAccent(role));
+            }
+        }
+
+        // ---------- palette/GamutClipper: a colour of a hue, chroma and tone where the chroma may not fit the display. preserveTone keeps
+        // the tone (a yellow at tone 99 through the palette's averaging, as upstream's TonalPalette does). scaled asks for the chroma the
+        // display reaches at that tone times the factor: a factor of 1 or less keeps the tone; above 1 the chroma is searched (16 halvings
+        // between 0 and the target) along a line from the target tone towards a pivot tone nearer the middle, the largest chroma that
+        // fits (within half a unit) winning, so a more saturated palette gives up a little lightness rather than its colour ----------
+        const CHROMA_EPSILON = 0.5, SEARCH_STEPS = 16, YELLOW_FIX_TONE = 99, ADAPTIVE_ALPHA = 1;
+        function preserveTone(hue, chroma, tone) {
+            return tone === YELLOW_FIX_TONE && Hct.isYellow(hue) ? TonalPalette.fromHueAndChroma(hue, chroma).tone(YELLOW_FIX_TONE) : Hct.from(hue, chroma, tone).toInt();
+        }
+        function fits(hue, chroma, tone) { return Hct.from(hue, chroma, tone).chroma >= chroma - CHROMA_EPSILON; }
+        // the pivot (tones and chromas as fractions of 100): half way, moved towards the tone by less the more chroma is asked for
+        function adaptiveMidTone(tone, chroma, alpha) {
+            const offset = tone - 0.5, e1 = 0.5 + Math.abs(offset) + alpha * chroma;
+            return 0.5 * (1 + Math.sign(offset) * (e1 - Math.sqrt(e1 * e1 - 2 * Math.abs(offset))));
+        }
+        function adaptiveTowardsMid(hue, chroma, tone, alpha) {
+            if (tone <= 0 || tone >= 100 || fits(hue, chroma, tone)) return preserveTone(hue, chroma, tone);
+            const pivot = adaptiveMidTone(tone / 100, chroma / 100, alpha) * 100;
+            const toneAt = c => pivot + (tone - pivot) * c / chroma;
+            let low = 0, high = chroma;
+            for (let i = 0; i < SEARCH_STEPS; i++) {
+                const mid = (low + high) / 2;
+                if (fits(hue, mid, toneAt(mid))) low = mid; else high = mid;
+            }
+            return Hct.from(hue, low, toneAt(low)).toInt();
+        }
+        function scaledColor(hue, chroma, tone, factor) {
+            const target = Hct.from(hue, chroma, tone).chroma * factor;
+            return factor <= 1 ? preserveTone(hue, target, tone) : adaptiveTowardsMid(hue, target, tone, ADAPTIVE_ALPHA);
+        }
+
+        // ---------- palette/AdjustedPalette: a scheme palette under its tuning. Nothing to tune (and no chroma multiplier): the
+        // palette's own colour (upstream's TonalPalette, tone 99 of a yellow averaged); otherwise the clipped colour of the palette's
+        // hue, its chroma times the role's multiplier, the tuned tone and the tuning's chroma factor ----------
+        class TunedPalette {
+            constructor(role, palette, tuning) { this.role = role; this.palette = palette; this.tuning = tuning; this.hue = palette.hue; this.chroma = palette.chroma; }
+            colorAt(tone, chromaMultiplier) {
+                if (chromaMultiplier === undefined) chromaMultiplier = 1;
+                if (this.tuning.isIdentity && chromaMultiplier === 1) return this.palette.getHct(tone).toInt();
+                return scaledColor(this.hue, this.chroma * chromaMultiplier, this.tuning.tone(tone), this.tuning.chromaFactor);
+            }
+            shades() { return TONES.map(tone => this.colorAt(tone)); }
+        }
+
+        // ---------- token/Token: the colours written as system_<name>_light / _dark, in ColorBlendr's order. SYSTEM: Material's roles
+        // (part 2's colorSpec, every spec) and Android's control/text roles (token/AndroidDynamicColors: a fixed tone per mode at 2021,
+        // from 2025 the tone of the Material role Android 16 maps them to, as part 2's extendSpecVersion picks it; control_highlight
+        // carries an opacity). FIXED: the twelve fixed colours. CUSTOM: SystemUI's custom colours (below) ----------
+        const MATERIAL_TOKENS = ['palette_key_color_primary', 'palette_key_color_secondary', 'palette_key_color_tertiary', 'palette_key_color_neutral', 'palette_key_color_neutral_variant', 'palette_key_color_error',
+            'background', 'on_background', 'surface', 'surface_dim', 'surface_bright', 'surface_container_lowest', 'surface_container_low', 'surface_container', 'surface_container_high', 'surface_container_highest',
+            'on_surface', 'surface_variant', 'on_surface_variant', 'outline', 'outline_variant', 'inverse_surface', 'inverse_on_surface', 'shadow', 'scrim', 'surface_tint',
+            'primary', 'primary_dim', 'on_primary', 'primary_container', 'on_primary_container', 'inverse_primary',
+            'secondary', 'secondary_dim', 'on_secondary', 'secondary_container', 'on_secondary_container',
+            'tertiary', 'tertiary_dim', 'on_tertiary', 'tertiary_container', 'on_tertiary_container',
+            'error', 'error_dim', 'on_error', 'error_container', 'on_error_container'];
+        const FIXED_TOKENS = ['primary_fixed', 'primary_fixed_dim', 'on_primary_fixed', 'on_primary_fixed_variant', 'secondary_fixed', 'secondary_fixed_dim', 'on_secondary_fixed', 'on_secondary_fixed_variant',
+            'tertiary_fixed', 'tertiary_fixed_dim', 'on_tertiary_fixed', 'on_tertiary_fixed_variant'];
+        // the colorSpec method of a token: palette_key_color_<p> is <p>PaletteKeyColor, the others camel case
+        const camel = name => name.replace(/_([a-z])/g, (m, c) => c.toUpperCase());
+        function materialMethod(name) {
+            const key = /^palette_key_color_(.+)$/.exec(name);
+            return key ? camel(key[1]) + 'PaletteKeyColor' : camel(name);
+        }
+        const material = name => { const method = materialMethod(name); if (typeof colorSpec[method] !== 'function') throw new Error('No Material role ' + name); return colorSpec[method](); };
+        const FP = args => DynamicColor.fromPalette(args);
+        const CC = (low, normal, medium, high) => new MCU.ContrastCurve(low, normal, medium, high);
+        const TDP = (roleA, roleB, delta, polarity, constraint) => new MCU.ToneDeltaPair(roleA, roleB, delta, polarity, false, constraint);
+        const fixedTone = (name, palette, dark, light) => FP({ name, palette, tone: s => s.isDark ? dark : light });
+        // from spec 2025 the Material role under the Android name (a foreground like the original, as ColorBlendr copies it)
+        const since2025 = (original, replacement) => MCU.extendSpecVersion(original, '2025', Object.assign(replacement.clone(), { name: original.name, isBackground: original.isBackground }));
+        const ANDROID = {
+            control_activated: () => since2025(fixedTone('control_activated', s => s.primaryPalette, 30, 90), colorSpec.primaryContainer()),
+            control_normal: () => since2025(fixedTone('control_normal', s => s.neutralVariantPalette, 80, 30), colorSpec.onSurfaceVariant()),
+            control_highlight: () => Object.assign(FP({ name: 'control_highlight', palette: s => s.neutralPalette, tone: s => s.isDark ? 100 : 0 }), { opacity: s => s.isDark ? 0.20 : 0.12 }),
+            text_primary_inverse: () => since2025(fixedTone('text_primary_inverse', s => s.neutralPalette, 10, 90), colorSpec.inverseOnSurface()),
+            text_secondary_and_tertiary_inverse: () => fixedTone('text_secondary_and_tertiary_inverse', s => s.neutralVariantPalette, 30, 80),
+            text_primary_inverse_disable_only: () => fixedTone('text_primary_inverse_disable_only', s => s.neutralPalette, 10, 90),
+            text_secondary_and_tertiary_inverse_disabled: () => fixedTone('text_secondary_and_tertiary_inverse_disabled', s => s.neutralPalette, 10, 90),
+            text_hint_inverse: () => fixedTone('text_hint_inverse', s => s.neutralPalette, 10, 90),
+            gen_widget: () => fixedTone('gen_widget', s => s.primaryPalette, 45, 75)
+        };
+        // ---------- AOSP frameworks/base/packages/SystemUI/src/com/android/systemui/monet/CustomDynamicColors.java, android17-release
+        // (Apache-2.0; ported as part 1 and part 2 port their sources): the custom colours SystemUI writes since Android 15, without its
+        // surface_effect_* colours (ColorBlendr's surface effects are its own list, below). ColorBlendr's SystemUiDynamicColors carries
+        // the same palette, tones, curves and pairs for every one of the 22 (compared number by number: nothing differs) and adds
+        // on_theme_app_ring as a second name for theme_notif's definition, which makes its 23. tMaxC / tMinC are part 2's (a
+        // chroma multiplier of 1) ----------
+        const tMaxC = (palette, lower, upper) => MCU.tMaxC(palette, lower, upper), tMinC = (palette, lower, upper) => MCU.tMinC(palette, lower, upper);
+        const CUSTOM = {
+            widget_background: () => FP({ name: 'widget_background', palette: s => s.secondaryPalette, tone: s => s.isDark ? 20 : 95, isBackground: true }),
+            clock_hour: () => FP({ name: 'clock_hour', palette: s => s.isDark ? s.primaryPalette : s.secondaryPalette, tone: s => s.isDark ? 80 : 30, isBackground: false,
+                background: s => CUSTOM.widget_background(), contrastCurve: s => CC(4, 4, 5, 15), toneDeltaPair: s => TDP(CUSTOM.clock_hour(), CUSTOM.clock_minute(), 10, 'darker', 'farther') }),
+            clock_minute: () => FP({ name: 'clock_minute', palette: s => s.primaryPalette, tone: s => s.isDark ? 90 : 40, isBackground: false, background: s => CUSTOM.widget_background(), contrastCurve: s => CC(6.5, 6.5, 10, 15) }),
+            clock_second: () => FP({ name: 'clock_second', palette: s => s.tertiaryPalette, tone: s => s.isDark ? 90 : 40, isBackground: false, background: s => CUSTOM.widget_background(), contrastCurve: s => CC(5, 5, 70, 11) }),
+            weather_temp: () => FP({ name: 'weather_temp', palette: s => s.primaryPalette, tone: s => s.isDark ? 80 : 40, isBackground: false, background: s => CUSTOM.widget_background(), contrastCurve: s => CC(5, 5, 70, 11) }),
+            theme_app: () => FP({ name: 'theme_app', palette: s => s.isDark ? s.secondaryPalette : s.primaryPalette, isBackground: true, tone: s => {
+                const primary = s.primaryPalette;
+                if (s.isDark) {
+                    if (s.variant === Variant.TONAL_SPOT || s.variant === Variant.EXPRESSIVE) return tMinC(primary, 20, 93);
+                    if (s.variant === Variant.VIBRANT) return tMinC(primary, 66, 93);
+                    return 20;
+                }
+                if (s.variant === Variant.TONAL_SPOT) return tMaxC(primary, 0, 90);
+                if (s.variant === Variant.EXPRESSIVE) return Hct.isCyan(primary.hue) ? 88 : tMaxC(primary, 78, 90);
+                if (s.variant === Variant.VIBRANT) return Hct.isCyan(primary.hue) ? 88 : tMaxC(primary, 0, 66);
+                return 90;
+            } }),
+            on_theme_app: () => FP({ name: 'on_theme_app', palette: s => s.primaryPalette, tone: s => s.isDark ? 80 : 30, isBackground: false, background: s => CUSTOM.theme_app(), contrastCurve: s => CC(7, 7, 11, 21) }),
+            theme_app_ring: () => FP({ name: 'theme_app_ring', palette: s => s.primaryPalette, isBackground: true, background: s => colorSpec.surfaceContainerHigh(), contrastCurve: s => CC(1.8, 1.8, 3, 4.5), tone: s => {
+                if (s.variant === Variant.TONAL_SPOT || s.variant === Variant.EXPRESSIVE) return tMaxC(s.primaryPalette, 0, 70);
+                if (s.variant === Variant.VIBRANT) return tMaxC(s.primaryPalette, 0, 100);
+                return 70;
+            } }),
+            theme_notif: () => FP({ name: 'theme_notif', palette: s => s.tertiaryPalette, tone: s => tMinC(s.tertiaryPalette, 80, 93), background: s => CUSTOM.theme_app_ring(), contrastCurve: s => CC(1, 1, 1, 1),
+                toneDeltaPair: s => TDP(CUSTOM.theme_notif(), CUSTOM.theme_app_ring(), 5, 'relative_lighter', 'farther') }),
+            on_theme_app_ring: () => CUSTOM.theme_notif(),
+            brand_a: () => FP({ name: 'brand_a', palette: s => s.primaryPalette, tone: s => s.isDark ? 80 : 40, background: s => colorSpec.surfaceContainerLow(), contrastCurve: s => s.isDark ? CC(10, 10, 12, 13) : CC(6, 6, 9, 12) }),
+            brand_b: () => FP({ name: 'brand_b', palette: s => s.secondaryPalette, tone: s => s.isDark ? 98 : 70, background: s => colorSpec.surfaceContainerLow(), contrastCurve: s => s.isDark ? CC(16, 16, 16.5, 17) : CC(2, 2, 3, 4.5) }),
+            brand_c: () => FP({ name: 'brand_c', palette: s => s.primaryPalette, tone: s => s.isDark ? 60 : 50, background: s => colorSpec.surfaceContainerLow(), contrastCurve: s => s.isDark ? CC(6, 6, 9, 11) : CC(4, 4, 7, 8) }),
+            brand_d: () => FP({ name: 'brand_d', palette: s => s.tertiaryPalette, tone: s => s.isDark ? 90 : 59, background: s => colorSpec.surfaceContainerLow(), contrastCurve: s => s.isDark ? CC(13, 13, 14, 15) : CC(3, 3, 4.5, 6) }),
+            under_surface: () => FP({ name: 'under_surface', palette: s => s.primaryPalette, tone: s => 0, isBackground: true }),
+            shade_active: () => FP({ name: 'shade_active', palette: s => s.primaryPalette, tone: s => 90, isBackground: true, background: s => CUSTOM.under_surface(), contrastCurve: s => CC(3, 3, 4.5, 7),
+                toneDeltaPair: s => TDP(CUSTOM.shade_active(), CUSTOM.shade_inactive(), 30, 'lighter', 'farther') }),
+            on_shade_active: () => FP({ name: 'on_shade_active', palette: s => s.primaryPalette, tone: s => 10, isBackground: false, background: s => CUSTOM.shade_active(), contrastCurve: s => CC(4.5, 4.5, 7, 11),
+                toneDeltaPair: s => TDP(CUSTOM.on_shade_active(), CUSTOM.on_shade_active_variant(), 20, 'relative_lighter', 'farther') }),
+            on_shade_active_variant: () => FP({ name: 'on_shade_active_variant', palette: s => s.primaryPalette, tone: s => 30, isBackground: false, background: s => CUSTOM.shade_active(), contrastCurve: s => CC(4.5, 4.5, 7, 11) }),
+            shade_inactive: () => FP({ name: 'shade_inactive', palette: s => s.neutralPalette, tone: s => 20, isBackground: true, background: s => CUSTOM.under_surface(), contrastCurve: s => CC(1, 1, 1, 1),
+                toneDeltaPair: s => TDP(CUSTOM.shade_inactive(), CUSTOM.shade_disabled(), 15, 'lighter', 'farther') }),
+            on_shade_inactive: () => FP({ name: 'on_shade_inactive', palette: s => s.neutralVariantPalette, tone: s => 90, isBackground: false, background: s => CUSTOM.shade_inactive(), contrastCurve: s => CC(4.5, 4.5, 7, 11),
+                toneDeltaPair: s => TDP(CUSTOM.on_shade_inactive(), CUSTOM.on_shade_inactive_variant(), 10, 'relative_lighter', 'farther') }),
+            on_shade_inactive_variant: () => FP({ name: 'on_shade_inactive_variant', palette: s => s.neutralVariantPalette, tone: s => 80, isBackground: false, background: s => CUSTOM.shade_inactive(), contrastCurve: s => CC(4.5, 4.5, 7, 11) }),
+            shade_disabled: () => FP({ name: 'shade_disabled', palette: s => s.neutralPalette, tone: s => 4, isBackground: false, background: s => CUSTOM.under_surface(), contrastCurve: s => CC(1, 1, 1, 1) }),
+            overview_background: () => FP({ name: 'overview_background', palette: s => s.neutralVariantPalette, tone: s => s.isDark ? 35 : 80, isBackground: true })
+        };
+        // [name, group, the DynamicColor] in the order written
+        const TOKENS = [].concat(
+            MATERIAL_TOKENS.map(name => [name, 'SYSTEM', () => material(name)]),
+            Object.keys(ANDROID).map(name => [name, 'SYSTEM', ANDROID[name]]),
+            FIXED_TOKENS.map(name => [name, 'FIXED', () => material(name)]),
+            Object.keys(CUSTOM).map(name => [name, 'CUSTOM', CUSTOM[name]]));
+        const tokenColor = name => { const t = TOKENS.find(t => t[0] === name); if (!t) throw new Error('Unknown token: ' + name); return t[2](); };
+
+        // ---------- token/TokenTones: what a token is on a scheme before any tuning: the palette it reads (one of the scheme's six, found
+        // by identity), the tone upstream's rules give it there, the role's chroma multiplier (1 without one) and its opacity. A colour
+        // that reads none of the six (none does) keeps upstream's colour ----------
+        function resolve(scheme) {
+            return TOKENS.map(([name, group, make]) => {
+                const color = make(), palette = color.palette(scheme), tone = color.getTone(scheme);
+                const role = ROLES.find(r => scheme[ROLE_PALETTE[r]] === palette) || null;
+                if (role === null) return { name, group, role, tone, chromaMultiplier: 1, opacity: null, color: color.getArgb(scheme) };
+                return { name, group, role, tone, chromaMultiplier: color.chromaMultiplier ? color.chromaMultiplier(scheme) : 1, opacity: color.opacity ? color.opacity(scheme) : null, color: null };
+            });
+        }
+        // ---------- rule/PitchBlackRule: in dark mode the neutral surface tokens move towards black: their tone above the surface's own
+        // tone (upstream's surface role on the same scheme), spread by 1.15, and shade 900 of the two neutral rows is black.
+        // rule/TintlessTextRule: text on surfaces and on containers is white in dark mode and black in light mode, on_error the
+        // other way round. Pitch black first, then tintless text (the two touch different tokens) ----------
+        const PITCH_BLACK_TOKENS = ['background', 'surface', 'surface_dim', 'surface_bright', 'surface_container_lowest', 'surface_container_low', 'surface_container', 'surface_container_high', 'surface_container_highest'];
+        const PITCH_BLACK_SPREAD = 1.15;
+        const TINTLESS_TOKENS = ['on_surface', 'on_surface_variant', 'on_background', 'on_primary_container', 'on_secondary_container', 'on_tertiary_container', 'on_error_container'];
+        function ruled(o, isDark, surfaceTone, r) {
+            if (o.black && isDark && r.role !== null && isNeutral(r.role) && PITCH_BLACK_TOKENS.indexOf(r.name) >= 0) r.tone = Math.max(r.tone - surfaceTone, 0) * PITCH_BLACK_SPREAD;
+            if (!o.tintText) {
+                if (TINTLESS_TOKENS.indexOf(r.name) >= 0) r.color = isDark ? WHITE : BLACK;
+                else if (r.name === 'on_error') r.color = isDark ? BLACK : WHITE;
+            }
+            return r;
+        }
+        // scheme/ResolvedScheme: one mode's scheme, tuned palettes, token colours (rules applied, opacity last) and shades (shade rule applied)
+        function resolved(o, isDark) {
+            const scheme = schemeOf(o, isDark), surfaceTone = o.black ? colorSpec.surface().getTone(scheme) : 0, palettes = {}, shades = {};
+            for (const role of ROLES) palettes[role] = new TunedPalette(role, scheme[ROLE_PALETTE[role]], Tuning.forRole(role, o.style, o));
+            const tokens = resolve(scheme).map(r => {
+                ruled(o, isDark, surfaceTone, r);
+                let argb = r.color !== null ? r.color : palettes[r.role].colorAt(r.tone, r.chromaMultiplier);
+                if (r.opacity !== null) argb = withAlpha(argb, Math.round(r.opacity * 255));
+                return { name: r.name, group: r.group, argb: argb >>> 0 };
+            });
+            for (const role of ROLES) shades[role] = palettes[role].shades().map((argb, i) => o.black && isDark && isNeutral(role) && i === SHADE_900 ? BLACK : argb >>> 0);
+            return { isDark, scheme, palettes, tokens, shades };
+        }
+
+        function scheme(opts, isDark) { const o = normalize(opts); return schemeOf(o, modeOf(o, isDark)); }
+        function tokens(opts, isDark) { const o = normalize(opts); return resolved(o, modeOf(o, isDark)).tokens.map(t => ({ name: t.name, group: t.group, argb: hex8(t.argb) })); }
+        // the six tuned palettes with their 13 shades, the shape of MonetPlan.palettes (the error row added) for the preview
+        function palettes(opts, isDark) {
+            const o = normalize(opts), r = resolved(o, modeOf(o, isDark)), out = { seed: o.seed, style: o.style };
+            for (const role of ROLES) { const p = r.palettes[role]; out[role] = { hue: p.hue, chroma: p.chroma, key: hex6(p.palette.keyColor.toInt()), shades: r.shades[role].map(hex6) }; }
+            return out;
+        }
+
+        // ---------- The framework's colour names per Android version: every name the writers below can produce that one of AOSP
+        // frameworks/base/core/res/res/values{,-night}/colors*.xml declares at android14-release (SDK 34), 15 (35), 16 (36) or 17 (37), as
+        // a bitmask (bit 0 = 34, bit 1 = 35, bit 2 = 36, bit 3 = 37) per name; a name the writers produce that no version declares is
+        // left out (mask 0). Written by hand from tests/fixtures/framework-colors.json; tests/monet/cb.test.js derives it again from
+        // that file and compares. Older than 34 reads as 34, newer than 37 as 37. Android's overlay does not take a colour the
+        // framework does not have (ColorBlendr asks the framework; here the table answers), so an entry for a missing name is dropped ----------
+        const CB_FRAMEWORK_COLORS = (function (groups) {
+            const map = new Map();
+            for (const mask of Object.keys(groups)) for (const name of groups[mask].split(' ')) if (name) map.set(name, Number(mask));
+            return map;
+        })({
+            2: 'system_on_theme_app_ring_dark system_on_theme_app_ring_light',
+            6: 'system_error_0 system_error_10 system_error_100 system_error_1000 system_error_200 system_error_300 system_error_400 system_error_50 system_error_500 system_error_600 system_error_700 system_error_800 system_error_900',
+            7: 'system_accent1_0 system_accent1_10 system_accent1_100 system_accent1_1000 system_accent1_200 system_accent1_300 system_accent1_400 system_accent1_50 system_accent1_500 system_accent1_600 system_accent1_700 system_accent1_800 system_accent1_900 system_accent2_0 system_accent2_10 system_accent2_100 system_accent2_1000 system_accent2_200 system_accent2_300 system_accent2_400 system_accent2_50 system_accent2_500 system_accent2_600 system_accent2_700 system_accent2_800 system_accent2_900 system_accent3_0 system_accent3_10 system_accent3_100 system_accent3_1000 system_accent3_200 system_accent3_300 system_accent3_400 system_accent3_50 system_accent3_500 system_accent3_600 system_accent3_700 system_accent3_800 system_accent3_900 system_neutral1_0 system_neutral1_10 system_neutral1_100 system_neutral1_1000 system_neutral1_200 system_neutral1_300 system_neutral1_400 system_neutral1_50 system_neutral1_500 system_neutral1_600 system_neutral1_700 system_neutral1_800 system_neutral1_900 system_neutral2_0 system_neutral2_10 system_neutral2_100 system_neutral2_1000 system_neutral2_200 system_neutral2_300 system_neutral2_400 system_neutral2_50 system_neutral2_500 system_neutral2_600 system_neutral2_700 system_neutral2_800 system_neutral2_900',
+            8: 'system_accent1_0_dark system_accent1_0_light system_accent1_1000_dark system_accent1_1000_light system_accent1_100_dark system_accent1_100_light system_accent1_10_dark system_accent1_10_light system_accent1_200_dark system_accent1_200_light system_accent1_300_dark system_accent1_300_light system_accent1_400_dark system_accent1_400_light system_accent1_500_dark system_accent1_500_light system_accent1_50_dark system_accent1_50_light system_accent1_600_dark system_accent1_600_light system_accent1_700_dark system_accent1_700_light system_accent1_800_dark system_accent1_800_light system_accent1_900_dark system_accent1_900_light system_accent2_0_dark system_accent2_0_light system_accent2_1000_dark system_accent2_1000_light system_accent2_100_dark system_accent2_100_light system_accent2_10_dark system_accent2_10_light system_accent2_200_dark system_accent2_200_light system_accent2_300_dark system_accent2_300_light system_accent2_400_dark system_accent2_400_light system_accent2_500_dark system_accent2_500_light system_accent2_50_dark system_accent2_50_light system_accent2_600_dark system_accent2_600_light system_accent2_700_dark system_accent2_700_light system_accent2_800_dark system_accent2_800_light system_accent2_900_dark system_accent2_900_light system_accent3_0_dark system_accent3_0_light system_accent3_1000_dark system_accent3_1000_light system_accent3_100_dark system_accent3_100_light system_accent3_10_dark system_accent3_10_light system_accent3_200_dark system_accent3_200_light system_accent3_300_dark system_accent3_300_light system_accent3_400_dark system_accent3_400_light system_accent3_500_dark system_accent3_500_light system_accent3_50_dark system_accent3_50_light system_accent3_600_dark system_accent3_600_light system_accent3_700_dark system_accent3_700_light system_accent3_800_dark system_accent3_800_light system_accent3_900_dark system_accent3_900_light system_error_0_dark system_error_0_light system_error_1000_dark system_error_1000_light system_error_100_dark system_error_100_light system_error_10_dark system_error_10_light system_error_200_dark system_error_200_light system_error_300_dark system_error_300_light system_error_400_dark system_error_400_light system_error_500_dark system_error_500_light system_error_50_dark system_error_50_light system_error_600_dark system_error_600_light system_error_700_dark system_error_700_light system_error_800_dark system_error_800_light system_error_900_dark system_error_900_light system_error_dim_dark system_error_dim_light system_neutral1_0_dark system_neutral1_0_light system_neutral1_1000_dark system_neutral1_1000_light system_neutral1_100_dark system_neutral1_100_light system_neutral1_10_dark system_neutral1_10_light system_neutral1_200_dark system_neutral1_200_light system_neutral1_300_dark system_neutral1_300_light system_neutral1_400_dark system_neutral1_400_light system_neutral1_500_dark system_neutral1_500_light system_neutral1_50_dark system_neutral1_50_light system_neutral1_600_dark system_neutral1_600_light system_neutral1_700_dark system_neutral1_700_light system_neutral1_800_dark system_neutral1_800_light system_neutral1_900_dark system_neutral1_900_light system_neutral2_0_dark system_neutral2_0_light system_neutral2_1000_dark system_neutral2_1000_light system_neutral2_100_dark system_neutral2_100_light system_neutral2_10_dark system_neutral2_10_light system_neutral2_200_dark system_neutral2_200_light system_neutral2_300_dark system_neutral2_300_light system_neutral2_400_dark system_neutral2_400_light system_neutral2_500_dark system_neutral2_500_light system_neutral2_50_dark system_neutral2_50_light system_neutral2_600_dark system_neutral2_600_light system_neutral2_700_dark system_neutral2_700_light system_neutral2_800_dark system_neutral2_800_light system_neutral2_900_dark system_neutral2_900_light system_on_primary_fixed_dark system_on_primary_fixed_light system_on_primary_fixed_variant_dark system_on_primary_fixed_variant_light system_on_secondary_fixed_dark system_on_secondary_fixed_light system_on_secondary_fixed_variant_dark system_on_secondary_fixed_variant_light system_on_tertiary_fixed_dark system_on_tertiary_fixed_light system_on_tertiary_fixed_variant_dark system_on_tertiary_fixed_variant_light system_palette_key_color_error_dark system_palette_key_color_error_light system_primary_dim_dark system_primary_dim_light system_primary_fixed_dark system_primary_fixed_dim_dark system_primary_fixed_dim_light system_primary_fixed_light system_secondary_dim_dark system_secondary_dim_light system_secondary_fixed_dark system_secondary_fixed_dim_dark system_secondary_fixed_dim_light system_secondary_fixed_light system_surface_effect_0_dark system_surface_effect_0_fallback_dark system_surface_effect_0_fallback_light system_surface_effect_0_light system_surface_effect_1_dark system_surface_effect_1_light system_surface_effect_2_dark system_surface_effect_2_light system_surface_effect_3_dark system_surface_effect_3_light system_tertiary_dim_dark system_tertiary_dim_light system_tertiary_fixed_dark system_tertiary_fixed_dim_dark system_tertiary_fixed_dim_light system_tertiary_fixed_light',
+            12: 'system_inverse_on_surface_dark system_inverse_on_surface_light system_inverse_primary_dark system_inverse_primary_light system_inverse_surface_dark system_inverse_surface_light system_scrim_dark system_scrim_light system_shadow_dark system_shadow_light system_surface_tint_dark system_surface_tint_light system_theme_notif_dark system_theme_notif_light system_weather_temp_dark system_weather_temp_light',
+            14: 'system_brand_a_dark system_brand_a_light system_brand_b_dark system_brand_b_light system_brand_c_dark system_brand_c_light system_brand_d_dark system_brand_d_light system_clock_hour_dark system_clock_hour_light system_clock_minute_dark system_clock_minute_light system_clock_second_dark system_clock_second_light system_on_shade_active_dark system_on_shade_active_light system_on_shade_active_variant_dark system_on_shade_active_variant_light system_on_shade_inactive_dark system_on_shade_inactive_light system_on_shade_inactive_variant_dark system_on_shade_inactive_variant_light system_on_theme_app_dark system_on_theme_app_light system_overview_background_dark system_overview_background_light system_shade_active_dark system_shade_active_light system_shade_disabled_dark system_shade_disabled_light system_shade_inactive_dark system_shade_inactive_light system_theme_app_dark system_theme_app_light system_theme_app_ring_dark system_theme_app_ring_light system_under_surface_dark system_under_surface_light system_widget_background_dark system_widget_background_light',
+            15: 'accent_device_default accent_device_default_dark accent_device_default_light background_dark system_background_dark system_background_light system_control_activated_dark system_control_activated_light system_control_highlight_dark system_control_highlight_light system_control_normal_dark system_control_normal_light system_error_container_dark system_error_container_light system_error_dark system_error_light system_on_background_dark system_on_background_light system_on_error_container_dark system_on_error_container_light system_on_error_dark system_on_error_light system_on_primary_container_dark system_on_primary_container_light system_on_primary_dark system_on_primary_fixed system_on_primary_fixed_variant system_on_primary_light system_on_secondary_container_dark system_on_secondary_container_light system_on_secondary_dark system_on_secondary_fixed system_on_secondary_fixed_variant system_on_secondary_light system_on_surface_dark system_on_surface_light system_on_surface_variant_dark system_on_surface_variant_light system_on_tertiary_container_dark system_on_tertiary_container_light system_on_tertiary_dark system_on_tertiary_fixed system_on_tertiary_fixed_variant system_on_tertiary_light system_outline_dark system_outline_light system_outline_variant_dark system_outline_variant_light system_palette_key_color_neutral_dark system_palette_key_color_neutral_light system_palette_key_color_neutral_variant_dark system_palette_key_color_neutral_variant_light system_palette_key_color_primary_dark system_palette_key_color_primary_light system_palette_key_color_secondary_dark system_palette_key_color_secondary_light system_palette_key_color_tertiary_dark system_palette_key_color_tertiary_light system_primary_container_dark system_primary_container_light system_primary_dark system_primary_fixed system_primary_fixed_dim system_primary_light system_secondary_container_dark system_secondary_container_light system_secondary_dark system_secondary_fixed system_secondary_fixed_dim system_secondary_light system_surface_bright_dark system_surface_bright_light system_surface_container_dark system_surface_container_high_dark system_surface_container_high_light system_surface_container_highest_dark system_surface_container_highest_light system_surface_container_light system_surface_container_low_dark system_surface_container_low_light system_surface_container_lowest_dark system_surface_container_lowest_light system_surface_dark system_surface_dim_dark system_surface_dim_light system_surface_light system_surface_variant_dark system_surface_variant_light system_tertiary_container_dark system_tertiary_container_light system_tertiary_dark system_tertiary_fixed system_tertiary_fixed_dim system_tertiary_light system_text_hint_inverse_dark system_text_hint_inverse_light system_text_primary_inverse_dark system_text_primary_inverse_disable_only_dark system_text_primary_inverse_disable_only_light system_text_primary_inverse_light system_text_secondary_and_tertiary_inverse_dark system_text_secondary_and_tertiary_inverse_disabled_dark system_text_secondary_and_tertiary_inverse_disabled_light system_text_secondary_and_tertiary_inverse_light'
+        });
+        function sdkLevel(sdk) {
+            const n = Number(sdk);
+            if (!Number.isFinite(n)) throw new Error('Bad SDK: ' + sdk);
+            return Math.trunc(n);
+        }
+        const tableLevel = sdk => clampInt(34, 37, sdkLevel(sdk));
+        function exists(name, sdk) { const bit = tableLevel(sdk) - 34, mask = CB_FRAMEWORK_COLORS.get(String(name)); return !!mask && ((mask >> bit) & 1) === 1; }
+
+        // ---------- overlay/writer: what ColorBlendr writes to the framework (target package android), in its order. put(name, argb,
+        // config): config null, or 'night' for the dark half of a day/night pair (Android 14 and later take a configuration; before,
+        // the current mode's colour is written unqualified). Names the writers give other packages (SystemUI, Settings, launchers) and
+        // the m3_* / gm3_* Material names, which are no framework resources, are not here ----------
+        const EFFECTS = [
+            { role: 'accent1', lightTone: 90, darkTone: 20, lightAlpha: 0.50, darkAlpha: 0.50 },
+            { role: 'neutral1', lightTone: 98, darkTone: 6, lightAlpha: 0.54, darkAlpha: 0.54 },
+            { role: 'accent1', lightTone: 100, darkTone: 90, lightAlpha: 0.32, darkAlpha: 0.15 },
+            { role: 'accent1', lightTone: 40, darkTone: 90, lightAlpha: 0.15, darkAlpha: 0.10 },
+            { role: 'accent1', lightTone: 16, darkTone: 85, lightAlpha: 0.70, darkAlpha: 0.85 }];
+        const EFFECT_FALLBACK = { role: 'accent2', lightTone: 80, darkTone: 20, lightAlpha: 1, darkAlpha: 1 };
+        const effectColor = (effect, r) => withAlpha(r.palettes[effect.role].colorAt(r.isDark ? effect.darkTone : effect.lightTone), Math.round((r.isDark ? effect.darkAlpha : effect.lightAlpha) * 255));
+        const SECONDARY_TEXT_DARK = 0xB3FFFFFF, SECONDARY_TEXT_LIGHT = 0xB3000000;
+        // writer/TintlessTextWriter's names (an m3_* name is written as gm3_* too); none is a framework resource, the table drops them all
+        const TINTLESS_NAMES = [['m3_ref_palette_dynamic_neutral90', WHITE], ['m3_ref_palette_dynamic_neutral95', WHITE], ['m3_ref_palette_dynamic_neutral_variant70', 0xFFCCCCCC],
+            ['m3_ref_palette_dynamic_neutral_variant80', WHITE], ['text_color_primary_dark', WHITE], ['text_color_secondary_dark', SECONDARY_TEXT_DARK], ['text_color_tertiary_dark', 0x80FFFFFF],
+            ['google_dark_default_color_on_background', WHITE], ['gm_ref_palette_grey500', WHITE], ['m3_ref_palette_dynamic_neutral10', BLACK], ['m3_ref_palette_dynamic_neutral_variant30', SECONDARY_TEXT_LIGHT],
+            ['text_color_primary_light', BLACK], ['text_color_secondary_light', SECONDARY_TEXT_LIGHT], ['text_color_tertiary_light', 0x80000000], ['google_default_color_on_background', BLACK], ['gm_ref_palette_grey700', BLACK]];
+        const EOS_ALPHA_ACCENT = 0x14, BLURRED_PANEL_ALPHA = 0.32;
+        function write(o, level, theme, put) {
+            const { light, dark } = theme, current = o.dark ? dark : light;
+            const dayNight = (name, lightArgb, darkArgb) => { if (level >= 34) { put(name, lightArgb, null); put(name, darkArgb, 'night'); } else put(name, o.dark ? darkArgb : lightArgb, null); };
+            // writer/SystemPaletteWriter: each shade unsuffixed (the current mode's), _light and _dark
+            for (const role of ROLES) SHADES.forEach((shade, i) => {
+                const name = ROLE_RESOURCE[role] + '_' + shade;
+                put(name, current.shades[role][i], null); put(name + '_light', light.shades[role][i], null); put(name + '_dark', dark.shades[role][i], null);
+            });
+            // writer/SystemTokenWriter: SYSTEM (and CUSTOM from Android 15) _light and _dark; FIXED day/night, _light and _dark
+            const groups = level >= 35 ? ['SYSTEM', 'CUSTOM'] : ['SYSTEM'];
+            for (const group of groups) light.tokens.forEach((t, i) => { if (t.group === group) { put('system_' + t.name + '_light', t.argb, null); put('system_' + t.name + '_dark', dark.tokens[i].argb, null); } });
+            light.tokens.forEach((t, i) => {
+                if (t.group !== 'FIXED') return;
+                dayNight('system_' + t.name, t.argb, dark.tokens[i].argb); put('system_' + t.name + '_light', t.argb, null); put('system_' + t.name + '_dark', dark.tokens[i].argb, null);
+            });
+            // writer/EosColorWriter: the device default accent (light: primary tone 40, dark: primary tone 80), then the e_* names of a
+            // ROM family the framework of AOSP does not have (the table drops them)
+            const qualified = (name, lightArgb, darkArgb) => { dayNight(name, lightArgb, darkArgb); put(name + '_dark', darkArgb, null); put(name + '_light', lightArgb, null); };
+            const accentLight = light.shades.accent1[8], accentDark = dark.shades.accent1[4];
+            const pair = (lightIndex, darkIndex) => [light.shades.neutral1[lightIndex], dark.shades.neutral1[darkIndex]];
+            const tileInactive = pair(3, 10), surface = pair(2, 12), onSurface = pair(11, 2), onSurfaceVariant = pair(10, 3), surfaceContainer = pair(3, 11), surfaceContainerHigh = pair(4, 10);
+            put('accent_device_default_light', accentLight, null); put('accent_device_default_dark', accentDark, null); dayNight('accent_device_default', accentLight, accentDark);
+            qualified('e_qs_tile_inactive', tileInactive[0], tileInactive[1]);
+            for (const name of ['e_background', 'e_action_bar', 'e_drawer_background', 'e_qs_background']) qualified(name, surface[0], surface[1]);
+            qualified('e_background_variant', surfaceContainer[0], surfaceContainer[1]); qualified('e_notification_background', surfaceContainerHigh[0], surfaceContainerHigh[1]);
+            qualified('e_primary_text_color', onSurface[0], onSurface[1]); qualified('e_secondary_text_color', onSurfaceVariant[0], onSurfaceVariant[1]); qualified('e_secondary_text_color_variant', onSurfaceVariant[0], onSurfaceVariant[1]);
+            qualified('e_accent', accentLight, accentDark); qualified('e_accent_inverse', accentDark, accentLight); qualified('e_alpha_accent', withAlpha(accentLight, EOS_ALPHA_ACCENT), withAlpha(accentDark, EOS_ALPHA_ACCENT));
+            // writer/TintlessTextWriter (tinted text off)
+            if (!o.tintText) for (const [name, argb] of TINTLESS_NAMES) { put(name, argb, null); if (name.startsWith('m3')) put('g' + name, argb, null); }
+            // writer/SurfaceEffectWriter: the fallback, then each effect as the current mode's colour, _light and _dark
+            put('system_surface_effect_0_fallback_light', effectColor(EFFECT_FALLBACK, light), null); put('system_surface_effect_0_fallback_dark', effectColor(EFFECT_FALLBACK, dark), null);
+            EFFECTS.forEach((effect, i) => {
+                const l = effectColor(effect, light), d = effectColor(effect, dark);
+                put('surface_effect_' + i + '_color', o.dark ? d : l, null); put('system_surface_effect_' + i + '_light', l, null); put('system_surface_effect_' + i + '_dark', d, null);
+            });
+            // writer/FrameworkExtrasWriter: Pure black's dark background (and a panel foreground in dark mode); tinted text off: the
+            // device default text colours (white and 70% white on dark, black and 70% black on light)
+            if (o.black) { put('background_dark', BLACK, null); put('surface_header_dark_sysui', BLACK, null); if (o.dark) put('shade_panel_fg_color', withAlpha(BLACK, Math.trunc(BLURRED_PANEL_ALPHA * 255)), null); }
+            if (!o.tintText) {
+                put('text_color_primary_device_default_dark', WHITE, null); put('text_color_secondary_device_default_dark', SECONDARY_TEXT_DARK, null);
+                put('text_color_primary_device_default_light', BLACK, null); put('text_color_secondary_device_default_light', SECONDARY_TEXT_LIGHT, null);
+            }
+        }
+        // the framework plan for that Android version (the SDK level as it is: below 34 no configuration; the table read at 34 to 37):
+        // [{ resource, argb, config? }], names the framework lacks dropped
+        function entries(opts, sdk) {
+            const o = normalize(opts), level = sdkLevel(sdk), out = [];
+            write(o, level, { light: resolved(o, false), dark: resolved(o, true) }, (name, argb, config) => {
+                if (!exists(name, level)) return;
+                const entry = { resource: 'android:color/' + name, argb: hex8(argb) };
+                if (config) entry.config = config;
+                out.push(entry);
+            });
+            return out;
+        }
+        function count(opts, sdk) { return entries(opts, sdk).length; }
+        // every name the writers can produce, whatever the framework has (for the table's test): both modes, Pure black and tinted text
+        // on and off, Android 13 (no configuration) and 15 (the custom colours)
+        function writerNames() {
+            const names = new Set(), o = normalize({});
+            const theme = { light: resolved(o, false), dark: resolved(o, true) };
+            for (const dark of [false, true]) for (const black of [false, true]) for (const tintText of [true, false]) for (const level of [33, 35])
+                write(Object.assign({}, o, { dark, black, tintText }), level, theme, name => names.add(name));
+            return Array.from(names);
+        }
+
+        return { STYLES, SPECS, CONTRASTS, SHADES, TONES, ROLES, defaults, normalize, scheme, palettes, tokens, entries, exists, count,
+            lib: { Tuning, TunedPalette, curveMap, vividTone, DARKEST_CURVE, BRIGHTEST_CURVE, preserveTone, fits, adaptiveMidTone, adaptiveTowardsMid, scaledColor,
+                TOKENS, MATERIAL_TOKENS, FIXED_TOKENS, ANDROID, CUSTOM, tokenColor, materialMethod, resolve, resolved, ruled, PITCH_BLACK_TOKENS, PITCH_BLACK_SPREAD, TINTLESS_TOKENS,
+                SHADE_900, ROLE_PALETTE, ROLE_RESOURCE, isAccent, isNeutral, SLIDER_MIN, SLIDER_MAX, CB_FRAMEWORK_COLORS, sdkLevel, write, writerNames, EFFECTS, EFFECT_FALLBACK, TINTLESS_NAMES,
+                hex8, withAlpha, BLACK, WHITE, SECONDARY_TEXT_DARK, SECONDARY_TEXT_LIGHT } };
+    })();
+
+    // ==========================================================================================================================
     // The API. Profile P14 (the default): a style at a spec that falls back to 2021 (upstream's rule, specFor below) is computed by
     // part 1 exactly as in PR 3, a style whose spec stays 2025 or 2026, and CMF at any spec, by part 2. P15, P15Q1, P15Q2, P16: part 2.
     // P14Q: P14's palettes and shades; its roles and fixed colours by part 2 with libmonet android14-qpr*-release's rules at 2021.
@@ -3627,7 +4083,7 @@
 
     return {
         STYLES: API_STYLES, SPECS, PROFILES, GOOGLE_BLUE: hex6(GOOGLE_BLUE), MIN_CHROMA, SHADE_KEYS,
-        hct, seed: (style, color) => hex6(seed(style, color)), specFor, palettes, roles, entries, scheme,
+        hct, seed: (style, color) => hex6(seed(style, color)), specFor, palettes, roles, entries, scheme, cb: CB,
         lib: { Hct, Cam16, HctSolver, ViewingConditions, Contrast, TonalPalette, TemperatureCache, DislikeAnalyzer, DynamicScheme, DynamicColor, Variant, MDC,
             ALL_DYNAMIC_COLORS_MAPPED, FIXED_COLORS_MAPPED, ROLES_A15Q2, FIXED_A15Q2, ANDROID_ONLY_ROLES, SHADE_WRITE_ORDER,
             ROLES_A16Q, DIM_ROLES, LIBMONET, LIBMONET_A15, LIBMONET_A14Q, ruleProfile, LIBMONET_REMAPPED_ROLES, FIXED_BOTH_MODES, roleListFor, roleArgb, PROFILE_COLORS, PALETTE_ROWS, specOf,

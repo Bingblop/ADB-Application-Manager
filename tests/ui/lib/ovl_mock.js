@@ -183,22 +183,28 @@ module.exports.initScript = function () {
     if (typeof window.__oneUi === 'string' && window.__oneUi !== '') o.oneUi = window.__oneUi;
     return JSON.stringify(o);
   };
-  // Root as the working mode, su granted and not vetoed (the shape t559 uses), while __root is set; the base mock's ADB TCP otherwise
+  // Root as the working mode, su granted and not vetoed (the shape t559 uses), while __root is set; Shizuku as the system user (uid 1000:
+  // privileged, sysPrivActive, but not uid 0) while __shizuku1000 is set (v7.22.0); the base mock's ADB TCP (the shell, uid 2000) otherwise
+  window.__shizuku1000 = false;
   const baseWorkingMode = b.getWorkingMode;
   b.getWorkingMode = function () {
+    if (window.__shizuku1000 && !window.__root) return JSON.stringify({ activeMode: 'shizuku', configuredMode: 'shizuku', modeAvailable: true, isPrivileged: true, sysPrivActive: true, rootUidActive: false, rootAvailable: false, adbTcp: { connected: false, port: 5555 }, adbWireless: { connected: false, port: 0 }, shizuku: { installed: true, running: true, authorized: true, uid: 1000 } });
     if (!window.__root) return baseWorkingMode.call(this);
     return JSON.stringify({ activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true, adbTcp: { connected: false, port: 5555 }, adbWireless: { connected: false, port: 0 }, shizuku: { installed: false, running: false, authorized: false } });
   };
   // This app's fabricated colour overlay, as MainActivity.overlayFabricate / overlayFabricateJob answer it: the plan is checked before anything
   // is queued ("error: ..." in the words of OverlayRules.fabricatePlanProblem and disablePlanOk), the ids come from the phone's Android (one
   // overlay from 14, one per colour on 12 and 13), the overlay joins the list, and the answer is the list plus a lookup per colour (the first
-  // four), judged from those, as window.onOverlayFab(json). T-049 PR 9: at most 320 entries (OverlayRules.MAX_FAB_ENTRIES); on the profile the
+  // four), judged from those, as window.onOverlayFab(json). v7.22.0 (ColorBlendr parity): any android:color/<name> (OverlayRules.FAB_RESOURCE),
+  // an entry may carry config "night" (and only that), a resource is named twice only within one configuration, at most 512 entries
+  // (OverlayRules.MAX_FAB_ENTRIES); on 12 and 13 one overlay per entry without a configuration, named after the resource
+  // (aam_monet_system_accent1_100, OverlayRules.entryOverlayName), the night entries skipped (perEntryPlan). On the profile the
   // mock reports, when it is P16Q1, P16Q2 or P17 (MonetProfile.suffixedPalettes: Java takes the profile itself), an unsuffixed palette shade is
   // refused and the lookups are OverlayRules.QPR_LOOKUPS the plan has, in that order, then its first other entries up to four. PR 10: on
   // P17 (MonetProfile.suffixedFixed) also an unsuffixed fixed colour (the 12 names exactly) is refused, and the lookups are
   // OverlayRules.P17_LOOKUPS (the QPR five, then system_primary_fixed_dark), at most six.
-  const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_';
-  const FAB_MAX = 320;
+  const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_', FAB_PREFIX = 'android:color/';
+  const FAB_MAX = 512;
   const QPR_LOOKUPS = ['accent1_600_light', 'accent1_600_dark', 'primary_light', 'surface_dark', 'primary_dim_dark'].map(n => FAB_RES + n);
   const P17_LOOKUPS = QPR_LOOKUPS.concat([FAB_RES + 'primary_fixed_dark']);
   const suffixed = () => window.__profile === 'P16Q1' || window.__profile === 'P16Q2' || window.__profile === 'P17';
@@ -222,10 +228,12 @@ module.exports.initScript = function () {
       const seen = new Set();
       for (let i = 0; i < es.length; i++) {
         const e = es[i] || {};
-        if (typeof e.resource !== 'string' || !/^android:color\/system_[a-z0-9_]+$/.test(e.resource)) return 'error: Entry ' + (i + 1) + ' does not name a system colour (android:color/system_...)';
+        if (typeof e.resource !== 'string' || !/^android:color\/[a-z0-9_]+$/.test(e.resource)) return 'error: Entry ' + (i + 1) + ' does not name a framework colour (android:color/...)';
         if (typeof e.argb !== 'string' || !/^0x[0-9A-Fa-f]{8}$/.test(e.argb)) return 'error: Entry ' + (i + 1) + ' is not a colour (0xAARRGGBB)';
-        if (seen.has(e.resource)) return 'error: Entry ' + (i + 1) + ' names a resource twice';
-        seen.add(e.resource);
+        if (e.config !== undefined && e.config !== null && e.config !== 'night') return 'error: Entry ' + (i + 1) + ' names a configuration other than night';
+        const key = e.resource + (e.config ? '|' + e.config : '');
+        if (seen.has(key)) return 'error: Entry ' + (i + 1) + ' names a resource twice';
+        seen.add(key);
       }
       if (suffixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_(accent[1-3]|neutral[12]|error)_[0-9]+$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a palette color without _light or _dark, which this Android version does not take';
       if (suffixedFixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a fixed color without _light or _dark, which this Android version does not take';
@@ -244,7 +252,7 @@ module.exports.initScript = function () {
     setTimeout(() => {
       const r = { req, op, mode: window.__root ? 'root' : 'adb_tcp' };
       if (window.__fabNeedsRoot || !window.__root) { r.ok = false; r.needsPrivilege = true; r.error = 'Needs Super User'; window.onOverlayFab(JSON.stringify(r)); return; }
-      const ids = op === 'disable' ? plan.ids.slice() : (window.__sdk >= 34 ? [FAB_OWNER + FAB_NAME] : plan.entries.map(e => FAB_OWNER + FAB_NAME + '_' + e.resource.slice(FAB_RES.length)));
+      const ids = op === 'disable' ? plan.ids.slice() : (window.__sdk >= 34 ? [FAB_OWNER + FAB_NAME] : plan.entries.filter(e => !e.config).map(e => FAB_OWNER + FAB_NAME + '_' + e.resource.slice(FAB_PREFIX.length)));
       r.ids = ids;
       if (window.__fabUnknown) { r.ok = false; r.unknown = true; r.error = 'No answer from the device'; window.onOverlayFab(JSON.stringify(r)); return; }
       ids.forEach(id => { let o = window.__ovl.find(x => x.id === id); if (!o) { o = { target: 'android', state: 0, id }; window.__ovl.push(o); } o.state = op === 'disable' ? 0 : 1; });

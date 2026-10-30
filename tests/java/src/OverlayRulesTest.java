@@ -151,7 +151,8 @@ public class OverlayRulesTest {
             "     [ -f \"$file\" ] && [ ! -f \"$OVL_FAKE/unreadable\" ] || { echo \"Error: failed to read $file\"; exit 1; }\n" +
             "     cp \"$file\" \"$OVL_FAKE/last.xml\"\n" +
             "     ls -l \"$file\" | cut -c1-10 > \"$OVL_FAKE/last.mode\"\n" +      // the mode the file had when Android read it
-            "     grep -o '<item target=\"[^\"]*\" value=\"[^\"]*\"/>' \"$file\" | sed -e 's/<item target=\"\\([^\"]*\\)\" value=\"\\([^\"]*\\)\"\\/>/android:\\1 \\2/' | while read -r res val; do echo \"$res $val $id\"; done >> \"$OVL_FAKE/colors\"\n" +
+            // an item with config="night" is held under "<resource>@night": a lookup (which resolves in the day configuration here) never matches it
+            "     grep -o '<item target=\"[^\"]*\" value=\"[^\"]*\"\\( config=\"[^\"]*\"\\)\\{0,1\\}/>' \"$file\" | sed -e 's/<item target=\"\\([^\"]*\\)\" value=\"\\([^\"]*\\)\" config=\"\\([^\"]*\\)\"\\/>/android:\\1@\\3 \\2/' -e 's/<item target=\"\\([^\"]*\\)\" value=\"\\([^\"]*\\)\"\\/>/android:\\1 \\2/' | while read -r res val; do echo \"$res $val $id\"; done >> \"$OVL_FAKE/colors\"\n" +
             "   else\n" +
             "     [ \"$2\" = 0x1c ] && [ -n \"$3\" ] || { echo \"Error: unsupported value: $2 $3\"; exit 1; }\n" +
             "     echo \"$1 $3 $id\" >> \"$OVL_FAKE/colors\"\n" +
@@ -797,7 +798,7 @@ public class OverlayRulesTest {
         final String FAB = "com.android.shell:aam_monet";
         final List<OverlayRules.FabEntry> black = plan(N1, "0xFF000000", N2, "0xFF000000");
         final List<String> ids34 = Arrays.asList(FAB);
-        final List<String> ids33 = Arrays.asList("com.android.shell:aam_monet_neutral1_900", "com.android.shell:aam_monet_neutral2_900");
+        final List<String> ids33 = Arrays.asList("com.android.shell:aam_monet_system_neutral1_900", "com.android.shell:aam_monet_system_neutral2_900");
 
         // ---- the plan's checks: hostile names, values and counts never reach a shell ----
         eq("the pure-black plan passes", OverlayRules.fabricatePlanProblem(black), null);
@@ -807,8 +808,9 @@ public class OverlayRulesTest {
         String[][] badEntries = {
             {N1, "0xFF00000"}, {N1, "0xFF0000000"}, {N1, "FF000000"}, {N1, "#FF000000"}, {N1, "0xFF00000G"}, {N1, "0XFF000000"}, {N1, " 0xFF000000"},
             {N1, "0xFF000000\n"}, {N1, ""}, {N1, null}, {N1, "0xFF000000'; touch canaryF1; echo '"}, {N1, "0xFF000000 0xFF000000"}, {N1, "0xＦＦ000000"},
-            {"android:color/accent_device_default", "0xFF000000"}, {"android:color/system_Neutral1_900", "0xFF000000"}, {N1 + " ", "0xFF000000"},
-            {"android:color/system_", "0xFF000000"}, {N1 + "/../x", "0xFF000000"}, {"color/system_neutral1_900", "0xFF000000"},
+            {"android:color/", "0xFF000000"}, {"android:color/system_Neutral1_900", "0xFF000000"}, {N1 + " ", "0xFF000000"},
+            {"android:color/Accent_device_default", "0xFF000000"}, {N1 + "/../x", "0xFF000000"}, {"color/system_neutral1_900", "0xFF000000"},
+            {"android:color/system_neutral1_900/x", "0xFF000000"}, {"android:colour/system_neutral1_900", "0xFF000000"}, {"android:color//system_neutral1_900", "0xFF000000"},
             {"com.android.systemui:color/system_neutral1_900", "0xFF000000"}, {"android:string/system_neutral1_900", "0xFF000000"},
             {N1 + "'; touch canaryF2; echo '", "0xFF000000"}, {N1 + "$(touch canaryF3)", "0xFF000000"}, {N1 + "\nAAM_OVL_EOF\ntouch canaryF4", "0xFF000000"},
             {N1 + "\" value=\"0xFF000000\"/><item target=\"color/x", "0xFF000000"}, {"android:color/system_néutral1_900", "0xFF000000"},
@@ -830,36 +832,40 @@ public class OverlayRulesTest {
         List<OverlayRules.FabEntry> withNull = plan(N1, "0xFF000000"); withNull.add(null);
         is("a null entry", OverlayRules.fabricatePlanProblem(withNull) != null);
         is("a resource named twice", OverlayRules.fabricatePlanProblem(plan(N1, "0xFF000000", N1, "0xFF000001")) != null && OverlayRules.fabricatePlanProblem(plan(N1, "0xFF000000", N1, "0xFF000001")).contains("twice"));
-        eq("the cap: 320 entries (264 on Android 17, 318 with its custom colours, and a margin)", OverlayRules.MAX_FAB_ENTRIES, 320);
-        List<OverlayRules.FabEntry> big200 = new ArrayList<OverlayRules.FabEntry>(), big320 = new ArrayList<OverlayRules.FabEntry>(), big321 = new ArrayList<OverlayRules.FabEntry>();
-        for (int i = 0; i < 321; i++) { OverlayRules.FabEntry e = fe("android:color/system_x" + i, "0xFF000000"); if (i < 200) big200.add(e); if (i < 320) big320.add(e); big321.add(e); }
+        // any framework colour, not only system_...: ColorBlendr's writer also sets accent_device_default and background_dark
+        for (String ok : new String[] {"accent_device_default", "accent_device_default_light", "background_dark", "surface_effect_0_color", "system_", "x", "0", "a_1"})
+            eq("a framework colour outside system_ passes: " + ok, OverlayRules.fabricatePlanProblem(plan("android:color/" + ok, "0xFF000000")), null);
+        is("the refusal names the shape", OverlayRules.fabricatePlanProblem(plan("android:string/x", "0xFF000000")).contains("android:color/"));
+        eq("the cap: 512 entries (about 470 at most in ColorBlendr's framework plan before the names a phone lacks are dropped, and a margin)", OverlayRules.MAX_FAB_ENTRIES, 512);
+        List<OverlayRules.FabEntry> big200 = new ArrayList<OverlayRules.FabEntry>(), big512 = new ArrayList<OverlayRules.FabEntry>(), big513 = new ArrayList<OverlayRules.FabEntry>();
+        for (int i = 0; i < 513; i++) { OverlayRules.FabEntry e = fe("android:color/system_x" + i, "0xFF000000"); if (i < 200) big200.add(e); if (i < 512) big512.add(e); big513.add(e); }
         eq("200 entries pass", OverlayRules.fabricatePlanProblem(big200), null);
-        eq("201 entries pass now (the old cap)", OverlayRules.fabricatePlanProblem(big320.subList(0, 201)), null);
-        eq("320 entries pass", OverlayRules.fabricatePlanProblem(big320), null);
-        eq("320 entries pass on P16Q2 too", OverlayRules.fabricatePlanProblem("P16Q2", big320), null);
-        eq("320 entries pass on P17 too", OverlayRules.fabricatePlanProblem("P17", big320), null);
-        is("321 entries are too many on P17", OverlayRules.fabricatePlanProblem("P17", big321) != null && OverlayRules.fabricatePlanProblem("P17", big321).contains("320"));
-        is("321 entries are too many", OverlayRules.fabricatePlanProblem(big321) != null && OverlayRules.fabricatePlanProblem(big321).contains("320"));
-        is("321 entries are too many on P16Q1", OverlayRules.fabricatePlanProblem("P16Q1", big321) != null && OverlayRules.fabricatePlanProblem("P16Q1", big321).contains("320"));
-        throwsIae("321 entries throw", () -> OverlayRules.fabricateScript(34, big321));
-        throwsIae("321 entries throw on 36 with P16Q2", () -> OverlayRules.fabricateScript(36, "P16Q2", big321));
-        // 320 entries with the longest names a QPR plan has, in the file form: one su -c argument, far under Linux's 131072-byte MAX_ARG_STRLEN
-        List<OverlayRules.FabEntry> long320 = new ArrayList<OverlayRules.FabEntry>();
-        for (int i = 0; i < 320; i++) long320.add(fe("android:color/system_text_secondary_and_tertiary_inverse_disabled_" + i + "_light", "0x1F000000"));
-        int len320 = OverlayRules.fabricateScript(36, "P16Q2", long320).getBytes(StandardCharsets.UTF_8).length;
-        is("320 long entries: the script stays under 64 KiB (" + len320 + " bytes), half of one argument's limit", len320 < 65536);
-        int len320a17 = OverlayRules.fabricateScript(37, "P17", long320).getBytes(StandardCharsets.UTF_8).length;
-        is("... and on Android 17 (" + len320a17 + " bytes)", len320a17 < 65536);
+        eq("201 entries pass now (the old cap)", OverlayRules.fabricatePlanProblem(big512.subList(0, 201)), null);
+        eq("512 entries pass", OverlayRules.fabricatePlanProblem(big512), null);
+        eq("512 entries pass on P16Q2 too", OverlayRules.fabricatePlanProblem("P16Q2", big512), null);
+        eq("512 entries pass on P17 too", OverlayRules.fabricatePlanProblem("P17", big512), null);
+        is("513 entries are too many on P17", OverlayRules.fabricatePlanProblem("P17", big513) != null && OverlayRules.fabricatePlanProblem("P17", big513).contains("512"));
+        is("513 entries are too many", OverlayRules.fabricatePlanProblem(big513) != null && OverlayRules.fabricatePlanProblem(big513).contains("512"));
+        is("513 entries are too many on P16Q1", OverlayRules.fabricatePlanProblem("P16Q1", big513) != null && OverlayRules.fabricatePlanProblem("P16Q1", big513).contains("512"));
+        throwsIae("513 entries throw", () -> OverlayRules.fabricateScript(34, big513));
+        throwsIae("513 entries throw on 36 with P16Q2", () -> OverlayRules.fabricateScript(36, "P16Q2", big513));
+        // 512 entries with the longest names a plan has, in the file form: one su -c argument, far under Linux's 131072-byte MAX_ARG_STRLEN
+        List<OverlayRules.FabEntry> long512 = new ArrayList<OverlayRules.FabEntry>();
+        for (int i = 0; i < 512; i++) long512.add(fe("android:color/system_text_secondary_and_tertiary_inverse_disabled_" + i + "_light", "0x1F000000"));
+        int len512 = OverlayRules.fabricateScript(36, "P16Q2", long512).getBytes(StandardCharsets.UTF_8).length;
+        is("512 long entries: the script stays under 96 KiB (" + len512 + " bytes), three quarters of one argument's limit", len512 < 98304);
+        int len512a17 = OverlayRules.fabricateScript(37, "P17", long512).getBytes(StandardCharsets.UTF_8).length;
+        is("... and on Android 17 (" + len512a17 + " bytes)", len512a17 < 98304);
 
         // ---- the identifiers written ----
         eq("ids on 34: one overlay", OverlayRules.fabricateIds(34, black).toString(), "[" + FAB + "]");
         eq("ids on 35 and 36: the same", OverlayRules.fabricateIds(35, black).toString() + OverlayRules.fabricateIds(36, black).toString(), "[" + FAB + "][" + FAB + "]");
-        eq("ids on 33: one per entry, named for it", OverlayRules.fabricateIds(33, black).toString(), "[com.android.shell:aam_monet_neutral1_900, com.android.shell:aam_monet_neutral2_900]");
+        eq("ids on 33: one per entry, named for it", OverlayRules.fabricateIds(33, black).toString(), "[com.android.shell:aam_monet_system_neutral1_900, com.android.shell:aam_monet_system_neutral2_900]");
         eq("ids on 31 and 32: the same", OverlayRules.fabricateIds(31, black).toString(), OverlayRules.fabricateIds(32, black).toString());
         for (String id : OverlayRules.fabricateIds(33, big200)) eq("every 33 id is one of ours: " + id, OverlayRules.fabricateIdProblem(id), null);
         eq("the 14+ id is one of ours", OverlayRules.fabricateIdProblem(FAB), null);
         throwsIae("ids check the plan", () -> OverlayRules.fabricateIds(33, plan(N1, "nope")));
-        eq("entry name", OverlayRules.entryOverlayName(fe("android:color/system_surface_container_lowest_dark", "0xFF000000")), "aam_monet_surface_container_lowest_dark");
+        eq("entry name", OverlayRules.entryOverlayName(fe("android:color/system_surface_container_lowest_dark", "0xFF000000")), "aam_monet_system_surface_container_lowest_dark");
 
         // ---- the three script forms, exactly ----
         String tail = "echo @@OVL-GET@@; cmd overlay list --user current; echo @@OVL-END@@\n";
@@ -883,10 +889,10 @@ public class OverlayRulesTest {
         eq("the app's file constant", OverlayRules.FAB_FILE, "/data/system/aam_monet.xml");
         String f33 = OverlayRules.fabricateScript(33, black);
         eq("sdk 33: one fabricate per entry, then one enable per overlay", f33,
-            "cmd overlay fabricate --user current --target android --name 'aam_monet_neutral1_900' 'android:color/system_neutral1_900' 0x1c '0xFF000000'\n"
-            + "cmd overlay fabricate --user current --target android --name 'aam_monet_neutral2_900' 'android:color/system_neutral2_900' 0x1c '0xFF000000'\n"
-            + "cmd overlay enable --user current 'com.android.shell:aam_monet_neutral1_900'\n"
-            + "cmd overlay enable --user current 'com.android.shell:aam_monet_neutral2_900'\n" + tail + lookups2);
+            "cmd overlay fabricate --user current --target android --name 'aam_monet_system_neutral1_900' 'android:color/system_neutral1_900' 0x1c '0xFF000000'\n"
+            + "cmd overlay fabricate --user current --target android --name 'aam_monet_system_neutral2_900' 'android:color/system_neutral2_900' 0x1c '0xFF000000'\n"
+            + "cmd overlay enable --user current 'com.android.shell:aam_monet_system_neutral1_900'\n"
+            + "cmd overlay enable --user current 'com.android.shell:aam_monet_system_neutral2_900'\n" + tail + lookups2);
         eq("sdk 31 and 32: the 33 form", OverlayRules.fabricateScript(31, black) + OverlayRules.fabricateScript(32, black), f33 + f33);
         is("sdk 33: no file, no heredoc", !f33.contains("<<") && !f33.contains("--file") && !f33.contains("/data/system"));
         throwsIae("sdk 30: no Material You", () -> OverlayRules.fabricateScript(30, black));
@@ -916,8 +922,74 @@ public class OverlayRulesTest {
         // ---- no priority line: AOSP 12-16 set-priority cannot address a fabricated overlay (it is looked up as a package named "com.android.shell:aam_monet") ----
         is("no set-priority in any fabricate script (34, 33, 36, eleven entries on 33)", !f34.contains("set-priority") && !f33.contains("set-priority") && !f36.contains("set-priority") && !OverlayRules.fabricateScript(33, eleven).contains("set-priority"));
         is("sdk 34: the file is removed right after the enable", f34.contains("cmd overlay enable --user current 'com.android.shell:aam_monet'\nrm -f '/tmp/aam_test.xml'\n"));
-        is("sdk 33: the read-back right after the enables", f33.contains("cmd overlay enable --user current 'com.android.shell:aam_monet_neutral2_900'\n" + tail));
+        is("sdk 33: the read-back right after the enables", f33.contains("cmd overlay enable --user current 'com.android.shell:aam_monet_system_neutral2_900'\n" + tail));
         is("no set-priority in a disable", !OverlayRules.disableScript(ids33).contains("set-priority") && !OverlayRules.disableScript(ids34).contains("set-priority"));
+
+        // ---- night entries: the dark-mode half of a day/night pair (the fixed colours, accent_device_default), as ColorBlendr writes them ----
+        final String PF = "android:color/system_primary_fixed", ADD = "android:color/accent_device_default", SD = "android:color/system_surface_dark";
+        final OverlayRules.FabEntry pfDay = fe(PF, "0xFFEADDFF"), pfNight = new OverlayRules.FabEntry(PF, "0xFF4F378B", "night");
+        final OverlayRules.FabEntry addDay = fe(ADD, "0xFF6750A4"), addNight = new OverlayRules.FabEntry(ADD, "0xFFD0BCFF", "night");
+        final List<OverlayRules.FabEntry> dayNight = new ArrayList<OverlayRules.FabEntry>(Arrays.asList(pfDay, pfNight, addDay, addNight, fe(SD, "0xFF000000")));
+        eq("the two-arg entry has no configuration", fe(N1, "0xFF000000").config + "|" + fe(N1, "0xFF000000").configured(), "null|false");
+        eq("the night entry", pfNight.config + "|" + pfNight.configured() + "|" + OverlayRules.FAB_CONFIG_NIGHT, "night|true|night");
+        for (String prof : new String[] {null, "P14", "P15", "P16", "P16Q1", "P16Q2", "P17"}) eq("a day/night pair passes (" + prof + ")", OverlayRules.fabricatePlanProblem(prof, dayNight), null);
+        // the configuration: night or nothing
+        for (String bad : new String[] {"", "day", "Night", "NIGHT", "night ", "notnight", "night\"/><item target=\"color/x\" value=\"0xFF000000", "en", "land", "dark"}) {
+            List<OverlayRules.FabEntry> p = new ArrayList<OverlayRules.FabEntry>(Arrays.asList(pfDay, new OverlayRules.FabEntry(PF, "0xFF4F378B", bad)));
+            String prob = OverlayRules.fabricatePlanProblem(p);
+            is("configuration refused: " + bad.replace("\n", "\\n"), prob != null && prob.startsWith("Entry 2 ") && prob.contains("configuration") && !prob.contains("<item"));
+            throwsIae("configuration builds no script: " + bad, () -> OverlayRules.fabricateScript(34, p, "/tmp/x.xml"));
+            throwsIae("configuration builds no script (33): " + bad, () -> OverlayRules.fabricateScript(33, p));
+        }
+        // the duplicate rule is on (resource, configuration)
+        is("the same resource twice with night", OverlayRules.fabricatePlanProblem(Arrays.asList(pfDay, pfNight, new OverlayRules.FabEntry(PF, "0xFF000000", "night"))) != null && OverlayRules.fabricatePlanProblem(Arrays.asList(pfDay, pfNight, new OverlayRules.FabEntry(PF, "0xFF000000", "night"))).startsWith("Entry 3 names a resource twice"));
+        is("the same resource twice unqualified, with a night between", OverlayRules.fabricatePlanProblem(Arrays.asList(pfDay, pfNight, fe(PF, "0xFF000001"))) != null && OverlayRules.fabricatePlanProblem(Arrays.asList(pfDay, pfNight, fe(PF, "0xFF000001"))).startsWith("Entry 3 names a resource twice"));
+        eq("night first, day second: a pair all the same", OverlayRules.fabricatePlanProblem(Arrays.asList(pfNight, pfDay)), null);
+        eq("a night entry alone passes the shape check", OverlayRules.fabricatePlanProblem(Arrays.asList(pfNight)), null);
+        // the 17 guard: the unsuffixed fixed colour is taken with its night pair (one colour per mode, as its _light and _dark names), refused alone
+        is("17: an unsuffixed fixed colour alone is still refused", OverlayRules.fabricatePlanProblem("P17", Arrays.asList(pfDay)) != null && OverlayRules.fabricatePlanProblem("P17", Arrays.asList(pfDay)).startsWith("Entry 1 names a fixed color"));
+        is("17: ... also when another resource has a night entry", OverlayRules.fabricatePlanProblem("P17", Arrays.asList(pfDay, addNight)) != null && OverlayRules.fabricatePlanProblem("P17", Arrays.asList(pfDay, addNight)).startsWith("Entry 1 "));
+        eq("17: the pair passes, in either order", OverlayRules.fabricatePlanProblem("P17", Arrays.asList(pfDay, pfNight)) + "|" + OverlayRules.fabricatePlanProblem("P17", Arrays.asList(pfNight, pfDay)), "null|null");
+        eq("17: a fixed night entry alone passes", OverlayRules.fabricatePlanProblem("P17", Arrays.asList(pfNight)), null);
+        is("16 QPR2: an unsuffixed palette shade is refused with a night pair too (the plan writes it as the current mode's shade, not as a pair)", OverlayRules.fabricatePlanProblem("P16Q2", Arrays.asList(fe(N1, "0xFF000000"), new OverlayRules.FabEntry(N1, "0xFF000001", "night"))) != null);
+        // the XML: config="night" on the night items only, after the value
+        String xmlDN = "<overlay>\n  <item target=\"color/system_primary_fixed\" value=\"0xFFEADDFF\"/>\n  <item target=\"color/system_primary_fixed\" value=\"0xFF4F378B\" config=\"night\"/>\n"
+            + "  <item target=\"color/accent_device_default\" value=\"0xFF6750A4\"/>\n  <item target=\"color/accent_device_default\" value=\"0xFFD0BCFF\" config=\"night\"/>\n  <item target=\"color/system_surface_dark\" value=\"0xFF000000\"/>\n</overlay>\n";
+        eq("the xml with night items", OverlayRules.fabricateXml(dayNight), xmlDN);
+        String fDN = OverlayRules.fabricateScript(34, dayNight, "/tmp/x.xml");
+        is("sdk 34: the night items go in the file, one fabricate, one enable", fDN.contains(xmlDN) && fDN.split("cmd overlay fabricate ", -1).length - 1 == 1 && fDN.split("cmd overlay enable ", -1).length - 1 == 1);
+        eq("sdk 34 ids with night items: one overlay", OverlayRules.fabricateIds(34, dayNight).toString(), "[" + FAB + "]");
+        eq("sdk 36 and 37: the same file", OverlayRules.fabricateXml(dayNight), OverlayRules.fabricateScript(37, "P17", dayNight, "/tmp/x.xml").substring(OverlayRules.fabricateScript(37, "P17", dayNight, "/tmp/x.xml").indexOf("<overlay>"), OverlayRules.fabricateScript(37, "P17", dayNight, "/tmp/x.xml").indexOf("</overlay>\n") + "</overlay>\n".length()));
+        // the lookups never name a night entry: the lookup resolves in the configuration system_server is in
+        eq("lookups skip the night entries", OverlayRules.lookupEntries(dayNight), Arrays.asList(pfDay, addDay, dayNight.get(4)));
+        eq("lookups skip the night entries on 17 too", OverlayRules.lookupEntries("P17", dayNight), Arrays.asList(dayNight.get(4), pfDay, addDay));
+        eq("lookups skip the night entries on QPR", OverlayRules.lookupEntries("P16Q2", dayNight), Arrays.asList(dayNight.get(4), pfDay, addDay));
+        eq("a plan of night entries alone: nothing looked up", OverlayRules.lookupEntries(Arrays.asList(pfNight, addNight)).size() + "|" + OverlayRules.lookupEntries("P17", Arrays.asList(pfNight, addNight)).size(), "0|0");
+        is("the script's lookups: the three day entries, no night one", fDN.split("cmd overlay lookup ", -1).length - 1 == 3 && fDN.contains("lookup --user current android 'android:color/accent_device_default' 2>&1") && !fDN.contains("night'"));
+        List<OverlayRules.FabEntry> sixDay = new ArrayList<OverlayRules.FabEntry>(Arrays.asList(pfNight, addNight));
+        for (int i = 0; i < 6; i++) sixDay.add(fe("android:color/system_d" + i, "0xFF000000"));
+        eq("four lookups counted over the day entries only", OverlayRules.lookupEntries(sixDay).size() + ":" + OverlayRules.lookupEntries(sixDay).get(0).resource, "4:android:color/system_d0");
+        // the 12/13 form has no configuration: the night entries are left out, their day halves written, named for the resource
+        eq("sdk 33 ids: the day entries only, named after android:color/", OverlayRules.fabricateIds(33, dayNight).toString(), "[com.android.shell:aam_monet_system_primary_fixed, com.android.shell:aam_monet_accent_device_default, com.android.shell:aam_monet_system_surface_dark]");
+        eq("entry name of a device-default colour", OverlayRules.entryOverlayName(addDay), "aam_monet_accent_device_default");
+        for (String id : OverlayRules.fabricateIds(33, dayNight)) eq("every 33 id of the pair plan is one of ours: " + id, OverlayRules.fabricateIdProblem(id), null);
+        String f33DN = OverlayRules.fabricateScript(33, dayNight);
+        eq("sdk 33: three fabricates, three enables, three lookups", (f33DN.split("cmd overlay fabricate ", -1).length - 1) + ":" + (f33DN.split("cmd overlay enable ", -1).length - 1) + ":" + (f33DN.split("cmd overlay lookup ", -1).length - 1), "3:3:3");
+        is("sdk 33: the night colours are nowhere in the script", !f33DN.contains("0xFF4F378B") && !f33DN.contains("0xFFD0BCFF") && !f33DN.contains("night"));
+        is("sdk 33: the day colours are", f33DN.contains("--name 'aam_monet_system_primary_fixed' 'android:color/system_primary_fixed' 0x1c '0xFFEADDFF'\n") && f33DN.contains("--name 'aam_monet_accent_device_default' 'android:color/accent_device_default' 0x1c '0xFF6750A4'\n"));
+        eq("sdk 33: the same script as the day entries alone", f33DN, OverlayRules.fabricateScript(33, Arrays.asList(pfDay, addDay, dayNight.get(4))));
+        throwsIae("sdk 33: a plan of night entries alone builds no script", () -> OverlayRules.fabricateScript(33, Arrays.asList(pfNight, addNight)));
+        throwsIae("sdk 33: ... and has no ids", () -> OverlayRules.fabricateIds(33, Arrays.asList(pfNight, addNight)));
+        eq("sdk 34: a plan of night entries alone is written (its file has the two items)", OverlayRules.fabricateIds(34, Arrays.asList(pfNight, addNight)).toString() + "|" + OverlayRules.fabricateXml(Arrays.asList(pfNight, addNight)).split("config=\"night\"", -1).length, "[" + FAB + "]|3");
+        is("sdk 34: the night-only script has no lookups", !OverlayRules.fabricateScript(34, Arrays.asList(pfNight, addNight), "/tmp/x.xml").contains("cmd overlay lookup"));
+        // the verdict checks the day entries only
+        OverlayRules.FabResult rDN = new OverlayRules.FabResult();
+        rDN.change = OverlayRules.parseChange("@@OVL-GET@@\n[x] " + FAB + "\n@@OVL-END@@");
+        rDN.lookups.put(PF, "#ffeaddff"); rDN.lookups.put(ADD, "#ff6750a4"); rDN.lookups.put(SD, "#ff000000");
+        is("verdict: the three day lookups answered, ok", OverlayRules.judgeFabricate("fabricate", ids34, dayNight, rDN).ok);
+        rDN.lookups.put(PF, "#ff4f378b");
+        OverlayRules.FabVerdict vDN = OverlayRules.judgeFabricate("fabricate", ids34, dayNight, rDN);
+        is("verdict: the lookup showing the night colour in the day is a refusal naming the resource", !vDN.ok && !vDN.unknown && vDN.mismatched.equals(Arrays.asList(PF)));
 
         // ---- a root-style plan: the 65 palette entries, the 44 roles light and dark, the 12 fixed colours = 165, control_highlight with its alpha ----
         String[] roles = {"primary_container", "on_primary_container", "primary", "on_primary", "secondary_container", "on_secondary_container", "secondary", "on_secondary",
@@ -1070,7 +1142,7 @@ public class OverlayRulesTest {
 
         // ---- the disable script ----
         eq("disable script", OverlayRules.disableScript(ids34), "cmd overlay disable --user current 'com.android.shell:aam_monet'\n" + tail);
-        eq("disable script of two", OverlayRules.disableScript(ids33), "cmd overlay disable --user current 'com.android.shell:aam_monet_neutral1_900'\ncmd overlay disable --user current 'com.android.shell:aam_monet_neutral2_900'\n" + tail);
+        eq("disable script of two", OverlayRules.disableScript(ids33), "cmd overlay disable --user current 'com.android.shell:aam_monet_system_neutral1_900'\ncmd overlay disable --user current 'com.android.shell:aam_monet_system_neutral2_900'\n" + tail);
         is("no lookups after a disable", !OverlayRules.disableScript(ids33).contains("lookup"));
         for (String bad : new String[] {"com.android.systemui:aam_monet", "com.android.shell:aam_monet; touch canaryF5", "com.android.shell:aam_monet_", "com.android.shell:aam_monetx", "com.android.shell:AAM_MONET",
                 "com.android.shell:aam_monet_Neutral", "com.android.shell:", "aam_monet", "com.android.shell:aam_monet\n", "", "android.theme.customization.accent_color", "com.android.shell:aam_monet'", "com.android.shell:aam_monet:x", "-com.android.shell:aam_monet"}) {
@@ -1081,9 +1153,9 @@ public class OverlayRulesTest {
         throwsIae("no ids", () -> OverlayRules.disableScript(new ArrayList<String>()));
         throwsIae("null ids", () -> OverlayRules.disableScript(null));
         throwsIae("an id twice", () -> OverlayRules.disableScript(Arrays.asList(FAB, FAB)));
-        List<String> many = new ArrayList<String>(); for (int i = 0; i < 321; i++) many.add("com.android.shell:aam_monet_x" + i);
-        throwsIae("321 ids", () -> OverlayRules.disableScript(many));
-        OverlayRules.disablePlanOk(many.subList(0, 320));
+        List<String> many = new ArrayList<String>(); for (int i = 0; i < 513; i++) many.add("com.android.shell:aam_monet_x" + i);
+        throwsIae("513 ids", () -> OverlayRules.disableScript(many));
+        OverlayRules.disablePlanOk(many.subList(0, 512));
         OverlayRules.disablePlanOk(many.subList(0, 201));
 
         // ---- the lookup's answer ----
@@ -1171,7 +1243,7 @@ public class OverlayRulesTest {
         jv = OverlayRules.judgeFabricate("fabricate", ids33, black, OverlayRules.parseFabricate(list33 + good2));
         is("33: both on: ok", jv.ok && jv.state == 1);
         jv = OverlayRules.judgeFabricate("fabricate", ids33, black, OverlayRules.parseFabricate(list33.replace("[x] " + ids33.get(1), "[ ] " + ids33.get(1)) + good2));
-        is("33: one off: refused, named", !jv.ok && !jv.unknown && jv.error.contains("aam_monet_neutral2_900") && !jv.error.contains("aam_monet_neutral1_900")); eq("33: the first one's state", jv.state, 1);
+        is("33: one off: refused, named", !jv.ok && !jv.unknown && jv.error.contains("aam_monet_system_neutral2_900") && !jv.error.contains("aam_monet_system_neutral1_900")); eq("33: the first one's state", jv.state, 1);
         jv = OverlayRules.judgeFabricate("fabricate", ids33, black, OverlayRules.parseFabricate(list33.replace("[x] " + ids33.get(0) + "\n", "") + good2));
         is("33: the first not listed: state -2", !jv.ok && jv.state == -2 && jv.error.contains("did not register"));
         // disable
@@ -1258,7 +1330,7 @@ public class OverlayRulesTest {
         OverlayRules.FabVerdict v33 = OverlayRules.judgeFabricate("fabricate", ids33, black, r33);
         is("sh 33: ok", v33.ok && !v33.unknown);
         eq("sh 33: both really on", overlayState(ids33.get(0)) + overlayState(ids33.get(1)), "11");
-        eq("sh 33: the first fabricate's argv", cmdCall(0), "[overlay]\n[fabricate]\n[--user]\n[current]\n[--target]\n[android]\n[--name]\n[aam_monet_neutral1_900]\n[" + N1 + "]\n[0x1c]\n[0xFF000000]\n");
+        eq("sh 33: the first fabricate's argv", cmdCall(0), "[overlay]\n[fabricate]\n[--user]\n[current]\n[--target]\n[android]\n[--name]\n[aam_monet_system_neutral1_900]\n[" + N1 + "]\n[0x1c]\n[0xFF000000]\n");
         eq("sh 33: the lookups", r33.lookups.get(N1) + "|" + r33.lookups.get(N2), "#ff000000|#ff000000");
         is("sh 33: no set-priority asked", read(fakeDir.resolve("priority")) == null);
         is("sh 33: no file written", !Files.exists(fakeDir.resolve("last.xml")));
@@ -1338,6 +1410,27 @@ public class OverlayRulesTest {
         OverlayRules.FabVerdict vA17 = OverlayRules.judgeFabricate("fabricate", ids34, "P17", a17, rA17);
         is("sh 17: ok " + vA17.error, vA17.ok); eq("sh 17: six lookups came", rA17.lookups.keySet().toString(), "[android:color/system_accent1_600_light, android:color/system_accent1_600_dark, android:color/system_primary_light, android:color/system_surface_dark, android:color/system_primary_dim_dark, android:color/system_primary_fixed_dark]");
         eq("sh 17: 264 colours held", read(fakeDir.resolve("colors")).split("\n").length, 264);
+        // a day/night pair plan, end to end: the night items reach the file, the lookups (which resolve in the day) show the day colours
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock);
+        OverlayRules.FabResult rDNsh = OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(34, dayNight, XML.toString()))));
+        OverlayRules.FabVerdict vDNsh = OverlayRules.judgeFabricate("fabricate", ids34, dayNight, rDNsh);
+        is("sh day/night: ok " + vDNsh.error, vDNsh.ok && !vDNsh.unknown);
+        eq("sh day/night: the file Android read has the night items", read(fakeDir.resolve("last.xml")), xmlDN);
+        eq("sh day/night: three lookups, the day colours", rDNsh.lookups.keySet().toString() + " " + rDNsh.lookups.get(PF) + " " + rDNsh.lookups.get(ADD), "[" + PF + ", " + ADD + ", " + SD + "] #ffeaddff #ff6750a4");
+        eq("sh day/night: five colours held, the night ones under their configuration", read(fakeDir.resolve("colors")), PF + " 0xFFEADDFF " + FAB + "\n" + PF + "@night 0xFF4F378B " + FAB + "\n" + ADD + " 0xFF6750A4 " + FAB + "\n" + ADD + "@night 0xFFD0BCFF " + FAB + "\n" + SD + " 0xFF000000 " + FAB + "\n");
+        // the same plan in the 12/13 form: three overlays, the night colours never written
+        resetFake();
+        write(fakeDir.resolve("overlays"), "android 1 android.theme.customization.accent_color\n");
+        write(STOCK, stock);
+        List<String> idsDN33 = OverlayRules.fabricateIds(33, dayNight);
+        OverlayRules.FabResult rDN33 = OverlayRules.parseFabricate(viaReader(runShell(OverlayRules.fabricateScript(33, dayNight))));
+        OverlayRules.FabVerdict vDN33 = OverlayRules.judgeFabricate("fabricate", idsDN33, dayNight, rDN33);
+        is("sh 33 day/night: ok " + vDN33.error, vDN33.ok && !vDN33.unknown);
+        eq("sh 33 day/night: three overlays on", overlayState(idsDN33.get(0)) + overlayState(idsDN33.get(1)) + overlayState(idsDN33.get(2)), "111");
+        eq("sh 33 day/night: three colours held, no night one", read(fakeDir.resolve("colors")), PF + " 0xFFEADDFF " + idsDN33.get(0) + "\n" + ADD + " 0xFF6750A4 " + idsDN33.get(1) + "\n" + SD + " 0xFF000000 " + idsDN33.get(2) + "\n");
+        eq("sh 33 day/night: the first fabricate's argv", cmdCall(0), "[overlay]\n[fabricate]\n[--user]\n[current]\n[--target]\n[android]\n[--name]\n[aam_monet_system_primary_fixed]\n[" + PF + "]\n[0x1c]\n[0xFFEADDFF]\n");
         // canaries: none of the hostile entries above ran anything
         for (int i = 1; i <= 5; i++) is("no canaryF" + i, !Files.exists(fakeDir.resolve("canaryF" + i)));
 
@@ -1356,6 +1449,7 @@ public class OverlayRulesTest {
             is("source: the job goes through the settings executor", bridge != null && bridge.contains("submitSettingsJob(") && bridge.contains("overlayFabricateJob(req, op, profile, entries, ids, queuedAt);"));
             is("source: the bridge takes the phone's profile once, before the check, and hands the same one to the job", bridge != null && bridge.contains("final String profile = monetProfile().profile;") && bridge.indexOf("final String profile = monetProfile().profile;") < bridge.indexOf("OverlayRules.fabricatePlanOk(profile, entries)"));
             is("source: the bridge copies at most one entry or id past the cap", bridge != null && bridge.split("Math.min\\(a.length\\(\\), OverlayRules.MAX_FAB_ENTRIES \\+ 1\\)", -1).length - 1 == 2 && !bridge.contains("200"));
+            is("source: the bridge reads an entry's config (null when left out or JSON null) and hands it to the three-argument entry", bridge != null && bridge.contains("e.isNull(\"config\") ? null : e.optString(\"config\", null)") && bridge.contains("e.optString(\"argb\", null), config)"));
             String job = bodyOf(m, "private void overlayFabricateJob(int req, String op, String profile, List<OverlayRules.FabEntry> entries, List<String> ids, long queuedAt) {");
             is("source: the job exists once", job != null);
             is("source: the job is gated by RootGate.uid0 before any shell", job != null && job.contains("RootGate.uid0(mode, suGranted, fabShizuku, fabSzUid)") && job.indexOf("RootGate.uid0(") < job.indexOf("runPrivilegedShell("));
