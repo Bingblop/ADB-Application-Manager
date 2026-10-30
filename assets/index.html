@@ -8408,6 +8408,199 @@
             </div>
         </div>
 <!-- FONTS:VIEW:END -->
+<!-- FIREWALL:VIEW:BEGIN -->
+        <!-- v7.21.0 Android Firewall: a per-app firewall on iptables (the feature set of AFWall+, written for this app): each app's Wi-Fi, mobile data,
+             roaming, VPN, LAN and Tor access, an allow list or a block list, profiles, your own iptables lines, the kernel's log of what was stopped,
+             export and import, apply on boot. The rules are written by FirewallRules.java and run by su, or by Shizuku as the system user (UID 1000)
+             or root (UID 0): the Root Features gate (isRootActive). The work is in FIREWALL:JS (fw*). -->
+        <section id="view-firewall" class="view-content">
+            <style>
+                #view-firewall .color-card-subtitle { margin-bottom: 0; }
+                .fw-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+                .fw-head .color-card-title { flex: 1 1 auto; margin: 0; min-width: 0; }
+                #fwTop.has-help > .fw-head { min-height: var(--ctl-h); margin-top: calc(var(--space-2) - var(--space-5)); padding-right: calc(var(--ctl-h) + var(--space-1)); }
+                #fwGate { margin: var(--space-4) 0 0; }
+                .fw-note { font-size: var(--fs-body); line-height: 1.5; color: var(--text-muted); margin-top: var(--space-2); overflow-wrap: anywhere; }
+                .fw-note b { color: var(--text-main); font-weight: var(--fw-bold); }
+                .fw-note.is-warn { color: var(--text-main); margin-top: var(--space-3); padding: var(--space-3) var(--space-3h); border-radius: var(--radius-md); border: 1px solid var(--line-suspended); background: var(--tint-suspended); }
+                #view-firewall .xq-status { font-size: var(--fs-body); line-height: 1.45; margin: var(--space-3) 0 0; overflow-wrap: anywhere; }
+                #view-firewall .xq-status:empty { display: none; }
+                #view-firewall .xq-status.is-bad { color: var(--status-bloat); font-weight: var(--fw-bold); }
+                #view-firewall .xq-status.is-ok { color: var(--status-running); font-weight: var(--fw-bold); }
+                /* the main switch and Apply: one row, the big switch left, the buttons right */
+                .fw-master { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-3); }
+                .fw-master .switch-row { flex: 1 1 200px; margin: 0; padding: 0; border: 0; }
+                .fw-master .mode-btn-row { flex: 0 0 auto; margin: 0; }
+                .fw-master .mode-action-btn.is-dirty { box-shadow: 0 0 0 2px var(--accent-glow); }
+                /* mode (allow list / block list) and the profile: two pickers side by side */
+                .fw-pickers { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-3); }
+                .fw-pickers > div { flex: 1 1 150px; min-width: 0; }
+                .fw-lab { display: block; font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); margin-bottom: var(--space-1); }
+                .fw-pick { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); font-size: var(--fs-item); padding: var(--space-3); margin: 0; }
+                .fw-pick .fw-pick-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+                .fw-pick svg { flex: 0 0 auto; width: 18px; height: 18px; }
+                /* the app table: the header row with one symbol per network, each app row with one square per network */
+                .fw-cols { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) 0; border-bottom: 1px solid var(--fill-2); position: sticky; top: 0; background: var(--bg-card); z-index: 2; }
+                .fw-cols .fw-cols-name { flex: 1 1 auto; min-width: 0; font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); }
+                .fw-col-btn, .fw-cell { flex: 0 0 auto; width: var(--ctl-h); height: var(--ctl-h); min-height: var(--ctl-h); padding: 0; margin: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); }
+                .fw-col-btn svg, .fw-cell svg { width: 20px; height: 20px; }
+                .fw-col-btn { color: var(--text-muted); background: var(--fill-1); border: 1px solid var(--border-glass); }
+                .fw-col-btn .fw-col-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+                .fw-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); padding: var(--space-2) 0; border-bottom: 1px solid var(--fill-2); }   /* on a narrow screen with many columns the cells wrap under the name, right-aligned */
+                .fw-row .app-icon { width: 36px; height: 36px; border-radius: var(--radius-sm); flex: 0 0 auto; background: var(--fill-2); }
+                .fw-row .fw-info { flex: 1 1 120px; min-width: 0; }
+                .fw-row .fw-name { font-size: var(--fs-item); font-weight: var(--fw-bold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .fw-row .fw-sub { font-size: var(--fs-pkg); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+                .fw-row.is-special .fw-name::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: var(--space-2); vertical-align: middle; }
+                .fw-cell { background: var(--fill-1); border: 1px solid var(--border-glass); color: var(--text-muted); }
+                .fw-cell.on.allow { background: var(--tint-running-strong); color: var(--status-running); border-color: transparent; }
+                .fw-cell.on.deny { background: var(--tint-bloat-strong); color: var(--status-bloat); border-color: transparent; }
+                .fw-count { font-size: var(--fs-pill); color: var(--text-muted); margin-top: var(--space-2); }
+                #fwList { max-height: 70vh; overflow: auto; }
+                #view-firewall .list-toolbar { margin-top: var(--space-3); }
+                #view-firewall .chip-row { margin-top: var(--space-2); }
+                /* the log and the active rules */
+                .fw-log-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--fill-2); }
+                .fw-log-row .fw-info { flex: 1 1 auto; min-width: 0; }
+                .fw-log-row .fw-cnt { flex: 0 0 auto; font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--status-bloat); background: var(--tint-bloat); border-radius: var(--radius-pill); padding: var(--space-1) var(--space-3); }
+                #fwRulesOut { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: var(--fs-pkg); line-height: 1.45; white-space: pre; overflow: auto; max-height: 50vh; margin: var(--space-3) 0 0; padding: var(--space-3); border-radius: var(--radius-md); background: var(--fill-1); border: 1px solid var(--border-glass); }
+                #view-firewall textarea.modal-text-input { width: 100%; min-height: 96px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: var(--fs-code); margin-top: var(--space-2); resize: vertical; }
+                #view-firewall .fw-boot-row { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3); flex-wrap: wrap; }
+                #view-firewall .fw-boot-row .op-select { flex: 0 0 auto; }
+                #view-firewall .mode-btn-row { flex-wrap: wrap; }
+            </style>
+
+            <div class="color-card" id="fwTop">
+                <div class="fw-head">
+                    <div class="color-card-title">Android Firewall</div>
+                    <span class="mode-status-tag inactive" id="fwStatusTag">Checking...</span>
+                </div>
+                <div class="color-card-subtitle">Decide which apps may use Wi-Fi, mobile data, roaming, a VPN, your local network or Tor. The rules are netfilter (iptables) rules, so they need Super User, or Shizuku running as the system user (UID 1000) or root (UID 0).</div>
+
+                <div class="mode-alert-card" id="fwGate" style="display:none;">
+                    <div class="mode-alert-body">
+                        <div class="mode-alert-title">Needs Super User or Shizuku as system</div>
+                        <div class="mode-alert-desc" id="fwGateDesc">The firewall writes kernel rules. Choose Root with su granted, or Shizuku started as the system user or root, in Working Modes.</div>
+                    </div>
+                    <button class="mode-alert-btn" onclick="openWorkingModesModal()">Set Up</button>
+                </div>
+
+                <div class="fw-master" id="fwMaster">
+                    <label class="switch-row">
+                        <div><div class="switch-title">Firewall</div><div class="switch-sub" id="fwMasterSub">Off. The rules below are kept but not in force.</div></div>
+                        <input type="checkbox" class="switch-input" id="fwMasterSwitch" onchange="fwMasterToggle(this.checked)"><span class="switch-track"></span>
+                    </label>
+                    <div class="mode-btn-row">
+                        <button type="button" class="mode-action-btn primary" id="fwApplyBtn" onclick="fwApply()">Apply</button>
+                    </div>
+                </div>
+                <div class="xq-status" id="fwStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+
+                <div class="fw-pickers">
+                    <div>
+                        <span class="fw-lab">Mode</span>
+                        <button type="button" class="mode-action-btn fw-pick" id="fwModePick" onclick="fwPickMode()"><span class="fw-pick-txt" id="fwModeTxt">Allow list</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg></button>
+                    </div>
+                    <div>
+                        <span class="fw-lab">Profile</span>
+                        <button type="button" class="mode-action-btn fw-pick" id="fwProfPick" onclick="fwPickProfile()"><span class="fw-pick-txt" id="fwProfTxt" translate="no">Default</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg></button>
+                    </div>
+                </div>
+                <div class="fw-note" id="fwModeNote">Allow list: only the apps you tick get out; everything else is stopped. Block list: the apps you tick are stopped; everything else gets out.</div>
+            </div>
+
+            <div class="color-card" id="fwAppsCard">
+                <div class="color-card-title">Apps</div>
+                <div class="color-card-subtitle">One square per network. Tap a square to tick an app, tap a column's symbol to tick every app shown. Apps that share a user ID share their rule.</div>
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="fwSearch" placeholder="Search apps or packages..." oninput="fwRenderList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="chip-row h-fade" id="fwFilterRow">
+                    <span class="filter-chip active" role="button" tabindex="0" data-f="net" onclick="fwFilter('net')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();fwFilter('net');}">Use the internet</span>
+                    <span class="filter-chip" role="button" tabindex="0" data-f="user" onclick="fwFilter('user')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();fwFilter('user');}">User apps</span>
+                    <span class="filter-chip" role="button" tabindex="0" data-f="system" onclick="fwFilter('system')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();fwFilter('system');}">System apps</span>
+                    <span class="filter-chip" role="button" tabindex="0" data-f="special" onclick="fwFilter('special')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();fwFilter('special');}">Special</span>
+                    <span class="filter-chip" role="button" tabindex="0" data-f="ticked" onclick="fwFilter('ticked')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();fwFilter('ticked');}">Ticked</span>
+                    <span class="filter-chip" role="button" tabindex="0" data-f="all" onclick="fwFilter('all')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();fwFilter('all');}">All</span>
+                </div>
+                <div class="mode-btn-row">
+                    <button type="button" class="mode-action-btn" id="fwSavedListBtn" onclick="fwPickSavedList()">Saved list…</button>
+                    <button type="button" class="mode-action-btn" id="fwClearBtn" onclick="fwClearProfile()">Untick all</button>
+                </div>
+                <div class="fw-cols" id="fwCols"></div>
+                <div id="fwList"></div>
+                <div class="fw-count" id="fwCount"></div>
+            </div>
+
+            <div class="color-card cc" data-cc="fwopts" data-cc-default="closed" id="fwOptsCard">
+                <div class="color-card-title">Networks and options</div>
+                <div class="color-card-subtitle">Which networks get a column of their own, and how a stopped connection is answered.</div>
+                <label class="switch-row"><div><div class="switch-title">Roaming column</div><div class="switch-sub">Separate rules while the phone roams. Without it, roaming follows the mobile data rules.</div></div><input type="checkbox" class="switch-input" id="fwOptRoam" onchange="fwOpt('roam', this.checked)"><span class="switch-track"></span></label>
+                <label class="switch-row"><div><div class="switch-title">VPN column</div><div class="switch-sub">Rules for traffic inside a VPN tunnel. Without it, the VPN app decides.</div></div><input type="checkbox" class="switch-input" id="fwOptVpn" onchange="fwOpt('vpn', this.checked)"><span class="switch-track"></span></label>
+                <label class="switch-row"><div><div class="switch-title">LAN column</div><div class="switch-sub">Your local network (printers, casting, NAS) apart from the internet over Wi-Fi.</div></div><input type="checkbox" class="switch-input" id="fwOptLan" onchange="fwOpt('lan', this.checked)"><span class="switch-track"></span></label>
+                <label class="switch-row"><div><div class="switch-title">Tor column</div><div class="switch-sub">Send a ticked app through Orbot's transparent proxy (ports 9040 and 5400) and stop everything of it that does not go through Tor.</div></div><input type="checkbox" class="switch-input" id="fwOptTor" onchange="fwOpt('tor', this.checked)"><span class="switch-track"></span></label>
+                <label class="switch-row"><div><div class="switch-title">IPv6 too</div><div class="switch-sub">The same rules in ip6tables. Off, IPv6 is left as it is (an app could still reach IPv6 sites).</div></div><input type="checkbox" class="switch-input" id="fwOptIpv6" onchange="fwOpt('ipv6', this.checked)"><span class="switch-track"></span></label>
+                <label class="switch-row"><div><div class="switch-title">Log stopped connections</div><div class="switch-sub">Writes each stopped packet to the kernel log, for the Log card below (at most 1000 a minute).</div></div><input type="checkbox" class="switch-input" id="fwOptLog" onchange="fwOpt('log', this.checked)"><span class="switch-track"></span></label>
+                <label class="switch-row"><div><div class="switch-title">Drop silently</div><div class="switch-sub">Off, a stopped app is told at once that the port is unreachable (it fails fast). On, its packets vanish and it waits for a timeout.</div></div><input type="checkbox" class="switch-input" id="fwOptDrop" onchange="fwOpt('drop', this.checked)"><span class="switch-track"></span></label>
+                <label class="switch-row"><div><div class="switch-title">Block inbound connections</div><div class="switch-sub">New connections from outside are refused; answers to the phone's own connections still arrive.</div></div><input type="checkbox" class="switch-input" id="fwOptInbound" onchange="fwOpt('inbound', this.checked)"><span class="switch-track"></span></label>
+                <label class="switch-row"><div><div class="switch-title">Block tethered devices</div><div class="switch-sub">Devices on your hotspot (Wi-Fi, USB, Bluetooth) get no internet through this phone.</div></div><input type="checkbox" class="switch-input" id="fwOptTether" onchange="fwOpt('tether', this.checked)"><span class="switch-track"></span></label>
+                <label class="switch-row"><div><div class="switch-title">Apply on boot</div><div class="switch-sub" id="fwBootSub">A restart empties every rule. On, the last applied rules are run again through su after the delay (su only: Shizuku is not up that early).</div></div><input type="checkbox" class="switch-input" id="fwOptBoot" onchange="fwBootToggle(this.checked)"><span class="switch-track"></span></label>
+                <div class="fw-boot-row"><span class="fw-lab">Delay after boot</span>
+                    <select class="op-select" id="fwBootDelay" onchange="fwBootDelayChange(this.value)"><option value="0">none</option><option value="15" selected>15 s</option><option value="30">30 s</option><option value="60">60 s</option></select>
+                </div>
+                <label class="switch-row"><div><div class="switch-title">Re-apply when the network changes</div><div class="switch-sub">With the Roaming column: the rules are applied again when the phone starts or stops roaming.</div></div><input type="checkbox" class="switch-input" id="fwOptReapply" checked onchange="fwOpt('reapply', this.checked)"><span class="switch-track"></span></label>
+            </div>
+
+            <div class="color-card cc" data-cc="fwcustom" data-cc-default="closed" id="fwCustomCard">
+                <div class="color-card-title">Your own rules</div>
+                <div class="color-card-subtitle">iptables lines run before this app's rules are built, and after. One command per line, as root. They are yours: nothing checks them.</div>
+                <span class="fw-lab" style="margin-top:var(--space-3);">Before</span>
+                <textarea class="modal-text-input" id="fwPre" translate="no" spellcheck="false" placeholder="iptables -w 5 -A atbx -p tcp --dport 22 -j RETURN" onchange="fwCustomChange()"></textarea>
+                <span class="fw-lab" style="margin-top:var(--space-3);">After</span>
+                <textarea class="modal-text-input" id="fwPost" translate="no" spellcheck="false" onchange="fwCustomChange()"></textarea>
+                <div class="fw-note">The chains are <b>atbx</b> (everything leaving the phone), <b>atbx-wifi</b>, <b>atbx-mobile</b>, <b>atbx-roam</b>, <b>atbx-vpn</b>, <b>atbx-lan</b> and <b>atbx-reject</b>. A line that iptables refuses is shown after Apply; the other lines still run.</div>
+            </div>
+
+            <div class="color-card cc" data-cc="fwlog" data-cc-default="closed" id="fwLogCard">
+                <div class="color-card-title">Log</div>
+                <div class="color-card-subtitle">What the firewall stopped, by app, newest first. Needs <b>Log stopped connections</b> above.</div>
+                <div class="mode-btn-row">
+                    <button type="button" class="mode-action-btn" id="fwLogBtn" onclick="fwLogLoad(false)">Refresh</button>
+                    <button type="button" class="mode-action-btn" id="fwLogClearBtn" onclick="fwLogLoad(true)">Clear log</button>
+                </div>
+                <div id="fwLogList"></div>
+            </div>
+
+            <div class="color-card cc" data-cc="fwrules" data-cc-default="closed" id="fwRulesCard">
+                <div class="color-card-title">Active rules</div>
+                <div class="color-card-subtitle">This app's chains as iptables lists them right now, for a check or a bug report.</div>
+                <div class="mode-btn-row">
+                    <button type="button" class="mode-action-btn" id="fwRulesBtn" onclick="fwRulesLoad()">Read from the phone</button>
+                    <button type="button" class="mode-action-btn" id="fwRulesCopyBtn" onclick="fwRulesCopy()">Copy</button>
+                </div>
+                <pre id="fwRulesOut" translate="no" style="display:none;"></pre>
+            </div>
+
+            <div class="color-card cc" data-cc="fwbackup" data-cc-default="closed" id="fwBackupCard">
+                <div class="color-card-title">Export and import</div>
+                <div class="color-card-subtitle">Every profile, the mode and the options in one JSON file, by package name, so it works on another phone too.</div>
+                <div class="mode-btn-row">
+                    <button type="button" class="mode-action-btn" onclick="fwExport(false)">Save to Downloads</button>
+                    <button type="button" class="mode-action-btn" onclick="fwExport(true)">Share</button>
+                    <button type="button" class="mode-action-btn" onclick="fwImportPick()">Import…</button>
+                </div>
+                <div class="xq-status" id="fwBackupStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+            </div>
+
+            <div class="color-card" id="fwDangerCard">
+                <div class="color-card-title">If something breaks</div>
+                <div class="color-card-subtitle">Every rule of this app can be removed at once. Android's own rules are never touched, and a restart without Apply on boot removes them too.</div>
+                <div class="mode-btn-row">
+                    <button type="button" class="mode-action-btn" id="fwFlushBtn" onclick="fwFlush()">Remove all firewall rules</button>
+                </div>
+            </div>
+        </section>
+<!-- FIREWALL:VIEW:END -->
         <section id="view-about" class="view-content">
             <style>
                 .auth-code-row { display:flex; gap:var(--space-3); align-items:center; margin-top:var(--space-4); }
@@ -12296,6 +12489,7 @@ Type any command above (e.g. pm list packages -d)</div>
             { key: 'sdm', label: 'SD Maid', name: 'SD Maid' },
             { key: 'rootfeatures', label: 'Root\nFeatures', name: 'Root Features' },          // v7.15.1: Super User features; unlocked by the root gate (isRootActive)
             { key: 'fonts', label: 'Custom\nFonts', name: 'Custom Fonts' },                  // v7.17.0: make Samsung font packages, emoji downloads, the font changer (FONTS:VIEW / FONTS:JS)
+            { key: 'firewall', label: 'Android\nFirewall', name: 'Android Firewall' },          // v7.21.0: a per-app firewall on iptables, Root / UID 1000 / UID 0 (FIREWALL:VIEW / FIREWALL:JS)
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
@@ -12450,7 +12644,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // NOTE: these lists name tabs by their key (BNAV_DEFAULT, BNAV_SHORT, BNAV_ICONS, TAB_SHORTCUTS: 'console', 'logcat', 'taskmgr' ...). When a tab is added, renamed or replaced in TAB_DEFS, update them with it:
         // a key that TAB_DEFS does not have is skipped, so nothing breaks, but the default pinned tab and the shortcuts of that tab are lost until it is done (t260 checks that every tab has an icon).
         const BNAV_DEFAULT = ['apps', 'installer', ['extrasettings', 'settings'], 'console'];          // a list inside is "the first of these this version has" (Extra Settings where it exists, else Hidden Settings); Console: the ADB shell and the Terminal
-        const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', console: 'Console', logcat: 'Logcat', settings: 'Hidden', extrasettings: 'Extra', overlays: 'Monet', store: 'Stores', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', rootfeatures: 'Root', fonts: 'Fonts', about: 'About' };
+        const BNAV_SHORT = { apps: 'Apps', 'saved-lists': 'Saved', debloater: 'Debloat', installer: 'Installer', files: 'Files', console: 'Console', logcat: 'Logcat', settings: 'Hidden', extrasettings: 'Extra', overlays: 'Monet', store: 'Stores', taskmgr: 'Tasks', devices: 'Devices', morphe: 'Morphe', sdm: 'SD Maid', rootfeatures: 'Root', fonts: 'Fonts', firewall: 'Firewall', about: 'About' };
         const BNAV_ICONS = {                                                         // 24 px Material-style symbols, filled like the rest of the app's icons
             apps: '<path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>',
             'saved-lists': '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>',
@@ -12469,6 +12663,7 @@ Type any command above (e.g. pm list packages -d)</div>
             sdm: '<path d="M18 2h-8L4.02 8 4 20c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 6h-2V4h2v4zm3 0h-2V4h2v4zm3 0h-2V4h2v4z"/>',
             rootfeatures: '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>',          // a shield with a check (Material "verified user"): Super User
             fonts: '<path d="M1.75 19L6.75 5h2.6l5 14h-2.6l-1.286-3.6H5.636L4.35 19zM6.35 13.4h3.4L8.05 8.64zM18.05 11.8a3.6 3.6 0 1 1 0 7.2a3.6 3.6 0 1 1 0-7.2zM18.05 13.8a1.6 1.6 0 1 0 0 3.2a1.6 1.6 0 1 0 0-3.2zM20 11.8h2V19h-2z"/>',          // "Aa", a capital and a small letter: Custom Fonts
+            firewall: '<path d="M12 2L4 5v6c0 5.25 3.4 10.15 8 11.35C16.6 21.15 20 16.25 20 11V5zm0 2.18l6 2.25V11c0 4.2-2.55 8.1-6 9.27C8.55 19.1 6 15.2 6 11V6.43zM8 9v2h3v2H8v2h3v2h2v-2h3v-2h-3v-2h3V9h-3V7h-2v2z"/>',        // a shield with a brick course inside: Android Firewall
             about: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'
         };
         const BNAV_ICON_MORE = '<path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>';
@@ -13186,6 +13381,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
             if (viewName === 'rootfeatures' && typeof onRootFeaturesShown === 'function') onRootFeaturesShown();
             if (viewName === 'fonts' && typeof onFontsShown === 'function') onFontsShown();
+            if (viewName === 'firewall' && typeof onFirewallShown === 'function') onFirewallShown();
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
             if (viewName === 'overlays') onOverlaysShown();
@@ -13984,6 +14180,7 @@ Type any command above (e.g. pm list packages -d)</div>
                             <button class="apps-tool-btn${quickListId === (list.id || '') ? ' active' : ''}" data-list-id="${listId}" onclick="toggleQuickList(this.getAttribute('data-list-id'))" title="Use this list for the Quick Settings tile and the widget">${quickListId === (list.id || '') ? 'Quick list ✓' : 'Quick list'}</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="openListEditorModal(this.getAttribute('data-list-id'))">Edit</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="copySavedList(this.getAttribute('data-list-id'))">Copy</button>
+                            ${typeof tabIsOn === 'function' && tabIsOn('firewall') ? `<button class="apps-tool-btn sl-firewall" data-list-id="${listId}" onclick="fwFromSavedList(this.getAttribute('data-list-id'))" title="Block or allow every app in this list in Android Firewall">Firewall</button>` : ''}
                             <button class="apps-tool-btn sl-delete" data-list-id="${listId}" onclick="deleteSavedList(this.getAttribute('data-list-id'))">Delete</button>
                         </div>
                     </div>`;
@@ -14704,6 +14901,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 try { if (typeof tmOnModeChange === 'function') tmOnModeChange(); } catch (e) { console.error('Task Manager tab: ' + e); }
                 try { if (typeof rootOnModeChange === 'function') rootOnModeChange(); } catch (e) { console.error('Root Features tab: ' + e); }
                 try { if (typeof fntOnModeChange === 'function') fntOnModeChange(); } catch (e) { console.error(e); }
+                try { if (typeof fwOnModeChange === 'function') fwOnModeChange(); } catch (e) { console.error('Android Firewall tab: ' + e); }
                 try { if (typeof installerOnModeChange === 'function') installerOnModeChange(); } catch (e) { console.error(e); }
                 try { if (typeof updOnModeChange === 'function') updOnModeChange(); } catch (e) { console.error(e); }
 
@@ -22581,6 +22779,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (r && r.tag === 'lists-file') { listsOnFile(r); return; }
             if (r && r.tag === 'monet-file') { if (r.error) showToast('Could not read that file: ' + r.error); else ovlBkRestoreFrom(r.text || '', r.name || 'that file'); return; }
             if (r && r.tag === 'hs-restore') { if (r.error) showToast('Could not read that file: ' + r.error); else sdbRestoreFrom(r.text || ''); return; }
+            if (r && r.tag === 'fw-file') { if (r.error) showToast('Could not read that file: ' + r.error); else fwImportFrom(r.text || '', r.name || 'that file'); return; }
             if (!r || !String(r.tag || '').startsWith('presets-')) return;
             if (r.error) { showToast('Could not read that file: ' + r.error); return; }
             const got = presetsFromFile(r.text || '');
@@ -28008,7 +28207,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
         const HELP_LINKS = {
             apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', logcat: 'tab-logcat', devices: 'tab-devices',
-            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', console: 'tab-console', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', extrasettings: 'tab-extrasettings', rootfeatures: 'tab-rootfeatures', fonts: 'tab-fonts', prefs: 'prefs'
+            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', console: 'tab-console', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', extrasettings: 'tab-extrasettings', rootfeatures: 'tab-rootfeatures', fonts: 'tab-fonts', firewall: 'tab-firewall', prefs: 'prefs'
         };
         function injectHelpLinks() {
             Object.keys(HELP_LINKS).forEach(view => {
@@ -31754,7 +31953,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 // v7.18.1 (the owner's wish): a signpost to the RRO/Monet Customization tab, whose Root-only theme controls write a color overlay
                 // (the UID-0 tier: Root with su, or Shizuku as root)
                 + rootFeatureRow('Additional Monet Customization', 'Pure black, more styles, intensity and your own accents for every app that uses Monet colors.', 'Open tab', 'rfMonetBtn', 'rootOpenMonet()', ovlCanWriteOverlays())
-                + rootFeatureRow('Root File Management', 'Open, change and delete any file, and set its permissions and owner (Permissions… on a file).', 'Open files', 'rfFilesBtn', 'rootOpenFiles()', ovlCanWriteOverlays());
+                + rootFeatureRow('Root File Management', 'Open, change and delete any file, and set its permissions and owner (Permissions… on a file).', 'Open files', 'rfFilesBtn', 'rootOpenFiles()', ovlCanWriteOverlays())
+                // v7.21.0 (the owner's wish): a signpost to the Android Firewall tab, whose iptables rules need su or Shizuku as the system user / root
+                + rootFeatureRow('Android Firewall', 'Block Wi-Fi, mobile data, roaming, VPN, LAN or Tor for any app, with profiles and a log of what was stopped.', 'Open tab', 'rfFirewallBtn', 'rootOpenFirewall()', isRootActive());
         }
         // "Root File Management" (v7.18.2): the File Manager, where as root every path goes through su and a file's sheet has Permissions…
         function rootOpenFiles() { switchView('files'); }
@@ -49728,6 +49929,540 @@ Type any command above (e.g. pm list packages -d)</div>
         // a new language: the cards are drawn again, since the texts inside data rows (translate="no") are put together with txT / txF when drawn
         document.addEventListener('i18nchange', () => { if (currentViewName() === 'fonts') fntRenderAll(); gfRedraw(); });
         // FONTS:JS:END
+        // FIREWALL:JS:BEGIN
+        // ---------- Android Firewall (v7.21.0) ----------
+        // A per-app firewall on netfilter, with the feature set of AFWall+ written for this app. The page keeps the rule set (kv 'fw_cfg'), the
+        // engine is FirewallRules.java: fwRun('apply', json) turns the set into one iptables / ip6tables script that su (or Shizuku as the system
+        // user / root) runs, and the script reads the phone's state back; the page believes only that read-back. Rules are kept by package name
+        // (an export works on another phone); the uid is looked up at apply time, and packages that share a uid share their rule.
+        // kv 'fw_cfg': { mode: 'allow'|'block', opts: { roam, vpn, lan, tor, ipv6, log, drop, inbound, tether, reapply }, boot, bootDelay,
+        //                profile: index, profiles: [{ name, rules: { pkg | '@special': ['wifi', 'mobile', 'roam', 'vpn', 'lan', 'tor'] } }],
+        //                pre, post, on (the switch's position, whether the rules are meant to be in force), appliedKey (what was last applied) }
+        const FW_NETS = [
+            { key: 'wifi', name: 'Wi-Fi', icon: '<path fill="currentColor" d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>' },
+            { key: 'mobile', name: 'Mobile data', icon: '<path fill="currentColor" d="M2 22h20V2L2 22z"/>' },
+            { key: 'roam', name: 'Roaming', opt: 'roam', icon: '<path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.93 6h-2.95a15.65 15.65 0 00-1.38-3.56A8.03 8.03 0 0118.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 015.08 16zm2.95-8H5.08a7.987 7.987 0 014.33-3.56A15.65 15.65 0 008.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 01-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/>' },
+            { key: 'vpn', name: 'VPN', opt: 'vpn', icon: '<path fill="currentColor" d="M12.65 10A5.99 5.99 0 007 6c-3.31 0-6 2.69-6 6s2.69 6 6 6a5.99 5.99 0 005.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>' },
+            { key: 'lan', name: 'LAN', opt: 'lan', icon: '<path fill="currentColor" d="M15 20a1 1 0 001-1v-2h4a2 2 0 002-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2h4v2a1 1 0 001 1h6zM4 5h16v10H4V5z"/>' },
+            { key: 'tor', name: 'Tor', opt: 'tor', icon: '<path fill="currentColor" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 010 16V4zm-2 2.25A6 6 0 1010 17.7V6.25z"/>' },
+        ];
+        const FW_NET_KEYS = FW_NETS.map(n => n.key);
+        const FW_DEFAULT_OPTS = { roam: false, vpn: false, lan: false, tor: false, ipv6: false, log: false, drop: false, inbound: false, tether: false, reapply: true };
+        let fw = null;                 // the rule set (fwLoad)
+        let fwData = null;             // fwApps(): { apps, specials, selfUid, selfPkg }
+        let fwRows = [];               // one row per uid: { uid, pkgs, name, sub, isSystem, net, special, key }
+        let fwFilterKey = 'net', fwJobs = {}, fwJobSeq = 0, fwLastStatus = null, fwNet = null, fwBusy = false, fwNetTimer = 0;
+
+        function fwLoad() {
+            if (fw) return fw;
+            const k = kvGet('fw_cfg', null);
+            fw = k && typeof k === 'object' && !Array.isArray(k) ? k : {};
+            if (fw.mode !== 'allow' && fw.mode !== 'block') fw.mode = 'allow';
+            fw.opts = Object.assign({}, FW_DEFAULT_OPTS, fw.opts && typeof fw.opts === 'object' ? fw.opts : {});
+            if (!Array.isArray(fw.profiles) || !fw.profiles.length) fw.profiles = [{ name: 'Default', rules: {} }];
+            fw.profiles.forEach(p => { if (!p.rules || typeof p.rules !== 'object') p.rules = {}; if (!p.name) p.name = 'Profile'; });
+            fw.profile = Math.min(Math.max(0, +fw.profile || 0), fw.profiles.length - 1);
+            fw.pre = String(fw.pre || ''); fw.post = String(fw.post || '');
+            fw.bootDelay = [0, 15, 30, 60].includes(+fw.bootDelay) ? +fw.bootDelay : 15;
+            fw.on = !!fw.on; fw.boot = !!fw.boot;
+            return fw;
+        }
+        function fwSave() { kvSet('fw_cfg', fw); }
+        function fwProf() { return fwLoad().profiles[fw.profile]; }
+        function fwRule(key) { const r = fwProf().rules[key]; return Array.isArray(r) ? r : []; }
+        function fwSetRule(key, nets) { if (nets.length) fwProf().rules[key] = nets; else delete fwProf().rules[key]; }
+        function fwRowKeys(row) { return row.special ? ['@' + row.special] : row.pkgs; }
+        /** the networks that have a column now */
+        function fwCols() { return FW_NETS.filter(n => !n.opt || fw.opts[n.opt]); }
+        function fwCanRun() { return !!(window.AndroidBridge && window.AndroidBridge.fwRun) && isRootActive(); }
+
+        // ---- the apps ----
+        function fwLoadApps() {
+            fwData = null;
+            if (!window.AndroidBridge || !window.AndroidBridge.fwApps) return;
+            try {
+                const d = JSON.parse(window.AndroidBridge.fwApps() || '{}');
+                if (d && d.ok) fwData = d;
+            } catch (e) { fwData = null; }
+            fwBuildRows();
+        }
+        function fwBuildRows() {
+            fwRows = [];
+            if (!fwData) return;
+            const byUid = new Map();
+            (fwData.apps || []).forEach(a => {
+                let r = byUid.get(a.uid);
+                if (!r) { r = { uid: a.uid, pkgs: [], names: [], isSystem: true, net: false, special: '' }; byUid.set(a.uid, r); }
+                r.pkgs.push(a.pkg); r.names.push(a.name || a.pkg);
+                if (!a.isSystem) r.isSystem = false;
+                if (a.net) r.net = true;
+            });
+            byUid.forEach(r => {
+                r.name = r.names[0];
+                r.sub = r.pkgs.length > 1 ? r.pkgs[0] + ' +' + (r.pkgs.length - 1) : r.pkgs[0];
+                r.icon = r.pkgs[0];
+                r.search = (r.names.join(' ') + ' ' + r.pkgs.join(' ')).toLowerCase();
+                fwRows.push(r);
+            });
+            fwRows.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+            (fwData.specials || []).forEach(s => fwRows.push({ uid: s.uid, pkgs: [], name: s.name, sub: s.why, special: s.key, isSystem: true, net: true, search: (s.name + ' ' + s.key + ' ' + s.why).toLowerCase() }));
+        }
+        function fwFilter(k) {
+            fwFilterKey = k;
+            document.querySelectorAll('#fwFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.dataset.f === k));
+            fwRenderList();
+        }
+        function fwRowShown(r, q) {
+            if (q && !r.search.includes(q)) return false;
+            switch (fwFilterKey) {
+                case 'net': return r.special ? false : r.net;
+                case 'user': return !r.special && !r.isSystem;
+                case 'system': return !r.special && r.isSystem;
+                case 'special': return !!r.special;
+                case 'ticked': return fwRowKeys(r).some(k => fwRule(k).length);
+            }
+            return true;
+        }
+        function fwCellHtml(row, net) {
+            const on = fwRowKeys(row).some(k => fwRule(k).includes(net.key));
+            const cls = 'fw-cell' + (on ? ' on ' + (fw.mode === 'allow' ? 'allow' : 'deny') : '');
+            const lab = txF(fw.mode === 'allow' ? '{0}: allowed on {1}' : '{0}: blocked on {1}', row.name, txT(net.name));
+            return '<button type="button" class="' + cls + '" data-uid="' + row.uid + '" data-net="' + net.key + '" aria-pressed="' + on + '" aria-label="' + escapeHtml(on ? lab : txF('{0}: not ticked for {1}', row.name, txT(net.name))) + '" onclick="fwToggle(this)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + net.icon + '</svg></button>';
+        }
+        function fwRenderList() {
+            fwLoad();
+            const cols = fwCols();
+            const head = document.getElementById('fwCols'), list = document.getElementById('fwList'), cnt = document.getElementById('fwCount');
+            if (!head || !list) return;
+            head.innerHTML = '<div class="fw-cols-name">' + txT('App') + '</div>' + cols.map(n => '<button type="button" class="fw-col-btn" data-net="' + n.key + '" title="' + escapeHtml(txF('Tick every app shown for {0}', txT(n.name))) + '" onclick="fwToggleColumn(\'' + n.key + '\')"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + n.icon + '</svg><span class="fw-col-txt">' + escapeHtml(txT(n.name)) + '</span></button>').join('');
+            if (!fwData) {
+                list.innerHTML = emptyStateHtml({ key: 'fw-noapps', icon: 'list', title: 'The app list is read in the app', hint: 'Open this tab in the app on the phone; a plain browser has no package list.' });
+                if (cnt) cnt.textContent = '';
+                return;
+            }
+            const q = (document.getElementById('fwSearch').value || '').trim().toLowerCase();
+            const shown = fwRows.filter(r => fwRowShown(r, q));
+            if (!shown.length) {
+                list.innerHTML = emptyStateHtml({ key: 'fw-nomatch', icon: 'filter', title: 'No app matches', hint: 'Try another word, or another filter chip.' });
+            } else {
+                list.innerHTML = shown.slice(0, 400).map(r => '<div class="fw-row' + (r.special ? ' is-special' : '') + '" data-uid="' + r.uid + '">'
+                    + (r.special ? '' : '<img class="app-icon" alt="" data-icon="' + escapeHtml(r.icon) + '">')
+                    + '<div class="fw-info"><div class="fw-name"' + (r.special ? '' : ' translate="no"') + '>' + escapeHtml(r.name) + '</div><div class="fw-sub"' + (r.special ? '' : ' translate="no"') + '>' + escapeHtml(r.special ? r.sub : r.sub + ' · UID ' + r.uid) + '</div></div>'
+                    + cols.map(n => fwCellHtml(r, n)).join('') + '</div>').join('');
+                appsLoadIcons();
+            }
+            if (cnt) cnt.textContent = shown.length > 400 ? txF('{0} of {1} apps shown; narrow the list with the search', 400, shown.length) : txF('{0} apps', shown.length);
+            fwRenderTicked();
+        }
+        /** how many rules the profile holds, for the Apps card's count line and the master row */
+        function fwRenderTicked() {
+            const n = Object.keys(fwProf().rules).length;
+            const btn = document.getElementById('fwClearBtn');
+            if (btn) btn.disabled = !n;
+        }
+        function fwToggle(btn) {
+            haptic();
+            const row = fwRows.find(r => String(r.uid) === btn.dataset.uid);
+            if (!row) return;
+            const net = btn.dataset.net, on = btn.getAttribute('aria-pressed') !== 'true';
+            fwRowKeys(row).forEach(k => { const set = new Set(fwRule(k)); if (on) set.add(net); else set.delete(net); fwSetRule(k, FW_NET_KEYS.filter(x => set.has(x))); });
+            fwSave();
+            const html = fwCellHtml(row, FW_NETS.find(n => n.key === net));
+            const tmp = document.createElement('div'); tmp.innerHTML = html;
+            btn.replaceWith(tmp.firstChild);
+            fwDirty();
+        }
+        function fwToggleColumn(net) {
+            haptic();
+            const q = (document.getElementById('fwSearch').value || '').trim().toLowerCase();
+            const shown = fwRows.filter(r => fwRowShown(r, q));
+            const anyOff = shown.some(r => !fwRowKeys(r).some(k => fwRule(k).includes(net)));
+            shown.forEach(r => fwRowKeys(r).forEach(k => { const set = new Set(fwRule(k)); if (anyOff) set.add(net); else set.delete(net); fwSetRule(k, FW_NET_KEYS.filter(x => set.has(x))); }));
+            fwSave();
+            fwRenderList();
+            fwDirty();
+            showToast(anyOff ? txF('Ticked {0} apps for {1}', shown.length, txT(FW_NETS.find(n => n.key === net).name)) : txF('Unticked {0} apps for {1}', shown.length, txT(FW_NETS.find(n => n.key === net).name)));
+        }
+        function fwClearProfile() {
+            nextDialogTitle(txT('Untick all'));
+            if (!confirm(txF('Remove every tick of the profile "{0}"? The rules stay in force until you Apply.', fwProf().name))) return;
+            fwProf().rules = {};
+            fwSave(); fwRenderList(); fwDirty();
+        }
+
+        // ---- mode and profiles ----
+        function fwPickMode() {
+            openChoiceSheet({ title: txT('Mode'), desc: txT('What a tick means.'), current: fw.mode,
+                options: [['allow', txT('Allow list'), txT('Only ticked apps get out; everything else is stopped (the safer default).')], ['block', txT('Block list'), txT('Ticked apps are stopped; everything else gets out.')]],
+                onPick: v => { if (v === fw.mode) return; fw.mode = v; fwSave(); fwRenderTop(); fwRenderList(); fwDirty(); } });
+        }
+        function fwPickProfile() {
+            const opts = fw.profiles.map((p, i) => [String(i), p.name, txF('{0} rules', Object.keys(p.rules || {}).length)]);
+            opts.push(['+new', txT('New profile…'), txT('An empty profile, or a copy of the current one.')]);
+            opts.push(['+rename', txT('Rename this profile…'), '']);
+            if (fw.profiles.length > 1) opts.push(['+delete', txT('Delete this profile'), '']);
+            openChoiceSheet({ title: txT('Profile'), desc: txT('Rule sets you can switch between (home, work, travel). The mode and options are shared.'), current: String(fw.profile), options: opts,
+                onPick: v => {
+                    if (v === '+new') return fwProfileNew();
+                    if (v === '+rename') return fwProfileRename();
+                    if (v === '+delete') return fwProfileDelete();
+                    const i = +v;
+                    if (!(i >= 0 && i < fw.profiles.length) || i === fw.profile) return;
+                    fw.profile = i; fwSave(); fwRenderTop(); fwRenderList(); fwDirty();
+                    if (fw.on && fwCanRun()) fwApply();           // a profile switch while the firewall is on takes effect at once
+                } });
+        }
+        function fwProfileNew() {
+            nextDialogTitle(txT('New profile'));
+            const name = prompt(txT('Name of the new profile'), '');
+            if (name === null) return;
+            const n = String(name).trim().slice(0, 40);
+            if (!n) { showToast(txT('A profile needs a name.')); return; }
+            if (fw.profiles.length >= 12) { showToast(txT('Twelve profiles are the most this tab keeps.')); return; }
+            nextDialogTitle(txT('New profile'));
+            const copy = confirm(txF('Start "{0}" as a copy of "{1}"? Cancel starts it empty.', n, fwProf().name));
+            fw.profiles.push({ name: n, rules: copy ? JSON.parse(JSON.stringify(fwProf().rules)) : {} });
+            fw.profile = fw.profiles.length - 1;
+            fwSave(); fwRenderTop(); fwRenderList(); fwDirty();
+            showToast(txF('Profile: {0}', n));
+        }
+        function fwProfileRename() {
+            nextDialogTitle(txT('Rename profile'));
+            const name = prompt(txT('New name'), fwProf().name);
+            if (name === null) return;
+            const n = String(name).trim().slice(0, 40);
+            if (!n) return;
+            fwProf().name = n; fwSave(); fwRenderTop();
+        }
+        function fwProfileDelete() {
+            if (fw.profiles.length < 2) return;
+            nextDialogTitle(txT('Delete profile'));
+            if (!confirm(txF('Delete the profile "{0}" and its {1} rules?', fwProf().name, Object.keys(fwProf().rules).length))) return;
+            fw.profiles.splice(fw.profile, 1);
+            fw.profile = Math.max(0, fw.profile - 1);
+            fwSave(); fwRenderTop(); fwRenderList(); fwDirty();
+        }
+
+        // ---- options, custom lines, boot ----
+        function fwOpt(k, on) {
+            fw.opts[k] = !!on;
+            fwSave();
+            if (k === 'roam' || k === 'vpn' || k === 'lan' || k === 'tor') fwRenderList();
+            if (k !== 'reapply') fwDirty();
+            if (k === 'reapply' && on) fwNetCheck();
+        }
+        function fwCustomChange() {
+            fw.pre = document.getElementById('fwPre').value.slice(0, 20000);
+            fw.post = document.getElementById('fwPost').value.slice(0, 20000);
+            fwSave(); fwDirty();
+        }
+        function fwBootToggle(on) {
+            if (!window.AndroidBridge || !window.AndroidBridge.fwBoot) { showToast(txT('Apply on boot works in the app.')); fwRenderOpts(); return; }
+            let r = null;
+            try { r = JSON.parse(window.AndroidBridge.fwBoot(!!on, on ? JSON.stringify(fwCfgJson()) : '', fw.bootDelay) || '{}'); } catch (e) { r = { ok: false, error: String(e) }; }
+            if (!r || !r.ok) { showToast(txF('Apply on boot was not changed: {0}', r && r.error || '')); fw.boot = false; }
+            else fw.boot = !!r.boot;
+            fwSave(); fwRenderOpts();
+            if (fw.boot) showToast(txT('The current rules will be applied again after each restart.'));
+        }
+        function fwBootDelayChange(v) { fw.bootDelay = +v || 0; fwSave(); if (fw.boot) fwBootToggle(true); }
+        /** Apply on boot keeps the script of the last apply: after every successful apply it is written again when the switch is on */
+        function fwBootRefresh() { if (fw.boot && window.AndroidBridge && window.AndroidBridge.fwBoot) { try { window.AndroidBridge.fwBoot(true, JSON.stringify(fwCfgJson()), fw.bootDelay); } catch (e) {} } }
+
+        // ---- the rule set as Java wants it ----
+        function fwCfgJson() {
+            const uids = {};
+            const rules = fwProf().rules;
+            const addUid = (uid, nets) => { const set = new Set(uids[uid] || []); nets.forEach(n => set.add(n)); uids[uid] = FW_NET_KEYS.filter(x => set.has(x)); };
+            if (fwData) {
+                const uidOf = new Map();
+                (fwData.apps || []).forEach(a => uidOf.set(a.pkg, a.uid));
+                Object.keys(rules).forEach(k => {
+                    const nets = Array.isArray(rules[k]) ? rules[k].filter(n => FW_NET_KEYS.includes(n)) : [];
+                    if (!nets.length) return;
+                    if (k.charAt(0) === '@') { const s = (fwData.specials || []).find(x => x.key === k.slice(1)); if (s) addUid(s.uid, nets); }
+                    else if (uidOf.has(k)) addUid(uidOf.get(k), nets);
+                });
+                // an allow list keeps this app reachable (updates, stores) and the resolver (names) unless the user unticked them on purpose
+                if (fw.mode === 'allow' && fwData.selfPkg && !(fwData.selfPkg in rules)) addUid(fwData.selfUid, ['wifi', 'mobile', 'roam', 'vpn', 'lan']);
+                if (fw.mode === 'allow' && !('@dns' in rules)) addUid(1051, ['wifi', 'mobile', 'roam', 'vpn', 'lan']);
+            }
+            const o = Object.assign({ mode: fw.mode, uids, pre: fw.pre, post: fw.post, roamingNow: !!(fwNet && fwNet.roaming), selfUid: fwData ? fwData.selfUid : -1 }, fw.opts);
+            delete o.reapply;
+            return o;
+        }
+        /** what Apply would send, as a string: the master row says "changes not applied" when it differs from the last apply */
+        function fwKey() { return JSON.stringify(fwCfgJson()); }
+        function fwDirty() { fwRenderTop(); }
+
+        // ---- the jobs: apply, disable, status, list, log ----
+        function fwJob(kind, arg) {
+            return new Promise(res => {
+                if (!window.AndroidBridge || !window.AndroidBridge.fwRun) { res({ ok: false, error: txT('The firewall works in the app, not in a plain browser.') }); return; }
+                const id = 'fw' + (++fwJobSeq);
+                fwJobs[id] = res;
+                let r;
+                try { r = window.AndroidBridge.fwRun(id, kind, arg || ''); } catch (e) { r = 'error: ' + e; }
+                if (r !== 'started') { delete fwJobs[id]; res({ ok: false, error: String(r || '').replace(/^error:\s*/, '') }); }
+            });
+        }
+        window.onFwDone = function (id, json) {
+            const cb = fwJobs[id];
+            if (!cb) return;
+            delete fwJobs[id];
+            let r;
+            try { r = JSON.parse(json || '{}'); } catch (e) { r = { ok: false, error: String(e) }; }
+            cb(r);
+        };
+        async function fwApply() {
+            if (fwBusy) return;
+            if (!fwCanRun()) { guardPrivilege(txT('Android Firewall')); fwRenderTop(); return; }
+            if (!fwData) fwLoadApps();
+            fwNetRead();
+            const key = fwKey();
+            const cfg = fwCfgJson();
+            const n = Object.keys(cfg.uids).length;
+            if (fw.mode === 'allow' && n <= 2 && !fw.allowWarned) {
+                nextDialogTitle(txT('Allow list'));
+                if (!confirm(txT('An allow list with almost nothing ticked stops nearly every app, this one included. Apply anyway?'))) return;
+                fw.allowWarned = true;
+            }
+            fwBusy = true; fwRenderTop();
+            xqSetStatus('fwStatus', txT('Applying…'));
+            const r = await fwJob('apply', JSON.stringify(cfg));
+            fwBusy = false;
+            fwLastStatus = r && r.status || null;
+            if (r && r.ok) {
+                fw.on = true; fw.appliedKey = key; fwSave();
+                const st = r.status || {};
+                let text = txF('In force: {0} rules in iptables', st.rules4 || 0) + (st.jump6 ? txF(', {0} in ip6tables', st.rules6 || 0) : '') + (st.tor ? txT(', Tor redirects on') : '') + '.';
+                if (r.output) text += ' ' + txT('iptables also said:') + ' ' + r.output.split('\n').slice(-3).join(' ');
+                xqSetStatus('fwStatus', text, r.output ? '' : 'ok');
+                fwBootRefresh();
+            } else {
+                xqSetStatus('fwStatus', txF('Not applied: {0}', r && r.error || txT('no answer')), 'bad');
+                if (r && r.status && !r.status.jump4) fw.on = false;
+                fwSave();
+            }
+            fwRenderTop();
+        }
+        async function fwDisable(quiet) {
+            if (fwBusy) return false;
+            if (!fwCanRun()) { guardPrivilege(txT('Android Firewall')); fwRenderTop(); return false; }
+            fwBusy = true; fwRenderTop();
+            if (!quiet) xqSetStatus('fwStatus', txT('Removing the rules…'));
+            const r = await fwJob('disable');
+            fwBusy = false;
+            fwLastStatus = r && r.status || null;
+            if (r && r.ok) { fw.on = false; fw.appliedKey = ''; fwSave(); if (!quiet) xqSetStatus('fwStatus', txT('Off: every rule of this app was removed. Android\'s own rules were not touched.'), 'ok'); }
+            else { if (!quiet) xqSetStatus('fwStatus', txF('Could not remove the rules: {0}', r && r.error || txT('no answer')), 'bad'); }
+            fwRenderTop();
+            return !!(r && r.ok);
+        }
+        function fwMasterToggle(on) {
+            haptic();
+            if (on) fwApply(); else fwDisable(false);
+        }
+        async function fwStatusRead() {
+            if (!fwCanRun()) { fwLastStatus = null; fwRenderTop(); return; }
+            const r = await fwJob('status');
+            fwLastStatus = r && r.status || null;
+            if (fwLastStatus) { fw.on = !!fwLastStatus.on; fwSave(); }
+            fwRenderTop();
+        }
+        function fwFlush() {
+            if (!fwCanRun()) { guardPrivilege(txT('Android Firewall')); return; }
+            xqOpen({ title: txT('Remove all firewall rules'), sub: txT('The way out when an app or the phone lost its connection'), hue: 0, hold: true, tone: 'danger',
+                text: txT('Every chain this app made is deleted from iptables and ip6tables, for every profile, and the switch above goes off. Your profiles stay saved. Android\'s own rules are not touched.'),
+                cmd: 'iptables -D OUTPUT -j atbx; iptables -F atbx…; iptables -X atbx…', okLabel: txT('Remove'),
+                run: async say => {
+                    const ok = await fwDisable(true);
+                    if (ok && fw.boot) fwBootToggle(false);
+                    return ok ? { ok: true, text: txT('Removed. The phone is back to Android\'s own rules.') } : { ok: false, text: txT('The rules could not be removed; read the status line of the tab.') };
+                } });
+        }
+        async function fwLogLoad(clear) {
+            const box = document.getElementById('fwLogList');
+            if (!box) return;
+            if (!fwCanRun()) { box.innerHTML = emptyStateHtml({ key: 'fw-log-locked', icon: 'list', title: 'Needs Super User or Shizuku as system', compact: true }); return; }
+            if (clear) { nextDialogTitle(txT('Clear log')); if (!confirm(txT('Empty the kernel log? This clears dmesg for every reader, not only this list.'))) return; }
+            box.innerHTML = '<div class="fw-note">' + escapeHtml(txT('Reading…')) + '</div>';
+            const r = await fwJob(clear ? 'logclear' : 'log');
+            if (!r || !r.ok) { box.innerHTML = '<div class="fw-note">' + escapeHtml(txF('Could not read the log: {0}', r && r.error || '')) + '</div>'; return; }
+            const log = Array.isArray(r.log) ? r.log : [];
+            if (!log.length) { box.innerHTML = emptyStateHtml({ key: 'fw-log-empty', icon: 'list', title: 'Nothing stopped yet', hint: fw.opts.log ? 'The kernel log holds no line of this firewall. Clear log also empties it.' : 'Turn on Log stopped connections in the options and Apply.', compact: true }); return; }
+            box.innerHTML = log.slice(0, 200).map(g => {
+                const row = fwRows.find(x => x.uid === g.uid);
+                const name = row ? row.name : g.uid === -11 ? txT('Linux kernel') : txF('UID {0}', g.uid);
+                const where = [g.proto, g.dst ? g.dst + (g.dport > 0 ? ':' + g.dport : '') : '', g.iface].filter(Boolean).join(' ');
+                return '<div class="fw-log-row">' + (row && !row.special ? '<img class="app-icon" alt="" data-icon="' + escapeHtml(row.icon) + '">' : '')
+                    + '<div class="fw-info"><div class="fw-name" translate="no">' + escapeHtml(name) + '</div><div class="fw-sub" translate="no">' + escapeHtml(where) + '</div></div>'
+                    + '<span class="fw-cnt">' + g.count + '</span></div>';
+            }).join('');
+            appsLoadIcons();
+        }
+        async function fwRulesLoad() {
+            const pre = document.getElementById('fwRulesOut');
+            if (!pre) return;
+            if (!fwCanRun()) { guardPrivilege(txT('Android Firewall')); return; }
+            pre.style.display = ''; pre.textContent = txT('Reading…');
+            const r = await fwJob('list');
+            pre.textContent = r && r.ok ? (r.output && r.output.trim() ? r.output.trim() : txT('No rule of this app is in iptables right now.')) : txF('Could not read the rules: {0}', r && r.error || '');
+        }
+        function fwRulesCopy() { const pre = document.getElementById('fwRulesOut'); if (pre && pre.textContent) { copyText(pre.textContent); showToast(txT('Copied')); } }
+
+        // ---- the network: roaming decides which mobile chain the apply builds; a change re-applies when asked ----
+        function fwNetRead() {
+            if (!window.AndroidBridge || !window.AndroidBridge.fwNetState) return null;
+            try { fwNet = JSON.parse(window.AndroidBridge.fwNetState() || '{}'); } catch (e) { fwNet = null; }
+            return fwNet;
+        }
+        function fwNetCheck() {
+            const before = fwNet ? !!fwNet.roaming : null;
+            const now = fwNetRead();
+            if (!now || !fw) return;
+            if (fw.on && fw.opts.roam && fw.opts.reapply && before !== null && before !== !!now.roaming && fwCanRun()) {
+                showToast(now.roaming ? txT('Roaming started: the firewall applies the roaming rules.') : txT('Roaming ended: the firewall applies the mobile data rules.'));
+                fwApply();
+            }
+        }
+        window.onFwNet = function () { clearTimeout(fwNetTimer); fwNetTimer = setTimeout(fwNetCheck, 2500); };
+
+        // ---- saved lists: block or allow every app of a list at once ----
+        function fwPickSavedList() {
+            if (typeof customLists === 'undefined' || !customLists.length) { showToast(txT('There are no saved lists yet. Select apps in Application Manager and tap Save to List.')); return; }
+            openChoiceSheet({ title: txT('Saved list'), desc: txT('Then choose what the firewall does with its apps.'), current: '',
+                options: customLists.map(l => [String(l.id), l.name, txF('{0} apps', (l.packages || []).length)]),
+                onPick: id => setTimeout(() => fwFromSavedList(id), 50) });
+        }
+        /** the action for one saved list (the Firewall button of a list's card, and the picker above): block, allow or clear its apps */
+        function fwFromSavedList(id) {
+            fwLoad();
+            const l = (typeof customLists !== 'undefined' ? customLists : []).find(x => String(x.id) === String(id));
+            if (!l) { showToast(txT('That saved list is not there any more.')); return; }
+            const pkgs = Array.isArray(l.packages) ? l.packages : [];
+            const nets = fwCols().map(n => n.key);
+            const allow = fw.mode === 'allow';
+            openChoiceSheet({ title: l.name, desc: txF('{0} apps. The firewall is in {1} mode.', pkgs.length, allow ? txT('allow list') : txT('block list')), current: '',
+                options: [
+                    ['block', txT('Block these apps'), allow ? txT('Removes their ticks: with an allow list, an app without a tick is stopped.') : txT('Ticks them on every network column.')],
+                    ['allow', txT('Allow these apps'), allow ? txT('Ticks them on every network column.') : txT('Removes their ticks: with a block list, an app without a tick gets out.')],
+                    ['clear', txT('Forget their rules'), txT('Removes their ticks, whatever the mode.')]],
+                onPick: v => {
+                    let tick = v === 'allow' ? allow : v === 'block' ? !allow : false;
+                    pkgs.forEach(p => fwSetRule(p, tick ? nets.slice() : []));
+                    fwSave();
+                    if (currentViewName() !== 'firewall') { if (!tabNeed('firewall')) return; switchView('firewall'); }
+                    fwRenderList(); fwDirty();
+                    if (fw.on && fwCanRun()) fwApply();
+                    else showToast(txF('{0} apps changed. Tap Apply to put the rules in force.', pkgs.length));
+                } });
+        }
+
+        // ---- export and import ----
+        function fwPayload() { return { app: 'adb-app-manager', format: 1, kind: 'firewall', exportedAt: new Date().toISOString(), cfg: { mode: fw.mode, opts: fw.opts, profile: fw.profile, profiles: fw.profiles, pre: fw.pre, post: fw.post, bootDelay: fw.bootDelay } }; }
+        function fwExport(share) {
+            const name = 'firewall-' + lbStamp(new Date()) + '.json', text = JSON.stringify(fwPayload(), null, 2);
+            if (share) { shareFileViaBridge(name, text, 'application/json'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.saveTextToDownloads) { xqSetStatus('fwBackupStatus', txT('Saving works in the app.'), 'bad'); return; }
+            let r = '';
+            try { r = window.AndroidBridge.saveTextToDownloads(name, text) || ''; } catch (e) { r = 'Error: ' + e; }
+            if (/^Error/i.test(r)) xqSetStatus('fwBackupStatus', r, 'bad'); else xqSetStatus('fwBackupStatus', txF('Saved to {0}', r || name), 'ok');
+        }
+        function fwImportPick() {
+            if (!window.AndroidBridge || !window.AndroidBridge.pickTextFile) { xqSetStatus('fwBackupStatus', txT('Importing works in the app.'), 'bad'); return; }
+            window.AndroidBridge.pickTextFile('fw-file');
+        }
+        function fwImportFrom(text, fileName) {
+            let d = null;
+            try { d = JSON.parse(text); } catch (e) { d = null; }
+            if (!d || d.kind !== 'firewall' || !d.cfg || !Array.isArray(d.cfg.profiles)) { xqSetStatus('fwBackupStatus', txF('{0} is not a firewall file from this app.', fileName), 'bad'); return; }
+            const profiles = d.cfg.profiles.filter(p => p && typeof p === 'object').slice(0, 12).map(p => ({ name: String(p.name || 'Profile').slice(0, 40), rules: {} }));
+            d.cfg.profiles.slice(0, 12).forEach((p, i) => {
+                const rules = p && p.rules && typeof p.rules === 'object' ? p.rules : {};
+                Object.keys(rules).slice(0, 5000).forEach(k => { if (/^(@[a-z]+|[A-Za-z0-9._]+)$/.test(k)) { const nets = Array.isArray(rules[k]) ? rules[k].filter(n => FW_NET_KEYS.includes(n)) : []; if (nets.length) profiles[i].rules[k] = nets; } });
+            });
+            if (!profiles.length) { xqSetStatus('fwBackupStatus', txT('The file holds no profile.'), 'bad'); return; }
+            nextDialogTitle(txT('Import'));
+            const replace = confirm(txF('Replace your {0} profiles with the {1} of the file? Cancel adds them next to yours.', fw.profiles.length, profiles.length));
+            if (replace) {
+                fw.profiles = profiles;
+                fw.mode = d.cfg.mode === 'block' ? 'block' : 'allow';
+                fw.opts = Object.assign({}, FW_DEFAULT_OPTS, d.cfg.opts && typeof d.cfg.opts === 'object' ? d.cfg.opts : {});
+                Object.keys(fw.opts).forEach(k => { fw.opts[k] = !!fw.opts[k]; });
+                fw.pre = String(d.cfg.pre || '').slice(0, 20000); fw.post = String(d.cfg.post || '').slice(0, 20000);
+                fw.profile = Math.min(Math.max(0, +d.cfg.profile || 0), fw.profiles.length - 1);
+            } else {
+                const taken = fw.profiles.map(p => p.name);
+                profiles.forEach(p => { p.name = uniqueImportName(p.name, taken); taken.push(p.name); fw.profiles.push(p); });
+                fw.profiles = fw.profiles.slice(0, 12);
+            }
+            fwSave(); fwRenderAll(); fwDirty();
+            xqSetStatus('fwBackupStatus', txF('Imported {0} profiles from {1}. Tap Apply to put them in force.', profiles.length, fileName), 'ok');
+        }
+
+        // ---- rendering ----
+        function fwRenderTop() {
+            fwLoad();
+            const active = isRootActive(), inApp = !!(window.AndroidBridge && window.AndroidBridge.fwRun);
+            const gate = document.getElementById('fwGate');
+            if (!gate) return;
+            gate.style.display = active ? 'none' : 'flex';
+            const d = lastModesData || {};
+            const desc = document.getElementById('fwGateDesc');
+            if (desc) desc.innerText = d.rootAvailable ? txT('Your device has su. Choose Root in Working Modes and allow this app when su asks.')
+                : txT('No su was found. Shizuku started as root or as the system user (UID 1000) works too; the ADB shell user (UID 2000) may not write kernel rules.');
+            const dirty = fw.on && fw.appliedKey && fw.appliedKey !== fwKey();
+            const st = fwLastStatus;
+            if (!active) setTag('fwStatusTag', 'inactive', txT('LOCKED'));
+            else if (fwBusy) setTag('fwStatusTag', 'warning', txT('WORKING'));
+            else if (st && st.on && dirty) setTag('fwStatusTag', 'warning', txT('NOT APPLIED'));
+            else if (st && st.on) setTag('fwStatusTag', 'active', txT('ACTIVE'));
+            else if (st && !st.bin4) setTag('fwStatusTag', 'inactive', txT('NO IPTABLES'));
+            else setTag('fwStatusTag', 'inactive', txT('OFF'));
+            const sw = document.getElementById('fwMasterSwitch');
+            if (sw) { sw.checked = !!(st ? st.on : fw.on); sw.disabled = !active || fwBusy || !inApp; }
+            const sub = document.getElementById('fwMasterSub');
+            if (sub) sub.innerText = !inApp ? txT('The firewall works in the app on the phone.')
+                : !active ? txT('Locked until Super User, or Shizuku as system or root, is the working mode.')
+                : st && st.on ? (dirty ? txT('On, with changes not applied yet. Tap Apply.') : txF('On: {0} rules in force, profile "{1}".', st.rules4 || 0, fwProf().name))
+                : txT('Off. The rules below are kept but not in force.');
+            const ab = document.getElementById('fwApplyBtn');
+            if (ab) { ab.disabled = !active || fwBusy || !inApp; ab.classList.toggle('is-dirty', !!dirty); ab.textContent = fwBusy ? txT('Working…') : dirty ? txT('Apply changes') : txT('Apply'); }
+            const mt = document.getElementById('fwModeTxt'); if (mt) mt.textContent = fw.mode === 'allow' ? txT('Allow list') : txT('Block list');
+            const pt = document.getElementById('fwProfTxt'); if (pt) pt.textContent = fwProf().name;
+            ['fwSavedListBtn', 'fwLogBtn', 'fwLogClearBtn', 'fwRulesBtn', 'fwFlushBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = !inApp; });
+            fwRenderTicked();
+        }
+        function fwRenderOpts() {
+            fwLoad();
+            const map = { roam: 'fwOptRoam', vpn: 'fwOptVpn', lan: 'fwOptLan', tor: 'fwOptTor', ipv6: 'fwOptIpv6', log: 'fwOptLog', drop: 'fwOptDrop', inbound: 'fwOptInbound', tether: 'fwOptTether', reapply: 'fwOptReapply' };
+            Object.keys(map).forEach(k => { const el = document.getElementById(map[k]); if (el) el.checked = !!fw.opts[k]; });
+            const boot = document.getElementById('fwOptBoot'); if (boot) boot.checked = !!fw.boot;
+            const delay = document.getElementById('fwBootDelay'); if (delay) delay.value = String(fw.bootDelay);
+            const pre = document.getElementById('fwPre'), post = document.getElementById('fwPost');
+            if (pre && document.activeElement !== pre) pre.value = fw.pre;
+            if (post && document.activeElement !== post) post.value = fw.post;
+        }
+        function fwRenderAll() { fwRenderTop(); fwRenderOpts(); fwRenderList(); }
+        function onFirewallShown() {
+            fwLoad();
+            if (!fwData) fwLoadApps();
+            fwNetRead();
+            fwRenderAll();
+            // su's last yes may be stale (T-044): asked once more before the tab works, as Root Features does
+            if (isRootActive()) checkAllWorkingModes(false, true);
+            fwStatusRead();
+        }
+        function fwOnModeChange() {
+            if (currentViewName() !== 'firewall') return;
+            fwRenderTop();
+            fwStatusRead();
+        }
+        /** the Root Features row: a signpost to this tab */
+        function rootOpenFirewall() { if (tabNeed('firewall')) switchView('firewall'); }
+        document.addEventListener('i18nchange', () => { if (currentViewName() === 'firewall') fwRenderAll(); });
+        // FIREWALL:JS:END
         window.addEventListener('DOMContentLoaded', () => {
             tabLoadConfig();
             navLoad();

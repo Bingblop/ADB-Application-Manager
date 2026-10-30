@@ -24,6 +24,7 @@ public class BootReceiver extends BroadcastReceiver {
     public void onReceive(Context ctx, Intent intent) {
         if (intent == null || !Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) return;
         SharedPreferences p = QuickActions.prefs(ctx);
+        firewallAtBoot(ctx, p, goAsync());
         String fingerprint = Build.FINGERPRINT == null ? "" : Build.FINGERPRINT;
         // "app_fp" is written by MainActivity on every normal launch (see onCreate); it is the only
         // baseline that can exist before this receiver has ever recorded one of its own, so if the OTA
@@ -34,6 +35,39 @@ public class BootReceiver extends BroadcastReceiver {
         String watched = p.getString("watched_profile", "");
         if (last == null || last.equals(fingerprint) || watched.isEmpty()) return;
         notifyUpdated(ctx, watched);
+    }
+
+    /**
+     * Android Firewall (v7.21.0), "Apply on boot": a reboot empties every netfilter table, so the script the app wrote at the last apply
+     * (files/firewall/boot.sh, with its own delay in front) is run again through su. Only su: Shizuku is rarely up this early. The script is
+     * the app's own file (not a page string), and nothing else is run.
+     */
+    static void firewallAtBoot(Context ctx, SharedPreferences p, final PendingResult pending) {
+        if (!p.getBoolean("fw_boot", false) || !new java.io.File(ctx.getFilesDir(), FirewallRules.BOOT_SCRIPT).isFile()) {
+            if (pending != null) { try { pending.finish(); } catch (Throwable ignored) {} }
+            return;
+        }
+        final java.io.File f = new java.io.File(ctx.getFilesDir(), FirewallRules.BOOT_SCRIPT);
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ProcessBuilder pb = new ProcessBuilder("su", "-c", "sh " + BackupScripts.quote(f.getAbsolutePath()));
+                    pb.redirectErrorStream(true);
+                    Process proc = pb.start();
+                    proc.getOutputStream().close();
+                    java.io.InputStream in = proc.getInputStream();
+                    byte[] buf = new byte[4096];
+                    while (in.read(buf) > 0) { /* drain */ }
+                    proc.waitFor();
+                } catch (Throwable ignored) {
+                } finally {
+                    if (pending != null) { try { pending.finish(); } catch (Throwable ignored) {} }
+                }
+            }
+        }, "firewall-boot");
+        t.setDaemon(true);
+        t.start();
     }
 
     static void notifyUpdated(Context ctx, String profileName) {
