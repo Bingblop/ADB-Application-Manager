@@ -1,5 +1,5 @@
 ok   1. TAB_DEFS has fonts, label "Custom\nFonts", name "Custom Fonts"
-ok      it sits after Root Features, before About
+ok      it sits after Root Features, before Android Firewall and About
 ok      the bottom bar names it "Fonts" and has an icon for it
 ok      the top bar shows it
 ok   2. the tab opens (switchView)
