@@ -42555,7 +42555,8 @@ Type any command above (e.g. pm list packages -d)</div>
             // (ovlRootSeed: the colour above, the wallpaper's, or Google blue). Without uid 0 the phone's own palettes, as before.
             const preview = ovlThemeSupported() && ovlRootLive() ? ovlPreviewPalettes() : null;
             if (preview) {
-                const from = preview.seed.from === 'color' ? 'the color below' : preview.seed.from === 'wallpaper' ? 'your wallpaper' : 'Google blue (no wallpaper color could be read)';
+                // the source named in the page's language (txT: the words are translated here, as they fill a hole of the sentence below)
+                const from = txT(preview.seed.from === 'color' ? 'the color below' : preview.seed.from === 'wallpaper' ? 'your wallpaper' : 'Google blue (no wallpaper color could be read)');
                 pal.innerHTML = '<div class="ovl-preview-title" id="ovlPreviewLine">' + escapeHtml('Preview of what Apply theme writes: #' + preview.seed.hex + ' from ' + from + ', ' + ovlStyleName(preview.opts.style) + (preview.opts.dark ? ', dark' : ', light')) + '</div>'
                     + rows(k => preview.pal[k] && Array.isArray(preview.pal[k].shades) ? preview.pal[k].shades.map(h => '#' + h) : [], escapeHtml('Tap a color to copy it. The same palettes as ColorBlendr; the phone shows them once Apply theme has written them.'));
                 return;
