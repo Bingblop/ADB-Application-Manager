@@ -1,0 +1,72 @@
+  Settings:
+    light_after_inactive_to=+2m0s0ms
+    light_pre_idle_to=+3m0s0ms
+    light_idle_to=+10m0s0ms
+    light_idle_to_initial_flex=+1m0s0ms
+    light_max_idle_to_flex=+15m0s0ms
+    light_idle_factor=2.0
+    light_max_idle_to=+30m0s0ms
+    light_idle_maintenance_min_budget=+1m0s0ms
+    light_idle_maintenance_max_budget=+5m0s0ms
+    min_light_maintenance_time=+5s0ms
+    min_deep_maintenance_time=+30s0ms
+    inactive_to=+7m30s0ms
+    sensing_to=+4m0s0ms
+    locating_to=+30s0ms
+    location_accuracy=20.0m
+    motion_inactive_to=+7m30s0ms
+    motion_inactive_to_flex=+1m0s0ms
+    idle_after_inactive_to=+7m30s0ms
+    idle_pending_to=+5m0s0ms
+    max_idle_pending_to=+10m0s0ms
+    idle_pending_factor=2.0
+    quick_doze_delay_to=+1m0s0ms
+    idle_to=+2h0m0s0ms
+    max_idle_to=+12h0m0s0ms
+    idle_factor=2.0
+    min_time_to_alarm=+30m0s0ms
+    max_temp_app_allowlist_duration_ms=+5m0s0ms
+    mms_temp_app_allowlist_duration_ms=+1m0s0ms
+    sms_temp_app_allowlist_duration_ms=+20s0ms
+    notification_allowlist_duration_ms=+30s0ms
+    wait_for_unlock=true
+    pre_idle_factor_long=1.67
+    pre_idle_factor_short=0.33
+    use_window_alarms=true
+  Idle-whitelist user apps:
+    com.google.android.apps.messaging
+    com.whatsapp
+  Idle-whitelist system apps except idle:
+    com.android.providers.downloads
+    com.android.vending
+  Idle-whitelist system apps:
+    com.android.cellbroadcastreceiver
+    com.google.android.gms
+  Temp whitelist schedule:
+    UID=10188: 2026-10-03 08:13:11.205
+  mLightEnabled=true  mDeepEnabled=true
+  mForceIdle=false
+  mUseMotionSensor=true mMotionSensor={Sensor name="LSM6DSO Accelerometer -Wakeup", vendor="STMicro", version=1, type=1, maxRange=78.4532, resolution=0.0023956299, power=0.15, minDelay=2500}
+  mScreenOn=false
+  mScreenLocked=false
+  mNetworkConnected=true
+  mCharging=false
+  mMotionActive=false
+  mNotMoving=false
+  mMotionListener.active=false
+  mLocating=false
+  mHasGps=false
+  mHasNetwork=false
+  mLocated=false
+  mState=IDLE_PENDING mLightState=IDLE
+  mInactiveTimeout=+7m30s0ms
+  mNextAlarmTime=+6m12s500ms
+  mNextIdlePendingDelay=+5m0s0ms
+  mNextIdleDelay=+2h0m0s0ms
+  mNextLightIdleDelay=+10m0s0ms
+  mNextLightAlarmTime=+3m2s0ms
+  mQuickDozeActivated=false
+  mCurLightIdleBudget=+1m0s0ms
+  mMaintenanceStartTime=+1d2h37m40s0ms
+  mJobsActive=false
+  mAlarmsActive=false

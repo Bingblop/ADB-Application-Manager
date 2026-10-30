@@ -7314,6 +7314,41 @@
                         #extraSettingsRoot .xq-row { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-3h); }
                         #extraSettingsRoot .xq-row .xs-btn { flex: 1 1 140px; min-width: 0; }
                         #extraSettingsRoot .xq-row .xs-btn > span { overflow: hidden; text-overflow: ellipsis; }
+                        /* the settings rows of Doze timing and Memory settings: a title with the live tag (what the phone runs) at its right, one sentence, a row of chips; the pressed chip is the target, the dashed one what the phone runs when the two differ */
+                        #extraSettingsRoot .xq-set { margin-top: var(--space-3h); padding-top: var(--space-3); border-top: 1px solid var(--border-glass); min-width: 0; }
+                        #extraSettingsRoot .xq-set:first-child, #extraSettingsRoot .xq-set.is-alone { margin-top: 0; padding-top: 0; border-top: 0; }
+                        #extraSettingsRoot .xq-set-h { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); min-width: 0; }
+                        #extraSettingsRoot .xq-set-h b { font-size: var(--fs-code); line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+                        #extraSettingsRoot .xq-live { flex: 0 1 auto; max-width: 55%; font-size: var(--fs-pkg); font-weight: var(--fw-heavy); color: var(--text-muted); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+                        #extraSettingsRoot .xq-live.is-warn { color: var(--xs-warn); }
+                        #extraSettingsRoot .xq-set-s { display: block; font-size: var(--fs-caption); line-height: 1.4; color: var(--text-muted); overflow-wrap: anywhere; margin: 2px 0 var(--space-3); }
+                        #extraSettingsRoot .xq-opts { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+                        #extraSettingsRoot .xq-opt { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 0; max-width: 100%; padding: 0 var(--space-3h); border-radius: var(--radius-pill); border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; font-size: calc(var(--fs-pill) + 0.5px); font-weight: var(--fw-heavy); white-space: nowrap; cursor: pointer; box-sizing: border-box; font-variant-numeric: tabular-nums; }
+                        #extraSettingsRoot .xq-opt > span { overflow: hidden; text-overflow: ellipsis; }
+                        #extraSettingsRoot .xq-opt[aria-pressed="true"] { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); border-color: transparent; }
+                        #extraSettingsRoot .xq-opt.is-live { border-style: dashed; border-color: var(--accent); }
+                        #extraSettingsRoot .xq-opt:disabled, #extraSettingsRoot .xq-preset:disabled { opacity: 0.6; cursor: default; }
+                        #extraSettingsRoot .xq-opt:active:not(:disabled), #extraSettingsRoot .xq-preset:active:not(:disabled) { transform: scale(0.97); }
+                        #extraSettingsRoot .xq-opt:focus-visible, #extraSettingsRoot .xq-preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+                        /* the presets: three cards (one column at 320 px); the one whose values every row holds gets the gradient border, as a profile card does */
+                        #extraSettingsRoot .xq-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3h); }
+                        @media (max-width: 399px) { #extraSettingsRoot .xq-presets { grid-template-columns: minmax(0, 1fr); } }
+                        #extraSettingsRoot .xq-preset { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px; padding: var(--space-3) var(--space-3h); border-radius: calc(var(--radius-md) + 2px); border: 2px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
+                        #extraSettingsRoot .xq-preset[aria-pressed="true"] { border-color: transparent; background: linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box, linear-gradient(135deg, var(--accent), var(--secondary)) border-box; box-shadow: 0 6px 16px var(--accent-glow); }
+                        #extraSettingsRoot .xq-preset[aria-pressed="true"] b::before { content: '\2713\00a0'; color: var(--accent); }
+                        #extraSettingsRoot .xq-preset b { font-size: var(--fs-code); line-height: 1.2; overflow-wrap: anywhere; }
+                        #extraSettingsRoot .xq-preset small { font-size: var(--fs-caption); line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
+                        /* the facts of the power governor: small tiles, a label, the value, one more word under it */
+                        #extraSettingsRoot .xq-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-bottom: var(--space-3h); }
+                        @media (min-width: 640px) { #extraSettingsRoot .xq-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+                        #extraSettingsRoot .xq-fact { padding: var(--space-3h) calc(var(--space-3h) + 1px); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-surface); min-width: 0; }
+                        #extraSettingsRoot .xq-fact small { display: block; font-size: var(--fs-caption); font-weight: var(--fw-bold); color: var(--text-muted); line-height: 1.3; overflow-wrap: anywhere; }
+                        #extraSettingsRoot .xq-fact b { display: block; font-size: var(--fs-code); font-weight: var(--fw-heavy); line-height: 1.25; margin-top: 2px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+                        #extraSettingsRoot .xq-fact em { display: block; font-style: normal; font-size: var(--fs-pkg); font-weight: var(--fw-heavy); color: var(--text-muted); line-height: 1.3; overflow-wrap: anywhere; min-height: 12px; }
+                        /* one muted line: a row that cannot be read in this mode; what was applied and no longer runs, with Re-apply */
+                        #extraSettingsRoot .xq-none { font-size: var(--fs-pill); line-height: 1.45; color: var(--text-muted); margin-top: var(--space-2); overflow-wrap: anywhere; }
+                        #extraSettingsRoot .xq-kept { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-3); font-size: var(--fs-pill); line-height: 1.45; color: var(--text-muted); margin-top: var(--space-3); overflow-wrap: anywhere; }
+                        #extraSettingsRoot .xq-none:empty, #extraSettingsRoot .xq-kept:empty { display: none; }
                         /* the tiles of Power & reboot: a 2-column grid, an icon tile in the action's own colour, a bold title, one line in plain words */
                         /* the head: the pill keeps its own width (one word, a mode name, a size); the title gives way, and the long Doze title may wrap to two lines */
                         #extraPowerSection .xs-sec-line .xs-pill, #extraDozeSection .xs-sec-line .xs-pill, #extraZramSection .xs-sec-line .xs-pill { flex: 0 0 auto; max-width: 52%; }
@@ -7380,8 +7415,11 @@
                 </section>
                 <section id="extraDozeSection" class="xs-sec" aria-label="Doze and power governor">
                     <style>
-                        #extraDozeSection .xdz-now { font-size: var(--fs-code); font-weight: var(--fw-bold); margin: 0 0 var(--space-3h); overflow-wrap: anywhere; }
+                        #extraDozeSection .xdz-now { font-size: var(--fs-code); font-weight: var(--fw-bold); margin: 0 0 var(--space-2); overflow-wrap: anywhere; }
                         #extraDozeSection .xdz-now .xdz-tok { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', monospace; font-size: var(--fs-pill); font-weight: var(--fw-bold); color: var(--text-muted); }
+                        /* why Doze is where it is: the screen, the charger, the next step; one muted line under the state, gone when the report prints none of it */
+                        #extraDozeSection .xdz-why { font-size: var(--fs-pill); line-height: 1.45; color: var(--text-muted); margin: 0 0 var(--space-3h); overflow-wrap: anywhere; }
+                        #extraDozeSection .xdz-why:empty { display: none; }
                         /* the phase timeline: five deep-Doze phases on one line, joined by a track; the current one lit in the gradient and named below */
                         #extraDozeSection .xdz-line { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; list-style: none; margin: var(--space-1) 0 2px; padding: 0; position: relative; }
                         #extraDozeSection .xdz-line::before { content: ''; position: absolute; left: 10%; right: 10%; top: 13px; height: 3px; border-radius: 2px; background: var(--border-glass); }
@@ -7449,10 +7487,11 @@
                                 <span class="xs-pill" id="xdzPill"><span id="xdzPillIc" aria-hidden="true"></span><span id="xdzPillT">…</span></span>
                             </div>
                         </div>
-                        <div class="color-card-subtitle">See which Doze phase the phone is in, push it through the phases to test how apps behave when it sleeps, and choose a power profile.</div>
-                        <div class="xs-trust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span>Nothing runs until you confirm. After every action the section reads the phase back from the phone and shows that, not the command.</span></div>
+                        <div class="color-card-subtitle">See which Doze phase the phone is in and why, set how soon after the screen goes off Doze starts and how often it wakes up, push it through the phases to test apps, and choose a power profile with the CPU governor behind it.</div>
+                        <div class="xs-trust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span>Nothing runs until you confirm. After every change the section reads the phone back and shows what it really runs, next to what you chose.</span></div>
                         <div class="xq-lock" id="xdzLock"></div>
                         <div class="xdz-now" id="xdzNow" role="status" aria-live="polite" aria-atomic="true">Reading…</div>
+                        <div class="xdz-why" id="xdzWhy"></div>
                         <ol class="xdz-line" id="xdzLine" aria-label="Doze phases">
                             <span class="xdz-fill" id="xdzFill" aria-hidden="true"></span>
                             <li class="xdz-ph" data-ph="0"><span class="xdz-dot" aria-hidden="true">1</span><span class="xdz-lbl">Active</span><span class="xdz-sub" translate="no"></span></li>
@@ -7466,7 +7505,18 @@
                             <span class="xdz-lc" data-ls="ACTIVE">Active</span><span class="xdz-lc" data-ls="INACTIVE">Inactive</span><span class="xdz-lc" data-ls="PRE_IDLE">Pre-idle</span><span class="xdz-lc" data-ls="IDLE">Idle</span><span class="xdz-lc" data-ls="WAITING_FOR_NETWORK">Waiting for network</span><span class="xdz-lc" data-ls="IDLE_MAINTENANCE">Maintenance</span><span class="xdz-lc" data-ls="OVERRIDE">Override</span>
                         </div>
                         <div class="xq-status" id="xdzStatus" role="status" aria-live="polite" aria-atomic="true"></div>
-                        <div class="xdz-h">Actions</div>
+                        <div class="xdz-h">Doze timing</div>
+                        <div class="xq-presets" role="group" aria-label="Doze timing presets">
+                            <button type="button" class="xq-preset" id="xdzPresetOwn" data-preset="own" aria-pressed="false" onclick="xdzPresetTap(this.dataset.preset)"><b>Phone's own</b><small>Android's defaults: light Doze a few minutes after the screen goes off, deep Doze after about an hour of lying still.</small></button>
+                            <button type="button" class="xq-preset" id="xdzPresetBalanced" data-preset="balanced" aria-pressed="false" onclick="xdzPresetTap(this.dataset.preset)"><b>Balanced</b><small>Light Doze after 2 minutes, deep Doze after 15 minutes still; the phone wakes every 2 to 12 hours for 5 to 10 minutes.</small></button>
+                            <button type="button" class="xq-preset" id="xdzPresetAggressive" data-preset="aggressive" aria-pressed="false" onclick="xdzPresetTap(this.dataset.preset)"><b>Aggressive</b><small>Light Doze after 1 minute, deep Doze after 5 minutes still; wakes every 4 to 24 hours for 2 to 5 minutes. Messages from apps without push may wait.</small></button>
+                        </div>
+                        <div id="xdzTune"></div>
+                        <div class="xq-row">
+                            <button type="button" class="xs-btn is-primary" id="xdzApply" onclick="xdzTuneTap()"><span>Apply changes</span></button>
+                        </div>
+                        <div class="xq-kept" id="xdzKept"></div>
+                        <div class="xdz-h">Test Doze now</div>
                         <div class="xdz-acts" role="group" aria-label="Doze actions">
                             <button type="button" class="xdz-act is-primary" id="xdzForce" data-act="force" onclick="xdzTap(this)"><span class="xdz-act-top"><span class="xdz-act-ico" style="--h:255;" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span><b>Force deep Doze</b></span><small>Puts the phone into deep Doze now, as if it had lain still for an hour: background work and network pause for most apps.</small></button>
                             <button type="button" class="xdz-act" id="xdzStep" data-act="step" onclick="xdzTap(this)"><span class="xdz-act-top"><span class="xdz-act-ico" style="--h:200;" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h12"/><path d="M13 6l6 6-6 6"/></svg></span><b>Step to next phase</b></span><small>Moves Doze one phase forward so you can watch what an app does in each.</small></button>
@@ -7476,12 +7526,25 @@
                         <div class="xdz-motion" id="xdzMotionBox">
                             <div class="xdz-motion-t"><b>Motion sensor</b><small id="xdzMotionT">State unknown until the phone is read.</small></div>
                         </div>
+                        <div class="xdz-h">Power governor</div>
+                        <div class="xq-facts" role="group" aria-label="Power state">
+                            <div class="xq-fact" id="xdzFact_saver"><small>Battery saver</small><b>…</b><em></em></div>
+                            <div class="xq-fact" id="xdzFact_charge"><small>Charger</small><b>…</b><em></em></div>
+                            <div class="xq-fact" id="xdzFact_gov"><small>CPU governor</small><b>…</b><em></em></div>
+                            <div class="xq-fact" id="xdzFact_fixed"><small>Fixed performance mode</small><b>…</b><em></em></div>
+                        </div>
+                        <div class="xq-set is-alone" id="xdzSet_gov" data-set="gov">
+                            <div class="xq-set-h"><b id="xdzSetT_gov">CPU governor</b><span class="xq-live" id="xdzLive_gov" translate="no">…</span></div>
+                            <small class="xq-set-s">How the CPU picks its clock. The phone's own follows the load; performance holds the top clock, powersave the lowest. Root mode writes the choice to every CPU cluster; a restart brings the phone's own back.</small>
+                            <div class="xq-opts" id="xdzGovOpts" role="group" aria-labelledby="xdzSetT_gov"></div>
+                            <div class="xq-none" id="xdzGovNone"></div>
+                        </div>
                         <div class="xdz-h">Power profile</div>
                         <div class="xq-status" id="xdzProfNow" role="status" aria-live="polite" aria-atomic="true"></div>
                         <div class="xdz-profs" role="group" aria-label="Power profiles">
-                            <button type="button" class="xdz-prof" id="xdzProfPerf" data-prof="performance" aria-pressed="false" onclick="xdzProfTap(this)"><span class="xdz-act-ico" style="--h:330;" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></span><span class="xdz-prof-t"><b>Performance</b><small>Fixed performance mode on, battery saver off: steady speed, more heat and battery use.</small><span class="xdz-prof-why" id="xdzProfPerfWhy"></span></span></button>
-                            <button type="button" class="xdz-prof" id="xdzProfBal" data-prof="balanced" aria-pressed="false" onclick="xdzProfTap(this)"><span class="xdz-act-ico" style="--h:200;" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M4 8h16"/><path d="M4 8l-2 6h4l-2-6zM20 8l-2 6h4l-2-6z"/></svg></span><span class="xdz-prof-t"><b>Balanced</b><small>Battery saver off, adaptive saver on: Android's own default.</small><span class="xdz-prof-why" id="xdzProfBalWhy"></span></span></button>
-                            <button type="button" class="xdz-prof" id="xdzProfSave" data-prof="saver" aria-pressed="false" onclick="xdzProfTap(this)"><span class="xdz-act-ico" style="--h:140;" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/><path d="M11 9l-2 3h3l-2 3"/></svg></span><span class="xdz-prof-t"><b>Ultra saver</b><small>Battery saver on: slower, dimmer, background work and location limited.</small><span class="xdz-prof-why" id="xdzProfSaveWhy"></span></span></button>
+                            <button type="button" class="xdz-prof" id="xdzProfPerf" data-prof="performance" aria-pressed="false" onclick="xdzProfTap(this)"><span class="xdz-act-ico" style="--h:330;" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></span><span class="xdz-prof-t"><b>Performance</b><small>Battery saver off, fixed performance mode where Android has it; in Root mode every CPU cluster runs the performance governor. Steady speed, more heat and battery use.</small><span class="xdz-prof-why" id="xdzProfPerfWhy"></span></span></button>
+                            <button type="button" class="xdz-prof" id="xdzProfBal" data-prof="balanced" aria-pressed="false" onclick="xdzProfTap(this)"><span class="xdz-act-ico" style="--h:200;" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M4 8h16"/><path d="M4 8l-2 6h4l-2-6zM20 8l-2 6h4l-2-6z"/></svg></span><span class="xdz-prof-t"><b>Balanced</b><small>Battery saver off, adaptive saver on, the phone's own CPU governor: Android's own default.</small><span class="xdz-prof-why" id="xdzProfBalWhy"></span></span></button>
+                            <button type="button" class="xdz-prof" id="xdzProfSave" data-prof="saver" aria-pressed="false" onclick="xdzProfTap(this)"><span class="xdz-act-ico" style="--h:140;" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/><path d="M11 9l-2 3h3l-2 3"/></svg></span><span class="xdz-prof-t"><b>Battery saver</b><small>Android's battery saver on: dimmer, slower, background work and location limited. Android keeps it off while the phone is charging.</small><span class="xdz-prof-why" id="xdzProfSaveWhy"></span></span></button>
                         </div>
                         <div class="xq-row">
                             <button class="xs-btn" id="xdzRefresh" onclick="xdzRefresh(true)"><span>Check again</span></button>
@@ -7489,16 +7552,24 @@
                         <details class="xs-more" id="xdzMore">
                             <summary>What does this do?</summary>
                             <div class="xq-notes">
-                                <p>Doze is Android's deep sleep: when the phone lies still with the screen off it goes Active, Inactive, Idle pending (the phone checks its motion sensor and location), Idle (deep) and then short Maintenance windows in which apps may sync. Light Doze is the lighter version that starts a few minutes after the screen goes off. The timeline shows the phase the phone reports (<code translate="no">dumpsys deviceidle get deep</code> and <code translate="no">get light</code>).</p>
-                                <p>Force deep Doze runs <code translate="no">dumpsys deviceidle force-idle deep</code>, Step to next phase <code translate="no">dumpsys deviceidle step deep</code>, Wake device <code translate="no">dumpsys deviceidle unforce</code> and Simulate motion <code translate="no">dumpsys deviceidle motion</code>, each through the working mode. A forced Doze stays until you wake the device or the phone restarts; the phone still rings and alarms still fire.</p>
+                                <p>Doze is Android's deep sleep: when the phone lies still with the screen off it goes Active, Inactive, Idle pending (the phone checks its motion sensor and location), Idle (deep) and then short Maintenance windows in which apps may sync. Light Doze is the lighter version that starts a few minutes after the screen goes off. The timeline shows the phase the phone reports (<code translate="no">dumpsys deviceidle get deep</code> and <code translate="no">get light</code>); the line under it says why it is there, from the same report: screen on, charging (Doze waits for the charger to go), and when the next step is due.</p>
+                                <p>Doze timing: the five rows are Android's own Doze constants, read back from the Settings block of <code translate="no">dumpsys deviceidle</code>. Light Doze after the screen goes off is <code translate="no">light_after_inactive_to</code>; its wake-ups <code translate="no">light_idle_to</code> growing to <code translate="no">light_max_idle_to</code>. Deep Doze after the phone lies still is <code translate="no">inactive_to</code> plus <code translate="no">idle_after_inactive_to</code> (half each, as Android keeps them) with <code translate="no">motion_inactive_to</code> no longer than 10 minutes; its wake-ups <code translate="no">idle_to</code> growing to <code translate="no">max_idle_to</code>; the maintenance window <code translate="no">idle_pending_to</code> to <code translate="no">max_idle_pending_to</code>. On Android 12 and newer the section writes them with <code translate="no">device_config put device_idle KEY MILLISECONDS</code> (the DeviceConfig namespace Android reads them from), on Android 11 and older with <code translate="no">settings put global device_idle_constants</code>. They take effect at once and stay after a restart; a Google Play services sync may put the phone's own values back, which the section notices and offers to re-apply. Phone's own deletes the override. Shorter times save battery but delay messages from apps that do not use high-priority push; alarms apps set for Doze still fire.</p>
+                                <p>Test Doze now: Force deep Doze runs <code translate="no">dumpsys deviceidle force-idle deep</code>, Step to next phase <code translate="no">dumpsys deviceidle step deep</code>, Wake device <code translate="no">dumpsys deviceidle unforce</code> and Simulate motion <code translate="no">dumpsys deviceidle motion</code>, each through the working mode. A forced Doze stays until you wake the device or the phone restarts; the phone still rings and alarms still fire.</p>
                                 <p>The motion sensor line comes from the full <code translate="no">dumpsys deviceidle</code> report when the phone prints it (<code translate="no">mUseMotionSensor</code>, <code translate="no">mMotionListener.active</code>); a phone that does not print it reads as unknown. Android has no switch for the sensor in that report, so this section does not pretend to have one.</p>
-                                <p>Power profiles: Ultra saver writes <code translate="no">settings put global low_power 1</code> (Android's battery saver), Balanced writes <code translate="no">low_power 0</code> and, where the phone has it, <code translate="no">cmd power set-adaptive-power-saver-enabled true</code>; Performance writes <code translate="no">low_power 0</code> and <code translate="no">cmd power set-fixed-performance-mode-enabled true</code> (Android 11 or newer; the section reads <code translate="no">cmd power</code> first and locks the card when the phone does not know the command). The marked card always comes from reading the phone back: <code translate="no">low_power</code>, and the fixed performance state where the phone reports it. Many phones do not report that state; the section then says so and marks Balanced.</p>
+                                <p>Power governor: the four facts come from <code translate="no">dumpsys power</code> (battery saver in force, and whether the phone is powered), <code translate="no">dumpsys battery</code> (the charger and the level), the CPU clusters under <code translate="no">/sys/devices/system/cpu/cpufreq/policy*</code> (governor, current, lowest and highest clock, the governors each one offers; many phones let every mode read them, only Root may write) and the adaptive battery setting. The CPU governor chips write <code translate="no">scaling_governor</code> of every cluster in Root mode and read the clusters back; the phone's own governor is remembered the first time it is read, and a restart brings it back on its own.</p>
+                                <p>Power profiles: Battery saver writes <code translate="no">settings put global low_power 1</code> (Android's own battery saver). Android refuses it while a charger is connected and turns it straight back off, so the section says Not while charging and asks you to unplug first. Balanced writes <code translate="no">low_power 0</code>, where the phone has it <code translate="no">cmd power set-adaptive-power-saver-enabled true</code>, and in Root mode the phone's own governor. Performance writes <code translate="no">low_power 0</code>, <code translate="no">cmd power set-fixed-performance-mode-enabled true</code> where <code translate="no">cmd power</code> knows the command, and in Root mode the performance governor on every cluster. The marked card always comes from reading the phone back: battery saver on marks Battery saver; fixed performance mode on, or every cluster on the performance governor, marks Performance; otherwise Balanced. Most phones never print the fixed performance state, which is why Performance used to look as if it did nothing: with Root the governor line now shows the change, without it the section says honestly that the phone does not report it.</p>
                             </div>
                         </details>
                     </div>
                 </section>
                 <section id="extraZramSection" class="xs-sec" aria-label="Zram and memory">
                     <style>
+                        /* the RAM picture first: one line (available of total), a bar of used / cache / free, the legend and the pressure line */
+                        #extraZramSection .xzr-ramh { font-size: var(--fs-code); font-weight: var(--fw-bold); margin: 2px 0 var(--space-2); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+                        #extraZramSection .xzr-ramh:empty { display: none; }
+                        #extraZramSection .xzr-psi { font-size: var(--fs-pill); line-height: 1.45; color: var(--text-muted); margin: var(--space-2) 0 0; overflow-wrap: anywhere; }
+                        #extraZramSection .xzr-psi:empty { display: none; }
+                        #extraZramSection .xq-h { font-size: var(--fs-pill); font-weight: var(--fw-heavy); color: var(--text-muted); margin: calc(var(--space-4) + 2px) 0 var(--space-2); }
                         #extraZramSection .xzr-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3h); min-width: 0; margin: 2px 0 var(--space-2); }
                         #extraZramSection .xzr-badge { display: inline-flex; align-items: baseline; gap: var(--space-2); max-width: 100%; min-width: 0; flex: 0 1 auto; height: 40px; padding: 0 calc(var(--space-4) + 2px); border-radius: var(--radius-pill); white-space: nowrap; overflow: hidden; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); box-shadow: 0 4px 14px var(--accent-glow); }
                         #extraZramSection .xzr-badge b { font-size: 19px; font-weight: var(--fw-black); letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
@@ -7510,11 +7581,12 @@
                         #extraZramSection .xzr-ref svg { width: 20px; height: 20px; }
                         #extraZramSection .xzr-ref:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
                         #extraZramSection .xzr-ref:disabled { opacity: 0.6; cursor: default; }
-                        /* the stacked bar: three parts of the zram disk */
+                        /* the stacked bars: three parts of the RAM, three parts of the zram disk */
                         #extraZramSection .xzr-bar { display: flex; height: 14px; border-radius: var(--radius-pill); overflow: hidden; background: rgba(var(--ov), 0.08); border: 1px solid var(--border-glass); }
                         #extraZramSection .xzr-bar > span { height: 100%; min-width: 0; }
-                        #extraZramSection .xzr-s-c { background: linear-gradient(90deg, var(--accent), var(--secondary)); }
+                        #extraZramSection .xzr-s-c, #extraZramSection .xzr-s-u { background: linear-gradient(90deg, var(--accent), var(--secondary)); }
                         #extraZramSection .xzr-s-s { background: var(--xs-ok); opacity: 0.85; }
+                        #extraZramSection .xzr-s-k { background: rgba(var(--ov), 0.22); }
                         #extraZramSection .xzr-s-f { background: transparent; }
                         #extraZramSection .xzr-leg { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: calc(var(--space-2) + 1px) 0 2px; }
                         #extraZramSection .xzr-leg span { display: inline-flex; align-items: center; gap: calc(var(--space-1) + 1px); font-size: var(--fs-caption); font-weight: var(--fw-bold); color: var(--text-muted); white-space: nowrap; }
@@ -7522,6 +7594,7 @@
                         #extraZramSection .xzr-leg b { color: var(--text-main); font-variant-numeric: tabular-nums; }
                         #extraZramSection .xzr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-3h); }
                         @media (min-width: 640px) { #extraZramSection .xzr-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+                        #extraZramSection .xzr-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-3h); }          /* the two RAM numbers, side by side at every width */
                         #extraZramSection .xzr-stat { padding: var(--space-3h) calc(var(--space-3h) + 1px); border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-surface); min-width: 0; }
                         #extraZramSection .xzr-stat small { display: block; font-size: var(--fs-caption); font-weight: var(--fw-bold); color: var(--text-muted); overflow-wrap: anywhere; line-height: 1.3; }
                         #extraZramSection .xzr-stat b { display: block; font-size: var(--fs-title); font-weight: var(--fw-heavy); letter-spacing: -0.2px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
@@ -7529,6 +7602,8 @@
                         #extraZramSection .xzr-stat em { display: block; font-style: normal; font-size: var(--fs-pkg); font-weight: var(--fw-heavy); color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 12px; }
                         #extraZramSection .xzr-stat em.is-up { color: var(--xs-warn); }
                         #extraZramSection .xzr-stat em.is-down { color: var(--xs-ok); }
+                        #extraZramSection .xzr-pair .xzr-stat em.is-up { color: var(--xs-ok); }          /* more available RAM, more cache: the good direction is up here */
+                        #extraZramSection .xzr-pair .xzr-stat em.is-down { color: var(--xs-warn); }
                         #extraZramSection .xzr-btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
                         #extraZramSection .xzr-btn { display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--space-1) - 1px); min-height: 60px; padding: calc(var(--space-3) + 1px) var(--space-4); border-radius: calc(var(--radius-md) + 2px); border: 1px solid var(--border-glass); background: var(--bg-surface); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; box-sizing: border-box; }
                         #extraZramSection .xzr-btn.is-primary { border-color: transparent; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-gradient); }
@@ -7556,9 +7631,18 @@
                                 <span class="xs-pill" id="xzrPill"><span id="xzrPillIc" aria-hidden="true"></span><span id="xzrPillT">…</span></span>
                             </div>
                         </div>
-                        <div class="color-card-subtitle">How much RAM the phone's compressed swap (zram) gives back, and buttons to free memory that caches hold.</div>
+                        <div class="color-card-subtitle">What the phone's RAM is doing right now, how much its compressed swap (zram) gives back, buttons that free memory, and the knobs behind it: zram size, swappiness and the low-memory killer.</div>
                         <div class="xs-trust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span>Read from the phone every 5 seconds while this tab is open. Nothing runs until you confirm; after an action the numbers are read again and the change is shown.</span></div>
                         <div class="xq-lock" id="xzrLock"></div>
+                        <div class="xzr-ramh" id="xzrRamT">…</div>
+                        <div class="xzr-bar" id="xzrRamBar" role="img" aria-label="RAM use"><span class="xzr-s-u" id="xzrRamU"></span><span class="xzr-s-k" id="xzrRamC"></span><span class="xzr-s-f" id="xzrRamF"></span></div>
+                        <div class="xzr-leg"><span><i style="background:linear-gradient(90deg,var(--accent),var(--secondary));"></i><span>Apps and system</span><b id="xzrRamLegU">…</b></span><span><i style="background:rgba(var(--ov),0.22);"></i><span>Cache</span><b id="xzrRamLegC">…</b></span><span><i style="border:1px solid var(--border-glass);"></i><span>Free</span><b id="xzrRamLegF">…</b></span></div>
+                        <div class="xzr-psi" id="xzrPsi"></div>
+                        <div class="xzr-pair">
+                            <div class="xzr-stat"><small>Available to apps</small><b id="xzrAvail">…</b><em id="xzrAvailD"></em></div>
+                            <div class="xzr-stat"><small>Held as cache</small><b id="xzrCache">…</b><em id="xzrCacheD"></em></div>
+                        </div>
+                        <div class="xq-h">Zram: compressed swap</div>
                         <div class="xzr-top">
                             <span class="xzr-badge" id="xzrBadge"><b id="xzrRatio" translate="no">…</b><span id="xzrBadgeT">compression</span></span>
                             <button type="button" class="xzr-ref" id="xzrRefresh" aria-label="Read again" title="Read again" onclick="xzrRefresh(true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
@@ -7575,17 +7659,25 @@
                         </div>
                         <div class="xq-status" id="xzrDelta" role="status" aria-live="polite" aria-atomic="true"></div>
                         <div class="xzr-btns" role="group" aria-label="Memory actions">
-                            <button type="button" class="xzr-btn is-primary" id="xzrReclaim" data-act="reclaim" onclick="xzrTap(this)"><b>Reclaim disk caches</b><small>Writes pending data, then frees the file, folder and inode caches.</small><span class="xzr-why"></span></button>
+                            <button type="button" class="xzr-btn is-primary" id="xzrReclaim" data-act="reclaim" onclick="xzrTap(this)"><b>Reclaim disk caches</b><small>Writes pending data, then frees the file, folder and inode caches: Available RAM goes up at once.</small><span class="xzr-why"></span></button>
                             <button type="button" class="xzr-btn" id="xzrDrop" data-act="drop" onclick="xzrTap(this)"><b>Drop page caches</b><small>Frees only the file page cache; Android fills it again as apps read files.</small><span class="xzr-why"></span></button>
                             <button type="button" class="xzr-btn" id="xzrTrim" data-act="trim" onclick="xzrTap(this)"><b>Trim app caches</b><small>Asks Android to delete the cache files of every app; apps, data and logins stay.</small><span class="xzr-why"></span></button>
                         </div>
+                        <div class="xq-h">Memory settings</div>
+                        <div id="xzrSets"></div>
+                        <div class="xq-row">
+                            <button type="button" class="xs-btn is-primary" id="xzrApply" onclick="xzrSetTap()"><span>Apply changes</span></button>
+                        </div>
+                        <div class="xq-kept" id="xzrKept"></div>
                         <details class="xs-more" id="xzrMore">
                             <summary>What does this do?</summary>
                             <div class="xq-notes">
-                                <p>Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <code translate="no">/sys/block/zram0/mm_stat</code> (uncompressed data, compressed size, RAM really used), <code translate="no">/sys/block/zram0/disksize</code> and <code translate="no">/proc/meminfo</code> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.</p>
-                                <p>Reclaim disk caches runs <code translate="no">sync; echo 3 &gt; /proc/sys/vm/drop_caches</code> and Drop page caches <code translate="no">sync; echo 1 &gt; /proc/sys/vm/drop_caches</code>. Only root may write that file, so both are locked in ADB, Wireless Debugging and Shizuku mode. Freed cache is not a gain for long: the kernel keeps those caches because they make the phone faster, and fills them again.</p>
+                                <p>The RAM bar comes from <code translate="no">/proc/meminfo</code>: Apps and system is what is really in use, Cache the file pages the kernel keeps so apps open faster (Buffers, Cached and SReclaimable, less shared memory), Free what nobody holds. Available to apps is Android's own <code translate="no">MemAvailable</code>: free memory plus the cache the kernel would give up, which is the number that matters. The pressure line reads <code translate="no">/proc/pressure/memory</code>, the share of the last ten seconds in which something waited for memory.</p>
+                                <p>Zram is a piece of RAM that works as compressed swap: when memory runs low Android moves the memory of idle apps into it, squeezed to roughly a third of its size, instead of closing them. The section reads <code translate="no">/sys/block/zram0/mm_stat</code> (uncompressed data, compressed size, RAM really used), <code translate="no">/sys/block/zram0/disksize</code>, <code translate="no">/proc/swaps</code> and <code translate="no">/proc/meminfo</code> through the working mode. Compression is uncompressed data divided by compressed size; RAM saved is uncompressed data minus the RAM the compressed copy takes.</p>
+                                <p>Reclaim disk caches runs <code translate="no">sync; echo 3 &gt; /proc/sys/vm/drop_caches</code> and Drop page caches <code translate="no">sync; echo 1 &gt; /proc/sys/vm/drop_caches</code>. Only Root may write that file, so both are locked in ADB, Wireless Debugging and Shizuku mode. They do not touch the zram counters: the change shows under Available to apps and Held as cache, read again right after. Freed cache is not a gain for long: the kernel keeps those caches because they make the phone faster, and fills them again.</p>
                                 <p>Trim app caches is the same as Settings &gt; Trim Caches in All Applications: <code translate="no">pm trim-caches 128G</code>, which works in every working mode. It deletes cache files on storage; it does not change RAM directly, but apps that lose their cache may hold less.</p>
-                                <p>A phone without zram, or one whose shell may not read the counters, shows Not available with the reason. The numbers are a snapshot; they move as apps run.</p>
+                                <p>Memory settings: Zram size (Root mode) turns the swap off, resets the device, writes the new <code translate="no">disksize</code>, runs <code translate="no">mkswap</code> and turns the swap on again; it can take up to a minute, apps parked in the background may close meanwhile, and the phone's own size comes back at the next restart. Swappiness (Root mode) writes <code translate="no">/proc/sys/vm/swappiness</code>, 0 to 200: how eagerly the kernel moves idle app memory into zram instead of dropping file cache; it holds until the next restart. The low-memory killer row writes <code translate="no">device_config put lmkd_native swap_free_low_percentage</code> and <code translate="no">thrashing_limit</code>, which every working mode may do and which Android keeps across restarts, then <code translate="no">setprop lmkd.reinit 1</code> so lmkd reads them at once where the mode may set that property; otherwise they apply at the next restart. Keep more apps open lets the killer wait longer (swap may run down to 5 %, more thrashing allowed), Free memory sooner closes background apps earlier (20 %, less thrashing). Phone's own deletes the overrides. The first values seen are remembered as the phone's own; the section says when the phone no longer runs what you applied and offers to re-apply.</p>
+                                <p>A phone without zram, or one whose shell may not read the counters, shows Not available with the reason; the RAM picture and the rows still come through. The numbers are a snapshot; they move as apps run.</p>
                             </div>
                         </details>
                     </div>
@@ -17604,7 +17696,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const out = []; let para = [], list = '', fence = false;
             const flush = () => { if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para = []; } };
             const endList = () => { if (list) { out.push('</' + list + '>'); list = ''; } };
-            text.replace(/<!--[\s\S]*?-->/g, '').split(/\r?\n/).forEach((line) => {
+            let bare = String(text), prev; do { prev = bare; bare = bare.replace(/<!--[\s\S]*?--!?>/g, ''); } while (bare !== prev); do { prev = bare; bare = bare.replace(/<!--|--!?>/g, ''); } while (bare !== prev);       // comments go, and so does a bare marker left behind
+            bare.split(/\r?\n/).forEach((line) => {
                 if (/^\s*```/.test(line)) { flush(); endList(); out.push(fence ? '</pre>' : '<pre>'); fence = !fence; return; }
                 if (fence) { out.push(esc(line) + '\n'); return; }
                 if (/^\s*\[[^\]]+\]:\s*\S+/.test(line)) return;
@@ -19078,6 +19171,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function xqRun(cmd, timeoutMs) {
             return new Promise(done => {
                 if (!xqBridgeOk()) { done({ ok: false, output: '', error: txT('Needs the app') }); return; }
+                if (cmd == null) { done({ ok: false, output: '', error: txT('It did not work.') }); return; }          // a row whose values did not pass xqRowCmd
                 const id = 'xq' + (++xqReqSeq), marker = '__XQRC_' + id + '__';
                 const full = cmd + '; echo "' + marker + ':$?"';
                 const finish = raw => {
@@ -19110,6 +19204,14 @@ Type any command above (e.g. pm list packages -d)</div>
             });
         }
         function xqShellDone(id, out) { const q = xqReqs.get(id); if (!q) return false; q.finish(out); return true; }
+        // Fills the {name} holes of a table row's command from vars, each value checked against the row's own pattern; null when a value is missing, wrong or a hole stays open.
+        function xqApplyLabel(n) { return !n ? txT('Apply changes') : n === 1 ? txT('Apply 1 change') : txF('Apply {0} changes', n); }
+        function xqRowCmd(a, vars) {
+            if (!a || !a.cmd) return null;
+            let bad = false;
+            const cmd = a.cmd.replace(/\{([a-z]+)\}/g, (m, k) => { const re = a.vars && a.vars[k], v = vars && vars[k]; if (!re || v == null || !re.test(String(v))) { bad = true; return m; } return String(v); });
+            return bad || /\{[a-z]+\}/.test(cmd) ? null : cmd;
+        }
         // One Global setting through the Hidden Settings path (settingsOp), as Private DNS does; { ok, value } or { ok: false, error }.
         function xqSetting(op, key, value) {
             if (typeof sdbBridgeOk === 'function' && sdbBridgeOk()) return new Promise(done => { sdbRequest(id => window.AndroidBridge.settingsOp(id, op, 'global', key, value), done, 60000); });
@@ -19376,16 +19478,44 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- E. Doze & power governor ----
         const XDZ_DEEP = ['ACTIVE', 'INACTIVE', 'IDLE_PENDING', 'SENSING', 'LOCATING', 'IDLE', 'IDLE_MAINTENANCE', 'QUICK_DOZE_DELAY'];
         const XDZ_LIGHT = ['ACTIVE', 'INACTIVE', 'PRE_IDLE', 'IDLE', 'WAITING_FOR_NETWORK', 'IDLE_MAINTENANCE', 'OVERRIDE'];
-        const XDZ_READ_CMD = 'dumpsys deviceidle get deep; echo ' + XQ_SEP + '; dumpsys deviceidle get light; echo ' + XQ_SEP + '; dumpsys deviceidle get force; echo ' + XQ_SEP + "; dumpsys deviceidle | grep -E 'm(UseMotionSensor|MotionListener\\.active|MotionSensor|State|LightState|ForceIdle)=' | head -n 12";
+        // The read: the phase tokens; the full report's Settings block (the timing constants in force) and state lines (motion, screen, charging, the next
+        // step); the Android version; the overrides of the device_idle namespace (Android 12+) and the old constants string (11 and older). Reads only.
+        const XDZ_GREP = "grep -E '^ *Settings:$|^ +[a-z][a-z0-9_]*=|m(UseMotionSensor|MotionListener\\.active|MotionSensor|State|LightState|ForceIdle|ScreenOn|Charging|NetworkConnected|LightEnabled|DeepEnabled|QuickDozeActivated|NextAlarmTime|NextLightAlarmTime|NextIdleDelay|NextIdlePendingDelay|InactiveTimeout)=' | head -n 90";
+        const XDZ_READ_CMD = 'dumpsys deviceidle get deep; echo ' + XQ_SEP + '; dumpsys deviceidle get light; echo ' + XQ_SEP + '; dumpsys deviceidle get force; echo ' + XQ_SEP + '; dumpsys deviceidle | ' + XDZ_GREP + '; echo ' + XQ_SEP + '; getprop ro.build.version.sdk; echo ' + XQ_SEP + '; device_config list device_idle 2>&1; echo ' + XQ_SEP + '; settings get global device_idle_constants';
+        // The power read: the battery saver lines of dumpsys power, the charger and level of dumpsys battery, one line per CPU cluster from sysfs (governor, clocks, the governors it offers), the adaptive battery setting.
+        const XDZ_POWER_CMD = "dumpsys power | grep -iE '^ *(Enabled|mIsPowered|mSettingBatterySaverEnabled|mSettingAutomaticBatterySaver)=|fixed.?performance' | head -n 12; echo " + XQ_SEP + "; dumpsys battery | grep -E '^ *((AC|USB|Wireless|Dock) powered|level|status):'; echo " + XQ_SEP + '; for p in /sys/devices/system/cpu/cpufreq/policy*; do echo "$(basename $p)|$(cat $p/scaling_governor 2>/dev/null)|$(cat $p/scaling_cur_freq 2>/dev/null)|$(cat $p/scaling_min_freq 2>/dev/null)|$(cat $p/scaling_max_freq 2>/dev/null)|$(cat $p/related_cpus 2>/dev/null)|$(cat $p/scaling_available_governors 2>/dev/null)"; done 2>/dev/null; echo ' + XQ_SEP + '; settings get global adaptive_battery_management_enabled';
+        // Every write of the section is a row here. A row with {name} holes takes its values through xqRowCmd, each checked against the row's own pattern.
         const XDZ_ACTS = {
-            force:  { cmd: 'dumpsys deviceidle force-idle deep', hue: 255 },
-            step:   { cmd: 'dumpsys deviceidle step deep', hue: 200 },
-            wake:   { cmd: 'dumpsys deviceidle unforce', hue: 40 },
-            motion: { cmd: 'dumpsys deviceidle motion', hue: 150 },
+            force:     { cmd: 'dumpsys deviceidle force-idle deep', hue: 255 },
+            step:      { cmd: 'dumpsys deviceidle step deep', hue: 200 },
+            wake:      { cmd: 'dumpsys deviceidle unforce', hue: 40 },
+            motion:    { cmd: 'dumpsys deviceidle motion', hue: 150 },
+            dcPut:     { cmd: 'device_config put device_idle {key} {ms}', vars: { key: /^[a-z][a-z0-9_]{2,40}$/, ms: /^\d{4,9}$/ }, hue: 255 },          // Android 12+: one Doze constant, in milliseconds
+            dcDel:     { cmd: 'device_config delete device_idle {key}', vars: { key: /^[a-z][a-z0-9_]{2,40}$/ }, hue: 255 },                            // back to the phone's own value
+            constsPut: { cmd: 'settings put global device_idle_constants {kv}', vars: { kv: /^[a-z][a-z0-9_]*=\d{4,9}(,[a-z][a-z0-9_]*=\d{4,9}){0,40}$/ }, hue: 255 },          // Android 11 and older: the whole list at once
+            constsDel: { cmd: 'settings delete global device_idle_constants', hue: 255 },
+            gov:       { cmd: 'for p in /sys/devices/system/cpu/cpufreq/policy*; do echo {gov} > $p/scaling_governor; done', vars: { gov: /^[a-z][a-z0-9_-]{0,23}$/ }, hue: 330, needsRoot: true },
         };
         const XDZ_PROFS = ['performance', 'balanced', 'saver'];
-        let xdz = { state: null, light: null, forced: null, motion: null, err: null, read: false, lowPower: null, fixed: null, help: null, profErr: null };
-        let xdzBusy = null, xdzReading = false, xdzSeq = 0;
+        const XDZ_MIN = 60000;
+        // The five timing rows: the constants each one writes and the choices it offers (milliseconds, one value per key). 'own' = the phone's own value (no override).
+        const XDZ_TUNE = [
+            { id: 'light', keys: ['light_after_inactive_to'], kind: 'one', choices: [1, 2, 4, 8, 15].map(m => ({ id: String(m), ms: [m * XDZ_MIN] })) },
+            { id: 'lightWake', keys: ['light_idle_to', 'light_max_idle_to'], kind: 'range', choices: [[3, 10], [5, 15], [10, 30], [15, 60]].map(p => ({ id: p.join('-'), ms: [p[0] * XDZ_MIN, p[1] * XDZ_MIN] })) },
+            { id: 'deep', keys: ['inactive_to', 'idle_after_inactive_to', 'motion_inactive_to'], kind: 'total', choices: [5, 10, 15, 30, 60].map(m => ({ id: String(m), ms: xdzDeepSplit(m * XDZ_MIN) })) },
+            { id: 'deepWake', keys: ['idle_to', 'max_idle_to'], kind: 'range', choices: [[30, 120], [60, 360], [120, 720], [240, 1440]].map(p => ({ id: p.join('-'), ms: [p[0] * XDZ_MIN, p[1] * XDZ_MIN] })) },
+            { id: 'window', keys: ['idle_pending_to', 'max_idle_pending_to'], kind: 'range', choices: [[2, 5], [5, 10], [10, 20]].map(p => ({ id: p.join('-'), ms: [p[0] * XDZ_MIN, p[1] * XDZ_MIN] })) },
+        ];
+        const XDZ_PRESETS = {
+            own:        { light: 'own', lightWake: 'own', deep: 'own', deepWake: 'own', window: 'own' },
+            balanced:   { light: '2', lightWake: '10-30', deep: '15', deepWake: '120-720', window: '5-10' },
+            aggressive: { light: '1', lightWake: '15-60', deep: '5', deepWake: '240-1440', window: '2-5' },
+        };
+        function xdzBlank() { return { state: null, light: null, forced: null, motion: null, err: null, read: false, consts: {}, now: null, sdk: null, modern: true, dc: {}, lowPower: null, fixed: null, help: null, profErr: null, saver: null, batt: null, cpu: null, adaptive: null }; }
+        let xdz = xdzBlank();
+        let xdzBusy = null, xdzReading = false, xdzSeq = 0, xdzPend = {};
+        // "Deep Doze after N minutes still" as Android's constants: inactive_to and idle_after_inactive_to take half each (AOSP keeps them equal), motion_inactive_to is the smaller of its 10 minutes and that half; at least two minutes.
+        function xdzDeepSplit(totalMs) { const total = Math.max(120000, totalMs), half = Math.floor(total / 2); return [half, total - half, Math.min(600000, half)]; }
         // The token `dumpsys deviceidle get deep` / `get light` prints, or the one in "Stepped to deep: X", "Light state: X, Deep state: Y"; null when none is there.
         function xdzToken(text, kind) {
             const list = kind === 'light' ? XDZ_LIGHT : XDZ_DEEP;
@@ -19427,6 +19557,116 @@ Type any command above (e.g. pm list packages -d)</div>
             });
             return r;
         }
+        // A duration as Android prints it (+4m0s0ms, -6m12s500ms, 2h, 1d2h) or bare milliseconds, in milliseconds; -1 for anything else (2.0, true). Mirrors PowerTweaks.parseDuration.
+        function xdzParseDuration(text) {
+            const t = String(text == null ? '' : text).trim();
+            if (/^\d{1,15}$/.test(t)) return parseInt(t, 10);
+            const m = /^([+-])?(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m(?!s))?(?:(\d+)s)?(?:(\d+)ms)?$/.exec(t);
+            if (!m || t.length <= (m[1] ? 1 : 0)) return -1;
+            const ms = (+(m[2] || 0)) * 86400000 + (+(m[3] || 0)) * 3600000 + (+(m[4] || 0)) * 60000 + (+(m[5] || 0)) * 1000 + (+(m[6] || 0));
+            return m[1] === '-' ? -ms : ms;
+        }
+        // The Settings: block of the report: every key=value line indented under it, as printed; the first other line ends the block. Mirrors PowerTweaks.parseConstants.
+        function xdzParseConstants(text) {
+            const out = {};
+            let inBlock = false;
+            for (const raw of String(text == null ? '' : text).split('\n')) {
+                if (raw.trim() === 'Settings:') { inBlock = true; continue; }
+                if (!inBlock) continue;
+                const m = /^\s+([a-z][a-z0-9_]*)=(\S+)\s*$/.exec(raw);
+                if (m) out[m[1]] = m[2]; else break;
+            }
+            return out;
+        }
+        function xdzConstMs(consts, key) { return consts && Object.prototype.hasOwnProperty.call(consts, key) ? xdzParseDuration(consts[key]) : -1; }
+        // The state lines of the report that say how the phone is doing right now (null / -1 when not printed). Mirrors PowerTweaks.parseNow.
+        function xdzParseNow(text) {
+            const d = { screenOn: null, charging: null, network: null, lightEnabled: null, deepEnabled: null, quickDoze: null, nextAlarmMs: -1, nextLightAlarmMs: -1, nextIdleDelayMs: -1, nextIdlePendingMs: -1, inactiveTimeoutMs: -1 };
+            const b = v => v === 'true';
+            String(text == null ? '' : text).split('\n').forEach(raw => {
+                let m;
+                if ((m = /\bmScreenOn=(true|false)/.exec(raw))) d.screenOn = b(m[1]);
+                if ((m = /\bmCharging=(true|false)/.exec(raw))) d.charging = b(m[1]);
+                if ((m = /\bmNetworkConnected=(true|false)/.exec(raw))) d.network = b(m[1]);
+                if ((m = /\bmLightEnabled=(true|false)/.exec(raw))) d.lightEnabled = b(m[1]);
+                if ((m = /\bmDeepEnabled=(true|false)/.exec(raw))) d.deepEnabled = b(m[1]);
+                if ((m = /\bmQuickDozeActivated=(true|false)/.exec(raw))) d.quickDoze = b(m[1]);
+                if ((m = /\bmNextAlarmTime=(\S+)/.exec(raw))) d.nextAlarmMs = xdzParseDuration(m[1]);
+                if ((m = /\bmNextLightAlarmTime=(\S+)/.exec(raw))) d.nextLightAlarmMs = xdzParseDuration(m[1]);
+                if ((m = /\bmNextIdleDelay=(\S+)/.exec(raw))) d.nextIdleDelayMs = xdzParseDuration(m[1]);
+                if ((m = /\bmNextIdlePendingDelay=(\S+)/.exec(raw))) d.nextIdlePendingMs = xdzParseDuration(m[1]);
+                if ((m = /\bmInactiveTimeout=(\S+)/.exec(raw))) d.inactiveTimeoutMs = xdzParseDuration(m[1]);
+            });
+            return d;
+        }
+        // `device_config list device_idle`: the key=value lines; anything else (an error, "not found") is skipped. Mirrors PowerTweaks.parseDeviceConfigList.
+        function xdzParseDcList(text) {
+            const out = {};
+            String(text == null ? '' : text).split('\n').forEach(raw => { const m = /^([a-z][a-z0-9_]*)=(.*)$/.exec(raw.trim()); if (m) out[m[1]] = m[2].trim(); });
+            return out;
+        }
+        // The old constants string of Settings.Global (key=value,key=value) as a map; "null" and errors give an empty one.
+        function xdzParseKv(text) {
+            const out = {};
+            String(text == null ? '' : text).trim().split(',').forEach(part => { const m = /^([a-z][a-z0-9_]*)=([^,]*)$/.exec(part.trim()); if (m) out[m[1]] = m[2]; });
+            return out;
+        }
+        // The policy lines of the power read (policy0|schedutil|1804800|400000|1804800|0-3|conservative powersave performance schedutil); other lines are skipped. Mirrors PowerTweaks.parseCpuPolicies.
+        function xdzParseCpu(text) {
+            const out = [];
+            String(text == null ? '' : text).split('\n').forEach(raw => {
+                const t = raw.trim();
+                if (!t.startsWith('policy') || t.indexOf('|') < 0) return;
+                const f = t.split('|');
+                if (!/^policy\d{1,3}$/.test(f[0].trim())) return;
+                const num = s => /^\d{1,12}$/.test((s || '').trim()) ? parseInt(s.trim(), 10) : -1;
+                out.push({ name: f[0].trim(), governor: /^[A-Za-z0-9_-]+$/.test((f[1] || '').trim()) ? f[1].trim() : '', curKhz: num(f[2]), minKhz: num(f[3]), maxKhz: num(f[4]), cpus: (f[5] || '').trim(), available: (f[6] || '').trim().split(/\s+/).filter(g => /^[A-Za-z0-9_-]+$/.test(g)) });
+            });
+            return out;
+        }
+        function xdzCommonGov(policies) { if (!policies || !policies.length) return null; let g = null; for (const p of policies) { if (!p.governor) return null; if (g === null) g = p.governor; else if (g !== p.governor) return null; } return g; }
+        function xdzGovs(policies) { const out = []; (policies || []).forEach(p => p.available.forEach(g => { if (!out.includes(g)) out.push(g); })); return out; }
+        // `dumpsys battery`: whether the phone is plugged in and from what, the level and the status. Mirrors PowerTweaks.parseBattery.
+        function xdzParseBattery(text) {
+            const b = { read: false, ac: false, usb: false, wireless: false, dock: false, level: -1, status: -1 };
+            String(text == null ? '' : text).split('\n').forEach(raw => {
+                const t = raw.trim();
+                let m;
+                if ((m = /^(AC|USB|Wireless|Dock) powered: (true|false)$/.exec(t))) { b.read = true; b[m[1].toLowerCase()] = m[2] === 'true'; }
+                else if ((m = /^level: (\d{1,3})$/.exec(t))) { b.read = true; b.level = parseInt(m[1], 10); }
+                else if ((m = /^status: (\d{1,2})$/.exec(t))) { b.read = true; b.status = parseInt(m[1], 10); }
+            });
+            b.plugged = b.ac || b.usb || b.wireless || b.dock;
+            return b;
+        }
+        // The battery saver lines of dumpsys power (Enabled=, mIsPowered=, mSettingBatterySaverEnabled=, mSettingAutomaticBatterySaver=); null where not printed. Mirrors PowerTweaks.parseSaver.
+        function xdzParseSaver(text) {
+            const s = { enabled: null, powered: null, setting: null, automatic: null };
+            String(text == null ? '' : text).split('\n').forEach(raw => {
+                const t = raw.trim();
+                let m;
+                if ((m = /^Enabled=(true|false)$/.exec(t))) s.enabled = m[1] === 'true';
+                else if ((m = /^mIsPowered=(true|false)$/.exec(t))) s.powered = m[1] === 'true';
+                else if ((m = /^mSettingBatterySaverEnabled=(true|false)$/.exec(t))) s.setting = m[1] === 'true';
+                else if ((m = /^mSettingAutomaticBatterySaver=(\d)$/.exec(t))) s.automatic = parseInt(m[1], 10);
+            });
+            return s;
+        }
+        // Durations for people: 45 s, 2 min, 1 h 30 min, 6 h; a range as "5–15 min" or "1–6 h".
+        function xdzFmtMs(ms) {
+            if (ms == null || ms < 0) return '—';
+            if (ms < XDZ_MIN) return txF('{0} s', Math.round(ms / 1000));
+            const min = Math.round(ms / XDZ_MIN);
+            if (min < 60) return txF('{0} min', min);
+            const h = Math.floor(min / 60), m = min % 60;
+            return m ? txF('{0} h {1} min', h, m) : txF('{0} h', h);
+        }
+        function xdzFmtRange(a, b) {
+            if (a == null || b == null || a < 0 || b < 0) return '—';
+            if (a < 3600000 && b <= 7200000) return txF('{0}–{1} min', Math.round(a / XDZ_MIN), Math.round(b / XDZ_MIN));       // 15–60 min, 30–120 min; from an hour up in hours
+            if (a % 3600000 === 0 && b % 3600000 === 0) return txF('{0}–{1} h', a / 3600000, b / 3600000);
+            return xdzFmtMs(a) + '–' + xdzFmtMs(b);
+        }
         function xdzPhaseName(i) {
             switch (i) {
                 case 0: return txT('Active');
@@ -19458,9 +19698,287 @@ Type any command above (e.g. pm list packages -d)</div>
             if (xdz.forced === true) t += ' · ' + txT('forced');
             return t;
         }
+        // Why Doze is where it is: the screen, the charger, the next step; '' when the report prints none of it.
+        function xdzWhyLine() {
+            const n = xdz.now;
+            if (!xdz.read || xdz.err || !n) return '';
+            const parts = [];
+            if (n.screenOn === true) parts.push(txT('Screen on: Doze starts counting when it goes off'));
+            else if (n.screenOn === false) parts.push(txT('Screen off'));
+            if (n.charging === true) parts.push(txT('Charging: Doze waits until the charger is unplugged'));
+            if (n.deepEnabled === false) parts.push(txT('Deep Doze is switched off on this phone'));
+            if (n.lightEnabled === false) parts.push(txT('Light Doze is switched off on this phone'));
+            if (n.quickDoze === true) parts.push(txT('Quick Doze (battery saver) is on'));
+            if (n.screenOn === false && n.charging !== true && xdz.forced !== true) {
+                if (n.nextAlarmMs > 0) parts.push(txF('Next deep Doze step in {0}', xdzFmtMs(n.nextAlarmMs)));
+                if (n.nextLightAlarmMs > 0) parts.push(txF('Next light Doze step in {0}', xdzFmtMs(n.nextLightAlarmMs)));
+            }
+            return parts.join(' · ');
+        }
+        // ---- the timing rows ----
+        function xdzTuneRow(id) { return XDZ_TUNE.find(r => r.id === id) || null; }
+        function xdzTuneTitle(id) {
+            switch (id) {
+                case 'light': return txT('Light Doze after the screen goes off');
+                case 'lightWake': return txT('Light Doze wake-ups');
+                case 'deep': return txT('Deep Doze after the phone lies still');
+                case 'deepWake': return txT('Deep Doze wake-ups');
+                case 'window': return txT('Maintenance window');
+            }
+            return id;
+        }
+        function xdzTuneSub(id) {
+            switch (id) {
+                case 'light': return txT('How long after the screen goes off apps lose their background network for the first time. Android waits a few minutes.');
+                case 'lightWake': return txT('How often light Doze lets apps sync: the gap starts at the first number and grows to the second.');
+                case 'deep': return txT('How long the phone must lie still, screen off and unplugged, before deep Doze: then alarms, jobs and network wait for the next window. Android waits about an hour.');
+                case 'deepWake': return txT('How often deep Doze opens a maintenance window: the gap starts at the first number and grows to the second. Android: 1 to 6 hours.');
+                case 'window': return txT('How long each maintenance window stays open for apps to sync. Android: 5 to 10 minutes.');
+            }
+            return '';
+        }
+        function xdzChoiceText(row, c) { return row.kind === 'range' ? xdzFmtRange(c.ms[0], c.ms[1]) : row.kind === 'total' ? xdzFmtMs(c.ms[0] + c.ms[1]) : xdzFmtMs(c.ms[0]); }
+        // The row's live values from the report's Settings block: [ms per key] (-1 where not printed), and the text for people.
+        function xdzLive(row) {
+            const ms = row.keys.map(k => xdzConstMs(xdz.consts, k));
+            let text;
+            if (ms[0] < 0 || (row.kind !== 'one' && ms[1] < 0)) text = txT('not printed');
+            else text = row.kind === 'range' ? xdzFmtRange(ms[0], ms[1]) : row.kind === 'total' ? xdzFmtMs(ms[0] + ms[1]) : xdzFmtMs(ms[0]);
+            return { ms, text };
+        }
+        function xdzOverridden(row) { return row.keys.some(k => Object.prototype.hasOwnProperty.call(xdz.dc || {}, k)); }
+        // What the phone runs now as a chip id: 'own' when none of the row's constants is overridden, the matching choice, or 'custom'.
+        function xdzCur(row) {
+            if (!xdzOverridden(row)) return 'own';
+            const live = xdzLive(row).ms;
+            const hit = row.choices.find(c => row.kind === 'total' ? live[0] >= 0 && live[1] >= 0 && c.ms[0] + c.ms[1] === live[0] + live[1] : c.ms.every((v, i) => v === live[i]));
+            return hit ? hit.id : 'custom';
+        }
+        function xdzTarget(row) { const p = xdzPend[row.id]; return p == null ? xdzCur(row) : p; }
+        function xdzChanges() { return XDZ_TUNE.filter(r => xdzTarget(r) !== xdzCur(r)); }
+        // The plan of an apply: the rows of XDZ_ACTS to run, with their values. Android 12+: one put / delete per constant; older: the whole constants string again.
+        function xdzTunePlan() {
+            const steps = [];
+            if (xdz.modern !== false) {
+                xdzChanges().forEach(row => {
+                    const t = xdzTarget(row);
+                    if (t === 'own') row.keys.forEach(key => steps.push({ row: 'dcDel', vars: { key }, tune: row.id }));
+                    else { const c = row.choices.find(x => x.id === t); if (c) row.keys.forEach((key, i) => steps.push({ row: 'dcPut', vars: { key, ms: String(c.ms[i]) }, tune: row.id })); }
+                });
+                return steps;
+            }
+            const all = [];
+            const rowKeys = new Set(XDZ_TUNE.flatMap(r => r.keys));
+            Object.keys(xdz.dc || {}).forEach(key => { if (!rowKeys.has(key) && /^\d+$/.test(String(xdz.dc[key]))) all.push(key + '=' + xdz.dc[key]); });       // constants of no row (sensing_to, an OEM's) stay as they are
+            XDZ_TUNE.forEach(row => {
+                const t = xdzTarget(row);
+                if (t === 'own') return;
+                if (t === 'custom') { row.keys.forEach(key => { if (/^\d+$/.test(String(xdz.dc[key] || ''))) all.push(key + '=' + xdz.dc[key]); }); return; }
+                const c = row.choices.find(x => x.id === t);
+                if (c) row.keys.forEach((key, i) => all.push(key + '=' + c.ms[i]));
+            });
+            steps.push(all.length ? { row: 'constsPut', vars: { kv: all.join(',') } } : { row: 'constsDel', vars: {} });
+            return steps;
+        }
+        function xdzStepCmd(st) { return st.cmd ? st.cmd : st.row ? (xqRowCmd(XDZ_ACTS[st.row], st.vars) || '') : 'settings put global ' + st.setting + ' ' + st.value; }
+        function xdzPresetTitle(p) { return p === 'balanced' ? txT('Balanced') : p === 'aggressive' ? txT('Aggressive') : txT('Phone\'s own'); }
+        function xdzPresetOf() {
+            for (const p of Object.keys(XDZ_PRESETS)) if (XDZ_TUNE.every(r => xdzTarget(r) === XDZ_PRESETS[p][r.id])) return p;
+            return null;
+        }
+        function xdzBuildTune() {
+            const box = document.getElementById('xdzTune');
+            if (!box || box.childElementCount) return;
+            XDZ_TUNE.forEach(row => {
+                const set = document.createElement('div'); set.className = 'xq-set'; set.id = 'xdzSet_' + row.id; set.dataset.set = row.id;
+                const head = document.createElement('div'); head.className = 'xq-set-h';
+                const title = document.createElement('b'); title.id = 'xdzSetT_' + row.id; title.textContent = xdzTuneTitle(row.id);
+                const live = document.createElement('span'); live.className = 'xq-live'; live.id = 'xdzLive_' + row.id; live.setAttribute('translate', 'no');
+                head.appendChild(title); head.appendChild(live);
+                const sub = document.createElement('small'); sub.className = 'xq-set-s'; sub.textContent = xdzTuneSub(row.id);
+                const opts = document.createElement('div'); opts.className = 'xq-opts'; opts.setAttribute('role', 'group'); opts.setAttribute('aria-labelledby', title.id);
+                [{ id: 'own' }].concat(row.choices).forEach(c => {
+                    const b = document.createElement('button');
+                    b.type = 'button'; b.className = 'xq-opt'; b.dataset.v = c.id; b.setAttribute('aria-pressed', 'false');
+                    const s = document.createElement('span'); s.textContent = c.id === 'own' ? txT('Phone\'s own') : xdzChoiceText(row, c); b.appendChild(s);
+                    b.addEventListener('click', () => xdzChip(row.id, c.id));
+                    opts.appendChild(b);
+                });
+                set.appendChild(head); set.appendChild(sub); set.appendChild(opts);
+                box.appendChild(set);
+            });
+        }
+        function xdzChip(rowId, v) {
+            if (xdzBusy || xdzReading || xqActLock(null)) return;
+            haptic();
+            const row = xdzTuneRow(rowId);
+            if (v === xdzCur(row)) delete xdzPend[rowId]; else xdzPend[rowId] = v;
+            xdzRender();
+        }
+        function xdzPresetTap(p) {
+            if (!XDZ_PRESETS[p] || xdzBusy || xdzReading) return;
+            const why = xqActLock(null);
+            if (why === 'mode') { guardPrivilege(txT('Doze timing')); return; }
+            if (why) { showToast(txT('Needs the app')); return; }
+            if (!xdz.read || xdz.err) { showToast(txT('Doze is not read yet.')); return; }
+            haptic();
+            xdzPend = {};
+            XDZ_TUNE.forEach(r => { if (XDZ_PRESETS[p][r.id] !== xdzCur(r)) xdzPend[r.id] = XDZ_PRESETS[p][r.id]; });
+            xdzRender();
+            if (!xdzChanges().length) { showToast(txT('The phone already runs these values.')); return; }
+            xdzTuneTap();
+        }
+        function xdzTuneSummary(rows) { return rows.map(r => xdzTuneTitle(r.id) + ': ' + (xdzTarget(r) === 'own' ? txT('phone\'s own') : xdzChoiceText(r, r.choices.find(c => c.id === xdzTarget(r)) || { ms: [0, 0] }))).join(' · '); }
+        function xdzTuneTap() {
+            if (xdzBusy || xdzReading) return;
+            const why = xqActLock(null);
+            if (why === 'mode') { guardPrivilege(txT('Doze timing')); return; }
+            if (why) { showToast(txT('Needs the app')); return; }
+            const rows = xdzChanges();
+            if (!rows.length) { showToast(txT('Nothing to apply: choose another value first.')); return; }
+            haptic();
+            const plan = xdzTunePlan();
+            const text = (xdz.modern !== false ? txT('Writes the chosen Doze timings as the phone\'s Doze constants (the device_idle namespace, the same place Android reads them from). They take effect at once and stay after a restart; a later Google Play services sync may put the phone\'s own back, and Phone\'s own undoes them any time.') : txT('Writes the chosen Doze timings as the phone\'s Doze constants (Settings.Global device_idle_constants, the place this Android reads them from). They take effect at once and stay after a restart; Phone\'s own undoes them any time.'))
+                + ' ' + txF('Changes: {0}.', xdzTuneSummary(rows));
+            xqOpen({ title: txT('Apply Doze timing'), sub: txT('Doze'), hue: 255, icon: xdzActIcon('force'), text, cmd: plan.map(xdzStepCmd).join('\n'), expect: txT('The Doze report is read back right after; each row then shows what the phone really runs.'), hold: false, tone: '', okLabel: xqApplyLabel(rows.length), run: say => xdzTunePerform(plan, say) });
+        }
+        // Runs the plan of an apply, then reads the Doze report back; the result is the read-back, row by row.
+        async function xdzTunePerform(plan, say) {
+            if (!plan || !plan.length || xdzBusy || xqActLock(null)) return { ok: false, text: xqLockText(xqActLock(null)) || txT('It did not work.') };
+            const gen = xqGen;
+            const wanted = {}; XDZ_TUNE.forEach(r => { wanted[r.id] = xdzTarget(r); });
+            const rows = xdzChanges().map(r => r.id);
+            xdzBusy = 'tune'; xdzRender();
+            xqSetStatus('xdzStatus', txT('Applying the Doze timing…'));
+            let fail = null;
+            for (const st of plan) {
+                const a = XDZ_ACTS[st.row];
+                if (!a || xqActLock(a)) { fail = { step: xdzStepCmd(st), why: xqLockText(xqActLock(a)) || txT('It did not work.') }; break; }
+                const r = await xqRun(xqRowCmd(a, st.vars));
+                if (gen !== xqGen) return null;
+                if (r.ok === false || /error|exception|not found|inapplicable|permission denied/i.test(r.output || '')) { fail = { step: xdzStepCmd(st), why: (r.output || '').trim() || xqFailText(r) }; break; }
+            }
+            let back = await xdzReadBack();
+            if (gen !== xqGen) return null;
+            xdz = Object.assign({}, xdz, back, { read: true });
+            if (!fail && !back.err && rows.some(id => xdzCur(xdzTuneRow(id)) !== wanted[id])) {           // DeviceIdleController picks a put up a moment later: read once more before calling it off
+                const again = await xdzReadBack();
+                if (gen !== xqGen) return null;
+                if (!again.err) { back = again; xdz = Object.assign({}, xdz, again, { read: true }); }
+            }
+            xdzBusy = null;
+            xdzPend = {};
+            xdzRender();
+            let res;
+            if (back.err) res = { ok: false, text: txF('Could not confirm the change: {0}', back.err) };
+            else {
+                const off = rows.filter(id => xdzCur(xdzTuneRow(id)) !== wanted[id]).map(id => txF('{0} still reads {1}', xdzTuneTitle(id), xdzLive(xdzTuneRow(id)).text));
+                const done = rows.filter(id => xdzCur(xdzTuneRow(id)) === wanted[id]).map(id => xdzTuneTitle(id) + ': ' + xdzLive(xdzTuneRow(id)).text);
+                if (fail) res = { ok: false, text: txF('Could not apply it: {0} failed: {1}', fail.step, fail.why) + (done.length ? ' ' + txF('Applied before that: {0}.', done.join(' · ')) : '') };
+                else if (off.length) res = { ok: false, text: txF('Not all of it took: {0}.', off.join(' · ')) + (done.length ? ' ' + txF('Applied: {0}.', done.join(' · ')) : '') };
+                else { res = { ok: true, text: txF('Applied and read back from the phone: {0}.', done.join(' · ')) }; const prev = (kvGet('xdz_tune', null) || {}).rows || {}; xdzSaveTune(Object.assign({}, prev, Object.fromEntries(rows.map(id => [id, wanted[id]])))); }
+            }
+            xqSetStatus('xdzStatus', res.text, res.ok ? 'ok' : 'bad');
+            return res;
+        }
+        // What was applied last (kv xdz_tune): shown as the saved choice when the phone no longer runs it, with a Re-apply button; all Phone's own forgets it.
+        function xdzSaveTune(rows) { const own = Object.keys(rows).every(k => rows[k] === 'own'); kvSet('xdz_tune', own ? null : { at: Date.now(), rows }); }
+        function xdzSavedLine() {
+            const saved = kvGet('xdz_tune', null);
+            const el = document.getElementById('xdzKept');
+            if (!el) return;
+            el.textContent = '';
+            if (!saved || !saved.rows || !xdz.read || xdz.err || xqActLock(null)) return;
+            const differs = XDZ_TUNE.some(r => saved.rows[r.id] && saved.rows[r.id] !== 'custom' && saved.rows[r.id] !== xdzCur(r));
+            if (!differs) return;
+            const when = saved.at ? new Date(saved.at).toLocaleDateString() : '';
+            const t = document.createElement('span'); t.textContent = txF('Saved {0}: the phone no longer runs the Doze timing you applied (a sync or a reset put its own back). ', when);
+            const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'batch-tool-link'; btn.style.cssText = 'padding:0;min-height:44px;'; btn.id = 'xdzReapply'; btn.textContent = txT('Re-apply');
+            btn.addEventListener('click', () => { if (xdzBusy || xdzReading) return; xdzPend = {}; XDZ_TUNE.forEach(r => { if (saved.rows[r.id] && saved.rows[r.id] !== 'custom' && saved.rows[r.id] !== xdzCur(r)) xdzPend[r.id] = saved.rows[r.id]; }); xdzRender(); xdzTuneTap(); });
+            el.appendChild(t); el.appendChild(btn);
+        }
+        // ---- the power governor ----
+        function xdzGhz(khz) { return khz == null || khz < 0 ? '—' : (khz / 1e6).toFixed(1) + ' GHz'; }
+        function xdzGhzRange(lo, hi) { return lo == null || lo < 0 || hi == null || hi < 0 ? xdzGhz(hi) : (lo / 1e6).toFixed(1) + '–' + (hi / 1e6).toFixed(1) + ' GHz'; }
+        function xdzOwnGov() { const v = kvGet('xdz_gov_own', null); return v && /^[a-z][a-z0-9_-]{0,23}$/.test(String(v)) ? String(v) : null; }
+        function xdzBuildGov() {
+            const box = document.getElementById('xdzGovOpts');
+            if (!box) return;
+            const govs = xdzGovs(xdz.cpu), own = xdzOwnGov();
+            const key = govs.join(',') + '|' + own;
+            if (box.dataset.key === key) return;
+            box.dataset.key = key; box.textContent = '';
+            govs.forEach(g => {
+                const b = document.createElement('button');
+                b.type = 'button'; b.className = 'xq-opt'; b.dataset.v = g; b.setAttribute('aria-pressed', 'false'); b.setAttribute('translate', 'no');
+                const s = document.createElement('span'); s.textContent = g === own ? txF('{0} (phone\'s own)', g) : g; b.appendChild(s);
+                b.addEventListener('click', () => xdzGovTap(g));
+                box.appendChild(b);
+            });
+        }
+        function xdzGovTap(gov) {
+            const a = XDZ_ACTS.gov;
+            if (xdzBusy || xdzReading || !/^[a-z][a-z0-9_-]{0,23}$/.test(gov)) return;
+            const why = xqActLock(a);
+            if (why === 'mode') { guardPrivilege(txT('CPU governor')); return; }
+            if (why) { showToast(why === 'root' ? txT('Needs Root mode') : txT('Needs the app')); return; }
+            if (xdzCommonGov(xdz.cpu) === gov) { showToast(txT('The phone already runs this governor.')); return; }
+            haptic();
+            const own = xdzOwnGov();
+            xqOpen({ title: txF('CPU governor: {0}', gov), sub: txT('Power governor'), hue: a.hue, icon: xdzProfIcon('performance'),
+                text: txT('Writes this governor to every CPU cluster. performance holds the top clock (fast, warm, hungry); powersave the lowest; schedutil and interactive follow the load, which is what phones ship with; conservative ramps up slowly. A restart brings the phone\'s own back, and some phones switch back by themselves after a while.') + (own && own !== gov ? ' ' + txF('The phone\'s own is {0}.', own) : ''),
+                cmd: xqRowCmd(a, { gov }), expect: txT('The clusters are read back right after; the governor line shows what each one runs.'), hold: false, tone: gov === 'performance' || gov === 'powersave' ? 'warn' : '', okLabel: txF('Set {0}', gov), run: say => xdzGovPerform(gov, say) });
+        }
+        async function xdzGovPerform(gov, say) {
+            const a = XDZ_ACTS.gov;
+            if (!a || xdzBusy || xqActLock(a)) return { ok: false, text: xqLockText(xqActLock(a)) || txT('It did not work.') };
+            const gen = xqGen;
+            xdzBusy = 'gov'; xdzRender();
+            xqSetStatus('xdzStatus', txF('Setting the CPU governor to {0}…', gov));
+            const r = await xqRun(xqRowCmd(a, { gov }));
+            if (gen !== xqGen) return null;
+            const pw = await xdzReadPower();
+            if (gen !== xqGen) return null;
+            xdzBusy = null;
+            xdz = Object.assign({}, xdz, pw, { read: true });
+            xdzRender();
+            const said = (r.output || '').trim(), now = xdzCommonGov(xdz.cpu);
+            let res;
+            if (now === gov) res = { ok: true, text: txF('Applied and read back from the phone: every cluster runs {0}.', gov), out: said };
+            else if (r.ok === false || said) res = { ok: false, text: txF('It did not work: {0}', said || xqFailText(r)) + ' ' + xdzGovLine(), out: '' };
+            else res = { ok: false, text: txT('Not applied: the phone kept its governor.') + ' ' + xdzGovLine(), out: said };
+            xqSetStatus('xdzStatus', res.text, res.ok ? 'ok' : 'bad');
+            return res;
+        }
+        function xdzGovLine() {
+            const cpu = xdz.cpu;
+            if (!cpu || !cpu.length) return txT('CPU governor: not readable in this mode');
+            const g = xdzCommonGov(cpu);
+            if (g) return txF('CPU governor: {0}', g);
+            const list = [...new Set(cpu.map(p => p.governor || '?'))];
+            return txF('CPU governor: mixed ({0})', list.join(', '));
+        }
+        function xdzBattLine() {
+            const b = xdz.batt;
+            if (!b || !b.read) return txT('Charger: not reported');
+            const lvl = b.level >= 0 ? ' · ' + b.level + ' %' : '';
+            if (b.plugged) return txF('Charging over {0}', b.usb ? 'USB' : b.wireless ? txT('wireless') : b.dock ? txT('dock') : txT('AC')) + lvl;
+            return txT('On battery') + lvl;
+        }
+        // Which profile the phone reports: battery saver on = Battery saver; fixed performance on, or every cluster on the performance governor = Performance; saver off = Balanced; else nothing. Mirrors PowerTweaks.profileOf.
+        // Performance has nothing to write when this Android has no fixed performance command and no readable CPU cluster offers the performance governor under Root.
+        function xdzPerfLocked() { return !!(xdz.help && !xdz.help.fixed) && !(xqIsRoot() && xdzGovs(xdz.cpu).includes('performance')); }
+        function xdzProfMarked() {
+            if (!xdz.read || xdz.profErr) return null;
+            if (xdz.lowPower === '1') return 'saver';
+            if (xdz.fixed === true || xdzCommonGov(xdz.cpu) === 'performance') return 'performance';
+            if (xdz.lowPower === '0' || xdz.lowPower === null || xdz.lowPower === 'null' || xdz.lowPower === '') return 'balanced';
+            return null;
+        }
         function xdzRender() {
             const card = document.getElementById('xdzCard');
             if (!card) return;
+            xdzBuildTune();
             card.setAttribute('aria-busy', xdzBusy || xdzReading ? 'true' : 'false');
             const lock = xqActLock(null);
             xqLockBox('xdzLock', lock, txT('Reading and changing Doze and the power profile needs a working mode.'));
@@ -19484,6 +20002,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 now.appendChild(document.createTextNode(xdzStateLine()));
                 if (!xdz.err && xdz.state) { const tok = document.createElement('span'); tok.className = 'xdz-tok'; tok.setAttribute('translate', 'no'); tok.textContent = ' ' + xdz.state + (xdz.light ? ' / ' + xdz.light : ''); now.appendChild(tok); }
             }
+            document.getElementById('xdzWhy').textContent = lock ? '' : xdzWhyLine();
             // the motion sensor: only what the report says
             const mt = document.getElementById('xdzMotionT');
             const m = xdz.motion;
@@ -19497,17 +20016,58 @@ Type any command above (e.g. pm list packages -d)</div>
                 else if (m.sensor === '') parts.push(txT('no sensor'));
                 mt.textContent = parts.join(' · ');
             }
-            card.querySelectorAll('.xdz-act').forEach(b => { b.disabled = !!lock || !!xdzBusy || xdzReading; });
+            const off = !!lock || !!xdzBusy || xdzReading;
+            card.querySelectorAll('.xdz-act').forEach(b => { b.disabled = off; });
+            // the timing rows: the chip the phone runs, the chip chosen, the live tag
+            const readable = xdz.read && !xdz.err;
+            XDZ_TUNE.forEach(row => {
+                const cur = readable ? xdzCur(row) : null, tgt = readable ? xdzTarget(row) : null;
+                const live = document.getElementById('xdzLive_' + row.id);
+                if (live) {
+                    const lv = readable ? xdzLive(row) : null;
+                    live.textContent = !readable ? '…' : txF('Phone: {0}', lv.text + (cur === 'custom' ? ' (' + txT('custom') + ')' : ''));
+                    live.className = 'xq-live' + (readable && tgt !== cur ? ' is-warn' : '');
+                }
+                document.querySelectorAll('#xdzSet_' + row.id + ' .xq-opt').forEach(b => {
+                    b.setAttribute('aria-pressed', readable && b.dataset.v === tgt ? 'true' : 'false');
+                    b.classList.toggle('is-live', readable && b.dataset.v === cur && tgt !== cur);
+                    b.disabled = off || !readable;
+                });
+            });
+            const preset = readable ? xdzPresetOf() : null;
+            card.querySelectorAll('.xq-preset').forEach(b => { b.setAttribute('aria-pressed', b.dataset.preset === preset ? 'true' : 'false'); b.disabled = off || !readable; });
+            const changes = readable ? xdzChanges().length : 0;
+            const apply = document.getElementById('xdzApply');
+            apply.disabled = off || !changes;
+            apply.querySelector('span').textContent = xqApplyLabel(changes);
+            xdzSavedLine();
+            // the power governor: four facts from the read, the governor chips (Root)
+            const facts = {
+                saver: !readable || !xdz.read ? ['…', ''] : xdz.lowPower === '1' || (xdz.saver && xdz.saver.enabled === true) ? [txT('on'), xdz.saver && xdz.saver.enabled === false ? txT('asked for, not in force') : ''] : [txT('off'), xdz.batt && xdz.batt.plugged ? txT('cannot turn on while charging') : xdz.saver && xdz.saver.setting === true ? txT('asked for, not in force') : ''],
+                charge: !readable ? ['…', ''] : [xdzBattLine(), xdz.adaptive === '1' ? txT('adaptive battery on') : xdz.adaptive === '0' ? txT('adaptive battery off') : ''],
+                gov: !readable ? ['…', ''] : (() => { const cpu = xdz.cpu || []; if (!cpu.length) return [txT('not readable in this mode'), lock || xqIsRoot() ? '' : txT('Root reads and sets it')]; const g = xdzCommonGov(cpu); const cur = Math.max(...cpu.map(p => p.curKhz)), lo = Math.min(...cpu.map(p => p.minKhz < 0 ? Infinity : p.minKhz)), hi = Math.max(...cpu.map(p => p.maxKhz)); return [g || txT('mixed'), txF('{0} clusters · {1}, now {2}', cpu.length, xdzGhzRange(isFinite(lo) ? lo : -1, hi), xdzGhz(cur))]; })(),
+                fixed: !readable ? ['…', ''] : xdz.fixed === true ? [txT('on'), ''] : xdz.fixed === false ? [txT('off'), ''] : [txT('not reported'), xdz.help && !xdz.help.fixed ? txT('no such command on this Android') : ''],
+            };
+            Object.keys(facts).forEach(k => { const el = document.getElementById('xdzFact_' + k); if (!el) return; el.querySelector('b').textContent = facts[k][0]; el.querySelector('em').textContent = facts[k][1]; });
+            const govBox = document.getElementById('xdzGovOpts');
+            if (readable) xdzBuildGov(); else if (govBox) { govBox.textContent = ''; govBox.dataset.key = ''; }
+            const govLock = xqActLock(XDZ_ACTS.gov), common = readable ? xdzCommonGov(xdz.cpu) : null;
+            const govLive = document.getElementById('xdzLive_gov');
+            govLive.textContent = !readable ? '…' : govLock === 'root' ? xqLockText('root') : (xdz.cpu && xdz.cpu.length ? txF('Phone: {0}', common || txT('mixed')) : txT('not readable'));
+            govLive.className = 'xq-live' + (govLock === 'root' && readable ? ' is-warn' : '');
+            govBox.querySelectorAll('.xq-opt').forEach(b => { b.setAttribute('aria-pressed', b.dataset.v === common ? 'true' : 'false'); b.disabled = off || !!govLock; });
+            document.getElementById('xdzGovNone').textContent = readable && !(xdz.cpu && xdz.cpu.length) ? txT('This mode may not read the CPU clusters; Root can.') : '';
             // the profiles, from the read-back only
-            const sel = xdz.read && !xdz.profErr ? (xdz.lowPower === '1' ? 'saver' : xdz.fixed === true ? 'performance' : (xdz.lowPower === '0' || xdz.lowPower === null || xdz.lowPower === 'null' || xdz.lowPower === '') ? 'balanced' : null) : null;
+            const sel = xdzProfMarked();
             card.querySelectorAll('.xdz-prof').forEach(b => {
                 const p = b.dataset.prof;
                 b.setAttribute('aria-pressed', sel === p ? 'true' : 'false');
                 const why = document.getElementById(b.id + 'Why');
                 let w = '';
-                if (p === 'performance' && !lock && xdz.help && !xdz.help.fixed) w = txT('Not on this Android version');
+                if (p === 'performance' && !lock && xdzPerfLocked()) w = txT('Not on this Android version');
+                if (p === 'saver' && !lock && xdz.batt && xdz.batt.plugged) w = txT('Not while charging');
                 why.textContent = w;
-                b.disabled = !!lock || !!xdzBusy || xdzReading || !!w;
+                b.disabled = off || (p === 'performance' && !!w);
             });
             let pn = '';
             if (xdz.read && !lock) {
@@ -19516,17 +20076,20 @@ Type any command above (e.g. pm list packages -d)</div>
                     pn = xdz.lowPower === '1' ? txT('Battery saver: on') : txT('Battery saver: off');
                     pn += ' · ' + (xdz.fixed === true ? txT('Fixed performance mode: on') : xdz.fixed === false ? txT('Fixed performance mode: off') : txT('Fixed performance mode: not reported by this phone'));
                     if (xdz.help && !xdz.help.fixed) pn += ' · ' + txT('this Android has no fixed performance command');
+                    if (xdz.cpu && xdz.cpu.length) pn += ' · ' + xdzGovLine();
+                    const want = kvGet('xdz_prof_want', null);
+                    if (want && XDZ_PROFS.includes(want.prof) && want.prof !== sel) pn += ' · ' + txF('You chose {0}; the phone reports {1}', xdzProfTitle(want.prof), xdzProfTitle(sel || 'balanced'));
                 }
             }
             xqSetStatus('xdzProfNow', pn, xdz.profErr ? 'bad' : '');
-            document.getElementById('xdzRefresh').disabled = !!lock || !!xdzBusy || xdzReading;
+            document.getElementById('xdzRefresh').disabled = off;
             if (!xqStatePill('xdzPill', 'xsChipDoze')) {
                 if (xdz.read && xdz.err) { xqPill('xdzPill', txT('Not read'), 'warn'); xqChip('xsChipDoze', txT('Not read')); }
                 else if (ph >= 0) { xqPill('xdzPill', xdzPhaseName(ph), ph === 0 ? 'ok' : '', '●'); xqChip('xsChipDoze', xdzPhaseName(ph)); }
                 else { xqPill('xdzPill', '…', ''); xqChip('xsChipDoze', '…'); }
             }
         }
-        // Reads the phase, the forced flag and the motion lines, then the power profile (low_power, the cmd power help once, the fixed state where printed).
+        // Reads the Doze report (phase, forced, motion, the constants, the state lines), then the power profile (low_power, the cmd power help once, saver / charger / clusters).
         async function xdzRefresh(user) {
             if (xdzBusy || !xqCanRun()) { if (user && xqBridgeOk() && !xdzBusy) guardPrivilege(txT('Doze')); xdzRender(); return; }
             if (user) haptic();
@@ -19538,16 +20101,20 @@ Type any command above (e.g. pm list packages -d)</div>
             if (seq !== xdzSeq || gen !== xqGen) return;
             xdzReading = false;
             xdz = Object.assign({}, xdz, back, prof, { read: true });
+            if (!back.err && xdz.cpu && xdz.cpu.length && !xdzOwnGov()) { const g = xdzCommonGov(xdz.cpu); if (g) kvSet('xdz_gov_own', g); }          // the first governor seen is the phone's own; clusters that disagree have no single own governor to write back
             xdzRender();
         }
         async function xdzReadBack() {
+            const none = { state: null, light: null, forced: null, motion: null, consts: {}, now: null };
             const r = await xqRun(XDZ_READ_CMD);
-            if (r.ok === false && r.error) return { err: xqFailText(r), state: null, light: null, forced: null, motion: null };
+            if (r.ok === false && r.error) return Object.assign({ err: xqFailText(r) }, none);
             const parts = String(r.output || '').split(XQ_SEP);
             const state = xdzToken(parts[0], 'deep'), light = xdzToken(parts[1] || '', 'light');
             const dump = xdzParseDump(parts[3] || '');
-            if (!state && !dump.state) return { err: (r.output || '').trim().split('\n')[0] || txT('The command gave no answer.'), state: null, light: null, forced: null, motion: null };
-            return { err: null, state: state || dump.state, light: light || dump.lightState, forced: xdzBool(parts[2]) !== null ? xdzBool(parts[2]) : dump.forced, motion: { useMotion: dump.useMotion, listening: dump.listening, sensor: dump.sensor } };
+            if (!state && !dump.state) return Object.assign({ err: (r.output || '').trim().split('\n')[0] || txT('The command gave no answer.') }, none);
+            const sdk = parseInt(String(parts[4] || '').trim(), 10), modern = isFinite(sdk) ? sdk >= 31 : true;
+            return { err: null, state: state || dump.state, light: light || dump.lightState, forced: xdzBool(parts[2]) !== null ? xdzBool(parts[2]) : dump.forced, motion: { useMotion: dump.useMotion, listening: dump.listening, sensor: dump.sensor },
+                consts: xdzParseConstants(parts[3] || ''), now: xdzParseNow(parts[3] || ''), sdk: isFinite(sdk) ? sdk : null, modern, dc: modern ? xdzParseDcList(parts[5] || '') : xdzParseKv(parts[6] || '') };
         }
         // What `cmd power` knows: { fixed, adaptive }, or null when the help could not be read.
         function xdzParseHelp(text) {
@@ -19562,14 +20129,20 @@ Type any command above (e.g. pm list packages -d)</div>
             const v = m[1].toLowerCase();
             return v === 'true' || v === 'on' || v === 'enabled';
         }
+        async function xdzReadPower() {
+            const r = await xqRun(XDZ_POWER_CMD, 8000);
+            const parts = String(r.output || '').split(XQ_SEP);
+            const adaptive = String(parts[3] || '').trim();
+            return { saver: xdzParseSaver(parts[0]), fixed: xdzParseFixed(parts[0]), batt: xdzParseBattery(parts[1] || ''), cpu: xdzParseCpu(parts[2] || ''), adaptive: /^[01]$/.test(adaptive) ? adaptive : null };
+        }
         async function xdzReadProfile() {
             const lp = await xqSetting('get', 'low_power', '');
             if (!lp.ok) return { profErr: lp.error || txT('The phone did not answer.'), lowPower: null, fixed: null };
             const lowPower = lp.value == null ? null : String(lp.value).trim();
             let help = xdz.help;
             if (!help) { const h = await xqRun('cmd power help', 8000); help = xdzParseHelp(h.output); }       // no answer (a timeout, an empty output) is not kept: the next read asks again
-            const fx = await xqRun("dumpsys power | grep -iE 'fixed.?performance' | head -n 3", 8000);
-            return { profErr: null, lowPower, help, fixed: xdzParseFixed(fx.output) };
+            const pw = await xdzReadPower();
+            return Object.assign({ profErr: null, lowPower, help }, pw);
         }
         function xdzActTitle(id) {
             switch (id) {
@@ -19590,6 +20163,7 @@ Type any command above (e.g. pm list packages -d)</div>
             return '';
         }
         function xdzActIcon(id) { const b = document.getElementById('xdz' + id.charAt(0).toUpperCase() + id.slice(1)); const i = b && b.querySelector('.xdz-act-ico'); return i ? i.innerHTML : ''; }
+        function xdzProfIcon(p) { const b = document.getElementById(p === 'performance' ? 'xdzProfPerf' : p === 'saver' ? 'xdzProfSave' : 'xdzProfBal'); const i = b && b.querySelector('.xdz-act-ico'); return i ? i.innerHTML : ''; }
         function xdzTap(btn) {
             const id = btn && btn.dataset.act, a = XDZ_ACTS[id];
             if (!a || xdzBusy || xdzReading) return;
@@ -19621,29 +20195,31 @@ Type any command above (e.g. pm list packages -d)</div>
             xqSetStatus('xdzStatus', res.text, res.ok ? 'ok' : 'bad');
             return res;
         }
-        function xdzProfTitle(p) { return p === 'performance' ? txT('Performance') : p === 'saver' ? txT('Ultra saver') : txT('Balanced'); }
+        function xdzProfTitle(p) { return p === 'performance' ? txT('Performance') : p === 'saver' ? txT('Battery saver') : txT('Balanced'); }
         function xdzProfText(p) {
-            if (p === 'performance') return txT('Turns battery saver off and asks Android for its fixed performance mode: the CPU and GPU hold a steady clock instead of ramping up and down, which gives even frame times and uses more battery and heat. Android 11 or newer.');
-            if (p === 'saver') return txT('Turns Android\'s battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.');
-            return txT('Turns battery saver off and, where the phone has it, adaptive battery saver on (Android turns the saver on by itself when the battery runs low). The phone\'s normal state.');
+            const own = xdzOwnGov();
+            if (p === 'performance') return txT('Turns battery saver off and asks Android for its fixed performance mode (Android 11 or newer): the CPU and GPU hold a steady clock instead of ramping up and down, for even frame times, more heat and more battery use.') + (xqIsRoot() && xdzGovs(xdz.cpu).includes('performance') ? ' ' + txT('In Root mode every CPU cluster also gets the performance governor, which the clocks line shows at once.') : '');
+            if (p === 'saver') return txT('Turns Android\'s battery saver on, the same switch as in Settings > Battery: the screen dims, background work, sync and location are limited and animations shrink. The phone shows its battery-saver icon.') + (xdz.batt && xdz.batt.plugged ? ' ' + txT('The phone is charging: Android keeps battery saver off while a charger is connected, so this takes effect only after you unplug.') : '');
+            return txT('Turns battery saver off and, where the phone has it, adaptive battery saver on (Android turns the saver on by itself when the battery runs low). The phone\'s normal state.') + (xqIsRoot() && own && xdzCommonGov(xdz.cpu) !== own ? ' ' + txF('In Root mode the CPU governor goes back to the phone\'s own, {0}.', own) : '');
         }
-        // The steps of a profile: Global settings through the Hidden Settings path, cmd power through the shell; steps marked soft may fail without failing the change.
+        // The steps of a profile: Global settings through the Hidden Settings path, cmd power through the shell, the governor row under Root; steps marked soft may fail without failing the change.
         function xdzProfPlan(p) {
-            const fixed = !!(xdz.help && xdz.help.fixed), adaptive = !!(xdz.help && xdz.help.adaptive);
+            const fixed = !!(xdz.help && xdz.help.fixed), adaptive = !!(xdz.help && xdz.help.adaptive), govs = xdzGovs(xdz.cpu), own = xdzOwnGov(), common = xdzCommonGov(xdz.cpu);
+            const root = xqIsRoot() && !xqActLock(XDZ_ACTS.gov);
             const s = [];
-            if (p === 'performance') { s.push({ cmd: 'cmd power set-fixed-performance-mode-enabled true' }); s.push({ setting: 'low_power', value: '0' }); }
-            else if (p === 'saver') { if (fixed) s.push({ cmd: 'cmd power set-fixed-performance-mode-enabled false', soft: true }); s.push({ setting: 'low_power', value: '1' }); }
-            else { if (fixed) s.push({ cmd: 'cmd power set-fixed-performance-mode-enabled false', soft: true }); s.push({ setting: 'low_power', value: '0' }); if (adaptive) s.push({ cmd: 'cmd power set-adaptive-power-saver-enabled true', soft: true }); }
+            if (p === 'performance') { if (fixed) s.push({ cmd: 'cmd power set-fixed-performance-mode-enabled true', soft: root }); s.push({ setting: 'low_power', value: '0' }); if (root && govs.includes('performance') && common !== 'performance') s.push({ row: 'gov', vars: { gov: 'performance' }, soft: true }); }
+            else if (p === 'saver') { if (fixed) s.push({ cmd: 'cmd power set-fixed-performance-mode-enabled false', soft: true }); s.push({ setting: 'low_power', value: '1' }); if (root && own && common === 'performance' && govs.includes(own)) s.push({ row: 'gov', vars: { gov: own }, soft: true }); }
+            else { if (fixed) s.push({ cmd: 'cmd power set-fixed-performance-mode-enabled false', soft: true }); s.push({ setting: 'low_power', value: '0' }); if (adaptive) s.push({ cmd: 'cmd power set-adaptive-power-saver-enabled true', soft: true }); if (root && own && common !== own && govs.includes(own)) s.push({ row: 'gov', vars: { gov: own }, soft: true }); }
             return s;
         }
-        function xdzStepText(st) { return st.cmd ? st.cmd : 'settings put global ' + st.setting + ' ' + st.value; }
+        function xdzStepText(st) { return xdzStepCmd(st); }
         function xdzProfTap(btn) {
             const p = btn && btn.dataset.prof;
             if (!XDZ_PROFS.includes(p) || xdzBusy || xdzReading) return;
             const why = xqActLock(null);
             if (why === 'mode') { guardPrivilege(txT('Power profile')); return; }
             if (why) { showToast(txT('Needs the app')); return; }
-            if (p === 'performance' && xdz.help && !xdz.help.fixed) { showToast(txT('Not on this Android version')); return; }
+            if (p === 'performance' && xdzPerfLocked()) { showToast(txT('Not on this Android version')); return; }
             haptic();
             const ico = btn.querySelector('.xdz-act-ico');
             xqOpen({ title: xdzProfTitle(p), sub: txT('Power profile'), hue: p === 'performance' ? 330 : p === 'saver' ? 140 : 200, icon: ico ? ico.innerHTML : '', text: xdzProfText(p), cmd: xdzProfPlan(p).map(xdzStepText).join('\n'), expect: txT('The marked card comes from reading the phone back, not from this tap.'), hold: false, tone: '', okLabel: txF('Apply {0}', xdzProfTitle(p)), run: say => xdzProfPerform(p, say) });
@@ -19655,10 +20231,10 @@ Type any command above (e.g. pm list packages -d)</div>
             xqSetStatus('xdzStatus', txF('Applying {0}…', xdzProfTitle(p)));
             let fail = null, soft = [];
             for (const st of xdzProfPlan(p)) {
-                const r = st.cmd ? await xqRun(st.cmd) : await xqSetting('put', st.setting, st.value);
+                const r = st.cmd ? await xqRun(st.cmd) : st.row ? await xqRun(xqRowCmd(XDZ_ACTS[st.row], st.vars)) : await xqSetting('put', st.setting, st.value);
                 if (gen !== xqGen) return null;
-                const bad = st.cmd ? (r.ok === false || /unknown command|error|exception/i.test(r.output || '')) : !r.ok;
-                if (bad) { if (st.soft) soft.push(xdzStepText(st)); else { fail = { step: xdzStepText(st), why: st.cmd ? (r.output || '').trim() || xqFailText(r) : xqFailText(r) }; break; } }
+                const bad = st.setting ? !r.ok : (r.ok === false || /unknown command|error|exception|permission denied/i.test(r.output || ''));
+                if (bad) { if (st.soft) soft.push(xdzStepText(st)); else { fail = { step: xdzStepText(st), why: st.setting ? xqFailText(r) : (r.output || '').trim() || xqFailText(r) }; break; } }
             }
             const prof = await xdzReadProfile();
             if (gen !== xqGen) return null;
@@ -19666,26 +20242,36 @@ Type any command above (e.g. pm list packages -d)</div>
             xdz = Object.assign({}, xdz, prof, { read: true });
             try { sdbLoadedAt.global = 0; sdbDirty(); } catch (e) {}                      // the Hidden Settings tab lists low_power: it reads the table again when it is next shown
             xdzRender();
-            const sel = document.querySelector('#xdzCard .xdz-prof[aria-pressed="true"]');
-            const marked = sel ? sel.dataset.prof : null;
+            const marked = xdzProfMarked();
             let res;
             if (prof.profErr) res = { ok: false, text: txF('Could not confirm the change: {0}', prof.profErr) };
+            else if (p === 'saver' && marked !== 'saver' && xdz.batt && xdz.batt.plugged) res = { ok: false, text: txF('Not applied: Android keeps battery saver off while the phone is charging ({0}). Unplug the cable and apply it again.', xdz.batt.usb ? 'USB' : xdz.batt.wireless ? txT('wireless') : txT('charger')) };
             else if (fail) res = { ok: false, text: txF('Could not apply {0}: {1} failed: {2}', xdzProfTitle(p), fail.step, fail.why) + ' ' + txF('The phone now reports: {0}.', xdzProfTitle(marked || 'balanced')) };
-            else if (p === 'performance' && prof.fixed === null) res = { ok: null, text: txT('Applied. The phone reports battery saver off, but it does not report whether fixed performance mode is on, so the Balanced card stays marked.') };
+            else if (p === 'performance' && marked !== 'performance' && prof.fixed === null) res = { ok: null, text: txT('Applied. The phone reports battery saver off, but it does not report whether fixed performance mode is on, so the Balanced card stays marked.') + (soft.length ? ' ' + txF('One optional step did not work: {0}', soft.join(', ')) : '') };
             else if (marked !== p) res = { ok: false, text: txF('Not applied: the phone reports {0}, not {1}.', xdzProfTitle(marked || 'balanced'), xdzProfTitle(p)) };
-            else res = { ok: true, text: txF('Applied and read back from the phone: {0}.', xdzProfTitle(p)) + (soft.length ? ' ' + txF('One optional step did not work: {0}', soft.join(', ')) : '') };
+            else res = { ok: true, text: txF('Applied and read back from the phone: {0}.', xdzProfTitle(p)) + (xdz.cpu && xdz.cpu.length ? ' ' + xdzGovLine() + '.' : '') + (soft.length ? ' ' + txF('One optional step did not work: {0}', soft.join(', ')) : '') };
+            if (res.ok !== false) kvSet('xdz_prof_want', { prof: p, at: Date.now() });
             xqSetStatus('xdzStatus', res.text, res.ok === true ? 'ok' : res.ok === false ? 'bad' : '');
             return res;
         }
 
         // ---- F. Zram & memory ----
-        const XZR_READ_CMD = 'cat /sys/block/zram0/mm_stat; echo ' + XQ_SEP + '; cat /sys/block/zram0/disksize; echo ' + XQ_SEP + '; cat /proc/meminfo';
+        // The read: the zram counters, its size, the whole memory picture, the active swaps, swappiness, the memory pressure file, the low-memory killer's values (the DeviceConfig mirror, then the build's own).
+        const XZR_READ_CMD = 'cat /sys/block/zram0/mm_stat; echo ' + XQ_SEP + '; cat /sys/block/zram0/disksize; echo ' + XQ_SEP + '; cat /proc/meminfo; echo ' + XQ_SEP + '; cat /proc/swaps; echo ' + XQ_SEP + '; cat /proc/sys/vm/swappiness; echo ' + XQ_SEP + '; cat /proc/pressure/memory 2>&1; echo ' + XQ_SEP + '; getprop persist.device_config.lmkd_native.swap_free_low_percentage; getprop persist.device_config.lmkd_native.thrashing_limit; echo ' + XQ_SEP + '; getprop ro.lmk.swap_free_low_percentage; getprop ro.lmk.thrashing_limit';
         const XZR_ACTS = {
-            reclaim: { cmd: 'sync; echo 3 > /proc/sys/vm/drop_caches', hue: 200, needsRoot: true },
-            drop:    { cmd: 'sync; echo 1 > /proc/sys/vm/drop_caches', hue: 170, needsRoot: true },
-            trim:    { cmd: 'pm trim-caches 128G', hue: 40, via: 'trim' },                     // the Settings page's own path (trimCachesStart): see "Trim Caches in All Applications"
+            reclaim:    { cmd: 'sync; echo 3 > /proc/sys/vm/drop_caches', hue: 200, needsRoot: true },
+            drop:       { cmd: 'sync; echo 1 > /proc/sys/vm/drop_caches', hue: 170, needsRoot: true },
+            trim:       { cmd: 'pm trim-caches 128G', hue: 40, via: 'trim' },                     // the Settings page's own path (trimCachesStart): see "Trim Caches in All Applications"
+            zramSize:   { cmd: 'swapoff /dev/block/zram0 && echo 1 > /sys/block/zram0/reset && echo {bytes} > /sys/block/zram0/disksize && mkswap /dev/block/zram0 && swapon /dev/block/zram0', vars: { bytes: /^\d{7,12}$/ }, hue: 255, needsRoot: true },
+            swappiness: { cmd: 'echo {n} > /proc/sys/vm/swappiness', vars: { n: /^(\d{1,2}|1\d\d|200)$/ }, hue: 200, needsRoot: true },
+            lmkPut:     { cmd: 'device_config put lmkd_native {key} {val}', vars: { key: /^(swap_free_low_percentage|thrashing_limit)$/, val: /^\d{1,3}$/ }, hue: 40 },
+            lmkDel:     { cmd: 'device_config delete lmkd_native {key}', vars: { key: /^(swap_free_low_percentage|thrashing_limit)$/ }, hue: 40 },
+            lmkReinit:  { cmd: 'setprop lmkd.reinit 1', hue: 40, soft: true },                     // lmkd reads its values again; a mode that may not set it leaves them for the next restart
         };
-        let xzr = null, xzrBusy = null, xzrReading = false, xzrSeq = 0, xzrTimer = 0, xzrBefore = null, xzrDeltaOf = null;
+        const XZR_GIB = 1073741824;
+        const XZR_LMK = { keep: { swap_free_low_percentage: 5, thrashing_limit: 150 }, sooner: { swap_free_low_percentage: 20, thrashing_limit: 50 } };
+        const XZR_SWAPPINESS = [20, 60, 100, 150];
+        let xzr = null, xzrBusy = null, xzrReading = false, xzrSeq = 0, xzrTimer = 0, xzrBefore = null, xzrDeltaOf = null, xzrPend = {};
         // /sys/block/zram0/mm_stat: orig_data_size compr_data_size mem_used_total mem_limit mem_used_max same_pages pages_compacted [huge_pages [huge_pages_since]], bytes except the page counts.
         function xzrParseMmStat(text) {
             const t = String(text == null ? '' : text).trim().split('\n')[0] || '';
@@ -19696,16 +20282,34 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function xzrParseDisksize(text) { const t = String(text == null ? '' : text).trim().split('\n')[0] || ''; return /^\d+$/.test(t.trim()) ? parseInt(t.trim(), 10) : null; }
         function xzrParseMeminfo(text) {
-            const r = { memTotalKb: null, memAvailableKb: null, swapTotalKb: null, swapFreeKb: null };
+            const r = { memTotalKb: null, memFreeKb: null, memAvailableKb: null, buffersKb: null, cachedKb: null, sReclaimableKb: null, shmemKb: null, swapTotalKb: null, swapFreeKb: null };
             String(text == null ? '' : text).split('\n').forEach(raw => {
-                const m = /^\s*(MemTotal|MemAvailable|SwapTotal|SwapFree):\s*(\d+)/.exec(raw);
+                const m = /^\s*(MemTotal|MemFree|MemAvailable|Buffers|Cached|SReclaimable|Shmem|SwapTotal|SwapFree):\s*(\d+)/.exec(raw);
                 if (!m) return;
                 const k = m[1].charAt(0).toLowerCase() + m[1].slice(1) + 'Kb';
                 r[k] = parseInt(m[2], 10);
             });
             return r;
         }
-        // The numbers the card shows: ratio (orig / compr, null when there is nothing compressed), saved (orig - memUsed), the three parts of the bar (of disksize).
+        // The RAM picture from /proc/meminfo: used by apps and the kernel, held as cache (file pages the kernel keeps for speed, minus shared memory), free, and what Android counts as available. Bytes.
+        function xzrRam(mi) {
+            if (!mi || mi.memTotalKb == null || mi.memAvailableKb == null) return null;
+            const total = mi.memTotalKb * 1024, free = (mi.memFreeKb || 0) * 1024;
+            const cache = Math.max(0, ((mi.buffersKb || 0) + (mi.cachedKb || 0) + (mi.sReclaimableKb || 0) - (mi.shmemKb || 0)) * 1024);
+            const used = Math.max(0, total - free - cache);
+            return { total, free, cache, used, avail: mi.memAvailableKb * 1024, bar: [used / total, cache / total, Math.max(0, total - used - cache) / total] };
+        }
+        function xzrParseSwappiness(text) { const t = String(text == null ? '' : text).trim().split('\n')[0].trim(); return /^\d{1,3}$/.test(t) && +t <= 200 ? +t : -1; }
+        // /proc/pressure/memory: the "some" and "full" ten-second averages in percent, or null when the file is not there or reads oddly. Mirrors PowerTweaks.parsePressure.
+        function xzrParsePressure(text) {
+            let some = null, full = null;
+            String(text == null ? '' : text).split('\n').forEach(raw => { const m = /^\s*(some|full) avg10=(\d+(?:\.\d+)?)/.exec(raw); if (!m) return; if (m[1] === 'some') some = parseFloat(m[2]); else full = parseFloat(m[2]); });
+            return some === null ? null : [some, full === null ? 0 : full];
+        }
+        function xzrSwapOn(text) { return String(text == null ? '' : text).split('\n').some(l => l.trim().startsWith('/dev/block/zram')); }
+        // The zram sizes the page offers for this much RAM, in GiB: 1, 2, 3, 4, 6, 8, 12, 16 as far as one and a half times the RAM (at least 1). Mirrors PowerTweaks.zramSizeChoicesGb.
+        function xzrSizeChoices(memTotalKb) { const ram = memTotalKb > 0 ? memTotalKb / 1048576 : 0; const out = []; [1, 2, 3, 4, 6, 8, 12, 16].forEach(gb => { if (!out.length || gb <= ram * 1.5) out.push(gb); }); return out; }
+        // The numbers the card shows: ratio (orig / compr, null when there is nothing compressed), saved (orig - memUsed), the three parts of the bar (of disksize), the RAM picture.
         function xzrSummary(mm, disk, mi) {
             if (!mm || !mm.ok) return null;
             const ratio = mm.compr > 0 ? mm.orig / mm.compr : null;
@@ -19714,7 +20318,8 @@ Type any command above (e.g. pm list packages -d)</div>
             const freeSwap = mi && mi.swapFreeKb != null ? mi.swapFreeKb * 1024 : null;
             const total = alloc && alloc > 0 ? alloc : Math.max(mm.orig, 1);
             const c = Math.min(mm.memUsed, total), s = Math.min(saved, Math.max(0, total - c)), f = Math.max(0, total - c - s);
-            return { ratio, saved, orig: mm.orig, comp: mm.memUsed, alloc, freeSwap, swapTotal: mi && mi.swapTotalKb != null ? mi.swapTotalKb * 1024 : null, bar: [c / total, s / total, f / total] };
+            const ram = xzrRam(mi);
+            return { ratio, saved, orig: mm.orig, comp: mm.memUsed, alloc, freeSwap, swapTotal: mi && mi.swapTotalKb != null ? mi.swapTotalKb * 1024 : null, bar: [c / total, s / total, f / total], ram, avail: ram ? ram.avail : null, cache: ram ? ram.cache : null };
         }
         function xzrFmt(n) { return n == null ? txT('Not available') : formatBytes(n); }
         function xzrRatioText(r) { return r == null ? '—' : (r >= 10 ? Math.round(r) : r.toFixed(1)) + '×'; }
@@ -19726,6 +20331,174 @@ Type any command above (e.g. pm list packages -d)</div>
             el.textContent = d === 0 ? txT('no change') : (d > 0 ? '+' : '−') + formatBytes(Math.abs(d));
             el.className = d > 0 ? 'is-up' : d < 0 ? 'is-down' : '';
         }
+        function xzrPressureText(p) {
+            if (!p) return '';
+            const level = p[0] < 1 ? txT('low') : p[0] < 10 ? txT('some') : txT('high');
+            return txF('Memory pressure: {0} ({1} % of the last 10 s stalled on memory)', level, p[0] < 10 ? p[0].toFixed(1) : Math.round(p[0]));
+        }
+        // ---- the settings rows ----
+        function xzrOwn() { const v = kvGet('xzr_own', null); return v && typeof v === 'object' ? v : {}; }
+        function xzrSetTitle(id) { return id === 'zram' ? txT('Zram size') : id === 'swappiness' ? txT('Swappiness') : txT('Low-memory killer'); }
+        function xzrSetSub(id) {
+            if (id === 'zram') return txT('How much compressed swap the phone may use. Bigger keeps more apps alive in the background and costs a little CPU; the phone\'s own comes back at the next restart.');
+            if (id === 'swappiness') return txT('How eagerly the kernel moves idle app memory into zram instead of dropping file cache (0 to 200). Higher keeps file cache and swaps apps sooner; lower keeps apps in plain RAM longer.');
+            return txT('When Android\'s low-memory killer starts closing background apps. Keep more apps open lets it wait longer (swap may run lower, more cache thrashing allowed); Free memory sooner closes them earlier so the foreground app stays smooth.');
+        }
+        function xzrLmkTitle(id) { return id === 'keep' ? txT('Keep more apps open') : id === 'sooner' ? txT('Free memory sooner') : txT('Phone\'s own'); }
+        // The chips of a row: 'own' first (the phone's own, with its value where known), then the choices.
+        function xzrChoices(id) {
+            const own = xzrOwn();
+            if (id === 'zram') { const gbs = xzrSizeChoices(xzr && xzr.mi ? xzr.mi.memTotalKb : 0); const ownGb = own.disksize ? own.disksize / XZR_GIB : null; return [{ id: 'own', text: txT('Phone\'s own') + (own.disksize ? ' (' + formatBytes(own.disksize) + ')' : '') }].concat(gbs.filter(gb => gb !== ownGb).map(gb => ({ id: String(gb), text: formatBytes(gb * XZR_GIB) }))); }
+            if (id === 'swappiness') return [{ id: 'own', text: txT('Phone\'s own') + (own.swappiness >= 0 && own.swappiness != null ? ' (' + own.swappiness + ')' : '') }].concat(XZR_SWAPPINESS.filter(n => n !== own.swappiness).map(n => ({ id: String(n), text: String(n) })));
+            return [{ id: 'own', text: txT('Phone\'s own') }, { id: 'keep', text: xzrLmkTitle('keep') }, { id: 'sooner', text: xzrLmkTitle('sooner') }];
+        }
+        // What the phone runs now as a chip id ('own', a choice, 'custom'), and the text of the live tag.
+        function xzrCur(id) {
+            if (!xzr || xzr.err) return { cur: null, text: '…' };
+            const own = xzrOwn();
+            if (id === 'zram') {
+                const d = xzr.disk;
+                if (d == null) return { cur: null, text: txT('not readable') };
+                const text = formatBytes(d) + (xzr.swapOn === false ? ' · ' + txT('swap off') : '');
+                if (own.disksize === d) return { cur: 'own', text };
+                return { cur: d % XZR_GIB === 0 && xzrChoices('zram').some(c => c.id === String(d / XZR_GIB)) ? String(d / XZR_GIB) : 'custom', text };
+            }
+            if (id === 'swappiness') {
+                const s = xzr.swappiness;
+                if (s == null || s < 0) return { cur: null, text: txT('not readable') };
+                if (own.swappiness === s) return { cur: 'own', text: String(s) };
+                return { cur: XZR_SWAPPINESS.includes(s) ? String(s) : 'custom', text: String(s) };
+            }
+            const p = xzr.lmk || {};
+            const set = p.swap_free_low_percentage != null || p.thrashing_limit != null;
+            const text = txF('swap low at {0} %, thrashing limit {1}', p.swap_free_low_percentage != null ? p.swap_free_low_percentage : (xzr.lmkOwn && xzr.lmkOwn.swap_free_low_percentage != null ? xzr.lmkOwn.swap_free_low_percentage : 10), p.thrashing_limit != null ? p.thrashing_limit : (xzr.lmkOwn && xzr.lmkOwn.thrashing_limit != null ? xzr.lmkOwn.thrashing_limit : 100));
+            if (!set) return { cur: 'own', text };
+            const hit = Object.keys(XZR_LMK).find(k => XZR_LMK[k].swap_free_low_percentage === p.swap_free_low_percentage && XZR_LMK[k].thrashing_limit === p.thrashing_limit);
+            return { cur: hit || 'custom', text };
+        }
+        function xzrTarget(id) { const p = xzrPend[id]; return p == null ? xzrCur(id).cur : p; }
+        function xzrRowLock(id) { return xqActLock(id === 'zram' ? XZR_ACTS.zramSize : id === 'swappiness' ? XZR_ACTS.swappiness : XZR_ACTS.lmkPut); }
+        function xzrChanges() { return ['zram', 'swappiness', 'lmk'].filter(id => !xzrRowLock(id) && xzrCur(id).cur !== null && xzrTarget(id) !== xzrCur(id).cur); }
+        function xzrSetPlan() {
+            const steps = [];
+            const own = xzrOwn();
+            xzrChanges().forEach(id => {
+                const t = xzrTarget(id);
+                if (id === 'zram') { const bytes = t === 'own' ? own.disksize : (+t) * XZR_GIB; if (bytes) steps.push({ row: 'zramSize', vars: { bytes: String(bytes) }, set: id }); }
+                else if (id === 'swappiness') { const n = t === 'own' ? own.swappiness : +t; if (n != null && n >= 0) steps.push({ row: 'swappiness', vars: { n: String(n) }, set: id }); }
+                else {
+                    if (t === 'own') ['swap_free_low_percentage', 'thrashing_limit'].forEach(key => steps.push({ row: 'lmkDel', vars: { key }, set: id }));
+                    else if (XZR_LMK[t]) Object.keys(XZR_LMK[t]).forEach(key => steps.push({ row: 'lmkPut', vars: { key, val: String(XZR_LMK[t][key]) }, set: id }));
+                    steps.push({ row: 'lmkReinit', vars: {}, set: id, soft: true });
+                }
+            });
+            return steps;
+        }
+        function xzrStepCmd(st) { return xqRowCmd(XZR_ACTS[st.row], st.vars) || ''; }
+        function xzrBuildSets() {
+            const box = document.getElementById('xzrSets');
+            if (!box) return;
+            ['zram', 'swappiness', 'lmk'].forEach(id => {
+                let set = document.getElementById('xzrSet_' + id);
+                if (!set) {
+                    set = document.createElement('div'); set.className = 'xq-set'; set.id = 'xzrSet_' + id; set.dataset.set = id;
+                    const head = document.createElement('div'); head.className = 'xq-set-h';
+                    const title = document.createElement('b'); title.id = 'xzrSetT_' + id; title.textContent = xzrSetTitle(id);
+                    const live = document.createElement('span'); live.className = 'xq-live'; live.id = 'xzrLive_' + id; live.setAttribute('translate', 'no');
+                    head.appendChild(title); head.appendChild(live);
+                    const sub = document.createElement('small'); sub.className = 'xq-set-s'; sub.textContent = xzrSetSub(id);
+                    const opts = document.createElement('div'); opts.className = 'xq-opts'; opts.id = 'xzrOpts_' + id; opts.setAttribute('role', 'group'); opts.setAttribute('aria-labelledby', title.id);
+                    set.appendChild(head); set.appendChild(sub); set.appendChild(opts);
+                    box.appendChild(set);
+                }
+                const opts = document.getElementById('xzrOpts_' + id), choices = xzrChoices(id), key = choices.map(c => c.id + ':' + c.text).join('|');
+                if (opts.dataset.key !== key) {
+                    opts.dataset.key = key; opts.textContent = '';
+                    choices.forEach(c => {
+                        const b = document.createElement('button');
+                        b.type = 'button'; b.className = 'xq-opt'; b.dataset.v = c.id; b.setAttribute('aria-pressed', 'false');
+                        const s = document.createElement('span'); s.textContent = c.text; b.appendChild(s);
+                        b.addEventListener('click', () => xzrChip(id, c.id));
+                        opts.appendChild(b);
+                    });
+                }
+            });
+        }
+        function xzrChip(id, v) {
+            if (xzrBusy || xzrRowLock(id)) return;
+            haptic();
+            if (v === xzrCur(id).cur) delete xzrPend[id]; else xzrPend[id] = v;
+            xzrRender();
+        }
+        function xzrSetSummary(ids) { return ids.map(id => xzrSetTitle(id) + ': ' + (xzrTarget(id) === 'own' ? txT('phone\'s own') : (xzrChoices(id).find(c => c.id === xzrTarget(id)) || { text: xzrTarget(id) }).text)).join(' · '); }
+        function xzrSetTap() {
+            if (xzrBusy) return;
+            const why = xqActLock(null);
+            if (why === 'mode') { guardPrivilege(txT('Memory settings')); return; }
+            if (why) { showToast(txT('Needs the app')); return; }
+            const ids = xzrChanges();
+            if (!ids.length) { showToast(txT('Nothing to apply: choose another value first.')); return; }
+            haptic();
+            const plan = xzrSetPlan();
+            let text = txF('Changes: {0}.', xzrSetSummary(ids));
+            if (ids.includes('zram')) text += ' ' + txT('Resizing zram turns the swap off, empties it and turns it on again at the new size: it can take up to a minute, and apps parked in the background may close meanwhile. The size holds until the next restart.');
+            if (ids.includes('swappiness')) text += ' ' + txT('Swappiness holds until the next restart.');
+            if (ids.includes('lmk')) text += ' ' + txT('The low-memory killer values are kept across restarts (DeviceConfig) and read again at once where the mode may restart lmkd; Phone\'s own deletes them.');
+            xqOpen({ title: txT('Apply memory settings'), sub: txT('Memory'), hue: 255, icon: xzrIcon(), text, cmd: plan.map(xzrStepCmd).join('\n'), expect: txT('The numbers are read again right after; each row then shows what the phone really runs.'), hold: false, tone: ids.includes('zram') ? 'warn' : '', okLabel: xqApplyLabel(ids.length), run: say => xzrSetPerform(plan, say) });
+        }
+        // Runs the plan of an apply (rows of XZR_ACTS), then reads the numbers again; the result is the read-back, row by row.
+        async function xzrSetPerform(plan, say) {
+            if (!plan || !plan.length || xzrBusy || xqActLock(null)) return { ok: false, text: xqLockText(xqActLock(null)) || txT('It did not work.') };
+            const gen = xqGen;
+            const wanted = {}; ['zram', 'swappiness', 'lmk'].forEach(id => { wanted[id] = xzrTarget(id); });
+            const ids = xzrChanges();
+            xzrBusy = 'set'; xzrRender();
+            xqSetStatus('xzrDelta', txT('Applying the memory settings…'));
+            xzrBefore = xzr && xzr.sum ? xzr : (await xzrRead());
+            if (gen !== xqGen) return null;
+            let fail = null, soft = [];
+            for (const st of plan) {
+                const a = XZR_ACTS[st.row];
+                if (!a || xqActLock(a)) { fail = { step: xzrStepCmd(st), why: xqLockText(xqActLock(a)) || txT('It did not work.') }; break; }
+                if (st.row === 'zramSize') say(txT('Resizing zram: swap off, reset, new size, swap on…'));
+                const r = await xqRun(xqRowCmd(a, st.vars), st.row === 'zramSize' ? 90000 : undefined);
+                if (gen !== xqGen) return null;
+                const bad = r.ok === false || /permission denied|read-only|invalid argument|not found|inapplicable|busy|no such/i.test(r.output || '');
+                if (bad) { if (st.soft) soft.push(xzrStepCmd(st)); else { fail = { step: xzrStepCmd(st), why: (r.output || '').trim() || xqFailText(r) }; break; } }
+            }
+            const after = await xzrRead();
+            if (gen !== xqGen) return null;
+            xzrBusy = null; xzrDeltaOf = 'set';
+            xzr = after; xzrPend = {};
+            xzrRender();
+            let res;
+            if (after.err) res = { ok: false, text: txF('Could not read the numbers back: {0}', after.err) };
+            else {
+                const off = ids.filter(id => xzrCur(id).cur !== wanted[id]).map(id => txF('{0} still reads {1}', xzrSetTitle(id), xzrCur(id).text));
+                const done = ids.filter(id => xzrCur(id).cur === wanted[id]).map(id => xzrSetTitle(id) + ': ' + xzrCur(id).text);
+                const softNote = soft.length ? ' ' + txT('lmkd could not be restarted in this mode: the low-memory killer reads the new values at the next restart.') : '';
+                if (fail) res = { ok: false, text: txF('Could not apply it: {0} failed: {1}', fail.step, fail.why) + (done.length ? ' ' + txF('Applied before that: {0}.', done.join(' · ')) : '') };
+                else if (off.length) res = { ok: false, text: txF('Not all of it took: {0}.', off.join(' · ')) + (done.length ? ' ' + txF('Applied: {0}.', done.join(' · ')) : '') + softNote };
+                else { res = { ok: true, text: txF('Applied and read back from the phone: {0}.', done.join(' · ')) + softNote }; const prev = (kvGet('xzr_set', null) || {}).rows || {}, keep = Object.assign({}, prev, Object.fromEntries(ids.map(id => [id, wanted[id]]))); const own = Object.keys(keep).every(k => keep[k] === 'own'); kvSet('xzr_set', own ? null : { at: Date.now(), rows: keep }); }
+            }
+            xqSetStatus('xzrDelta', res.text, res.ok ? 'ok' : 'bad');
+            return res;
+        }
+        function xzrSavedLine() {
+            const el = document.getElementById('xzrKept');
+            if (!el) return;
+            el.textContent = '';
+            const saved = kvGet('xzr_set', null);
+            if (!saved || !saved.rows || !xzr || xzr.err || xqActLock(null)) return;
+            const ids = ['zram', 'swappiness', 'lmk'].filter(id => saved.rows[id] && saved.rows[id] !== 'custom' && !xzrRowLock(id) && xzrCur(id).cur !== null && saved.rows[id] !== xzrCur(id).cur);
+            if (!ids.length) return;
+            const when = saved.at ? new Date(saved.at).toLocaleDateString() : '';
+            const t = document.createElement('span'); t.textContent = txF('Saved {0}: the phone no longer runs the memory settings you applied (a restart puts its own back). ', when);
+            const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'batch-tool-link'; btn.style.cssText = 'padding:0;min-height:44px;'; btn.id = 'xzrReapply'; btn.textContent = txT('Re-apply');
+            btn.addEventListener('click', () => { if (xzrBusy) return; xzrPend = {}; ids.forEach(id => { xzrPend[id] = saved.rows[id]; }); xzrRender(); xzrSetTap(); });
+            el.appendChild(t); el.appendChild(btn);
+        }
+        function xzrIcon() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7v10M12 7v10M17 7v10"/></svg>'; }
         function xzrRender() {
             const card = document.getElementById('xzrCard');
             if (!card) return;
@@ -19743,11 +20516,24 @@ Type any command above (e.g. pm list packages -d)</div>
             else if (xzr && xzr.err) cap.textContent = xzr.err;
             else if (s) cap.textContent = s.ratio == null ? txT('Nothing is swapped out right now.') : txF('{0} of data fits in {1} of RAM', formatBytes(s.orig), formatBytes(s.comp));
             else cap.textContent = xzrReading ? txT('Reading the zram counters…') : txT('Not read yet.');
+            // the RAM picture: a bar of used / cache / free, the available line, the pressure line
+            const ram = xzr && xzr.ram;
+            ['U', 'C', 'F'].forEach((k, i) => { document.getElementById('xzrRam' + k).style.width = ram ? (100 * ram.bar[i]).toFixed(1) + '%' : '0'; });
+            document.getElementById('xzrRamT').textContent = lock ? '' : ram ? txF('{0} available of {1}', formatBytes(ram.avail), formatBytes(ram.total)) : (xzr && xzr.err ? txT('RAM: not readable') : '…');
+            document.getElementById('xzrRamU').parentElement.setAttribute('aria-label', ram ? txF('RAM: {0} used, {1} cache, {2} free', formatBytes(ram.used), formatBytes(ram.cache), formatBytes(ram.free)) : txT('RAM use'));
+            document.getElementById('xzrRamLegU').textContent = ram ? formatBytes(ram.used) : '…';
+            document.getElementById('xzrRamLegC').textContent = ram ? formatBytes(ram.cache) : '…';
+            document.getElementById('xzrRamLegF').textContent = ram ? formatBytes(ram.free) : '…';
+            document.getElementById('xzrPsi').textContent = lock || !xzr ? '' : xzrPressureText(xzr.psi);
+            const b = xzrBefore && xzrBefore.sum;
+            [['xzrAvail', 'avail'], ['xzrCache', 'cache']].forEach(([id, k]) => {
+                document.getElementById(id).textContent = s && s[k] != null ? formatBytes(s[k]) : (xzr && xzr.err ? txT('Not available') : '…');
+                xzrDelta(id + 'D', b ? b[k] : null, s ? s[k] : null);
+            });
             ['C', 'S', 'F'].forEach((k, i) => { document.getElementById('xzrBar' + k).style.width = s ? (100 * s.bar[i]).toFixed(1) + '%' : '0'; });
             document.getElementById('xzrLegC').textContent = s ? formatBytes(s.comp) : '…';
             document.getElementById('xzrLegS').textContent = s ? formatBytes(s.saved) : '…';
             document.getElementById('xzrLegF').textContent = s ? xzrFmt(s.freeSwap) : '…';
-            const b = xzrBefore && xzrBefore.sum;
             [['xzrAlloc', 'alloc'], ['xzrComp', 'comp'], ['xzrOrig', 'orig'], ['xzrSaved', 'saved']].forEach(([id, k]) => {
                 document.getElementById(id).textContent = s ? xzrFmt(s[k]) : (xzr && xzr.err ? txT('Not available') : '…');
                 xzrDelta(id + 'D', b ? b[k] : null, s ? s[k] : null);
@@ -19760,6 +20546,25 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (why) { const g = document.createElement('span'); xqLockGlyph(g); const t = document.createElement('span'); t.textContent = xqLockText(why); w.appendChild(g); w.appendChild(t); }
                 if (why === 'root') btn.title = txT('Only Root may write /proc/sys/vm/drop_caches'); else btn.removeAttribute('title');
             });
+            // the settings rows
+            xzrBuildSets();
+            const readable = !!(xzr && !xzr.err);
+            ['zram', 'swappiness', 'lmk'].forEach(id => {
+                const rl = xzrRowLock(id), c = xzrCur(id), tgt = readable ? xzrTarget(id) : null;
+                const live = document.getElementById('xzrLive_' + id);
+                live.textContent = !xzr ? '…' : rl === 'root' ? xqLockText('root') : rl ? '' : (c.cur === null ? c.text : txF('Phone: {0}', c.text + (c.cur === 'custom' ? ' (' + txT('custom') + ')' : '')));
+                live.className = 'xq-live' + (rl === 'root' || (readable && !rl && c.cur !== null && tgt !== c.cur) ? ' is-warn' : '');
+                document.querySelectorAll('#xzrOpts_' + id + ' .xq-opt').forEach(btn => {
+                    btn.setAttribute('aria-pressed', readable && !rl && btn.dataset.v === tgt ? 'true' : 'false');
+                    btn.classList.toggle('is-live', readable && !rl && btn.dataset.v === c.cur && tgt !== c.cur);
+                    btn.disabled = !!rl || !!xzrBusy || !readable || c.cur === null;
+                });
+            });
+            const changes = readable ? xzrChanges().length : 0;
+            const apply = document.getElementById('xzrApply');
+            apply.disabled = !!lock || !!xzrBusy || !changes;
+            apply.querySelector('span').textContent = xqApplyLabel(changes);
+            xzrSavedLine();
             const ref = document.getElementById('xzrRefresh');
             ref.disabled = !!lock || !!xzrBusy;
             ref.classList.toggle('is-spin', xzrReading);
@@ -19776,13 +20581,18 @@ Type any command above (e.g. pm list packages -d)</div>
             if (want && !xzrTimer) xzrTimer = setInterval(() => { if (!xzrVisible() || !xqCanRun()) { xzrSync(); return; } if (!xzrBusy && !xzrReading) xzrRefresh(false); }, XZR_REFRESH_MS);
             else if (!want && xzrTimer) { clearInterval(xzrTimer); xzrTimer = 0; }
         }
+        // One read of everything the section shows. The zram counters may be missing (no zram, or a shell that may not read them): the RAM picture and the rows still come through.
         async function xzrRead() {
             const r = await xqRun(XZR_READ_CMD);
             if (r.ok === false && r.error) return { err: txF('Not available: {0}', xqFailText(r)), sum: null };
             const parts = String(r.output || '').split(XQ_SEP);
-            const mm = xzrParseMmStat(parts[0]);
-            if (!mm.ok) return { err: txF('Not available: {0}', mm.text ? txF('the phone said “{0}” for /sys/block/zram0/mm_stat (no zram, or the shell may not read it)', mm.text) : txT('the phone printed nothing for /sys/block/zram0/mm_stat (no zram, or the shell may not read it)')), sum: null };
-            return { err: null, sum: xzrSummary(mm, xzrParseDisksize(parts[1] || ''), xzrParseMeminfo(parts[2] || '')), mm };
+            const mm = xzrParseMmStat(parts[0]), mi = xzrParseMeminfo(parts[2] || ''), disk = xzrParseDisksize(parts[1] || '');
+            const lines = t => String(t || '').replace(/^\r?\n/, '').split('\n').map(l => l.trim());        // the echoed separator ends its own line: the first getprop answer is the line after it (an unset property prints an empty line, so no filtering)
+            const persist = lines(parts[6]), ro = lines(parts[7]);
+            const num = v => /^\d{1,3}$/.test(v || '') ? +v : null;
+            const extra = { mi, disk, ram: xzrRam(mi), swapOn: parts[3] != null && String(parts[3]).trim() ? xzrSwapOn(parts[3]) : null, swappiness: xzrParseSwappiness(parts[4]), psi: xzrParsePressure(parts[5]), lmk: { swap_free_low_percentage: num(persist[0]), thrashing_limit: num(persist[1]) }, lmkOwn: { swap_free_low_percentage: num(ro[0]), thrashing_limit: num(ro[1]) } };
+            if (!mm.ok) return Object.assign({ err: txF('Not available: {0}', mm.text ? txF('the phone said “{0}” for /sys/block/zram0/mm_stat (no zram, or the shell may not read it)', mm.text) : txT('the phone printed nothing for /sys/block/zram0/mm_stat (no zram, or the shell may not read it)')), sum: null }, extra);
+            return Object.assign({ err: null, sum: xzrSummary(mm, disk, mi), mm }, extra);
         }
         async function xzrRefresh(user) {
             if (xzrBusy || !xqCanRun()) { if (user && xqBridgeOk() && !xzrBusy) guardPrivilege(txT('Zram')); xzrRender(); return; }
@@ -19794,11 +20604,17 @@ Type any command above (e.g. pm list packages -d)</div>
             if (seq !== xzrSeq || gen !== xqGen) return;
             xzrReading = false;
             xzr = got;
+            if (!got.err && (got.disk > 0 || got.swappiness >= 0)) {                 // the first values seen are the phone's own: the Phone's own chips bring them back
+                const own = xzrOwn(), next = Object.assign({}, own);
+                if (own.disksize == null && got.disk > 0) next.disksize = got.disk;                 // a zram device that is not set up reads 0: that is not the phone's own size
+                if (own.swappiness == null && got.swappiness >= 0) next.swappiness = got.swappiness;
+                if (next.disksize !== own.disksize || next.swappiness !== own.swappiness) kvSet('xzr_own', next);
+            }
             xzrRender();
         }
         function xzrActTitle(id) { return id === 'reclaim' ? txT('Reclaim disk caches') : id === 'drop' ? txT('Drop page caches') : txT('Trim app caches'); }
         function xzrActText(id) {
-            if (id === 'reclaim') return txT('Writes everything that is waiting to be written, then tells the kernel to free the page cache and the folder and inode caches. Apps are not touched. The phone may feel slower for a moment while the caches fill again; the freed RAM is mostly a short-lived gain.');
+            if (id === 'reclaim') return txT('Writes everything that is waiting to be written, then tells the kernel to free the page cache and the folder and inode caches. Apps are not touched. Available RAM goes up and the cache number down at once; the phone may feel slower for a moment while the caches fill again.');
             if (id === 'drop') return txT('Frees only the page cache (copies of files the kernel keeps in RAM so they open faster). Apps are not touched. Android fills it again as apps read files.');
             return txT('Asks Android to delete the cache files of every app, the same as Settings > Trim Caches in All Applications. Apps, their data, logins and your files stay. It frees storage, not RAM directly, and can take a minute; the result opens in its own sheet.');
         }
@@ -19809,7 +20625,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (why === 'mode') { guardPrivilege(xzrActTitle(id)); return; }
             if (why) { showToast(why === 'root' ? txT('Needs Root mode') : txT('Needs the app')); return; }
             haptic();
-            xqOpen({ title: xzrActTitle(id), sub: txT('Memory'), hue: a.hue, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7v10M12 7v10M17 7v10"/></svg>', text: xzrActText(id), cmd: a.cmd, expect: txT('The zram numbers are read again right after and the change is shown under each number.'), hold: false, tone: '', okLabel: xzrActTitle(id), run: say => xzrPerform(id, say) });
+            xqOpen({ title: xzrActTitle(id), sub: txT('Memory'), hue: a.hue, icon: xzrIcon(), text: xzrActText(id), cmd: a.cmd, expect: txT('The memory numbers are read again right after and the change is shown under each number.'), hold: false, tone: '', okLabel: xzrActTitle(id), run: say => xzrPerform(id, say) });
         }
         // Runs one row of XZR_ACTS (trim through the Settings page's own path), then reads the numbers again and shows the change against the reading before.
         async function xzrPerform(id, say) {
@@ -19844,8 +20660,8 @@ Type any command above (e.g. pm list packages -d)</div>
             else if (r.ok === false) res = { ok: false, text: txF('It did not work: {0}', r.error || said || txT('the command reported an error.')), out: r.error ? '' : said };
             else if (after.err) res = { ok: false, text: txF('Could not read the numbers back: {0}', after.err), out: said };
             else {
-                const b = xzrBefore && xzrBefore.sum, s = after.sum;
-                res = { ok: true, text: b ? txF('Done. RAM saved {0} → {1}, compressed in RAM {2} → {3}, free swap {4} → {5}.', formatBytes(b.saved), formatBytes(s.saved), formatBytes(b.comp), formatBytes(s.comp), xzrFmt(b.freeSwap), xzrFmt(s.freeSwap)) : txT('Done, and the numbers were read again.'), out: said };
+                const bs = xzrBefore && xzrBefore.sum, s = after.sum;
+                res = { ok: true, text: bs ? (bs.avail != null && s.avail != null ? txF('Done. Available RAM {0} → {1}, cache {2} → {3}, compressed in RAM {4} → {5}.', formatBytes(bs.avail), formatBytes(s.avail), xzrFmt(bs.cache), xzrFmt(s.cache), formatBytes(bs.comp), formatBytes(s.comp)) : txF('Done. RAM saved {0} → {1}, compressed in RAM {2} → {3}, free swap {4} → {5}.', formatBytes(bs.saved), formatBytes(s.saved), formatBytes(bs.comp), formatBytes(s.comp), xzrFmt(bs.freeSwap), xzrFmt(s.freeSwap))) : txT('Done, and the numbers were read again.'), out: said };
             }
             xqSetStatus('xzrDelta', res.text, res.ok ? 'ok' : 'bad');
             return res;
@@ -19859,8 +20675,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (xqBackend === key) return;
             xqBackend = key;
             xqGen++; xpwBusy = null; xdzBusy = null; xzrBusy = null; xdzReading = false; xzrReading = false; clearTimeout(xpwWatch);
-            xdz = { state: null, light: null, forced: null, motion: null, err: null, read: false, lowPower: null, fixed: null, help: null, profErr: null };
-            xzr = null; xzrBefore = null; xzrDeltaOf = null;
+            xdz = xdzBlank(); xdzPend = {};
+            xzr = null; xzrBefore = null; xzrDeltaOf = null; xzrPend = {};
             xqSetStatus('xpwStatus', ''); xqSetStatus('xdzStatus', ''); xqSetStatus('xzrDelta', '');
             if (xqSheet && xqSheet.classList.contains('show') && xqRunning) xqSheetClose();
             if (currentViewName() === 'extrasettings') xqShow(); else { xpwRender(); xdzRender(); xzrRender(); xzrSync(); }
@@ -23759,7 +24575,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 if (window.AndroidBridge && window.AndroidBridge.loadSetting) { try { legacy = String(window.AndroidBridge.loadSetting('vt_api_key') || ''); } catch (e) {} }
                 vtKeyCache = (k || legacy).trim();
                 // vt_key wins; the older copy is only a fallback, and goes away once the one key is kept (an older key is moved first)
-                if (legacy && vtKeyCache && (k || kvSet('vt_key', vtKeyCache)) && window.AndroidBridge && window.AndroidBridge.saveSetting) { try { window.AndroidBridge.saveSetting('vt_api_key', ''); } catch (e) {} }
+                if (legacy && vtKeyCache && window.AndroidBridge && window.AndroidBridge.saveSetting) { let moved = !!k; if (!moved) { try { moved = window.AndroidBridge.saveSetting('vt_key', JSON.stringify(vtKeyCache)) !== false; } catch (e) {} } if (moved) { try { window.AndroidBridge.saveSetting('vt_api_key', ''); } catch (e) {} } }
             }
             return vtKeyCache;
         }
@@ -25830,7 +26646,7 @@ Type any command above (e.g. pm list packages -d)</div>
         function synGenericRe(key, o) {
             if (SYN_RE[key]) return SYN_RE[key];
             const parts = [];
-            if (o.block) parts.push('(' + o.block + ')'); else parts.push('(?!)()'.replace('()', '()'));
+            if (o.block) parts.push('(' + o.block + ')'); else parts.push('(?!)()');
             // groups: 1 block comment, 2 line comment, 3 string, 4 meta, 5 number, 6 word
             parts[0] = o.block ? '(' + o.block + ')' : '((?!))';
             parts.push(o.line ? '(' + o.line + ')' : '((?!))');
@@ -27342,10 +28158,10 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- search: the topics that hold every word, best first, each with a snippet; a tap opens the topic ----
         function hgPlainText() {
             if (hg.plain) return;
-            const ta = document.createElement('textarea');
+            const parser = new DOMParser();
             hg.data.sections.forEach(s => {
-                ta.innerHTML = s.html.replace(/<\/(p|li|td|th|tr|div|h4|h5|ul|ol|table)>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '');
-                const t = ta.value.replace(/\s+/g, ' ').trim();
+                const doc = parser.parseFromString('<!doctype html><body>' + s.html.replace(/<\/(p|li|td|th|tr|div|h4|h5|ul|ol|table)>/gi, '$& ').replace(/<br\s*\/?>/gi, ' '), 'text/html');
+                const t = (doc.body ? doc.body.textContent : '').replace(/\s+/g, ' ').trim();
                 hg.raw[s.id] = t;
                 hg.text[s.id] = (s.title + ' ' + s.group + ' ' + t).toLowerCase();
             });
@@ -30672,7 +31488,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const r2 = await wlGet('https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=5&srsearch=' + encodeURIComponent(q), 15000, run);
             const j = JSON.parse(r2.body);
             return ((j.query && j.query.search) || []).map(x => ({ title: x.title, url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(String(x.title).replace(/ /g, '_')),
-                snippet: String(x.snippet || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#039;/g, "'") }));
+                snippet: (new DOMParser().parseFromString('<!doctype html><body>' + String(x.snippet || ''), 'text/html').body || {}).textContent || '' }));
         }
         // the words that tell a passage is about the item: its name and the other longer words of the search
         function wlWords(q) {
@@ -37902,7 +38718,7 @@ Type any command above (e.g. pm list packages -d)</div>
             const start = cp + ' >>> ADB App Manager starter >>>', end = cp + ' <<< ADB App Manager starter <<<';
             const b64 = btoa(unescape(encodeURIComponent(text)));
             const f = '"$HOME/' + file + '"';
-            return 'f=' + f + '; touch "$f"; sed -i ' + txQ('/^' + start.replace(/[\/.*[\]^$]/g, '\\$&') + '/,/^' + end.replace(/[\/.*[\]^$]/g, '\\$&') + '/d') + ' "$f"; ' +
+            return 'f=' + f + '; touch "$f"; sed -i ' + txQ('/^' + start.replace(/[\\\/.*[\]^$]/g, '\\$&') + '/,/^' + end.replace(/[\\\/.*[\]^$]/g, '\\$&') + '/d') + ' "$f"; ' +
                 '[ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; printf %s ' + txQ(b64) + ' | base64 -d >> "$f" && echo "wrote the starter block of ~/' + file + '"';
         }
         // login shells (the real terminal runs bash -l) read ~/.bash_profile, not ~/.bashrc: make that file pass on to ~/.profile and ~/.bashrc, unless the person has one
@@ -42014,7 +42830,15 @@ Type any command above (e.g. pm list packages -d)</div>
             const box = document.getElementById('ovlRecent');
             if (!box) return;
             box.style.display = ovlRecent.length ? '' : 'none';
-            ovlKeepFocus(box, () => { box.innerHTML = ovlRecent.length ? '<span>Recent</span>' + ovlRecent.map(h => '<button type="button" class="ovl-sw" style="background:#' + h + '" data-hex="' + h + '" title="#' + h + '" aria-label="Color ' + h + '"></button>').join('') : ''; });
+            ovlKeepFocus(box, () => {
+                box.textContent = '';
+                if (!ovlRecent.length) return;
+                const lab = document.createElement('span'); lab.textContent = 'Recent'; box.appendChild(lab);
+                ovlRecent.forEach(h => {
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'ovl-sw'; b.style.background = '#' + h; b.dataset.hex = h; b.title = '#' + h; b.setAttribute('aria-label', 'Color ' + h);
+                    box.appendChild(b);
+                });
+            });
         }
 
         // ---- the preset colours ----

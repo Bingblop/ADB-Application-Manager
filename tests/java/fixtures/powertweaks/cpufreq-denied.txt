@@ -1,0 +1,2 @@
+ls: /sys/devices/system/cpu/cpufreq/: Permission denied
+policy*||||||

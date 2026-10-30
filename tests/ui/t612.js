@@ -38,6 +38,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
 
   const pins = await bar();
   check('1. Bottom bar only: Application Manager and the three pinned tabs', await ev(() => navMode) === 'bottom' && pins === 'apps,installer,console,extrasettings', pins);
+  check('   Smart Tabs is off by default: nothing in the store, the Settings switch unchecked, smartTabsOn false (v7.20.0: the owner asked to make sure of the default and that an on state is kept)', await ev(() => !smartTabsOn && document.getElementById('smartTabsToggle').checked === false && window.__kv.smart_tabs === undefined), await ev(() => [smartTabsOn, document.getElementById('smartTabsToggle').checked, window.__kv.smart_tabs]));
   await fromMore('fonts', 5);
   await fromMore('devices', 2);
   check('   tabs opened from More and left with Back are counted in the app\'s settings store', await store() === '{"fonts":5,"devices":2}', await store());
@@ -69,7 +70,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => bnavMoreClose()); await sleep(100);
 
   await page.reload(); await sleep(700);
-  check('4. after a restart Smart Tabs is still on, with the same bar', await ev(() => smartTabsOn && document.getElementById('smartTabsToggle').checked) && await bar() === 'apps,logcat,fonts,devices', await bar());
+  check('4. after a restart Smart Tabs is still on (the store says "true", the Settings switch is checked), with the same bar', await ev(() => smartTabsOn && document.getElementById('smartTabsToggle').checked) && await bar() === 'apps,logcat,fonts,devices', await bar());
   await ev(() => { navMode = 'both'; navApply(); }); await sleep(150);
   const top = await ev(() => [...document.querySelectorAll('#tabBar .tab-btn')].map(t => t.dataset.tab));
   check('   the top bar has the same order: Application Manager first, About last', top.slice(0, 5).join(',') === 'apps,logcat,fonts,devices,installer' && top[top.length - 1] === 'about', top.join(','));
