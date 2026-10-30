@@ -49969,31 +49969,46 @@ Type any command above (e.g. pm list packages -d)</div>
         }
         function fwSave() { kvSet('fw_cfg', fw); }
         function fwProf() { return fwLoad().profiles[fw.profile]; }
-        function fwRule(key) { const r = fwProf().rules[key]; return Array.isArray(r) ? r : []; }
-        function fwSetRule(key, nets) { if (nets.length) fwProf().rules[key] = nets; else delete fwProf().rules[key]; }
-        function fwRowKeys(row) { return row.special ? ['@' + row.special] : row.pkgs; }
+        const FW_SELF_PKG = 'com.bloatware.bingblop';
+        const FW_IMPLICIT = ['wifi', 'mobile', 'roam', 'vpn', 'lan'];
+        /** this app and the resolver are allowed on every network of an allow list until the user unticks them: an unticked one is kept as [] */
+        function fwImplicit(key) { return fw.mode === 'allow' && (key === '@dns' || key === ((fwData && fwData.selfPkg) || FW_SELF_PKG)); }
+        function fwRule(key) { const r = fwProf().rules[key]; return Array.isArray(r) ? r : fwImplicit(key) ? FW_IMPLICIT.slice() : []; }
+        function fwSetRule(key, nets) {
+            if (fwImplicit(key) && nets.length === FW_IMPLICIT.length && FW_IMPLICIT.every(n => nets.includes(n))) delete fwProf().rules[key]; // back to the implicit allow: nothing to keep
+            else if (nets.length || fwImplicit(key)) fwProf().rules[key] = nets;
+            else delete fwProf().rules[key];
+        }
+        /** the rule keys of a row: its packages, plus the special's key when a special shares the row's uid */
+        function fwRowKeys(row) { return row.special ? (row.pkgs.length ? row.pkgs.concat(['@' + row.special]) : ['@' + row.special]) : row.pkgs; }
         /** the networks that have a column now */
         function fwCols() { return FW_NETS.filter(n => !n.opt || fw.opts[n.opt]); }
         function fwCanRun() { return !!(window.AndroidBridge && window.AndroidBridge.fwRun) && isRootActive(); }
 
         // ---- the apps ----
-        let fwAppsWaiting = false;     // fwApps() is answered as window.onFwApps(json): the walk over every package runs off the page's thread
+        let fwAppsWaiting = false, fwAppsWaiters = [];  // fwApps() is answered as window.onFwApps(json): the walk over every package runs off the page's thread
+        /** reads the package list again; resolves (true when a list came) once window.onFwApps ran, or after 20 s without an answer */
         function fwLoadApps() {
-            fwData = null;
-            if (!window.AndroidBridge || !window.AndroidBridge.fwApps) return;
-            let r = null;
-            try { r = window.AndroidBridge.fwApps(); } catch (e) { r = null; }
-            if (r === 'started') { fwAppsWaiting = true; return; }
-            window.onFwApps(r);
+            return new Promise(res => {
+                if (!window.AndroidBridge || !window.AndroidBridge.fwApps) { fwData = null; fwBuildRows(); res(false); return; }
+                fwAppsWaiters.push(res);
+                if (fwAppsWaiting) return;
+                let r = null;
+                try { r = window.AndroidBridge.fwApps(); } catch (e) { r = null; }
+                if (r === 'started') { fwAppsWaiting = true; setTimeout(() => { if (fwAppsWaiting) window.onFwApps(null); }, 20000); return; }
+                window.onFwApps(r);
+            });
         }
         window.onFwApps = function (json) {
             fwAppsWaiting = false;
-            try {
-                const d = JSON.parse(json || '{}');
-                fwData = d && d.ok ? d : null;
-            } catch (e) { fwData = null; }
+            let d = null;
+            try { d = JSON.parse(json || '{}'); } catch (e) { d = null; }
+            const fresh = !!(d && d.ok);
+            if (fresh || !fwData) fwData = fresh ? d : null; // a failed re-read keeps the list that was there
             fwBuildRows();
             if (currentViewName() === 'firewall') { fwRenderList(); fwRenderTop(); }
+            const w = fwAppsWaiters; fwAppsWaiters = [];
+            w.forEach(f => { try { f(fresh); } catch (e) {} });
         };
         function fwBuildRows() {
             fwRows = [];
@@ -50014,7 +50029,11 @@ Type any command above (e.g. pm list packages -d)</div>
                 fwRows.push(r);
             });
             fwRows.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-            (fwData.specials || []).forEach(s => fwRows.push({ uid: s.uid, pkgs: [], name: s.name, sub: s.why, special: s.key, isSystem: true, net: true, search: (s.name + ' ' + s.key + ' ' + s.why).toLowerCase() }));
+            (fwData.specials || []).forEach(s => {
+                const r = byUid.get(s.uid);
+                if (r) { r.special = s.key; r.name = s.name; r.sub = s.why; r.net = true; r.search += ' ' + (s.name + ' ' + s.key + ' ' + s.why).toLowerCase(); } // one uid, one row: the special's name, its packages' rules
+                else fwRows.push({ uid: s.uid, pkgs: [], name: s.name, sub: s.why, special: s.key, isSystem: true, net: true, search: (s.name + ' ' + s.key + ' ' + s.why).toLowerCase() });
+            });
         }
         function fwFilter(k) {
             fwFilterKey = k;
@@ -50024,9 +50043,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function fwRowShown(r, q) {
             if (q && !r.search.includes(q)) return false;
             switch (fwFilterKey) {
-                case 'net': return r.special ? false : r.net;
+                case 'net': return r.net && (!r.special || r.pkgs.length > 0);
                 case 'user': return !r.special && !r.isSystem;
-                case 'system': return !r.special && r.isSystem;
+                case 'system': return r.isSystem && (!r.special || r.pkgs.length > 0);
                 case 'special': return !!r.special;
                 case 'ticked': return fwRowKeys(r).some(k => fwRule(k).length);
             }
@@ -50055,7 +50074,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 list.innerHTML = emptyStateHtml({ key: 'fw-nomatch', icon: 'filter', title: 'No app matches', hint: 'Try another word, or another filter chip.' });
             } else {
                 list.innerHTML = shown.slice(0, 400).map(r => '<div class="fw-row' + (r.special ? ' is-special' : '') + '" data-uid="' + r.uid + '">'
-                    + (r.special ? '' : '<img class="app-icon" alt="" data-icon="' + escapeHtml(r.icon) + '">')
+                    + (r.special ? '' : '<img class="app-icon" alt="" draggable="false" data-icon="' + escapeHtml(r.icon) + '"' + (appIconCache[r.icon] ? ' src="' + appIconCache[r.icon] + '"' : '') + '>')
                     + '<div class="fw-info"><div class="fw-name"' + (r.special ? '' : ' translate="no"') + '>' + escapeHtml(r.name) + '</div><div class="fw-sub"' + (r.special ? '' : ' translate="no"') + '>' + escapeHtml(r.special ? r.sub : r.sub + ' · UID ' + r.uid) + '</div></div>'
                     + cols.map(n => fwCellHtml(r, n)).join('') + '</div>').join('');
                 appsLoadIcons();
@@ -50103,7 +50122,13 @@ Type any command above (e.g. pm list packages -d)</div>
         function fwPickMode() {
             openChoiceSheet({ title: txT('Mode'), desc: txT('What a tick means.'), current: fw.mode,
                 options: [['allow', txT('Allow list'), txT('Only ticked apps get out; everything else is stopped (the safer default).')], ['block', txT('Block list'), txT('Ticked apps are stopped; everything else gets out.')]],
-                onPick: v => { if (v === fw.mode) return; fw.mode = v; fwSave(); fwRenderTop(); fwRenderList(); fwDirty(); } });
+                onPick: v => {
+                    if (v === fw.mode) return;
+                    // the rules kept for this app and the resolver are exceptions to an allow list's implicit allow: they mean nothing in the other mode
+                    const selfPkg = (fwData && fwData.selfPkg) || FW_SELF_PKG;
+                    fw.profiles.forEach(p => { delete p.rules['@dns']; delete p.rules[selfPkg]; });
+                    fw.mode = v; fwSave(); fwRenderTop(); fwRenderList(); fwDirty();
+                } });
         }
         function fwPickProfile() {
             const opts = fw.profiles.map((p, i) => [String(i), p.name, txF('{0} rules', Object.keys(p.rules || {}).length)]);
@@ -50175,8 +50200,8 @@ Type any command above (e.g. pm list packages -d)</div>
             if (fw.boot) showToast(txT('The current rules will be applied again after each restart.'));
         }
         function fwBootDelayChange(v) { fw.bootDelay = +v || 0; fwSave(); if (fw.boot) fwBootToggle(true); }
-        /** Apply on boot keeps the script of the last apply: after every successful apply it is written again when the switch is on */
-        function fwBootRefresh() { if (fw.boot && window.AndroidBridge && window.AndroidBridge.fwBoot) { try { window.AndroidBridge.fwBoot(true, JSON.stringify(fwCfgJson()), fw.bootDelay); } catch (e) {} } }
+        /** Apply on boot keeps the script of the last apply: after every successful apply it is written again, from the very rule set that was applied, when the switch is on */
+        function fwBootRefresh(appliedJson) { if (fw.boot && window.AndroidBridge && window.AndroidBridge.fwBoot) { try { window.AndroidBridge.fwBoot(true, appliedJson || '', fw.bootDelay); } catch (e) {} } }
 
         // ---- the rule set as Java wants it ----
         function fwCfgJson() {
@@ -50230,9 +50255,13 @@ Type any command above (e.g. pm list packages -d)</div>
         async function fwApply() {
             if (fwBusy) return;
             if (!fwCanRun()) { guardPrivilege(txT('Android Firewall')); fwRenderTop(); return; }
-            if (!fwData && !fwAppsWaiting) fwLoadApps();
+            fwBusy = true; fwRenderTop();
+            xqSetStatus('fwStatus', txT('Applying…'));
+            // the package list is read again first: an app installed or removed since the tab was opened must get the uid it has now
+            await fwLoadApps();
             if (!fwData) {
                 // without the package list the rule set would be empty: an allow list of nothing would stop every app, this one included
+                fwBusy = false;
                 xqSetStatus('fwStatus', txT('The app list is not read yet; try again in a moment.'), 'bad');
                 fwRenderTop();
                 return;
@@ -50243,12 +50272,11 @@ Type any command above (e.g. pm list packages -d)</div>
             const n = Object.keys(cfg.uids).length;
             if (fw.mode === 'allow' && n <= 2 && !fw.allowWarned) {
                 nextDialogTitle(txT('Allow list'));
-                if (!confirm(txT('An allow list with almost nothing ticked stops nearly every app, this one included. Apply anyway?'))) return;
+                if (!confirm(txT('An allow list with almost nothing ticked stops nearly every app, this one included. Apply anyway?'))) { fwBusy = false; xqSetStatus('fwStatus', ''); fwRenderTop(); return; }
                 fw.allowWarned = true;
             }
-            fwBusy = true; fwRenderTop();
-            xqSetStatus('fwStatus', txT('Applying…'));
-            const r = await fwJob('apply', JSON.stringify(cfg));
+            const cfgJson = JSON.stringify(cfg);
+            const r = await fwJob('apply', cfgJson);
             fwBusy = false;
             fwLastStatus = r && r.status || null;
             if (r && r.ok) {
@@ -50257,13 +50285,14 @@ Type any command above (e.g. pm list packages -d)</div>
                 let text = txF('In force: {0} rules in iptables', st.rules4 || 0) + (st.jump6 ? txF(', {0} in ip6tables', st.rules6 || 0) : '') + (st.tor ? txT(', Tor redirects on') : '') + '.';
                 if (r.output) text += ' ' + txT('iptables also said:') + ' ' + r.output.split('\n').slice(-3).join(' ');
                 xqSetStatus('fwStatus', text, r.output ? '' : 'ok');
-                fwBootRefresh();
+                fwBootRefresh(cfgJson);
             } else {
                 xqSetStatus('fwStatus', txF('Not applied: {0}', r && r.error || txT('no answer')), 'bad');
                 if (r && r.status && !r.status.jump4) fw.on = false;
                 fwSave();
             }
             fwRenderTop();
+            if (fwNetPending) { fwNetPending = false; fwNetCheck(); } // roaming changed while this apply ran: looked at now, against what this apply used
         }
         async function fwDisable(quiet) {
             if (fwBusy) return false;
@@ -50314,7 +50343,7 @@ Type any command above (e.g. pm list packages -d)</div>
                 const row = fwRows.find(x => x.uid === g.uid);
                 const name = row ? row.name : g.uid === -11 ? txT('Linux kernel') : txF('UID {0}', g.uid);
                 const where = [g.proto, g.dst ? g.dst + (g.dport > 0 ? ':' + g.dport : '') : '', g.iface].filter(Boolean).join(' ');
-                return '<div class="fw-log-row">' + (row && !row.special ? '<img class="app-icon" alt="" data-icon="' + escapeHtml(row.icon) + '">' : '')
+                return '<div class="fw-log-row">' + (row && !row.special ? '<img class="app-icon" alt="" draggable="false" data-icon="' + escapeHtml(row.icon) + '"' + (appIconCache[row.icon] ? ' src="' + appIconCache[row.icon] + '"' : '') + '>' : '')
                     + '<div class="fw-info"><div class="fw-name" translate="no">' + escapeHtml(name) + '</div><div class="fw-sub" translate="no">' + escapeHtml(where) + '</div></div>'
                     + '<span class="fw-cnt">' + g.count + '</span></div>';
             }).join('');
@@ -50336,7 +50365,9 @@ Type any command above (e.g. pm list packages -d)</div>
             try { fwNet = JSON.parse(window.AndroidBridge.fwNetState() || '{}'); } catch (e) { fwNet = null; }
             return fwNet;
         }
+        let fwNetPending = false;      // a roaming change that came while an apply was running
         function fwNetCheck() {
+            if (fwBusy) { fwNetPending = true; return; }
             const before = fwNet ? !!fwNet.roaming : null;
             const now = fwNetRead();
             if (!now || !fw) return;
@@ -50369,7 +50400,10 @@ Type any command above (e.g. pm list packages -d)</div>
                     ['clear', txT('Forget their rules'), txT('Removes their ticks, whatever the mode.')]],
                 onPick: v => {
                     let tick = v === 'allow' ? allow : v === 'block' ? !allow : false;
-                    pkgs.forEach(p => fwSetRule(p, tick ? nets.slice() : []));
+                    // a rule is per uid in the kernel: the whole row of an app that shares its uid goes with it (and so do the rules shown for it)
+                    const keys = new Set();
+                    pkgs.forEach(p => { const row = fwRows.find(r => r.pkgs.includes(p)); (row ? fwRowKeys(row) : [p]).forEach(k => keys.add(k)); });
+                    keys.forEach(k => fwSetRule(k, tick ? nets.slice() : []));
                     fwSave();
                     if (currentViewName() !== 'firewall') { if (!tabNeed('firewall')) return; switchView('firewall'); }
                     fwRenderList(); fwDirty();
@@ -50396,10 +50430,12 @@ Type any command above (e.g. pm list packages -d)</div>
             let d = null;
             try { d = JSON.parse(text); } catch (e) { d = null; }
             if (!d || d.kind !== 'firewall' || !d.cfg || !Array.isArray(d.cfg.profiles)) { xqSetStatus('fwBackupStatus', txF('{0} is not a firewall file from this app.', fileName), 'bad'); return; }
-            const profiles = d.cfg.profiles.filter(p => p && typeof p === 'object').slice(0, 12).map(p => ({ name: String(p.name || 'Profile').slice(0, 40), rules: {} }));
-            d.cfg.profiles.slice(0, 12).forEach((p, i) => {
-                const rules = p && p.rules && typeof p.rules === 'object' ? p.rules : {};
-                Object.keys(rules).slice(0, 5000).forEach(k => { if (/^(@[a-z]+|[A-Za-z0-9._]+)$/.test(k)) { const nets = Array.isArray(rules[k]) ? rules[k].filter(n => FW_NET_KEYS.includes(n)) : []; if (nets.length) profiles[i].rules[k] = nets; } });
+            const src = d.cfg.profiles.filter(p => p && typeof p === 'object').slice(0, 12);
+            const profiles = src.map(p => ({ name: String(p.name || 'Profile').slice(0, 40), rules: {} }));
+            const selfPkg = (fwData && fwData.selfPkg) || FW_SELF_PKG;
+            src.forEach((p, i) => {
+                const rules = p.rules && typeof p.rules === 'object' ? p.rules : {};
+                Object.keys(rules).slice(0, 5000).forEach(k => { if (/^(@[a-z]+|[A-Za-z0-9._]+)$/.test(k)) { const nets = Array.isArray(rules[k]) ? rules[k].filter(n => FW_NET_KEYS.includes(n)) : []; if (nets.length || k === '@dns' || k === selfPkg) profiles[i].rules[k] = nets; } });
             });
             if (!profiles.length) { xqSetStatus('fwBackupStatus', txT('The file holds no profile.'), 'bad'); return; }
             nextDialogTitle(txT('Import'));

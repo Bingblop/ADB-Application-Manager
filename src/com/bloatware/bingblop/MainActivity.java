@@ -11625,7 +11625,15 @@ public class MainActivity extends Activity {
                                 FirewallRules.Status st = FirewallRules.parseStatus(out);
                                 res.put("status", st.toJson());
                                 if ("apply".equals(kind)) {
-                                    boolean good = st.applied && st.jump4 && st.rules4 > 0;
+                                    // believed only when the read-back shows what was asked: the jump, every network chain with exactly the rules of the
+                                    // set (a refused rule is a rule not in force), and each requested family and feature in place
+                                    FirewallRules.Cfg cfg = FirewallRules.parse(arg == null ? "{}" : arg);
+                                    String mismatch = FirewallRules.countMismatch(cfg, st);
+                                    String missing = !st.jump4 ? "the jump from OUTPUT" : mismatch != null ? mismatch
+                                            : cfg.ipv6 && !(st.jump6 && st.rules6 > 0) ? "the ip6tables rules (IPv6 too)"
+                                            : cfg.inbound && !st.inbound ? "the inbound chain" : cfg.tether && !st.tether ? "the tethering chain"
+                                            : cfg.tor && !cfg.ticked("tor").isEmpty() && !cfg.ticked("tor").equals(java.util.Collections.singleton(String.valueOf(FirewallRules.UID_KERNEL))) && !st.tor ? "the Tor redirects" : null;
+                                    boolean good = st.applied && st.jump4 && st.rules4 > 0 && !st.staged && missing == null;
                                     res.put("ok", good);
                                     if (good) fwLastScript = script;
                                     // the apply's own messages (an iptables line that was refused) come back for the status line, without the status block
@@ -11634,10 +11642,13 @@ public class MainActivity extends Activity {
                                     if (msgs.length() > 4000) msgs = msgs.substring(msgs.length() - 4000);
                                     res.put("output", msgs);
                                     if (st.noBin) res.put("error", "No iptables binary was found on this phone.");
-                                    else if (!good) res.put("error", msgs.isEmpty() ? "The rules did not take: iptables accepted nothing (is the working mode really root or the system user?)." : msgs);
+                                    else if (!good) res.put("error", (st.jump4 && missing != null ? "Not every rule took (" + missing + "). " : "The rules did not take: iptables accepted nothing (is the working mode really root or the system user?). ") + msgs);
                                 } else if ("disable".equals(kind)) {
-                                    res.put("ok", st.cleared && !st.jump4);
-                                    if (st.cleared && !st.jump4) fwLastScript = null;
+                                    // removed only when no hook of this app is left: both families' OUTPUT, INPUT, FORWARD and the Tor nat chain
+                                    boolean gone = st.cleared && !st.jump4 && !st.jump6 && !st.inbound && !st.tether && !st.tor && !st.staged;
+                                    res.put("ok", gone);
+                                    if (!gone) res.put("error", st.cleared ? "A hook of this app is still in the kernel; read Active rules and try again." : "The remove script did not run to its end.");
+                                    if (gone) fwLastScript = null;
                                 }
                             }
                         } catch (Throwable t) {
@@ -11710,7 +11721,7 @@ public class MainActivity extends Activity {
                 File dir = f.getParentFile();
                 if (dir != null && !dir.isDirectory() && !dir.mkdirs()) throw new IOException("Could not make " + dir);
                 FileOutputStream out = new FileOutputStream(f);
-                try { out.write(FirewallRules.bootScript(apply, delaySec).getBytes("UTF-8")); } finally { out.close(); }
+                try { out.write(FirewallRules.bootScript(apply, delaySec, f.getAbsolutePath()).getBytes("UTF-8")); } finally { out.close(); }
                 // owner-readable only: root reads it regardless, and the file holds the user's own iptables lines
                 p.edit().putBoolean("fw_boot", true).putInt("fw_boot_delay", delaySec).apply();
                 o.put("ok", true); o.put("boot", true);

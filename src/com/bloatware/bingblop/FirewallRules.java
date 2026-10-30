@@ -176,92 +176,133 @@ public final class FirewallRules {
         return s.toString();
     }
 
+    /** The staging name of one of this app's chains: the new rule set is built under these names and renamed into place at the end. */
+    static String staged(String chain) { return "atbxn" + chain.substring(4); }
+
     private static void build(StringBuilder s, Cfg c, boolean v6) {
         String I = bin(v6);
         String[] lan = v6 ? LAN6 : LAN4;
-        // chains: made when missing, then emptied (an earlier apply's rules go, the jump from OUTPUT is renewed below)
-        for (String ch : CHAINS) s.append(I).append(" -N ").append(ch).append(" 2>/dev/null\n").append(I).append(" -F ").append(ch).append('\n');
-        s.append("while ").append(I).append(" -D OUTPUT -j atbx 2>/dev/null; do :; done\n");
-        s.append(I).append(" -I OUTPUT 1 -j atbx\n");
+        // The chains in force keep filtering while the new set is built: the new set goes into staging chains (atbxn, atbxn-wifi, ...), the
+        // jumps are switched to them only when they are complete, then the old chains go and the staging chains take the old names
+        // (iptables -E renames a chain and every reference to it). So there is no moment in which a blocked app is let through.
+        s.append("while ").append(I).append(" -D OUTPUT -j atbxn 2>/dev/null; do :; done\n");
+        s.append("while ").append(I).append(" -D INPUT -j atbxn-in 2>/dev/null; do :; done\n");
+        s.append("while ").append(I).append(" -D FORWARD -j atbxn-fwd 2>/dev/null; do :; done\n");
+        for (String ch : CHAINS) s.append(I).append(" -F ").append(staged(ch)).append(" 2>/dev/null\n");
+        for (int i = CHAINS.length - 1; i >= 0; i--) s.append(I).append(" -X ").append(staged(CHAINS[i])).append(" 2>/dev/null\n");
+        for (String ch : CHAINS) s.append(I).append(" -N ").append(staged(ch)).append('\n');
         // the reject chain: an optional log line (rate limited: a chatty app must not flood the kernel log), then REJECT or DROP
-        if (c.log) s.append(I).append(" -A atbx-reject -m limit --limit 1000/min --limit-burst 200 -j LOG --log-prefix \"").append(LOG_PREFIX).append(" \" --log-uid --log-level 4\n");
-        s.append(I).append(" -A atbx-reject -j ").append(c.drop ? "DROP" : v6 ? "REJECT --reject-with icmp6-port-unreachable" : "REJECT --reject-with icmp-port-unreachable").append('\n');
+        if (c.log) s.append(I).append(" -A atbxn-reject -m limit --limit 1000/min --limit-burst 200 -j LOG --log-prefix \"").append(LOG_PREFIX).append(" \" --log-uid --log-level 4\n");
+        s.append(I).append(" -A atbxn-reject -j ").append(c.drop ? "DROP" : v6 ? "REJECT --reject-with icmp6-port-unreachable" : "REJECT --reject-with icmp-port-unreachable").append('\n');
         // the main chain: loopback first
-        s.append(I).append(" -A atbx -o lo -j RETURN\n");
-        // Tor apps: only Orbot's local ports and DNS, in the filter table; the nat table redirects below (IPv4 only: Orbot's transparent proxy is IPv4)
-        if (c.tor && !v6) {
+        s.append(I).append(" -A atbxn -o lo -j RETURN\n");
+        // Tor apps: only Orbot's local ports and DNS, in the filter table; the nat table redirects below. Orbot's transparent proxy is IPv4,
+        // so over IPv6 a Tor app gets nothing at all (otherwise it would reach IPv6 sites around Tor).
+        if (c.tor) {
             for (String uid : c.ticked("tor")) {
                 if (uid.equals(String.valueOf(UID_KERNEL))) continue; // packets no app owns cannot go through Orbot, and iptables refuses the pseudo-uid
-                s.append(I).append(" -A atbx -m owner --uid-owner ").append(uid).append(" -d 127.0.0.1 -p tcp -m multiport --dports ")
-                        .append(TOR_TCP_PORT).append(',').append(TOR_SOCKS_PORT).append(',').append(TOR_HTTP_PORT).append(" -j RETURN\n");
-                s.append(I).append(" -A atbx -m owner --uid-owner ").append(uid).append(" -d 127.0.0.1 -p udp --dport ").append(TOR_DNS_PORT).append(" -j RETURN\n");
-                s.append(I).append(" -A atbx -m owner --uid-owner ").append(uid).append(" -j atbx-reject\n");
+                if (!v6) {
+                    s.append(I).append(" -A atbxn -m owner --uid-owner ").append(uid).append(" -d 127.0.0.1 -p tcp -m multiport --dports ")
+                            .append(TOR_TCP_PORT).append(',').append(TOR_SOCKS_PORT).append(',').append(TOR_HTTP_PORT).append(" -j RETURN\n");
+                    s.append(I).append(" -A atbxn -m owner --uid-owner ").append(uid).append(" -d 127.0.0.1 -p udp --dport ").append(TOR_DNS_PORT).append(" -j RETURN\n");
+                }
+                s.append(I).append(" -A atbxn -m owner --uid-owner ").append(uid).append(" -j atbxn-reject\n");
             }
         }
         // Wi-Fi interfaces: the LAN ranges to the LAN chain when LAN is a column of its own, the rest to the Wi-Fi chain
         for (String itf : IF_WIFI) {
-            // a LAN packet is decided by atbx-lan alone: what that chain lets through RETURNs here and leaves atbx on the next line, so the
+            // a LAN packet is decided by atbxn-lan alone: what that chain lets through RETURNs here and leaves the chain on the next line, so the
             // Wi-Fi chain never sees it (RETURN cannot leave two chains at once; a LAN tick without a Wi-Fi tick must still work)
             if (c.lan) for (String range : lan) {
-                s.append(I).append(" -A atbx -o ").append(itf).append(" -d ").append(range).append(" -j atbx-lan\n");
-                s.append(I).append(" -A atbx -o ").append(itf).append(" -d ").append(range).append(" -j RETURN\n");
+                s.append(I).append(" -A atbxn -o ").append(itf).append(" -d ").append(range).append(" -j atbxn-lan\n");
+                s.append(I).append(" -A atbxn -o ").append(itf).append(" -d ").append(range).append(" -j RETURN\n");
             }
-            s.append(I).append(" -A atbx -o ").append(itf).append(" -j atbx-wifi\n");
+            s.append(I).append(" -A atbxn -o ").append(itf).append(" -j atbxn-wifi\n");
         }
         // mobile interfaces: the roaming chain while the phone roams (and Roaming is a column), the mobile chain otherwise
-        String mobileChain = (c.roam && c.roamingNow) ? "atbx-roam" : "atbx-mobile";
-        for (String itf : IF_MOBILE) s.append(I).append(" -A atbx -o ").append(itf).append(" -j ").append(mobileChain).append('\n');
+        String mobileChain = (c.roam && c.roamingNow) ? "atbxn-roam" : "atbxn-mobile";
+        for (String itf : IF_MOBILE) s.append(I).append(" -A atbxn -o ").append(itf).append(" -j ").append(mobileChain).append('\n');
         // VPN interfaces: filtered only when VPN is a column; otherwise the VPN app's tunnel decides
-        if (c.vpn) for (String itf : IF_VPN) s.append(I).append(" -A atbx -o ").append(itf).append(" -j atbx-vpn\n");
+        if (c.vpn) for (String itf : IF_VPN) s.append(I).append(" -A atbxn -o ").append(itf).append(" -j atbxn-vpn\n");
         // the per-network chains
-        chain(s, I, c, "atbx-wifi", "wifi");
-        if (c.lan) chain(s, I, c, "atbx-lan", "lan");
-        chain(s, I, c, "atbx-mobile", "mobile");
-        if (c.roam) chain(s, I, c, "atbx-roam", "roam");
-        if (c.vpn) chain(s, I, c, "atbx-vpn", "vpn");
+        chain(s, I, c, "atbxn-wifi", "wifi");
+        if (c.lan) chain(s, I, c, "atbxn-lan", "lan");
+        chain(s, I, c, "atbxn-mobile", "mobile");
+        if (c.roam) chain(s, I, c, "atbxn-roam", "roam");
+        if (c.vpn) chain(s, I, c, "atbxn-vpn", "vpn");
         // inbound: lo and answers to the phone's own connections pass, new inbound connections do not
-        s.append("while ").append(I).append(" -D INPUT -j atbx-in 2>/dev/null; do :; done\n");
         if (c.inbound) {
-            s.append(I).append(" -I INPUT 1 -j atbx-in\n");
-            s.append(I).append(" -A atbx-in -i lo -j RETURN\n");
-            s.append(I).append(" -A atbx-in -m state --state ESTABLISHED,RELATED -j RETURN\n");
-            s.append(I).append(" -A atbx-in -j atbx-reject\n");
+            s.append(I).append(" -A atbxn-in -i lo -j RETURN\n");
+            s.append(I).append(" -A atbxn-in -m state --state ESTABLISHED,RELATED -j RETURN\n");
+            s.append(I).append(" -A atbxn-in -j atbxn-reject\n");
         }
         // tethered devices: what comes in from a hotspot interface and is forwarded out is rejected
+        if (c.tether) for (String itf : IF_TETHER) s.append(I).append(" -A atbxn-fwd -i ").append(itf).append(" -j atbxn-reject\n");
+        // the switch: the new jumps first in their chains, then the old ones out, the old chains gone, the new chains renamed into place
+        s.append(I).append(" -I OUTPUT 1 -j atbxn\n");
+        if (c.inbound) s.append(I).append(" -I INPUT 1 -j atbxn-in\n");
+        if (c.tether) s.append(I).append(" -I FORWARD 1 -j atbxn-fwd\n");
+        s.append("while ").append(I).append(" -D OUTPUT -j atbx 2>/dev/null; do :; done\n");
+        s.append("while ").append(I).append(" -D INPUT -j atbx-in 2>/dev/null; do :; done\n");
         s.append("while ").append(I).append(" -D FORWARD -j atbx-fwd 2>/dev/null; do :; done\n");
-        if (c.tether) {
-            s.append(I).append(" -I FORWARD 1 -j atbx-fwd\n");
-            for (String itf : IF_TETHER) s.append(I).append(" -A atbx-fwd -i ").append(itf).append(" -j atbx-reject\n");
-        }
-        // Tor: the nat redirects (IPv4)
+        for (String ch : CHAINS) s.append(I).append(" -F ").append(ch).append(" 2>/dev/null\n");
+        for (int i = CHAINS.length - 1; i >= 0; i--) s.append(I).append(" -X ").append(CHAINS[i]).append(" 2>/dev/null\n");
+        for (String ch : CHAINS) s.append(I).append(" -E ").append(staged(ch)).append(' ').append(ch).append('\n');
+        // Tor: the nat redirects (IPv4), staged the same way
         if (!v6) {
-            s.append("while ").append(I).append(" -t nat -D OUTPUT -j atbx-tor 2>/dev/null; do :; done\n");
-            s.append(I).append(" -t nat -N atbx-tor 2>/dev/null\n").append(I).append(" -t nat -F atbx-tor\n");
-            if (c.tor) {
-                Set<String> torUids = new java.util.TreeSet<String>(c.ticked("tor"));
-                torUids.remove(String.valueOf(UID_KERNEL));
-                if (!torUids.isEmpty()) {
-                    s.append(I).append(" -t nat -I OUTPUT 1 -j atbx-tor\n");
-                    for (String uid : torUids) {
-                        s.append(I).append(" -t nat -A atbx-tor -m owner --uid-owner ").append(uid).append(" -p udp --dport 53 -j REDIRECT --to-ports ").append(TOR_DNS_PORT).append('\n');
-                        s.append(I).append(" -t nat -A atbx-tor -m owner --uid-owner ").append(uid).append(" -p tcp --syn -j REDIRECT --to-ports ").append(TOR_TCP_PORT).append('\n');
-                    }
+            s.append("while ").append(I).append(" -t nat -D OUTPUT -j atbxn-tor 2>/dev/null; do :; done\n");
+            s.append(I).append(" -t nat -F atbxn-tor 2>/dev/null\n").append(I).append(" -t nat -X atbxn-tor 2>/dev/null\n");
+            Set<String> torUids = new java.util.TreeSet<String>(c.tor ? c.ticked("tor") : java.util.Collections.<String>emptySet());
+            torUids.remove(String.valueOf(UID_KERNEL));
+            if (!torUids.isEmpty()) {
+                s.append(I).append(" -t nat -N atbxn-tor\n");
+                for (String uid : torUids) {
+                    s.append(I).append(" -t nat -A atbxn-tor -m owner --uid-owner ").append(uid).append(" -p udp --dport 53 -j REDIRECT --to-ports ").append(TOR_DNS_PORT).append('\n');
+                    s.append(I).append(" -t nat -A atbxn-tor -m owner --uid-owner ").append(uid).append(" -p tcp --syn -j REDIRECT --to-ports ").append(TOR_TCP_PORT).append('\n');
                 }
-            } else {
-                s.append(I).append(" -t nat -X atbx-tor 2>/dev/null\n");
+                s.append(I).append(" -t nat -I OUTPUT 1 -j atbxn-tor\n");
             }
+            s.append("while ").append(I).append(" -t nat -D OUTPUT -j atbx-tor 2>/dev/null; do :; done\n");
+            s.append(I).append(" -t nat -F atbx-tor 2>/dev/null\n").append(I).append(" -t nat -X atbx-tor 2>/dev/null\n");
+            if (!torUids.isEmpty()) s.append(I).append(" -t nat -E atbxn-tor atbx-tor\n");
         }
+    }
+
+    /**
+     * How many rules each of this app's IPv4 network chains must hold once the script ran, from the rule set alone: the apply is believed
+     * only when the read-back shows exactly these (a rule iptables refused is a rule that is not in force).
+     */
+    public static Map<String, Integer> expectedCounts(Cfg c) {
+        Map<String, Integer> m = new LinkedHashMap<String, Integer>();
+        int extra = "allow".equals(c.mode) ? 1 : 0;
+        m.put("atbx-wifi", c.ticked("wifi").size() + extra);
+        m.put("atbx-mobile", c.ticked("mobile").size() + extra);
+        if (c.lan) m.put("atbx-lan", c.ticked("lan").size() + extra);
+        if (c.roam) m.put("atbx-roam", c.ticked("roam").size() + extra);
+        if (c.vpn) m.put("atbx-vpn", c.ticked("vpn").size() + extra);
+        m.put("atbx-reject", (c.log ? 1 : 0) + 1);
+        return m;
+    }
+
+    /** The first chain whose rule count differs from {@link #expectedCounts}, as "chain: wrote N of M", or null when every count matches. */
+    public static String countMismatch(Cfg c, Status st) {
+        for (Map.Entry<String, Integer> e : expectedCounts(c).entrySet()) {
+            Integer have = st.chains.get(e.getKey());
+            if (have == null || have.intValue() != e.getValue().intValue()) return e.getKey() + ": " + (have == null ? 0 : have) + " of " + e.getValue() + " rules";
+        }
+        return null;
     }
 
     /** One network chain. Allow list: ticked uids RETURN, everyone else is rejected. Block list: ticked uids are rejected, everyone else returns. */
     private static void chain(StringBuilder s, String I, Cfg c, String chain, String net) {
         boolean allow = "allow".equals(c.mode);
-        String target = allow ? "RETURN" : "atbx-reject";
+        String reject = chain.startsWith("atbxn") ? "atbxn-reject" : "atbx-reject"; // a staging chain rejects through the staging reject chain
+        String target = allow ? "RETURN" : reject;
         for (String uid : c.ticked(net)) {
             if (uid.equals(String.valueOf(UID_KERNEL))) s.append(I).append(" -A ").append(chain).append(" -m owner ! --uid-owner 0-999999999 -j ").append(target).append('\n');
             else s.append(I).append(" -A ").append(chain).append(" -m owner --uid-owner ").append(uid).append(" -j ").append(target).append('\n');
         }
-        if (allow) s.append(I).append(" -A ").append(chain).append(" -j atbx-reject\n");
+        if (allow) s.append(I).append(" -A ").append(chain).append(" -j ").append(reject).append('\n');
     }
 
     /** Removes this app's jumps and chains of one family; Android's chains are not touched. */
@@ -271,11 +312,16 @@ public final class FirewallRules {
         s.append("while ").append(I).append(" -D OUTPUT -j atbx 2>/dev/null; do :; done\n");
         s.append("while ").append(I).append(" -D INPUT -j atbx-in 2>/dev/null; do :; done\n");
         s.append("while ").append(I).append(" -D FORWARD -j atbx-fwd 2>/dev/null; do :; done\n");
-        for (String ch : CHAINS) s.append(I).append(" -F ").append(ch).append(" 2>/dev/null\n");
-        for (int i = CHAINS.length - 1; i >= 0; i--) s.append(I).append(" -X ").append(CHAINS[i]).append(" 2>/dev/null\n");
+        s.append("while ").append(I).append(" -D OUTPUT -j atbxn 2>/dev/null; do :; done\n");
+        s.append("while ").append(I).append(" -D INPUT -j atbxn-in 2>/dev/null; do :; done\n");
+        s.append("while ").append(I).append(" -D FORWARD -j atbxn-fwd 2>/dev/null; do :; done\n");
+        for (String ch : CHAINS) s.append(I).append(" -F ").append(ch).append(" 2>/dev/null\n").append(I).append(" -F ").append(staged(ch)).append(" 2>/dev/null\n");
+        for (int i = CHAINS.length - 1; i >= 0; i--) s.append(I).append(" -X ").append(CHAINS[i]).append(" 2>/dev/null\n").append(I).append(" -X ").append(staged(CHAINS[i])).append(" 2>/dev/null\n");
         if (!v6) {
             s.append("while ").append(I).append(" -t nat -D OUTPUT -j atbx-tor 2>/dev/null; do :; done\n");
+            s.append("while ").append(I).append(" -t nat -D OUTPUT -j atbxn-tor 2>/dev/null; do :; done\n");
             s.append(I).append(" -t nat -F atbx-tor 2>/dev/null\n").append(I).append(" -t nat -X atbx-tor 2>/dev/null\n");
+            s.append(I).append(" -t nat -F atbxn-tor 2>/dev/null\n").append(I).append(" -t nat -X atbxn-tor 2>/dev/null\n");
         }
         s.append("fi\n");
     }
@@ -300,6 +346,7 @@ public final class FirewallRules {
                 + "echo \"in4=$(iptables -w 5 -S INPUT 2>/dev/null | grep -c -- '-j atbx-in$')\"\n"
                 + "echo \"fwd4=$(iptables -w 5 -S FORWARD 2>/dev/null | grep -c -- '-j atbx-fwd$')\"\n"
                 + "echo \"tor4=$(iptables -w 5 -t nat -S OUTPUT 2>/dev/null | grep -c -- '-j atbx-tor$')\"\n"
+                + "echo \"stage4=$(iptables -w 5 -S OUTPUT 2>/dev/null | grep -c -- '-j atbxn$')\"\n"
                 + "for c in atbx atbx-wifi atbx-lan atbx-mobile atbx-roam atbx-vpn atbx-reject; do echo \"n4_$c=$(iptables -w 5 -S $c 2>/dev/null | grep -c -- '^-A ')\"; done\n"
                 + "echo \"n6_atbx=$(ip6tables -w 5 -S atbx 2>/dev/null | grep -c -- '^-A ')\"\n"
                 + "echo \"uid=$(id -u 2>/dev/null)\"\n"
@@ -325,14 +372,14 @@ public final class FirewallRules {
 
     /** What the status lines said. */
     public static final class Status {
-        public boolean bin4, bin6, jump4, jump6, inbound, tether, tor, applied, cleared, noBin;
+        public boolean bin4, bin6, jump4, jump6, inbound, tether, tor, applied, cleared, noBin, staged;
         public int rules4, rules6, uid = -1;
         public final Map<String, Integer> chains = new LinkedHashMap<String, Integer>();
 
         public JSONObject toJson() throws JSONException {
             JSONObject o = new JSONObject();
             o.put("bin4", bin4); o.put("bin6", bin6); o.put("jump4", jump4); o.put("jump6", jump6); o.put("inbound", inbound);
-            o.put("tether", tether); o.put("tor", tor); o.put("applied", applied); o.put("cleared", cleared); o.put("noBin", noBin);
+            o.put("tether", tether); o.put("tor", tor); o.put("applied", applied); o.put("cleared", cleared); o.put("noBin", noBin); o.put("staged", staged);
             o.put("rules4", rules4); o.put("rules6", rules6); o.put("uid", uid);
             o.put("on", jump4 && rules4 > 0);
             JSONObject ch = new JSONObject();
@@ -363,6 +410,7 @@ public final class FirewallRules {
             else if (k.equals("in4")) st.inbound = n > 0;
             else if (k.equals("fwd4")) st.tether = n > 0;
             else if (k.equals("tor4")) st.tor = n > 0;
+            else if (k.equals("stage4")) st.staged = n > 0;
             else if (k.equals("uid")) st.uid = n;
             else if (k.startsWith("n4_")) { st.chains.put(k.substring(3), n); st.rules4 += n; }
             else if (k.equals("n6_atbx")) st.rules6 = n;
@@ -432,8 +480,15 @@ public final class FirewallRules {
     }
 
     /** The boot script: the last applied script, with a delay in front, so the rules come back before most apps start talking. */
-    public static String bootScript(String applyScript, int delaySec) {
+    public static String bootScript(String applyScript, int delaySec) { return bootScript(applyScript, delaySec, null); }
+
+    /**
+     * With its own path, the script checks after the delay that the file is still there: turning Apply on boot off (or Remove all firewall
+     * rules) deletes the file, and a script already started by the boot receiver then does nothing instead of putting the rules back.
+     */
+    public static String bootScript(String applyScript, int delaySec, String ownPath) {
         int d = Math.max(0, Math.min(300, delaySec));
-        return "#!/system/bin/sh\n# ADB/Root Toolbox - Android Firewall, run at boot\n" + (d > 0 ? "sleep " + d + "\n" : "") + applyScript;
+        return "#!/system/bin/sh\n# ADB/Root Toolbox - Android Firewall, run at boot\n" + (d > 0 ? "sleep " + d + "\n" : "")
+                + (ownPath != null ? "[ -f " + BackupScripts.quote(ownPath) + " ] || exit 0\n" : "") + applyScript;
     }
 }

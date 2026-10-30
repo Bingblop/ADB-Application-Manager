@@ -84,7 +84,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => document.querySelector('#fwFilterRow .filter-chip[data-f="net"]').click()); await sleep(80);
   check('   With internet: apps that hold the INTERNET permission (Gamma Notes has not), no specials', (await rows()).map(x => x.split(':')[0]).join() === '10200,10101,10102,1001,10104', JSON.stringify(await rows()));
   await ev(() => document.querySelector('#fwFilterRow .filter-chip[data-f="ticked"]').click()); await sleep(80);
-  check('   Ticked: only Alpha', (await rows()).join() === '10101:Alpha Browser', JSON.stringify(await rows()));
+  check('   Ticked: Alpha, and the two implicit allows of an allow list (this app and the resolver) shown as the ticks they are', (await rows()).join() === '10200:ADB/Root Toolbox,10101:Alpha Browser,1051:DNS resolver (UID 1051)', JSON.stringify(await rows()));
   await ev(() => document.querySelector('#fwFilterRow .filter-chip[data-f="all"]').click()); await sleep(80);
   await ev(() => { const s = document.getElementById('fwSearch'); s.value = 'shared'; s.dispatchEvent(new Event('input', { bubbles: true })); }); await sleep(120);
   check('   the search finds a row by any of its packages', (await rows()).join() === '10104:Shared One', JSON.stringify(await rows()));
@@ -111,9 +111,13 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => document.getElementById('fwApplyBtn').click()); await settle();
   check('   applied again: ACTIVE, Beta in the set', await tag() === 'ACTIVE' && (await lastApply()).uids['10102'].join() === 'wifi');
   await ev(() => document.querySelector('#fwCols .fw-col-btn[data-net="mobile"]').click()); await sleep(120);
-  check('   the column button ticks every row shown for mobile data (the specials too)', Object.keys(await rules()).length === 12 && (await rules())['@kernel'].join() === 'mobile' && (await rules())['com.example.gamma'].join() === 'mobile', JSON.stringify(Object.keys(await rules())));
+  check('   the column button ticks every row shown for mobile data (the specials too; this app and the resolver already had it implicitly, so no rule is stored for them)', Object.keys(await rules()).length === 10 && (await rules())['@kernel'].join() === 'mobile' && (await rules())['com.example.gamma'].join() === 'mobile' && !('@dns' in await rules()) && !('com.bloatware.bingblop' in await rules()), JSON.stringify(Object.keys(await rules())));
   await ev(() => document.querySelector('#fwCols .fw-col-btn[data-net="mobile"]').click()); await sleep(120);
-  check('   and unticks them when every row has it', !Object.values(await rules()).some(v => v.includes('mobile')) && (await rules())['com.example.alpha'].join() === 'wifi', JSON.stringify(await rules()));
+  check('   and unticks them when every row has it; this app and the resolver keep that untick as an explicit rule', !Object.values(await rules()).some(v => v.includes('mobile')) && (await rules())['com.example.alpha'].join() === 'wifi' && (await rules())['@dns'].join() === 'wifi,roam,vpn,lan' && (await rules())['com.bloatware.bingblop'].join() === 'wifi,roam,vpn,lan', JSON.stringify(await rules()));
+  await tapCell(1051, 'mobile'); await tapCell(10200, 'mobile');
+  check('   ticked again, the implicit allow needs no stored rule', !('@dns' in await rules()) && !('com.bloatware.bingblop' in await rules()), JSON.stringify(await rules()));
+  await tapCell(1051, 'mobile');
+  check('   an untick of the resolver alone is kept too (an explicit choice an allow list must respect)', (await rules())['@dns'].join() === 'wifi,roam,vpn,lan', JSON.stringify(await rules()));
 
   // 6. the mode
   await ev(() => document.getElementById('fwModePick').click()); await sleep(120);
@@ -122,7 +126,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   block list: the picker says so, a tick is coloured as blocked, NOT APPLIED', await txt('fwModeTxt') === 'Block list' && /\bdeny\b/.test((await cell(10101, 'wifi')).cls) && await tag() === 'NOT APPLIED');
   await ev(() => document.getElementById('fwApplyBtn').click()); await settle();
   const blk = await lastApply();
-  check('   a block list sends no automatic entries for the app and the resolver', blk.mode === 'block' && !('10200' in blk.uids) && !('1051' in blk.uids) && blk.uids['10101'].join() === 'wifi', JSON.stringify(blk.uids));
+  check('   a block list sends no automatic entries for the app and the resolver (their allow-list exceptions are dropped with the mode)', blk.mode === 'block' && !('10200' in blk.uids) && !('1051' in blk.uids) && blk.uids['10101'].join() === 'wifi' && !('@dns' in await rules()), JSON.stringify(blk.uids));
   await ev(() => document.getElementById('fwModePick').click()); await sleep(100); await sheetPick('allow');
 
   // 7. profiles

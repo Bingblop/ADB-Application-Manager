@@ -14,7 +14,7 @@ ok      the count line
 ok      User apps: the four of them
 ok      Special: the five pseudo-apps, each with its reason
 ok      With internet: apps that hold the INTERNET permission (Gamma Notes has not), no specials
-ok      Ticked: only Alpha
+ok      Ticked: Alpha, and the two implicit allows of an allow list (this app and the resolver) shown as the ticks they are
 ok      the search finds a row by any of its packages
 ok   4. a ticked cell is pressed and coloured as allowed (allow list)
 ok      a tick on the shared row rules both its packages
@@ -25,11 +25,13 @@ ok      the phone's answer: ACTIVE, the switch on, the rule count in the status 
 ok      the on state is saved
 ok      a change after that: NOT APPLIED, the button reads Apply changes
 ok      applied again: ACTIVE, Beta in the set
-ok      the column button ticks every row shown for mobile data (the specials too)
-ok      and unticks them when every row has it
+ok      the column button ticks every row shown for mobile data (the specials too; this app and the resolver already had it implicitly, so no rule is stored for them)
+ok      and unticks them when every row has it; this app and the resolver keep that untick as an explicit rule
+ok      ticked again, the implicit allow needs no stored rule
+ok      an untick of the resolver alone is kept too (an explicit choice an allow list must respect)
 ok   6. the mode sheet offers the allow list (current) and the block list
 ok      block list: the picker says so, a tick is coloured as blocked, NOT APPLIED
-ok      a block list sends no automatic entries for the app and the resolver
+ok      a block list sends no automatic entries for the app and the resolver (their allow-list exceptions are dropped with the mode)
 ok   7. the profile sheet: Default, New, Rename (no Delete with one profile)
 ok      a new empty profile (the copy question answered no): named in the picker, no rules, the firewall re-applied with the empty set at once
 ok      an empty allow list warns once before Apply
