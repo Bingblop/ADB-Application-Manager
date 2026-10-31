@@ -1,0 +1,48 @@
+a. the page sees Super User (isRootActive) and the list is up: true {"activeMode":"root","configuredMode":"root","modeAvailable":true,"isPrivileged":true,"rootAvailable":true,"rootGranted":true,"rootWorkingModeActive":true,"adbTcp":{"connected":false,"port":5555},"adbWireless":{"connected":false,"port":0},"shizuku":{"installed":false,"running":false,"authorized":false}}
+   the row starts off: true {"on":false,"busy":false}
+   the hold opens the uninstall prompt, with the id in its title and the red Uninstall button: true {"shown":true,"title":"Uninstall android.theme.customization.font?","text":"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.","ok":"Uninstall"}
+   the text says the APK is copied to Download/ADB App Manager/Overlays first and can be installed again from the Installer tab, and that the package is removed for the phone's current user: true The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.
+   the hold did not switch the row on and did not open the sheet: true
+   while the answer is awaited the row is busy: true
+   overlayUninstall was called once, with that id, and no switch was made: true {"op":[],"un":["android.theme.customization.font"]}
+   the row has left the list: true
+   a toast names the uninstall: true Uninstalled: android.theme.customization.font
+   a line names where the copy went (the package's own folder under Download/ADB App Manager/Overlays): true A copy of its APK is in Download/ADB App Manager/Overlays/android.theme.customization.font
+   no failure sheet: true
+b. a hold on a row that is on switches it off (overlayOp disable), with no uninstall call and no prompt: true {"op":[{"op":"disable","id":"android.theme.customization.accent_color"}],"un":["android.theme.customization.font"]}
+   a tap on the switch of a row that is off still turns it on: true
+   a tap on the row still opens the sheet: true
+   with Super User the sheet of a row that is off has a live Uninstall button: true {"shown":true,"disabled":false,"locked":false,"text":"Uninstall","title":""}
+   tapping it opens the same prompt: true {"shown":true,"title":"Uninstall com.android.theme.icon_pack.circular.android?","text":"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.","ok":"Uninstall"}
+   confirming uninstalls it and closes the sheet: true
+   a hold on the fabricated colour overlay (on) switches it off like any row that is on: true
+   held again (off now) it says it is not a package, with no prompt and no bridge call: true This overlay is not an app package; switching it off is all there is to remove
+c. the shell: usable for switching, but not Super User: true {"activeMode":"adb_tcp","modeAvailable":true,"isPrivileged":true,"configuredMode":"auto","adbTcp":{"connected":true,"port":5555},"adbWireless":{"connected":false,"port":0},"shizuku":{"installed":false,"running":false,"authorized":false},"rootAvailable":false}
+   a hold on a row that is off shows the lock toast: true Uninstalling an overlay needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)
+   no prompt, no bridge call, and the row is NOT switched on: true {"op":[],"un":[]}
+   a hold on a row that is on still switches it off at the shell: true
+d. the sheet of a row that is off at the shell: Uninstall present, disabled, locked, the lock glyph before its label, the reason as its title: true {"shown":true,"disabled":true,"locked":true,"text":"🔒 Uninstall","title":"Uninstalling an overlay needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)"}
+   a tap on the locked button does nothing: true
+   Switch on is still there and live: true
+   another row that is off: locked too: true
+   the sheet of a row that is on has no Uninstall button: true
+   Shizuku as the system user (uid 1000) opens the gate: true
+   the Uninstall button is live there: true {"shown":true,"disabled":false,"locked":false,"text":"Uninstall","title":""}
+   and the hold opens the prompt: true
+g. Cancel: no bridge call, the row stays, off: true {"op":[{"op":"disable","id":"android.theme.customization.accent_color"}],"un":[]}
+   the prompt is up again: true
+   OK on a row that turned on meanwhile: no bridge call, the toast says to switch it off first: true It is on again; switch it off first
+   the prompt is up once more: true
+   OK on a row that left the list meanwhile: no bridge call, the toast says so: true That overlay is not listed any more
+   the phone lists it as on: the answer refuses in its words and the row stays: true {"shown":true,"title":"Could not uninstall","body":"Could not uninstall\nFAILED\nandroid.theme.customization.font\nandroid.theme.customization.font is not a switched-off overlay on this phone. Reload the list."}
+e. the prompt opens for a firmware overlay too (the page cannot know where the APK lives): true
+   the firmware refusal is shown in the failure sheet, in its words: true {"shown":true,"title":"Could not uninstall","body":"Could not uninstall\nFAILED\nandroid.theme.customization.font\nandroid.theme.customization.font is part of the phone's firmware, so it cannot be uninstalled. Switching it off is the way to stop it.\n\npackage:/product/overlay/FontOverlay.apk\n\nOverlays that ship with the phone live on a read-only partition. Leave this one off, or remove it with a custom ROM or a module that changes the firmware."}
+   the toast says it could not be uninstalled: true Could not uninstall android.theme.customization.fo…
+   the row stays, off and not busy: true
+   one bridge call went out: true
+f. a failed copy: "No copy of the APK could be saved" is shown and nothing was removed: true {"shown":true,"title":"Could not uninstall","body":"Could not uninstall\nFAILED\ncom.android.internal.systemui.navbar.threebutton\nNo copy of the APK could be saved to Download/ADB App Manager/Overlays, so nothing was removed\n\npackage:/data/app/~~mock/com.android.internal.systemui.navbar.threebutton-1/base.apk"}
+   the row stays: true
+   a refusal by Android: shown with its text, the row stays: true
+   the gate closing under the request: the sheet names Super User or Shizuku as root or the system user, not the working modes of the switch: true {"shown":true,"title":"Could not uninstall","body":"Could not uninstall\nFAILED\ncom.android.theme.icon_pack.circular.android\nUninstalling an overlay needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)\n\nConnect one of them in Working Modes, then try again."}
+no page errors: true
+all passed

@@ -4,5 +4,5 @@ ok   tests/i18n/keys.json has no string the page lost
 ok   texts of txT/txF with a ">" in them ("Settings > Battery") are listed
 ok   the Google Fonts weight names, the About label "Added" and the new Google Fonts sentences are listed
 ok   every dictionary in assets/lang/ has every string of keys.json and none the page does not have (i18n/check.js --strict)
-ok   de.js: the More styles strings and the wallpaper preview line use the Sie form, as Colors in use does
+ok   de.js: the Monet tab's style strings, the switches and the preview line use the Sie form, as Colors in use does
 all passed

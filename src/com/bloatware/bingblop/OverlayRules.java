@@ -851,8 +851,9 @@ final class OverlayRules {
     // ---- root-only theme: this app's fabricated colour overlay ----
     //
     // `cmd overlay fabricate` writes a colour overlay straight into the overlay manager, and refuses anyone but root (the shell
-    // user Shizuku and ADB run as is turned away with "must be root"). The page hands over a plan of {resource, argb} entries; what
-    // is written, in which of the three command forms Android has had, and how the result is read back is decided here.
+    // user Shizuku and ADB run as is turned away with "must be root"). The page hands over a plan of {resource, argb, config?} entries
+    // (config "night" for a dark-mode colour); what is written, in which of the three command forms Android has had, and how the result
+    // is read back is decided here.
 
     /** The shell registers every fabricated overlay under its own package, so this app's overlay is com.android.shell:aam_monet (the Help Guide names it so the user can find it in the overlay list). */
     static final String FAB_OWNER = "com.android.shell";
@@ -867,14 +868,15 @@ final class OverlayRules {
     static final String FAB_FILE = "/data/system/aam_monet.xml";
     static final String FAB_HEREDOC = "AAM_OVL_EOF";
     /**
-     * The most entries a plan may have. Android 17 takes the most: 65 palette shades as {@code _light} and as {@code _dark} (130), the 55
-     * roles as {@code _light} and {@code _dark} (110) and the 12 fixed colours as {@code _light} and {@code _dark} (24), 264 in all, and 318
-     * with the 27 custom colour pairs SystemUI also writes there (not written yet). Android 16 QPR1 and QPR2 write the fixed colours once,
-     * unsuffixed: 252, and 296 with their 22 custom colour pairs. 320 leaves a margin. The Android 14+ form puts the whole plan in one file written
-     * by a heredoc inside the {@code su -c} argument: 320 entries make about 24,000 characters, far under the 131,072 bytes Linux allows one
-     * argument (MAX_ARG_STRLEN; OverlayRulesTest builds the script to check).
+     * The most entries a plan may have. The page's plan follows ColorBlendr's framework writer: 78 palette shades (6 rows of 13) as
+     * {@code _light} and as {@code _dark} and, on Android 14 to 16, unsuffixed too (up to 234), 59 system and 23 custom colours as
+     * {@code _light} and {@code _dark} (164), the 12 fixed colours unsuffixed, with their {@code night} configuration and as {@code _light}
+     * and {@code _dark} (48), the device-default accent, the surface effects and a few extras (about 20): about 470 at most before the
+     * names the phone's framework lacks are dropped. 512 leaves a margin. The Android 14+ form puts the whole plan in one file written by a
+     * heredoc inside the {@code su -c} argument: 512 entries with the longest names make about 60,000 characters, under the 131,072 bytes
+     * Linux allows one argument (MAX_ARG_STRLEN; OverlayRulesTest builds the script to check).
      */
-    static final int MAX_FAB_ENTRIES = 320;
+    static final int MAX_FAB_ENTRIES = 512;
     /** How many of a plan's entries are looked up after the write (the first ones: the page puts the entries that matter most first); see {@link #lookupEntries(String, List)} for Android 16 QPR1, QPR2 and 17. */
     static final int FAB_LOOKUPS = 4;
     /**
@@ -907,12 +909,15 @@ final class OverlayRules {
     /** The first Android whose fabricate option parser has no {@code --user} (an unknown option is an error there). */
     static final int FAB_NO_USER_SDK = 36;
 
-    private static final Pattern FAB_RESOURCE = Pattern.compile("android:color/system_[a-z0-9_]+");
+    /** A framework colour by name: the Material You names (system_...) and the device-default ones ColorBlendr writes too (accent_device_default_dark, background_dark). */
+    private static final Pattern FAB_RESOURCE = Pattern.compile("android:color/[a-z0-9_]+");
     private static final Pattern FAB_VALUE = Pattern.compile("0x[0-9A-Fa-f]{8}");
     private static final Pattern FAB_OVERLAY_NAME = Pattern.compile("aam_monet(_[a-z0-9_]+)?");
     /** What a lookup prints for a colour: Integer.toHexString pads nothing, so an alpha below 0x10 prints fewer than eight digits. */
     private static final Pattern LOOKUP_COLOR = Pattern.compile("#[0-9a-f]{1,8}");
-    private static final String FAB_RESOURCE_PREFIX = "android:color/system_";
+    private static final String FAB_RESOURCE_PREFIX = "android:color/";
+    /** The one resource configuration an entry may carry: the colour the framework shows in dark mode (values-night). */
+    static final String FAB_CONFIG_NIGHT = "night";
     /** A palette shade by its unsuffixed name (system_accent1_500, system_error_0): on Android 16 QPR1, QPR2 and 17 an alias of the _light or _dark name. */
     private static final Pattern FAB_PALETTE_ALIAS = Pattern.compile("android:color/system_(accent[1-3]|neutral[12]|error)_[0-9]+");
     /**
@@ -922,21 +927,38 @@ final class OverlayRules {
      */
     private static final Pattern FAB_FIXED_ALIAS = Pattern.compile("android:color/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)");
 
-    /** One entry of a plan: a framework colour resource and the colour it is to show. */
+    /**
+     * One entry of a plan: a framework colour resource, the colour it is to show and, when the colour is for dark mode only, the
+     * configuration {@code night}. An entry with no configuration and one with {@code night} on the same resource make the pair a
+     * day/night colour needs (the unqualified one is what the framework shows in light mode, and in dark mode too on Android 12 and 13,
+     * whose fabricate has no configuration).
+     */
     static final class FabEntry {
         final String resource;      // android:color/system_neutral1_900
         final String argb;          // 0xAARRGGBB
+        final String config;        // null, or "night"
 
         FabEntry(String resource, String argb) {
+            this(resource, argb, null);
+        }
+
+        FabEntry(String resource, String argb, String config) {
             this.resource = resource;
             this.argb = argb;
+            this.config = config;
+        }
+
+        /** Whether this entry is for one configuration only (dark mode), not for the one the framework resolves in. */
+        boolean configured() {
+            return config != null;
         }
     }
 
     /**
-     * Null when the plan can be written, else why not: a resource that is not {@code android:color/system_<name>}, a value that is not
-     * {@code 0xAARRGGBB}, a resource named twice (on Android 12 and 13 the second would replace the first), no entries, or more than
-     * {@link #MAX_FAB_ENTRIES}. Nothing of the entry itself is echoed back: the words name the entry by its number.
+     * Null when the plan can be written, else why not: a resource that is not {@code android:color/<name>}, a value that is not
+     * {@code 0xAARRGGBB}, a configuration other than none or {@code night}, a resource named twice for the same configuration (on
+     * Android 12 and 13 the second would replace the first), no entries, or more than {@link #MAX_FAB_ENTRIES}. Nothing of the entry
+     * itself is echoed back: the words name the entry by its number.
      */
     static String fabricatePlanProblem(List<FabEntry> plan) {
         return fabricatePlanProblem(null, plan);
@@ -948,8 +970,10 @@ final class OverlayRules {
      * ({@code system_accent1_500}, {@code system_error_0}) is refused too: there it is an alias of the {@code _light} and {@code _dark}
      * names, and an overlay on the alias would show one colour in both modes over SystemUI's two (the plan writes the suffixed names, as
      * SystemUI does). On a profile whose fixed colours are suffixed (MonetProfile.suffixedFixed: Android 17) an unsuffixed fixed colour
-     * ({@code system_primary_fixed}) is refused for the same reason. Those are the only names this checks per profile: a name the build does
-     * not have is skipped by Android, not refused.
+     * ({@code system_primary_fixed}) is refused for the same reason, unless the plan also has that resource with the {@code night}
+     * configuration: the pair gives each mode its colour (the unqualified entry resolves in light mode, the night one in dark mode), which is
+     * what the two suffixed names do, so Android takes it. Those are the only names this checks per profile: a name the build does not have
+     * is skipped by Android, not refused.
      */
     static String fabricatePlanProblem(String profile, List<FabEntry> plan) {
         if (plan == null || plan.isEmpty()) return "The plan has no entries";
@@ -957,9 +981,11 @@ final class OverlayRules {
         java.util.HashSet<String> seen = new java.util.HashSet<String>();
         for (int i = 0; i < plan.size(); i++) {
             FabEntry e = plan.get(i);
-            if (e == null || e.resource == null || !FAB_RESOURCE.matcher(e.resource).matches()) return "Entry " + (i + 1) + " does not name a system colour (android:color/system_...)";
+            if (e == null || e.resource == null || !FAB_RESOURCE.matcher(e.resource).matches()) return "Entry " + (i + 1) + " does not name a framework colour (android:color/...)";
             if (e.argb == null || !FAB_VALUE.matcher(e.argb).matches()) return "Entry " + (i + 1) + " is not a colour (0xAARRGGBB)";
-            if (!seen.add(e.resource)) return "Entry " + (i + 1) + " names a resource twice";
+            if (e.config != null && !FAB_CONFIG_NIGHT.equals(e.config)) return "Entry " + (i + 1) + " names a configuration other than night";
+            // the key holds the configuration too: the unqualified entry and the night one of a resource are two different items
+            if (!seen.add(e.resource + (e.config == null ? "" : "|" + e.config))) return "Entry " + (i + 1) + " names a resource twice";
         }
         if (MonetProfile.suffixedPalettes(profile)) {
             for (int i = 0; i < plan.size(); i++) {
@@ -967,8 +993,12 @@ final class OverlayRules {
             }
         }
         if (MonetProfile.suffixedFixed(profile)) {
+            java.util.HashSet<String> night = new java.util.HashSet<String>();
+            for (FabEntry e : plan) if (e.configured()) night.add(e.resource);
             for (int i = 0; i < plan.size(); i++) {
-                if (FAB_FIXED_ALIAS.matcher(plan.get(i).resource).matches()) return "Entry " + (i + 1) + " names a fixed color without _light or _dark, which this Android version does not take";
+                FabEntry e = plan.get(i);
+                // paired with its night entry the alias shows one colour per mode, as SystemUI's two names do, and is taken
+                if (!e.configured() && !night.contains(e.resource) && FAB_FIXED_ALIAS.matcher(e.resource).matches()) return "Entry " + (i + 1) + " names a fixed color without _light or _dark, which this Android version does not take";
             }
         }
         return null;
@@ -1006,28 +1036,45 @@ final class OverlayRules {
         }
     }
 
-    /** The overlay name an entry gets on Android 12 and 13 (one overlay per entry): aam_monet_neutral1_900 for android:color/system_neutral1_900. */
+    /** The overlay name an entry gets on Android 12 and 13 (one overlay per entry): the resource's name after android:color/, so aam_monet_system_neutral1_900 for android:color/system_neutral1_900. */
     static String entryOverlayName(FabEntry e) {
         return FAB_NAME + "_" + e.resource.substring(FAB_RESOURCE_PREFIX.length());
     }
 
-    /** The identifiers a plan is written under: one (com.android.shell:aam_monet) from Android 14, one per entry before it. Checks the plan first. */
+    /**
+     * The entries the Android 12 and 13 form writes: those with no configuration. Their fabricate takes a resource and a value, nothing
+     * else, so a {@code night} entry has no place there; its pair, the unqualified entry, is what the framework shows in both modes.
+     * Throws IllegalArgumentException when nothing is left (a plan of night entries alone).
+     */
+    static List<FabEntry> perEntryPlan(List<FabEntry> plan) {
+        List<FabEntry> out = new ArrayList<FabEntry>();
+        for (FabEntry e : plan) if (!e.configured()) out.add(e);
+        if (out.isEmpty()) throw new IllegalArgumentException("The plan has only night colours, which this Android version cannot take");
+        return out;
+    }
+
+    /** The identifiers a plan is written under: one (com.android.shell:aam_monet) from Android 14, one per unconfigured entry before it ({@link #perEntryPlan}). Checks the plan first. */
     static List<String> fabricateIds(int sdk, List<FabEntry> plan) {
         fabricatePlanOk(plan);
         List<String> ids = new ArrayList<String>();
         if (sdk >= FAB_FILE_SDK) {
             ids.add(FAB_ID);
         } else {
-            for (FabEntry e : plan) ids.add(FAB_OWNER + ":" + entryOverlayName(e));
+            for (FabEntry e : perEntryPlan(plan)) ids.add(FAB_OWNER + ":" + entryOverlayName(e));
         }
         return ids;
     }
 
-    /** The XML the Android 14+ form reads: one item per entry, the target without its package (the shell prefixes android:). */
+    /**
+     * The XML the Android 14+ form reads: one item per entry, the target without its package (the shell prefixes android:), and
+     * {@code config="night"} on an entry that has it (the shell's parser reads that attribute on 14, 16 and 17 and keys the item by it).
+     */
     static String fabricateXml(List<FabEntry> plan) {
         StringBuilder sb = new StringBuilder("<overlay>\n");
         for (FabEntry e : plan) {
-            sb.append("  <item target=\"").append(e.resource.substring("android:".length())).append("\" value=\"").append(e.argb).append("\"/>\n");
+            sb.append("  <item target=\"").append(e.resource.substring("android:".length())).append("\" value=\"").append(e.argb).append('"');
+            if (e.configured()) sb.append(" config=\"").append(e.config).append('"');
+            sb.append("/>\n");
         }
         return sb.append("</overlay>\n").toString();
     }
@@ -1037,18 +1084,24 @@ final class OverlayRules {
         return "echo " + GET_MARK + "; " + listCommand() + "; echo " + END_MARK + "\n";
     }
 
-    /** The entries whose colour is looked up after the write: the first {@link #FAB_LOOKUPS} of the plan. */
+    /** The entries whose colour is looked up after the write: the first {@link #FAB_LOOKUPS} of the plan without a configuration. */
     static List<FabEntry> lookupEntries(List<FabEntry> plan) {
         return lookupEntries(null, plan);
     }
 
     /**
-     * The entries looked up after the write on the phone's build family. On a profile whose palettes are suffixed
-     * (MonetProfile.suffixedPalettes) the entries of {@link #QPR_LOOKUPS} the plan has (of {@link #P17_LOOKUPS} on Android 17), in that
-     * order, then the plan's first other entries until there are {@link #FAB_LOOKUPS} (a plan with Pure black only has one of them): at most
-     * five (six on Android 17). Elsewhere (and with no profile) the first {@link #FAB_LOOKUPS} of the plan, as before.
+     * The entries looked up after the write on the phone's build family. A {@code night} entry is never one of them: {@code cmd overlay
+     * lookup} resolves in the configuration system_server is in, so what it prints for the resource is the unqualified entry's colour (in
+     * light mode) or Android's own (in dark mode, when the plan has no unqualified entry), never the night one's by name. Of the rest, on a
+     * profile whose palettes are suffixed (MonetProfile.suffixedPalettes) the entries of {@link #QPR_LOOKUPS} the plan has (of
+     * {@link #P17_LOOKUPS} on Android 17), in that order, then the plan's first other entries until there are {@link #FAB_LOOKUPS} (a plan
+     * with Pure black only has one of them): at most five (six on Android 17). Elsewhere (and with no profile) the first {@link #FAB_LOOKUPS}
+     * of the plan, as before.
      */
     static List<FabEntry> lookupEntries(String profile, List<FabEntry> plan) {
+        List<FabEntry> current = new ArrayList<FabEntry>();
+        for (FabEntry e : plan) if (!e.configured()) current.add(e);
+        plan = current;
         if (!MonetProfile.suffixedPalettes(profile)) return plan.size() <= FAB_LOOKUPS ? plan : new ArrayList<FabEntry>(plan.subList(0, FAB_LOOKUPS));
         List<FabEntry> out = new ArrayList<FabEntry>();
         for (String want : MonetProfile.suffixedFixed(profile) ? P17_LOOKUPS : QPR_LOOKUPS) {
@@ -1101,10 +1154,12 @@ final class OverlayRules {
      * The script that writes a plan and reads back what became of it; {@code file} is where the Android 14+ form puts its XML
      * ({@link #FAB_FILE} in the app; a path of its own in the test). Three forms:
      * <ul>
-     * <li>Android 12 and 13: one fabricate per entry, each its own overlay named for the entry, then one enable per overlay (one
-     *     name cannot hold two entries there, and registering a name again replaces it).</li>
+     * <li>Android 12 and 13: one fabricate per entry without a configuration ({@link #perEntryPlan}: the night entries are left out,
+     *     that form has no configuration), each its own overlay named for the entry, then one enable per overlay (one name cannot hold
+     *     two entries there, and registering a name again replaces it).</li>
      * <li>Android 14 and 15: the XML written by a heredoc whose delimiter is quoted (nothing in the body is expanded), made readable
-     *     to everyone (chmod 644), one fabricate with {@code --file}, one enable, the file removed.</li>
+     *     to everyone (chmod 644), one fabricate with {@code --file}, one enable, the file removed. The night entries are items with
+     *     {@code config="night"}.</li>
      * <li>Android 16: the same without {@code --user current} on the fabricate (its parser has no such option; list, enable
      *     and lookup keep it).</li>
      * </ul>
@@ -1134,12 +1189,13 @@ final class OverlayRules {
             sb.append(changeCommand("enable", FAB_ID)).append('\n');
             sb.append("rm -f ").append(BackupScripts.quote(file)).append('\n');
         } else {
-            for (FabEntry e : plan) {
+            List<FabEntry> written = perEntryPlan(plan);
+            for (FabEntry e : written) {
                 // 0x1c is TYPE_INT_COLOR_ARGB8, the type the shell's own help example uses
                 sb.append(head).append(BackupScripts.quote(entryOverlayName(e))).append(' ').append(BackupScripts.quote(e.resource))
                         .append(" 0x1c ").append(BackupScripts.quote(e.argb)).append('\n');
             }
-            for (FabEntry e : plan) sb.append(changeCommand("enable", FAB_OWNER + ":" + entryOverlayName(e))).append('\n');
+            for (FabEntry e : written) sb.append(changeCommand("enable", FAB_OWNER + ":" + entryOverlayName(e))).append('\n');
         }
         sb.append(readBackTail());
         sb.append(lookupBlock(profile, plan));
@@ -1300,6 +1356,393 @@ final class OverlayRules {
                 v.error = "The overlay is on, but Android did not say what colour it shows for " + joinTables(v.unanswered);
                 return v;
             }
+        }
+        v.ok = true;
+        return v;
+    }
+
+    // ---- uninstalling an overlay package ----
+    // A disabled overlay that is an app of its own (an APK under /data/app, from a theme pack or a sideload) can be removed with pm uninstall.
+    // One that lives in the firmware (/system, /vendor, /product ...) cannot, and one this app fabricated through the shell
+    // (com.android.shell:name) is no package at all. Which it is comes from what `pm path` prints, never from the name. Before the package
+    // goes, its APK files (the base APK and every split) are copied to a folder named after it under Download/ADB App Manager/Overlays so the
+    // Installer tab can put them back together; nothing is removed when a copy did not verify. Whether the uninstall worked is read back
+    // (pm path prints nothing, the list has no such overlay), never taken from "Success". The list is read for the foreground user
+    // (--user current), so pm path and pm uninstall address the same user: pm takes a number only, so the scripts resolve it themselves
+    // (am get-current-user, falling back to user 0 when that prints nothing or no number) and pass it as --user "$U".
+
+    static final String PATH_MARK = "@@OVL-PATH@@";
+    static final String SAVED_MARK = "@@OVL-SAVED@@";
+    static final String NOSAVE_MARK = "@@OVL-NOSAVE@@";
+    /** Where the copies go, under the phone's Download folder (the Installer tab's picker opens there): one folder per package below it. */
+    static final String BACKUP_FOLDER = "ADB App Manager/Overlays";
+    /**
+     * Resolves the foreground user into $U for the pm calls that follow: what am get-current-user prints when it is a number, else 0 (an old
+     * Android without the command, or an answer that is an error). The same user cmd overlay list --user current reads.
+     */
+    static final String USER_RESOLVE = "U=$(am get-current-user 2>/dev/null); case \"$U\" in ''|*[!0-9]*) U=0;; esac";
+    static final String USER_ARG = "--user \"$U\"";
+
+    static final String NOT_A_PACKAGE = "This overlay is not an app package; switching it off is all there is to remove";
+    static final String NEEDS_PRIVILEGE = "Needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)";
+    static final String NO_BACKUP = "No copy of the APK could be saved to Download/" + BACKUP_FOLDER + ", so nothing was removed";
+    static final String SYSTEM_ADVICE = "Overlays that ship with the phone live on a read-only partition. Leave this one off, or remove it with a custom ROM or a module that changes the firmware.";
+    static final String[] SYSTEM_ROOTS = {"/system/", "/vendor/", "/product/", "/odm/", "/system_ext/", "/oem/", "/apex/", "/prism/", "/optics/"};
+    /** Where an app of its own may live: the data partition, or an SD card adopted as internal storage (pm uninstall takes both away). */
+    static final String[] DATA_ROOTS = {"/data/", "/mnt/expand/"};
+    static final String SLASH_IN_NAME = "An overlay name can't contain a slash";
+    /** The longest file name most Android file systems take; the copies go to a folder named <id>. */
+    static final int MAX_NAME = 255;
+
+    /** An overlay the shell fabricated (owner:name) is registered with the overlay manager only; there is no package to uninstall. */
+    static boolean isFabricatedId(String id) {
+        return id != null && id.indexOf(':') >= 0;
+    }
+
+    /**
+     * Null when the overlay may be asked about as a package, else why not (the bridge answers with this before anything is queued). The id
+     * also names the folder the copies go to, so a slash (which would point the copies outside the backup folder), "." and ".." are refused here too.
+     */
+    static String uninstallIdProblem(String id) {
+        String p = idProblem(id);
+        if (p != null) return p;
+        if (isFabricatedId(id)) return NOT_A_PACKAGE;
+        if (id.indexOf('/') >= 0 || id.equals(".") || id.equals("..")) return SLASH_IN_NAME;
+        if (backupName(id).length() > MAX_NAME) return "The overlay name is too long for a folder name (" + MAX_NAME + " characters at most)";
+        return null;
+    }
+
+    /** True when the package lives where pm uninstall can remove it: under /data/, or on adopted storage under /mnt/expand/. */
+    static boolean isDataPath(String path) {
+        if (path == null || path.isEmpty()) return false;
+        for (String r : DATA_ROOTS) if (path.startsWith(r)) return true;
+        return false;
+    }
+
+    /** The overlay list, then what pm path prints for the package (for the same user), each closed by a marker: one answer says whether the id is a switched-off overlay and where its APK files are. */
+    static String probeScript(String id) {
+        return listCommand() + "; echo " + GET_MARK + "; " + pathScript(id) + "; echo " + PATH_MARK;
+    }
+
+    /** What {@link #probeScript} printed: the list (null when it never came, or was an error), what pm path printed, and whether the closing marker came. */
+    static final class ProbeResult {
+        boolean complete = false;     // PATH_MARK came last, so nothing was cut off
+        List<Overlay> all = null;
+        String listError = "";
+        String pathOut = "";
+        List<String> paths = new ArrayList<String>();   // every package: line pm path printed, the base APK first
+        String path = null;                             // the base APK (the first line), null when none was printed
+        String text = "";
+    }
+
+    static ProbeResult parseProbe(String out) {
+        ProbeResult r = new ProbeResult();
+        if (out == null) return r;
+        r.text = out.trim();
+        int g = out.indexOf(GET_MARK);
+        if (g < 0) {
+            r.listError = out.trim();
+            return r;
+        }
+        String body = out.substring(0, g);
+        List<Overlay> all = parseList(body);
+        if (all.isEmpty() && (body.trim().isEmpty() || looksLikeFailure(body))) r.listError = body.trim();
+        else r.all = all;
+        int afterGet = g + GET_MARK.length();
+        int p = out.lastIndexOf(PATH_MARK);
+        if (p < afterGet) {
+            r.pathOut = out.substring(afterGet).trim();
+            return r;
+        }
+        r.complete = true;
+        r.pathOut = out.substring(afterGet, p).trim();
+        r.paths = parsePath(r.pathOut);
+        r.path = first(r.paths);
+        return r;
+    }
+
+    static String notOffError(String id) {
+        return id + " is not a switched-off overlay on this phone. Reload the list.";
+    }
+
+    /** What the probe says: where ("data", "system", "missing") when the id is a switched-off overlay, else the refusal, or unknown when the answer was cut off or the list was an error. */
+    static final class ProbeVerdict {
+        boolean ok;               // the id is a switched-off overlay installed as an app of its own: the copy and the uninstall may follow
+        boolean unknown;
+        String where = "";
+        String error = "";
+        int state = -2;
+    }
+
+    static ProbeVerdict judgeProbe(String id, ProbeResult r) {
+        ProbeVerdict v = new ProbeVerdict();
+        if (!r.complete || r.all == null) {
+            v.unknown = true;
+            String why = !r.listError.isEmpty() ? r.listError : !r.pathOut.isEmpty() ? r.pathOut : r.text;
+            v.error = why.isEmpty() ? "No answer from the device" : summary(why);
+            return v;
+        }
+        Overlay found = null;
+        for (Overlay o : r.all) {
+            if (o.id.equals(id)) {
+                found = o;
+                break;
+            }
+        }
+        if (found == null || found.state != 0) {
+            if (found != null) v.state = found.state;
+            v.error = notOffError(id);
+            return v;
+        }
+        v.state = 0;
+        // a failure line in place of a path is no answer about where the package is
+        if (r.paths.isEmpty() && (looksLikeFailure(r.pathOut) || FileRules.transportLost(r.pathOut))) {
+            v.unknown = true;
+            v.error = summary(r.pathOut);
+            return v;
+        }
+        v.where = whereOf(r.paths);
+        if ("missing".equals(v.where)) v.error = missingError(id);
+        else if ("system".equals(v.where)) v.error = systemError(id);
+        else v.ok = true;
+        return v;
+    }
+
+    private static String checkedUninstallId(String id) {
+        String p = uninstallIdProblem(id);
+        if (p != null) throw new IllegalArgumentException(p);
+        return BackupScripts.quote(id);
+    }
+
+    /**
+     * Where the overlay's package is installed for the foreground user ({@link #USER_RESOLVE}, then {@code pm path --user "$U"}): one
+     * {@code package:<apk>} line per split, the base APK first, nothing when it is no package for that user.
+     */
+    static String pathScript(String id) {
+        return USER_RESOLVE + "; pm path " + USER_ARG + " " + checkedUninstallId(id);
+    }
+
+    /** Every {@code package:} line's path in order (the base APK first, then the splits); empty when none was printed (a warning or error line is skipped). */
+    static List<String> parsePath(String out) {
+        List<String> paths = new ArrayList<String>();
+        if (out == null) return paths;
+        for (String line : out.split("\r?\n", -1)) {
+            String t = line.trim();
+            if (t.startsWith("package:") && t.length() > "package:".length()) paths.add(t.substring("package:".length()).trim());
+        }
+        return paths;
+    }
+
+    /** The base APK: the first path {@link #parsePath} found, or null when it found none. */
+    static String first(List<String> paths) {
+        return paths == null || paths.isEmpty() ? null : paths.get(0);
+    }
+
+    /** True when the APK is not in a data location (/data/, /mnt/expand/): part of the firmware, in an APEX, or somewhere else pm uninstall does not take away. */
+    static boolean isSystemPath(String path) {
+        if (path == null || path.isEmpty()) return false;
+        if (isDataPath(path)) return false;
+        for (String r : SYSTEM_ROOTS) if (path.startsWith(r)) return true;
+        return true;        // anything else outside the data locations is not something this app may remove either
+    }
+
+    /** "data" (an app of its own), "system" (firmware) or "missing" (no package of that name). */
+    static String whereOf(String path) {
+        if (path == null || path.isEmpty()) return "missing";
+        return isSystemPath(path) ? "system" : "data";
+    }
+
+    /** The same for every APK of the package: "data" only when each one is in a data location; one firmware path among them makes it "system". */
+    static String whereOf(List<String> paths) {
+        if (paths == null || paths.isEmpty()) return "missing";
+        for (String p : paths) if (!"data".equals(whereOf(p))) return "system";
+        return "data";
+    }
+
+    static String missingError(String id) {
+        return id + " is not installed as a package (it may be part of another app, or already gone)";
+    }
+
+    static String systemError(String id) {
+        return id + " is part of the phone's firmware, so it cannot be uninstalled. Switching it off is the way to stop it.";
+    }
+
+    /** The folder the package's copies go to, below the backup folder: named after the package. */
+    static String backupName(String id) {
+        return id;
+    }
+
+    /**
+     * The file name each APK keeps in that folder (base.apk, split_config.xxhdpi.apk ...): the part after the last slash. Refused
+     * (IllegalArgumentException) when a path has no slash, ends in one, names "." or "..", holds a line break, or when two paths share a name.
+     */
+    static List<String> backupFileNames(List<String> apks) {
+        if (apks == null || apks.isEmpty()) throw new IllegalArgumentException("bad APK path");
+        List<String> names = new ArrayList<String>();
+        for (String apk : apks) {
+            if (apk == null || apk.indexOf('\n') >= 0 || apk.indexOf('\r') >= 0 || apk.indexOf('\0') >= 0) throw new IllegalArgumentException("bad APK path");
+            int slash = apk.lastIndexOf('/');
+            if (slash < 0) throw new IllegalArgumentException("bad APK path");
+            String name = apk.substring(slash + 1);
+            if (name.isEmpty() || name.equals(".") || name.equals("..")) throw new IllegalArgumentException("bad APK path");
+            if (names.contains(name)) throw new IllegalArgumentException("two APKs share the name " + name);
+            names.add(name);
+        }
+        return names;
+    }
+
+    /** Folders the privileged shell writes to below the FUSE mount; their files must be handed to the media layer (media_rw, uid 1023) or the user and this app cannot see or change them. */
+    static boolean isShellSideMedia(String dir) {
+        return dir != null && dir.startsWith("/data/media/");
+    }
+
+    /**
+     * Copies every APK of the package ({@code apks}: the base APK and its splits, as pm path printed them) into a folder named after the package
+     * below the first folder of {@code dirs} that takes them (the Download folder as this app sees it, then the same folder as the shell may
+     * have to reach it). For each folder: any old folder of that name goes first (a stale or planted copy must never pass for the new one),
+     * the folder is made, and the copies count only when, for every APK, cp itself succeeded, the copy is not empty and cmp finds it
+     * identical to the APK; then they are made world-readable (a failure of chmod on a FUSE storage, whose modes are fixed, is no failure),
+     * copies that landed below the FUSE mount (/data/media) are handed to media_rw so the media layer and the user can see and change them, and
+     * {@link #SAVED_MARK} followed by the folder's path is printed. A set that did not verify is removed again. Prints {@link #NOSAVE_MARK}
+     * when no folder took it. Every path is single-quoted. Each APK keeps its file name ({@link #backupFileNames}).
+     */
+    static String backupScript(List<String> apks, List<String> dirs, String id) {
+        List<String> names = backupFileNames(apks);
+        if (dirs == null || dirs.isEmpty()) throw new IllegalArgumentException("no folder to save to");
+        checkedUninstallId(id);           // also refuses a slash in the name and a name too long for a folder (MAX_NAME)
+        String folder = backupName(id);
+        StringBuilder sb = new StringBuilder();
+        for (String dir : dirs) {
+            if (dir == null || dir.isEmpty() || dir.indexOf('\n') >= 0 || dir.indexOf('\r') >= 0 || dir.indexOf('\0') >= 0) throw new IllegalArgumentException("bad folder");
+            String sub = (dir.endsWith("/") ? dir : dir + "/") + folder;
+            String qdir = BackupScripts.quote(dir);
+            String qsub = BackupScripts.quote(sub);
+            StringBuilder dests = new StringBuilder();
+            sb.append("rm -rf ").append(qsub).append(" 2>/dev/null; ")
+              .append("mkdir -p ").append(qsub).append(" 2>/dev/null; ")
+              .append("if ");
+            for (int k = 0; k < apks.size(); k++) {
+                String qa = BackupScripts.quote(apks.get(k));
+                String qd = BackupScripts.quote(sub + "/" + names.get(k));
+                dests.append(' ').append(qd);
+                if (k > 0) sb.append(" && ");
+                sb.append("cp -f ").append(qa).append(' ').append(qd).append(" 2>/dev/null && test -s ").append(qd).append(" && cmp -s ").append(qa).append(' ').append(qd).append(" 2>/dev/null");
+            }
+            sb.append("; then chmod 0644").append(dests).append(" 2>/dev/null; ");
+            if (isShellSideMedia(dir)) {
+                sb.append("chown 1023:1023 ").append(qdir).append(' ').append(qsub).append(dests).append(" 2>/dev/null; chmod 0775 ").append(qdir).append(' ').append(qsub).append(" 2>/dev/null; chmod 0664").append(dests).append(" 2>/dev/null; ");
+            }
+            sb.append("echo ").append(SAVED_MARK).append(qsub).append("; exit 0; fi; ")
+              .append("rm -rf ").append(qsub).append(" 2>/dev/null; ");
+        }
+        sb.append("echo ").append(NOSAVE_MARK);
+        return sb.toString();
+    }
+
+    /** The folder the copies went to when {@link #backupScript} printed {@link #SAVED_MARK}, else null (a copy did not verify, or nothing came back). */
+    static String parseBackup(String out) {
+        if (out == null) return null;
+        for (String line : out.split("\r?\n", -1)) {
+            String t = line.trim();
+            if (t.startsWith(SAVED_MARK) && t.length() > SAVED_MARK.length()) return t.substring(SAVED_MARK.length());
+        }
+        return null;
+    }
+
+    /**
+     * The uninstall for the foreground user (the user the list is read for: {@link #USER_RESOLVE}, then {@code pm uninstall --user "$U"}),
+     * then the read-back: what pm path prints now for that user (between the markers), then the whole overlay list.
+     */
+    static String uninstallScript(String id) {
+        String q = checkedUninstallId(id);
+        return USER_RESOLVE + "; pm uninstall " + USER_ARG + " " + q + "; echo " + GET_MARK + "; pm path " + USER_ARG + " " + q + "; echo " + PATH_MARK + "; " + listCommand() + "; echo " + END_MARK;
+    }
+
+    /** What an uninstall printed, what pm path printed afterwards, and the list that followed (as {@link ChangeResult}: all is null when it never came). */
+    static final class UninstallResult {
+        String answer = "";
+        String pathOut = "";
+        List<String> paths = new ArrayList<String>();   // what pm path printed after the uninstall: empty when the package is gone (or pm path failed: see pathOut)
+        String path = null;                             // the first of them, null when none
+        boolean complete = false;     // the closing marker came, so the list was not cut off
+        List<Overlay> all = null;
+        String listError = "";
+    }
+
+    static UninstallResult parseUninstall(String out) {
+        UninstallResult r = new UninstallResult();
+        if (out == null) return r;
+        int g = out.indexOf(GET_MARK);
+        if (g < 0) {
+            r.answer = out.trim();
+            return r;
+        }
+        r.answer = out.substring(0, g).trim();
+        int afterGet = g + GET_MARK.length();
+        int p = out.indexOf(PATH_MARK, afterGet);
+        if (p < 0) {
+            r.pathOut = out.substring(afterGet).trim();
+            r.paths = parsePath(r.pathOut);
+            r.path = first(r.paths);
+            return r;
+        }
+        r.pathOut = out.substring(afterGet, p).trim();
+        r.paths = parsePath(r.pathOut);
+        r.path = first(r.paths);
+        int start = p + PATH_MARK.length();
+        int end = out.lastIndexOf(END_MARK);
+        if (end >= start) {
+            r.complete = true;
+            String body = out.substring(start, end);
+            List<Overlay> all = parseList(body);
+            if (all.isEmpty() && (body.trim().isEmpty() || looksLikeFailure(body))) r.listError = body.trim();
+            else r.all = all;
+        }
+        return r;
+    }
+
+    /**
+     * Whether the uninstall worked, from the read-back only: pm path prints nothing for the package any more and the list no longer has the
+     * overlay. "Success" from pm uninstall counts for nothing. Unknown when the list never completed (the link dropped, say), and when pm path
+     * printed a failure or was cut off instead of answering: an empty answer is only "gone" when pm path itself said nothing.
+     */
+    static Verdict judgeUninstall(String id, UninstallResult r) {
+        Verdict v = new Verdict();
+        if (!r.complete) {
+            v.unknown = true;
+            String why = r.listError.isEmpty() ? r.answer : r.listError;
+            v.error = why.isEmpty() ? "No answer from the device" : summary(why);
+            return v;
+        }
+        Overlay found = null;
+        if (r.all != null) {
+            for (Overlay o : r.all) {
+                if (o.id.equals(id)) {
+                    found = o;
+                    break;
+                }
+            }
+        }
+        if (found != null) v.state = found.state;
+        if (!r.paths.isEmpty()) {
+            v.error = looksLikeFailure(r.answer) ? summary(r.answer) : "Android did not remove " + id + " (its package is still installed)";
+            return v;
+        }
+        if (looksLikeFailure(r.pathOut) || FileRules.transportLost(r.pathOut)) {
+            // pm path printed an error or was cut off instead of answering: whether the package is gone is not known, whatever the list says
+            v.unknown = true;
+            v.error = summary(r.pathOut);
+            return v;
+        }
+        if (found != null) {
+            v.error = "The package is gone, but Android still lists the overlay. Reload the list, or restart the phone.";
+            return v;
+        }
+        if (r.all == null && !r.listError.isEmpty()) {
+            // the package is gone, but the listing printed an error instead of a list: where the overlay stands is not known
+            v.unknown = true;
+            v.error = summary(r.listError);
+            return v;
         }
         v.ok = true;
         return v;

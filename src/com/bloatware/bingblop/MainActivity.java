@@ -5201,6 +5201,128 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * Removes a switched-off overlay's package and reports it as window.onOverlayUninstall(json): req, id, ok, mode, needsPrivilege, where
+     * ("data": an app of its own, "system": part of the firmware, "missing": no package of that name), path (the base APK pm path printed),
+     * backup (the folder the copies went to, "" when none), files (the copies' file names in that folder: base.apk and the splits), list
+     * (every overlay as it is now, when the read-back gave one), answer, error, advice, unknown, stale.
+     * The root user or the system user (RootGate.unlocked, as fmkGate: Super User with su granted, or Shizuku as uid 0 or 1000); the gate is
+     * checked before any shell runs. Then, in turn: the overlay list and pm path in one answer say that the id is an overlay that is off on
+     * this phone (anything else is refused: the page's rule, enforced here for every caller) and where its package is (a firmware overlay
+     * is refused with advice, a name that is no package is reported as missing, a probe that was cut off or a pm path that failed is unknown);
+     * every APK of the package (the base and its splits) is copied to a folder named after it under Download/ADB App Manager/Overlays (the
+     * Installer tab can put them back together) and nothing is removed when a copy did not verify; last pm uninstall for the foreground user
+     * (the user the list is read for), followed by pm path and the overlay list, which alone decide whether it worked
+     * (OverlayRules.judgeUninstall) - "Success" from pm counts for nothing, and a pm path that failed instead of answering is unknown.
+     */
+    private void overlayUninstallJob(int req, String id, long queuedAt) {
+        JSONObject res = new JSONObject();
+        try {
+            res.put("req", req);
+            res.put("id", id);
+            if (settingsJobStale(queuedAt)) {
+                res.put("ok", false);
+                res.put("stale", true);
+                res.put("error", "Skipped: it waited too long behind other requests");
+                settingsReply("onOverlayUninstall", res);
+                return;
+            }
+            String mode = resolveExecMode();
+            res.put("mode", mode);
+            boolean suGranted = "root".equals(mode) && isRootGranted();
+            boolean sz = "shizuku".equals(mode) && isShizukuAuthorized();
+            int szUid = sz ? shizukuServerUid() : -1;
+            if (!RootGate.unlocked(mode, suGranted, sz, szUid)) {
+                res.put("ok", false);
+                res.put("needsPrivilege", true);
+                res.put("error", OverlayRules.NEEDS_PRIVILEGE);
+                settingsReply("onOverlayUninstall", res);
+                return;
+            }
+            // 1. is the id a switched-off overlay on this phone, and where is its package: the list and pm path in one answer (OverlayRules.probeScript).
+            // The page only offers the uninstall for a row that is off; this is the floor for every caller. A probe that was cut off, or whose
+            // pm path failed instead of answering, is unknown, never "missing".
+            String probeOut = runPrivilegedShell(mode, OverlayRules.probeScript(id), 15000);
+            OverlayRules.ProbeResult pr = OverlayRules.parseProbe(probeOut);
+            OverlayRules.ProbeVerdict pv = OverlayRules.judgeProbe(id, pr);
+            String path = pr.path;
+            List<String> paths = pr.paths;
+            String where = pv.where;
+            res.put("backup", "");
+            if (!pv.ok) {
+                res.put("ok", false);
+                if (pv.unknown) res.put("unknown", true);
+                if (!where.isEmpty()) res.put("where", where);
+                res.put("path", path == null ? "" : path);
+                res.put("error", pv.error);
+                if ("system".equals(where)) res.put("advice", OverlayRules.SYSTEM_ADVICE);
+                else {
+                    String adv = OverlayRules.advice(pr.listError + "\n" + pr.pathOut);
+                    if (!adv.isEmpty()) res.put("advice", adv);
+                }
+                if (pr.all != null && !pr.all.isEmpty()) res.put("list", overlaysToJson(pr.all));
+                if (!pr.pathOut.isEmpty() && path == null) res.put("answer", clipAnswer(pr.pathOut));
+                settingsReply("onOverlayUninstall", res);
+                return;
+            }
+            res.put("where", where);
+            res.put("path", path);
+            // 2. a copy of every APK first (the base and its splits, into a folder named after the package), so the Installer tab can put the overlay back
+            File pub = new File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), OverlayRules.BACKUP_FOLDER);
+            try { pub.mkdirs(); } catch (Throwable ignored) {}
+            List<String> dirs = new ArrayList<String>();
+            dirs.add(pub.getAbsolutePath());
+            // the same folder as a privileged shell reaches it when the FUSE mount is not in its view
+            dirs.add("/data/media/" + (android.os.Process.myUid() / 100000) + "/Download/" + OverlayRules.BACKUP_FOLDER);
+            List<String> fileNames = OverlayRules.backupFileNames(paths);
+            String copyOut = runPrivilegedShell(mode, OverlayRules.backupScript(paths, dirs, id), 30000);
+            String saved = OverlayRules.parseBackup(copyOut);
+            if (saved == null) {
+                res.put("ok", false);
+                res.put("error", OverlayRules.NO_BACKUP);
+                if (copyOut != null && !copyOut.trim().isEmpty()) res.put("answer", clipAnswer(copyOut.trim()));
+                String adv = OverlayRules.advice(copyOut);
+                if (!adv.isEmpty()) res.put("advice", adv);
+                settingsReply("onOverlayUninstall", res);
+                return;
+            }
+            res.put("backup", saved);
+            JSONArray fileArr = new JSONArray();
+            for (String f : fileNames) fileArr.put(f);
+            res.put("files", fileArr);
+            if (saved.startsWith("/data/media/")) {
+                // the shell wrote below the FUSE mount: tell the media layer about the files at their public paths, so the Installer tab's picker and the Files app list them
+                try {
+                    File pubSub = new File(pub, OverlayRules.backupName(id));
+                    String[] pubFiles = new String[fileNames.size()];
+                    for (int k = 0; k < pubFiles.length; k++) pubFiles[k] = new File(pubSub, fileNames.get(k)).getAbsolutePath();
+                    android.media.MediaScannerConnection.scanFile(this, pubFiles, null, null);
+                } catch (Throwable ignored) {}
+            }
+            // 3. the uninstall, judged by its read-back
+            String out = runPrivilegedShell(mode, OverlayRules.uninstallScript(id), 30000);
+            OverlayRules.UninstallResult ur = OverlayRules.parseUninstall(out);
+            OverlayRules.Verdict v = OverlayRules.judgeUninstall(id, ur);
+            res.put("ok", v.ok);
+            if (v.unknown) res.put("unknown", true);
+            // an empty list after the change is not "this phone has no overlays": the page keeps the list it has and looks again
+            if (ur.all != null && !ur.all.isEmpty()) res.put("list", overlaysToJson(ur.all));
+            if (!ur.answer.isEmpty()) res.put("answer", clipAnswer(ur.answer));
+            if (!v.ok) {
+                res.put("error", v.error);
+                String adv = OverlayRules.advice(ur.answer + "\n" + ur.listError);
+                if (!adv.isEmpty()) res.put("advice", adv);
+            }
+            if (isDebuggableBuild()) Log.d(TAG, "overlayUninstall " + id + " (" + where + ", copy " + saved + "): " + (out != null ? out.trim() : ""));
+        } catch (Throwable t) {
+            try {
+                res.put("ok", false);
+                res.put("error", errMsg(t));
+            } catch (Exception ignored) {}
+        }
+        settingsReply("onOverlayUninstall", res);
+    }
+
+    /**
      * Writes this app's fabricated colour overlay (op "fabricate", the plan's entries) or switches off the overlays it wrote (op
      * "disable", their ids) with root, and reports it as window.onOverlayFab(json): req, op, ids (the overlay identifiers written or
      * switched off), ok, state (the first overlay as the list has it: 1 on, 0 off, -1 cannot be switched, -2 not listed), list, answer,
@@ -11805,15 +11927,35 @@ public class MainActivity extends Activity {
         }
 
         /**
+         * Removes a switched-off overlay's package (Super User, or Shizuku as root or the system user), after a copy of its APK is saved to
+         * Download/ADB App Manager/Overlays. Returns "started", or "error: ..." when the request itself is not acceptable (a bad name, or one
+         * this app fabricated through the shell, which is no package). The answer arrives as window.onOverlayUninstall(json).
+         */
+        @JavascriptInterface
+        public String overlayUninstall(final int req, final String id) {
+            String bad = OverlayRules.uninstallIdProblem(id);
+            if (bad != null) return "error: " + bad;
+            final long queuedAt = android.os.SystemClock.elapsedRealtime();
+            if (!submitSettingsJob(new Runnable() {
+                @Override
+                public void run() {
+                    overlayUninstallJob(req, id, queuedAt);
+                }
+            })) return "error: the app is closing";
+            return "started";
+        }
+
+        /**
          * Writes this app's fabricated colour overlay with root, or switches it off. The plan is JSON: {"action":"fabricate",
-         * "entries":[{"resource":"android:color/system_neutral1_900","argb":"0xFF000000"}, ...]} (action may be left out), or
-         * {"action":"disable","ids":["com.android.shell:aam_monet", ...]}. It is checked here, before anything is queued: a resource
-         * outside android:color/system_*, a value that is not 0xAARRGGBB, a resource named twice, more than OverlayRules.MAX_FAB_ENTRIES
-         * (320) entries or ids, an unsuffixed palette shade on Android 16 QPR1, QPR2 and 17 or an unsuffixed fixed colour on Android 17
-         * (the phone's profile, MonetProfile, as getSystemPalette reports it; the script is built and its lookups chosen for the same
-         * profile), or an id that is not one of this
-         * app's overlays is refused with "error: ...". Returns "started". The answer arrives as window.onOverlayFab(json); without Super
-         * User it says needsPrivilege.
+         * "entries":[{"resource":"android:color/system_neutral1_900","argb":"0xFF000000"}, {"resource":"android:color/system_primary_fixed",
+         * "argb":"0xFF4F378B","config":"night"}, ...]} (action may be left out; config only on a dark-mode colour, which pairs with the
+         * unqualified entry of the same resource), or {"action":"disable","ids":["com.android.shell:aam_monet", ...]}. It is checked here,
+         * before anything is queued: a resource outside android:color/*, a value that is not 0xAARRGGBB, a config other than "night", a
+         * resource named twice for the same config, more than OverlayRules.MAX_FAB_ENTRIES (512) entries or ids, an unsuffixed palette shade
+         * on Android 16 QPR1, QPR2 and 17 or an unsuffixed fixed colour on Android 17 (the phone's profile, MonetProfile, as getSystemPalette
+         * reports it; the script is built and its lookups chosen for the same profile), or an id that is not one of this app's overlays is
+         * refused with "error: ...". Returns "started". The answer arrives as window.onOverlayFab(json); without Super User it says
+         * needsPrivilege.
          */
         @JavascriptInterface
         public String overlayFabricate(final int req, final String planJson) {
@@ -11838,7 +11980,9 @@ public class MainActivity extends Activity {
                     int n = a == null ? 0 : Math.min(a.length(), OverlayRules.MAX_FAB_ENTRIES + 1);
                     for (int i = 0; i < n; i++) {
                         JSONObject e = a.optJSONObject(i);
-                        entries.add(new OverlayRules.FabEntry(e == null ? null : e.optString("resource", null), e == null ? null : e.optString("argb", null)));
+                        // a config left out or null is "the configuration the phone is in"; any text (even an unknown one) is kept for the check to refuse
+                        String config = e == null || e.isNull("config") ? null : e.optString("config", null);
+                        entries.add(new OverlayRules.FabEntry(e == null ? null : e.optString("resource", null), e == null ? null : e.optString("argb", null), config));
                     }
                     OverlayRules.fabricatePlanOk(profile, entries);
                 } else {

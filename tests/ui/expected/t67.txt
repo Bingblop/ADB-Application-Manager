@@ -16,7 +16,7 @@
    a refused change leaves no note: true null
    an unanswered one keeps the note (the restart may still come): true {"t":<epoch ms>,"sub":"theme","undo":null,"done":false,"n":0,"kind":"apply","source":"preset","hex":"43A047","style":"TONAL_SPOT","from":"","root":null,"at":null,"prev":null}
    Default is not an Undo: true
-4. the read-out says "Monochromatic", not Tonal Spot: true From your wallpaper Monochromatic style
+4. the read-out says "Prismatic glow", not Tonal Spot: true From your wallpaper Prismatic glow style
    Apply does not claim it is already the same: true Android repaints in a moment, and apps may restart.
    the editor does not start on the unknown style (one of the six stays chosen): true
    a style with markup in it is not taken for a style at all: true From your wallpaper Tonal Spot style

@@ -34,10 +34,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
 
   await ev(() => { window.__mode.priv = true; checkAllWorkingModes(false); switchView('overlays'); ovlSetSub('list'); }); await sleep(700);
 
-  // 1) touch: a hold flips the overlay once, whatever its length, though the row is redrawn under the finger
+  // 1) touch: a hold on a row that is on switches it off once, whatever its length, though the row is redrawn under the finger (v7.22.0: a hold
+  // on a row that is off asks to uninstall it instead, so the row is put back on before each hold; see t63 and t617 for the off case)
   const target = 'overlay.launcher3.n01';
+  const putOn = id => ev(i => { const o = window.__ovl.find(x => x.id === i); if (o) o.state = 1; ovlReadList(); }, id);
   for (const ms of [520, 600, 690, 800, 1000, 1500]) {
-    await closeAll(); await find(target); await reset();
+    await closeAll(); await putOn(target); await sleep(300); await find(target); await reset();
     const before = await rowOn(target);
     // on the overlay's name: the middle of the row is now close to the 36px Ask agent button, and a finger that near it is the button's
     const box = await page.locator('#ovlRows .ovl-row[data-id="' + target + '"] .sdb-key').first().boundingBox();
@@ -47,11 +49,16 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     check('1. touch hold ' + ms + ' ms on the row: one change (' + o.length + '), no sheet', o.length === 1 && !sheet && (await rowOn(target)) === !before, JSON.stringify({ o: o.length, sheet }));
   }
   for (const ms of [700, 1200]) {
-    await closeAll(); await find(target); await reset();
+    await closeAll(); await putOn(target); await sleep(300); await find(target); await reset();
     const sb = await page.locator('#ovlRows .ovl-row[data-id="' + target + '"] .sdb-sw').first().boundingBox();
     await touch(sb.x + sb.width / 2, sb.y + sb.height / 2, ms);
     check('   touch hold ' + ms + ' ms on the switch: one change, not two', (await ops()).length === 1);
   }
+  // the row is off now (the last hold switched it off): a hold without Super User or Shizuku as uid 0 / 1000 changes nothing and names the gate
+  await closeAll(); await find(target); await reset();
+  const ob = await page.locator('#ovlRows .ovl-row[data-id="' + target + '"] .sdb-key').first().boundingBox();
+  await touch(ob.x + 24, ob.y + ob.height / 2, 800);
+  check('   touch hold on a row that is off at the shell: no change, no sheet, the toast names what uninstalling needs', (await ops()).length === 0 && !(await ev(() => document.getElementById('ovlDetailModal').classList.contains('show'))) && (await rowOn(target)) === false && /Uninstalling an overlay needs Super User/.test(await page.locator('#toastMsg').innerText()), await page.locator('#toastMsg').innerText());
   await closeAll(); await find(target); await reset();
   const tb = await page.locator('#ovlRows .ovl-row[data-id="' + target + '"] .sdb-key').first().boundingBox();
   await touch(tb.x + 24, tb.y + tb.height / 2, 60);

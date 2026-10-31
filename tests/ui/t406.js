@@ -35,25 +35,29 @@ if (fs.existsSync(tmp)) {
 }
 const ck = node([path.join(TESTS, 'i18n', 'check.js'), '--strict']);
 check('every dictionary in assets/lang/ has every string of keys.json and none the page does not have (i18n/check.js --strict)', ck.status === 0, (ck.stdout || '').split('\n').filter(l => /ERROR|warn/.test(l)).slice(0, 6).join(' | '));
-// German addresses the reader as Sie (T-010, T-075): the More styles strings of PR 3, the theme card's other lines (the accents row and
-// Accurate shades included) and the theme preview line must not say du next to the Sie-form "Aus Ihrem Hintergrundbild" of Colors in use
+// German addresses the reader as Sie (T-010, T-075): the style strings of the Monet tab, the other lines of the one theme screen (the accents
+// row, the three switches, the preview's note and the Style card's line; v7.22.0) and the preview line's "your wallpaper" must not say du next
+// to the Sie-form "Aus Ihrem Hintergrundbild" of Colors in use
 {
   const win = {};
   new Function('window', fs.readFileSync(path.join(TESTS, '..', 'assets', 'lang', 'de.js'), 'utf8'))(win);
   const de = win.__LANGS && win.__LANGS.de, px = new Map(((de && de.p) || []).map(e => [e[0], e[1]]));
   const vals = ['Like Fidelity, with a third accent chosen to sit beside your color.', 'Accents keep your exact color; backgrounds take a faint tint of it.', 'From your wallpaper',
-    // the other theme-card lines of the Overlays tab (PR 4, More styles, accents)
-    'Secondary accent: your color.', 'Secondary and tertiary accents: your colors.', 'Tertiary accent: your color.',
     'One color family: accents and backgrounds are your color at different strengths.',
-    'Rainbow, Fruit Salad, Fidelity, Content and Monochrome keep their 2021 colors. The base shades follow light or dark mode as the phone is when you tap Apply; after switching, tap Apply again.',
     'Almost grey, with only a trace of your color.',
     'One hue, five strengths: your color in full for the accent, at half and three quarters for the other accents, a fifth for the surfaces. From the 2026 Material color spec.',
     'Playful: the accents are turned far from your color.', 'Stays as close to your source color as it can, in its own strength.',
-    // the accents row's line and the Accurate shades row (PR 8)
-    'Your own colors for the second and third accent. The main color stays as it is.', 'Accurate shades', 'Accurate shades: off.',
-    'On: every accent shade keeps its own tone. Off: the pale accent colors (shade 100 and, mostly with Color spec 2021, the light container and fixed colors) take a darker tone.'].map(k => de && de.x[k]).concat([px.get('The style gives #{0} now • Apply theme writes your color to the phone'), px.get('From your wallpaper (#{0})')]);
+    // the accents row's line, the three switches and the preview's note (v7.22.0, the one screen)
+    'Your own colors for the second and third accent. The main color stays as it is.', 'Accurate shades',
+    'On: every shade keeps its computed tone. Off: the accent colors come out more vivid, with their pale tones pulled down a little.',
+    'True black dark backgrounds, with the surfaces in a few dark greys. Light mode keeps its colors.',
+    'On: text on surfaces takes a tint of your color. Off: plain white text in dark mode and black in light mode.',
+    'Tap a color to copy it. The same palettes as ColorBlendr; the phone shows them once Apply theme has written them.',
+    'How the palette is worked out from that color. Four more styles need Super User: this app computes their colors and writes them itself.',
+    // the source the preview line names (a hole of the Preview of what Apply theme writes sentence)
+    'your wallpaper'].map(k => de && de.x[k]).concat([px.get('The style gives #{0} now • Apply theme writes your color to the phone'), px.get('Preview of what Apply theme writes: #{0} from {1}, {2}, dark')]);
   const du = vals.filter(v => typeof v !== 'string' || /\b(du|dich|dir|dein|deine|deiner|deinem|deinen|deines)\b/i.test(v));
-  check('de.js: the More styles strings and the wallpaper preview line use the Sie form, as Colors in use does', !du.length && /Ihrem Hintergrundbild/.test(vals[vals.length - 1] || ''), JSON.stringify(du));
+  check('de.js: the Monet tab\'s style strings, the switches and the preview line use the Sie form, as Colors in use does', !du.length && /Ihrem Hintergrundbild/.test(vals[vals.length - 3] || ''), JSON.stringify(du));
 }
 console.log(failed ? failed + ' FAILED' : 'all passed');
 process.exit(failed ? 1 : 0);

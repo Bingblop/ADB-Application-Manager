@@ -17,7 +17,12 @@ module.exports.initScript = function () {
   ];
   for (let t = 2; t < targets.length; t++) for (let i = 0; i < 40; i++) ov.push([targets[t], i % 3 === 0 ? 1 : i % 3 === 1 ? 0 : (i % 7 === 2 ? -1 : 0), 'overlay.' + targets[t].split('.').pop() + '.n' + String(i).padStart(2, '0') + (i % 9 === 0 ? '.theme.color' : '')]);
   window.__ovl = ov.map(r => ({ target: r[0], state: r[1], id: r[2] }));
-  window.__ovlCalls = { list: 0, op: [], apply: [], restore: [], restoreUndo: [], palette: 0, fab: [] };
+  window.__ovlCalls = { list: 0, op: [], apply: [], restore: [], restoreUndo: [], palette: 0, fab: [], un: [] };
+  // v7.22.0 uninstalling an overlay (overlayUninstall): where pm path finds each APK (the default is an installed app under /data/app), a refusal
+  // of the pm uninstall itself, and a copy to Download/ADB App Manager/Overlays/<id>/ (the package's own folder) that cannot be saved (nothing is removed then)
+  window.__ovlPaths = {};         // id -> the APK path pm path prints ('' : not installed as a package); default /data/app/~~mock/<id>-1/base.apk
+  window.__ovlUninstallDeny = {}; // id -> error text: pm uninstall refuses, the package stays
+  window.__ovlNoBackup = false;   // true: the copy of the APK could not be saved, so nothing is removed
   window.__ovlDeny = {};          // id -> error text: the change is refused
   window.__ovlFixed = {};         // id -> true: stays on whatever is asked
   window.__ovlNoAnswer = false;
@@ -121,6 +126,46 @@ module.exports.initScript = function () {
     }, window.__delay);
     return 'started';
   };
+  // MainActivity.overlayUninstall / overlayUninstallJob: the id is checked before anything is queued (OverlayRules.idProblem, a fabricated id),
+  // the gate is RootGate.unlocked (su granted, or Shizuku as uid 0 or uid 1000: the __root and __shizuku1000 knobs), then pm path decides
+  // where the APK lives (missing / system / data), the package's APKs are copied to Download/ADB App Manager/Overlays/<id>/ (base.apk and any splits,
+  // reported as backup = the folder and files = their names; or nothing is removed), pm uninstall runs for the foreground user and ok comes only
+  // from the read-back (pm path prints nothing and the list no longer has the id). Answered as window.onOverlayUninstall(json).
+  const UN_DIR = '/storage/emulated/0/Download/ADB App Manager/Overlays/';
+  const UN_NEEDS = 'Needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)';
+  b.overlayUninstall = function (req, id) {
+    window.__ovlCalls.un.push(id);
+    if (typeof id !== 'string' || !id) return 'error: No overlay named';
+    if (id.length > 300) return 'error: The overlay name is too long (300 characters at most)';
+    if (id.charAt(0) === '-') return "error: An overlay name can't start with a dash";
+    if (/[\s\u0000-\u001f\u007f\ufeff]/.test(id)) return "error: An overlay name can't contain spaces or control characters";
+    if (id.indexOf(':') >= 0) return 'error: This overlay is not an app package; switching it off is all there is to remove';
+    if (id.indexOf('/') >= 0 || id === '.' || id === '..') return "error: An overlay name can't contain a slash";
+    if (id.length + 4 > 255) return 'error: The overlay name is too long for a file name (251 characters at most)';
+    if (window.__ovlNoAnswer) return 'started';
+    setTimeout(() => {
+      const mode = window.__root ? 'root' : window.__shizuku1000 ? 'shizuku' : 'adb_tcp';
+      const r = { req, id, ok: false, mode, needsPrivilege: false, where: '', path: '', backup: '', files: [], answer: '', error: '', advice: '', unknown: false, stale: false };
+      if (!window.__root && !window.__shizuku1000) { r.needsPrivilege = true; r.error = UN_NEEDS; window.onOverlayUninstall(JSON.stringify(r)); return; }
+      // OverlayRules.judgeProbe: the id must be an overlay that is off on this phone (the page's rule, enforced in Java for every caller)
+      const cur = window.__ovl.find(x => x.id === id);
+      if (!cur || cur.state !== 0) { r.error = id + ' is not a switched-off overlay on this phone. Reload the list.'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      const path = Object.prototype.hasOwnProperty.call(window.__ovlPaths, id) ? window.__ovlPaths[id] : '/data/app/~~mock/' + id + '-1/base.apk';
+      if (!path) { r.where = 'missing'; r.error = id + ' is not installed as a package (it may be part of another app, or already gone)'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      r.path = path; r.answer = 'package:' + path;
+      // OverlayRules.isDataPath / SYSTEM_ADVICE: /data/ and adopted storage (/mnt/expand/) are an app's own; anything else is firmware
+      if (!/^\/(data|mnt\/expand)\//.test(path)) { r.where = 'system'; r.error = id + " is part of the phone's firmware, so it cannot be uninstalled. Switching it off is the way to stop it."; r.advice = 'Overlays that ship with the phone live on a read-only partition. Leave this one off, or remove it with a custom ROM or a module that changes the firmware.'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      r.where = 'data';
+      if (window.__ovlNoBackup) { r.error = 'No copy of the APK could be saved to Download/ADB App Manager/Overlays, so nothing was removed'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      r.backup = UN_DIR + id; r.files = [path.replace(/^.*\//, '')];
+      if (window.__ovlUninstallDeny[id]) { r.error = window.__ovlUninstallDeny[id]; r.answer = 'Failure [' + window.__ovlUninstallDeny[id] + ']\npackage:' + path; r.advice = 'Android refused the request.'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      const i = window.__ovl.findIndex(x => x.id === id);
+      if (i >= 0) window.__ovl.splice(i, 1);
+      r.ok = true; r.answer = 'Success'; r.list = wire();
+      window.onOverlayUninstall(JSON.stringify(r));
+    }, window.__delay);
+    return 'started';
+  };
   function themeWrite(kind, req, value, requested, before) {
     setTimeout(() => {
       const r = { req, kind, mode: 'adb_tcp', requested, flags: [] };
@@ -183,22 +228,30 @@ module.exports.initScript = function () {
     if (typeof window.__oneUi === 'string' && window.__oneUi !== '') o.oneUi = window.__oneUi;
     return JSON.stringify(o);
   };
-  // Root as the working mode, su granted and not vetoed (the shape t559 uses), while __root is set; the base mock's ADB TCP otherwise
+  // Root as the working mode, su granted and not vetoed (the shape t559 uses), while __root is set; Shizuku as the system user (uid 1000:
+  // privileged, sysPrivActive, but not uid 0) while __shizuku1000 is set (v7.22.0); the base mock's ADB TCP (the shell, uid 2000) otherwise
+  window.__shizuku1000 = false;
   const baseWorkingMode = b.getWorkingMode;
   b.getWorkingMode = function () {
+    if (window.__shizuku1000 && !window.__root) return JSON.stringify({ activeMode: 'shizuku', configuredMode: 'shizuku', modeAvailable: true, isPrivileged: true, sysPrivActive: true, rootUidActive: false, rootAvailable: false, adbTcp: { connected: false, port: 5555 }, adbWireless: { connected: false, port: 0 }, shizuku: { installed: true, running: true, authorized: true, uid: 1000 } });
     if (!window.__root) return baseWorkingMode.call(this);
     return JSON.stringify({ activeMode: 'root', configuredMode: 'root', modeAvailable: true, isPrivileged: true, rootAvailable: true, rootGranted: true, rootWorkingModeActive: true, adbTcp: { connected: false, port: 5555 }, adbWireless: { connected: false, port: 0 }, shizuku: { installed: false, running: false, authorized: false } });
   };
   // This app's fabricated colour overlay, as MainActivity.overlayFabricate / overlayFabricateJob answer it: the plan is checked before anything
   // is queued ("error: ..." in the words of OverlayRules.fabricatePlanProblem and disablePlanOk), the ids come from the phone's Android (one
   // overlay from 14, one per colour on 12 and 13), the overlay joins the list, and the answer is the list plus a lookup per colour (the first
-  // four), judged from those, as window.onOverlayFab(json). T-049 PR 9: at most 320 entries (OverlayRules.MAX_FAB_ENTRIES); on the profile the
+  // four), judged from those, as window.onOverlayFab(json). v7.22.0 (ColorBlendr parity): any android:color/<name> (OverlayRules.FAB_RESOURCE),
+  // an entry may carry config "night" (and only that), a resource is named twice only within one configuration, at most 512 entries
+  // (OverlayRules.MAX_FAB_ENTRIES); on 12 and 13 one overlay per entry without a configuration, named after the resource
+  // (aam_monet_system_accent1_100, OverlayRules.entryOverlayName), the night entries skipped (perEntryPlan). On the profile the
   // mock reports, when it is P16Q1, P16Q2 or P17 (MonetProfile.suffixedPalettes: Java takes the profile itself), an unsuffixed palette shade is
   // refused and the lookups are OverlayRules.QPR_LOOKUPS the plan has, in that order, then its first other entries up to four. PR 10: on
   // P17 (MonetProfile.suffixedFixed) also an unsuffixed fixed colour (the 12 names exactly) is refused, and the lookups are
-  // OverlayRules.P17_LOOKUPS (the QPR five, then system_primary_fixed_dark), at most six.
-  const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_';
-  const FAB_MAX = 320;
+  // OverlayRules.P17_LOOKUPS (the QPR five, then system_primary_fixed_dark), at most six. As in Java, a night entry is never a fixed-alias
+  // refusal, and an unqualified fixed entry is refused only when the plan has no night entry of the same resource (the pair gives each
+  // mode its colour, so Android takes it); the palette alias rule applies on P16Q1, P16Q2 and P17 alike.
+  const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_', FAB_PREFIX = 'android:color/';
+  const FAB_MAX = 512;
   const QPR_LOOKUPS = ['accent1_600_light', 'accent1_600_dark', 'primary_light', 'surface_dark', 'primary_dim_dark'].map(n => FAB_RES + n);
   const P17_LOOKUPS = QPR_LOOKUPS.concat([FAB_RES + 'primary_fixed_dark']);
   const suffixed = () => window.__profile === 'P16Q1' || window.__profile === 'P16Q2' || window.__profile === 'P17';
@@ -222,13 +275,18 @@ module.exports.initScript = function () {
       const seen = new Set();
       for (let i = 0; i < es.length; i++) {
         const e = es[i] || {};
-        if (typeof e.resource !== 'string' || !/^android:color\/system_[a-z0-9_]+$/.test(e.resource)) return 'error: Entry ' + (i + 1) + ' does not name a system colour (android:color/system_...)';
+        if (typeof e.resource !== 'string' || !/^android:color\/[a-z0-9_]+$/.test(e.resource)) return 'error: Entry ' + (i + 1) + ' does not name a framework colour (android:color/...)';
         if (typeof e.argb !== 'string' || !/^0x[0-9A-Fa-f]{8}$/.test(e.argb)) return 'error: Entry ' + (i + 1) + ' is not a colour (0xAARRGGBB)';
-        if (seen.has(e.resource)) return 'error: Entry ' + (i + 1) + ' names a resource twice';
-        seen.add(e.resource);
+        if (e.config !== undefined && e.config !== null && e.config !== 'night') return 'error: Entry ' + (i + 1) + ' names a configuration other than night';
+        const key = e.resource + (e.config ? '|' + e.config : '');
+        if (seen.has(key)) return 'error: Entry ' + (i + 1) + ' names a resource twice';
+        seen.add(key);
       }
       if (suffixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_(accent[1-3]|neutral[12]|error)_[0-9]+$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a palette color without _light or _dark, which this Android version does not take';
-      if (suffixedFixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a fixed color without _light or _dark, which this Android version does not take';
+      if (suffixedFixed()) {
+        const night = new Set(es.filter(e => e.config === 'night').map(e => e.resource));
+        for (let i = 0; i < es.length; i++) if (!es[i].config && !night.has(es[i].resource) && /^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a fixed color without _light or _dark, which this Android version does not take';
+      }
     } else if (op === 'disable') {
       const ids = plan.ids;
       if (!Array.isArray(ids) || !ids.length) return 'error: No overlay named';
@@ -244,7 +302,7 @@ module.exports.initScript = function () {
     setTimeout(() => {
       const r = { req, op, mode: window.__root ? 'root' : 'adb_tcp' };
       if (window.__fabNeedsRoot || !window.__root) { r.ok = false; r.needsPrivilege = true; r.error = 'Needs Super User'; window.onOverlayFab(JSON.stringify(r)); return; }
-      const ids = op === 'disable' ? plan.ids.slice() : (window.__sdk >= 34 ? [FAB_OWNER + FAB_NAME] : plan.entries.map(e => FAB_OWNER + FAB_NAME + '_' + e.resource.slice(FAB_RES.length)));
+      const ids = op === 'disable' ? plan.ids.slice() : (window.__sdk >= 34 ? [FAB_OWNER + FAB_NAME] : plan.entries.filter(e => !e.config).map(e => FAB_OWNER + FAB_NAME + '_' + e.resource.slice(FAB_PREFIX.length)));
       r.ids = ids;
       if (window.__fabUnknown) { r.ok = false; r.unknown = true; r.error = 'No answer from the device'; window.onOverlayFab(JSON.stringify(r)); return; }
       ids.forEach(id => { let o = window.__ovl.find(x => x.id === id); if (!o) { o = { target: 'android', state: 0, id }; window.__ovl.push(o); } o.state = op === 'disable' ? 0 : 1; });

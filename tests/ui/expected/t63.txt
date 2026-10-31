@@ -45,7 +45,7 @@ Connect ADB, Shizuku or Root to see and change the theme setting.
    "Show more" adds another page: true
    every family has some colors and together they are all 657: true
    closing hides it again: true
-7. six styles, one chosen, with their descriptions: true ["EXPRESSIVE"]
+7. ten styles (v7.22.0: the six of Android and the four of Super User), one chosen, with their descriptions: true ["EXPRESSIVE"]
 8. while it is being applied the button says so and is off: true
    a second tap meanwhile is refused: true
    the native side got the source, the normalized color and the style: true {"source":"preset","hex":"1E88E5","style":"VIBRANT"}
@@ -90,8 +90,9 @@ Refresh / 131
     a bar offers Undo: true Off: android.theme.customization.accent_color
     the group counts follow: true
     Undo switches it back on, without a new Undo: true
-    press and hold flips a row (off -> on): true [{"op":"enable","id":"android.theme.customization.font"}]
+    press and hold on a row that is off at the shell: the lock toast, no switch (uninstalling needs Super User or Shizuku as root or the system user): true Uninstalling an overlay needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)
     and the hold did not also open the sheet: true
+    the switch still flips a row (off -> on): true [{"op":"enable","id":"android.theme.customization.font"}]
     an unavailable overlay cannot be switched, with a word about why: true Android lists this overlay as unavailable
 15. tapping the row opens its sheet: name, state, target: true {"shown":true,"id":"com.android.systemui.clocks.metro","sub":"On · com.android.systemui","on":"none","off":"flex"}
     an overlay that is on offers "Switch off" only: true
