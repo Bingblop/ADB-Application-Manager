@@ -1361,6 +1361,326 @@ final class OverlayRules {
         return v;
     }
 
+    // ---- uninstalling an overlay package ----
+    // A disabled overlay that is an app of its own (an APK under /data/app, from a theme pack or a sideload) can be removed with pm uninstall.
+    // One that lives in the firmware (/system, /vendor, /product ...) cannot, and one this app fabricated through the shell
+    // (com.android.shell:name) is no package at all. Which it is comes from what `pm path` prints, never from the name. Before the package
+    // goes, its APK is copied to Download/ADB App Manager/Overlays so the Installer tab can put it back; nothing is removed when that copy did
+    // not verify. Whether the uninstall worked is read back (pm path prints nothing, the list has no such overlay), never taken from "Success".
+
+    static final String PATH_MARK = "@@OVL-PATH@@";
+    static final String SAVED_MARK = "@@OVL-SAVED@@";
+    static final String NOSAVE_MARK = "@@OVL-NOSAVE@@";
+    /** Where the copy goes, under the phone's Download folder (the Installer tab's picker opens there). */
+    static final String BACKUP_FOLDER = "ADB App Manager/Overlays";
+
+    static final String NOT_A_PACKAGE = "This overlay is not an app package; switching it off is all there is to remove";
+    static final String NEEDS_PRIVILEGE = "Needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)";
+    static final String NO_BACKUP = "No copy of the APK could be saved to Download/" + BACKUP_FOLDER + ", so nothing was removed";
+    static final String SYSTEM_ADVICE = "Overlays that ship with the phone live on a read-only partition. Leave this one off, or remove it with a custom ROM or a module that changes the firmware.";
+    static final String[] SYSTEM_ROOTS = {"/system/", "/vendor/", "/product/", "/odm/", "/system_ext/", "/oem/", "/apex/", "/prism/", "/optics/"};
+    /** Where an app of its own may live: the data partition, or an SD card adopted as internal storage (pm uninstall takes both away). */
+    static final String[] DATA_ROOTS = {"/data/", "/mnt/expand/"};
+    static final String SLASH_IN_NAME = "An overlay name can't contain a slash";
+    /** The longest file name most Android file systems take; the copy is named <id>.apk. */
+    static final int MAX_NAME = 255;
+
+    /** An overlay the shell fabricated (owner:name) is registered with the overlay manager only; there is no package to uninstall. */
+    static boolean isFabricatedId(String id) {
+        return id != null && id.indexOf(':') >= 0;
+    }
+
+    /**
+     * Null when the overlay may be asked about as a package, else why not (the bridge answers with this before anything is queued). The id
+     * also names the saved copy's file, so a slash (which would point the copy outside the backup folder), "." and ".." are refused here too.
+     */
+    static String uninstallIdProblem(String id) {
+        String p = idProblem(id);
+        if (p != null) return p;
+        if (isFabricatedId(id)) return NOT_A_PACKAGE;
+        if (id.indexOf('/') >= 0 || id.equals(".") || id.equals("..")) return SLASH_IN_NAME;
+        if (backupName(id).length() > MAX_NAME) return "The overlay name is too long for a file name (" + (MAX_NAME - ".apk".length()) + " characters at most)";
+        return null;
+    }
+
+    /** True when the package lives where pm uninstall can remove it: under /data/, or on adopted storage under /mnt/expand/. */
+    static boolean isDataPath(String path) {
+        if (path == null || path.isEmpty()) return false;
+        for (String r : DATA_ROOTS) if (path.startsWith(r)) return true;
+        return false;
+    }
+
+    /** The overlay list, then what pm path prints for the package, each closed by a marker: one answer says whether the id is a switched-off overlay and where its APK is. */
+    static String probeScript(String id) {
+        return listCommand() + "; echo " + GET_MARK + "; " + pathScript(id) + "; echo " + PATH_MARK;
+    }
+
+    /** What {@link #probeScript} printed: the list (null when it never came, or was an error), what pm path printed, and whether the closing marker came. */
+    static final class ProbeResult {
+        boolean complete = false;     // PATH_MARK came last, so nothing was cut off
+        List<Overlay> all = null;
+        String listError = "";
+        String pathOut = "";
+        String path = null;
+        String text = "";
+    }
+
+    static ProbeResult parseProbe(String out) {
+        ProbeResult r = new ProbeResult();
+        if (out == null) return r;
+        r.text = out.trim();
+        int g = out.indexOf(GET_MARK);
+        if (g < 0) {
+            r.listError = out.trim();
+            return r;
+        }
+        String body = out.substring(0, g);
+        List<Overlay> all = parseList(body);
+        if (all.isEmpty() && (body.trim().isEmpty() || looksLikeFailure(body))) r.listError = body.trim();
+        else r.all = all;
+        int afterGet = g + GET_MARK.length();
+        int p = out.lastIndexOf(PATH_MARK);
+        if (p < afterGet) {
+            r.pathOut = out.substring(afterGet).trim();
+            return r;
+        }
+        r.complete = true;
+        r.pathOut = out.substring(afterGet, p).trim();
+        r.path = parsePath(r.pathOut);
+        return r;
+    }
+
+    static String notOffError(String id) {
+        return id + " is not a switched-off overlay on this phone. Reload the list.";
+    }
+
+    /** What the probe says: where ("data", "system", "missing") when the id is a switched-off overlay, else the refusal, or unknown when the answer was cut off or the list was an error. */
+    static final class ProbeVerdict {
+        boolean ok;               // the id is a switched-off overlay installed as an app of its own: the copy and the uninstall may follow
+        boolean unknown;
+        String where = "";
+        String error = "";
+        int state = -2;
+    }
+
+    static ProbeVerdict judgeProbe(String id, ProbeResult r) {
+        ProbeVerdict v = new ProbeVerdict();
+        if (!r.complete || r.all == null) {
+            v.unknown = true;
+            String why = !r.listError.isEmpty() ? r.listError : !r.pathOut.isEmpty() ? r.pathOut : r.text;
+            v.error = why.isEmpty() ? "No answer from the device" : summary(why);
+            return v;
+        }
+        Overlay found = null;
+        for (Overlay o : r.all) {
+            if (o.id.equals(id)) {
+                found = o;
+                break;
+            }
+        }
+        if (found == null || found.state != 0) {
+            if (found != null) v.state = found.state;
+            v.error = notOffError(id);
+            return v;
+        }
+        v.state = 0;
+        // a failure line in place of a path is no answer about where the package is
+        if (r.path == null && (looksLikeFailure(r.pathOut) || FileRules.transportLost(r.pathOut))) {
+            v.unknown = true;
+            v.error = summary(r.pathOut);
+            return v;
+        }
+        v.where = whereOf(r.path);
+        if ("missing".equals(v.where)) v.error = missingError(id);
+        else if ("system".equals(v.where)) v.error = systemError(id);
+        else v.ok = true;
+        return v;
+    }
+
+    private static String checkedUninstallId(String id) {
+        String p = uninstallIdProblem(id);
+        if (p != null) throw new IllegalArgumentException(p);
+        return BackupScripts.quote(id);
+    }
+
+    /** Where the overlay's package is installed: {@code pm path} prints one {@code package:<apk>} line per split, nothing when it is no package. */
+    static String pathScript(String id) {
+        return "pm path " + checkedUninstallId(id);
+    }
+
+    /** The first {@code package:} line's path (the base APK), or null when none was printed (a warning or error line before it is skipped). */
+    static String parsePath(String out) {
+        if (out == null) return null;
+        for (String line : out.split("\r?\n", -1)) {
+            String t = line.trim();
+            if (t.startsWith("package:") && t.length() > "package:".length()) return t.substring("package:".length()).trim();
+        }
+        return null;
+    }
+
+    /** True when the APK is not in a data location (/data/, /mnt/expand/): part of the firmware, in an APEX, or somewhere else pm uninstall does not take away. */
+    static boolean isSystemPath(String path) {
+        if (path == null || path.isEmpty()) return false;
+        if (isDataPath(path)) return false;
+        for (String r : SYSTEM_ROOTS) if (path.startsWith(r)) return true;
+        return true;        // anything else outside the data locations is not something this app may remove either
+    }
+
+    /** "data" (an app of its own), "system" (firmware) or "missing" (no package of that name). */
+    static String whereOf(String path) {
+        if (path == null || path.isEmpty()) return "missing";
+        return isSystemPath(path) ? "system" : "data";
+    }
+
+    static String missingError(String id) {
+        return id + " is not installed as a package (it may be part of another app, or already gone)";
+    }
+
+    static String systemError(String id) {
+        return id + " is part of the phone's firmware, so it cannot be uninstalled. Switching it off is the way to stop it.";
+    }
+
+    /** The copy's file name in the backup folder. */
+    static String backupName(String id) {
+        return id + ".apk";
+    }
+
+    /** Folders the privileged shell writes to below the FUSE mount; their files must be handed to the media layer (media_rw, uid 1023) or the user and this app cannot see or change them. */
+    static boolean isShellSideMedia(String dir) {
+        return dir != null && dir.startsWith("/data/media/");
+    }
+
+    /**
+     * Copies the APK to the first folder of {@code dirs} that takes it (the Download folder as this app sees it, then the same folder as
+     * the shell may have to reach it). For each folder: any old file of that name goes first (a stale or planted copy must never pass for the
+     * new one), the folder is made, and the copy counts only when cp itself succeeded, the copy is not empty and cmp finds it identical to the
+     * APK; then it is made world-readable (a failure of chmod on a FUSE storage, whose modes are fixed, is no failure), a copy that landed
+     * below the FUSE mount (/data/media) is handed to media_rw so the media layer and the user can see and change it, and
+     * {@link #SAVED_MARK} followed by the copy's path is printed. A copy that did not verify is removed again. Prints {@link #NOSAVE_MARK} when
+     * no folder took it. Every path is single-quoted.
+     */
+    static String backupScript(String apk, List<String> dirs, String id) {
+        if (apk == null || apk.isEmpty() || apk.indexOf('\n') >= 0 || apk.indexOf('\r') >= 0 || apk.indexOf('\0') >= 0) throw new IllegalArgumentException("bad APK path");
+        if (dirs == null || dirs.isEmpty()) throw new IllegalArgumentException("no folder to save to");
+        checkedUninstallId(id);           // also refuses a slash in the name and a name too long for a file (MAX_NAME)
+        String name = backupName(id);
+        String qa = BackupScripts.quote(apk);
+        StringBuilder sb = new StringBuilder();
+        for (String dir : dirs) {
+            if (dir == null || dir.isEmpty() || dir.indexOf('\n') >= 0 || dir.indexOf('\r') >= 0 || dir.indexOf('\0') >= 0) throw new IllegalArgumentException("bad folder");
+            String dest = (dir.endsWith("/") ? dir : dir + "/") + name;
+            String qdir = BackupScripts.quote(dir);
+            String qd = BackupScripts.quote(dest);
+            sb.append("rm -f ").append(qd).append(" 2>/dev/null; ")
+              .append("mkdir -p ").append(qdir).append(" 2>/dev/null; ")
+              .append("if cp -f ").append(qa).append(' ').append(qd).append(" 2>/dev/null && test -s ").append(qd).append(" && cmp -s ").append(qa).append(' ').append(qd).append(" 2>/dev/null; then ")
+              .append("chmod 0644 ").append(qd).append(" 2>/dev/null; ");
+            if (isShellSideMedia(dir)) {
+                sb.append("chown 1023:1023 ").append(qdir).append(' ').append(qd).append(" 2>/dev/null; chmod 0775 ").append(qdir).append(" 2>/dev/null; chmod 0664 ").append(qd).append(" 2>/dev/null; ");
+            }
+            sb.append("echo ").append(SAVED_MARK).append(BackupScripts.quote(dest)).append("; exit 0; fi; ")
+              .append("rm -f ").append(qd).append(" 2>/dev/null; ");
+        }
+        sb.append("echo ").append(NOSAVE_MARK);
+        return sb.toString();
+    }
+
+    /** The saved copy's path when {@link #backupScript} printed {@link #SAVED_MARK}, else null (the copy did not verify, or nothing came back). */
+    static String parseBackup(String out) {
+        if (out == null) return null;
+        for (String line : out.split("\r?\n", -1)) {
+            String t = line.trim();
+            if (t.startsWith(SAVED_MARK) && t.length() > SAVED_MARK.length()) return t.substring(SAVED_MARK.length());
+        }
+        return null;
+    }
+
+    /** The uninstall for every user, then the read-back: what pm path prints now (between the markers), then the whole overlay list. */
+    static String uninstallScript(String id) {
+        String q = checkedUninstallId(id);
+        return "pm uninstall " + q + "; echo " + GET_MARK + "; pm path " + q + "; echo " + PATH_MARK + "; " + listCommand() + "; echo " + END_MARK;
+    }
+
+    /** What an uninstall printed, what pm path printed afterwards, and the list that followed (as {@link ChangeResult}: all is null when it never came). */
+    static final class UninstallResult {
+        String answer = "";
+        String pathOut = "";
+        String path = null;           // what pm path printed after the uninstall: null when the package is gone
+        boolean complete = false;     // the closing marker came, so the list was not cut off
+        List<Overlay> all = null;
+        String listError = "";
+    }
+
+    static UninstallResult parseUninstall(String out) {
+        UninstallResult r = new UninstallResult();
+        if (out == null) return r;
+        int g = out.indexOf(GET_MARK);
+        if (g < 0) {
+            r.answer = out.trim();
+            return r;
+        }
+        r.answer = out.substring(0, g).trim();
+        int afterGet = g + GET_MARK.length();
+        int p = out.indexOf(PATH_MARK, afterGet);
+        if (p < 0) {
+            r.pathOut = out.substring(afterGet).trim();
+            r.path = parsePath(r.pathOut);
+            return r;
+        }
+        r.pathOut = out.substring(afterGet, p).trim();
+        r.path = parsePath(r.pathOut);
+        int start = p + PATH_MARK.length();
+        int end = out.lastIndexOf(END_MARK);
+        if (end >= start) {
+            r.complete = true;
+            String body = out.substring(start, end);
+            List<Overlay> all = parseList(body);
+            if (all.isEmpty() && (body.trim().isEmpty() || looksLikeFailure(body))) r.listError = body.trim();
+            else r.all = all;
+        }
+        return r;
+    }
+
+    /**
+     * Whether the uninstall worked, from the read-back only: pm path prints nothing for the package any more and the list no longer has the
+     * overlay. "Success" from pm uninstall counts for nothing. Unknown when the list never completed (the link dropped, say).
+     */
+    static Verdict judgeUninstall(String id, UninstallResult r) {
+        Verdict v = new Verdict();
+        if (!r.complete) {
+            v.unknown = true;
+            String why = r.listError.isEmpty() ? r.answer : r.listError;
+            v.error = why.isEmpty() ? "No answer from the device" : summary(why);
+            return v;
+        }
+        Overlay found = null;
+        if (r.all != null) {
+            for (Overlay o : r.all) {
+                if (o.id.equals(id)) {
+                    found = o;
+                    break;
+                }
+            }
+        }
+        if (found != null) v.state = found.state;
+        if (r.path != null) {
+            v.error = looksLikeFailure(r.answer) ? summary(r.answer) : "Android did not remove " + id + " (its package is still installed)";
+            return v;
+        }
+        if (found != null) {
+            v.error = "The package is gone, but Android still lists the overlay. Reload the list, or restart the phone.";
+            return v;
+        }
+        if (r.all == null && !r.listError.isEmpty()) {
+            // the package is gone, but the listing printed an error instead of a list: where the overlay stands is not known
+            v.unknown = true;
+            v.error = summary(r.listError);
+            return v;
+        }
+        v.ok = true;
+        return v;
+    }
+
     // ---- words for failures ----
 
     static boolean looksLikeFailure(String text) {

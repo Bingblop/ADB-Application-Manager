@@ -17,7 +17,12 @@ module.exports.initScript = function () {
   ];
   for (let t = 2; t < targets.length; t++) for (let i = 0; i < 40; i++) ov.push([targets[t], i % 3 === 0 ? 1 : i % 3 === 1 ? 0 : (i % 7 === 2 ? -1 : 0), 'overlay.' + targets[t].split('.').pop() + '.n' + String(i).padStart(2, '0') + (i % 9 === 0 ? '.theme.color' : '')]);
   window.__ovl = ov.map(r => ({ target: r[0], state: r[1], id: r[2] }));
-  window.__ovlCalls = { list: 0, op: [], apply: [], restore: [], restoreUndo: [], palette: 0, fab: [] };
+  window.__ovlCalls = { list: 0, op: [], apply: [], restore: [], restoreUndo: [], palette: 0, fab: [], un: [] };
+  // v7.22.0 uninstalling an overlay (overlayUninstall): where pm path finds each APK (the default is an installed app under /data/app), a refusal
+  // of the pm uninstall itself, and a copy to Download/ADB App Manager/Overlays that cannot be saved (nothing is removed then)
+  window.__ovlPaths = {};         // id -> the APK path pm path prints ('' : not installed as a package); default /data/app/~~mock/<id>-1/base.apk
+  window.__ovlUninstallDeny = {}; // id -> error text: pm uninstall refuses, the package stays
+  window.__ovlNoBackup = false;   // true: the copy of the APK could not be saved, so nothing is removed
   window.__ovlDeny = {};          // id -> error text: the change is refused
   window.__ovlFixed = {};         // id -> true: stays on whatever is asked
   window.__ovlNoAnswer = false;
@@ -118,6 +123,45 @@ module.exports.initScript = function () {
         r.list = wire();
       }
       window.onOverlayOp(JSON.stringify(r));
+    }, window.__delay);
+    return 'started';
+  };
+  // MainActivity.overlayUninstall / overlayUninstallJob: the id is checked before anything is queued (OverlayRules.idProblem, a fabricated id),
+  // the gate is RootGate.unlocked (su granted, or Shizuku as uid 0 or uid 1000: the __root and __shizuku1000 knobs), then pm path decides
+  // where the APK lives (missing / system / data), the APK is copied to Download/ADB App Manager/Overlays (or nothing is removed), pm uninstall
+  // runs and ok comes only from the read-back (pm path prints nothing and the list no longer has the id). Answered as window.onOverlayUninstall(json).
+  const UN_DIR = '/storage/emulated/0/Download/ADB App Manager/Overlays/';
+  const UN_NEEDS = 'Needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)';
+  b.overlayUninstall = function (req, id) {
+    window.__ovlCalls.un.push(id);
+    if (typeof id !== 'string' || !id) return 'error: No overlay named';
+    if (id.length > 300) return 'error: The overlay name is too long (300 characters at most)';
+    if (id.charAt(0) === '-') return "error: An overlay name can't start with a dash";
+    if (/[\s\u0000-\u001f\u007f\ufeff]/.test(id)) return "error: An overlay name can't contain spaces or control characters";
+    if (id.indexOf(':') >= 0) return 'error: This overlay is not an app package; switching it off is all there is to remove';
+    if (id.indexOf('/') >= 0 || id === '.' || id === '..') return "error: An overlay name can't contain a slash";
+    if (id.length + 4 > 255) return 'error: The overlay name is too long for a file name (251 characters at most)';
+    if (window.__ovlNoAnswer) return 'started';
+    setTimeout(() => {
+      const mode = window.__root ? 'root' : window.__shizuku1000 ? 'shizuku' : 'adb_tcp';
+      const r = { req, id, ok: false, mode, needsPrivilege: false, where: '', path: '', backup: '', answer: '', error: '', advice: '', unknown: false, stale: false };
+      if (!window.__root && !window.__shizuku1000) { r.needsPrivilege = true; r.error = UN_NEEDS; window.onOverlayUninstall(JSON.stringify(r)); return; }
+      // OverlayRules.judgeProbe: the id must be an overlay that is off on this phone (the page's rule, enforced in Java for every caller)
+      const cur = window.__ovl.find(x => x.id === id);
+      if (!cur || cur.state !== 0) { r.error = id + ' is not a switched-off overlay on this phone. Reload the list.'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      const path = Object.prototype.hasOwnProperty.call(window.__ovlPaths, id) ? window.__ovlPaths[id] : '/data/app/~~mock/' + id + '-1/base.apk';
+      if (!path) { r.where = 'missing'; r.error = id + ' is not installed as a package (it may be part of another app, or already gone)'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      r.path = path; r.answer = 'package:' + path;
+      // OverlayRules.isDataPath / SYSTEM_ADVICE: /data/ and adopted storage (/mnt/expand/) are an app's own; anything else is firmware
+      if (!/^\/(data|mnt\/expand)\//.test(path)) { r.where = 'system'; r.error = id + " is part of the phone's firmware, so it cannot be uninstalled. Switching it off is the way to stop it."; r.advice = 'Overlays that ship with the phone live on a read-only partition. Leave this one off, or remove it with a custom ROM or a module that changes the firmware.'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      r.where = 'data';
+      if (window.__ovlNoBackup) { r.error = 'No copy of the APK could be saved to Download/ADB App Manager/Overlays, so nothing was removed'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      r.backup = UN_DIR + id + '.apk';
+      if (window.__ovlUninstallDeny[id]) { r.error = window.__ovlUninstallDeny[id]; r.answer = 'Failure [' + window.__ovlUninstallDeny[id] + ']\npackage:' + path; r.advice = 'Android refused the request.'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
+      const i = window.__ovl.findIndex(x => x.id === id);
+      if (i >= 0) window.__ovl.splice(i, 1);
+      r.ok = true; r.answer = 'Success'; r.list = wire();
+      window.onOverlayUninstall(JSON.stringify(r));
     }, window.__delay);
     return 'started';
   };

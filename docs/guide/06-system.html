@@ -509,11 +509,11 @@
   <h5>Switch an overlay on or off</h5>
   <ol class="hg-steps">
     <li>Find the overlay (search or a chip).</li>
-    <li><b>Tap its switch</b>, or <b>press and hold the row</b> for about half a second (you feel a short tap).</li>
+    <li><b>Tap its switch</b>. A row that is <b>On</b> also switches off when you <b>press and hold it</b> for about half a second (you feel a short tap); a press and hold on a row that is <b>Off</b> does not switch it on any more, it asks to uninstall it instead (see <a href="#overlays-uninstall">Uninstalling an overlay</a>).</li>
     <li>The app runs the change and reads the whole list again, so the row shows what Android reports, not what was asked for.</li>
     <li>The Undo bar says <i>On: name</i> or <i>Off: name</i>. Tap <b>Undo</b> within 3 seconds to put it back.</li>
   </ol>
-  <p><b>The detail sheet.</b> Tap a row (not the switch) to open a sheet with the full name, state and target, a note, <b>Switch on</b> or <b>Switch off</b>, and the links <b>Copy name</b>, <b>Copy target</b> and <b>Copy command</b> (the exact <code>cmd overlay</code> line).</p>
+  <p><b>The detail sheet.</b> Tap a row (not the switch) to open a sheet with the full name, state and target, a note, <b>Switch on</b> or <b>Switch off</b>, a red <b>Uninstall</b> button on a row that is Off (locked, with the lock glyph, when no mode with the privilege is connected), and the links <b>Copy name</b>, <b>Copy target</b> and <b>Copy command</b> (the exact <code>cmd overlay</code> line).</p>
   <p><b>When an overlay will not switch.</b> Some overlays are fixed on or off by the system or belong to another app. Android 12 and newer answer with a bare "commit failed", and the app says so: <i>Android refused the change and gave no reason</i>. A sheet titled <b>Could not switch it on</b> (or off) shows Android's words and advice. If no answer comes in time, the phone may still apply it and the list is read again shortly. Overlays are switched for the user the phone's shell uses by default, which is the owner on nearly every phone.</p>
 
   <h4>If a colour looks bad: undo and recovery</h4>
@@ -539,6 +539,28 @@
     </tbody>
   </table>
 </section>
+<section id="overlays-uninstall" data-title="Uninstalling an overlay" data-group="The tabs">
+  <p class="hg-lead">An overlay you do not want at all, rather than merely off, can be removed from the phone. It needs <b>Super User</b> (<code>su</code> granted, uid 0), or <b>Shizuku</b> running as root (uid 0) or as the system user (uid 1000); ADB, Wireless Debugging and Shizuku as the shell cannot do it. The note at the top of the Overlays half and the Press and hold guide in <a href="#prefs">Settings</a> say the same.</p>
+  <p><b>Where to find it:</b> the <b>RRO/Monet Customization</b> tab, <b>Overlays</b> half: a press and hold on a row that is <b>Off</b>, or the red <b>Uninstall</b> button in the row's detail sheet. New in v7.22.0.</p>
+  <ol class="hg-steps">
+    <li>Switch the overlay <b>off</b> first if it is on (an uninstall is only offered for a row that is Off, so you see the phone without it before it is gone).</li>
+    <li><b>Press and hold the row</b> for about half a second, or open its detail sheet and tap the red <b>Uninstall</b>. A prompt titled <b>Uninstall name?</b> explains what follows; <b>Uninstall</b> is the red button.</li>
+    <li>The app first copies the overlay's APK to <code>Download/ADB App Manager/Overlays/name.apk</code> and checks that the copy is there; nothing is removed when the copy did not take.</li>
+    <li>Then it runs <code>pm uninstall</code>, which removes the package for every user of the phone, and asks Android twice whether it is really gone: <code>pm path</code> must print nothing and the overlay list must no longer have it. The row is shown busy meanwhile; the answer may take up to a minute.</li>
+    <li>On success the list is drawn again without it, a message says <i>Uninstalled: name</i>, and a second line names the saved copy. There is no Undo bar for an uninstall.</li>
+  </ol>
+  <p><b>What the app refuses.</b></p>
+  <ul>
+    <li><b>Part of the firmware.</b> An overlay that lives on a read-only partition (<code>/system</code>, <code>/vendor</code>, <code>/product</code> and the like) cannot be uninstalled; the sheet <b>Could not uninstall</b> says so and advises leaving it off. Switching it off is the way to stop it.</li>
+    <li><b>An overlay this app fabricated</b> (a name with a colon, such as <code>com.android.shell:aam_monet</code>) is not a package: switching it off is all there is to remove, and the hold says so without a prompt.</li>
+    <li><b>No mode with the privilege.</b> Without Super User, or Shizuku as root or the system user, the <b>Uninstall</b> button in the sheet is greyed and locked with the lock glyph, and a press and hold on an Off row only shows why (<i>Uninstalling an overlay needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)</i>); nothing else happens. A build of the app too old to have the bridge says <i>This version of the app cannot uninstall overlays</i>.</li>
+    <li><b>Not a switched-off overlay.</b> The app checks the overlay list again on the phone before anything is copied or removed: a name that is not listed, or an overlay that is on by then (it was switched on while the prompt was open, say), is refused with <i>name is not a switched-off overlay on this phone. Reload the list.</i></li>
+    <li><b>Not installed as a package</b>, or the copy could not be saved: the sheet names the reason and nothing is removed. The copy must match the APK byte for byte; an older or foreign file of that name in the folder is never taken for it.</li>
+  </ul>
+  <div class="hg-warn"><b>Careful.</b> Android may restart apps when an overlay disappears, this one included. An overlay another app installed and needs (a theme engine, an icon pack, a launcher's own styling) is gone until it is installed again, and that app may look wrong or refuse to start until then. The app decides from what Android reports, never from the command's own words: a <code>Success</code> that leaves the package in place is reported as a failure, and a list that could not be read is reported as unknown and read again shortly.</div>
+  <p><b>Undo.</b> Nothing else in the app brings an uninstalled overlay back. Install the saved copy from the <a href="#tab-installer">Installer</a> tab (it is in <code>Download/ADB App Manager/Overlays</code>), or from a computer: the copy is on the phone, so pull it first and then install it, <code>adb pull "/sdcard/Download/ADB App Manager/Overlays/name.apk"</code> and <code>adb install name.apk</code> (or in one step, <code>adb shell pm install "/sdcard/Download/ADB App Manager/Overlays/name.apk"</code>); then switch it on again here if you want it on. The copy is a plain APK, so it survives this app being uninstalled.</p>
+</section>
+
 <section id="overlays-root" data-title="Root-only theme controls" data-group="The tabs">
   <p class="hg-lead">Most of the Theme half is colours that Android takes only from a colour overlay written as the root user. These rows are locked without <b>Super User</b> (uid 0) and live with it: the <b>Secondary and tertiary accents</b> on the Color card, the four extra styles on the Style card, <b>Color spec</b>, <b>Contrast</b>, <b>Intensity</b> and the three switches of <b>Shades and text</b> (<b>Accurate shades</b>, <b>Pure black</b> and <b>Tint text color</b>). The colours they produce are the ones <b>ColorBlendr</b> produces for the same choices: the same colour library, the same tuning, the same list of colours in the same order. This section says what the lock means, what the one Apply writes, what can go wrong and how to undo it; each control has a section of its own after this one.</p>
   <p><b>Where it is:</b> the <b>RRO/Monet Customization</b> tab, <b>Theme</b> half, from the Color card down to Shades and text; the one <b>Apply theme</b> sits in the bar at the bottom. On Android 11 and older the cards are hidden with the rest of the Theme half.</p>
@@ -1055,7 +1077,7 @@
       <tr><td>A file or folder row</td><td>File Manager</td><td>Starts selecting. Tap more rows to add them, then Copy, Move, Compress or Delete.</td></tr>
       <tr><td>A file the APK search found</td><td>Installer</td><td>Asks to delete it from the phone, with an Undo right after.</td></tr>
       <tr><td>A setting that is on or off</td><td>Hidden Settings</td><td>Flips it (1 / 0, true / false, on / off, yes / no). Any other setting says to tap it to edit. See <a href="#tab-settings">Hidden Settings</a>.</td></tr>
-      <tr><td>An overlay row</td><td>Overlays</td><td>Switches that overlay on or off. See <a href="#tab-overlays">RRO/Monet Customization</a>.</td></tr>
+      <tr><td>An overlay row</td><td>Overlays</td><td>A row that is on: switches it off. A row that is off: asks to uninstall it (Super User, or Shizuku as root or the system user), after saving a copy of its APK to Download/ADB App Manager/Overlays. The switch turns it on or off either way. See <a href="#overlays-uninstall">Uninstalling an overlay</a>.</td></tr>
       <tr><td>Hold to confirm</td><td>Extra Settings</td><td>Power off, Recovery and Bootloader run only when you keep holding until the ring fills (just over a second). A short tap does nothing.</td></tr>
       <tr><td>The arrow and page keys</td><td>Real terminal</td><td>Repeat while you hold them, like a keyboard key. See <a href="#tab-terminal">Terminal</a>.</td></tr>
     </tbody>

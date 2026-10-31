@@ -268,9 +268,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('    Undo switches it back on, without a new Undo', JSON.stringify((await calls()).op) === '[{"op":"enable","id":"android.theme.customization.accent_color"}]' && (await rowState('android.theme.customization.accent_color')).on === true && (await snack()) === '');
   await ev(() => { window.__ovlCalls.op.length = 0; });
   await ev(() => { ovlLimit = 100000; ovlRender(); }); await sleep(300);      // the off ones sit after the on ones now: draw them all
+  // v7.22.0: a hold on a row that is off asks to uninstall it (Super User, or Shizuku as root or the system user; t617), so at the shell it only says what is needed; the switch still turns the row on
   await hold('android.theme.customization.font'); await sleep(200);
-  check('    press and hold flips a row (off -> on)', JSON.stringify((await calls()).op) === '[{"op":"enable","id":"android.theme.customization.font"}]' && (await rowState('android.theme.customization.font')).on === true, JSON.stringify((await calls()).op));
+  check('    press and hold on a row that is off at the shell: the lock toast, no switch (uninstalling needs Super User or Shizuku as root or the system user)', (await calls()).op.length === 0 && (await rowState('android.theme.customization.font')).on === false && /needs Super User, or Shizuku as root \(uid 0\) or the system user \(uid 1000\)/.test(await toast()), await toast());
   check('    and the hold did not also open the sheet', (await ev(() => document.getElementById('ovlDetailModal').classList.contains('show'))) === false);
+  await page.locator('#ovlRows .ovl-row[data-id="android.theme.customization.font"] .sdb-sw').click(); await sleep(200);
+  check('    the switch still flips a row (off -> on)', JSON.stringify((await calls()).op) === '[{"op":"enable","id":"android.theme.customization.font"}]' && (await rowState('android.theme.customization.font')).on === true, JSON.stringify((await calls()).op));
   await ev(() => { window.__ovlCalls.op.length = 0; });
   await hold('com.google.android.overlay.gmsconfig.photos'); await sleep(100);
   check('    an unavailable overlay cannot be switched, with a word about why', (await calls()).op.length === 0 && /unavailable/.test(await toast()), await toast());
