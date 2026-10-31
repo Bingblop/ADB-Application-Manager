@@ -122,7 +122,7 @@ const KEY = 'theme_customization_overlay_packages';
     await page.close();
   }
 
-  // 4) a style the page does not list is shown as it is, and never called "already what the phone uses"
+  // 4) a style the page does not list is shown as it is
   {
     const page = await mk(); const T = tools(page);
     await T.open('theme');
@@ -130,7 +130,6 @@ const KEY = 'theme_customization_overlay_packages';
     await T.ev(() => { window.__db.secure['theme_customization_overlay_packages'] = '{"android.theme.customization.color_source":"home_wallpaper","android.theme.customization.theme_style":"PRISMATIC_GLOW"}'; ovlReadTheme(); }); await T.sleep(400);
     const now = await T.ev(() => document.getElementById('ovlNow').innerText.replace(/\s+/g, ' '));
     check('4. the read-out says "Prismatic glow", not Tonal Spot', /From your wallpaper Prismatic glow style/.test(now), now);
-    check('   Apply does not claim it is already the same', !/already what the phone uses/.test(await T.ev(() => document.getElementById('ovlApplyHint').innerText)), await T.ev(() => document.getElementById('ovlApplyHint').innerText));
     check('   the editor does not start on the unknown style (one of the six stays chosen)', await T.ev(() => OVL_STYLE_IDS.includes(ovlStyle)));
     await T.ev(() => { window.__db.secure['theme_customization_overlay_packages'] = '{"android.theme.customization.color_source":"home_wallpaper","android.theme.customization.theme_style":"X<img src=x onerror=window.__pwned=1>"}'; ovlReadTheme(); }); await T.sleep(400);
     check('   a style with markup in it is not taken for a style at all', (await T.ev(() => window.__pwned)) === undefined && (await T.ev(() => ovlTheme.style)) === '', await T.ev(() => document.getElementById('ovlNow').innerText.replace(/\s+/g, ' ')));
@@ -263,7 +262,6 @@ const KEY = 'theme_customization_overlay_packages';
     check('11. on Android 11 a first visit opens on the Overlays list', await T.ev(() => ovlSub === 'list' && document.getElementById('ovlListPanel').style.display !== 'none'));
     await T.ev(() => ovlSetSub('theme')); await T.sleep(300);
     check('    Apply and Default are off', await T.ev(() => document.getElementById('ovlApplyBtn').disabled && document.getElementById('ovlResetBtn').disabled));
-    check('    and it says why', /Android 12 or newer/.test(await T.ev(() => document.getElementById('ovlApplyHint').innerText)), await T.ev(() => document.getElementById('ovlApplyHint').innerText));
     await T.ev(() => { window.__ovlCalls.apply.length = 0; ovlApply(); }); await T.sleep(300);
     check('    asking anyway changes nothing and says so', (await T.ev(() => window.__ovlCalls.apply.length)) === 0 && /Android 12/.test(await T.toast()), await T.toast());
     await page.close();

@@ -8,12 +8,10 @@
    Apply: the theme setting gets Tonal Spot (Android knows no Content), the overlay the Content colours (236 entries on Android 15), the record Content: true [{"source":"home_wallpaper","hex":"","style":"TONAL_SPOT"},236]
    the overlay's shades are the Content ones, not Tonal Spot's: true
    Colors in use reads the setting: a custom colour is not set, so the wallpaper line, Tonal Spot: true
-   the hint stays the usual one plus the overlay sentence: true
    Vibrant: the setting gets Vibrant, the overlay the Vibrant colours too: true {"source":"home_wallpaper","hex":"","style":"VIBRANT"}
    ovlStyleName knows all ten, and a name Android adds later: true
 3. Monochrome chosen, then Root gone: the grid marks Tonal Spot, Monochrome is greyed with the uid 0 reason: true {"id":"MONOCHROMATIC","name":"🔒 Monochrome","tag":"Super User","locked":true,"disabled":true,"checked":"false","why":"Needs Super User (uid 0) to write Material You colors"}
    Apply writes Tonal Spot and nothing else: true [{"source":"home_wallpaper","hex":"","style":"TONAL_SPOT"}]
-   the hint says this is what the phone uses now (the setting is Tonal Spot from the wallpaper): true
    Root back: Monochrome is the one marked again: true
 4. the grid's choice is not stored by itself: true
 no page errors: true

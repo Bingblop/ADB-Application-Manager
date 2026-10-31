@@ -8,7 +8,7 @@
    the plan: system_surface_dark black, system_background_dark black; light mode kept: true ["0xFF000000","0xFF000000","0xFFF6FBF2"]
    Tint text color off: stored false: true
    the plan: plain white text on the dark surfaces, black on the light ones; with it on they were tinted: true ["0xFFFFFFFF","0xFF000000","0xFFDFE4DC"]
-   the hint names no switch (one sentence for the overlay): true
+   no line of text under Apply theme and Reset (v7.22.1): true Apply theme Reset
 3. Enter on a focused switch toggles it and the focus stays on it: true
 4. after a restart Pure black is still on and the other two as left: true
    without uid 0: three locked rows with the glyph and the reason, no switch: true true:🔒 Accurate shades:Needs Super User (uid 0) to write Material You colors:false|true:🔒 Pure black:Needs Super User (uid 0) to write Material You colors:false|true:🔒 Tint text color:Needs Super User (uid 0) to write Material You colors:false

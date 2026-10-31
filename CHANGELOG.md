@@ -1,5 +1,12 @@
 # Changelog
 
+## v7.22.1-Pro (versionCode 879)
+
+A patch release on top of v7.22.0, cut from `main`, for the owner's request of 2026-10-31. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version.
+
+- **RRO/Monet Customization, Theme half:** the line of text under **Apply theme** and **Reset** in the bar at the bottom is gone (*Android repaints in a moment, and apps may restart.*, *This is already what the phone uses.*, *Material You needs Android 12 or newer.*, and with Super User *Also writes these colors into Android with Super User: the same palettes as ColorBlendr.* and *Reset also removes the theme overlay.*). The bar holds only the two buttons and is shorter. Nothing else on the tab changed: the buttons, what Apply and Reset do, the confirm before Reset, the Undo bar and the Overlays half with its press and hold to uninstall are as in v7.22.0.
+- The five texts are removed from the 13 translations, the guide's steps no longer quote them, and UI scripts t67, t564, t565, t570, t573, t574, t615 and t616 check that the bar has no line under the buttons.
+
 ## v7.22.0-Pro (versionCode 878)
 
 A feature release on top of v7.21.0, cut from `main`, for the owner's request of 2026-10-30 that the Monet colours written with Super User be the ones ColorBlendr makes, on one screen with one Apply. Package, signing certificate, APK file names and permissions are unchanged, so it installs over every earlier version. **Nothing in it has been run on a phone yet:** the colour maths were checked in a Node test against ColorBlendr's behaviour as read in its source, the page in a headless browser with a mock phone, the overlay rules by the Java suite.

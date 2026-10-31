@@ -1,7 +1,7 @@
 // The notes of the one Theme screen (v7.22.0; PR 13's One UI note and the Android 11 case carried over): on One UI (getSystemPalette reports
 // oneUi) the note under the switches on which apps follow these colours shows, locked or not, and not on any other phone; below Android 12 the
-// root cards (Color spec, Contrast, Intensity, Shades and text) and the accents are hidden with the rest of Material You, the hint says
-// Android 12 is needed, and they come back on Android 14; the note on what is written names PR 2's pure black overlay for a record without a
+// root cards (Color spec, Contrast, Intensity, Shades and text) and the accents are hidden with the rest of Material You, Apply theme is
+// greyed, and they come back on Android 14; the note on what is written names PR 2's pure black overlay for a record without a
 // style and the theme overlay otherwise, "may be" while pending; the How this works card is collapsed and opens with its text and buttons.
 const { chromium, PAGE } = require('./lib/pw');
 const sdb = require('./lib/sdb_mock.js');
@@ -47,8 +47,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
 
   // 3) Android 11
   await ev(() => { window.__sdk = 28; ovlReadPalette(); ovlRender(); }); await sleep(60);
-  const hidden = await ev(() => ({ cards: ['ovlSpecCard', 'ovlContrastCard', 'ovlIntensityCard', 'ovlSwitchCard'].map(id => getComputedStyle(document.getElementById(id)).display), acc: document.getElementById('ovlAccents').innerHTML, note: document.getElementById('ovlRootNote').innerText, hint: document.getElementById('ovlApplyHint').innerText, styles: document.querySelectorAll('#ovlStyles .ovl-style').length, apply: document.getElementById('ovlApplyBtn').disabled }));
-  check('3. below Android 12 the four root cards are hidden and the accents empty; the hint says Android 12 is needed and Apply is disabled', hidden.cards.every(d => d === 'none') && hidden.acc === '' && hidden.note === '' && /needs Android 12/.test(hidden.hint) && !/ColorBlendr/.test(hidden.hint) && hidden.apply, JSON.stringify(hidden));
+  const hidden = await ev(() => ({ cards: ['ovlSpecCard', 'ovlContrastCard', 'ovlIntensityCard', 'ovlSwitchCard'].map(id => getComputedStyle(document.getElementById(id)).display), acc: document.getElementById('ovlAccents').innerHTML, note: document.getElementById('ovlRootNote').innerText, styles: document.querySelectorAll('#ovlStyles .ovl-style').length, apply: document.getElementById('ovlApplyBtn').disabled }));
+  check('3. below Android 12 the four root cards are hidden and the accents empty, and Apply is disabled', hidden.cards.every(d => d === 'none') && hidden.acc === '' && hidden.note === '' && hidden.apply, JSON.stringify(hidden));
   await ev(() => { window.__sdk = 34; ovlReadPalette(); ovlRender(); }); await sleep(60);
   check('   back on Android 14 they are there again, live', await ev(() => ['ovlSpecCard', 'ovlContrastCard', 'ovlIntensityCard', 'ovlSwitchCard'].every(id => getComputedStyle(document.getElementById(id)).display !== 'none') && document.querySelectorAll('#ovlSwitches .sdb-sw').length === 3 && !document.getElementById('ovlApplyBtn').disabled));
 

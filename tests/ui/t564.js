@@ -29,7 +29,6 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const reset = () => ev(() => { window.__ovlCalls.apply.length = 0; window.__ovlCalls.fab.length = 0; window.__ovlCalls.restore.length = 0; window.__ovlCalls.restoreUndo.length = 0; });
   const kv = key => ev(k => kvGet(k, null), key);
   const note = () => ev(() => document.getElementById('ovlRootNote').innerText);
-  const hint = () => ev(() => document.getElementById('ovlApplyHint').innerText.replace(/\s+/g, ' ').trim());
   const settle = (p = page) => p.waitForFunction(() => !ovlBusy && sdbReqs.size === 0, null, { timeout: 8000, polling: 25 }).then(() => true, () => false);
   const apply = async () => { await page.locator('#ovlApplyBtn').click(); await settle(); await sleep(120); };
   const undo = async (p = page) => { await p.locator('#sdbSnackUndo').click(); await settle(p); await p.waitForTimeout(120); };
@@ -37,7 +36,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const AAM = 'com.android.shell:aam_monet';
 
   await ev(() => switchView('overlays')); await sleep(400);
-  check('0. Root on Android 14: live, nothing written, the hint promises the overlay', await ev(() => ovlRootLive() && kvGet('ovl_root_applied', null) === null) && /the same palettes as ColorBlendr/.test(await hint()));
+  check('0. Root on Android 14: live, nothing written', await ev(() => ovlRootLive() && kvGet('ovl_root_applied', null) === null));
 
   // 1) the first Apply: the theme setting, then the overlay; the record
   await ev(() => ovlPickColor('6750A4')); await reset();
@@ -45,7 +44,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   let k = await calls(), rec = await kv('ovl_root_applied');
   check('1. Apply writes the theme (preset 6750A4, Tonal Spot) and then the overlay: 181 entries for Android 14', k.apply.length === 1 && k.apply[0].hex === '6750A4' && k.apply[0].style === 'TONAL_SPOT' && k.fab.length === 1 && k.fab[0].action === 'fabricate' && k.fab[0].entries.length === 181, JSON.stringify([k.apply, k.fab.length]));
   check('   the overlay is listed on, remembered with its options and the level; the toasts and the Undo bar', (await listed(AAM)) === 1 && rec && rec.ids.join() === AAM && rec.style === 'TONAL_SPOT' && rec.opts.seed === '6750A4' && rec.sdk === 34 && !rec.pending && (await toast()) === 'Theme overlay written' && (await snack()) === 'Theme applied' && (await undoShown()), JSON.stringify([rec, await toast(), await snack()]));
-  check('   the note under the switches says it is on the phone; the hint says Reset removes it', (await note()) === 'The theme overlay is written on this phone.' && /Reset also removes the theme overlay\./.test(await hint()), JSON.stringify([await note(), await hint()]));
+  check('   the note under the switches says it is on the phone', (await note()) === 'The theme overlay is written on this phone.', await note());
 
   // 2) Undo with nothing before: the overlay off first, then the theme
   await reset(); await undo();
@@ -121,7 +120,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // 7) the lock follows the working mode: everything locked, Apply writes the theme alone; a root-only style chosen falls back to Tonal Spot
   await ev(() => { ovlStyle = 'FIDELITY'; ovlRender(); });
   await ev(() => { window.__root = false; checkAllWorkingModes(false); }); await sleep(150);
-  check('7. the working mode leaving Root: the rows are locked, the hint promises nothing, the note says the overlay stays on', await ev(() => document.querySelectorAll('#ovlSwitches .rf-row.is-locked').length === 3) && !/ColorBlendr/.test(await hint()) && (await note()) === 'Shizuku and ADB cannot write these colors; Super User (uid 0) can.\nThe theme overlay is written on this phone.', JSON.stringify([await hint(), await note()]));
+  check('7. the working mode leaving Root: the rows are locked, the note says the overlay stays on', await ev(() => document.querySelectorAll('#ovlSwitches .rf-row.is-locked').length === 3) && (await note()) === 'Shizuku and ADB cannot write these colors; Super User (uid 0) can.\nThe theme overlay is written on this phone.', await note());
   check('   the Fidelity chosen before is greyed and Tonal Spot is the one marked', await ev(() => document.querySelector('#ovlStyles .ovl-style.active').dataset.style === 'TONAL_SPOT' && document.querySelector('#ovlStyles .ovl-style[data-style="FIDELITY"]').disabled));
   await reset(); await apply();
   k = await calls();
