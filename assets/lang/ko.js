@@ -4514,7 +4514,7 @@ x: {
 "The old code is gone. Anything you gave it to has to be given the new one.": "이전 코드는 사라졌습니다. 이전 코드를 건넸던 곳에는 새 코드를 다시 건네야 합니다.",
 "The older storage permission some apps still check for.": "일부 앱이 아직 확인하는 이전 방식의 저장 공간 권한입니다.",
 "The overlay stays on: switching it off needs Super User (uid 0).": "오버레이는 켜진 상태로 남습니다. 끄려면 슈퍼유저(uid 0)가 필요합니다.",
-"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for every user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.": "오버레이의 APK를 먼저 Download/ADB App Manager/Overlays에 복사하므로 나중에 설치 관리자 탭에서 다시 설치할 수 있습니다. 그런 다음 패키지가 모든 사용자에서 제거됩니다. Android가 앱을 다시 시작할 수 있습니다. 이 작업은 이 앱에서 되돌릴 수 없으며, 그 복사본을 다시 설치하는 방법만 있습니다.",
+"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.": "오버레이의 APK를 먼저 Download/ADB App Manager/Overlays에 복사하므로 나중에 설치 관리자 탭에서 다시 설치할 수 있습니다. 그런 다음 패키지가 휴대전화의 현재 사용자에서 제거됩니다. Android가 앱을 다시 시작할 수 있습니다. 이 작업은 이 앱에서 되돌릴 수 없으며, 그 복사본을 다시 설치하는 방법만 있습니다.",
 "The pairing code has 6 digits": "페어링 코드는 6자리입니다",
 "The password is used only for this archive, only while it is open. It is never saved.": "비밀번호는 이 압축 파일에만, 열려 있는 동안에만 사용됩니다. 저장되지는 않습니다.",
 "The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.": "패치 번들이 손상되었거나 더 최신 Morphe용으로 만들어졌을 수 있습니다. 소스에서 소스를 업데이트하세요.",

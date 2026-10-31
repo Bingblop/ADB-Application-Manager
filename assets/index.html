@@ -42027,6 +42027,9 @@ Type any command above (e.g. pm list packages -d)</div>
         function ovlSdk() { const p = ovlPalette; return p && typeof p.sdk === 'number' && p.sdk > 0 ? p.sdk : 0; }
         // the phone's build (Build.FINGERPRINT), kept with the colours written for it; '' when the answer has none (an older APK)
         function ovlBuild() { const p = ovlPalette; return p && typeof p.build === 'string' ? p.build : ''; }
+        // the Android build family getSystemPalette reports (MonetProfile's id: 'P14', 'P16Q1', 'P17', ...; 'unknown' or '' when it cannot say):
+        // MonetPlan.cb.entries leaves out what OverlayRules refuses on it (the unsuffixed palette shades on Android 16 QPR1, QPR2 and 17)
+        function ovlProfile() { const p = ovlPalette; return p && typeof p.profile === 'string' ? p.profile : ''; }
         // the stored spec ('2021' when none is stored, ColorBlendr's default) and contrast (0, Standard)
         function ovlSpec() { const s = kvGet('ovl_spec', null); return typeof s === 'string' && OVL_SPEC_IDS.includes(s) ? s : '2021'; }
         function ovlContrastLevel() { const c = kvGet('ovl_contrast', 0); return OVL_CONTRASTS.some(o => o.value === c) ? c : 0; }
@@ -42149,13 +42152,15 @@ Type any command above (e.g. pm list packages -d)</div>
         function ovlRootRemember(rec) { kvSet('ovl_root_applied', rec); if (kvGet('ovl_black_applied', null) != null) kvSet('ovl_black_applied', null); }
 
         // ---- the plan ----
-        // The plan Apply writes, { style, black, opts, entries, sdk, build }: MonetPlan.cb.entries for the phone's Android level (the palette
-        // shades, the roles, the fixed colours, light and dark, a night configuration where Android takes one; names the framework of that
-        // level lacks are left out there), each entry { resource, argb: '0xAARRGGBB', config? } as OverlayRules reads it. at: what Apply
+        // The plan Apply writes, { style, black, opts, entries, sdk, build }: MonetPlan.cb.entries for the phone's Android level and build family
+        // (the palette shades, the roles, the fixed colours, light and dark, a night configuration where Android takes one; names the framework
+        // of that level lacks are left out there, and on Android 16 QPR1, QPR2 and 17 (ovlProfile: P16Q1, P16Q2, P17) the unsuffixed palette
+        // shades, which Java refuses as aliases of the _light / _dark names), each entry { resource, argb: '0xAARRGGBB', config? } as
+        // OverlayRules reads it. Every list the page shows or remembers comes from here, so what is counted is what is written. at: what Apply
         // took when it was tapped ({ opts }: the options then, with the source colour and the mode), else the choices as they are now.
         function ovlBuildRootPlan(sdk, at) {
             const opts = at && at.opts ? at.opts : ovlRootOpts();
-            const entries = MonetPlan.cb.entries(opts, sdk || 34).map(e => {
+            const entries = MonetPlan.cb.entries(opts, sdk || 34, ovlProfile()).map(e => {
                 const out = { resource: e.resource, argb: '0x' + String(e.argb).replace(/^#/, '') };
                 if (e.config) out.config = e.config;
                 return out;
@@ -43087,7 +43092,7 @@ Type any command above (e.g. pm list packages -d)</div>
         // ---- uninstalling an overlay (v7.22.0: "Add the ability to uninstall RRO's if SU, UID 0 or UID 1000 Shizuku is enabled") ----
         // A press and hold on a row that is off asks to uninstall it (the switch and the sheet still turn it on). The gate is the Java RootGate
         // (isRootActive: su granted, or Shizuku as root or as the system user); closed, the hold only says what is needed. The app copies the
-        // APK to Download/ADB App Manager/Overlays first, then removes the package for every user, and answers through onOverlayUninstall.
+        // package's APK files to a folder named after it under Download/ADB App Manager/Overlays first, then removes the package for the phone's current user (the one the list is read for), and answers through onOverlayUninstall.
         const OVL_UN_LOCK = 'Uninstalling an overlay needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)';
         function ovlCanUninstall() { return !!(window.AndroidBridge && typeof window.AndroidBridge.overlayUninstall === 'function') && isRootActive(); }
         function ovlHold(id) {
@@ -43105,7 +43110,7 @@ Type any command above (e.g. pm list packages -d)</div>
             if (!ovlUsable() || !isRootActive()) { showToast(OVL_UN_LOCK); if (!ovlUsable()) openWorkingModesModal(); return; }
             if (id.indexOf(':') >= 0) { showToast('This overlay is not an app package; switching it off is all there is to remove'); return; }
             const ok = await mpAsk({ title: txF('Uninstall {0}?', id),
-                text: txT("The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for every user. Android may restart apps. This cannot be undone from this app, except by installing that copy again."),
+                text: txT("The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again."),
                 ok: txT('Uninstall'), danger: true });
             if (!ok) return;
             // the list may have moved while the prompt was open (a re-read, a late answer, the Undo of an earlier switch): only a row that is still off and idle goes

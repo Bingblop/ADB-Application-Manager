@@ -182,23 +182,38 @@ public class OverlayRulesTest {
             " put) if [ -f \"$OVL_FAKE/deny\" ] && grep -qx \"$2__$3\" \"$OVL_FAKE/deny\"; then echo \"Exception occurred while executing 'put':\"; echo \"java.lang.SecurityException: Permission denial: writing to $2 settings requires android.permission.WRITE_SECURE_SETTINGS\"; echo \"$2 $3 $4 DENIED\" >> \"$OVL_FAKE/put.log\"; else printf '%s' \"$4\" > \"$d/$2__$3\"; echo \"$2 $3 $4\" >> \"$OVL_FAKE/put.log\"; if [ \"$3\" = theme_customization_overlay_packages ] && [ -f \"$OVL_FAKE/rewrite\" ]; then case \"$(cat \"$OVL_FAKE/rewrite\")\" in alpha) sed -e 's/\"android.theme.customization.system_palette\":\"\\([0-9A-F]*\\)\"/\"android.theme.customization.system_palette\":\"FF\\1\"/' \"$d/$2__$3\" > \"$d/.tmp\" && mv \"$d/.tmp\" \"$d/$2__$3\";; other) printf '%s' '{\"other\":1}' > \"$d/$2__$3\";; esac; fi; fi;;\n" +
             " delete) rm -f \"$d/$2__$3\";;\n" +
             "esac\n");
-        // a fake `pm`: "pm path PKG" prints package:<apk> from $OVL_FAKE/paths ("<pkg> <apk>", nothing and exit 1 when unknown; a warning line first
-        // when $OVL_FAKE/pmwarn exists); "pm uninstall PKG" prints Success and drops the package from paths and from the overlay list (keeps the
-        // package, still printing Success, when $OVL_FAKE/pmkeep exists). Logs its arguments one per line.
+        // a fake `pm`: "pm path [--user N] PKG" prints one package:<apk> line per line of $OVL_FAKE/paths for the package ("<pkg> <apk>", the base
+        // first, one more line per split; nothing and exit 1 when unknown; a warning line first when $OVL_FAKE/pmwarn exists; an "Error:" line
+        // and exit 1 when $OVL_FAKE/pmpatherr exists). User N's packages come from $OVL_FAKE/paths.N when that file exists, else from paths; no
+        // --user is user 0, and a user that is no number is refused like pm does. "pm uninstall [--user N] PKG" prints Success and drops the
+        // package from that user's paths and from the overlay list (keeps the package, still printing Success, when $OVL_FAKE/pmkeep exists).
+        // Logs its arguments one per line.
         write(fakeBin.resolve("pm"),
             "#!/bin/sh\n" +
             "{ echo '---'; for x in \"$@\"; do printf '[%s]\\n' \"$x\"; done; } >> \"$OVL_FAKE/pm.log\"\n" +
-            "f=\"$OVL_FAKE/paths\"; touch \"$f\"\n" +
-            "case \"$1\" in\n" +
+            "c=$1; shift; u=0\n" +
+            "if [ \"$1\" = --user ]; then u=$2; shift 2; fi\n" +
+            "case \"$u\" in ''|*[!0-9]*) echo \"Error: Bad user number: $u\"; exit 1;; esac\n" +
+            "f=\"$OVL_FAKE/paths\"; [ -f \"$OVL_FAKE/paths.$u\" ] && f=\"$OVL_FAKE/paths.$u\"; touch \"$f\"\n" +
+            "case \"$c\" in\n" +
             " path) [ -f \"$OVL_FAKE/pmwarn\" ] && echo \"WARNING: linker: Warning: unable to normalize\"\n" +
-            "   p=$(grep \"^$2 \" \"$f\" | head -1 | cut -d' ' -f2-); [ -n \"$p\" ] || exit 1; echo \"package:$p\";;\n" +
-            " uninstall) grep -q \"^$2 \" \"$f\" || { echo \"Failure [DELETE_FAILED_INTERNAL_ERROR]\"; exit 1; }\n" +
+            "   [ -f \"$OVL_FAKE/pmpatherr\" ] && { echo \"Error: java.lang.SecurityException: Shell does not have permission to access user $u\"; exit 1; }\n" +
+            "   grep -q \"^$1 \" \"$f\" || exit 1; grep \"^$1 \" \"$f\" | cut -d' ' -f2- | sed 's/^/package:/';;\n" +
+            " uninstall) grep -q \"^$1 \" \"$f\" || { echo \"Failure [DELETE_FAILED_INTERNAL_ERROR]\"; exit 1; }\n" +
             "   echo Success; [ -f \"$OVL_FAKE/pmkeep\" ] && exit 0\n" +
-            "   grep -v \"^$2 \" \"$f\" > \"$f.tmp\"; mv \"$f.tmp\" \"$f\"\n" +
-            "   o=\"$OVL_FAKE/overlays\"; [ -f \"$o\" ] && { grep -v \" $2\\$\" \"$o\" > \"$o.tmp\"; mv \"$o.tmp\" \"$o\"; };;\n" +
-            " *) echo \"Error: Unknown command: $1\"; exit 1;;\n" +
+            "   grep -v \"^$1 \" \"$f\" > \"$f.tmp\"; mv \"$f.tmp\" \"$f\"\n" +
+            "   o=\"$OVL_FAKE/overlays\"; [ -f \"$o\" ] && { grep -v \" $1\\$\" \"$o\" > \"$o.tmp\"; mv \"$o.tmp\" \"$o\"; };;\n" +
+            " *) echo \"Error: Unknown command: $c\"; exit 1;;\n" +
             "esac\n");
-        for (String f : new String[] {"cmd", "settings", "pm"}) fakeBin.resolve(f).toFile().setExecutable(true);
+        // a fake `am`: "am get-current-user" prints $OVL_FAKE/user when that file exists (whatever it holds), else 0. Logs its arguments one per line.
+        write(fakeBin.resolve("am"),
+            "#!/bin/sh\n" +
+            "{ echo '---'; for x in \"$@\"; do printf '[%s]\\n' \"$x\"; done; } >> \"$OVL_FAKE/am.log\"\n" +
+            "case \"$1\" in\n" +
+            " get-current-user) if [ -f \"$OVL_FAKE/user\" ]; then cat \"$OVL_FAKE/user\"; else echo 0; fi;;\n" +
+            " *) echo \"Error: unknown command: $1\"; exit 1;;\n" +
+            "esac\n");
+        for (String f : new String[] {"cmd", "settings", "pm", "am"}) fakeBin.resolve(f).toFile().setExecutable(true);
 
         // ---- overlay names ----
         for (String id : new String[] {"android.theme.customization.accent_color", "com.android.systemui:overlay_name", "a", "x".repeat(300), "com.foo$bar", "weird'quote", "a;b", "a$(x)", "a>b", "ünï.pkg", "a/b", "a@b+c"}) eq("good id " + id.length(), OverlayRules.idProblem(id), null);
@@ -1461,59 +1476,90 @@ public class OverlayRulesTest {
         throwsIae("un: uninstallScript refuses a fabricated id", new Runnable() { public void run() { OverlayRules.uninstallScript("a:b"); } });
         throwsIae("un: uninstallScript refuses a bad id", new Runnable() { public void run() { OverlayRules.uninstallScript("a b"); } });
         // exact scripts, every name single-quoted
-        eq("un: path script", OverlayRules.pathScript("com.foo.theme"), "pm path 'com.foo.theme'");
-        eq("un: path script quotes a quote", OverlayRules.pathScript("it's"), "pm path 'it'\\''s'");
-        eq("un: uninstall script", OverlayRules.uninstallScript("com.foo.theme"), "pm uninstall 'com.foo.theme'; echo @@OVL-GET@@; pm path 'com.foo.theme'; echo @@OVL-PATH@@; cmd overlay list --user current; echo @@OVL-END@@");
-        eq("un: uninstall script quotes a quote", OverlayRules.uninstallScript("it's"), "pm uninstall 'it'\\''s'; echo @@OVL-GET@@; pm path 'it'\\''s'; echo @@OVL-PATH@@; cmd overlay list --user current; echo @@OVL-END@@");
-        String bk = OverlayRules.backupScript("/data/app/~~x/it's-1/base.apk", Arrays.asList("/sdcard/Download/ADB App Manager/Overlays"), "it's");
-        String bkDest = "'/sdcard/Download/ADB App Manager/Overlays/it'\\''s.apk'";
-        is("un: backup script quotes every path", bk.contains("if cp -f '/data/app/~~x/it'\\''s-1/base.apk' " + bkDest + " 2>/dev/null && test -s " + bkDest + " && cmp -s '/data/app/~~x/it'\\''s-1/base.apk' " + bkDest) && bk.contains("mkdir -p '/sdcard/Download/ADB App Manager/Overlays'") && bk.contains("chmod 0644 " + bkDest) && bk.endsWith("echo " + OverlayRules.NOSAVE_MARK));
-        is("un: backup script removes any old file first, and the marker only comes after cp, test -s and cmp all passed", bk.startsWith("rm -f " + bkDest) && bk.indexOf("cmp -s") < bk.indexOf(OverlayRules.SAVED_MARK) && bk.indexOf("test -s") < bk.indexOf(OverlayRules.SAVED_MARK) && bk.indexOf("; then ") < bk.indexOf(OverlayRules.SAVED_MARK));
-        is("un: a copy that did not verify is removed again", bk.indexOf("fi; rm -f " + bkDest) > bk.indexOf(OverlayRules.SAVED_MARK));
+        // every pm call addresses the foreground user: the scripts resolve it themselves (pm takes a number, not "current") and fall back to 0
+        final String UR = OverlayRules.USER_RESOLVE, UA = "--user \"$U\"";
+        eq("un: the user resolution", UR, "U=$(am get-current-user 2>/dev/null); case \"$U\" in ''|*[!0-9]*) U=0;; esac");
+        eq("un: path script", OverlayRules.pathScript("com.foo.theme"), UR + "; pm path " + UA + " 'com.foo.theme'");
+        eq("un: path script quotes a quote", OverlayRules.pathScript("it's"), UR + "; pm path " + UA + " 'it'\\''s'");
+        eq("un: uninstall script", OverlayRules.uninstallScript("com.foo.theme"), UR + "; pm uninstall " + UA + " 'com.foo.theme'; echo @@OVL-GET@@; pm path " + UA + " 'com.foo.theme'; echo @@OVL-PATH@@; cmd overlay list --user current; echo @@OVL-END@@");
+        eq("un: uninstall script quotes a quote", OverlayRules.uninstallScript("it's"), UR + "; pm uninstall " + UA + " 'it'\\''s'; echo @@OVL-GET@@; pm path " + UA + " 'it'\\''s'; echo @@OVL-PATH@@; cmd overlay list --user current; echo @@OVL-END@@");
+        for (String usc : new String[] {OverlayRules.pathScript("com.foo"), OverlayRules.probeScript("com.foo"), OverlayRules.uninstallScript("com.foo")}) {
+            is("un: the script resolves the user before its first pm call: " + usc, usc.contains(UR + "; pm ") && usc.indexOf(UR) < usc.indexOf("pm "));
+            is("un: no pm call without the resolved user: " + usc, !usc.replace("pm path " + UA + " ", "").replace("pm uninstall " + UA + " ", "").contains("pm "));
+            is("un: pm is never asked for the user as a word: " + usc, !usc.contains("pm path --user current") && !usc.contains("pm uninstall --user current"));
+        }
+        String bk = OverlayRules.backupScript(Arrays.asList("/data/app/~~x/it's-1/base.apk"), Arrays.asList("/sdcard/Download/ADB App Manager/Overlays"), "it's");
+        String bkSub = "'/sdcard/Download/ADB App Manager/Overlays/it'\\''s'", bkDest = "'/sdcard/Download/ADB App Manager/Overlays/it'\\''s/base.apk'";
+        is("un: backup script quotes every path", bk.contains("if cp -f '/data/app/~~x/it'\\''s-1/base.apk' " + bkDest + " 2>/dev/null && test -s " + bkDest + " && cmp -s '/data/app/~~x/it'\\''s-1/base.apk' " + bkDest) && bk.contains("mkdir -p " + bkSub) && bk.contains("chmod 0644 " + bkDest) && bk.endsWith("echo " + OverlayRules.NOSAVE_MARK));
+        is("un: backup script removes any old folder of that name first, and the marker only comes after cp, test -s and cmp all passed", bk.startsWith("rm -rf " + bkSub) && bk.indexOf("cmp -s") < bk.indexOf(OverlayRules.SAVED_MARK) && bk.indexOf("test -s") < bk.indexOf(OverlayRules.SAVED_MARK) && bk.indexOf("; then ") < bk.indexOf(OverlayRules.SAVED_MARK));
+        is("un: the marker names the package's folder, not a file", bk.contains("echo " + OverlayRules.SAVED_MARK + bkSub + "; exit 0; fi;"));
+        is("un: a set that did not verify is removed again", bk.indexOf("fi; rm -rf " + bkSub) > bk.indexOf(OverlayRules.SAVED_MARK));
         is("un: a folder under the FUSE mount gets no chown", !bk.contains("chown"));
-        String bkMedia = OverlayRules.backupScript("/data/app/x/base.apk", Arrays.asList("/storage/emulated/0/Download/ADB App Manager/Overlays", "/data/media/0/Download/ADB App Manager/Overlays"), "com.foo");
-        String mdDir = "'/data/media/0/Download/ADB App Manager/Overlays'", mdDest = "'/data/media/0/Download/ADB App Manager/Overlays/com.foo.apk'";
-        is("un: a copy below the FUSE mount is handed to media_rw (uid 1023), folder 0775, file 0664, before its marker", bkMedia.contains("chown 1023:1023 " + mdDir + " " + mdDest + " 2>/dev/null; chmod 0775 " + mdDir + " 2>/dev/null; chmod 0664 " + mdDest + " 2>/dev/null; echo " + OverlayRules.SAVED_MARK + mdDest) && bkMedia.indexOf("chown") > bkMedia.indexOf("cmp -s '/data/app/x/base.apk' " + mdDest));
-        is("un: ... and the public folder is not chowned", bkMedia.indexOf("chown") > bkMedia.indexOf("/storage/emulated/0/Download/ADB App Manager/Overlays/com.foo.apk'; exit 0; fi;"));
+        // splits: every APK is copied and checked under its own file name, all three checks in one condition before one marker
+        String bkSplit = OverlayRules.backupScript(Arrays.asList("/data/app/x/base.apk", "/data/app/x/split_config.xxhdpi.apk", "/data/app/x/split_config.en.apk"), Arrays.asList("/sdcard/Download/ADB App Manager/Overlays"), "com.foo");
+        String spSub = "'/sdcard/Download/ADB App Manager/Overlays/com.foo'";
+        for (String nm : new String[] {"base.apk", "split_config.xxhdpi.apk", "split_config.en.apk"}) { String d = "'/sdcard/Download/ADB App Manager/Overlays/com.foo/" + nm + "'"; is("un: split copied and checked " + nm, bkSplit.contains("cp -f '/data/app/x/" + nm + "' " + d + " 2>/dev/null && test -s " + d + " && cmp -s '/data/app/x/" + nm + "' " + d + " 2>/dev/null")); }
+        is("un: the splits' checks are one condition, before one marker", bkSplit.split("&& cp -f", -1).length - 1 == 2 && bkSplit.split(OverlayRules.SAVED_MARK, -1).length - 1 == 1 && bkSplit.contains("; then chmod 0644 '/sdcard/Download/ADB App Manager/Overlays/com.foo/base.apk' '/sdcard/Download/ADB App Manager/Overlays/com.foo/split_config.xxhdpi.apk' '/sdcard/Download/ADB App Manager/Overlays/com.foo/split_config.en.apk' 2>/dev/null; echo " + OverlayRules.SAVED_MARK + spSub + "; exit 0; fi; rm -rf " + spSub));
+        String bkMedia = OverlayRules.backupScript(Arrays.asList("/data/app/x/base.apk", "/data/app/x/split_a.apk"), Arrays.asList("/storage/emulated/0/Download/ADB App Manager/Overlays", "/data/media/0/Download/ADB App Manager/Overlays"), "com.foo");
+        String mdDir = "'/data/media/0/Download/ADB App Manager/Overlays'", mdSub = "'/data/media/0/Download/ADB App Manager/Overlays/com.foo'", mdDest = "'/data/media/0/Download/ADB App Manager/Overlays/com.foo/base.apk'", mdDest2 = "'/data/media/0/Download/ADB App Manager/Overlays/com.foo/split_a.apk'";
+        is("un: copies below the FUSE mount are handed to media_rw (uid 1023), folders 0775, files 0664, before their marker", bkMedia.contains("chown 1023:1023 " + mdDir + " " + mdSub + " " + mdDest + " " + mdDest2 + " 2>/dev/null; chmod 0775 " + mdDir + " " + mdSub + " 2>/dev/null; chmod 0664 " + mdDest + " " + mdDest2 + " 2>/dev/null; echo " + OverlayRules.SAVED_MARK + mdSub) && bkMedia.indexOf("chown") > bkMedia.indexOf("cmp -s '/data/app/x/split_a.apk' " + mdDest2));
+        is("un: ... and the public folder is not chowned", bkMedia.indexOf("chown") > bkMedia.indexOf("/storage/emulated/0/Download/ADB App Manager/Overlays/com.foo'; exit 0; fi;"));
+        // the file names the copies keep: the part after the last slash, refused when there is none, when it is empty, "." or "..", or when two share one
+        eq("un: file names", OverlayRules.backupFileNames(Arrays.asList("/data/app/x/base.apk", "/data/app/x/split_config.en.apk")).toString(), "[base.apk, split_config.en.apk]");
+        throwsIae("un: a path without a slash has no file name this app takes", new Runnable() { public void run() { OverlayRules.backupFileNames(Arrays.asList("base.apk")); } });
+        throwsIae("un: a path that ends in a slash", new Runnable() { public void run() { OverlayRules.backupFileNames(Arrays.asList("/data/app/x/")); } });
+        throwsIae("un: '..' as a file name", new Runnable() { public void run() { OverlayRules.backupFileNames(Arrays.asList("/data/app/..")); } });
+        throwsIae("un: two APKs of one name", new Runnable() { public void run() { OverlayRules.backupFileNames(Arrays.asList("/data/app/x/base.apk", "/data/app/y/base.apk")); } });
+        throwsIae("un: no APK at all", new Runnable() { public void run() { OverlayRules.backupFileNames(new ArrayList<String>()); } });
+        throwsIae("un: a null APK", new Runnable() { public void run() { OverlayRules.backupFileNames(Arrays.asList("/data/app/x/base.apk", (String) null)); } });
+        throwsIae("un: ... and backupScript refuses the same", new Runnable() { public void run() { OverlayRules.backupScript(Arrays.asList("/data/app/x/base.apk", "/data/app/y/base.apk"), Arrays.asList("/sdcard"), "a"); } });
         eq("un: /data/media is shell-side media", OverlayRules.isShellSideMedia("/data/media/0/Download/x"), true);
         eq("un: /storage is not", OverlayRules.isShellSideMedia("/storage/emulated/0/Download/x"), false);
         // the id names the copy's file: a slash, "." and ".." are refused, and a name too long for a file name too
-        for (String id : new String[] {"../x", "a/b", "/etc/passwd", ".", "..", "x/"}) { eq("un: slash id refused " + id, OverlayRules.uninstallIdProblem(id), OverlayRules.SLASH_IN_NAME); throwsIae("un: slash id builds no script " + id, new Runnable() { public void run() { OverlayRules.backupScript("/data/app/x/base.apk", Arrays.asList("/sdcard"), id); } }); throwsIae("un: slash id builds no path script " + id, new Runnable() { public void run() { OverlayRules.pathScript(id); } }); }
+        for (String id : new String[] {"../x", "a/b", "/etc/passwd", ".", "..", "x/"}) { eq("un: slash id refused " + id, OverlayRules.uninstallIdProblem(id), OverlayRules.SLASH_IN_NAME); throwsIae("un: slash id builds no script " + id, new Runnable() { public void run() { OverlayRules.backupScript(Arrays.asList("/data/app/x/base.apk"), Arrays.asList("/sdcard"), id); } }); throwsIae("un: slash id builds no path script " + id, new Runnable() { public void run() { OverlayRules.pathScript(id); } }); }
         eq("un: a dot inside a name is fine", OverlayRules.uninstallIdProblem("a.b"), null);
-        eq("un: 251 characters name a file", OverlayRules.uninstallIdProblem("x".repeat(251)), null);
-        is("un: 252 characters are too long for a file name", OverlayRules.uninstallIdProblem("x".repeat(252)) != null && OverlayRules.uninstallIdProblem("x".repeat(252)).contains("too long for a file name (251 characters at most)"));
-        is("un: a 300-character id (idProblem takes it) is refused for the copy's name", OverlayRules.idProblem("x".repeat(300)) == null && OverlayRules.uninstallIdProblem("x".repeat(300)) != null);
-        throwsIae("un: ... and builds no backup script", new Runnable() { public void run() { OverlayRules.backupScript("/data/app/x/base.apk", Arrays.asList("/sdcard"), "x".repeat(300)); } });
-        throwsIae("un: backup script refuses a path with a line break", new Runnable() { public void run() { OverlayRules.backupScript("/data/app/x\nrm -rf /", Arrays.asList("/sdcard"), "a"); } });
-        throwsIae("un: backup script refuses no folder", new Runnable() { public void run() { OverlayRules.backupScript("/data/app/x/base.apk", new ArrayList<String>(), "a"); } });
+        eq("un: 255 characters name a folder", OverlayRules.uninstallIdProblem("x".repeat(255)), null);
+        is("un: 256 characters are too long for a folder name", OverlayRules.uninstallIdProblem("x".repeat(256)) != null && OverlayRules.uninstallIdProblem("x".repeat(256)).contains("too long for a folder name (255 characters at most)"));
+        is("un: a 300-character id (idProblem takes it) is refused for the folder's name", OverlayRules.idProblem("x".repeat(300)) == null && OverlayRules.uninstallIdProblem("x".repeat(300)) != null);
+        throwsIae("un: ... and builds no backup script", new Runnable() { public void run() { OverlayRules.backupScript(Arrays.asList("/data/app/x/base.apk"), Arrays.asList("/sdcard"), "x".repeat(300)); } });
+        throwsIae("un: backup script refuses a path with a line break", new Runnable() { public void run() { OverlayRules.backupScript(Arrays.asList("/data/app/x\nrm -rf /"), Arrays.asList("/sdcard"), "a"); } });
+        throwsIae("un: backup script refuses no folder", new Runnable() { public void run() { OverlayRules.backupScript(Arrays.asList("/data/app/x/base.apk"), new ArrayList<String>(), "a"); } });
         // parsePath
-        eq("un: parsePath data", OverlayRules.parsePath("package:/data/app/~~x/com.foo-1/base.apk\n"), "/data/app/~~x/com.foo-1/base.apk");
-        eq("un: parsePath product", OverlayRules.parsePath("package:/product/overlay/x.apk"), "/product/overlay/x.apk");
-        eq("un: parsePath empty", OverlayRules.parsePath(""), null);
-        eq("un: parsePath null", OverlayRules.parsePath(null), null);
-        eq("un: parsePath warning first", OverlayRules.parsePath("WARNING: linker: Warning: unable to normalize\npackage:/data/app/com.foo-2/base.apk\npackage:/data/app/com.foo-2/split_config.xxhdpi.apk\n"), "/data/app/com.foo-2/base.apk");
-        eq("un: parsePath error only", OverlayRules.parsePath("Error: Unknown command: path\n"), null);
-        eq("un: parsePath bare prefix", OverlayRules.parsePath("package:\n"), null);
+        eq("un: parsePath data", OverlayRules.first(OverlayRules.parsePath("package:/data/app/~~x/com.foo-1/base.apk\n")), "/data/app/~~x/com.foo-1/base.apk");
+        eq("un: parsePath product", OverlayRules.first(OverlayRules.parsePath("package:/product/overlay/x.apk")), "/product/overlay/x.apk");
+        eq("un: parsePath empty", OverlayRules.parsePath("").size(), 0);
+        eq("un: parsePath null", OverlayRules.parsePath(null).size(), 0);
+        eq("un: parsePath warning first, every split in order", OverlayRules.parsePath("WARNING: linker: Warning: unable to normalize\npackage:/data/app/com.foo-2/base.apk\npackage:/data/app/com.foo-2/split_config.xxhdpi.apk\n").toString(), "[/data/app/com.foo-2/base.apk, /data/app/com.foo-2/split_config.xxhdpi.apk]");
+        eq("un: parsePath first is the base", OverlayRules.first(OverlayRules.parsePath("package:/data/app/com.foo-2/base.apk\npackage:/data/app/com.foo-2/split_config.en.apk\n")), "/data/app/com.foo-2/base.apk");
+        eq("un: parsePath error only", OverlayRules.parsePath("Error: Unknown command: path\n").size(), 0);
+        eq("un: parsePath bare prefix", OverlayRules.parsePath("package:\n").size(), 0);
+        eq("un: first of none", OverlayRules.first(new ArrayList<String>()), null);
+        eq("un: first of null", OverlayRules.first(null), null);
         // where
         eq("un: where data", OverlayRules.whereOf("/data/app/~~x/com.foo-1/base.apk"), "data");
-        eq("un: where missing", OverlayRules.whereOf(null), "missing");
+        eq("un: where missing", OverlayRules.whereOf((String) null), "missing");
         for (String sp : new String[] {"/product/overlay/x.apk", "/system/product/overlay/x.apk", "/vendor/overlay/x.apk", "/odm/overlay/x.apk", "/system_ext/overlay/x.apk", "/oem/x.apk", "/apex/com.android.x/overlay/x.apk", "/prism/x.apk", "/mnt/x.apk"}) { eq("un: system path " + sp, OverlayRules.isSystemPath(sp), true); eq("un: where system " + sp, OverlayRules.whereOf(sp), "system"); }
         eq("un: /data is not system", OverlayRules.isSystemPath("/data/app/x/base.apk"), false);
         for (String dp : new String[] {"/mnt/expand/1234-ABCD/app/com.foo-1/base.apk", "/mnt/expand/x/base.apk", "/data/app/~~x/com.foo-1/base.apk"}) { eq("un: adopted storage or data is not system " + dp, OverlayRules.isSystemPath(dp), false); eq("un: where data " + dp, OverlayRules.whereOf(dp), "data"); eq("un: isDataPath " + dp, OverlayRules.isDataPath(dp), true); }
         eq("un: /mnt/expand without a slash is not data", OverlayRules.isDataPath("/mnt/expandx/base.apk"), false);
         eq("un: isDataPath null", OverlayRules.isDataPath(null), false);
         eq("un: /data_x is not /data/", OverlayRules.isSystemPath("/data_x/base.apk"), true);
+        eq("un: where of splits all in data locations", OverlayRules.whereOf(Arrays.asList("/data/app/x/base.apk", "/mnt/expand/u/app/x/split.apk")), "data");
+        eq("un: where of a mix with a firmware path is system", OverlayRules.whereOf(Arrays.asList("/data/app/x/base.apk", "/product/overlay/split.apk")), "system");
+        eq("un: where of a firmware base with a data split is system too", OverlayRules.whereOf(Arrays.asList("/product/overlay/x.apk", "/data/app/x/split.apk")), "system");
+        eq("un: where of no path is missing", OverlayRules.whereOf(new ArrayList<String>()), "missing");
+        eq("un: where of a null list is missing", OverlayRules.whereOf((List<String>) null), "missing");
         eq("un: missing error names the id", OverlayRules.missingError("com.foo"), "com.foo is not installed as a package (it may be part of another app, or already gone)");
         eq("un: system error names the id", OverlayRules.systemError("com.foo"), "com.foo is part of the phone's firmware, so it cannot be uninstalled. Switching it off is the way to stop it.");
         is("un: the words", OverlayRules.NEEDS_PRIVILEGE.equals("Needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)") && OverlayRules.NO_BACKUP.startsWith("No copy of the APK could be saved to Download/ADB App Manager/Overlays") && !OverlayRules.SYSTEM_ADVICE.isEmpty());
         // parseBackup
-        eq("un: parseBackup saved", OverlayRules.parseBackup("@@OVL-SAVED@@/sdcard/Download/ADB App Manager/Overlays/com.foo.apk\n"), "/sdcard/Download/ADB App Manager/Overlays/com.foo.apk");
+        eq("un: parseBackup saved names the folder", OverlayRules.parseBackup("@@OVL-SAVED@@/sdcard/Download/ADB App Manager/Overlays/com.foo\n"), "/sdcard/Download/ADB App Manager/Overlays/com.foo");
         eq("un: parseBackup not saved", OverlayRules.parseBackup("cp: /data/app/x: No such file or directory\n@@OVL-NOSAVE@@\n"), null);
         eq("un: parseBackup nothing", OverlayRules.parseBackup(""), null);
         eq("un: parseBackup null", OverlayRules.parseBackup(null), null);
         // the probe: the list and pm path in one answer; the id must be listed and off, the answer whole, before anything is copied or removed
-        eq("un: probe script", OverlayRules.probeScript("com.foo.theme"), "cmd overlay list --user current; echo @@OVL-GET@@; pm path 'com.foo.theme'; echo @@OVL-PATH@@");
-        eq("un: probe script quotes a quote", OverlayRules.probeScript("it's"), "cmd overlay list --user current; echo @@OVL-GET@@; pm path 'it'\\''s'; echo @@OVL-PATH@@");
+        eq("un: probe script", OverlayRules.probeScript("com.foo.theme"), "cmd overlay list --user current; echo @@OVL-GET@@; " + UR + "; pm path " + UA + " 'com.foo.theme'; echo @@OVL-PATH@@");
+        eq("un: probe script quotes a quote", OverlayRules.probeScript("it's"), "cmd overlay list --user current; echo @@OVL-GET@@; " + UR + "; pm path " + UA + " 'it'\\''s'; echo @@OVL-PATH@@");
         throwsIae("un: probe script refuses a fabricated id", new Runnable() { public void run() { OverlayRules.probeScript("a:b"); } });
         String listNo = "android\n[x] com.other\n\n";
         String listYes = "android\n[x] com.other\n[ ] com.foo\n\n";
@@ -1545,6 +1591,11 @@ public class OverlayRulesTest {
         is("un: a timed-out pm path is unknown", !pv11.ok && pv11.unknown);
         OverlayRules.ProbeVerdict pv12 = OverlayRules.judgeProbe("com.foo", OverlayRules.parseProbe(listYes + "@@OVL-GET@@\nWARNING: linker: Warning: unable to normalize\npackage:/data/app/~~x/com.foo-1/base.apk\n@@OVL-PATH@@\n"));
         is("un: a warning before the path is fine", pv12.ok && pv12.where.equals("data"));
+        OverlayRules.ProbeResult pr13 = OverlayRules.parseProbe(listYes + "@@OVL-GET@@\npackage:/data/app/~~x/com.foo-1/base.apk\npackage:/data/app/~~x/com.foo-1/split_config.xxhdpi.apk\n@@OVL-PATH@@\n");
+        OverlayRules.ProbeVerdict pv13 = OverlayRules.judgeProbe("com.foo", pr13);
+        is("un: a package with splits under /data is data, every path kept, the base first", pv13.ok && pv13.where.equals("data") && pr13.paths.size() == 2 && pr13.path.equals("/data/app/~~x/com.foo-1/base.apk") && pr13.paths.get(1).endsWith("split_config.xxhdpi.apk"));
+        OverlayRules.ProbeVerdict pv14 = OverlayRules.judgeProbe("com.foo", OverlayRules.parseProbe(listYes + "@@OVL-GET@@\npackage:/data/app/~~x/com.foo-1/base.apk\npackage:/product/overlay/FooSplit.apk\n@@OVL-PATH@@\n"));
+        is("un: a split on a firmware partition makes the package system (refused)", !pv14.ok && !pv14.unknown && pv14.where.equals("system") && pv14.error.equals(OverlayRules.systemError("com.foo")));
         // judgeUninstall: only the read-back counts
         OverlayRules.UninstallResult unr1 = OverlayRules.parseUninstall("Success\n@@OVL-GET@@\n@@OVL-PATH@@\n" + listNo + "@@OVL-END@@\n");
         OverlayRules.Verdict unv1 = OverlayRules.judgeUninstall("com.foo", unr1);
@@ -1569,18 +1620,60 @@ public class OverlayRulesTest {
         OverlayRules.UninstallResult unr7 = OverlayRules.parseUninstall("Success\n@@OVL-GET@@\n@@OVL-PATH@@\ncmd: Can't find service: overlay\n@@OVL-END@@\n");
         OverlayRules.Verdict unv7 = OverlayRules.judgeUninstall("com.foo", unr7);
         is("un: unknown when the listing printed an error", !unv7.ok && unv7.unknown && unr7.all == null && !unr7.listError.isEmpty());
+        // a pm path that failed instead of answering is no "gone": unknown, never ok, even with Success before it and the id gone from the list
+        OverlayRules.UninstallResult unr8 = OverlayRules.parseUninstall("Success\n@@OVL-GET@@\nError: java.lang.SecurityException: Shell does not have permission to access user 10\n@@OVL-PATH@@\n" + listNo + "@@OVL-END@@\n");
+        OverlayRules.Verdict unv8 = OverlayRules.judgeUninstall("com.foo", unr8);
+        is("un: pm path printing an error after Success is unknown, never ok", !unv8.ok && unv8.unknown && unr8.paths.isEmpty() && unr8.complete && unv8.error.toLowerCase(Locale.US).contains("securityexception"));
+        OverlayRules.UninstallResult unr9 = OverlayRules.parseUninstall("Success\n@@OVL-GET@@\nerror: device offline\n@@OVL-PATH@@\n" + listNo + "@@OVL-END@@\n");
+        OverlayRules.Verdict unv9 = OverlayRules.judgeUninstall("com.foo", unr9);
+        is("un: a transport-lost line in place of the path is unknown", !unv9.ok && unv9.unknown && unv9.error.toLowerCase(Locale.US).contains("device offline"));
+        OverlayRules.UninstallResult unr10 = OverlayRules.parseUninstall("Success\n@@OVL-GET@@\n[process timed out after 30000 ms]\n@@OVL-PATH@@\n" + listNo + "@@OVL-END@@\n");
+        OverlayRules.Verdict unv10 = OverlayRules.judgeUninstall("com.foo", unr10);
+        is("un: a pm path that timed out is unknown", !unv10.ok && unv10.unknown);
+        OverlayRules.UninstallResult unr11 = OverlayRules.parseUninstall("Success\n@@OVL-GET@@\nError: Unknown command: path\n@@OVL-PATH@@\n" + listYes + "@@OVL-END@@\n");
+        OverlayRules.Verdict unv11 = OverlayRules.judgeUninstall("com.foo", unr11);
+        is("un: ... and with the overlay still listed it is unknown too, not \"still lists\"", !unv11.ok && unv11.unknown && unv11.state == 0 && unv11.error.toLowerCase(Locale.US).contains("unknown command"));
+        is("un: the clean case is still ok", OverlayRules.judgeUninstall("com.foo", OverlayRules.parseUninstall("Success\n@@OVL-GET@@\n@@OVL-PATH@@\n" + listNo + "@@OVL-END@@\n")).ok);
+        is("un: a warning line in place of the path is still gone", OverlayRules.judgeUninstall("com.foo", OverlayRules.parseUninstall("Success\n@@OVL-GET@@\nWARNING: linker: Warning: unable to normalize\n@@OVL-PATH@@\n" + listNo + "@@OVL-END@@\n")).ok);
         // the whole thing through a real sh against the fake phone
         write(fakeDir.resolve("overlays"), "android 1 com.other\nandroid 0 com.foo.theme\nandroid 0 it's\n");
         write(fakeDir.resolve("paths"), "com.foo.theme /data/app/~~x/com.foo.theme-1/base.apk\nit's /data/app/~~y/it's-1/base.apk\ncom.sys.ovl /product/overlay/Sys.apk\n");
         Files.deleteIfExists(fakeDir.resolve("pm.log"));
         String shPath = runShell(OverlayRules.pathScript("com.foo.theme"));
-        eq("sh un: path", OverlayRules.parsePath(shPath), "/data/app/~~x/com.foo.theme-1/base.apk");
+        eq("sh un: path", OverlayRules.first(OverlayRules.parsePath(shPath)), "/data/app/~~x/com.foo.theme-1/base.apk");
         eq("sh un: where", OverlayRules.whereOf(OverlayRules.parsePath(shPath)), "data");
         eq("sh un: where system", OverlayRules.whereOf(OverlayRules.parsePath(runShell(OverlayRules.pathScript("com.sys.ovl")))), "system");
         eq("sh un: where missing", OverlayRules.whereOf(OverlayRules.parsePath(runShell(OverlayRules.pathScript("com.nope")))), "missing");
+        eq("sh un: pm was asked for user 0 (the fake am's answer)", read(fakeDir.resolve("pm.log")), "---\n[path]\n[--user]\n[0]\n[com.foo.theme]\n---\n[path]\n[--user]\n[0]\n[com.sys.ovl]\n---\n[path]\n[--user]\n[0]\n[com.nope]\n");
         write(fakeDir.resolve("pmwarn"), "");
-        eq("sh un: path with a warning line", OverlayRules.parsePath(runShell(OverlayRules.pathScript("com.foo.theme"))), "/data/app/~~x/com.foo.theme-1/base.apk");
+        eq("sh un: path with a warning line", OverlayRules.first(OverlayRules.parsePath(runShell(OverlayRules.pathScript("com.foo.theme")))), "/data/app/~~x/com.foo.theme-1/base.apk");
         Files.delete(fakeDir.resolve("pmwarn"));
+        // splits: pm path prints one line per APK, all kept
+        write(fakeDir.resolve("paths"), read(fakeDir.resolve("paths")) + "com.split /data/app/~~s/com.split-1/base.apk\ncom.split /data/app/~~s/com.split-1/split_config.en.apk\n");
+        eq("sh un: every split", OverlayRules.parsePath(runShell(OverlayRules.pathScript("com.split"))).toString(), "[/data/app/~~s/com.split-1/base.apk, /data/app/~~s/com.split-1/split_config.en.apk]");
+        // the foreground user: pm is asked for the user am get-current-user names, so a package installed for user 10 only is found when the phone is on user 10
+        write(fakeDir.resolve("paths.10"), "com.ten /data/app/~~t/com.ten-1/base.apk\n");
+        eq("sh un: user 0 does not have the package of user 10", OverlayRules.whereOf(OverlayRules.parsePath(runShell(OverlayRules.pathScript("com.ten")))), "missing");
+        write(fakeDir.resolve("user"), "10\n");
+        Files.deleteIfExists(fakeDir.resolve("pm.log"));
+        eq("sh un: on user 10 the package is found", OverlayRules.whereOf(OverlayRules.parsePath(runShell(OverlayRules.pathScript("com.ten")))), "data");
+        eq("sh un: ... because pm was asked for user 10", read(fakeDir.resolve("pm.log")), "---\n[path]\n[--user]\n[10]\n[com.ten]\n");
+        OverlayRules.ProbeVerdict shP10 = OverlayRules.judgeProbe("com.foo.theme", OverlayRules.parseProbe(runShell(OverlayRules.probeScript("com.foo.theme"))));
+        is("sh un: the probe on user 10: the list has the overlay, pm path (asked for user 10) has no package: missing, not an error", !shP10.ok && !shP10.unknown && shP10.where.equals("missing"));
+        is("sh un: ... pm asked for user 10 in the probe", read(fakeDir.resolve("pm.log")).endsWith("---\n[path]\n[--user]\n[10]\n[com.foo.theme]\n"));
+        // am answers with no number, nothing, or is missing altogether: user 0
+        for (String amOdd : new String[] {"Error: no current user\n", "", "current\n", "1 0\n"}) {
+            write(fakeDir.resolve("user"), amOdd);
+            Files.deleteIfExists(fakeDir.resolve("pm.log"));
+            eq("sh un: am's odd answer falls back to user 0: " + amOdd.trim(), OverlayRules.whereOf(OverlayRules.parsePath(runShell(OverlayRules.pathScript("com.foo.theme")))), "data");
+            eq("sh un: ... pm asked for user 0: " + amOdd.trim(), read(fakeDir.resolve("pm.log")), "---\n[path]\n[--user]\n[0]\n[com.foo.theme]\n");
+        }
+        Files.delete(fakeDir.resolve("user"));
+        Files.move(fakeBin.resolve("am"), fakeDir.resolve("am.away"));
+        String shNoAm = runShell(OverlayRules.pathScript("com.foo.theme"));
+        eq("sh un: without an am command the script asks for user 0 and prints nothing else", shNoAm.trim(), "package:/data/app/~~x/com.foo.theme-1/base.apk");
+        Files.move(fakeDir.resolve("am.away"), fakeBin.resolve("am"));
+        Files.delete(fakeDir.resolve("paths.10"));
         // the probe against the fake phone: an off overlay under /data goes on, one that is on, one that is no overlay and a firmware one do not
         Files.deleteIfExists(fakeDir.resolve("pm.log"));
         OverlayRules.ProbeVerdict shP1 = OverlayRules.judgeProbe("com.foo.theme", OverlayRules.parseProbe(runShell(OverlayRules.probeScript("com.foo.theme"))));
@@ -1594,40 +1687,50 @@ public class OverlayRulesTest {
         OverlayRules.ProbeVerdict shP4 = OverlayRules.judgeProbe("com.sys.ovl", OverlayRules.parseProbe(runShell(OverlayRules.probeScript("com.sys.ovl"))));
         is("sh un: probe: a firmware overlay that is off is system", !shP4.ok && shP4.where.equals("system"));
         is("sh un: the probe ran pm path only, never pm uninstall", read(fakeDir.resolve("pm.log")) != null && !read(fakeDir.resolve("pm.log")).contains("[uninstall]"));
-        // the copy: the first folder cannot be made (a file is in its way), the second takes it
+        // the copy: the first folder cannot be made (a file is in its way), the second takes it; the APK keeps its file name in a folder named after the package
         Path apk = fakeDir.resolve("app"); Files.createDirectories(apk); write(apk.resolve("it's.apk"), "PK\u0003\u0004 fake");
         write(fakeDir.resolve("blocked"), "a file, not a folder");
         Path dl = fakeDir.resolve("Download/ADB App Manager/Overlays");
-        String shCopy = runShell(OverlayRules.backupScript(apk.resolve("it's.apk").toString(), Arrays.asList(fakeDir.resolve("blocked/sub").toString(), dl.toString()), "it's"));
-        eq("sh un: the copy's path", OverlayRules.parseBackup(shCopy), dl.resolve("it's.apk").toString());
-        eq("sh un: the copy is there", read(dl.resolve("it's.apk")), "PK\u0003\u0004 fake");
-        String shNoCopy = runShell(OverlayRules.backupScript(fakeDir.resolve("app/missing.apk").toString(), Arrays.asList(dl.toString()), "com.gone"));
+        String shCopy = runShell(OverlayRules.backupScript(Arrays.asList(apk.resolve("it's.apk").toString()), Arrays.asList(fakeDir.resolve("blocked/sub").toString(), dl.toString()), "it's"));
+        eq("sh un: the copy's folder", OverlayRules.parseBackup(shCopy), dl.resolve("it's").toString());
+        eq("sh un: the copy is there, under its own name", read(dl.resolve("it's/it's.apk")), "PK\u0003\u0004 fake");
+        String shNoCopy = runShell(OverlayRules.backupScript(Arrays.asList(fakeDir.resolve("app/missing.apk").toString()), Arrays.asList(dl.toString()), "com.gone"));
         eq("sh un: no copy when the APK is not there", OverlayRules.parseBackup(shNoCopy), null);
-        is("sh un: ... and no empty file left behind", !Files.exists(dl.resolve("com.gone.apk")));
-        // a stale or planted file at the copy's path must not pass for the copy: the APK unreadable, the old file goes and nothing is saved
-        write(dl.resolve("com.stale.apk"), "STALE-OR-PLANTED");
-        String shStale = runShell(OverlayRules.backupScript(fakeDir.resolve("app/missing.apk").toString(), Arrays.asList(dl.toString()), "com.stale"));
+        is("sh un: ... and no empty folder left behind", !Files.exists(dl.resolve("com.gone")));
+        // splits: every APK lands in the folder with its own name, and one split that cannot be read means no copy at all (the base is not left behind)
+        Path sp = fakeDir.resolve("app/split"); Files.createDirectories(sp); write(sp.resolve("base.apk"), "PK base"); write(sp.resolve("split_config.en.apk"), "PK en");
+        String shSplit = runShell(OverlayRules.backupScript(Arrays.asList(sp.resolve("base.apk").toString(), sp.resolve("split_config.en.apk").toString()), Arrays.asList(dl.toString()), "com.split"));
+        eq("sh un: the splits' folder", OverlayRules.parseBackup(shSplit), dl.resolve("com.split").toString());
+        eq("sh un: the base is there", read(dl.resolve("com.split/base.apk")), "PK base");
+        eq("sh un: the split is there", read(dl.resolve("com.split/split_config.en.apk")), "PK en");
+        String shHalf = runShell(OverlayRules.backupScript(Arrays.asList(sp.resolve("base.apk").toString(), sp.resolve("split_config.xxhdpi.apk").toString()), Arrays.asList(dl.toString()), "com.half"));
+        eq("sh un: a split that is not there: nothing is saved", OverlayRules.parseBackup(shHalf), null);
+        is("sh un: ... and the base copy did not stay behind", !Files.exists(dl.resolve("com.half")));
+        // a stale or planted folder at the copies' path must not pass for the copies: the APK unreadable, the old folder goes and nothing is saved
+        Files.createDirectories(dl.resolve("com.stale")); write(dl.resolve("com.stale/missing.apk"), "STALE-OR-PLANTED"); write(dl.resolve("com.stale/planted.apk"), "PLANTED");
+        String shStale = runShell(OverlayRules.backupScript(Arrays.asList(fakeDir.resolve("app/missing.apk").toString()), Arrays.asList(dl.toString()), "com.stale"));
         eq("sh un: a stale file at the destination is no copy", OverlayRules.parseBackup(shStale), null);
         is("sh un: ... it prints the no-save mark", shStale.contains(OverlayRules.NOSAVE_MARK));
-        is("sh un: ... and the stale file is gone", !Files.exists(dl.resolve("com.stale.apk")));
-        // a stale file at the path, the APK readable: the copy is the APK's bytes, not the old ones
-        write(dl.resolve("it's.apk"), "OLD VERSION");
-        String shOver = runShell(OverlayRules.backupScript(apk.resolve("it's.apk").toString(), Arrays.asList(dl.toString()), "it's"));
-        eq("sh un: a copy over a stale file is the APK", read(dl.resolve("it's.apk")), "PK\u0003\u0004 fake");
-        eq("sh un: ... and is reported saved", OverlayRules.parseBackup(shOver), dl.resolve("it's.apk").toString());
+        is("sh un: ... and the stale folder is gone, planted files and all", !Files.exists(dl.resolve("com.stale")));
+        // a stale file at the path, the APK readable: the copy is the APK's bytes, not the old ones, and a planted extra file does not survive
+        write(dl.resolve("it's/it's.apk"), "OLD VERSION"); write(dl.resolve("it's/extra.apk"), "PLANTED");
+        String shOver = runShell(OverlayRules.backupScript(Arrays.asList(apk.resolve("it's.apk").toString()), Arrays.asList(dl.toString()), "it's"));
+        eq("sh un: a copy over a stale file is the APK", read(dl.resolve("it's/it's.apk")), "PK\u0003\u0004 fake");
+        eq("sh un: ... and is reported saved", OverlayRules.parseBackup(shOver), dl.resolve("it's").toString());
+        is("sh un: ... and the planted extra file is gone", !Files.exists(dl.resolve("it's/extra.apk")));
         // a copy that differs from the source (a full disk, say) is not saved: cmp against a different file in the APK's place
         Path truncBin = fakeDir.resolve("truncbin"); Files.createDirectories(truncBin);
         write(truncBin.resolve("cp"), "#!/bin/sh\nfor last; do :; done; printf 'PK' > \"$last\"\n");
         truncBin.resolve("cp").toFile().setExecutable(true);
-        String shTrunc = runShell("PATH=\"" + truncBin + ":$PATH\"; " + OverlayRules.backupScript(apk.resolve("it's.apk").toString(), Arrays.asList(dl.toString()), "it's"));
+        String shTrunc = runShell("PATH=\"" + truncBin + ":$PATH\"; " + OverlayRules.backupScript(Arrays.asList(apk.resolve("it's.apk").toString()), Arrays.asList(dl.toString()), "it's"));
         eq("sh un: a copy that is not the APK's bytes is no copy", OverlayRules.parseBackup(shTrunc), null);
-        is("sh un: ... and the partial file is removed", !Files.exists(dl.resolve("it's.apk")));
+        is("sh un: ... and the partial file and its folder are removed", !Files.exists(dl.resolve("it's/it's.apk")) && !Files.exists(dl.resolve("it's")));
         // the uninstall, with a quote in the name: pm got the name whole, the package and the overlay are gone
         Files.deleteIfExists(fakeDir.resolve("pm.log"));
         OverlayRules.UninstallResult shU = OverlayRules.parseUninstall(runShell(OverlayRules.uninstallScript("it's")));
         OverlayRules.Verdict shV = OverlayRules.judgeUninstall("it's", shU);
         is("sh un: ok " + shV.error, shV.ok && !shV.unknown && shU.complete);
-        eq("sh un: pm's argv", read(fakeDir.resolve("pm.log")), "---\n[uninstall]\n[it's]\n---\n[path]\n[it's]\n");
+        eq("sh un: pm's argv: the uninstall and the read-back both for user 0", read(fakeDir.resolve("pm.log")), "---\n[uninstall]\n[--user]\n[0]\n[it's]\n---\n[path]\n[--user]\n[0]\n[it's]\n");
         eq("sh un: the overlay left the list", overlayState("it's"), null);
         is("sh un: the list came back without it (com.other, com.foo.theme and the firmware one added above)", shU.all != null && shU.all.size() == 3 && !shU.all.stream().anyMatch(o -> o.id.equals("it's")));
         // Success that did nothing is not ok
@@ -1637,6 +1740,24 @@ public class OverlayRulesTest {
         is("sh un: Success without effect is not ok", !shKV.ok && !shKV.unknown && shK.answer.equals("Success") && shK.path != null);
         Files.delete(fakeDir.resolve("pmkeep"));
         eq("sh un: ... and the overlay is still off", overlayState("com.foo.theme"), "0");
+        // the uninstall for user 10: pm removes the package for that user only
+        write(fakeDir.resolve("paths.10"), "com.foo.theme /data/app/~~x/com.foo.theme-1/base.apk\n");
+        write(fakeDir.resolve("user"), "10\n");
+        Files.deleteIfExists(fakeDir.resolve("pm.log"));
+        OverlayRules.UninstallResult shT = OverlayRules.parseUninstall(runShell(OverlayRules.uninstallScript("com.foo.theme")));
+        OverlayRules.Verdict shTV = OverlayRules.judgeUninstall("com.foo.theme", shT);
+        is("sh un: on user 10 the uninstall is ok " + shTV.error, shTV.ok && !shTV.unknown);
+        eq("sh un: ... pm was asked for user 10 both times", read(fakeDir.resolve("pm.log")), "---\n[uninstall]\n[--user]\n[10]\n[com.foo.theme]\n---\n[path]\n[--user]\n[10]\n[com.foo.theme]\n");
+        is("sh un: ... user 0 still has its package", read(fakeDir.resolve("paths")).contains("com.foo.theme /data/app/~~x/com.foo.theme-1/base.apk"));
+        Files.delete(fakeDir.resolve("user")); Files.delete(fakeDir.resolve("paths.10"));
+        write(fakeDir.resolve("overlays"), read(fakeDir.resolve("overlays")) + "android 0 com.foo.theme\n");
+        // pm path that fails after the uninstall: the package may be gone, but that is not known: unknown, never ok
+        write(fakeDir.resolve("pmpatherr"), "");
+        OverlayRules.UninstallResult shE = OverlayRules.parseUninstall(runShell(OverlayRules.uninstallScript("com.foo.theme")));
+        OverlayRules.Verdict shEV = OverlayRules.judgeUninstall("com.foo.theme", shE);
+        is("sh un: a pm path that printed an error after the uninstall is unknown, not ok", !shEV.ok && shEV.unknown && shE.complete && shE.paths.isEmpty() && shEV.error.toLowerCase(Locale.US).contains("securityexception"));
+        eq("sh un: ... although pm said Success", shE.answer, "Success");
+        Files.delete(fakeDir.resolve("pmpatherr"));
 
         // ---- the wiring in MainActivity (it cannot be compiled here: read from the source) ----
         File srcDir = findUp("src/com/bloatware/bingblop");
@@ -1675,7 +1796,8 @@ public class OverlayRulesTest {
             is("source: the uninstall job probes the list and the path (probeScript, judged by judgeProbe) before anything else runs", unJob != null && unJob.contains("OverlayRules.probeScript(id)") && unJob.contains("OverlayRules.parseProbe(probeOut)") && unJob.contains("OverlayRules.judgeProbe(id, pr)") && unJob.indexOf("OverlayRules.probeScript(id)") < unJob.indexOf("OverlayRules.backupScript(") && unJob.indexOf("OverlayRules.backupScript(") < unJob.indexOf("OverlayRules.uninstallScript(id)") && !unJob.contains("OverlayRules.pathScript("));
             is("source: a refused probe answers and returns before the copy", unJob != null && unJob.indexOf("if (!pv.ok) {") < unJob.indexOf("OverlayRules.backupScript(") && unJob.contains("res.put(\"error\", pv.error);") && unJob.indexOf("if (pv.unknown) res.put(\"unknown\", true);") < unJob.indexOf("OverlayRules.backupScript("));
             is("source: a firmware overlay is refused with advice", unJob != null && unJob.contains("if (\"system\".equals(where)) res.put(\"advice\", OverlayRules.SYSTEM_ADVICE);") && !unJob.contains("OverlayRules.missingError("));
-            is("source: a copy below the FUSE mount is handed to the media scanner at its public path", unJob != null && unJob.contains("if (saved.startsWith(\"/data/media/\")) {") && unJob.contains("android.media.MediaScannerConnection.scanFile(this, new String[] {new File(pub, OverlayRules.backupName(id)).getAbsolutePath()}, null, null);"));
+            is("source: copies below the FUSE mount are handed to the media scanner at their public paths, every file of the package's folder", unJob != null && unJob.contains("if (saved.startsWith(\"/data/media/\")) {") && unJob.contains("File pubSub = new File(pub, OverlayRules.backupName(id));") && unJob.contains("new File(pubSub, fileNames.get(k)).getAbsolutePath()") && unJob.contains("android.media.MediaScannerConnection.scanFile(this, pubFiles, null, null);"));
+            is("source: every APK of the package is copied (backupScript takes the probe's paths) and the copies' names are reported as files", unJob != null && unJob.contains("List<String> paths = pr.paths;") && unJob.contains("OverlayRules.backupScript(paths, dirs, id)") && unJob.contains("OverlayRules.backupFileNames(paths)") && unJob.contains("res.put(\"files\", fileArr);") && unJob.indexOf("res.put(\"backup\", saved);") < unJob.indexOf("res.put(\"files\", fileArr);"));
             is("source: no copy, no uninstall", unJob != null && unJob.contains("OverlayRules.parseBackup(copyOut)") && unJob.contains("res.put(\"error\", OverlayRules.NO_BACKUP);") && unJob.indexOf("OverlayRules.NO_BACKUP") < unJob.indexOf("OverlayRules.uninstallScript(id)"));
             is("source: the copy goes under the Download folder", unJob != null && unJob.contains("android.os.Environment.DIRECTORY_DOWNLOADS), OverlayRules.BACKUP_FOLDER)"));
             is("source: the verdict comes from the read-back", unJob != null && unJob.contains("OverlayRules.parseUninstall(out)") && unJob.contains("OverlayRules.judgeUninstall(id, ur)") && !unJob.contains("\"Success\""));

@@ -54,7 +54,7 @@ const LOCK = 'Uninstalling an overlay needs Super User, or Shizuku as root (uid 
     await T.hold(OFF);
     let a = await T.ask();
     check('   the hold opens the uninstall prompt, with the id in its title and the red Uninstall button', a.shown && a.title === 'Uninstall ' + OFF + '?' && a.ok === 'Uninstall', JSON.stringify(a));
-    check('   the text says the APK is copied to Download/ADB App Manager/Overlays first and can be installed again from the Installer tab, and that the package is removed for every user', /copied to Download\/ADB App Manager\/Overlays first/.test(a.text) && /Installer tab/.test(a.text) && /removed for every user/.test(a.text) && /cannot be undone from this app/.test(a.text), a.text);
+    check('   the text says the APK is copied to Download/ADB App Manager/Overlays first and can be installed again from the Installer tab, and that the package is removed for the phone\'s current user', /copied to Download\/ADB App Manager\/Overlays first/.test(a.text) && /Installer tab/.test(a.text) && /removed for the phone's current user/.test(a.text) && /cannot be undone from this app/.test(a.text), a.text);
     check('   the hold did not switch the row on and did not open the sheet', (await T.rowState(OFF)).on === false && (await T.calls()).op.length === 0 && !(await T.ev(() => document.getElementById('ovlDetailModal').classList.contains('show'))));
     await page.click('#mpAskOk'); await T.sleep(60);
     check('   while the answer is awaited the row is busy', (await T.rowState(OFF)) === null || (await T.rowState(OFF)).busy === true);
@@ -63,7 +63,7 @@ const LOCK = 'Uninstalling an overlay needs Super User, or Shizuku as root (uid 
     check('   overlayUninstall was called once, with that id, and no switch was made', JSON.stringify(c.un) === JSON.stringify([OFF]) && c.op.length === 0, JSON.stringify(c));
     check('   the row has left the list', !(await T.rowIds()).includes(OFF) && (await T.ev(() => !ovlFind('android.theme.customization.font'))));
     check('   a toast names the uninstall', (await T.toast()) === 'Uninstalled: ' + OFF, await T.toast());
-    check('   a line names where the copy went', await T.ev(() => document.getElementById('sdbSnack').classList.contains('show') && document.getElementById('sdbSnackMsg').innerText === 'A copy of its APK is in Download/ADB App Manager/Overlays/android.theme.customization.font.apk' && document.getElementById('sdbSnackUndo').style.display === 'none'), await T.ev(() => document.getElementById('sdbSnackMsg').innerText));
+    check('   a line names where the copy went (the package\'s own folder under Download/ADB App Manager/Overlays)', await T.ev(() => document.getElementById('sdbSnack').classList.contains('show') && document.getElementById('sdbSnackMsg').innerText === 'A copy of its APK is in Download/ADB App Manager/Overlays/android.theme.customization.font' && document.getElementById('sdbSnackUndo').style.display === 'none'), await T.ev(() => document.getElementById('sdbSnackMsg').innerText));
     check('   no failure sheet', !(await T.results()).shown);
     await page.screenshot({ path: 'ovl_uninstall_done.png', fullPage: true });
 

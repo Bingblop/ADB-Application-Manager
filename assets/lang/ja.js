@@ -4514,7 +4514,7 @@ x: {
 "The old code is gone. Anything you gave it to has to be given the new one.": "古いコードは無効になりました。古いコードを渡していたものには、新しいコードを渡し直す必要があります。",
 "The older storage permission some apps still check for.": "一部のアプリが今も確認する、従来のストレージ権限です。",
 "The overlay stays on: switching it off needs Super User (uid 0).": "オーバーレイはオンのままです。オフにするにはスーパーユーザー（uid 0）が必要です。",
-"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for every user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.": "オーバーレイの APK はまず Download/ADB App Manager/Overlays にコピーされるので、あとでインストーラタブから再インストールできます。その後、パッケージはすべてのユーザーから削除されます。Android がアプリを再起動することがあります。このアプリから元に戻すことはできません（そのコピーを再インストールする以外に方法はありません）。",
+"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.": "オーバーレイの APK はまず Download/ADB App Manager/Overlays にコピーされるので、あとでインストーラタブから再インストールできます。その後、パッケージは端末の現在のユーザーから削除されます。Android がアプリを再起動することがあります。このアプリから元に戻すことはできません（そのコピーを再インストールする以外に方法はありません）。",
 "The pairing code has 6 digits": "ペア設定コードは6桁です",
 "The password is used only for this archive, only while it is open. It is never saved.": "パスワードはこのアーカイブを開いている間だけ使用され、保存されることはありません。",
 "The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.": "パッチバンドルが破損しているか、より新しい Morphe 向けに作られている可能性があります。「ソース」でソースを更新してください。",

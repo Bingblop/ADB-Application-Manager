@@ -1,19 +1,19 @@
 a. the page sees Super User (isRootActive) and the list is up: true {"activeMode":"root","configuredMode":"root","modeAvailable":true,"isPrivileged":true,"rootAvailable":true,"rootGranted":true,"rootWorkingModeActive":true,"adbTcp":{"connected":false,"port":5555},"adbWireless":{"connected":false,"port":0},"shizuku":{"installed":false,"running":false,"authorized":false}}
    the row starts off: true {"on":false,"busy":false}
-   the hold opens the uninstall prompt, with the id in its title and the red Uninstall button: true {"shown":true,"title":"Uninstall android.theme.customization.font?","text":"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for every user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.","ok":"Uninstall"}
-   the text says the APK is copied to Download/ADB App Manager/Overlays first and can be installed again from the Installer tab, and that the package is removed for every user: true The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for every user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.
+   the hold opens the uninstall prompt, with the id in its title and the red Uninstall button: true {"shown":true,"title":"Uninstall android.theme.customization.font?","text":"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.","ok":"Uninstall"}
+   the text says the APK is copied to Download/ADB App Manager/Overlays first and can be installed again from the Installer tab, and that the package is removed for the phone's current user: true The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.
    the hold did not switch the row on and did not open the sheet: true
    while the answer is awaited the row is busy: true
    overlayUninstall was called once, with that id, and no switch was made: true {"op":[],"un":["android.theme.customization.font"]}
    the row has left the list: true
    a toast names the uninstall: true Uninstalled: android.theme.customization.font
-   a line names where the copy went: true A copy of its APK is in Download/ADB App Manager/Overlays/android.theme.customization.font.apk
+   a line names where the copy went (the package's own folder under Download/ADB App Manager/Overlays): true A copy of its APK is in Download/ADB App Manager/Overlays/android.theme.customization.font
    no failure sheet: true
 b. a hold on a row that is on switches it off (overlayOp disable), with no uninstall call and no prompt: true {"op":[{"op":"disable","id":"android.theme.customization.accent_color"}],"un":["android.theme.customization.font"]}
    a tap on the switch of a row that is off still turns it on: true
    a tap on the row still opens the sheet: true
    with Super User the sheet of a row that is off has a live Uninstall button: true {"shown":true,"disabled":false,"locked":false,"text":"Uninstall","title":""}
-   tapping it opens the same prompt: true {"shown":true,"title":"Uninstall com.android.theme.icon_pack.circular.android?","text":"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for every user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.","ok":"Uninstall"}
+   tapping it opens the same prompt: true {"shown":true,"title":"Uninstall com.android.theme.icon_pack.circular.android?","text":"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.","ok":"Uninstall"}
    confirming uninstalls it and closes the sheet: true
    a hold on the fabricated colour overlay (on) switches it off like any row that is on: true
    held again (off now) it says it is not a package, with no prompt and no bridge call: true This overlay is not an app package; switching it off is all there is to remove

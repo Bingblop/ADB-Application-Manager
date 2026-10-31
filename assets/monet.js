@@ -583,9 +583,12 @@
  *                                          third colour's primary palette in place of accent2 / accent3). cb.palettes(opts, isDark):
  *                                          the six tuned rows as MonetPlan.palettes shapes them (error added). cb.tokens(opts, isDark):
  *                                          [{ name, group: 'SYSTEM' | 'FIXED' | 'CUSTOM', argb: '#AARRGGBB' }] with the rules applied.
- *                                          cb.entries(opts, sdk): the framework plan [{ resource: 'android:color/<name>', argb:
+ *                                          cb.entries(opts, sdk, profile?): the framework plan [{ resource: 'android:color/<name>', argb:
  *                                          '#AARRGGBB', config?: 'night' }] for that SDK, only names the framework has (cb.exists(name,
- *                                          sdk); 34 for older, 37 for newer), cb.count(opts, sdk) its length; cb.lib the pieces, for tests
+ *                                          sdk); 34 for older, 37 for newer); with a profile in cb.SUFFIXED_PALETTE_PROFILES (P16Q1,
+ *                                          P16Q2, P17: MonetProfile.suffixedPalettes) the unsuffixed palette shades are left out too
+ *                                          (any other profile, 'unknown' or none filters nothing); cb.count(opts, sdk, profile?) its
+ *                                          length; cb.lib the pieces, for tests
  * Colours go in as 0xAARRGGBB numbers or 'RRGGBB' / '#RRGGBB' strings and come out as '0xAARRGGBB' or 'RRGGBB' strings (cb: '#AARRGGBB').
  */
 (function (root, factory) {
@@ -3252,6 +3255,13 @@
     // does not fit); its token list (Material's roles, Android's control/text roles, SystemUI's custom colours); its two rules (Pure
     // black, tintless text); its writers' names, configurations and order; and the framework's colour names per Android version, so
     // that only names the framework has are written. The old profile engine above stays for its tests; the page writes with this one.
+    // The plan is profile-aware as well (entries(opts, sdk, profile)): on a build whose palettes are suffixed (SUFFIXED_PALETTE_PROFILES
+    // below, MonetProfile.suffixedPalettes: Android 16 QPR1, QPR2 and 17) an unsuffixed palette shade (system_accent1_500) is an alias of the
+    // _light and _dark names and OverlayRules.fabricatePlanProblem refuses it, so it is left out there; the _light / _dark entries, which
+    // carry both modes, stay. The unsuffixed fixed colours (system_primary_fixed) stay: each comes with its night twin, the pair Java takes
+    // on Android 17 (MonetProfile.suffixedFixed). Entry counts with the defaults (Pure black adds one): SDK 33 168, 34 181, 35 236, 36 250,
+    // 37 372; with a suffixed-palette profile 33 259, 34 272, 35 314, 36 328 (the 78 unsuffixed shades out, the 156 _light / _dark
+    // shades in), 37 372 (its table has no unsuffixed palette name and every suffixed one).
     // ==========================================================================================================================
     const CB = (function () {
         const Hct = MCU.Hct, TonalPalette = MCU.TonalPalette, DynamicColor = MCU.DynamicColor, colorSpec = MCU.colorSpec, Variant = MCU.Variant;
@@ -3593,6 +3603,17 @@
         }
         const tableLevel = sdk => clampInt(34, 37, sdkLevel(sdk));
         function exists(name, sdk) { const bit = tableLevel(sdk) - 34, mask = CB_FRAMEWORK_COLORS.get(String(name)); return !!mask && ((mask >> bit) & 1) === 1; }
+        // the builds whose SystemUI writes the palette shades as _light and _dark and leaves the unsuffixed names as aliases of them
+        // (MonetProfile.suffixedPalettes: Android 16 QPR1, QPR2 and 17, by MonetProfile's ids as getSystemPalette reports them); there
+        // OverlayRules.fabricatePlanProblem refuses an unsuffixed palette shade, so entries() leaves those out for such a profile
+        const SUFFIXED_PALETTE_PROFILES = ['P16Q1', 'P16Q2', 'P17'];
+        const PALETTE_ALIAS = /^system_(accent[1-3]|neutral[12]|error)_[0-9]+$/;
+        // the _light / _dark palette shades themselves: the table's level 36 is android16-release (16.0), which has none of them, but
+        // Android 16 QPR1 and QPR2 (SDK 36 too, told apart by MonetProfile's probes) define every one, since their SystemUI writes them
+        // (MonetProfile P16Q1 / P16Q2, OverlayRules.QPR_LOOKUPS reads system_accent1_600_light back); so with such a profile below the
+        // level-37 table they are written although the table lacks them, and the plan keeps its palette shades
+        const PALETTE_SUFFIXED = /^system_(accent[1-3]|neutral[12]|error)_[0-9]+_(light|dark)$/;
+        const suffixedPalettes = profile => typeof profile === 'string' && SUFFIXED_PALETTE_PROFILES.includes(profile);
 
         // ---------- overlay/writer: what ColorBlendr writes to the framework (target package android), in its order. put(name, argb,
         // config): config null, or 'night' for the dark half of a day/night pair (Android 14 and later take a configuration; before,
@@ -3657,18 +3678,22 @@
             }
         }
         // the framework plan for that Android version (the SDK level as it is: below 34 no configuration; the table read at 34 to 37):
-        // [{ resource, argb, config? }], names the framework lacks dropped
-        function entries(opts, sdk) {
-            const o = normalize(opts), level = sdkLevel(sdk), out = [];
+        // [{ resource, argb, config? }], names the framework lacks dropped. profile (optional): MonetProfile's id for the phone's build; for
+        // one of SUFFIXED_PALETTE_PROFILES the unsuffixed palette shades are dropped too (the _light / _dark ones carry both modes) and the
+        // _light / _dark palette shades are kept even where the table lacks them (Android 16 QPR1 and QPR2 share SDK 36 with 16.0, whose
+        // framework the table describes, but define them: PALETTE_SUFFIXED); any other profile, 'unknown' or none drops nothing
+        function entries(opts, sdk, profile) {
+            const o = normalize(opts), level = sdkLevel(sdk), out = [], noAlias = suffixedPalettes(profile);
             write(o, level, { light: resolved(o, false), dark: resolved(o, true) }, (name, argb, config) => {
-                if (!exists(name, level)) return;
+                if (!exists(name, level) && !(noAlias && PALETTE_SUFFIXED.test(name))) return;
+                if (noAlias && PALETTE_ALIAS.test(name)) return;
                 const entry = { resource: 'android:color/' + name, argb: hex8(argb) };
                 if (config) entry.config = config;
                 out.push(entry);
             });
             return out;
         }
-        function count(opts, sdk) { return entries(opts, sdk).length; }
+        function count(opts, sdk, profile) { return entries(opts, sdk, profile).length; }
         // every name the writers can produce, whatever the framework has (for the table's test): both modes, Pure black and tinted text
         // on and off, Android 13 (no configuration) and 15 (the custom colours)
         function writerNames() {
@@ -3679,7 +3704,7 @@
             return Array.from(names);
         }
 
-        return { STYLES, SPECS, CONTRASTS, SHADES, TONES, ROLES, defaults, normalize, scheme, palettes, tokens, entries, exists, count,
+        return { STYLES, SPECS, CONTRASTS, SHADES, TONES, ROLES, SUFFIXED_PALETTE_PROFILES, defaults, normalize, scheme, palettes, tokens, entries, exists, count,
             lib: { Tuning, TunedPalette, curveMap, vividTone, DARKEST_CURVE, BRIGHTEST_CURVE, preserveTone, fits, adaptiveMidTone, adaptiveTowardsMid, scaledColor,
                 TOKENS, MATERIAL_TOKENS, FIXED_TOKENS, ANDROID, CUSTOM, tokenColor, materialMethod, resolve, resolved, ruled, PITCH_BLACK_TOKENS, PITCH_BLACK_SPREAD, TINTLESS_TOKENS,
                 SHADE_900, ROLE_PALETTE, ROLE_RESOURCE, isAccent, isNeutral, SLIDER_MIN, SLIDER_MAX, CB_FRAMEWORK_COLORS, sdkLevel, write, writerNames, EFFECTS, EFFECT_FALLBACK, TINTLESS_NAMES,

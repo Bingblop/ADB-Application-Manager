@@ -1365,14 +1365,23 @@ final class OverlayRules {
     // A disabled overlay that is an app of its own (an APK under /data/app, from a theme pack or a sideload) can be removed with pm uninstall.
     // One that lives in the firmware (/system, /vendor, /product ...) cannot, and one this app fabricated through the shell
     // (com.android.shell:name) is no package at all. Which it is comes from what `pm path` prints, never from the name. Before the package
-    // goes, its APK is copied to Download/ADB App Manager/Overlays so the Installer tab can put it back; nothing is removed when that copy did
-    // not verify. Whether the uninstall worked is read back (pm path prints nothing, the list has no such overlay), never taken from "Success".
+    // goes, its APK files (the base APK and every split) are copied to a folder named after it under Download/ADB App Manager/Overlays so the
+    // Installer tab can put them back together; nothing is removed when a copy did not verify. Whether the uninstall worked is read back
+    // (pm path prints nothing, the list has no such overlay), never taken from "Success". The list is read for the foreground user
+    // (--user current), so pm path and pm uninstall address the same user: pm takes a number only, so the scripts resolve it themselves
+    // (am get-current-user, falling back to user 0 when that prints nothing or no number) and pass it as --user "$U".
 
     static final String PATH_MARK = "@@OVL-PATH@@";
     static final String SAVED_MARK = "@@OVL-SAVED@@";
     static final String NOSAVE_MARK = "@@OVL-NOSAVE@@";
-    /** Where the copy goes, under the phone's Download folder (the Installer tab's picker opens there). */
+    /** Where the copies go, under the phone's Download folder (the Installer tab's picker opens there): one folder per package below it. */
     static final String BACKUP_FOLDER = "ADB App Manager/Overlays";
+    /**
+     * Resolves the foreground user into $U for the pm calls that follow: what am get-current-user prints when it is a number, else 0 (an old
+     * Android without the command, or an answer that is an error). The same user cmd overlay list --user current reads.
+     */
+    static final String USER_RESOLVE = "U=$(am get-current-user 2>/dev/null); case \"$U\" in ''|*[!0-9]*) U=0;; esac";
+    static final String USER_ARG = "--user \"$U\"";
 
     static final String NOT_A_PACKAGE = "This overlay is not an app package; switching it off is all there is to remove";
     static final String NEEDS_PRIVILEGE = "Needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)";
@@ -1382,7 +1391,7 @@ final class OverlayRules {
     /** Where an app of its own may live: the data partition, or an SD card adopted as internal storage (pm uninstall takes both away). */
     static final String[] DATA_ROOTS = {"/data/", "/mnt/expand/"};
     static final String SLASH_IN_NAME = "An overlay name can't contain a slash";
-    /** The longest file name most Android file systems take; the copy is named <id>.apk. */
+    /** The longest file name most Android file systems take; the copies go to a folder named <id>. */
     static final int MAX_NAME = 255;
 
     /** An overlay the shell fabricated (owner:name) is registered with the overlay manager only; there is no package to uninstall. */
@@ -1392,14 +1401,14 @@ final class OverlayRules {
 
     /**
      * Null when the overlay may be asked about as a package, else why not (the bridge answers with this before anything is queued). The id
-     * also names the saved copy's file, so a slash (which would point the copy outside the backup folder), "." and ".." are refused here too.
+     * also names the folder the copies go to, so a slash (which would point the copies outside the backup folder), "." and ".." are refused here too.
      */
     static String uninstallIdProblem(String id) {
         String p = idProblem(id);
         if (p != null) return p;
         if (isFabricatedId(id)) return NOT_A_PACKAGE;
         if (id.indexOf('/') >= 0 || id.equals(".") || id.equals("..")) return SLASH_IN_NAME;
-        if (backupName(id).length() > MAX_NAME) return "The overlay name is too long for a file name (" + (MAX_NAME - ".apk".length()) + " characters at most)";
+        if (backupName(id).length() > MAX_NAME) return "The overlay name is too long for a folder name (" + MAX_NAME + " characters at most)";
         return null;
     }
 
@@ -1410,7 +1419,7 @@ final class OverlayRules {
         return false;
     }
 
-    /** The overlay list, then what pm path prints for the package, each closed by a marker: one answer says whether the id is a switched-off overlay and where its APK is. */
+    /** The overlay list, then what pm path prints for the package (for the same user), each closed by a marker: one answer says whether the id is a switched-off overlay and where its APK files are. */
     static String probeScript(String id) {
         return listCommand() + "; echo " + GET_MARK + "; " + pathScript(id) + "; echo " + PATH_MARK;
     }
@@ -1421,7 +1430,8 @@ final class OverlayRules {
         List<Overlay> all = null;
         String listError = "";
         String pathOut = "";
-        String path = null;
+        List<String> paths = new ArrayList<String>();   // every package: line pm path printed, the base APK first
+        String path = null;                             // the base APK (the first line), null when none was printed
         String text = "";
     }
 
@@ -1446,7 +1456,8 @@ final class OverlayRules {
         }
         r.complete = true;
         r.pathOut = out.substring(afterGet, p).trim();
-        r.path = parsePath(r.pathOut);
+        r.paths = parsePath(r.pathOut);
+        r.path = first(r.paths);
         return r;
     }
 
@@ -1485,12 +1496,12 @@ final class OverlayRules {
         }
         v.state = 0;
         // a failure line in place of a path is no answer about where the package is
-        if (r.path == null && (looksLikeFailure(r.pathOut) || FileRules.transportLost(r.pathOut))) {
+        if (r.paths.isEmpty() && (looksLikeFailure(r.pathOut) || FileRules.transportLost(r.pathOut))) {
             v.unknown = true;
             v.error = summary(r.pathOut);
             return v;
         }
-        v.where = whereOf(r.path);
+        v.where = whereOf(r.paths);
         if ("missing".equals(v.where)) v.error = missingError(id);
         else if ("system".equals(v.where)) v.error = systemError(id);
         else v.ok = true;
@@ -1503,19 +1514,28 @@ final class OverlayRules {
         return BackupScripts.quote(id);
     }
 
-    /** Where the overlay's package is installed: {@code pm path} prints one {@code package:<apk>} line per split, nothing when it is no package. */
+    /**
+     * Where the overlay's package is installed for the foreground user ({@link #USER_RESOLVE}, then {@code pm path --user "$U"}): one
+     * {@code package:<apk>} line per split, the base APK first, nothing when it is no package for that user.
+     */
     static String pathScript(String id) {
-        return "pm path " + checkedUninstallId(id);
+        return USER_RESOLVE + "; pm path " + USER_ARG + " " + checkedUninstallId(id);
     }
 
-    /** The first {@code package:} line's path (the base APK), or null when none was printed (a warning or error line before it is skipped). */
-    static String parsePath(String out) {
-        if (out == null) return null;
+    /** Every {@code package:} line's path in order (the base APK first, then the splits); empty when none was printed (a warning or error line is skipped). */
+    static List<String> parsePath(String out) {
+        List<String> paths = new ArrayList<String>();
+        if (out == null) return paths;
         for (String line : out.split("\r?\n", -1)) {
             String t = line.trim();
-            if (t.startsWith("package:") && t.length() > "package:".length()) return t.substring("package:".length()).trim();
+            if (t.startsWith("package:") && t.length() > "package:".length()) paths.add(t.substring("package:".length()).trim());
         }
-        return null;
+        return paths;
+    }
+
+    /** The base APK: the first path {@link #parsePath} found, or null when it found none. */
+    static String first(List<String> paths) {
+        return paths == null || paths.isEmpty() ? null : paths.get(0);
     }
 
     /** True when the APK is not in a data location (/data/, /mnt/expand/): part of the firmware, in an APEX, or somewhere else pm uninstall does not take away. */
@@ -1532,6 +1552,13 @@ final class OverlayRules {
         return isSystemPath(path) ? "system" : "data";
     }
 
+    /** The same for every APK of the package: "data" only when each one is in a data location; one firmware path among them makes it "system". */
+    static String whereOf(List<String> paths) {
+        if (paths == null || paths.isEmpty()) return "missing";
+        for (String p : paths) if (!"data".equals(whereOf(p))) return "system";
+        return "data";
+    }
+
     static String missingError(String id) {
         return id + " is not installed as a package (it may be part of another app, or already gone)";
     }
@@ -1540,9 +1567,28 @@ final class OverlayRules {
         return id + " is part of the phone's firmware, so it cannot be uninstalled. Switching it off is the way to stop it.";
     }
 
-    /** The copy's file name in the backup folder. */
+    /** The folder the package's copies go to, below the backup folder: named after the package. */
     static String backupName(String id) {
-        return id + ".apk";
+        return id;
+    }
+
+    /**
+     * The file name each APK keeps in that folder (base.apk, split_config.xxhdpi.apk ...): the part after the last slash. Refused
+     * (IllegalArgumentException) when a path has no slash, ends in one, names "." or "..", holds a line break, or when two paths share a name.
+     */
+    static List<String> backupFileNames(List<String> apks) {
+        if (apks == null || apks.isEmpty()) throw new IllegalArgumentException("bad APK path");
+        List<String> names = new ArrayList<String>();
+        for (String apk : apks) {
+            if (apk == null || apk.indexOf('\n') >= 0 || apk.indexOf('\r') >= 0 || apk.indexOf('\0') >= 0) throw new IllegalArgumentException("bad APK path");
+            int slash = apk.lastIndexOf('/');
+            if (slash < 0) throw new IllegalArgumentException("bad APK path");
+            String name = apk.substring(slash + 1);
+            if (name.isEmpty() || name.equals(".") || name.equals("..")) throw new IllegalArgumentException("bad APK path");
+            if (names.contains(name)) throw new IllegalArgumentException("two APKs share the name " + name);
+            names.add(name);
+        }
+        return names;
     }
 
     /** Folders the privileged shell writes to below the FUSE mount; their files must be handed to the media layer (media_rw, uid 1023) or the user and this app cannot see or change them. */
@@ -1551,41 +1597,49 @@ final class OverlayRules {
     }
 
     /**
-     * Copies the APK to the first folder of {@code dirs} that takes it (the Download folder as this app sees it, then the same folder as
-     * the shell may have to reach it). For each folder: any old file of that name goes first (a stale or planted copy must never pass for the
-     * new one), the folder is made, and the copy counts only when cp itself succeeded, the copy is not empty and cmp finds it identical to the
-     * APK; then it is made world-readable (a failure of chmod on a FUSE storage, whose modes are fixed, is no failure), a copy that landed
-     * below the FUSE mount (/data/media) is handed to media_rw so the media layer and the user can see and change it, and
-     * {@link #SAVED_MARK} followed by the copy's path is printed. A copy that did not verify is removed again. Prints {@link #NOSAVE_MARK} when
-     * no folder took it. Every path is single-quoted.
+     * Copies every APK of the package ({@code apks}: the base APK and its splits, as pm path printed them) into a folder named after the package
+     * below the first folder of {@code dirs} that takes them (the Download folder as this app sees it, then the same folder as the shell may
+     * have to reach it). For each folder: any old folder of that name goes first (a stale or planted copy must never pass for the new one),
+     * the folder is made, and the copies count only when, for every APK, cp itself succeeded, the copy is not empty and cmp finds it
+     * identical to the APK; then they are made world-readable (a failure of chmod on a FUSE storage, whose modes are fixed, is no failure),
+     * copies that landed below the FUSE mount (/data/media) are handed to media_rw so the media layer and the user can see and change them, and
+     * {@link #SAVED_MARK} followed by the folder's path is printed. A set that did not verify is removed again. Prints {@link #NOSAVE_MARK}
+     * when no folder took it. Every path is single-quoted. Each APK keeps its file name ({@link #backupFileNames}).
      */
-    static String backupScript(String apk, List<String> dirs, String id) {
-        if (apk == null || apk.isEmpty() || apk.indexOf('\n') >= 0 || apk.indexOf('\r') >= 0 || apk.indexOf('\0') >= 0) throw new IllegalArgumentException("bad APK path");
+    static String backupScript(List<String> apks, List<String> dirs, String id) {
+        List<String> names = backupFileNames(apks);
         if (dirs == null || dirs.isEmpty()) throw new IllegalArgumentException("no folder to save to");
-        checkedUninstallId(id);           // also refuses a slash in the name and a name too long for a file (MAX_NAME)
-        String name = backupName(id);
-        String qa = BackupScripts.quote(apk);
+        checkedUninstallId(id);           // also refuses a slash in the name and a name too long for a folder (MAX_NAME)
+        String folder = backupName(id);
         StringBuilder sb = new StringBuilder();
         for (String dir : dirs) {
             if (dir == null || dir.isEmpty() || dir.indexOf('\n') >= 0 || dir.indexOf('\r') >= 0 || dir.indexOf('\0') >= 0) throw new IllegalArgumentException("bad folder");
-            String dest = (dir.endsWith("/") ? dir : dir + "/") + name;
+            String sub = (dir.endsWith("/") ? dir : dir + "/") + folder;
             String qdir = BackupScripts.quote(dir);
-            String qd = BackupScripts.quote(dest);
-            sb.append("rm -f ").append(qd).append(" 2>/dev/null; ")
-              .append("mkdir -p ").append(qdir).append(" 2>/dev/null; ")
-              .append("if cp -f ").append(qa).append(' ').append(qd).append(" 2>/dev/null && test -s ").append(qd).append(" && cmp -s ").append(qa).append(' ').append(qd).append(" 2>/dev/null; then ")
-              .append("chmod 0644 ").append(qd).append(" 2>/dev/null; ");
-            if (isShellSideMedia(dir)) {
-                sb.append("chown 1023:1023 ").append(qdir).append(' ').append(qd).append(" 2>/dev/null; chmod 0775 ").append(qdir).append(" 2>/dev/null; chmod 0664 ").append(qd).append(" 2>/dev/null; ");
+            String qsub = BackupScripts.quote(sub);
+            StringBuilder dests = new StringBuilder();
+            sb.append("rm -rf ").append(qsub).append(" 2>/dev/null; ")
+              .append("mkdir -p ").append(qsub).append(" 2>/dev/null; ")
+              .append("if ");
+            for (int k = 0; k < apks.size(); k++) {
+                String qa = BackupScripts.quote(apks.get(k));
+                String qd = BackupScripts.quote(sub + "/" + names.get(k));
+                dests.append(' ').append(qd);
+                if (k > 0) sb.append(" && ");
+                sb.append("cp -f ").append(qa).append(' ').append(qd).append(" 2>/dev/null && test -s ").append(qd).append(" && cmp -s ").append(qa).append(' ').append(qd).append(" 2>/dev/null");
             }
-            sb.append("echo ").append(SAVED_MARK).append(BackupScripts.quote(dest)).append("; exit 0; fi; ")
-              .append("rm -f ").append(qd).append(" 2>/dev/null; ");
+            sb.append("; then chmod 0644").append(dests).append(" 2>/dev/null; ");
+            if (isShellSideMedia(dir)) {
+                sb.append("chown 1023:1023 ").append(qdir).append(' ').append(qsub).append(dests).append(" 2>/dev/null; chmod 0775 ").append(qdir).append(' ').append(qsub).append(" 2>/dev/null; chmod 0664").append(dests).append(" 2>/dev/null; ");
+            }
+            sb.append("echo ").append(SAVED_MARK).append(qsub).append("; exit 0; fi; ")
+              .append("rm -rf ").append(qsub).append(" 2>/dev/null; ");
         }
         sb.append("echo ").append(NOSAVE_MARK);
         return sb.toString();
     }
 
-    /** The saved copy's path when {@link #backupScript} printed {@link #SAVED_MARK}, else null (the copy did not verify, or nothing came back). */
+    /** The folder the copies went to when {@link #backupScript} printed {@link #SAVED_MARK}, else null (a copy did not verify, or nothing came back). */
     static String parseBackup(String out) {
         if (out == null) return null;
         for (String line : out.split("\r?\n", -1)) {
@@ -1595,17 +1649,21 @@ final class OverlayRules {
         return null;
     }
 
-    /** The uninstall for every user, then the read-back: what pm path prints now (between the markers), then the whole overlay list. */
+    /**
+     * The uninstall for the foreground user (the user the list is read for: {@link #USER_RESOLVE}, then {@code pm uninstall --user "$U"}),
+     * then the read-back: what pm path prints now for that user (between the markers), then the whole overlay list.
+     */
     static String uninstallScript(String id) {
         String q = checkedUninstallId(id);
-        return "pm uninstall " + q + "; echo " + GET_MARK + "; pm path " + q + "; echo " + PATH_MARK + "; " + listCommand() + "; echo " + END_MARK;
+        return USER_RESOLVE + "; pm uninstall " + USER_ARG + " " + q + "; echo " + GET_MARK + "; pm path " + USER_ARG + " " + q + "; echo " + PATH_MARK + "; " + listCommand() + "; echo " + END_MARK;
     }
 
     /** What an uninstall printed, what pm path printed afterwards, and the list that followed (as {@link ChangeResult}: all is null when it never came). */
     static final class UninstallResult {
         String answer = "";
         String pathOut = "";
-        String path = null;           // what pm path printed after the uninstall: null when the package is gone
+        List<String> paths = new ArrayList<String>();   // what pm path printed after the uninstall: empty when the package is gone (or pm path failed: see pathOut)
+        String path = null;                             // the first of them, null when none
         boolean complete = false;     // the closing marker came, so the list was not cut off
         List<Overlay> all = null;
         String listError = "";
@@ -1624,11 +1682,13 @@ final class OverlayRules {
         int p = out.indexOf(PATH_MARK, afterGet);
         if (p < 0) {
             r.pathOut = out.substring(afterGet).trim();
-            r.path = parsePath(r.pathOut);
+            r.paths = parsePath(r.pathOut);
+            r.path = first(r.paths);
             return r;
         }
         r.pathOut = out.substring(afterGet, p).trim();
-        r.path = parsePath(r.pathOut);
+        r.paths = parsePath(r.pathOut);
+        r.path = first(r.paths);
         int start = p + PATH_MARK.length();
         int end = out.lastIndexOf(END_MARK);
         if (end >= start) {
@@ -1643,7 +1703,8 @@ final class OverlayRules {
 
     /**
      * Whether the uninstall worked, from the read-back only: pm path prints nothing for the package any more and the list no longer has the
-     * overlay. "Success" from pm uninstall counts for nothing. Unknown when the list never completed (the link dropped, say).
+     * overlay. "Success" from pm uninstall counts for nothing. Unknown when the list never completed (the link dropped, say), and when pm path
+     * printed a failure or was cut off instead of answering: an empty answer is only "gone" when pm path itself said nothing.
      */
     static Verdict judgeUninstall(String id, UninstallResult r) {
         Verdict v = new Verdict();
@@ -1663,8 +1724,14 @@ final class OverlayRules {
             }
         }
         if (found != null) v.state = found.state;
-        if (r.path != null) {
+        if (!r.paths.isEmpty()) {
             v.error = looksLikeFailure(r.answer) ? summary(r.answer) : "Android did not remove " + id + " (its package is still installed)";
+            return v;
+        }
+        if (looksLikeFailure(r.pathOut) || FileRules.transportLost(r.pathOut)) {
+            // pm path printed an error or was cut off instead of answering: whether the package is gone is not known, whatever the list says
+            v.unknown = true;
+            v.error = summary(r.pathOut);
             return v;
         }
         if (found != null) {

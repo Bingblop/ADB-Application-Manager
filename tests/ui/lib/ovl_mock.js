@@ -19,7 +19,7 @@ module.exports.initScript = function () {
   window.__ovl = ov.map(r => ({ target: r[0], state: r[1], id: r[2] }));
   window.__ovlCalls = { list: 0, op: [], apply: [], restore: [], restoreUndo: [], palette: 0, fab: [], un: [] };
   // v7.22.0 uninstalling an overlay (overlayUninstall): where pm path finds each APK (the default is an installed app under /data/app), a refusal
-  // of the pm uninstall itself, and a copy to Download/ADB App Manager/Overlays that cannot be saved (nothing is removed then)
+  // of the pm uninstall itself, and a copy to Download/ADB App Manager/Overlays/<id>/ (the package's own folder) that cannot be saved (nothing is removed then)
   window.__ovlPaths = {};         // id -> the APK path pm path prints ('' : not installed as a package); default /data/app/~~mock/<id>-1/base.apk
   window.__ovlUninstallDeny = {}; // id -> error text: pm uninstall refuses, the package stays
   window.__ovlNoBackup = false;   // true: the copy of the APK could not be saved, so nothing is removed
@@ -128,8 +128,9 @@ module.exports.initScript = function () {
   };
   // MainActivity.overlayUninstall / overlayUninstallJob: the id is checked before anything is queued (OverlayRules.idProblem, a fabricated id),
   // the gate is RootGate.unlocked (su granted, or Shizuku as uid 0 or uid 1000: the __root and __shizuku1000 knobs), then pm path decides
-  // where the APK lives (missing / system / data), the APK is copied to Download/ADB App Manager/Overlays (or nothing is removed), pm uninstall
-  // runs and ok comes only from the read-back (pm path prints nothing and the list no longer has the id). Answered as window.onOverlayUninstall(json).
+  // where the APK lives (missing / system / data), the package's APKs are copied to Download/ADB App Manager/Overlays/<id>/ (base.apk and any splits,
+  // reported as backup = the folder and files = their names; or nothing is removed), pm uninstall runs for the foreground user and ok comes only
+  // from the read-back (pm path prints nothing and the list no longer has the id). Answered as window.onOverlayUninstall(json).
   const UN_DIR = '/storage/emulated/0/Download/ADB App Manager/Overlays/';
   const UN_NEEDS = 'Needs Super User, or Shizuku as root (uid 0) or the system user (uid 1000)';
   b.overlayUninstall = function (req, id) {
@@ -144,7 +145,7 @@ module.exports.initScript = function () {
     if (window.__ovlNoAnswer) return 'started';
     setTimeout(() => {
       const mode = window.__root ? 'root' : window.__shizuku1000 ? 'shizuku' : 'adb_tcp';
-      const r = { req, id, ok: false, mode, needsPrivilege: false, where: '', path: '', backup: '', answer: '', error: '', advice: '', unknown: false, stale: false };
+      const r = { req, id, ok: false, mode, needsPrivilege: false, where: '', path: '', backup: '', files: [], answer: '', error: '', advice: '', unknown: false, stale: false };
       if (!window.__root && !window.__shizuku1000) { r.needsPrivilege = true; r.error = UN_NEEDS; window.onOverlayUninstall(JSON.stringify(r)); return; }
       // OverlayRules.judgeProbe: the id must be an overlay that is off on this phone (the page's rule, enforced in Java for every caller)
       const cur = window.__ovl.find(x => x.id === id);
@@ -156,7 +157,7 @@ module.exports.initScript = function () {
       if (!/^\/(data|mnt\/expand)\//.test(path)) { r.where = 'system'; r.error = id + " is part of the phone's firmware, so it cannot be uninstalled. Switching it off is the way to stop it."; r.advice = 'Overlays that ship with the phone live on a read-only partition. Leave this one off, or remove it with a custom ROM or a module that changes the firmware.'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
       r.where = 'data';
       if (window.__ovlNoBackup) { r.error = 'No copy of the APK could be saved to Download/ADB App Manager/Overlays, so nothing was removed'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
-      r.backup = UN_DIR + id + '.apk';
+      r.backup = UN_DIR + id; r.files = [path.replace(/^.*\//, '')];
       if (window.__ovlUninstallDeny[id]) { r.error = window.__ovlUninstallDeny[id]; r.answer = 'Failure [' + window.__ovlUninstallDeny[id] + ']\npackage:' + path; r.advice = 'Android refused the request.'; r.list = wire(); window.onOverlayUninstall(JSON.stringify(r)); return; }
       const i = window.__ovl.findIndex(x => x.id === id);
       if (i >= 0) window.__ovl.splice(i, 1);
@@ -246,7 +247,9 @@ module.exports.initScript = function () {
   // mock reports, when it is P16Q1, P16Q2 or P17 (MonetProfile.suffixedPalettes: Java takes the profile itself), an unsuffixed palette shade is
   // refused and the lookups are OverlayRules.QPR_LOOKUPS the plan has, in that order, then its first other entries up to four. PR 10: on
   // P17 (MonetProfile.suffixedFixed) also an unsuffixed fixed colour (the 12 names exactly) is refused, and the lookups are
-  // OverlayRules.P17_LOOKUPS (the QPR five, then system_primary_fixed_dark), at most six.
+  // OverlayRules.P17_LOOKUPS (the QPR five, then system_primary_fixed_dark), at most six. As in Java, a night entry is never a fixed-alias
+  // refusal, and an unqualified fixed entry is refused only when the plan has no night entry of the same resource (the pair gives each
+  // mode its colour, so Android takes it); the palette alias rule applies on P16Q1, P16Q2 and P17 alike.
   const FAB_OWNER = 'com.android.shell:', FAB_NAME = 'aam_monet', FAB_RES = 'android:color/system_', FAB_PREFIX = 'android:color/';
   const FAB_MAX = 512;
   const QPR_LOOKUPS = ['accent1_600_light', 'accent1_600_dark', 'primary_light', 'surface_dark', 'primary_dim_dark'].map(n => FAB_RES + n);
@@ -280,7 +283,10 @@ module.exports.initScript = function () {
         seen.add(key);
       }
       if (suffixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_(accent[1-3]|neutral[12]|error)_[0-9]+$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a palette color without _light or _dark, which this Android version does not take';
-      if (suffixedFixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a fixed color without _light or _dark, which this Android version does not take';
+      if (suffixedFixed()) {
+        const night = new Set(es.filter(e => e.config === 'night').map(e => e.resource));
+        for (let i = 0; i < es.length; i++) if (!es[i].config && !night.has(es[i].resource) && /^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a fixed color without _light or _dark, which this Android version does not take';
+      }
     } else if (op === 'disable') {
       const ids = plan.ids;
       if (!Array.isArray(ids) || !ids.length) return 'error: No overlay named';

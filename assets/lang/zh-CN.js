@@ -4514,7 +4514,7 @@ x: {
 "The old code is gone. Anything you gave it to has to be given the new one.": "旧授权码已失效。凡是给过旧授权码的地方，都需要重新给予新授权码。",
 "The older storage permission some apps still check for.": "一些应用仍会检查的旧版存储权限。",
 "The overlay stays on: switching it off needs Super User (uid 0).": "叠加层保持开启：要关闭它需要超级用户（uid 0）。",
-"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for every user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.": "叠加层的 APK 会先复制到 Download/ADB App Manager/Overlays，以便日后从“安装器”标签页重新安装。然后该软件包会对所有用户移除。Android 可能会重启应用。此操作无法在本应用中撤销，只能重新安装那份副本。",
+"The overlay's APK is copied to Download/ADB App Manager/Overlays first, so it can be installed again from the Installer tab. Then the package is removed for the phone's current user. Android may restart apps. This cannot be undone from this app, except by installing that copy again.": "叠加层的 APK 会先复制到 Download/ADB App Manager/Overlays，以便日后从“安装器”标签页重新安装。然后该软件包会对手机的当前用户移除。Android 可能会重启应用。此操作无法在本应用中撤销，只能重新安装那份副本。",
 "The pairing code has 6 digits": "配对码为 6 位数字",
 "The password is used only for this archive, only while it is open. It is never saved.": "密码仅用于此压缩包，且仅在其打开期间使用，系统不会保存密码。",
 "The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.": "补丁包可能已损坏，或是为更新的 Morphe 制作的。请在“来源”中更新该来源。",

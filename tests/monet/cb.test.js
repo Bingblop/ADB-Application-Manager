@@ -8,7 +8,9 @@
 // neutral rows is black in dark mode and nothing else moves. (d) tintless text: seven on_* tokens white in dark and black in light,
 // on_error the other way, nothing else moves. (e) the framework plan per SDK: unsuffixed palettes on 34, _light / _dark on 37, the
 // fixed colours as a day/night pair, no name outside the table, under 512 entries, well-formed resources and colours, no duplicate
-// (resource, config), the extras of Pure black and tintless text. (f) CMF is always spec 2026; a second or third colour replaces the
+// (resource, config), the extras of Pure black and tintless text; with a profile whose palettes are suffixed (P16Q1, P16Q2, P17) the
+// unsuffixed palette shades are left out and the _light / _dark set is unchanged, and every unsuffixed fixed colour on 37 has its night
+// twin (what OverlayRules.fabricatePlanProblem takes on Android 17). (f) CMF is always spec 2026; a second or third colour replaces the
 // palette by that colour's primary palette. (g) the per-SDK existence table equals the one derived from tests/fixtures/framework-colors.json.
 // (h) normalize: defaults, clamps, aliases, what throws. Plain node: `node tests/monet/cb.test.js`, exit code 1 on a failure.
 'use strict';
@@ -187,6 +189,27 @@ const within1 = (a, b) => channels(a).every((c, i) => Math.abs(c - channels(b)[i
     }
     check('    the plan carries the tokens\' colours: system_primary_light / _dark on 37 equal tokens()', e37.find(x => x.resource === 'android:color/system_primary_light').argb === cb.tokens({}, false).find(t => t.name === 'primary').argb && e37.find(x => x.resource === 'android:color/system_primary_dark').argb === cb.tokens({}, true).find(t => t.name === 'primary').argb);
     check('    the plan carries the palettes: system_accent1_500 on 34 is the current mode\'s shade 500 (light by default, dark with dark: true)', e34.find(x => x.resource === 'android:color/system_accent1_500').argb === '#FF' + pal.accent1.shades[7] && cb.entries({ dark: true }, 34).find(x => x.resource === 'android:color/system_accent1_500').argb === '#FF' + palD.accent1.shades[7]);
+    // the profile (MonetProfile's id): on P16Q1, P16Q2 and P17 (cb.SUFFIXED_PALETTE_PROFILES, MonetProfile.suffixedPalettes) Java refuses an
+    // unsuffixed palette shade, so entries() leaves those out, and keeps the 156 _light / _dark shades (6 rows x 13 shades x 2) which Android
+    // 16 QPR1 and QPR2 define although the level-36 table (16.0's framework) lacks them; nothing else moves; any other profile, 'unknown'
+    // or none changes nothing
+    const PAL = /^system_(accent[123]|neutral[12]|error)_\d+$/, SUF = /^system_(accent[123]|neutral[12]|error)_\d+_(light|dark)$/;
+    const FIXED = /^system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/;
+    check('    SUFFIXED_PALETTE_PROFILES is P16Q1, P16Q2, P17', JSON.stringify(cb.SUFFIXED_PALETTE_PROFILES) === '["P16Q1","P16Q2","P17"]', cb.SUFFIXED_PALETTE_PROFILES);
+    const COUNTS = { 33: 168, 34: 181, 35: 236, 36: 250, 37: 372 }, FILTERED = { 33: 259, 34: 272, 35: 314, 36: 328, 37: 372 };
+    for (const sdk of [33, 34, 35, 36, 37]) {
+        const plain = cb.entries({}, sdk), np = names(plain);
+        check('    SDK ' + sdk + ': ' + COUNTS[sdk] + ' entries with the defaults, one more with Pure black; no profile, \'unknown\' and P16 give the same list', plain.length === COUNTS[sdk] && cb.count({ black: true, dark: true }, sdk) === COUNTS[sdk] + 1 && ['unknown', 'P16', 'P14', '', null].every(p => JSON.stringify(cb.entries({}, sdk, p)) === JSON.stringify(plain)), [plain.length, cb.count({ black: true, dark: true }, sdk)]);
+        for (const profile of ['P16Q1', 'P16Q2', 'P17']) {
+            const f = cb.entries({}, sdk, profile), nf = names(f);
+            const suf = nf.filter(x => SUF.test(x)), rest = f.filter(x => !SUF.test(x.resource.slice('android:color/'.length)));
+            check('    SDK ' + sdk + ' ' + profile + ': ' + FILTERED[sdk] + ' entries, no unsuffixed palette name, all 156 _light / _dark shades (the same set and colours as on 37) and every other entry as without a profile, in order; count() agrees', f.length === FILTERED[sdk] && !nf.some(x => PAL.test(x)) && suf.length === 156 && JSON.stringify(f.filter(x => SUF.test(x.resource.slice('android:color/'.length)))) === JSON.stringify(e37.filter(x => SUF.test(x.resource.slice('android:color/'.length)))) && JSON.stringify(rest) === JSON.stringify(plain.filter(x => !PAL.test(x.resource.slice('android:color/'.length)) && !SUF.test(x.resource.slice('android:color/'.length)))) && cb.count({}, sdk, profile) === f.length, [f.length, suf.length, nf.filter(x => PAL.test(x)).slice(0, 3)]);
+        }
+    }
+    // Android 17 (P17, MonetProfile.suffixedFixed): Java refuses an unqualified fixed colour unless the plan has its night twin, so each of the
+    // 12 must come paired; the plan for 37 is the same with and without the profile (its table has no unsuffixed palette name)
+    const e37p = cb.entries({}, 37, 'P17'), unqFixed = e37p.filter(x => !x.config && FIXED.test(x.resource.slice('android:color/'.length))), night37 = new Set(e37p.filter(x => x.config === 'night').map(x => x.resource));
+    check('    SDK 37 + P17: the 12 unsuffixed fixed colours each have a night entry of the same resource (Java takes the pair), and the plan equals the one without a profile', unqFixed.length === 12 && unqFixed.every(x => night37.has(x.resource)) && JSON.stringify(e37p) === JSON.stringify(e37), unqFixed.filter(x => !night37.has(x.resource)).map(x => x.resource));
     check('    exists(): below 34 reads as 34, above 37 as 37; an unknown name is false; a bad SDK throws', cb.exists('system_accent1_500', 21) && !cb.exists('system_accent1_500', 99) && cb.exists('system_accent1_500_light', 99) && !cb.exists('no_such_colour', 34) && (function () { try { cb.exists('x', 'abc'); return false; } catch (e) { return true; } })());
 })();
 

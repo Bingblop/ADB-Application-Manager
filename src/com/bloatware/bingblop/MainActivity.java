@@ -5202,15 +5202,17 @@ public class MainActivity extends Activity {
 
     /**
      * Removes a switched-off overlay's package and reports it as window.onOverlayUninstall(json): req, id, ok, mode, needsPrivilege, where
-     * ("data": an app of its own, "system": part of the firmware, "missing": no package of that name), path (what pm path printed), backup
-     * (the saved copy's path, "" when none), list (every overlay as it is now, when the read-back gave one), answer, error, advice, unknown,
-     * stale.
+     * ("data": an app of its own, "system": part of the firmware, "missing": no package of that name), path (the base APK pm path printed),
+     * backup (the folder the copies went to, "" when none), files (the copies' file names in that folder: base.apk and the splits), list
+     * (every overlay as it is now, when the read-back gave one), answer, error, advice, unknown, stale.
      * The root user or the system user (RootGate.unlocked, as fmkGate: Super User with su granted, or Shizuku as uid 0 or 1000); the gate is
      * checked before any shell runs. Then, in turn: the overlay list and pm path in one answer say that the id is an overlay that is off on
      * this phone (anything else is refused: the page's rule, enforced here for every caller) and where its package is (a firmware overlay
-     * is refused with advice, a name that is no package is reported as missing, a probe that was cut off or a pm path that failed is unknown); the APK is copied to Download/ADB App Manager/Overlays (the Installer tab can put it back) and
-     * nothing is removed when that copy did not verify; last pm uninstall for every user, followed by pm path and the overlay list, which
-     * alone decide whether it worked (OverlayRules.judgeUninstall) - "Success" from pm counts for nothing.
+     * is refused with advice, a name that is no package is reported as missing, a probe that was cut off or a pm path that failed is unknown);
+     * every APK of the package (the base and its splits) is copied to a folder named after it under Download/ADB App Manager/Overlays (the
+     * Installer tab can put them back together) and nothing is removed when a copy did not verify; last pm uninstall for the foreground user
+     * (the user the list is read for), followed by pm path and the overlay list, which alone decide whether it worked
+     * (OverlayRules.judgeUninstall) - "Success" from pm counts for nothing, and a pm path that failed instead of answering is unknown.
      */
     private void overlayUninstallJob(int req, String id, long queuedAt) {
         JSONObject res = new JSONObject();
@@ -5243,6 +5245,7 @@ public class MainActivity extends Activity {
             OverlayRules.ProbeResult pr = OverlayRules.parseProbe(probeOut);
             OverlayRules.ProbeVerdict pv = OverlayRules.judgeProbe(id, pr);
             String path = pr.path;
+            List<String> paths = pr.paths;
             String where = pv.where;
             res.put("backup", "");
             if (!pv.ok) {
@@ -5263,14 +5266,15 @@ public class MainActivity extends Activity {
             }
             res.put("where", where);
             res.put("path", path);
-            // 2. a copy of the APK first, so the Installer tab can put the overlay back
+            // 2. a copy of every APK first (the base and its splits, into a folder named after the package), so the Installer tab can put the overlay back
             File pub = new File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), OverlayRules.BACKUP_FOLDER);
             try { pub.mkdirs(); } catch (Throwable ignored) {}
             List<String> dirs = new ArrayList<String>();
             dirs.add(pub.getAbsolutePath());
             // the same folder as a privileged shell reaches it when the FUSE mount is not in its view
             dirs.add("/data/media/" + (android.os.Process.myUid() / 100000) + "/Download/" + OverlayRules.BACKUP_FOLDER);
-            String copyOut = runPrivilegedShell(mode, OverlayRules.backupScript(path, dirs, id), 30000);
+            List<String> fileNames = OverlayRules.backupFileNames(paths);
+            String copyOut = runPrivilegedShell(mode, OverlayRules.backupScript(paths, dirs, id), 30000);
             String saved = OverlayRules.parseBackup(copyOut);
             if (saved == null) {
                 res.put("ok", false);
@@ -5282,10 +5286,16 @@ public class MainActivity extends Activity {
                 return;
             }
             res.put("backup", saved);
+            JSONArray fileArr = new JSONArray();
+            for (String f : fileNames) fileArr.put(f);
+            res.put("files", fileArr);
             if (saved.startsWith("/data/media/")) {
-                // the shell wrote below the FUSE mount: tell the media layer about the file at its public path, so the Installer tab's picker and the Files app list it
+                // the shell wrote below the FUSE mount: tell the media layer about the files at their public paths, so the Installer tab's picker and the Files app list them
                 try {
-                    android.media.MediaScannerConnection.scanFile(this, new String[] {new File(pub, OverlayRules.backupName(id)).getAbsolutePath()}, null, null);
+                    File pubSub = new File(pub, OverlayRules.backupName(id));
+                    String[] pubFiles = new String[fileNames.size()];
+                    for (int k = 0; k < pubFiles.length; k++) pubFiles[k] = new File(pubSub, fileNames.get(k)).getAbsolutePath();
+                    android.media.MediaScannerConnection.scanFile(this, pubFiles, null, null);
                 } catch (Throwable ignored) {}
             }
             // 3. the uninstall, judged by its read-back
