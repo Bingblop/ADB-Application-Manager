@@ -2797,6 +2797,7 @@ x: {
 "Not applied: the phone kept its governor.": "적용되지 않음: 휴대전화가 기존 거버너를 유지했습니다.",
 "Not available": "사용 불가",
 "Not available for this app": "이 앱에서는 사용할 수 없습니다",
+"Not available in this build": "이 빌드에서는 사용할 수 없습니다",
 "Not available on this phone": "이 휴대전화에서는 사용할 수 없습니다",
 "Not charging": "충전 안 함",
 "Not checked (large file)": "확인 안 함 (대용량 파일)",

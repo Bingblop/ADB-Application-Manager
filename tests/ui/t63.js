@@ -144,7 +144,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // 7) the style
   await page.locator('#ovlStyles button[data-style="EXPRESSIVE"]').click(); await sleep(80);
   const st = await ev(() => ({ style: ovlStyle, checked: Array.from(document.querySelectorAll('#ovlStyles button')).filter(b => b.getAttribute('aria-checked') === 'true').map(b => b.dataset.style), n: document.querySelectorAll('#ovlStyles button').length, text: document.getElementById('ovlStyles').innerText }));
-  check('7. six styles, one chosen, with their descriptions', st.n === 6 && st.checked.join() === 'EXPRESSIVE' && st.style === 'EXPRESSIVE' && /Tonal Spot/.test(st.text) && /Default/.test(st.text) && /Muted/.test(st.text) && /no background tint/.test(st.text), JSON.stringify(st.checked));
+  check('7. ten styles, one chosen, with their descriptions', st.n === 10 && st.checked.join() === 'EXPRESSIVE' && st.style === 'EXPRESSIVE' && /Tonal Spot/.test(st.text) && /Default/.test(st.text) && /Muted/.test(st.text) && /no background tint/.test(st.text), JSON.stringify(st.checked));
 
   // 8) applying a custom color
   await setTheme(null); await reread();

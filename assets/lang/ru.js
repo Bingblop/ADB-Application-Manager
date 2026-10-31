@@ -2797,6 +2797,7 @@ x: {
 "Not applied: the phone kept its governor.": "Не применено: телефон сохранил свой регулятор.",
 "Not available": "Недоступно",
 "Not available for this app": "Недоступно для этого приложения",
+"Not available in this build": "Недоступно в этой сборке",
 "Not available on this phone": "Недоступно на этом телефоне",
 "Not charging": "Не заряжается",
 "Not checked (large file)": "Не проверено (большой файл)",

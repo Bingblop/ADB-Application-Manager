@@ -2797,6 +2797,7 @@ x: {
 "Not applied: the phone kept its governor.": "適用されませんでした：端末はガバナーを維持しました。",
 "Not available": "取得できません",
 "Not available for this app": "このアプリでは利用できません",
+"Not available in this build": "このビルドでは利用できません",
 "Not available on this phone": "この端末では利用できません",
 "Not charging": "充電していません",
 "Not checked (large file)": "未確認（大きなファイル）",

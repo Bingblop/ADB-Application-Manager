@@ -2797,6 +2797,7 @@ x: {
 "Not applied: the phone kept its governor.": "未应用：手机保留了原调速器。",
 "Not available": "不可用",
 "Not available for this app": "此应用不可用",
+"Not available in this build": "此版本中不可用",
 "Not available on this phone": "此手机不可用",
 "Not charging": "未充电",
 "Not checked (large file)": "未检查（文件过大）",

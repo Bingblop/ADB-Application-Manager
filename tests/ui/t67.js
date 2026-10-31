@@ -128,7 +128,7 @@ const KEY = 'theme_customization_overlay_packages';
     await T.open('theme');
     await T.ev(() => { window.__db.secure['theme_customization_overlay_packages'] = '{"android.theme.customization.color_source":"home_wallpaper","android.theme.customization.theme_style":"MONOCHROMATIC"}'; ovlReadTheme(); }); await T.sleep(400);
     const now = await T.ev(() => document.getElementById('ovlNow').innerText.replace(/\s+/g, ' '));
-    check('4. the read-out says "Monochromatic", not Tonal Spot', /From your wallpaper Monochromatic style/.test(now), now);
+    check('4. the read-out says "Monochrome", not Tonal Spot', /From your wallpaper Monochrome style/.test(now), now);
     check('   Apply does not claim it is already the same', !/already what the phone uses/.test(await T.ev(() => document.getElementById('ovlApplyHint').innerText)), await T.ev(() => document.getElementById('ovlApplyHint').innerText));
     check('   the editor does not start on the unknown style (one of the six stays chosen)', await T.ev(() => OVL_STYLE_IDS.includes(ovlStyle)));
     await T.ev(() => { window.__db.secure['theme_customization_overlay_packages'] = '{"android.theme.customization.color_source":"home_wallpaper","android.theme.customization.theme_style":"X<img src=x onerror=window.__pwned=1>"}'; ovlReadTheme(); }); await T.sleep(400);

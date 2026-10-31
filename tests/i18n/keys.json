@@ -2794,6 +2794,7 @@
 {"k":"Not applied: the phone kept its governor.","ctx":"built by the code of: xdz gov perform"},
 {"k":"Not available","ctx":"built by the code of: tel na"},
 {"k":"Not available for this app","ctx":"built by the code of: top level"},
+{"k":"Not available in this build","ctx":"built by the code of: ovl render root"},
 {"k":"Not available on this phone","ctx":"built by the code of: tm render gpu"},
 {"k":"Not charging","ctx":"built by the code of: tm render battery"},
 {"k":"Not checked (large file)","ctx":"built by the code of: sign render"},

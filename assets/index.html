@@ -41956,6 +41956,7 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_LOCK_UID0 = 'Needs Super User (uid 0) to write Material You colors';
         const OVL_LOCK_UID1000 = 'Shizuku runs as the system user (uid 1000); writing these colors needs uid 0';
         const OVL_LOCK_UPDATE = 'Update the app';
+        const OVL_LOCK_NO_MATH = 'Not available in this build';
         const OVL_CMF_NEEDS_2026 = 'Needs Color spec 2026';
         // the note under the switches without uid 0, the one for colours written on another Android level (ovlRootStaleNote) and the One UI one
         const OVL_LOCK_NOTE = 'Shizuku and ADB cannot write these colors; Super User (uid 0) can.';
@@ -42004,14 +42005,19 @@ Type any command above (e.g. pm list packages -d)</div>
         ];
 
         function ovlRootBridgeOk() { const b = window.AndroidBridge; return !!(b && typeof b.overlayFabricate === 'function'); }
+        function ovlRootMathOk() {
+            return typeof MonetPlan === 'object' && MonetPlan !== null && MonetPlan.cb
+                && typeof MonetPlan.cb.entries === 'function' && typeof MonetPlan.cb.palettes === 'function';
+        }
         // the controls are live when the app can write overlays, uid 0 is active and the phone has Material You at all (also all that Undo,
         // Reset and Apply need to switch off an overlay this app wrote); the colour maths (MonetPlan.cb, assets/monet.js) ship with the page
-        function ovlRootLive() { return ovlRootBridgeOk() && ovlCanWriteOverlays() && ovlThemeSupported(); }
+        function ovlRootLive() { return ovlRootBridgeOk() && ovlRootMathOk() && ovlCanWriteOverlays() && ovlThemeSupported(); }
         // Shizuku running as the system user (uid 1000): privileged for most of the app, but not for these overlays; its lock names that
         function ovlShizukuUid1000() { const d = lastModesData; return !!(d && d.activeMode === 'shizuku' && d.shizuku && d.shizuku.uid === 1000); }
         // why the root rows are locked ('' while they are live)
         function ovlRootLockReason() {
             if (!ovlRootBridgeOk()) return OVL_LOCK_UPDATE;
+            if (!ovlRootMathOk()) return OVL_LOCK_NO_MATH;
             if (!ovlCanWriteOverlays()) return ovlShizukuUid1000() ? OVL_LOCK_UID1000 : OVL_LOCK_UID0;
             return '';
         }
@@ -42407,7 +42413,9 @@ Type any command above (e.g. pm list packages -d)</div>
                 drawAdj(ovlLockedRow('Intensity', OVL_ADJ_SUB, reason));
                 swBox.innerHTML = OVL_SWITCHES.map(o => ovlLockedRow(o.title, o.sub, reason)).join('');
                 const was = ovlRootBridgeOk() ? ovlRootApplied() : null, w = was ? ovlRootWords(was.style) : null, wasLine = was ? (was.pending ? w.maybe : w.on) : '';
-                say(reason === OVL_LOCK_UPDATE ? OVL_UPDATE_NOTE : OVL_LOCK_NOTE + (wasLine ? '\n' + wasLine : ''));
+                say(reason === OVL_LOCK_UPDATE ? OVL_UPDATE_NOTE : reason === OVL_LOCK_NO_MATH
+                    ? txT(OVL_LOCK_NO_MATH) + (wasLine ? '\n' + wasLine : '')
+                    : OVL_LOCK_NOTE + (wasLine ? '\n' + wasLine : ''));
                 ovlRenderRootStale(); ovlRenderRootOneUi();
                 return;
             }
