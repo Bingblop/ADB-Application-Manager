@@ -5986,7 +5986,7 @@
                 .ovl-acc-from { font-size:var(--fs-pill); font-weight:var(--fw-bold); color:var(--text-muted); }
                 /* the one action bar (v7.22.0), stuck to the bottom of the panel above the bottom navigation: the look of the Monitor's .mp-bar */
                 .ovl-bar { position:sticky; bottom:calc(8px + var(--bnav-h, 0px)); z-index:30; margin-top:var(--space-4); padding:var(--space-3h) var(--space-4) var(--space-3); border-radius:var(--radius-lg); background:var(--bg-sheet); border:1px solid var(--accent); box-shadow:0 6px 24px rgba(0, 0, 0, 0.55), 0 0 18px var(--accent-glow); }
-                .ovl-bar .ovl-hint { margin:var(--space-2) 2px 0; }
+                .ovl-bar .ovl-actions { margin:0; }
                 /* a root-only style of the grid while it cannot be chosen (no uid 0; CMF at another spec): greyed, the lock glyph in its name, the reason under its line */
                 .ovl-style.is-locked { opacity:.55; cursor:not-allowed; }
                 .ovl-style.is-locked .ovl-radio { border-style:dashed; }
@@ -6005,7 +6005,6 @@
                 .ovl-actions { display:flex; gap:var(--space-3h); margin:0 0 var(--space-2); }
                 .ovl-actions .mode-action-btn { min-height:44px; justify-content:center; }
                 .ovl-actions .mode-action-btn:disabled, #ovlDetailModal .mode-action-btn:disabled { opacity:.4; cursor:not-allowed; }
-                .ovl-hint { font-size:var(--fs-pill); color:var(--text-muted); margin:0 2px var(--space-5); min-height:14px; }
                 .ovl-section { display:flex; justify-content:space-between; align-items:baseline; gap:var(--space-3); margin:var(--space-5) 2px 2px; padding-bottom:var(--space-1); border-bottom:1px solid var(--border-glass); font-size:var(--fs-body); font-weight:var(--fw-black); letter-spacing:.2px; }
                 .ovl-section b { font-weight:var(--fw-bold); font-size:var(--fs-pill); color:var(--text-muted); }
                 .ovl-section.s-on { color:var(--status-running); }
@@ -6147,13 +6146,13 @@
                 </div>
 
                 <!-- the one action bar of the screen, stuck to the bottom while the panel scrolls (the look of the Monitor's .mp-bar): Apply theme
-                     writes everything above, Reset puts the system default back (and switches this app's overlay off with uid 0); the hint says what the tap does -->
+                     writes everything above, Reset puts the system default back (and switches this app's overlay off with uid 0); the two buttons
+                     only, with no line of text under them (v7.22.1, the owner's ask) -->
                 <div class="ovl-bar" id="ovlBar">
                     <div class="ovl-actions">
                         <button type="button" class="mode-action-btn primary" id="ovlApplyBtn" style="flex:1;" onclick="ovlApply()">Apply theme</button>
                         <button type="button" class="mode-action-btn" id="ovlResetBtn" onclick="ovlReset()">Reset</button>
                     </div>
-                    <div class="ovl-hint" id="ovlApplyHint"></div>
                 </div>
             </div>
 
@@ -41974,9 +41973,6 @@ Type any command above (e.g. pm list packages -d)</div>
         const OVL_UNDO_NOT_REBUILT = 'Theme put back. The overlay from before could not be written again, so it is off.';
         // the toast when an Undo's overlay from before could not be written after its theme answer was lost (ovlFinishUndo, T-069)
         const OVL_UNDO_NOT_FINISHED = 'Theme put back, but the overlay from before was not written again. Tap Apply theme to write the colors you want.';
-        // the sentences under Apply for what the overlay write adds to the theme setting, and for Reset
-        const OVL_ROOT_HINT = 'Also writes these colors into Android with Super User: the same palettes as ColorBlendr.';
-        const OVL_ROOT_REMOVE_HINT = 'Reset also removes the theme overlay.';
         // Intensity: the three sliders, each a percentage from 0 to 200 in steps of 5, 100 (the colors as computed) when never moved; key:
         // MonetPlan.cb's option, kv: where it is remembered, id: the input's (its value label is id + 'V')
         const OVL_ADJ = [
@@ -42675,25 +42671,13 @@ Type any command above (e.g. pm list packages -d)</div>
         }
 
         function ovlRenderActions() {
-            const apply = document.getElementById('ovlApplyBtn'), reset = document.getElementById('ovlResetBtn'), hint = document.getElementById('ovlApplyHint');
+            const apply = document.getElementById('ovlApplyBtn'), reset = document.getElementById('ovlResetBtn');
             if (!apply) return;
             const colorOk = ovlSource !== 'preset' || !!ovlNormalizeHex(document.getElementById('ovlHex').value);
             const supported = ovlThemeSupported();
             apply.disabled = ovlBusy || !colorOk || !supported;
             apply.innerText = ovlBusy ? 'Applying…' : 'Apply theme';
             if (reset) reset.disabled = ovlBusy || !supported;
-            const t = ovlTheme;
-            // with uid 0 every Apply writes the overlay (the colours may differ from the setting's), so nothing is "already what the phone uses"
-            const live = ovlUsable() && supported && ovlRootLive();
-            const same = !live && t && ((ovlSource === 'preset' && t.source === 'preset' && t.color === ovlColor) || (ovlSource === 'home_wallpaper' && (t.source === 'home_wallpaper' || t.source === 'default'))) && (t.style || 'TONAL_SPOT') === ovlStyleEffective();
-            if (hint) {
-                const main = !ovlUsable() ? '' : !supported ? 'Material You needs Android 12 or newer.' : same ? 'This is already what the phone uses.' : 'Android repaints in a moment, and apps may restart.';
-                // what Apply does for this app's overlay besides (Super User only), a sentence of its own so it is translated whole; and what Reset removes
-                const root = live ? OVL_ROOT_HINT : '';
-                const remove = live && ovlRootFollowUp('reset') === 'disable' ? OVL_ROOT_REMOVE_HINT : '';
-                hint.innerHTML = (main ? '<span>' + escapeHtml(main) + '</span>' : '') + (root ? ' <span id="ovlApplyHintRoot">' + escapeHtml(root) + '</span>' : '')
-                    + (remove ? ' <span id="ovlApplyHintRemove">' + escapeHtml(remove) + '</span>' : '');
-            }
             ovlRenderNow();                         // the preview follows the colour, the source, the style and every root control as they are changed
             ovlRenderRootStale(); ovlRenderRootOneUi();                   // and the note on colours written on another Android level, which shows while Apply would write them again
         }

@@ -7,7 +7,7 @@
    a record without a style (PR 2's pure black alone): the pure black overlay: true
    locked with it on the phone: the reason and the line: true
    a record naming an overlay that is not this app's counts for nothing: true
-3. below Android 12 the four root cards are hidden and the accents empty; the hint says Android 12 is needed and Apply is disabled: true {"cards":["none","none","none","none"],"acc":"","note":"","hint":"Material You needs Android 12 or newer.","styles":10,"apply":true}
+3. below Android 12 the four root cards are hidden and the accents empty, and Apply is disabled: true {"cards":["none","none","none","none"],"acc":"","note":"","styles":10,"apply":true}
    back on Android 14 they are there again, live: true
 4. How this works is collapsed, with its summary: true {"open":false,"summary":"How this works","text":"How this works"}
    opened: the text on the setting and on the overlay, and the Copy the setting and Reload buttons: true {"open":true,"text":"How this works Android 12 and newer build every system color from one source color: your wallpaper, or a color you set. The style decides how vibrant that palette is. This tab writes the secure setting theme_customization_overlay_packages, the same one Android’s own wallpaper pi

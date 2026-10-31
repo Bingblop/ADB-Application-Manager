@@ -3,7 +3,7 @@
 // in the store (ovl_accurate_shades as '0' / '1', ovl_black and ovl_tint_text as booleans), toggling stores and redraws and writes nothing;
 // the plan follows each (Accurate shades off makes the accent shades more vivid, Pure black puts the dark surfaces at black, Tint text color
 // off puts plain white and black text on the surfaces); the records from before (ovl_accurate_shades '0', ovl_black true) are read as they
-// are; the hint names nothing per switch; locked rows without uid 0; a restart keeps them.
+// are; no line of text under Apply theme and Reset (v7.22.1); locked rows without uid 0; a restart keeps them.
 const { chromium, PAGE } = require('./lib/pw');
 const sdb = require('./lib/sdb_mock.js');
 const ovl = require('./lib/ovl_mock.js');
@@ -53,7 +53,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('   Tint text color off: stored false', (await kv('ovl_tint_text')) === false && (await rows())[2].sw.checked === 'false');
   await reset(); await apply(); p = await plan();
   check('   the plan: plain white text on the dark surfaces, black on the light ones; with it on they were tinted', at(p, 'on_surface_dark') === '0xFFFFFFFF' && at(p, 'on_background_dark') === '0xFFFFFFFF' && at(p, 'on_surface_light') === '0xFF000000' && at(base, 'on_surface_dark') !== '0xFFFFFFFF', JSON.stringify([at(p, 'on_surface_dark'), at(p, 'on_surface_light'), at(base, 'on_surface_dark')]));
-  check('   the hint names no switch (one sentence for the overlay)', (await ev(() => document.getElementById('ovlApplyHint').innerText.replace(/\s+/g, ' ').trim())) === 'Android repaints in a moment, and apps may restart. Also writes these colors into Android with Super User: the same palettes as ColorBlendr. Reset also removes the theme overlay.');
+  check('   no line of text under Apply theme and Reset (v7.22.1)', await ev(() => !document.getElementById('ovlApplyHint') && document.getElementById('ovlBar').innerText.replace(/\s+/g, ' ').trim() === 'Apply theme Reset'), await ev(() => document.getElementById('ovlBar').innerText.replace(/\s+/g, ' ').trim()));
 
   // 3) the focus survives the redraw of a toggle
   await ev(() => document.getElementById('ovlTintSw').focus());

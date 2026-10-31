@@ -19,7 +19,7 @@
    the accent2 shades move, accent1 stays: true 0xFFAD6257 vs 0xFF697C69
    the record carries the accent: true
    Clear puts it back to From the style: true
-6. Monochrome chosen: the preview names it, the hint stays: true
+6. Monochrome chosen: the preview names it: true
    the theme setting gets Tonal Spot, the overlay the Monochrome colours (accent1 500 grey), the record the style: true [{"source":"home_wallpaper","hex":"","style":"TONAL_SPOT"},{"resource":"android:color/system_accent1_500_light","argb":"0xFF777777"}]
    Colors in use still reads the setting (Tonal Spot), the preview the overlay: true From your wallpaper
 Tonal Spot style · just now

@@ -1,5 +1,5 @@
-1. 320 px, locked: nothing overflows sideways and the page has no horizontal scroll: true {"barTop":628,"barBottom":712,"navTop":720,"inner":720,"wide":[],"scrollW":320,"innerW":320,"scrollY":0}
-   the bar sits at the bottom of the viewport, above the bottom navigation, at the top of the panel: true {"barTop":628,"barBottom":712,"navTop":720,"inner":720,"wide":[],"scrollW":320,"innerW":320,"scrollY":0}
+1. 320 px, locked: nothing overflows sideways and the page has no horizontal scroll: true {"barTop":648,"barBottom":712,"navTop":720,"inner":720,"wide":[],"scrollW":320,"innerW":320,"scrollY":0}
+   the bar sits at the bottom of the viewport, above the bottom navigation, at the top of the panel: true {"barTop":648,"barBottom":712,"navTop":720,"inner":720,"wide":[],"scrollW":320,"innerW":320,"scrollY":0}
    scrolled 900 px, the bar is still there (sticky), at the same place: true [712,712,900]
    seven locked rows of the Root Features kind: a disabled Locked button, the lock icon and the glyph: true [{"btn":"Locked","disabled":true,"svg":true,"glyph":true},{"btn":"Locked","disabled":true,"svg":true,"glyph":true},{"btn":"Locked","disabled":true,"svg":true,"glyph":true},{"btn":"Locked","disabled":true,"svg":true,"glyph":true},{"btn":"Locked","disabled":true,"svg":true,"glyph":true},{"btn":"Locked","disabled":true,"svg":true,"glyph":true},{"btn":"Locked","disabled":true,"svg":true,"glyph":true}]
    a tap on Locked does nothing: true

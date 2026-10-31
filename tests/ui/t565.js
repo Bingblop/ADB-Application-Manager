@@ -47,7 +47,6 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('   Apply: the theme setting gets Tonal Spot (Android knows no Content), the overlay the Content colours (236 entries on Android 15), the record Content', k.apply[0].style === 'TONAL_SPOT' && k.fab.length === 1 && k.fab[0].entries.length === 236 && (await ev(() => { const r = kvGet('ovl_root_applied', null); return r.style === 'CONTENT' && r.opts.style === 'CONTENT'; })), JSON.stringify([k.apply[0], k.fab[0].entries.length]));
   check('   the overlay\'s shades are the Content ones, not Tonal Spot\'s', await ev(() => { const o = kvGet('ovl_root_applied', null).opts; const c = MonetPlan.cb.entries(o, 35), t = MonetPlan.cb.entries(Object.assign({}, o, { style: 'TONAL_SPOT' }), 35); return c.some((e, i) => e.argb !== t[i].argb); }));
   check('   Colors in use reads the setting: a custom colour is not set, so the wallpaper line, Tonal Spot', /Tonal Spot/.test(await ev(() => document.getElementById('ovlNow').innerText)) && !/Content/.test(await ev(() => document.getElementById('ovlNow').innerText)));
-  check('   the hint stays the usual one plus the overlay sentence', /Android repaints in a moment, and apps may restart\. Also writes these colors into Android with Super User: the same palettes as ColorBlendr\./.test(await ev(() => document.getElementById('ovlApplyHint').innerText.replace(/\s+/g, ' ').trim())));
   // Android's six still go into the setting as themselves
   await page.locator('#ovlStyles .ovl-style[data-style="VIBRANT"]').click(); await sleep(100);
   await reset(); await apply(); k = await calls();
@@ -61,7 +60,6 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('3. Monochrome chosen, then Root gone: the grid marks Tonal Spot, Monochrome is greyed with the uid 0 reason', st.filter(x => x.checked === 'true').map(x => x.id).join() === 'TONAL_SPOT' && st[8].locked && st[8].why === 'Needs Super User (uid 0) to write Material You colors' && (await ev(() => ovlStyle === 'MONOCHROMATIC' && ovlStyleEffective() === 'TONAL_SPOT')), JSON.stringify(st[8]));
   await reset(); await apply(); k = await calls();
   check('   Apply writes Tonal Spot and nothing else', k.apply[0].style === 'TONAL_SPOT' && k.fab.length === 0, JSON.stringify(k.apply));
-  check('   the hint says this is what the phone uses now (the setting is Tonal Spot from the wallpaper)', (await ev(() => document.getElementById('ovlApplyHint').innerText.trim())) === 'This is already what the phone uses.');
   await ev(() => { window.__root = true; checkAllWorkingModes(false); }); await sleep(150);
   check('   Root back: Monochrome is the one marked again', (await styles()).filter(x => x.checked === 'true').map(x => x.id).join() === 'MONOCHROMATIC');
 

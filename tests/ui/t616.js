@@ -4,7 +4,7 @@
 // system_primary_fixed comes once without and once with the night configuration, Contrast High changes system_primary_light against Standard,
 // Pure black puts system_surface_dark at 0xFF000000, an own secondary accent moves the accent2 shades, a root-only style (Monochrome) greys
 // accent1; the theme setting takes the list style (Tonal Spot for a root-only one); the record (kv ovl_root_applied) keeps the options, the
-// Android level and the build, and the hint and the preview follow the choices. The mock reports the build family each Android level really
+// Android level and the build, and the preview follows the choices. The mock reports the build family each Android level really
 // has (__profile: 37 P17, 36 P16Q1 and P16Q2, 35 P15Q1, 34 P14, 33 P12), and the plan follows it: on Android 16 QPR1 and QPR2 it names no
 // unsuffixed palette shade (Java refuses them there as aliases of _light / _dark), carries the _light / _dark shades those builds define
 // (16.0 does not) and reaches overlayFabricate; on 17 the unsuffixed fixed
@@ -31,7 +31,6 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const reset = () => ev(() => { window.__ovlCalls.apply.length = 0; window.__ovlCalls.fab.length = 0; });
   const lastPlan = async () => { const c = await calls(); return c.fab[c.fab.length - 1]; };
   const entry = (plan, name, night) => plan.entries.find(e => e.resource === 'android:color/' + name && (night ? e.config === 'night' : !e.config));
-  const hint = () => ev(() => document.getElementById('ovlApplyHint').innerText.replace(/\s+/g, ' ').trim());
   const PAL = /^android:color\/system_(accent[123]|neutral[12]|error)_\d+$/, SUF = /^android:color\/system_(accent[123]|neutral[12]|error)_\d+_(light|dark)$/;
   const FIXED = /^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/;
   const listed = () => ev(() => { const o = window.__ovl.find(x => x.id === 'com.android.shell:aam_monet'); return o ? o.state : -9; });
@@ -94,7 +93,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   // 6) a root-only style: the setting takes Tonal Spot, the overlay the style
   await reset();
   await page.locator('#ovlStyles .ovl-style[data-style="MONOCHROMATIC"]').click(); await sleep(100);
-  check('6. Monochrome chosen: the preview names it, the hint stays', (await ev(() => ovlStyle === 'MONOCHROMATIC' && /Monochrome/.test(document.getElementById('ovlPreviewLine').innerText))) && /the same palettes as ColorBlendr/.test(await hint()));
+  check('6. Monochrome chosen: the preview names it', await ev(() => ovlStyle === 'MONOCHROMATIC' && /Monochrome/.test(document.getElementById('ovlPreviewLine').innerText)));
   await apply(); c = await calls(); plan = await lastPlan();
   check('   the theme setting gets Tonal Spot, the overlay the Monochrome colours (accent1 500 grey), the record the style', c.apply[0].style === 'TONAL_SPOT' && /^0xFF(..)\1\1$/.test(entry(plan, 'system_accent1_500_light').argb) && (await ev(() => { const r = kvGet('ovl_root_applied', null); return r.style === 'MONOCHROMATIC' && r.opts.style === 'MONOCHROMATIC'; })), JSON.stringify([c.apply[0], entry(plan, 'system_accent1_500_light')]));
   const now = await ev(() => document.getElementById('ovlNow').innerText);

@@ -444,7 +444,7 @@
   <h4>Before you start</h4>
   <ul>
     <li><b>Changing anything needs a working mode</b> (ADB over TCP, Wireless Debugging, Shizuku or Root; see <a href="#modes-overview">Working modes</a>). Without one, a card says <b>Needs ADB, Wireless Debugging, Shizuku or Root</b> with a <b>Set Up</b> button. The <b>colours in use</b> are still shown, because the app reads them from Android directly.</li>
-    <li><b>The Theme half needs Android 12 or newer.</b> On Android 11 and older the tab opens on the Overlays half (unless you chose a half before), <b>Apply theme</b> and <b>Reset</b> are greyed out, and the page says <i>Material You needs Android 12 or newer.</i></li>
+    <li><b>The Theme half needs Android 12 or newer.</b> On Android 11 and older the tab opens on the Overlays half (unless you chose a half before), <b>Apply theme</b> and <b>Reset</b> are greyed out.</li>
     <li><b>Phone makers differ.</b> The app writes the setting that Android's own wallpaper picker writes, so phones close to stock Android are the most likely to follow it. Some makers add their own palette on top (the page says so), and a few refuse changes from a shell. The app cannot tell in advance. Try one colour, and use <b>Undo</b> or <b>Reset</b> if you do not like it.</li>
     <li><b>Samsung.</b> If the phone has Samsung's "wallpaper colours" switch (a setting called <code>wallpapertheme_state</code>), <b>Apply theme</b> also sets it to match (off for a colour you chose, on for the wallpaper) and reads it back; <b>Undo</b> restores it. If it will not change, a message says the phone's own palette may still win. The app does not talk to Samsung's theme store or to Good Lock (Samsung's own customisation app); it only writes Android's standard theme setting and, where it exists, that one switch.</li>
     <li>On Xiaomi, Redmi and POCO a change may need <b>USB debugging (Security settings)</b> switched on in Developer options.</li>
@@ -490,7 +490,7 @@
   <h5>Apply a colour scheme</h5>
   <ol class="hg-steps">
     <li>Choose the source, the colour (if custom) and the style, and with Super User whatever else you want on the cards below.</li>
-    <li>Read the line under the two buttons at the bottom: <i>Android repaints in a moment, and apps may restart.</i> If it says <i>This is already what the phone uses.</i>, there is nothing to apply (with Super User it never says so: every Apply writes the whole overlay). With an invalid code, <b>Apply theme</b> stays grey. With Super User a second sentence reads <i>Also writes these colors into Android with Super User: the same palettes as ColorBlendr.</i></li>
+    <li>Look at the bar at the bottom: it holds only <b>Apply theme</b> and <b>Reset</b>, with no line of text under them (since v7.22.1). With an invalid code, <b>Apply theme</b> stays grey. With Super User, Apply also writes these colours into Android as an overlay, the same palettes as ColorBlendr.</li>
     <li>Tap <b>Apply theme</b>. It reads <b>Applying...</b> while the app reads the current setting, writes the new one and reads it back; with Super User it then writes the overlay and reads that back too.</li>
     <li>Android repaints within a second or two and may restart the app. The Undo bar appears for 3 seconds with <i>Theme applied</i>, and the colours in use update.</li>
   </ol>
@@ -610,7 +610,7 @@
   <ol class="hg-steps">
     <li>Get Super User (<a href="#rootfeatures-grant">Getting Super User</a>). The rows unlock: the <b>Locked</b> buttons and the locks go away, and the Colors in use card turns into the preview.</li>
     <li>Choose the colour and style as usual, then whatever you like on the cards below. Watch the preview: it shows the palettes Apply would write.</li>
-    <li>Read the line under the buttons; with Super User it ends with <i>Also writes these colors into Android with Super User: the same palettes as ColorBlendr.</i> <b>Apply theme</b> is live even when the setting alone would already be what the phone uses, because the overlay is still to be written.</li>
+    <li><b>Apply theme</b> writes these colours into Android with Super User, the same palettes as ColorBlendr, even when the setting alone would already be what the phone uses, because the overlay is still to be written.</li>
     <li>Tap <b>Apply theme</b>. It reads <b>Applying…</b> while the app writes the theme setting and reads it back; then, with that in, it writes the overlay, switches it on, reads the overlay list back and asks Android which colour it now gives for the first few entries. The button stays busy until both answers are in.</li>
     <li>Android repaints within a second or two and may restart apps. A message says <i>Theme overlay written</i>, the Undo bar appears with <i>Theme applied</i> for the whole change, and <b>Colors in use</b> redraws a few seconds later.</li>
   </ol>

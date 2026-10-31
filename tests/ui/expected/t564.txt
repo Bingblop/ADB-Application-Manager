@@ -1,7 +1,7 @@
-0. Root on Android 14: live, nothing written, the hint promises the overlay: true
+0. Root on Android 14: live, nothing written: true
 1. Apply writes the theme (preset 6750A4, Tonal Spot) and then the overlay: 181 entries for Android 14: true [[{"source":"preset","hex":"6750A4","style":"TONAL_SPOT"}],1]
    the overlay is listed on, remembered with its options and the level; the toasts and the Undo bar: true [{"ids":["com.android.shell:aam_monet"],"t":<epoch ms>,"black":false,"style":"TONAL_SPOT","opts":{"style":"TONAL_SPOT","seed":"6750A4","spec":"2021","contrast":0,"dark":true,"secondary":null,"tertiary":null,"accentSaturation":100,"backgroundSaturation":100,"backgroundLightness":100,"accurate":true,"black":false,"tintText":true},"sdk":34,"build":"google/mock/mock:14/UP1A.231005.007/10754064:user/release-keys"},"Theme overlay written","Theme applied"]
-   the note under the switches says it is on the phone; the hint says Reset removes it: true ["The theme overlay is written on this phone.","Android repaints in a moment, and apps may restart. Also writes these colors into Android with Super User: the same palettes as ColorBlendr. Reset also removes the theme overlay."]
+   the note under the switches says it is on the phone: true The theme overlay is written on this phone.
 2. Undo with no overlay before: a disable with the remembered id first, then the theme back: true [[{"action":"disable","ids":["com.android.shell:aam_monet"]}],[""]]
    the overlay is forgotten and listed off; Theme put back; no new Undo: true [null,"Theme put back"]
 3. a second Apply (another colour, Pure black) writes the overlay again: 182 entries, the record says black: true [182,{"ids":["com.android.shell:aam_monet"],"t":<epoch ms>,"black":true,"style":"TONAL_SPOT","opts":{"style":"TONAL_SPOT","seed":"E91E63","spec":"2021","contrast":0,"dark":true,"secondary":null,"tertiary":null,"accentSaturation":100,"backgroundSaturation":100,"backgroundLightness":100,"accurate":true,"black":true,"tintText":true},"sdk":34,"build":"google/mock/mock:14/UP1A.231005.007/10754064:user/release-keys"}]
@@ -21,7 +21,8 @@ Android will use your wallpaper’s colors with the Tonal Spot style again.
    one still listed on: the failure toast and sheet, the record kept: true ["Could not remove the theme overlay","The theme overlay was not removed"]
    a disable without an answer keeps the overlay remembered: true
 6. Pure black off when Apply is tapped, on while it reads Applying…: the overlay written without it (181 entries); the switch is on for the next Apply: true [{"busy":true,"text":"Applying…","disabled":false},1,true]
-7. the working mode leaving Root: the rows are locked, the hint promises nothing, the note says the overlay stays on: true ["This is already what the phone uses.","Shizuku and ADB cannot write these colors; Super User (uid 0) can.\nThe theme overlay is written on this phone."]
+7. the working mode leaving Root: the rows are locked, the note says the overlay stays on: true Shizuku and ADB cannot write these colors; Super User (uid 0) can.
+The theme overlay is written on this phone.
    the Fidelity chosen before is greyed and Tonal Spot is the one marked: true
    Apply writes the theme with Tonal Spot and calls the bridge no more; the record stays (the overlay is still on): true [{"source":"preset","hex":"E91E63","style":"TONAL_SPOT"}]
    Reset's question says the overlay stays on: switching it off needs Super User (uid 0): true Go back to the system default?

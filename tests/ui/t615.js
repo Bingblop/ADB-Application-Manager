@@ -1,6 +1,6 @@
 // The one Theme screen of the RRO/Monet tab (v7.22.0, ColorBlendr parity): every control in one flow (Colors in use, Color with the Secondary and
 // tertiary accents, the Style grid with all ten styles, Color spec, Contrast, Intensity, the three switches, How this works collapsed, Back up and
-// restore) and ONE sticky action bar at the bottom with Apply theme, Reset and the hint. Without uid 0 every root-only control is a locked row
+// restore) and ONE sticky action bar at the bottom with Apply theme and Reset (no line of text under them since v7.22.1). Without uid 0 every root-only control is a locked row
 // (rootLockedRow: greyed, the Locked button, the lock glyph in the title, the reason): at the shell (ADB TCP, uid 2000) "Needs Super User (uid 0) to
 // write Material You colors", with Shizuku as the system user (uid 1000) "Shizuku runs as the system user (uid 1000); writing these colors needs
 // uid 0"; the four root-only styles are greyed with the same reason and take no tap; with Root (uid 0) every row is live and the Root Features
@@ -33,22 +33,21 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     const cards = Array.from(panel.querySelectorAll(':scope > .color-card')).map(c => { const h = c.querySelector('.color-card-title, summary'); return h ? h.innerText : c.querySelector('.rf-name').childNodes[0].textContent.trim(); });
     const bar = document.getElementById('ovlBar'), cs = getComputedStyle(bar);
     return { cards, applies: panel.querySelectorAll('#ovlApplyBtn, button[onclick="ovlApply()"]').length, resets: panel.querySelectorAll('button[onclick="ovlReset()"]').length,
-      barLast: panel.lastElementChild === bar, sticky: cs.position === 'sticky', barHolds: ['ovlApplyBtn', 'ovlResetBtn', 'ovlApplyHint'].every(id => bar.contains(document.getElementById(id))),
+      barLast: panel.lastElementChild === bar, sticky: cs.position === 'sticky', barHolds: ['ovlApplyBtn', 'ovlResetBtn'].every(id => bar.contains(document.getElementById(id))), barText: bar.innerText.replace(/\s+/g, ' ').trim(), noHint: !document.getElementById('ovlApplyHint'),
       apply: document.getElementById('ovlApplyBtn').innerText, reset: document.getElementById('ovlResetBtn').innerText, how: document.getElementById('ovlHowCard').open,
-      note: document.getElementById('ovlRootNote').innerText, hint: document.getElementById('ovlApplyHint').innerText.replace(/\s+/g, ' ').trim() };
+      note: document.getElementById('ovlRootNote').innerText };
   });
 
   // 1) the shell (ADB TCP, uid 2000): one screen, locked rows with the uid 0 reason
   await ev(() => switchView('overlays')); await sleep(400);
   let s = await screen();
   check('1. one flow: Colors in use, Color, Style, Color spec, Contrast, Intensity, Shades and text, How this works, Back up and restore', s.cards.join('|') === 'Colors in use\nRefresh|Color|Style|🔒 Color spec|🔒 Contrast|🔒 Intensity|Shades and text|How this works|Back up and restore', JSON.stringify(s.cards));
-  check('   one sticky bar at the very end holds the only Apply theme, Reset and the hint; How this works is collapsed', s.applies === 1 && s.resets === 1 && s.barLast && s.sticky && s.barHolds && s.apply === 'Apply theme' && s.reset === 'Reset' && s.how === false, JSON.stringify(s));
+  check('   one sticky bar at the very end holds the only Apply theme and Reset, with no line under them; How this works is collapsed', s.applies === 1 && s.resets === 1 && s.barLast && s.sticky && s.barHolds && s.noHint && s.barText === 'Apply theme Reset' && s.apply === 'Apply theme' && s.reset === 'Reset' && s.how === false, JSON.stringify(s));
   let r = await rows();
   check('   the seven root-only rows are locked rows: accents, spec, contrast, intensity, Accurate shades, Pure black, Tint text color', r.length === 7 && r.every(x => x.locked && x.btn === 'Locked' && x.disabled) && r.map(x => x.name).join('|') === '🔒 Secondary and tertiary accents|🔒 Color spec|🔒 Contrast|🔒 Intensity|🔒 Accurate shades|🔒 Pure black|🔒 Tint text color', JSON.stringify(r.map(x => x.name)));
   check('   each with the reason for uid 2000', r.every(x => x.why === UID0), JSON.stringify(r.map(x => x.why)));
   check('   the rows sit in their cards: the accents in Color, then one card each', r.map(x => x.box).join() === 'ovlAccents,ovlSpecRow,ovlContrastRow,ovlAdjust,ovlSwitches,ovlSwitches,ovlSwitches', JSON.stringify(r.map(x => x.box)));
   check('   the note under the switches says who can write them', s.note === 'Shizuku and ADB cannot write these colors; Super User (uid 0) can.', s.note);
-  check('   the hint says nothing about the overlay', !/ColorBlendr|Super User/.test(s.hint) && s.hint !== '', s.hint);
   let st = await styles();
   check('   the Style grid holds all ten styles, Android\'s six open', st.length === 10 && st.slice(0, 6).every(x => !x.locked && !x.disabled) && st.map(x => x.id).join() === 'TONAL_SPOT,VIBRANT,EXPRESSIVE,FRUIT_SALAD,RAINBOW,SPRITZ,FIDELITY,CONTENT,MONOCHROMATIC,CMF', JSON.stringify(st.map(x => x.id)));
   check('   Fidelity, Content, Monochrome and CMF greyed, with the lock glyph and the uid 0 reason', st.slice(6).every(x => x.locked && x.disabled && x.name.startsWith('🔒 ') && x.why === UID0), JSON.stringify(st.slice(6)));
@@ -79,7 +78,6 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     preview: (document.getElementById('ovlPreviewLine') || {}).innerText || '', chips: document.querySelectorAll('#ovlPalette .ovl-chip').length }));
   check('   defaults as ColorBlendr: 2021, Standard, 100% x3, Accurate shades on, Pure black off, Tint text color on, accents from the style', live.spec === '2021*,2025,2026' && live.con === 'Standard*,Medium,High' && live.sliders === 'accentSaturation=100,backgroundSaturation=100,backgroundLightness=100' && live.sw === 'ovlAccurateSw:true,ovlBlackSw:false,ovlTintSw:true' && live.acc === 'From the style|From the style', JSON.stringify(live));
   check('   the preview shows what Apply writes: the wallpaper colour, Tonal Spot, 55 chips', /^Preview of what Apply theme writes: #[0-9A-F]{6} from your wallpaper, Tonal Spot, (dark|light)$/.test(live.preview) && live.chips === 55, JSON.stringify([live.preview, live.chips]));
-  check('   the hint says the colours are written with Super User as ColorBlendr computes them', /Also writes these colors into Android with Super User: the same palettes as ColorBlendr\./.test(s.hint), s.hint);
   check('   the note under the switches is empty while nothing is written', s.note === '', s.note);
   // the Root Features row
   await ev(() => switchView('rootfeatures')); await sleep(300);
