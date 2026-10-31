@@ -2797,6 +2797,7 @@ x: {
 "Not applied: the phone kept its governor.": "लागू नहीं हुआ: फ़ोन ने अपना governor बनाए रखा।",
 "Not available": "उपलब्ध नहीं",
 "Not available for this app": "इस ऐप के लिए उपलब्ध नहीं",
+"Not available in this build": "इस बिल्ड में उपलब्ध नहीं",
 "Not available on this phone": "इस फ़ोन पर उपलब्ध नहीं",
 "Not charging": "चार्ज नहीं हो रही",
 "Not checked (large file)": "जांचा नहीं गया (बड़ी फ़ाइल)",

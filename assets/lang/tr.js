@@ -2797,6 +2797,7 @@ x: {
 "Not applied: the phone kept its governor.": "Uygulanmadı: telefon kendi yöneticisini korudu.",
 "Not available": "Kullanılamıyor",
 "Not available for this app": "Bu uygulama için kullanılamıyor",
+"Not available in this build": "Bu sürümde kullanılamıyor",
 "Not available on this phone": "Bu telefonda mevcut değil",
 "Not charging": "Şarj olmuyor",
 "Not checked (large file)": "Denetlenmedi (büyük dosya)",

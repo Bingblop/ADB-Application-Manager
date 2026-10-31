@@ -2797,6 +2797,7 @@ x: {
 "Not applied: the phone kept its governor.": "Tidak diterapkan: ponsel mempertahankan governornya.",
 "Not available": "Tidak tersedia",
 "Not available for this app": "Tidak tersedia untuk aplikasi ini",
+"Not available in this build": "Tidak tersedia di build ini",
 "Not available on this phone": "Tidak tersedia di ponsel ini",
 "Not charging": "Tidak mengisi daya",
 "Not checked (large file)": "Tidak diperiksa (file besar)",

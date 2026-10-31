@@ -72,6 +72,8 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
       const t = n.nodeValue.trim();
       if (!t || !re.test(t)) continue;
       if (/^\u{1F512} /u.test(t) && p.classList.contains('locked') && (p.classList.contains('perm-toggle-btn') || p.classList.contains('op-mode-btn'))) continue;
+      // v7.22.0 (asked for: every root-only control of the Monet theme greyed with the lock): LOCK_ICON before the name of a locked row of that tab and of a greyed style
+      if (/^\u{1F512} /u.test(t) && (p.closest('.rf-row.is-locked .rf-name') || p.closest('#ovlStyles .ovl-style.is-locked'))) continue;
       if (gear.test(t) && (p.id === 'prefsHeaderBtn' || p.id === 'txSettingsBtn' || (p.classList.contains('btn-mini') && p.getAttribute('title') === 'App Settings'))) continue;
       hits.push((p.id || p.className || p.tagName) + ': ' + t.slice(0, 40));
     }
