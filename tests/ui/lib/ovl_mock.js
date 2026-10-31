@@ -280,7 +280,12 @@ module.exports.initScript = function () {
         seen.add(key);
       }
       if (suffixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_(accent[1-3]|neutral[12]|error)_[0-9]+$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a palette color without _light or _dark, which this Android version does not take';
-      if (suffixedFixed()) for (let i = 0; i < es.length; i++) if (/^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/.test(es[i].resource)) return 'error: Entry ' + (i + 1) + ' names a fixed color without _light or _dark, which this Android version does not take';
+      if (suffixedFixed()) for (let i = 0; i < es.length; i++) {
+        const e = es[i];
+        if (!e.config && !es.some(n => n.resource === e.resource && n.config === 'night')
+            && /^android:color\/system_((primary|secondary|tertiary)_fixed(_dim)?|on_(primary|secondary|tertiary)_fixed(_variant)?)$/.test(e.resource))
+          return 'error: Entry ' + (i + 1) + ' names a fixed color without _light or _dark, which this Android version does not take';
+      }
     } else if (op === 'disable') {
       const ids = plan.ids;
       if (!Array.isArray(ids) || !ids.length) return 'error: No overlay named';
